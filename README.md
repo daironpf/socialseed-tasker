@@ -391,6 +391,16 @@ See `CONTRIBUTING.md` for detailed guidelines on:
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
+## 🤖 AI Agent Documentation
+
+This project includes comprehensive documentation for AI agents in the `.agent` directory. After installation, AI agents can access:
+
+- **Skills**: Specialized capabilities and conventions (`environment-tooling.md`, `hexagonal-architecture.md`, `issue-driven-development.md`)
+- **Workflows**: Step-by-step procedural guides (`implement-issue.md`, `test-code.md`, `commit-push.md`, `create-issue.md`)
+- **README**: Overview of the agent skills and workflows system
+
+These documents ensure AI agents understand project conventions, architectural guidelines, and development workflows to effectively contribute to the SocialSeed Tasker ecosystem.
+
 ## Acknowledgments
 
 - Built as part of the [SocialSeed Project](https://github.com/daironpf/SocialSeed)
