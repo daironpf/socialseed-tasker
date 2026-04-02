@@ -225,4 +225,7 @@ neo4j/plugins/
 
 # Project specific
 .issues/
+.agent/
 *.log
+
+.tasker-data
