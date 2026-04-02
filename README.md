@@ -1,25 +1,96 @@
-# SocialSeed Tasker 🛡️🌱
+# SocialSeed Tasker
 
-**SocialSeed Tasker** is an AI-native task management framework designed to bridge the gap between autonomous AI agents and architectural integrity. By leveraging **Neo4j** as a knowledge graph, it transforms static "to-do lists" into a dynamic map of engineering decisions.
+A graph-based task management framework designed to provide "Infinite Context" and "Architectural Governance" to AI agents.
 
-Part of the [SocialSeed Project](https://github.com/daironpf/SocialSeed).
+## Features
 
-## 🚀 Key Features
+- **Dependency Graphing**: Tasks support [:DEPENDS_ON], [:BLOCKS], and [:AFFECTS] relationships
+- **Architectural Integrity**: Verify actions against established architectural rules
+- **Causal Traceability**: Link failed tests to recently closed issues to find root causes
+- **Dual Storage**: Neo4j graph database or local file fallback
+- **CLI & API**: Terminal interface for humans, REST API for AI agents
 
-- **Graph-First Architecture:** Relationships like `DEPENDS_ON`, `BLOCKS`, and `AFFECTS` are treated as first-class citizens.
-- **AI-Native Skills:** Built-in hooks for AI agents to create, analyze, and resolve issues without breaking project ergonomics.
-- **Docker-Ready:** Seamless integration with Neo4j Community Edition via Docker Compose.
-- **E2E Integration:** Designed to work alongside `socialseed-e2e` for automated bug reporting.
+## Quick Start
 
-## 🛠️ Tech Stack
+### Prerequisites
 
-- **Language:** Python 3.10+
-- **Database:** Neo4j (Graph Database)
-- **Containerization:** Docker & Docker Compose
-- **CLI Framework:** Typer
-- **Validation:** Pydantic v2
+- Python 3.10+
+- Docker & Docker Compose
 
-## 📦 Installation (Coming Soon to PyPI)
+### Installation
 
 ```bash
-pip install socialseed-tasker
+# Install the package
+pip install -e ".[dev]"
+
+# Start Neo4j
+docker compose up -d
+
+# Run the CLI
+tasker --help
+```
+
+### Basic Usage
+
+```bash
+# Create a component
+tasker component create --name "Backend" --project "my-project"
+
+# Create an issue
+tasker issue create --title "Fix login bug" --component <id> --priority HIGH
+
+# Add a dependency
+tasker dependency add <issue_id> <depends_on_id>
+
+# Check blocked issues
+tasker dependency blocked
+```
+
+### API Usage
+
+```bash
+# Start the API server
+uvicorn socialseed_tasker.entrypoints.web_api.app:app --reload
+
+# View OpenAPI docs
+open http://localhost:8000/docs
+```
+
+## Architecture
+
+This project follows a **Hexagonal Architecture** organized by **Functional Features**:
+
+- **core/**: Pure Python business logic, no external dependencies
+- **entrypoints/**: CLI (Typer) and API (FastAPI) interfaces
+- **storage/**: Neo4j and local file storage backends
+- **bootstrap/**: Dependency injection and system wiring
+
+## Configuration
+
+All configuration via environment variables:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| TASKER_STORAGE_BACKEND | Storage backend (neo4j/file) | neo4j |
+| TASKER_NEO4J_URI | Neo4j connection string | bolt://localhost:7687 |
+| TASKER_NEO4J_USER | Neo4j username | neo4j |
+| TASKER_NEO4J_PASSWORD | Neo4j password | (required) |
+| TASKER_API_HOST | API bind address | 0.0.0.0 |
+| TASKER_API_PORT | API port | 8000 |
+
+## Development
+
+```bash
+# Run tests
+pytest
+
+# Run linter
+ruff check .
+
+# Run type checker
+mypy .
+```
+
+## License
+
+Apache 2.0 - See LICENSE file for details.
