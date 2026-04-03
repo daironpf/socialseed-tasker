@@ -1,0 +1,59 @@
+{
+  "name": "tasker-api",
+  "version": "1.0.0",
+  "description": "AI Agent Skill for interacting with SocialSeed Tasker REST API",
+  "functions": [
+    {
+      "name": "create_issue",
+      "description": "Create a new issue in the task management system",
+      "parameters": {
+        "title": "string (required) - Issue title",
+        "component_id": "string (required) - UUID of the target component",
+        "description": "string (optional) - Detailed description",
+        "priority": "string (optional) - LOW, MEDIUM, HIGH, CRITICAL",
+        "labels": "array (optional) - Tags for categorisation"
+      }
+    },
+    {
+      "name": "list_issues",
+      "description": "List issues with optional filters",
+      "parameters": {
+        "status": "string (optional) - Filter by status",
+        "component": "string (optional) - Filter by component ID",
+        "page": "integer (optional) - Page number",
+        "limit": "integer (optional) - Items per page"
+      }
+    },
+    {
+      "name": "add_dependency",
+      "description": "Create a DEPENDS_ON relationship between two issues",
+      "parameters": {
+        "issue_id": "string (required) - Source issue UUID",
+        "depends_on_id": "string (required) - Target issue UUID"
+      }
+    },
+    {
+      "name": "get_dependency_chain",
+      "description": "Get the full transitive dependency chain for an issue",
+      "parameters": {
+        "issue_id": "string (required) - Issue UUID"
+      }
+    },
+    {
+      "name": "close_issue",
+      "description": "Close an issue (validates no open dependencies)",
+      "parameters": {
+        "issue_id": "string (required) - Issue UUID"
+      }
+    },
+    {
+      "name": "create_component",
+      "description": "Create a new component to group issues",
+      "parameters": {
+        "name": "string (required) - Component name",
+        "project": "string (required) - Project name",
+        "description": "string (optional) - Component description"
+      }
+    }
+  ]
+}

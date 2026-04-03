@@ -379,6 +379,91 @@ When integrated with test execution systems (like `socialseed-e2e`), the framewo
 - Easier to reason about and maintain
 - Faster test execution
 
+## Injected Setup (Using Tasker in Other Projects)
+
+SocialSeed Tasker can be injected into any external project as a management layer. This enables AI agents working on that project to use Tasker for issue tracking, dependency management, and architectural governance.
+
+### Quick Start
+
+```bash
+# In your target project directory
+pip install socialseed-tasker
+
+# Scaffold the Tasker infrastructure
+tasker init
+
+# Start the Neo4j database
+cd tasker && docker compose up -d
+
+# Copy and configure environment
+cp configs/.env.example configs/.env
+
+# Update skills to the latest version
+tasker init --force
+```
+
+### Injected Structure
+
+After running `tasker init`, your project will contain:
+
+```text
+Your-Project/
+├── tasker/
+│   ├── skills/              # AI Agent skills (Python modules)
+│   │   ├── task_skill.py    # Function Calling bridge to Tasker API
+│   │   └── skill_manifest.json
+│   ├── configs/
+│   │   └── .env.example     # Configuration template
+│   ├── docker-compose.yml   # Neo4j for local development
+│   └── README.md            # Tasker-specific instructions
+├── ...your existing files...
+```
+
+### Using the Injected Skills
+
+The skills in `tasker/skills/` are API-centric Python modules that your AI agents or scripts can import directly:
+
+```python
+import sys
+sys.path.insert(0, "tasker/skills")
+from task_skill import create_issue, list_issues, add_dependency
+
+# Create a component
+from task_skill import create_component
+result = create_component("Backend", "my-project")
+
+# Create an issue
+result = create_issue(
+    title="Implement authentication",
+    component_id="<component-uuid>",
+    priority="HIGH",
+    labels=["backend", "security"],
+)
+
+# List open issues
+issues = list_issues(status="OPEN")
+
+# Add a dependency
+add_dependency(issue_id="<uuid-1>", depends_on_id="<uuid-2>")
+```
+
+### Switching to Neo4j Aura DB
+
+Edit `tasker/configs/.env` to use a remote Neo4j Aura instance:
+
+```bash
+# Comment out local connection
+# TASKER_NEO4J_URI=bolt://localhost:7689
+
+# Use Aura DB (bolt+s:// enables TLS encryption)
+TASKER_NEO4J_URI=bolt+s://your-aura-id.databases.neo4j.io:7687
+TASKER_NEO4J_PASSWORD=your_aura_password
+```
+
+The system automatically detects the connection mode from the URI scheme:
+- `bolt://` or `neo4j://` → Local (unencrypted)
+- `bolt+s://` or `neo4j+s://` → Aura (encrypted with TLS)
+
 ## Contributing
 
 See `CONTRIBUTING.md` for detailed guidelines on:
