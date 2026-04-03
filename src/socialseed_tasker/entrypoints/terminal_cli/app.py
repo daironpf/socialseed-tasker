@@ -13,6 +13,7 @@ import typer
 from rich.console import Console
 from rich.theme import Theme
 
+from socialseed_tasker.entrypoints.cli.init_command import init_app
 from socialseed_tasker.entrypoints.terminal_cli import commands
 
 if TYPE_CHECKING:
@@ -50,6 +51,7 @@ app = typer.Typer(
 app.add_typer(commands.issue_app, name="issue", help="Manage issues")
 app.add_typer(commands.dependency_app, name="dependency", help="Manage dependencies")
 app.add_typer(commands.component_app, name="component", help="Manage components")
+app.add_typer(init_app, name="init", help="Initialize Tasker in an external project")
 
 
 @app.callback()
@@ -67,7 +69,7 @@ def handle_error(error: Exception, exit_code: int = 1) -> None:
     Business Value: Improves user experience and provides actionable guidance.
     """
     console.print(f"[error]Error:[/error] {error}")
-    raise typer.Exit(code=exit_code)
+    raise typer.Exit(code=exit_code) from error
 
 
 def main_entry() -> None:

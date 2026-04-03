@@ -9,8 +9,6 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Optional
-from uuid import UUID
 
 import typer
 from rich.console import Console
@@ -175,7 +173,7 @@ def issue_create(
     component: str = typer.Option(..., "--component", "-c", help="Component ID"),
     description: str = typer.Option("", "--description", "-d", help="Issue description"),
     priority: str = typer.Option("MEDIUM", "--priority", "-p", help="Priority: LOW, MEDIUM, HIGH, CRITICAL"),
-    labels: Optional[str] = typer.Option(None, "--labels", "-l", help="Comma-separated labels"),
+    labels: str | None = typer.Option(None, "--labels", "-l", help="Comma-separated labels"),
 ) -> None:
     """Create a new issue."""
     repo = get_repository()
@@ -194,16 +192,16 @@ def issue_create(
         console.print(_format_issue_card(issue))
     except ComponentNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from exc
     except ValueError as exc:
         console.print(f"[error]Validation error: {exc}[/error]")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from exc
 
 
 @issue_app.command("list")
 def issue_list(
-    status: Optional[str] = typer.Option(None, "--status", "-s", help="Filter by status"),
-    component: Optional[str] = typer.Option(None, "--component", "-c", help="Filter by component ID"),
+    status: str | None = typer.Option(None, "--status", "-s", help="Filter by status"),
+    component: str | None = typer.Option(None, "--component", "-c", help="Filter by component ID"),
     as_json: bool = typer.Option(False, "--json", help="Output as JSON"),
 ) -> None:
     """List issues with optional filters."""
@@ -232,7 +230,7 @@ def issue_show(issue_id: str) -> None:
 
     if issue is None:
         console.print(f"[error]Issue '{issue_id}' not found.[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     console.print(_format_issue_card(issue))
 
@@ -257,13 +255,13 @@ def issue_close(issue_id: str) -> None:
         console.print(f"[success]Issue closed:[/success] {issue.id}")
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from exc
     except OpenDependenciesError as exc:
         console.print(f"[error]{exc}[/error]")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from exc
     except Exception as exc:
         console.print(f"[error]{exc}[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from exc
 
 
 @issue_app.command("move")
@@ -279,10 +277,10 @@ def issue_move(
         console.print(f"[success]Issue moved:[/success] {issue.id} -> component {to_component[:8]}")
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from exc
     except ComponentNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from exc
 
 
 @issue_app.command("delete")
@@ -296,7 +294,7 @@ def issue_delete(
 
     if issue is None:
         console.print(f"[error]Issue '{issue_id}' not found.[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     if not force:
         confirm = typer.confirm(f"Delete issue '{issue.title}' ({issue_id[:8]})?")
@@ -325,10 +323,10 @@ def dependency_add(issue_id: str, depends_on: str) -> None:
         console.print(f"[success]Dependency added:[/success] {issue_id[:8]} -> {depends_on[:8]}")
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from exc
     except CircularDependencyError as exc:
         console.print(f"[error]{exc}[/error]")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from exc
 
 
 @dependency_app.command("remove")
@@ -341,7 +339,7 @@ def dependency_remove(issue_id: str, depends_on: str) -> None:
         console.print(f"[success]Dependency removed:[/success] {issue_id[:8]} -> {depends_on[:8]}")
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from exc
 
 
 @dependency_app.command("list")
@@ -352,7 +350,7 @@ def dependency_list(issue_id: str) -> None:
 
     if issue is None:
         console.print(f"[error]Issue '{issue_id}' not found.[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     deps = repo.get_dependencies(issue_id)
     dependents = repo.get_dependents(issue_id)
@@ -385,7 +383,7 @@ def dependency_chain(issue_id: str) -> None:
         console.print(tree)
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from exc
 
 
 @dependency_app.command("blocked")
@@ -413,7 +411,7 @@ component_app = typer.Typer(help="Manage components")
 def component_create(
     name: str = typer.Argument(..., help="Component name"),
     project: str = typer.Option(..., "--project", "-p", help="Project name"),
-    description: Optional[str] = typer.Option(None, "--description", "-d", help="Component description"),
+    description: str | None = typer.Option(None, "--description", "-d", help="Component description"),
 ) -> None:
     """Create a new component."""
     repo = get_repository()
@@ -424,7 +422,7 @@ def component_create(
 
 @component_app.command("list")
 def component_list(
-    project: Optional[str] = typer.Option(None, "--project", "-p", help="Filter by project"),
+    project: str | None = typer.Option(None, "--project", "-p", help="Filter by project"),
     as_json: bool = typer.Option(False, "--json", help="Output as JSON"),
 ) -> None:
     """List all components."""
@@ -451,7 +449,7 @@ def component_show(component_id: str) -> None:
 
     if component is None:
         console.print(f"[error]Component '{component_id}' not found.[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     lines = [
         f"[bold]Name:[/bold] {component.name}",
