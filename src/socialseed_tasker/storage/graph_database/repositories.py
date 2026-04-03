@@ -91,6 +91,21 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             result = session.run(queries.LIST_COMPONENTS, project=project)
             return [_node_to_component(r["c"]) for r in result]
 
+    def update_component(self, component_id: str, updates: dict) -> Component:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.UPDATE_COMPONENT,
+                id=component_id,
+                updates=updates,
+                updated_at=_now_iso(),
+            )
+            record = result.single()
+            return _node_to_component(record["c"])
+
+    def delete_component(self, component_id: str) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(queries.DELETE_COMPONENT, id=component_id)
+
     # -- Issue CRUD ----------------------------------------------------------
 
     def create_issue(self, issue: Issue) -> None:
@@ -185,3 +200,13 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(queries.GET_DEPENDENTS, issue_id=issue_id)
             return [_node_to_issue(r["source"]) for r in result]
+
+    def get_blocked_issues(self) -> list[Issue]:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                """
+                MATCH (i:Issue {status: 'OPEN'})-[:DEPENDS_ON]->(d:Issue {status: 'OPEN'})
+                RETURN DISTINCT i
+                """
+            )
+            return [_node_to_issue(r["i"]) for r in result]

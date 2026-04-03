@@ -38,10 +38,7 @@ class CircularDependencyError(Exception):
     """Raised when adding a dependency would create a cycle in the graph."""
 
     def __init__(self, issue_id: str, depends_on_id: str) -> None:
-        super().__init__(
-            f"Adding dependency from '{issue_id}' to '{depends_on_id}' "
-            f"would create a circular dependency"
-        )
+        super().__init__(f"Adding dependency from '{issue_id}' to '{depends_on_id}' would create a circular dependency")
 
 
 class IssueAlreadyClosedError(Exception):
@@ -55,10 +52,7 @@ class OpenDependenciesError(Exception):
     """Raised when closing an issue that still has open dependencies."""
 
     def __init__(self, issue_id: str, open_deps: list[str]) -> None:
-        super().__init__(
-            f"Cannot close issue '{issue_id}' because it still has "
-            f"open dependencies: {open_deps}"
-        )
+        super().__init__(f"Cannot close issue '{issue_id}' because it still has open dependencies: {open_deps}")
 
 
 # ---------------------------------------------------------------------------
@@ -113,6 +107,9 @@ class TaskRepositoryInterface(Protocol):
     def get_dependents(self, issue_id: str) -> list[Issue]:
         """Return issues that depend on *issue_id*."""
 
+    def get_blocked_issues(self) -> list[Issue]:
+        """Return all issues that are blocked by at least one open dependency."""
+
     # -- Component CRUD ------------------------------------------------------
 
     def create_component(self, component: Component) -> None:
@@ -123,6 +120,12 @@ class TaskRepositoryInterface(Protocol):
 
     def list_components(self, project: str | None = None) -> list[Component]:
         """List components, optionally filtered by project."""
+
+    def update_component(self, component_id: str, updates: dict) -> Component:
+        """Apply partial updates and return the updated component."""
+
+    def delete_component(self, component_id: str) -> None:
+        """Permanently remove a component."""
 
 
 # ---------------------------------------------------------------------------
@@ -182,11 +185,7 @@ def close_issue_action(
     if issue.status == IssueStatus.CLOSED:
         raise IssueAlreadyClosedError(issue_id)
 
-    open_deps = [
-        dep.id
-        for dep in repository.get_dependencies(issue_id)
-        if dep.status != IssueStatus.CLOSED
-    ]
+    open_deps = [dep.id for dep in repository.get_dependencies(issue_id) if dep.status != IssueStatus.CLOSED]
     if open_deps:
         raise OpenDependenciesError(issue_id, open_deps)
 
@@ -276,17 +275,7 @@ def get_blocked_issues_action(
     Business Value: Gives teams visibility into bottlenecks so they can
     prioritise unblocking work.
     """
-    all_issues = repository.list_issues()
-    blocked: list[Issue] = []
-
-    for issue in all_issues:
-        if issue.status == IssueStatus.CLOSED:
-            continue
-        deps = repository.get_dependencies(issue.id)
-        if any(dep.status != IssueStatus.CLOSED for dep in deps):
-            blocked.append(issue)
-
-    return blocked
+    return repository.get_blocked_issues()
 
 
 def get_dependency_chain_action(
@@ -324,6 +313,70 @@ def get_dependency_chain_action(
                 queue.append(dep.id)
 
     return chain
+
+
+def update_component_action(
+    repository: TaskRepositoryInterface,
+    component_id: str,
+    name: str | None = None,
+    description: str | None = None,
+    project: str | None = None,
+) -> Component:
+    """Update a component's fields.
+
+    Intent: Allow modifying component metadata after creation.
+    Business Value: Enables renaming, re-describing, or reassigning projects.
+    """
+    existing = repository.get_component(component_id)
+    if existing is None:
+        raise ComponentNotFoundError(component_id)
+
+    updates: dict = {}
+    if name is not None:
+        updates["name"] = name
+    if description is not None:
+        updates["description"] = description
+    if project is not None:
+        updates["project"] = project
+
+    return repository.update_component(component_id, updates)
+
+
+def delete_component_action(
+    repository: TaskRepositoryInterface,
+    component_id: str,
+    force: bool = False,
+) -> None:
+    """Delete a component, optionally moving its issues to unassigned.
+
+    Intent: Allow removing components that are no longer needed.
+    Business Value: Keeps the component list clean and relevant.
+
+    If force is False and the component has issues, raises an error.
+    If force is True, the component is deleted regardless of issues.
+    """
+    existing = repository.get_component(component_id)
+    if existing is None:
+        raise ComponentNotFoundError(component_id)
+
+    if not force:
+        issues = repository.list_issues(component_id=component_id)
+        if issues:
+            raise ComponentHasIssuesError(
+                component_id,
+                [str(i.id) for i in issues],
+            )
+
+    repository.delete_component(component_id)
+
+
+class ComponentHasIssuesError(Exception):
+    """Raised when attempting to delete a component that has issues."""
+
+    def __init__(self, component_id: str, issue_ids: list[str]) -> None:
+        super().__init__(
+            f"Cannot delete component '{component_id}' because it has {len(issue_ids)} issue(s): {issue_ids}"
+        )
 
 
 # ---------------------------------------------------------------------------

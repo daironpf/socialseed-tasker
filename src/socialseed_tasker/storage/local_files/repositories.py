@@ -91,10 +91,14 @@ class FileTaskRepository(TaskRepositoryInterface):
 
     def close_issue(self, issue_id: str) -> Issue:
         from datetime import datetime, timezone
-        return self.update_issue(issue_id, {
-            "status": IssueStatus.CLOSED.value,
-            "closed_at": datetime.now(timezone.utc).isoformat(),
-        })
+
+        return self.update_issue(
+            issue_id,
+            {
+                "status": IssueStatus.CLOSED.value,
+                "closed_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
 
     def delete_issue(self, issue_id: str) -> None:
         self._delete_file(self._issue_path(issue_id))
@@ -158,6 +162,17 @@ class FileTaskRepository(TaskRepositoryInterface):
                 issues.append(dep_issue)
         return issues
 
+    def get_blocked_issues(self) -> list[Issue]:
+        blocked: list[Issue] = []
+        all_issues = self.list_issues()
+        for issue in all_issues:
+            if issue.status == IssueStatus.CLOSED:
+                continue
+            deps = self.get_dependencies(str(issue.id))
+            if any(dep.status != IssueStatus.CLOSED for dep in deps):
+                blocked.append(issue)
+        return blocked
+
     # -- Component CRUD ------------------------------------------------------
 
     def create_component(self, component: Component) -> None:
@@ -183,3 +198,15 @@ class FileTaskRepository(TaskRepositoryInterface):
                 continue
             components.append(comp)
         return components
+
+    def update_component(self, component_id: str, updates: dict) -> Component:
+        path = self._component_path(component_id)
+        data = self._read_json(path)
+        if data is None:
+            raise FileNotFoundError(f"Component '{component_id}' not found")
+        data.update(updates)
+        self._write_json(path, data)
+        return Component(**data)
+
+    def delete_component(self, component_id: str) -> None:
+        self._delete_file(self._component_path(component_id))

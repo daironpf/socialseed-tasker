@@ -95,11 +95,7 @@ class FakeRepository:
 
     def get_dependents(self, issue_id: str) -> list[Issue]:
         key = self._key(issue_id)
-        return [
-            issue
-            for issue in self._issues.values()
-            if key in self._dependencies.get(self._key(issue.id), set())
-        ]
+        return [issue for issue in self._issues.values() if key in self._dependencies.get(self._key(issue.id), set())]
 
     # -- Component CRUD ------------------------------------------------------
 
@@ -115,44 +111,16 @@ class FakeRepository:
             result = [c for c in result if c.project == project]
         return result
 
-    # -- Dependency management -----------------------------------------------
-
-    def add_dependency(self, issue_id: str, depends_on_id: str) -> None:
-        key = self._key(issue_id)
-        dep_key = self._key(depends_on_id)
-        self._dependencies.setdefault(key, set()).add(dep_key)
-
-    def remove_dependency(self, issue_id: str, depends_on_id: str) -> None:
-        key = self._key(issue_id)
-        dep_key = self._key(depends_on_id)
-        self._dependencies.get(key, set()).discard(dep_key)
-
-    def get_dependencies(self, issue_id: str) -> list[Issue]:
-        key = self._key(issue_id)
-        dep_ids = self._dependencies.get(key, set())
-        return [self._issues[d] for d in dep_ids if d in self._issues]
-
-    def get_dependents(self, issue_id: str) -> list[Issue]:
-        key = self._key(issue_id)
-        return [
-            issue
-            for issue in self._issues.values()
-            if key in self._dependencies.get(self._key(issue.id), set())
-        ]
-
-    # -- Component CRUD ------------------------------------------------------
-
-    def create_component(self, component: Component) -> None:
-        self._components[self._key(component.id)] = component
-
-    def get_component(self, component_id: str) -> Component | None:
-        return self._components.get(self._key(component_id))
-
-    def list_components(self, project: str | None = None) -> list[Component]:
-        result = list(self._components.values())
-        if project:
-            result = [c for c in result if c.project == project]
-        return result
+    def get_blocked_issues(self) -> list[Issue]:
+        blocked: list[Issue] = []
+        all_issues = list(self._issues.values())
+        for issue in all_issues:
+            if issue.status == IssueStatus.CLOSED:
+                continue
+            deps = self.get_dependencies(str(issue.id))
+            if any(dep.status != IssueStatus.CLOSED for dep in deps):
+                blocked.append(issue)
+        return blocked
 
 
 # -- Fixtures ----------------------------------------------------------------
@@ -231,9 +199,7 @@ class TestCloseIssueAction:
         with pytest.raises(IssueAlreadyClosedError):
             close_issue_action(repo, str(issue.id))
 
-    def test_raises_when_open_dependencies_exist(
-        self, repo: FakeRepository, component: Component
-    ):
+    def test_raises_when_open_dependencies_exist(self, repo: FakeRepository, component: Component):
         dep = create_issue_action(repo, title="Dependency", component_id=str(component.id))
         issue = create_issue_action(repo, title="Main", component_id=str(component.id))
         repo.add_dependency(str(issue.id), str(dep.id))
@@ -241,9 +207,7 @@ class TestCloseIssueAction:
         with pytest.raises(OpenDependenciesError):
             close_issue_action(repo, str(issue.id))
 
-    def test_closes_when_dependencies_are_closed(
-        self, repo: FakeRepository, component: Component
-    ):
+    def test_closes_when_dependencies_are_closed(self, repo: FakeRepository, component: Component):
         dep = create_issue_action(repo, title="Dependency", component_id=str(component.id))
         issue = create_issue_action(repo, title="Main", component_id=str(component.id))
         repo.add_dependency(str(issue.id), str(dep.id))
@@ -254,22 +218,16 @@ class TestCloseIssueAction:
 
 
 class TestMoveIssueAction:
-    def test_moves_issue_to_new_component(
-        self, repo: FakeRepository, component: Component, component2: Component
-    ):
+    def test_moves_issue_to_new_component(self, repo: FakeRepository, component: Component, component2: Component):
         issue = create_issue_action(repo, title="Test", component_id=str(component.id))
         moved = move_issue_action(repo, str(issue.id), str(component2.id))
         assert moved.component_id == component2.id
 
-    def test_raises_when_issue_not_found(
-        self, repo: FakeRepository, component2: Component
-    ):
+    def test_raises_when_issue_not_found(self, repo: FakeRepository, component2: Component):
         with pytest.raises(IssueNotFoundError):
             move_issue_action(repo, "nonexistent", str(component2.id))
 
-    def test_raises_when_target_component_not_found(
-        self, repo: FakeRepository, component: Component
-    ):
+    def test_raises_when_target_component_not_found(self, repo: FakeRepository, component: Component):
         issue = create_issue_action(repo, title="Test", component_id=str(component.id))
         with pytest.raises(ComponentNotFoundError):
             move_issue_action(repo, str(issue.id), "nonexistent")
@@ -300,9 +258,7 @@ class TestAddDependencyAction:
         with pytest.raises(CircularDependencyError):
             add_dependency_action(repo, str(a.id), str(a.id))
 
-    def test_raises_on_circular_dependency(
-        self, repo: FakeRepository, component: Component
-    ):
+    def test_raises_on_circular_dependency(self, repo: FakeRepository, component: Component):
         a = create_issue_action(repo, title="A", component_id=str(component.id))
         b = create_issue_action(repo, title="B", component_id=str(component.id))
         c = create_issue_action(repo, title="C", component_id=str(component.id))
@@ -360,9 +316,7 @@ class TestGetBlockedIssuesAction:
 
 
 class TestGetDependencyChainAction:
-    def test_returns_transitive_chain(
-        self, repo: FakeRepository, component: Component
-    ):
+    def test_returns_transitive_chain(self, repo: FakeRepository, component: Component):
         c = create_issue_action(repo, title="C", component_id=str(component.id))
         b = create_issue_action(repo, title="B", component_id=str(component.id))
         a = create_issue_action(repo, title="A", component_id=str(component.id))
@@ -380,9 +334,7 @@ class TestGetDependencyChainAction:
         with pytest.raises(IssueNotFoundError):
             get_dependency_chain_action(repo, "nonexistent")
 
-    def test_empty_chain_when_no_dependencies(
-        self, repo: FakeRepository, component: Component
-    ):
+    def test_empty_chain_when_no_dependencies(self, repo: FakeRepository, component: Component):
         a = create_issue_action(repo, title="A", component_id=str(component.id))
         chain = get_dependency_chain_action(repo, str(a.id))
         assert len(chain) == 0

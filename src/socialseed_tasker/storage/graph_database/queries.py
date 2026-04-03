@@ -44,6 +44,18 @@ RETURN c
 ORDER BY c.name
 """
 
+UPDATE_COMPONENT = """
+MATCH (c:Component {id: $id})
+SET c += $updates
+SET c.updated_at = $updated_at
+RETURN c
+"""
+
+DELETE_COMPONENT = """
+MATCH (c:Component {id: $id})
+DETACH DELETE c
+"""
+
 # ---------------------------------------------------------------------------
 # Issue queries
 # ---------------------------------------------------------------------------

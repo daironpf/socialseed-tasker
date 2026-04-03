@@ -379,7 +379,7 @@ def dependency_chain(issue_id: str) -> None:
 
         tree = Tree(f"[bold]Dependency chain[/bold] for {issue_id[:8]}")
         for i, dep in enumerate(chain):
-            tree.add(f"{i+1}. {str(dep.id)[:8]} - {dep.title} ({_status_style(dep.status)})")
+            tree.add(f"{i + 1}. {str(dep.id)[:8]} - {dep.title} ({_status_style(dep.status)})")
         console.print(tree)
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
@@ -459,7 +459,9 @@ def component_show(component_id: str) -> None:
     if component.description:
         lines.append(f"[bold]Description:[/bold] {component.description}")
 
-    console.print(Panel("\n".join(lines), title=f"[bold]{component.name}[/bold] ({str(component.id)[:8]})", border_style="cyan"))
+    console.print(
+        Panel("\n".join(lines), title=f"[bold]{component.name}[/bold] ({str(component.id)[:8]})", border_style="cyan")
+    )
 
     # Show issues in this component
     issues = repo.list_issues(component_id=component_id)
@@ -468,3 +470,59 @@ def component_show(component_id: str) -> None:
         console.print(_issues_table(issues))
     else:
         console.print("\n[info]No issues in this component.[/info]")
+
+
+@component_app.command("update")
+def component_update(
+    component_id: str = typer.Argument(..., help="Component ID to update"),
+    name: str | None = typer.Option(None, "--name", "-n", help="New component name"),
+    description: str | None = typer.Option(None, "--description", "-d", help="New component description"),
+    project: str | None = typer.Option(None, "--project", "-p", help="New project name"),
+) -> None:
+    """Update a component's fields."""
+    from socialseed_tasker.core.task_management.actions import update_component_action
+
+    if name is None and description is None and project is None:
+        console.print(
+            "[error]At least one field to update must be provided (--name, --description, --project).[/error]"
+        )
+        raise typer.Exit(code=1) from None
+
+    repo = get_repository()
+    try:
+        updated = update_component_action(repo, component_id, name=name, description=description, project=project)
+        console.print(f"[success]Component updated:[/success] {updated.name} ({updated.id})")
+    except ComponentNotFoundError:
+        console.print(f"[error]Component '{component_id}' not found.[/error]")
+        raise typer.Exit(code=1) from None
+
+
+@component_app.command("delete")
+def component_delete(
+    component_id: str = typer.Argument(..., help="Component ID to delete"),
+    force: bool = typer.Option(False, "--force", "-f", help="Force deletion without confirmation"),
+) -> None:
+    """Delete a component."""
+    from socialseed_tasker.core.task_management.actions import delete_component_action, ComponentHasIssuesError
+
+    repo = get_repository()
+
+    if not force:
+        component = repo.get_component(component_id)
+        if component:
+            issues = repo.list_issues(component_id=component_id)
+            if issues:
+                console.print(
+                    f"[error]Component '{component_id}' has {len(issues)} issue(s). Use --force to delete anyway.[/error]"
+                )
+                raise typer.Exit(code=1) from None
+
+    try:
+        delete_component_action(repo, component_id, force=force)
+        console.print(f"[success]Component deleted:[/success] {component_id}")
+    except ComponentNotFoundError:
+        console.print(f"[error]Component '{component_id}' not found.[/error]")
+        raise typer.Exit(code=1) from None
+    except ComponentHasIssuesError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from None

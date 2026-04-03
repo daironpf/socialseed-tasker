@@ -230,6 +230,25 @@ class CausalLinkResponse(BaseModel):
     graph_distance: int
 
 
+class ImpactIssueSummary(BaseModel):
+    """Summary of an issue in impact analysis."""
+
+    id: str
+    title: str
+    status: str
+
+
+class ImpactAnalysisResponse(BaseModel):
+    """Impact analysis result for an issue."""
+
+    issue_id: str
+    directly_affected: list[ImpactIssueSummary]
+    transitively_affected: list[ImpactIssueSummary]
+    blocked_issues: list[ImpactIssueSummary]
+    affected_components: list[str]
+    risk_level: str
+
+
 class HealthResponse(BaseModel):
     """Health check response."""
 
