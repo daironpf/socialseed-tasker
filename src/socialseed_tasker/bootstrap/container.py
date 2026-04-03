@@ -21,6 +21,19 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 
+class Neo4jConnectionMode(str):
+    """Connection mode for Neo4j.
+
+    Intent: Distinguish between local Docker instances and remote Aura DB
+    so the system can apply appropriate connection settings.
+    Business Value: Enables seamless switching between development and
+    production database environments.
+    """
+
+    LOCAL = "local"
+    AURA = "aura"
+
+
 @dataclass
 class Neo4jConfig:
     """Neo4j connection configuration."""
@@ -30,6 +43,22 @@ class Neo4jConfig:
     password: str = ""
     database: str = "neo4j"
     max_connection_lifetime: int = 3600
+    connection_mode: Neo4jConnectionMode = Neo4jConnectionMode.LOCAL
+
+    @classmethod
+    def from_uri(cls, uri: str, **kwargs) -> Neo4jConfig:
+        """Create configuration by inferring connection mode from URI.
+
+        Args:
+            uri: Neo4j connection string (bolt://, bolt+s://, neo4j://, etc.)
+            **kwargs: Override any Neo4jConfig field.
+
+        Returns:
+            Neo4jConfig with inferred connection mode.
+        """
+        is_aura = uri.startswith(("bolt+s://", "neo4j+s://")) or "aura" in uri.lower()
+        mode = Neo4jConnectionMode.AURA if is_aura else Neo4jConnectionMode.LOCAL
+        return cls(uri=uri, connection_mode=mode, **kwargs)
 
 
 @dataclass
@@ -57,27 +86,23 @@ class AppConfig:
     debug: bool = False
 
     @classmethod
-    def from_env(cls) -> "AppConfig":
+    def from_env(cls) -> AppConfig:
         """Load configuration from environment variables.
 
         Environment variables override all defaults.
         """
-        neo4j = Neo4jConfig(
-            uri=os.environ.get("TASKER_NEO4J_URI", "bolt://localhost:7687"),
+        neo4j_uri = os.environ.get("TASKER_NEO4J_URI", "bolt://localhost:7687")
+        neo4j = Neo4jConfig.from_uri(
+            uri=neo4j_uri,
             user=os.environ.get("TASKER_NEO4J_USER", "neo4j"),
             password=os.environ.get("TASKER_NEO4J_PASSWORD", ""),
             database=os.environ.get("TASKER_NEO4J_DATABASE", "neo4j"),
-            max_connection_lifetime=int(
-                os.environ.get("TASKER_NEO4J_MAX_CONN_LIFETIME", "3600")
-            ),
+            max_connection_lifetime=int(os.environ.get("TASKER_NEO4J_MAX_CONN_LIFETIME", "3600")),
         )
 
         storage_backend = os.environ.get("TASKER_STORAGE_BACKEND", "file")
         if storage_backend not in ("neo4j", "file"):
-            raise ValueError(
-                f"Invalid storage backend '{storage_backend}'. "
-                f"Must be 'neo4j' or 'file'."
-            )
+            raise ValueError(f"Invalid storage backend '{storage_backend}'. Must be 'neo4j' or 'file'.")
 
         storage = StorageConfig(
             backend=storage_backend,  # type: ignore[arg-type]
@@ -117,11 +142,11 @@ class Container:
         return self._config
 
     @classmethod
-    def from_env(cls) -> "Container":
+    def from_env(cls) -> Container:
         """Create a container with configuration from environment variables."""
         return cls(config=AppConfig.from_env())
 
-    def get_repository(self) -> "TaskRepositoryInterface":
+    def get_repository(self) -> TaskRepositoryInterface:
         """Get the task repository, initializing it if needed.
 
         Selects the storage backend based on configuration.
@@ -146,7 +171,7 @@ class Container:
 
         return self._repository
 
-    def _get_neo4j_driver(self) -> "Neo4jDriver":
+    def _get_neo4j_driver(self) -> Neo4jDriver:
         """Get or create the Neo4j driver."""
         if self._neo4j_driver is None:
             from socialseed_tasker.storage.graph_database.driver import Neo4jDriver

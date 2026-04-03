@@ -9,9 +9,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from neo4j import GraphDatabase
 from neo4j.exceptions import Neo4jError
 
+from neo4j import GraphDatabase
 from socialseed_tasker.storage.graph_database.queries import SCHEMA_CONSTRAINTS
 
 if TYPE_CHECKING:
@@ -25,7 +25,8 @@ class Neo4jDriver:
 
     Intent: Provide a single point of connection management for Neo4j.
     Business Value: Enables connection pooling, health monitoring, and
-    clean shutdown without leaking resources.
+    clean shutdown without leaking resources. Supports both local Docker
+    instances and remote Neo4j Aura DB via bolt+s:// protocol.
     """
 
     def __init__(
@@ -35,6 +36,7 @@ class Neo4jDriver:
         password: str = "",
         database: str = "neo4j",
         max_connection_lifetime: int = 3600,
+        encrypted: bool | None = None,
     ) -> None:
         self._uri = uri
         self._user = user
@@ -42,6 +44,7 @@ class Neo4jDriver:
         self._database = database
         self._max_connection_lifetime = max_connection_lifetime
         self._driver: Driver | None = None
+        self._encrypted = encrypted
 
     @property
     def driver(self) -> Driver:
@@ -63,11 +66,23 @@ class Neo4jDriver:
 
         Creates the driver with connection pooling settings,
         verifies the connection, and initializes schema constraints.
+        Automatically detects encryption from URI scheme:
+        - bolt+s:// or neo4j+s:// → encrypted (Aura DB)
+        - bolt:// or neo4j:// → unencrypted (local Docker)
         """
+        driver_kwargs = {
+            "max_connection_lifetime": self._max_connection_lifetime,
+        }
+
+        if self._encrypted is not None:
+            driver_kwargs["encrypted"] = self._encrypted
+        elif self._uri.startswith(("bolt+s://", "neo4j+s://")):
+            driver_kwargs["encrypted"] = True
+
         self._driver = GraphDatabase.driver(
             self._uri,
             auth=(self._user, self._password),
-            max_connection_lifetime=self._max_connection_lifetime,
+            **driver_kwargs,
         )
         self._verify_connection()
         self._init_schema()
