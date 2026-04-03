@@ -1,6 +1,6 @@
 """Tests for core domain actions."""
 
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 
@@ -10,7 +10,6 @@ from socialseed_tasker.core.task_management.actions import (
     IssueAlreadyClosedError,
     IssueNotFoundError,
     OpenDependenciesError,
-    TaskRepositoryInterface,
     add_dependency_action,
     close_issue_action,
     create_issue_action,

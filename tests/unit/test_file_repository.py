@@ -1,9 +1,7 @@
 """Tests for the file-based task repository."""
 
-import json
 import tempfile
 from pathlib import Path
-from uuid import uuid4
 
 import pytest
 

@@ -12,7 +12,7 @@ from socialseed_tasker.core.project_analysis.rules import (
     ValidationResult,
     Violation,
 )
-from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
+from socialseed_tasker.core.task_management.entities import Component, Issue
 
 
 class FakeRepo:

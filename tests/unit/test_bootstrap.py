@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from socialseed_tasker.bootstrap.container import AppConfig, Container, Neo4jConfig, StorageConfig
+from socialseed_tasker.bootstrap.container import AppConfig, Container, StorageConfig
 
 
 class TestAppConfig:

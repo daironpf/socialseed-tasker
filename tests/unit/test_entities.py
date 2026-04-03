@@ -1,6 +1,6 @@
 """Tests for core domain entities."""
 
-from datetime import datetime, timezone
+from datetime import datetime
 from uuid import UUID
 
 import pytest

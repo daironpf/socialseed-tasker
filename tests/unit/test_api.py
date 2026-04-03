@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from socialseed_tasker.core.task_management.entities import Component
 from socialseed_tasker.entrypoints.web_api.app import create_app
 from socialseed_tasker.storage.local_files.repositories import FileTaskRepository
 
