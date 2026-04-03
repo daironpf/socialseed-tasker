@@ -40,7 +40,7 @@ def read_json(path: Path) -> dict | None:
     """Read and parse a JSON file, returning None if it doesn't exist."""
     if not path.exists():
         return None
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 

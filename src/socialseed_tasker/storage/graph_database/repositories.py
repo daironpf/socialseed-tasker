@@ -63,7 +63,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
     analysis, root-cause tracing, and impact assessment.
     """
 
-    def __init__(self, driver: "Neo4jDriver") -> None:
+    def __init__(self, driver: Neo4jDriver) -> None:
         self._driver = driver
 
     # -- Component CRUD ------------------------------------------------------

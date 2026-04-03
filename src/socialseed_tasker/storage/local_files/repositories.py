@@ -10,7 +10,6 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from typing import Optional
 
 from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
 from socialseed_tasker.core.task_management.entities import (
@@ -51,7 +50,7 @@ class FileTaskRepository(TaskRepositoryInterface):
     def _read_json(self, path: Path) -> dict | None:
         if not path.exists():
             return None
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
 
     def _write_json(self, path: Path, data: dict) -> None:

@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -59,7 +58,7 @@ class Component(BaseModel):
 
     id: UUID = Field(default_factory=uuid4)
     name: str = Field(..., min_length=1)
-    description: Optional[str] = None
+    description: str | None = None
     project: str = Field(..., min_length=1)
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
@@ -88,5 +87,5 @@ class Issue(BaseModel):
     affects: list[UUID] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
-    closed_at: Optional[datetime] = None
+    closed_at: datetime | None = None
     architectural_constraints: list[str] = Field(default_factory=list)

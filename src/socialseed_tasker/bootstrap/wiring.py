@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from fastapi import FastAPI
 
 
-def wire_api(config: Container | None = None) -> "FastAPI":
+def wire_api(config: Container | None = None) -> FastAPI:
     """Create and configure the FastAPI application.
 
     Intent: Assemble the API with proper dependency injection and lifecycle hooks.

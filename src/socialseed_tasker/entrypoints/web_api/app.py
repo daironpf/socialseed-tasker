@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-def create_app(repository: "TaskRepositoryInterface | None" = None) -> FastAPI:
+def create_app(repository: TaskRepositoryInterface | None = None) -> FastAPI:
     """Create and configure the FastAPI application.
 
     Intent: Assemble all API components into a single application instance.
