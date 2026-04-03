@@ -115,19 +115,19 @@ def _format_issue_card(issue: Issue) -> Panel:
 
 def _issues_table(issues: list[Issue]) -> Table:
     """Format a list of issues as a Rich table."""
-    table = Table(show_header=True, header_style="bold cyan")
-    table.add_column("ID", style="dim", width=10)
-    table.add_column("Title", width=40)
-    table.add_column("Status", width=14)
+    table = Table(show_header=True, header_style="bold cyan", min_width=120)
+    table.add_column("ID", style="dim", width=8)
+    table.add_column("Title", width=30)
+    table.add_column("Status", width=10)
     table.add_column("Priority", width=10)
-    table.add_column("Component", width=38)
+    table.add_column("Component", width=36)
 
     for issue in issues:
         table.add_row(
             str(issue.id)[:8],
             issue.title,
-            _status_style(issue.status),
-            _priority_style(issue.priority),
+            issue.status.value,
+            issue.priority.value,
             str(issue.component_id)[:8],
         )
     return table
@@ -265,8 +265,8 @@ def issue_close(issue_id: str) -> None:
 
 @issue_app.command("move")
 def issue_move(
-    issue_id: str,
-    to_component: str = typer.Option(..., "--to", help="Target component ID"),
+    issue_id: str = typer.Argument(..., help="Issue ID to move"),
+    to_component: str = typer.Argument(..., help="Target component ID"),
 ) -> None:
     """Move an issue to another component."""
     repo = get_repository()
@@ -422,10 +422,13 @@ def component_create(
 @component_app.command("list")
 def component_list(
     project: str | None = typer.Option(None, "--project", "-p", help="Filter by project"),
+    all: bool = typer.Option(False, "--all", "-a", help="Show all components from all projects"),
     as_json: bool = typer.Option(False, "--json", help="Output as JSON"),
 ) -> None:
     """List all components."""
     repo = get_repository()
+    if all:
+        project = None
     components = repo.list_components(project=project)
 
     if as_json:
@@ -499,31 +502,35 @@ def component_update(
 @component_app.command("delete")
 def component_delete(
     component_id: str = typer.Argument(..., help="Component ID to delete"),
-    force: bool = typer.Option(False, "--force", "-f", help="Force deletion without confirmation"),
+    force: bool = typer.Option(False, "--force", "-f", help="Force deletion, issues become unassigned"),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Confirm deletion without prompting"),
 ) -> None:
     """Delete a component."""
     from socialseed_tasker.core.task_management.actions import delete_component_action, ComponentHasIssuesError
 
     repo = get_repository()
 
-    if not force:
+    if not force and not yes:
         component = repo.get_component(component_id)
         if component:
             issues = repo.list_issues(component_id=component_id)
             if issues:
                 console.print(
-                    f"[error]Component '{component_id}' has {len(issues)} issue(s). Use --force to delete anyway.[/error]"
+                    f"[warning]Component '{component_id}' has {len(issues)} issue(s).[/warning]\n"
+                    f"Issues will become unassigned after deletion.\n"
+                    f"Use [cyan]--force[/cyan] or [cyan]--yes[/cyan] to confirm, or [cyan]--force[/cyan] to delete anyway."
                 )
                 raise typer.Exit(code=1) from None
 
     try:
-        delete_component_action(repo, component_id, force=force)
+        delete_component_action(repo, component_id, force=True)
         console.print(f"[success]Component deleted:[/success] {component_id}")
     except ComponentNotFoundError:
         console.print(f"[error]Component '{component_id}' not found.[/error]")
         raise typer.Exit(code=1) from None
     except ComponentHasIssuesError as e:
         console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from None
         raise typer.Exit(code=1) from None
 
 
