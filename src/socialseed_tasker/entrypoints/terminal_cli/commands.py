@@ -7,7 +7,7 @@ No business logic lives here - only presentation and user interaction.
 from __future__ import annotations
 
 import json
-import sys
+import os
 from pathlib import Path
 
 import typer
@@ -15,11 +15,6 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.tree import Tree
-
-# Add src to path for imports when running as script
-_src_path = str(Path(__file__).parent.parent.parent.parent / "src")
-if _src_path not in sys.path:
-    sys.path.insert(0, _src_path)
 
 from socialseed_tasker.core.task_management.actions import (
     CircularDependencyError,
@@ -41,27 +36,31 @@ from socialseed_tasker.core.task_management.entities import (
     IssuePriority,
     IssueStatus,
 )
-from socialseed_tasker.storage.local_files.repositories import (
-    FileTaskRepository,
-)
 
 console = Console()
 
 # ---------------------------------------------------------------------------
-# Repository factory
+# Status app (standalone, not under a subcommand group)
 # ---------------------------------------------------------------------------
 
-_data_dir = Path(".tasker-data")
+status_app = typer.Typer(help="Show CLI status and configuration")
+
+
+# ---------------------------------------------------------------------------
+# Repository factory (uses Container from app.py)
+# ---------------------------------------------------------------------------
 
 
 def get_repository() -> TaskRepositoryInterface:
-    """Create and return a file-based task repository.
+    """Get the task repository from the CLI container.
 
-    Intent: Provide the storage backend for CLI operations.
-    Business Value: Allows CLI to work offline without Neo4j.
+    Intent: Provide the storage backend for CLI operations, supporting
+    both file and neo4j backends.
+    Business Value: Unifies CLI and API to use the same configuration.
     """
-    _data_dir.mkdir(parents=True, exist_ok=True)
-    return FileTaskRepository(_data_dir)
+    from socialseed_tasker.entrypoints.terminal_cli.app import get_cli_container
+
+    return get_cli_container().get_repository()
 
 
 # ---------------------------------------------------------------------------
@@ -526,3 +525,28 @@ def component_delete(
     except ComponentHasIssuesError as e:
         console.print(f"[error]{e}[/error]")
         raise typer.Exit(code=1) from None
+
+
+# ---------------------------------------------------------------------------
+# Status command
+# ---------------------------------------------------------------------------
+
+
+@status_app.command("status")
+def status_command() -> None:
+    """Show current CLI status, backend, and connection info."""
+    from socialseed_tasker.bootstrap.container import AppConfig
+
+    config = AppConfig.from_env()
+
+    backend = config.storage.backend
+    console.print(
+        Panel(
+            f"[bold]Backend:[/bold] {backend}\n"
+            f"[bold]File path:[/bold] {config.storage.file_path}\n"
+            f"[bold]Neo4j URI:[/bold] {config.storage.neo4j.uri}\n"
+            f"[bold]Neo4j DB:[/bold] {config.storage.neo4j.database}",
+            title="[bold]Tasker Status[/bold]",
+            border_style="cyan",
+        )
+    )

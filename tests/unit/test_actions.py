@@ -1,5 +1,6 @@
 """Tests for core domain actions."""
 
+from contextlib import contextmanager
 from uuid import UUID
 
 import pytest
@@ -121,6 +122,23 @@ class FakeRepository:
             if any(dep.status != IssueStatus.CLOSED for dep in deps):
                 blocked.append(issue)
         return blocked
+
+    def update_component(self, component_id: str, updates: dict) -> Component:
+        key = self._key(component_id)
+        comp = self._components[key]
+        data = comp.model_dump()
+        data.update(updates)
+        self._components[key] = Component(**data)
+        return self._components[key]
+
+    def delete_component(self, component_id: str) -> None:
+        key = self._key(component_id)
+        self._components.pop(key, None)
+
+    @contextmanager
+    def transaction(self):
+        """No-op transaction for tests."""
+        yield
 
 
 # -- Fixtures ----------------------------------------------------------------

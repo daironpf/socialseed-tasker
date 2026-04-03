@@ -7,7 +7,8 @@ actions that enforce business rules regardless of storage backend.
 from __future__ import annotations
 
 from collections import deque
-from typing import Protocol
+from contextlib import contextmanager
+from typing import Protocol, Iterator
 
 from socialseed_tasker.core.task_management.entities import (
     Component,
@@ -127,6 +128,18 @@ class TaskRepositoryInterface(Protocol):
     def delete_component(self, component_id: str) -> None:
         """Permanently remove a component."""
 
+    # -- Transactions ----------------------------------------------------------
+
+    @contextmanager
+    def transaction(self) -> Iterator[None]:
+        """Execute operations atomically.
+
+        Usage:
+            with repo.transaction():
+                # do operations
+        """
+        yield
+
 
 # ---------------------------------------------------------------------------
 # Core actions
@@ -178,18 +191,19 @@ def close_issue_action(
     Business Value: Ensures work is truly complete before marking it done,
     reducing technical debt and hidden blockers.
     """
-    issue = repository.get_issue(issue_id)
-    if issue is None:
-        raise IssueNotFoundError(issue_id)
+    with repository.transaction():
+        issue = repository.get_issue(issue_id)
+        if issue is None:
+            raise IssueNotFoundError(issue_id)
 
-    if issue.status == IssueStatus.CLOSED:
-        raise IssueAlreadyClosedError(issue_id)
+        if issue.status == IssueStatus.CLOSED:
+            raise IssueAlreadyClosedError(issue_id)
 
-    open_deps = [dep.id for dep in repository.get_dependencies(issue_id) if dep.status != IssueStatus.CLOSED]
-    if open_deps:
-        raise OpenDependenciesError(issue_id, open_deps)
+        open_deps = [dep.id for dep in repository.get_dependencies(issue_id) if dep.status != IssueStatus.CLOSED]
+        if open_deps:
+            raise OpenDependenciesError(issue_id, open_deps)
 
-    return repository.close_issue(issue_id)
+        return repository.close_issue(issue_id)
 
 
 def move_issue_action(
@@ -204,15 +218,16 @@ def move_issue_action(
     Business Value: Supports evolving project structure without losing
     issue history or relationships.
     """
-    issue = repository.get_issue(issue_id)
-    if issue is None:
-        raise IssueNotFoundError(issue_id)
+    with repository.transaction():
+        issue = repository.get_issue(issue_id)
+        if issue is None:
+            raise IssueNotFoundError(issue_id)
 
-    target = repository.get_component(to_component_id)
-    if target is None:
-        raise ComponentNotFoundError(to_component_id)
+        target = repository.get_component(to_component_id)
+        if target is None:
+            raise ComponentNotFoundError(to_component_id)
 
-    return repository.update_issue(issue_id, {"component_id": to_component_id})
+        return repository.update_issue(issue_id, {"component_id": to_component_id})
 
 
 def add_dependency_action(
@@ -227,21 +242,22 @@ def add_dependency_action(
     Business Value: Prevents infinite loops in dependency traversal and
     ensures the dependency graph stays analysable.
     """
-    issue = repository.get_issue(issue_id)
-    if issue is None:
-        raise IssueNotFoundError(issue_id)
+    with repository.transaction():
+        issue = repository.get_issue(issue_id)
+        if issue is None:
+            raise IssueNotFoundError(issue_id)
 
-    target = repository.get_issue(depends_on_id)
-    if target is None:
-        raise IssueNotFoundError(depends_on_id)
+        target = repository.get_issue(depends_on_id)
+        if target is None:
+            raise IssueNotFoundError(depends_on_id)
 
-    if issue_id == depends_on_id:
-        raise CircularDependencyError(issue_id, depends_on_id)
+        if issue_id == depends_on_id:
+            raise CircularDependencyError(issue_id, depends_on_id)
 
-    if _would_create_cycle(repository, issue_id, depends_on_id):
-        raise CircularDependencyError(issue_id, depends_on_id)
+        if _would_create_cycle(repository, issue_id, depends_on_id):
+            raise CircularDependencyError(issue_id, depends_on_id)
 
-    repository.add_dependency(issue_id, depends_on_id)
+        repository.add_dependency(issue_id, depends_on_id)
 
 
 def remove_dependency_action(

@@ -6,6 +6,7 @@ Uses the synchronous Neo4j driver for simplicity and reliability.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
@@ -210,3 +211,17 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 """
             )
             return [_node_to_issue(r["i"]) for r in result]
+
+    # -- Transactions ----------------------------------------------------------
+
+    @contextmanager
+    def transaction(self):
+        """Execute Neo4j operations atomically using a real transaction."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            tx = session.begin_transaction()
+            try:
+                yield tx
+                tx.commit()
+            except Exception:
+                tx.rollback()
+                raise

@@ -6,6 +6,7 @@ registers command groups, and sets up error handling.
 
 from __future__ import annotations
 
+import os
 import sys
 from typing import TYPE_CHECKING
 
@@ -13,6 +14,7 @@ import typer
 from rich.console import Console
 from rich.theme import Theme
 
+from socialseed_tasker.bootstrap.container import Container
 from socialseed_tasker.entrypoints.cli.init_command import init_app
 from socialseed_tasker.entrypoints.terminal_cli import commands
 
@@ -39,6 +41,24 @@ cli_theme = Theme(
 
 console = Console(theme=cli_theme)
 
+# Global CLI state - shared container instance
+_cli_container: Container | None = None
+
+
+def get_cli_container() -> Container:
+    """Get or create the global CLI container."""
+    global _cli_container
+    if _cli_container is None:
+        _cli_container = Container.from_env()
+    return _cli_container
+
+
+def reset_cli_container() -> None:
+    """Reset the CLI container (useful for testing)."""
+    global _cli_container
+    _cli_container = None
+
+
 # Main application
 app = typer.Typer(
     name="tasker",
@@ -54,12 +74,27 @@ app.add_typer(commands.component_app, name="component", help="Manage components"
 app.add_typer(init_app, name="init", help="Initialize Tasker in an external project")
 
 
+# Register status as a standalone command (not a typer)
+app.command(name="status", help="Show CLI status and configuration")(commands.status_command)
+
+
 @app.callback()
-def main() -> None:
+def main(
+    backend: str = typer.Option(
+        "file",
+        "--backend",
+        "-b",
+        help="Storage backend: 'file' or 'neo4j'",
+        envvar="TASKER_STORAGE_BACKEND",
+    ),
+) -> None:
     """SocialSeed Tasker CLI.
 
     A graph-based task management framework for AI agents.
     """
+    global _cli_container
+    os.environ["TASKER_STORAGE_BACKEND"] = backend
+    _cli_container = None
 
 
 def handle_error(error: Exception, exit_code: int = 1) -> None:

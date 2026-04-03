@@ -236,10 +236,42 @@ class RootCauseAnalyzer:
     and helps teams understand the consequences of changes.
     """
 
+    TECHNICAL_STOP_WORDS = {
+        "fix",
+        "bug",
+        "issue",
+        "update",
+        "change",
+        "add",
+        "remove",
+        "test",
+        "tests",
+        "testing",
+        "error",
+        "exception",
+        "failed",
+        "the",
+        "a",
+        "an",
+        "is",
+        "to",
+        "in",
+        "of",
+        "and",
+        "for",
+        "on",
+        "with",
+    }
+
     def __init__(self, repository: TaskRepositoryInterface) -> None:
         self._repository = repository
 
-    def find_root_cause(self, failed_test: TestFailure, closed_issues: list[Issue]) -> list[CausalLink]:
+    def find_root_cause(
+        self,
+        failed_test: TestFailure,
+        closed_issues: list[Issue],
+        min_confidence: float = 0.1,
+    ) -> list[CausalLink]:
         """Find which recently closed issues are most likely responsible for a test failure.
 
         Uses graph proximity analysis to rank potential root causes:
@@ -277,21 +309,25 @@ class RootCauseAnalyzer:
             test_text = f"{failed_test.test_name} {failed_test.error_message}".lower()
             issue_text = f"{issue.title} {issue.description}".lower()
             common_words = set(test_text.split()) & set(issue_text.split())
-            stop_words = {"the", "a", "an", "is", "to", "in", "of", "and", "for", "on", "with"}
-            meaningful_words = common_words - stop_words
+            meaningful_words = common_words - self.TECHNICAL_STOP_WORDS
+            technical_matches = common_words & self.TECHNICAL_STOP_WORDS
+            semantic_bonus = max(0, 0.2 - (len(technical_matches) * 0.02))
             if len(meaningful_words) > 2:
-                score += 0.2
-                reasons.append(f"Semantic overlap: {len(meaningful_words)} common words")
+                score += semantic_bonus
+                reasons.append(f"Semantic overlap: {len(meaningful_words)} meaningful words")
 
             graph_distance = self._calculate_graph_distance(issue, failed_test)
-            if graph_distance <= 1:
+            if graph_distance == 0:
+                score += 0.2
+                reasons.append(f"Same component")
+            elif graph_distance <= 1:
                 score += 0.2
                 reasons.append(f"Direct graph proximity (distance={graph_distance})")
             elif graph_distance <= 3:
                 score += 0.1
                 reasons.append(f"Close graph proximity (distance={graph_distance})")
 
-            if score > 0:
+            if score >= min_confidence:
                 causal_links.append(
                     CausalLink(
                         issue=issue,
@@ -305,8 +341,11 @@ class RootCauseAnalyzer:
         causal_links.sort(key=lambda link: link.confidence, reverse=True)
         return causal_links
 
-    def _calculate_graph_distance(self, issue: Issue, failed_test: TestFailure) -> int:
-        """Calculate the shortest graph distance between an issue and a test's component."""
+    def _calculate_graph_distance(self, issue: Issue, failed_test: TestFailure, max_distance: int = 3) -> int:
+        """Calculate the shortest graph distance between an issue and a test's component.
+
+        Traverses both directions (dependents and dependencies) up to max_distance.
+        """
         if str(issue.component_id) == failed_test.component:
             return 0
 
@@ -315,18 +354,23 @@ class RootCauseAnalyzer:
 
         while queue:
             current_id, distance = queue.pop(0)
+            if distance >= max_distance:
+                continue
             current_issue = self._repository.get_issue(current_id)
             if current_issue is None:
                 continue
 
             dependents = self._repository.get_dependents(current_id)
-            for dependent in dependents:
-                dep_id = str(dependent.id)
-                if dep_id not in visited:
-                    visited.add(dep_id)
-                    if str(dependent.component_id) == failed_test.component:
+            dependencies = self._repository.get_dependencies(current_id)
+            all_connected = dependents + dependencies
+
+            for connected in all_connected:
+                conn_id = str(connected.id)
+                if conn_id not in visited:
+                    visited.add(conn_id)
+                    if str(connected.component_id) == failed_test.component:
                         return distance + 1
-                    queue.append((dep_id, distance + 1))
+                    queue.append((conn_id, distance + 1))
 
         return 999
 

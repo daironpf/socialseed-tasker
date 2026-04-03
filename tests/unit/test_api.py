@@ -393,3 +393,119 @@ class TestErrorEnvelope:
         body = resp.json()
         assert resp.status_code == 409
         assert body["error"]["code"] == "ISSUE_ALREADY_CLOSED"
+
+
+# ---------------------------------------------------------------------------
+# Analysis endpoints
+# ---------------------------------------------------------------------------
+
+
+class TestAnalysis:
+    def test_root_cause_with_matching_issue(self, client, component_id):
+        # Create and close an issue with matching title
+        resp_issue = client.post(
+            "/api/v1/issues",
+            json={
+                "title": "Fix null pointer exception",
+                "component_id": component_id,
+                "description": "Fixed the NPE in user service",
+            },
+        )
+        issue_id = resp_issue.json()["data"]["id"]
+        client.post(f"/api/v1/issues/{issue_id}/close")
+
+        # Submit a test failure that matches the issue
+        resp = client.post(
+            "/api/v1/analyze/root-cause",
+            json={
+                "test_id": "test_user_service",
+                "test_name": "test_get_user",
+                "error_message": "NullPointerException",
+                "component": component_id,
+            },
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "data" in data
+        assert "meta" in data
+        assert len(data["data"]) > 0
+        assert data["data"][0]["issue_id"] == issue_id
+        assert data["data"][0]["confidence"] > 0
+
+    def test_root_cause_invalid_body_returns_422(self, client):
+        resp = client.post("/api/v1/analyze/root-cause", json={})
+        assert resp.status_code == 422
+
+    def test_root_cause_response_structure(self, client, component_id):
+        # Create an issue
+        resp_issue = client.post(
+            "/api/v1/issues",
+            json={
+                "title": "Test issue",
+                "component_id": component_id,
+            },
+        )
+        issue_id = resp_issue.json()["data"]["id"]
+        client.post(f"/api/v1/issues/{issue_id}/close")
+
+        # Test returns proper envelope
+        resp = client.post(
+            "/api/v1/analyze/root-cause",
+            json={
+                "test_id": "test_xyz",
+                "test_name": "test_xyz",
+                "error_message": "xyz error",
+                "component": "different-component",
+            },
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "data" in data
+        assert "meta" in data
+
+    def test_impact_analysis_with_dependents(self, client, component_id):
+        # Create two issues with a dependency
+        resp_a = client.post(
+            "/api/v1/issues",
+            json={"title": "Feature A", "component_id": component_id},
+        )
+        id_a = resp_a.json()["data"]["id"]
+
+        resp_b = client.post(
+            "/api/v1/issues",
+            json={"title": "Feature B", "component_id": component_id},
+        )
+        id_b = resp_b.json()["data"]["id"]
+
+        # Add dependency: A depends on B
+        client.post(
+            f"/api/v1/issues/{id_a}/dependencies",
+            json={"depends_on_id": id_b},
+        )
+
+        resp = client.get(f"/api/v1/analyze/impact/{id_a}")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "directly_affected" in data["data"]
+        assert "risk_level" in data["data"]
+
+    def test_impact_analysis_for_nonexistent_returns_empty(self, client):
+        # The analyzer returns empty results for non-existent issues
+        resp = client.get("/api/v1/analyze/impact/00000000-0000-0000-0000-000000000000")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["data"]["risk_level"] == "LOW"
+
+    def test_impact_analysis_empty_for_isolated_issue(self, client, component_id):
+        resp_issue = client.post(
+            "/api/v1/issues",
+            json={"title": "Isolated", "component_id": component_id},
+        )
+        issue_id = resp_issue.json()["data"]["id"]
+
+        resp = client.get(f"/api/v1/analyze/impact/{issue_id}")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["data"]["directly_affected"] == []
+        assert data["data"]["transitively_affected"] == []
+        assert data["data"]["risk_level"] == "LOW"

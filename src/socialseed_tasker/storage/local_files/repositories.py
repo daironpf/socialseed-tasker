@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 
 from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
@@ -210,3 +211,26 @@ class FileTaskRepository(TaskRepositoryInterface):
 
     def delete_component(self, component_id: str) -> None:
         self._delete_file(self._component_path(component_id))
+
+    # -- Transactions ----------------------------------------------------------
+
+    @contextmanager
+    def transaction(self):
+        """Execute file operations atomically using a lock file."""
+        import msvcrt
+
+        lock_path = self._data_dir / ".tasker.lock"
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+
+        lock_fd = None
+        try:
+            lock_fd = open(lock_path, "w")
+            msvcrt.locking(lock_fd.fileno(), msvcrt.LK_LOCK, 1)
+            yield
+        finally:
+            if lock_fd:
+                try:
+                    msvcrt.locking(lock_fd.fileno(), msvcrt.LK_UNLCK, 1)
+                    lock_fd.close()
+                except (OSError, IOError):
+                    pass
