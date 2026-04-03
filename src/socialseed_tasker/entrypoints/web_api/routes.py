@@ -7,22 +7,25 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request  # noqa: B008
 
+from socialseed_tasker.core.project_analysis.analyzer import (
+    ImpactAnalysis,
+    RootCauseAnalyzer,
+    TestFailure,
+)
 from socialseed_tasker.core.task_management.actions import (
-    CircularDependencyError,
     ComponentNotFoundError,
     IssueNotFoundError,
-    OpenDependenciesError,
+    TaskRepositoryInterface,
     add_dependency_action,
     close_issue_action,
     create_issue_action,
     get_blocked_issues_action,
     get_dependency_chain_action,
-    move_issue_action,
     remove_dependency_action,
 )
-from socialseed_tasker.core.task_management.entities import IssuePriority, IssueStatus
+from socialseed_tasker.core.task_management.entities import IssueStatus
 from socialseed_tasker.entrypoints.web_api.schemas import (
     APIResponse,
     ComponentCreateRequest,
@@ -37,11 +40,14 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     PaginationMeta,
 )
 
+if TYPE_CHECKING:
+    pass
+
 
 class RepositoryDependency:
     """FastAPI dependency that provides the task repository from app state."""
 
-    def __call__(self, request: Request) -> "TaskRepositoryInterface":
+    def __call__(self, request: Request) -> TaskRepositoryInterface:
         return request.app.state.repository
 
 
@@ -157,9 +163,7 @@ def list_issues(
     page_items = all_issues[start:end]
 
     return APIResponse(
-        data=_paginated(
-            [_issue_to_response(i) for i in page_items], page, limit, total
-        ),
+        data=_paginated([_issue_to_response(i) for i in page_items], page, limit, total),
         meta=Meta(),
     )
 
@@ -226,10 +230,7 @@ def delete_issue(
     "/issues/{issue_id}/close",
     response_model=APIResponse[IssueResponse],
     summary="Close an issue",
-    description=(
-        "Close an issue. Fails if the issue has open dependencies "
-        "or is already closed."
-    ),
+    description=("Close an issue. Fails if the issue has open dependencies or is already closed."),
     responses={
         404: {"description": "Issue not found"},
         409: {"description": "Already closed or has open dependencies"},
@@ -255,10 +256,7 @@ dependencies_router = APIRouter()
     response_model=APIResponse[DependencyResponse],
     status_code=201,
     summary="Add a dependency",
-    description=(
-        "Create a [:DEPENDS_ON] relationship. "
-        "Fails if adding it would create a circular dependency."
-    ),
+    description=("Create a [:DEPENDS_ON] relationship. Fails if adding it would create a circular dependency."),
     responses={
         404: {"description": "Issue not found"},
         409: {"description": "Circular dependency detected"},
@@ -388,9 +386,7 @@ def list_components(
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     components = repo.list_components(project=project)
-    return APIResponse(
-        data=[_component_to_response(c) for c in components], meta=Meta()
-    )
+    return APIResponse(data=[_component_to_response(c) for c in components], meta=Meta())
 
 
 @components_router.get(
@@ -411,7 +407,7 @@ def get_component(
 
 
 # ---------------------------------------------------------------------------
-# Analysis router (placeholder for future root-cause analysis)
+# Analysis router (root-cause analysis and impact assessment)
 # ---------------------------------------------------------------------------
 
 analysis_router = APIRouter()
@@ -427,9 +423,35 @@ analysis_router = APIRouter()
         "to recently closed issues."
     ),
 )
-def analyze_root_cause():
-    # Placeholder - full implementation in issue #12
-    return APIResponse(data=[], meta=Meta())
+def analyze_root_cause(
+    body: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    analyzer = RootCauseAnalyzer(repo)
+    test_failure = TestFailure(
+        test_id=body.get("test_id", ""),
+        test_name=body.get("test_name", ""),
+        error_message=body.get("error_message", ""),
+        stack_trace=body.get("stack_trace", ""),
+        component=body.get("component", ""),
+        labels=body.get("labels", []),
+    )
+
+    all_issues = repo.list_issues()
+    closed_issues = [i for i in all_issues if i.status.value == "CLOSED"]
+    causal_links = analyzer.find_root_cause(test_failure, closed_issues)
+
+    link_data = [
+        {
+            "issue_id": str(link.issue.id),
+            "issue_title": link.issue.title,
+            "confidence": link.confidence,
+            "reasons": link.reasons,
+            "graph_distance": link.graph_distance,
+        }
+        for link in causal_links
+    ]
+    return APIResponse(data=link_data, meta=Meta())
 
 
 @analysis_router.get(
@@ -438,6 +460,25 @@ def analyze_root_cause():
     summary="Get impact analysis",
     description="Analyse what other issues and components would be affected.",
 )
-def analyze_impact(issue_id: str):
-    # Placeholder - full implementation in issue #12
-    return APIResponse(data={"issue_id": issue_id, "affected": []}, meta=Meta())
+def analyze_impact(
+    issue_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    analyzer = RootCauseAnalyzer(repo)
+    impact: ImpactAnalysis = analyzer.analyze_impact(issue_id)
+
+    impact_data = {
+        "issue_id": str(impact.issue_id),
+        "directly_affected": [
+            {"id": str(i.id), "title": i.title, "status": i.status.value} for i in impact.directly_affected
+        ],
+        "transitively_affected": [
+            {"id": str(i.id), "title": i.title, "status": i.status.value} for i in impact.transitively_affected
+        ],
+        "blocked_issues": [
+            {"id": str(i.id), "title": i.title, "status": i.status.value} for i in impact.blocked_issues
+        ],
+        "affected_components": impact.affected_components,
+        "risk_level": impact.risk_level.value,
+    }
+    return APIResponse(data=impact_data, meta=Meta())

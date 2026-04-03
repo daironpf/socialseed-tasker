@@ -7,7 +7,7 @@ and consistent envelope formatting.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -37,7 +37,7 @@ class Meta(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc),
         description="Response generation timestamp",
     )
-    request_id: Optional[str] = Field(
+    request_id: str | None = Field(
         None,
         description="Unique request identifier for tracing",
     )
@@ -52,8 +52,8 @@ class APIResponse(BaseModel, Generic[T]):
     handling across all endpoints.
     """
 
-    data: Optional[T] = Field(None, description="The response payload")
-    error: Optional[ErrorDetail] = Field(
+    data: T | None = Field(None, description="The response payload")
+    error: ErrorDetail | None = Field(
         None,
         description="Error information (present only on failure)",
     )
@@ -127,12 +127,12 @@ class IssueCreateRequest(BaseModel):
 class IssueUpdateRequest(BaseModel):
     """Request body for partially updating an issue."""
 
-    title: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    priority: Optional[str] = None
-    component_id: Optional[str] = None
-    labels: Optional[list[str]] = None
-    architectural_constraints: Optional[list[str]] = None
+    title: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = None
+    priority: str | None = None
+    component_id: str | None = None
+    labels: list[str] | None = None
+    architectural_constraints: list[str] | None = None
 
 
 class DependencyRequest(BaseModel):
@@ -154,7 +154,7 @@ class ComponentCreateRequest(BaseModel):
         description="Component name",
         examples=["Backend"],
     )
-    description: Optional[str] = Field(
+    description: str | None = Field(
         None,
         description="Component description",
         examples=["REST API and business logic layer"],
@@ -198,7 +198,7 @@ class IssueResponse(BaseModel):
     affects: list[str]
     created_at: datetime
     updated_at: datetime
-    closed_at: Optional[datetime]
+    closed_at: datetime | None
     architectural_constraints: list[str]
 
 
@@ -207,7 +207,7 @@ class ComponentResponse(BaseModel):
 
     id: str
     name: str
-    description: Optional[str]
+    description: str | None
     project: str
     created_at: datetime
     updated_at: datetime

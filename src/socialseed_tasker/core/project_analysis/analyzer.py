@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -17,14 +17,14 @@ from pydantic import BaseModel, ConfigDict, Field
 from socialseed_tasker.core.project_analysis.rules import (
     ArchitecturalRule,
     RuleType,
-    Severity,
     ValidationResult,
     Violation,
 )
 
 if TYPE_CHECKING:
     from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
-    from socialseed_tasker.core.task_management.entities import Issue
+
+from socialseed_tasker.core.task_management.entities import Issue
 
 
 # --- Data Models for Root Cause Analysis ---
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 class RiskLevel(str, Enum):
     """Risk levels for impact analysis."""
-    
+
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
@@ -41,9 +41,9 @@ class RiskLevel(str, Enum):
 
 class TestFailure(BaseModel):
     """Represents a failed test case."""
-    
+
     model_config = ConfigDict(frozen=True)
-    
+
     test_id: str
     test_name: str
     error_message: str
@@ -55,8 +55,8 @@ class TestFailure(BaseModel):
 
 class CausalLink(BaseModel):
     """Represents a causal link between a failed test and a potential root cause issue."""
-    
-    issue: 'Issue'  # Forward reference
+
+    issue: Issue  # Forward reference
     confidence: float = Field(..., ge=0.0, le=1.0)
     reasons: list[str] = Field(default_factory=list)
     graph_distance: int = Field(..., ge=0)
@@ -65,11 +65,11 @@ class CausalLink(BaseModel):
 
 class ImpactAnalysis(BaseModel):
     """Represents the impact analysis of an issue."""
-    
+
     issue_id: UUID
-    directly_affected: list['Issue'] = Field(default_factory=list)
-    transitively_affected: list['Issue'] = Field(default_factory=list)
-    blocked_issues: list['Issue'] = Field(default_factory=list)
+    directly_affected: list[Issue] = Field(default_factory=list)
+    transitively_affected: list[Issue] = Field(default_factory=list)
+    blocked_issues: list[Issue] = Field(default_factory=list)
     affected_components: list[str] = Field(default_factory=list)
     risk_level: RiskLevel = RiskLevel.LOW
 
@@ -124,9 +124,7 @@ class ArchitecturalAnalyzer:
 
         return ValidationResult(violations=violations)
 
-    def validate_dependency(
-        self, issue_id: str, depends_on_id: str
-    ) -> ValidationResult:
+    def validate_dependency(self, issue_id: str, depends_on_id: str) -> ValidationResult:
         """Check if adding a dependency violates any architectural rules.
 
         Evaluates FORBIDDEN_DEPENDENCY rules between the two issues'
@@ -155,9 +153,7 @@ class ArchitecturalAnalyzer:
 
     # -- Rule evaluators -----------------------------------------------------
 
-    def _check_forbidden_technology(
-        self, rule: ArchitecturalRule, issue: Issue
-    ) -> Violation | None:
+    def _check_forbidden_technology(self, rule: ArchitecturalRule, issue: Issue) -> Violation | None:
         """Check if the issue uses a forbidden technology."""
         forbidden = rule.source_pattern.lower()
         text = f"{issue.description} {' '.join(issue.labels)}".lower()
@@ -171,9 +167,7 @@ class ArchitecturalAnalyzer:
             )
         return None
 
-    def _check_required_pattern(
-        self, rule: ArchitecturalRule, issue: Issue
-    ) -> Violation | None:
+    def _check_required_pattern(self, rule: ArchitecturalRule, issue: Issue) -> Violation | None:
         """Check if the issue follows a required pattern."""
         required_label = rule.source_pattern
         if required_label and required_label not in issue.labels:
@@ -186,9 +180,7 @@ class ArchitecturalAnalyzer:
             )
         return None
 
-    def _check_forbidden_dependency(
-        self, rule: ArchitecturalRule, source: Issue, target: Issue
-    ) -> Violation | None:
+    def _check_forbidden_dependency(self, rule: ArchitecturalRule, source: Issue, target: Issue) -> Violation | None:
         """Check if a dependency between two issues is forbidden."""
         source_comp = str(source.component_id)
         target_comp = str(target.component_id)
@@ -198,17 +190,12 @@ class ArchitecturalAnalyzer:
                 rule_id=rule.id,
                 rule_name=rule.name,
                 severity=rule.severity,
-                message=(
-                    f"Dependency from component {source_comp[:8]} to "
-                    f"{target_comp[:8]} is forbidden"
-                ),
+                message=(f"Dependency from component {source_comp[:8]} to {target_comp[:8]} is forbidden"),
                 suggestion="Restructure the dependency to follow architectural boundaries",
             )
         return None
 
-    def _check_max_depth(
-        self, rule: ArchitecturalRule, issue_id: str
-    ) -> Violation | None:
+    def _check_max_depth(self, rule: ArchitecturalRule, issue_id: str) -> Violation | None:
         """Check if the dependency chain exceeds the maximum depth."""
         depth = self._get_dependency_depth(issue_id)
         if depth > rule.max_depth:
@@ -216,9 +203,7 @@ class ArchitecturalAnalyzer:
                 rule_id=rule.id,
                 rule_name=rule.name,
                 severity=rule.severity,
-                message=(
-                    f"Dependency depth {depth} exceeds maximum allowed {rule.max_depth}"
-                ),
+                message=(f"Dependency depth {depth} exceeds maximum allowed {rule.max_depth}"),
                 suggestion="Reduce the dependency chain length",
             )
         return None
@@ -244,98 +229,187 @@ class ArchitecturalAnalyzer:
 
 class RootCauseAnalyzer:
     """Analyzes test failures to find root causes and performs impact analysis.
-    
+
     Intent: Provide capabilities to trace test failures to their root causes
     and analyze the impact of issues on the system.
     Business Value: Reduces debugging time by identifying likely culprits
     and helps teams understand the consequences of changes.
     """
-    
+
     def __init__(self, repository: TaskRepositoryInterface) -> None:
         self._repository = repository
-    
-    def find_root_cause(self, failed_test_id: str, closed_issues: list[Issue]) -> list:
-        """
-        Find which recently closed issues are most likely responsible for a test failure.
-        
+
+    def find_root_cause(self, failed_test: TestFailure, closed_issues: list[Issue]) -> list[CausalLink]:
+        """Find which recently closed issues are most likely responsible for a test failure.
+
         Uses graph proximity analysis to rank potential root causes:
         1. Direct dependency links (issue -> component that was modified)
         2. Shared component analysis (issue and test affect same component)
         3. Temporal proximity (recently closed issues are more likely culprits)
         4. Label/keyword matching between test failure and issue description
         """
-        # Placeholder implementation - returns empty list
-        # In a full implementation, this would:
-        # 1. Get the failed test details from test failure data
-        # 2. Analyze closed issues for potential causal links
-        # 3. Score each issue based on proximity factors
-        # 4. Return ranked list of CausalLink objects
-        return []
-    
-    def analyze_impact(self, issue_id: str) -> dict:
-        """
-        Analyze what other issues and components would be affected if this issue changes.
-        
-        Traverses the graph to find:
-        - All issues that DEPENDS_ON this issue
-        - All issues that this issue BLOCKS
-        - All issues that this issue AFFECTS
-        - Transitive impact (issues affected by affected issues)
-        """
-        # Placeholder implementation - returns basic structure
-        # In a full implementation, this would:
-        # 1. Get the issue from the repository
-        # 2. Find all dependents (directly affected)
-        # 3. Find transitive dependencies
-        # 4. Find blocked issues
-        # 5. Calculate risk level based on impact scope
-        return {
-            "issue_id": issue_id,
-            "directly_affected": [],
-            "transitively_affected": [],
-            "blocked_issues": [],
-            "affected_components": [],
-            "risk_level": "LOW"
-        }
-    
-    def get_proximity_score(self, issue: Issue, failed_test: dict) -> float:
-        """
-        Calculate a proximity score indicating how likely this issue is the root cause.
-        
-        Scoring factors:
-        - Direct graph distance (shortest path in dependency graph)
-        - Component overlap (same component = higher score)
-        - Temporal recency (more recently closed = higher score)
-        - Semantic similarity (keyword/label overlap)
-        """
-        # Simplified implementation
-        score = 0.0
-        
-        # Component overlap
-        if issue and str(issue.component_id) == failed_test.get("component", ""):
-            score += 0.3
-        
-        # Temporal recency
-        if issue and issue.closed_at:
-            hours_ago = (datetime.now(timezone.utc) - issue.closed_at).total_seconds() / 3600
-            if hours_ago < 24:  # Less than a day
+        causal_links: list[CausalLink] = []
+
+        for issue in closed_issues:
+            reasons: list[str] = []
+            score = 0.0
+
+            component_match = str(issue.component_id) == failed_test.component
+            if component_match:
                 score += 0.3
-            elif hours_ago < 168:  # Less than a week
-                score += 0.2
-        
-        # Label/keyword matching (simplified)
-        if issue:
-            test_labels = set(failed_test.get("labels", []))
+                reasons.append(f"Same component: {failed_test.component}")
+
+            if issue.closed_at:
+                hours_ago = (datetime.now(timezone.utc) - issue.closed_at).total_seconds() / 3600
+                if hours_ago < 24:
+                    score += 0.3
+                    reasons.append(f"Closed recently ({hours_ago:.1f}h ago)")
+                elif hours_ago < 168:
+                    score += 0.2
+                    reasons.append(f"Closed within the week ({hours_ago:.1f}h ago)")
+
+            test_labels = set(failed_test.labels)
             issue_labels = set(issue.labels)
-            if test_labels & issue_labels:  # Intersection
+            if test_labels & issue_labels:
                 score += 0.2
-        
-        # Simple semantic similarity
-        if issue:
-            test_text = f"{failed_test.get('test_name', '')} {failed_test.get('error_message', '')}".lower()
+                reasons.append(f"Shared labels: {test_labels & issue_labels}")
+
+            test_text = f"{failed_test.test_name} {failed_test.error_message}".lower()
             issue_text = f"{issue.title} {issue.description}".lower()
             common_words = set(test_text.split()) & set(issue_text.split())
-            if len(common_words) > 2:
+            stop_words = {"the", "a", "an", "is", "to", "in", "of", "and", "for", "on", "with"}
+            meaningful_words = common_words - stop_words
+            if len(meaningful_words) > 2:
                 score += 0.2
-        
-        return min(score, 1.0)
+                reasons.append(f"Semantic overlap: {len(meaningful_words)} common words")
+
+            graph_distance = self._calculate_graph_distance(issue, failed_test)
+            if graph_distance <= 1:
+                score += 0.2
+                reasons.append(f"Direct graph proximity (distance={graph_distance})")
+            elif graph_distance <= 3:
+                score += 0.1
+                reasons.append(f"Close graph proximity (distance={graph_distance})")
+
+            if score > 0:
+                causal_links.append(
+                    CausalLink(
+                        issue=issue,
+                        confidence=min(score, 1.0),
+                        reasons=reasons,
+                        graph_distance=graph_distance,
+                        temporal_distance=hours_ago if issue.closed_at else -1.0,
+                    )
+                )
+
+        causal_links.sort(key=lambda link: link.confidence, reverse=True)
+        return causal_links
+
+    def _calculate_graph_distance(self, issue: Issue, failed_test: TestFailure) -> int:
+        """Calculate the shortest graph distance between an issue and a test's component."""
+        if str(issue.component_id) == failed_test.component:
+            return 0
+
+        visited: set[str] = {str(issue.id)}
+        queue: list[tuple[str, int]] = [(str(issue.id), 0)]
+
+        while queue:
+            current_id, distance = queue.pop(0)
+            current_issue = self._repository.get_issue(current_id)
+            if current_issue is None:
+                continue
+
+            dependents = self._repository.get_dependents(current_id)
+            for dependent in dependents:
+                dep_id = str(dependent.id)
+                if dep_id not in visited:
+                    visited.add(dep_id)
+                    if str(dependent.component_id) == failed_test.component:
+                        return distance + 1
+                    queue.append((dep_id, distance + 1))
+
+        return 999
+
+    def analyze_impact(self, issue_id: str) -> ImpactAnalysis:
+        """Analyze what other issues and components would be affected if this issue changes.
+
+        Traverses the graph to find:
+        - All issues that DEPENDS_ON this issue (direct dependents)
+        - Transitive dependents (issues affected by affected issues)
+        - Blocked issues (dependents with all dependencies satisfied except this one)
+        - Affected components (unique components of affected issues)
+        - Risk level based on impact scope
+        """
+        issue = self._repository.get_issue(issue_id)
+        if issue is None:
+            return ImpactAnalysis(
+                issue_id=UUID(issue_id),
+                directly_affected=[],
+                transitively_affected=[],
+                blocked_issues=[],
+                affected_components=[],
+                risk_level=RiskLevel.LOW,
+            )
+
+        directly_affected = self._repository.get_dependents(issue_id)
+        directly_affected_ids = {str(d.id) for d in directly_affected}
+
+        transitive_affected: list[Issue] = []
+        transitive_visited: set[str] = set(directly_affected_ids)
+        queue: list[str] = list(directly_affected_ids)
+
+        while queue:
+            current_id = queue.pop(0)
+            dependents = self._repository.get_dependents(current_id)
+            for dep in dependents:
+                dep_id = str(dep.id)
+                if dep_id not in transitive_visited:
+                    transitive_visited.add(dep_id)
+                    transitive_affected.append(dep)
+                    queue.append(dep_id)
+
+        blocked_issues = self._find_blocked_by(issue_id, directly_affected)
+
+        affected_components = self._collect_affected_components(
+            directly_affected + transitive_affected + blocked_issues
+        )
+
+        risk_level = self._calculate_risk_level(len(directly_affected), len(transitive_affected), len(blocked_issues))
+
+        return ImpactAnalysis(
+            issue_id=issue.id,
+            directly_affected=directly_affected,
+            transitively_affected=transitive_affected,
+            blocked_issues=blocked_issues,
+            affected_components=affected_components,
+            risk_level=risk_level,
+        )
+
+    def _find_blocked_by(self, source_id: str, dependents: list[Issue]) -> list[Issue]:
+        """Find issues that are blocked because they depend on the source issue."""
+        blocked: list[Issue] = []
+        for dep in dependents:
+            dep_dependencies = self._repository.get_dependencies(str(dep.id))
+            open_deps = [d for d in dep_dependencies if d.status.value != "CLOSED" and str(d.id) != source_id]
+            if not open_deps:
+                blocked.append(dep)
+        return blocked
+
+    def _collect_affected_components(self, issues: list[Issue]) -> list[str]:
+        """Collect unique component IDs from a list of issues."""
+        components: set[str] = set()
+        for issue in issues:
+            components.add(str(issue.component_id))
+        return sorted(components)
+
+    def _calculate_risk_level(self, direct_count: int, transitive_count: int, blocked_count: int) -> RiskLevel:
+        """Calculate risk level based on the scope of impact."""
+        total_impact = direct_count + (transitive_count * 0.5) + (blocked_count * 2)
+
+        if total_impact >= 10 or blocked_count >= 5:
+            return RiskLevel.CRITICAL
+        if total_impact >= 5 or blocked_count >= 3:
+            return RiskLevel.HIGH
+        if total_impact >= 2 or blocked_count >= 1:
+            return RiskLevel.MEDIUM
+        return RiskLevel.LOW
