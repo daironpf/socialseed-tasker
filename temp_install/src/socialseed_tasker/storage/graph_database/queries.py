@@ -1,0 +1,140 @@
+"""Cypher query definitions for Neo4j graph operations.
+
+All queries are parameterized to prevent Cypher injection.
+Organized by entity: components, issues, relationships.
+"""
+
+# ---------------------------------------------------------------------------
+# Schema initialization
+# ---------------------------------------------------------------------------
+
+SCHEMA_CONSTRAINTS = [
+    "CREATE CONSTRAINT issue_id IF NOT EXISTS FOR (i:Issue) REQUIRE i.id IS UNIQUE",
+    "CREATE CONSTRAINT component_id IF NOT EXISTS FOR (c:Component) REQUIRE c.id IS UNIQUE",
+    "CREATE INDEX issue_status IF NOT EXISTS FOR (i:Issue) ON (i.status)",
+    "CREATE INDEX issue_component IF NOT EXISTS FOR (i:Issue) ON (i.component_id)",
+    "CREATE INDEX issue_priority IF NOT EXISTS FOR (i:Issue) ON (i.priority)",
+    "CREATE INDEX issue_labels IF NOT EXISTS FOR (i:Issue) ON i.labels",
+]
+
+# ---------------------------------------------------------------------------
+# Component queries
+# ---------------------------------------------------------------------------
+
+CREATE_COMPONENT = """
+CREATE (c:Component {
+    id: $id,
+    name: $name,
+    description: $description,
+    project: $project,
+    created_at: $created_at,
+    updated_at: $updated_at
+})
+"""
+
+GET_COMPONENT = """
+MATCH (c:Component {id: $id})
+RETURN c
+"""
+
+LIST_COMPONENTS = """
+MATCH (c:Component)
+WHERE $project IS NULL OR c.project = $project
+RETURN c
+ORDER BY c.name
+"""
+
+# ---------------------------------------------------------------------------
+# Issue queries
+# ---------------------------------------------------------------------------
+
+CREATE_ISSUE = """
+MATCH (c:Component {id: $component_id})
+CREATE (i:Issue {
+    id: $id,
+    title: $title,
+    description: $description,
+    status: $status,
+    priority: $priority,
+    component_id: $component_id,
+    labels: $labels,
+    dependencies: $dependencies,
+    blocks: $blocks,
+    affects: $affects,
+    created_at: $created_at,
+    updated_at: $updated_at,
+    closed_at: $closed_at,
+    architectural_constraints: $architectural_constraints
+})
+CREATE (i)-[:BELONGS_TO]->(c)
+"""
+
+GET_ISSUE = """
+MATCH (i:Issue {id: $id})
+RETURN i
+"""
+
+UPDATE_ISSUE = """
+MATCH (i:Issue {id: $id})
+SET i += $updates
+SET i.updated_at = $updated_at
+RETURN i
+"""
+
+CLOSE_ISSUE = """
+MATCH (i:Issue {id: $id})
+SET i.status = 'CLOSED', i.closed_at = $closed_at, i.updated_at = $updated_at
+RETURN i
+"""
+
+DELETE_ISSUE = """
+MATCH (i:Issue {id: $id})
+DETACH DELETE i
+"""
+
+LIST_ISSUES = """
+MATCH (i:Issue)
+WHERE ($component_id IS NULL OR i.component_id = $component_id)
+  AND ($status IS NULL OR i.status = $status)
+RETURN i
+ORDER BY i.created_at DESC
+"""
+
+# ---------------------------------------------------------------------------
+# Dependency queries
+# ---------------------------------------------------------------------------
+
+ADD_DEPENDENCY = """
+MATCH (source:Issue {id: $issue_id})
+MATCH (target:Issue {id: $depends_on_id})
+MERGE (source)-[:DEPENDS_ON]->(target)
+"""
+
+REMOVE_DEPENDENCY = """
+MATCH (source:Issue {id: $issue_id})-[r:DEPENDS_ON]->(target:Issue {id: $depends_on_id})
+DELETE r
+"""
+
+GET_DEPENDENCIES = """
+MATCH (source:Issue {id: $issue_id})-[:DEPENDS_ON]->(target:Issue)
+RETURN target
+ORDER BY target.created_at DESC
+"""
+
+GET_DEPENDENTS = """
+MATCH (target:Issue {id: $issue_id})<-[:DEPENDS_ON]-(source:Issue)
+RETURN source
+ORDER BY source.created_at DESC
+"""
+
+GET_DEPENDENCY_CHAIN = """
+MATCH path = (start:Issue {id: $issue_id})-[:DEPENDS_ON*1..]->(dep:Issue)
+RETURN DISTINCT dep, length(path) AS distance
+ORDER BY distance
+"""
+
+CHECK_CYCLE = """
+MATCH (target:Issue {id: $depends_on_id})
+OPTIONAL MATCH path = (target)-[:DEPENDS_ON*1..]->(source:Issue {id: $issue_id})
+RETURN path IS NOT NULL AS would_cycle
+"""
