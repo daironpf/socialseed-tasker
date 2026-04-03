@@ -1,1 +1,0 @@
-"""FastAPI-based REST implementation."""
