@@ -71,6 +71,7 @@ app = typer.Typer(
 app.add_typer(commands.issue_app, name="issue", help="Manage issues")
 app.add_typer(commands.dependency_app, name="dependency", help="Manage dependencies")
 app.add_typer(commands.component_app, name="component", help="Manage components")
+app.add_typer(commands.analyze_app, name="analyze", help="Analyze issues and root causes")
 app.add_typer(init_app, name="init", help="Initialize Tasker in an external project")
 
 
