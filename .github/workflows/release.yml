@@ -28,7 +28,9 @@ jobs:
           cache: 'pip'
 
       - name: Run basic tests
-        run: pytest tests/unit/test_actions.py tests/unit/test_analyzer.py -v --tb=short
+        run: |
+          pip install pytest
+          pytest tests/unit/test_actions.py tests/unit/test_analyzer.py -v --tb=short
 
   build-and-publish:
     name: Build and Publish to PyPI

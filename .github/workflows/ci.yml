@@ -32,6 +32,7 @@ jobs:
 
       - name: Run pytest
         run: |
+          pip install pytest pytest-cov
           pytest --ignore=tests/integration/ --cov=socialseed_tasker --cov-report=term-missing -v --tb=short
 
   lint:
