@@ -73,6 +73,9 @@ app.add_typer(commands.dependency_app, name="dependency", help="Manage dependenc
 app.add_typer(commands.component_app, name="component", help="Manage components")
 app.add_typer(commands.analyze_app, name="analyze", help="Analyze issues and root causes")
 
+# Register project detection command
+app.add_typer(commands.project_app, name="project", help="Project detection and setup")
+
 # Register init as a standalone command to avoid nested typer issues
 from socialseed_tasker.entrypoints.cli.init_command import scaffold_command
 
