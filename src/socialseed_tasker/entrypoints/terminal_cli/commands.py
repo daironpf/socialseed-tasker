@@ -7,6 +7,7 @@ No business logic lives here - only presentation and user interaction.
 from __future__ import annotations
 
 import json
+from contextlib import suppress
 from pathlib import Path
 
 import typer
@@ -769,7 +770,7 @@ def project_detect(
                     and not item.name.startswith(".")
                     and item.name != "tests"
                     and not item.name.endswith(".egg-info")
-                    and not item.name == "socialseed_tasker"
+                    and item.name != "socialseed_tasker"
                 ):
                     init_file = item / "__init__.py"
                     pkg_json = item / "package.json"
@@ -865,8 +866,6 @@ def project_setup(
         package_json = project_path / "package.json"
         if package_json.exists():
             try:
-                import json
-
                 with open(package_json) as f:
                     pkg_data = json.load(f)
                 if "workspaces" in pkg_data:
@@ -902,7 +901,7 @@ def project_setup(
                         and not item.name.startswith(".")
                         and item.name != "tests"
                         and not item.name.endswith(".egg-info")
-                        and not item.name == "socialseed_tasker"
+                        and item.name != "socialseed_tasker"
                     ):
                         init_file = item / "__init__.py"
                         if init_file.exists():
@@ -937,10 +936,8 @@ def project_setup(
     if force:
         existing = repo.list_components(project=proj_name)
         for comp in existing:
-            try:
+            with suppress(Exception):
                 repo.delete_component(str(comp.id))
-            except Exception:
-                pass
 
     for module in modules_to_create:
         existing = repo.list_components(project=proj_name)
