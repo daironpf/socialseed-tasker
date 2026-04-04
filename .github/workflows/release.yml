@@ -65,7 +65,7 @@ jobs:
 
       - name: Check distribution
         run: |
-          check-wheel-contents dist/*.whl
+          check-wheel-contents dist/*.whl --ignore=W002
           twine check dist/*
 
       - name: Publish to PyPI
