@@ -311,7 +311,7 @@ def get_dependency_chain_action(
 
     visited: set[str] = set()
     chain: list[Issue] = []
-    queue = deque([issue_id])
+    queue = deque([str(issue_id)])
 
     while queue:
         current_id = queue.popleft()
@@ -319,14 +319,15 @@ def get_dependency_chain_action(
             continue
         visited.add(current_id)
 
-        if current_id != issue_id:
+        if current_id != str(issue_id):
             dep_issue = repository.get_issue(current_id)
             if dep_issue is not None:
                 chain.append(dep_issue)
 
         for dep in repository.get_dependencies(current_id):
-            if dep.id not in visited:
-                queue.append(dep.id)
+            dep_id_str = str(dep.id)
+            if dep_id_str not in visited:
+                queue.append(dep_id_str)
 
     return chain
 
