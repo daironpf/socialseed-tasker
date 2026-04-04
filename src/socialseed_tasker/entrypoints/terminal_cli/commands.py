@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 
 import typer
+from rich.box import SIMPLE
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -115,7 +116,7 @@ def _format_issue_card(issue: Issue) -> Panel:
 
 def _issues_table(issues: list[Issue]) -> Table:
     """Format a list of issues as a Rich table."""
-    table = Table(show_header=True, header_style="bold cyan", min_width=120)
+    table = Table(show_header=True, header_style="bold cyan", min_width=120, box=SIMPLE)
     table.add_column("ID", style="dim", width=8)
     table.add_column("Title", width=30)
     table.add_column("Status", width=12)
@@ -135,7 +136,7 @@ def _issues_table(issues: list[Issue]) -> Table:
 
 def _components_table(components: list[Component]) -> Table:
     """Format a list of components as a Rich table."""
-    table = Table(show_header=True, header_style="bold cyan")
+    table = Table(show_header=True, header_style="bold cyan", box=SIMPLE)
     table.add_column("ID", style="dim", width=10)
     table.add_column("Name", width=30)
     table.add_column("Project", width=30)
@@ -342,7 +343,10 @@ def dependency_remove(issue_id: str, depends_on: str) -> None:
 
 
 @dependency_app.command("list")
-def dependency_list(issue_id: str) -> None:
+def dependency_list(
+    issue_id: str,
+    as_json: bool = typer.Option(False, "--json", help="Output as JSON"),
+) -> None:
     """List all dependencies and dependents for an issue."""
     repo = get_repository()
     issue = repo.get_issue(issue_id)
@@ -353,6 +357,14 @@ def dependency_list(issue_id: str) -> None:
 
     deps = repo.get_dependencies(issue_id)
     dependents = repo.get_dependents(issue_id)
+
+    if as_json:
+        data = {
+            "dependencies": [d.model_dump(mode="json") for d in deps],
+            "dependents": [d.model_dump(mode="json") for d in dependents],
+        }
+        console.print(json.dumps(data, indent=2))
+        return
 
     if deps:
         console.print(_dependency_tree(issue_id, deps, "Dependencies"))

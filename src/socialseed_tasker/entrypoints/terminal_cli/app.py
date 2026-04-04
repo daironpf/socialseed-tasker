@@ -92,6 +92,13 @@ def main(
         help="Storage backend: 'file' or 'neo4j'",
         envvar="TASKER_STORAGE_BACKEND",
     ),
+    file_path: str = typer.Option(
+        ".tasker-data",
+        "--file-path",
+        "-f",
+        help="Path for file-based storage",
+        envvar="TASKER_FILE_PATH",
+    ),
 ) -> None:
     """SocialSeed Tasker CLI.
 
@@ -99,6 +106,7 @@ def main(
     """
     global _cli_container
     os.environ["TASKER_STORAGE_BACKEND"] = backend
+    os.environ["TASKER_FILE_PATH"] = file_path
     _cli_container = None
 
 
