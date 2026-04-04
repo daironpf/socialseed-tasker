@@ -1,493 +1,319 @@
 # SocialSeed Tasker
 
-A graph-based task management framework designed to provide "Infinite Context" and "Architectural Governance" to AI agents.
+**A graph-based task management framework designed for AI agents to manage issues with infinite context and architectural governance.**
 
-## Overview
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10+-blue.svg" alt="Python 3.10+">
+  <img src="https://img.shields.io/badge/Architecture-Hexagonal-green.svg" alt="Hexagonal Architecture">
+  <img src="https://img.shields.io/badge/Storage-Neo4j-orange.svg" alt="Neo4j">
+</p>
 
-SocialSeed Tasker transforms traditional task management by treating relationships between tasks as first-class citizens in a graph database. This enables powerful capabilities like architectural integrity checking, causal traceability (linking failed tests to root causes), and intelligent dependency management.
+---
 
-The framework implements a **Feature-Oriented Hexagonal Architecture** ensuring clean separation of concerns:
-- **Core**: Pure Python business logic (no external dependencies)
-- **Entry Points**: CLI and API interfaces
-- **Storage**: Neo4j graph database with local file fallback
-- **Bootstrap**: Dependency injection and system wiring
+## 🎯 Purpose: Built for AI Agents
 
-## Key Features
+SocialSeed Tasker is specifically designed to give **AI agents** superhuman capabilities in issue management:
 
-### 🔗 Dependency Graphing
-Tasks support rich relationships:
-- `[:DEPENDS_ON]` - Task requires completion of another task
-- `[:BLOCKS]` - Task prevents another task from starting
-- `[:AFFECTS]` - Task influences another task (weaker than blocks)
+- **Infinite Context**: AI agents can trace dependencies across thousands of issues instantly using graph traversal
+- **Architectural Governance**: Automatically enforce component boundaries and forbidden dependencies
+- **Root Cause Analysis**: Link failed tests to recent code changes using causal traceability
+- **Autonomous Decision Making**: AI agents can query the dependency graph to understand what can be worked on and what is blocked
 
-### 🏗️ Architectural Integrity
-Verify actions against established architectural rules:
-- Prevent forbidden dependencies between components
-- Enforce required patterns (e.g., "All API changes must have tests")
-- Limit technology usage in specific components
-- Control dependency chain depth
+Traditional issue trackers treat issues as isolated items. SocialSeed Tasker treats them as a **knowledge graph** where relationships are first-class citizens—exactly what AI agents need to make intelligent decisions.
 
-### 🔍 Causal Traceability
-Link failed tests to recently closed issues to find root causes:
-- Graph proximity analysis to identify likely culprits
-- Temporal proximity weighting (recent changes more suspect)
-- Component overlap analysis
-- Semantic similarity matching
+---
 
-### 💾 Dual Storage
-Choose your persistence layer:
-- **Neo4j**: Full graph capabilities for production
-- **Local Files**: JSON-based fallback for development/testing
+## 🚀 Quick Start for AI Agents
 
-### 🖥️ Multiple Interfaces
-- **CLI**: Terminal interface for humans and scripts
-- **REST API**: Programmatic access for AI agents and external tools
+### AI agents can interact with Tasker through multiple interfaces:
 
-## Getting Started
+```python
+# Method 1: Direct Python API (recommended for AI agents)
+from socialseed_tasker.core.task_management.actions import create_issue_action
+from socialseed_tasker.core.task_management.entities import Component
 
-### Prerequisites
+# Create component and issues
+component = Component(name="auth-service", project="my-project")
+issue = create_issue_action(repo, title="Fix login bug", component_id=str(component.id))
 
-- Python 3.10 or higher
-- Docker & Docker Compose (for Neo4j)
-- Git
+# Query the dependency graph
+chain = get_dependency_chain_action(repo, issue_id)
+blocked = get_blocked_issues_action(repo)
+```
 
-### Installation
-
-#### Option 1: Development Installation (Recommended)
 ```bash
-# Clone the repository
+# Method 2: CLI commands
+tasker issue create "Implement OAuth2" --component <id> --priority HIGH
+tasker dependency add <issue-id> <depends-on-id>
+tasker dependency chain <issue-id>
+```
+
+```python
+# Method 3: REST API for external AI systems
+import requests
+response = requests.post("http://localhost:8000/api/v1/issues/", json={
+    "title": "Add caching layer",
+    "component_id": "<component-uuid>",
+    "priority": "HIGH",
+    "labels": ["performance", "backend"]
+})
+```
+
+---
+
+## 🔑 Key Features for AI Agents
+
+### 🔗 Intelligent Dependency Management
+
+AI agents can understand complex dependency chains instantly:
+
+```python
+# Get full transitive dependency chain
+chain = get_dependency_chain_action(repo, issue_id)
+# Returns all issues that this issue depends on, recursively
+
+# Find all blocked issues (issues waiting on open dependencies)
+blocked = get_blocked_issues_action(repo)
+# AI agent can immediately see what can be worked on
+```
+
+### 🏗️ Architectural Integrity Enforcement
+
+AI agents automatically respect component boundaries:
+
+```python
+# Attempting to create a forbidden dependency is automatically rejected
+add_dependency_action(repo, frontend_issue_id, database_issue_id)
+# Raises: ForbiddenDependencyError: Frontend cannot depend on Database
+```
+
+### 🔍 Root Cause Analysis
+
+Link test failures to recent issues for autonomous debugging:
+
+```python
+from socialseed_tasker.core.project_analysis.analyzer import RootCauseAnalyzer
+
+analyzer = RootCauseAnalyzer(repo)
+causal_links = analyzer.find_root_cause(test_failure, closed_issues)
+# Returns ranked list of likely root causes with confidence scores
+```
+
+### 🌐 Project Structure Detection
+
+Automatically detect real project modules (microservices, packages, Python modules):
+
+```bash
+# Detect project structure
+tasker project detect --path /path/to/project
+
+# Setup components for all detected modules
+tasker project setup --path /path/to/project --project "my-project"
+```
+
+---
+
+## 📋 Usage Examples
+
+### Creating Issues with Dependencies
+
+```bash
+# Create components for different services
+tasker component create auth-service --project "social-network"
+tasker component create user-service --project "social-network"
+
+# Create issues
+tasker issue create "Implement JWT refresh" --component <auth-id> --priority HIGH
+tasker issue create "Add user profile API" --component <user-id> --priority MEDIUM
+
+# Make user service depend on auth (AI agent knows the order now!)
+tasker dependency add <user-issue-id> <auth-issue-id>
+```
+
+### Querying What Can Be Worked On
+
+```bash
+# AI agent: "What issues can I work on right now?"
+tasker dependency blocked
+# Returns: All issues that are NOT blocked (their dependencies are closed)
+
+# AI agent: "What's the full impact of this change?"
+tasker analyze impact <issue-id>
+# Returns: Directly and transitively affected issues
+```
+
+---
+
+## 🛠️ Installation
+
+```bash
+# Clone and install
 git clone https://github.com/daironpf/socialseed-tasker.git
 cd socialseed-tasker
-
-# Install in development mode with all extras
 pip install -e ".[dev]"
 
-# Start Neo4j database
+# Start Neo4j
 docker compose up -d
 
 # Verify installation
 tasker --help
 ```
 
-#### Option 2: Production Installation
-```bash
-# Install from PyPI (when available)
-pip install socialseed-tasker
+---
 
-# Configure environment variables (see Configuration section)
-```
+## 💾 Storage Backends
 
-### Quick Start Guide
+| Backend | Use Case | Command |
+|---------|----------|---------|
+| **Neo4j** (default) | Production with full graph capabilities | `--backend neo4j` |
+| **File** | Development/testing | `--backend file` |
 
-#### 1. Initialize Your Project
-
-```bash
-# Create a component (logical grouping of related tasks)
-tasker component create --name "Backend" --project "my-project" \
-    --description "Backend services and APIs"
-
-# Create another component
-tasker component create --name "Frontend" --project "my-project" \
-    --description "User interface and client-side code"
-```
-
-#### 2. Create and Manage Issues
+### Neo4j Configuration
 
 ```bash
-# Create a new issue
-tasker issue create --title "Implement user authentication API" \
-    --component <backend-component-id> \
-    --priority HIGH \
-    --description "Create login/logout endpoints with JWT validation" \
-    --labels backend,api,security
+# Local Docker (default ports: 17689 for Bolt, 18082 for HTTP)
+--neo4j-uri bolt://localhost:17689
+--neo4j-password <password>
 
-# List all issues
-tasker issue list
-
-# Show detailed information about an issue
-tasker issue show <issue-id>
-
-# Create related issues
-tasker issue create --title "Create login UI component" \
-    --component <frontend-component-id> \
-    --priority MEDIUM \
-    --description "Build React login form with validation" \
-    --labels frontend,ui,auth
+# Neo4j Aura (cloud)
+--neo4j-uri bolt+s://your-aura-id.databases.neo4j.io:7687
+--neo4j-password <aura-password>
 ```
 
-#### 3. Manage Dependencies
+---
+
+## 🤖 AI Agent Integration
+
+### Injected Skills System
+
+Tasker can be injected into any external project, giving AI agents immediate access to issue management:
 
 ```bash
-# Make frontend task depend on backend API completion
-tasker dependency add <frontend-issue-id> <backend-issue-id>
-
-# View dependency chain for an issue
-tasker dependency chain <issue-id>
-
-# Check for blocked issues (those waiting on open dependencies)
-tasker dependency blocked
-
-# Remove a dependency when requirements change
-tasker dependency remove <issue-id> <depends-on-id>
-```
-
-#### 4. Work with Components
-
-```bash
-# List all components
-tasker component list
-
-# Show details of a specific component
-tasker component show <component-id>
-
-# List issues within a component
-tasker issue list --component <component-id>
-```
-
-#### 5. Use the API Interface
-
-```bash
-# Start the API server
-uvicorn socialseed_tasker.entrypoints.web_api.app:app --reload
-
-# Access the interactive documentation
-# Open: http://localhost:8000/docs
-# Alternative: http://localhost:8000/redoc
-
-# Example API usage with curl:
-curl -X 'POST' \
-  'http://localhost:8000/api/v1/issues/' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "title": "API Health Check Endpoint",
-    "description": "Add a simple health check endpoint",
-    "component_id": "<component-id>",
-    "priority": "LOW",
-    "labels": ["api", "monitoring"]
-  }'
-```
-
-## Architecture Deep Dive
-
-### Hexagonal Architecture (Ports and Adapters)
-
-```
-                          ┌─────────────────────┐
-                          │  Entry Points (API) │
-                          │  Entry Points (CLI) │
-                          └─────────┬───────────┘
-                                    ▼
-                    ┌─────────────────────────┐
-                    │   Application Core      │
-                    │  (Business Logic)       │
-                    │                         │
-                    │  • Issue Management     │
-                    │  • Dependency Rules     │
-                    │  • Architectural Rules  │
-                    │  • Validation Engines   │
-                    └─────────┬───────────────┘
-                              ▼
-          ┌─────────────────────┐   ┌─────────────────────┐
-          │ Storage Adapters    │   │ Storage Adapters    │
-          │ (Neo4j Backend)     │   │ (File System Backend)│
-          └─────────────────────┘   └─────────────────────┘
-```
-
-### Core Principles
-
-1. **Pure Python Core**: Zero external framework dependencies in `core/` directory
-2. **Dependency Inversion**: High-level modules don't depend on low-level modules
-3. **Interface Segregation**: Small, specific interfaces rather than large monolithic ones
-4. **Testability**: Core logic can be tested without databases or web frameworks
-
-## Configuration
-
-All configuration is done through environment variables. Create a `.env` file or set variables in your environment:
-
-### Storage Configuration
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `TASKER_STORAGE_BACKEND` | Storage backend (`neo4j` or `file`) | `neo4j` | No |
-| `TASKER_NEO4J_URI` | Neo4j connection string | `bolt://localhost:7687` | Yes (if using neo4j) |
-| `TASKER_NEO4J_USER` | Neo4j username | `neo4j` | Yes (if using neo4j) |
-| `TASKER_NEO4J_PASSWORD` | Neo4j password | *(required)* | Yes (if using neo4j) |
-
-### API Configuration
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `TASKER_API_HOST` | API bind address | `0.0.0.0` |
-| `TASKER_API_PORT` | API port | `8000` |
-| `TASKER_API_RELOAD` | Enable auto-reload (dev only) | `false` |
-
-### Example `.env` File
-```bash
-# Storage Backend
-TASKER_STORAGE_BACKEND=neo4j
-TASKER_NEO4J_URI=bolt://localhost:7687
-TASKER_NEO4J_USER=neo4j
-TASKER_NEO4J_PASSWORD=your_secure_password_here
-
-# API Server
-TASKER_API_HOST=0.0.0.0
-TASKER_API_PORT=8000
-TASKER_API_RELOAD=false
-```
-
-## Development Workflow
-
-### Running Tests
-```bash
-# Run all tests
-pytest
-
-# Run tests with verbose output
-pytest -v
-
-# Run specific test module
-pytest tests/unit/test_analyzer.py -v
-
-# Run tests matching a pattern
-pytest -k "test_analyzer" -v
-```
-
-### Code Quality Checks
-```bash
-# Run linting
-ruff check .
-
-# Run linting with auto-fix
-ruff check --fix .
-
-# Run type checking
-mypy .
-
-# Run tests with coverage
-pytest --cov=socialseed_tasker --cov-report=term-missing
-```
-
-### Database Management
-```bash
-# Start Neo4j with Docker Compose
-docker compose up -d
-
-# Stop Neo4j
-docker compose down
-
-# View Neo4j logs
-docker compose logs -f neo4j
-
-# Access Neo4j Browser UI
-# Open: http://localhost:7474
-# Login with your neo4j credentials
-```
-
-## Advanced Usage
-
-### Architectural Integrity Rules
-
-The system includes built-in rule types for enforcing architectural constraints:
-
-#### Rule Types
-- `FORBIDDEN_DEPENDENCY`: Prevents issues in one component from depending on another
-- `FORBIDDEN_TECHNOLOGY`: Prevents certain technologies in specific components  
-- `REQUIRED_PATTERN`: Requires issues to follow specific patterns (labels, etc.)
-- `MAX_DEPENDENCY_DEPTH`: Limits how deep dependency chains can go
-
-#### Example: Creating Architectural Rules
-```python
-# This would typically be done through the API or CLI extensions
-from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
-from socialseed_tasker.core.project_analysis.rules import ArchitecturalRule, RuleType, Severity
-from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
-
-# Initialize analyzer with repository
-analyzer = ArchitecturalAnalyzer(repository: TaskRepositoryInterface)
-
-# Create a forbidden dependency rule
-rule = ArchitecturalRule(
-    name="UI-Database Separation",
-    description="UI components cannot depend directly on Database components",
-    rule_type=RuleType.FORBIDDEN_DEPENDENCY,
-    source_pattern="ui-component-id-here",
-    target_pattern="database-component-id-here",
-    severity=Severity.ERROR
-)
-
-# Register the rule
-analyzer.add_rule(rule)
-
-# Validate an issue creation against all rules
-validation_result = analyzer.validate_issue_creation(new_issue)
-if not validation_result.is_valid:
-    for violation in validation_result.violations:
-        print(f"Rule Violation: {violation.message}")
-        print(f"Suggestion: {violation.suggestion}")
-```
-
-### Causal Traceability & Root Cause Analysis
-
-When integrated with test execution systems (like `socialseed-e2e`), the framework can:
-
-1. Automatically detect test failures
-2. Analyze recently closed issues in related components
-3. Calculate proximity scores based on:
-   - Graph distance (shorter paths = higher suspicion)
-   - Temporal recency (recent changes weighted higher)
-   - Component overlap (same component = strong signal)
-   - Semantic similarity (keyword/description matching)
-4. Return ranked list of potential root causes with explanations
-
-## Extending the Framework
-
-### Adding New CLI Commands
-
-1. Add new command functions in `src/socialseed_tasker/entrypoints/terminal_cli/commands.py`
-2. Register them with the appropriate Typer Typer group
-3. Follow the existing pattern: delegate to core actions, handle presentation only
-
-### Adding New Storage Backends
-
-1. Implement `TaskRepositoryInterface` from `src/socialseed_tasker/core/task_management/actions.py`
-2. Add your implementation to the `storage/` directory
-3. Update the bootstrap container to conditionally use your backend
-4. No changes needed to core logic thanks to dependency injection
-
-### Adding New API Endpoints
-
-1. Define Pydantic models in `src/socialseed_tasker/entrypoints/web_api/schemas.py`
-2. Add route handlers in `src/socialseed_tasker/entrypoints/web_api/routes.py`
-3. Register routes in `src/socialseed_tasker/entrypoints/web_api/app.py`
-4. Follow existing patterns for dependency injection and error handling
-
-## Design Decisions
-
-### Why Neo4j?
-- Native graph storage and traversal algorithms
-- ACID transactions for data integrity
-- Mature ecosystem and tooling
-- Cypher query language optimized for graph patterns
-
-### Why Hexagonal Architecture?
-- Independent evolution of core logic and infrastructure
-- Easy testing with mock adapters
-- Clear boundaries between concerns
-- Ability to swap implementations (Neo4j ↔ File storage)
-
-### Why Pure Python Core?
-- Framework independence and testability
-- Reduced coupling to specific libraries/vendors
-- Easier to reason about and maintain
-- Faster test execution
-
-## Injected Setup (Using Tasker in Other Projects)
-
-SocialSeed Tasker can be injected into any external project as a management layer. This enables AI agents working on that project to use Tasker for issue tracking, dependency management, and architectural governance.
-
-### Quick Start
-
-```bash
-# In your target project directory
-pip install socialseed-tasker
-
-# Scaffold the Tasker infrastructure
+# In your target project
 tasker init
 
-# Start the Neo4j database
-cd tasker && docker compose up -d
-
-# Copy and configure environment
-cp configs/.env.example configs/.env
-
-# Update skills to the latest version
-tasker init --force
+# This creates:
+# project/
+# └── tasker/
+#     ├── skills/           # Python modules AI agents can import
+#     │   ├── task_skill.py # Function calling bridge
+#     │   └── skill_manifest.json
+#     ├── configs/
+#     └── docker-compose.yml
 ```
 
-### Injected Structure
-
-After running `tasker init`, your project will contain:
-
-```text
-Your-Project/
-├── tasker/
-│   ├── skills/              # AI Agent skills (Python modules)
-│   │   ├── task_skill.py    # Function Calling bridge to Tasker API
-│   │   └── skill_manifest.json
-│   ├── configs/
-│   │   └── .env.example     # Configuration template
-│   ├── docker-compose.yml   # Neo4j for local development
-│   └── README.md            # Tasker-specific instructions
-├── ...your existing files...
-```
-
-### Using the Injected Skills
-
-The skills in `tasker/skills/` are API-centric Python modules that your AI agents or scripts can import directly:
+AI agents can then import and use the skills directly:
 
 ```python
 import sys
 sys.path.insert(0, "tasker/skills")
 from task_skill import create_issue, list_issues, add_dependency
 
-# Create a component
-from task_skill import create_component
-result = create_component("Backend", "my-project")
-
-# Create an issue
+# Create issues (AI agent can do this autonomously!)
 result = create_issue(
-    title="Implement authentication",
-    component_id="<component-uuid>",
-    priority="HIGH",
-    labels=["backend", "security"],
+    title="Refactor authentication",
+    component_id="<uuid>",
+    priority="HIGH"
 )
 
-# List open issues
-issues = list_issues(status="OPEN")
-
-# Add a dependency
-add_dependency(issue_id="<uuid-1>", depends_on_id="<uuid-2>")
+# AI agent can check what depends on what
+issues = list_issues(component_id="<uuid>")
 ```
 
-### Switching to Neo4j Aura DB
+---
 
-Edit `tasker/configs/.env` to use a remote Neo4j Aura instance:
+## 📊 Architecture
 
-```bash
-# Comment out local connection
-# TASKER_NEO4J_URI=bolt://localhost:7689
-
-# Use Aura DB (bolt+s:// enables TLS encryption)
-TASKER_NEO4J_URI=bolt+s://your-aura-id.databases.neo4j.io:7687
-TASKER_NEO4J_PASSWORD=your_aura_password
+```
+                    ┌─────────────────────┐
+                    │   AI Agent / CLI    │
+                    │   REST API          │
+                    └─────────┬───────────┘
+                              ▼
+              ┌─────────────────────────────┐
+              │      Application Core      │
+              │  • Issue Management         │
+              │  • Dependency Graph        │
+              │  • Architectural Rules      │
+              │  • Root Cause Analysis     │
+              └─────────────┬───────────────┘
+                            ▼
+    ┌──────────────────────────┐   ┌──────────────────────────┐
+    │   Neo4j (Graph Storage)  │   │   File (JSON Fallback)   │
+    │   • Full graph queries   │   │   • Simple storage       │
+    │   • Cypher traversal     │   │   • Development use      │
+    └──────────────────────────┘   └──────────────────────────┘
 ```
 
-The system automatically detects the connection mode from the URI scheme:
-- `bolt://` or `neo4j://` → Local (unencrypted)
-- `bolt+s://` or `neo4j+s://` → Aura (encrypted with TLS)
+---
 
-## Contributing
+## 🎓 Why Graph-Based for AI Agents?
 
-See `CONTRIBUTING.md` for detailed guidelines on:
-- Setting up development environment
-- Coding standards and conventions
-- Pull request process
-- Testing requirements
+### Traditional Issue Trackers
+- Issues are isolated rows in a database
+- AI agent must scan thousands of records to understand relationships
+- No way to ask "what depends on this?"
 
-## License
+### SocialSeed Tasker
+- Issues are nodes in a knowledge graph
+- AI agent can traverse relationships instantly: `MATCH (i:Issue {id:'x'})-[:DEPENDS_ON*]->(d)`
+- Natural language queries become graph queries
+- AI can reason about **what's possible** vs **what's blocked**
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+---
 
-## 🤖 AI Agent Documentation
+## 📖 Detailed Documentation
 
-This project includes comprehensive documentation for AI agents in the `.agent` directory. After installation, AI agents can access:
+- **[CLI Reference](#)** - All available commands
+- **[API Documentation](#)** - REST API endpoints
+- **[Hexagonal Architecture](#)** - Code organization principles
+- **[Configuration](#)** - Environment variables and settings
+- **[Development Guide](#)** - Running tests, linting, contributing
 
-- **Skills**: Specialized capabilities and conventions (`environment-tooling.md`, `hexagonal-architecture.md`, `issue-driven-development.md`)
-- **Workflows**: Step-by-step procedural guides (`implement-issue.md`, `test-code.md`, `commit-push.md`, `create-issue.md`)
-- **README**: Overview of the agent skills and workflows system
+---
 
-These documents ensure AI agents understand project conventions, architectural guidelines, and development workflows to effectively contribute to the SocialSeed Tasker ecosystem.
+## 🔧 Commands Reference
 
-## Acknowledgments
+| Command | Description |
+|---------|-------------|
+| `tasker init` | Initialize Tasker in external project |
+| `tasker status` | Show current configuration |
+| `tasker component create` | Create a component |
+| `tasker component list` | List all components |
+| `tasker issue create` | Create an issue |
+| `tasker issue list` | List issues (with filters) |
+| `tasker issue show` | Show issue details |
+| `tasker dependency add` | Add dependency between issues |
+| `tasker dependency chain` | Show dependency chain |
+| `tasker dependency blocked` | Show unblocked issues |
+| `tasker project detect` | Detect project modules |
+| `tasker project setup` | Create components from modules |
+| `tasker analyze root-cause` | Find root causes for test failures |
+| `tasker analyze impact` | Analyze issue impact |
 
-- Built as part of the [SocialSeed Project](https://github.com/daironpf/SocialSeed)
-- Inspired by Domain-Driven Design and Hexagonal Architecture principles
-- Thanks to all contributors and users who help improve this framework
+---
+
+## 🤝 Contributing
+
+Built as part of the [SocialSeed Project](https://github.com/daironpf/SocialSeed). Licensed under Apache 2.0.
+
+---
+
+## 📂 Project Structure
+
+```
+socialseed-tasker/
+├── src/socialseed_tasker/
+│   ├── core/                    # Pure business logic (no dependencies)
+│   │   ├── task_management/     # Issue and component management
+│   │   └── project_analysis/    # Root cause and impact analysis
+│   ├── entrypoints/             # Interfaces (CLI, API, init)
+│   ├── storage/                 # Neo4j and file adapters
+│   ├── bootstrap/               # Dependency injection
+│   └── assets/                  # Templates for injected setup
+├── .agent/                      # AI agent documentation
+│   ├── skills/                  # Agent capabilities
+│   └── workflows/               # Step-by-step procedures
+├── tests/                       # Test suite
+└── docker-compose.yml           # Neo4j for local development
+```
