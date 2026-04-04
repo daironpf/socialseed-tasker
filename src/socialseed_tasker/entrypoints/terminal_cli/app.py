@@ -99,6 +99,18 @@ def main(
         help="Path for file-based storage",
         envvar="TASKER_FILE_PATH",
     ),
+    neo4j_uri: str = typer.Option(
+        "bolt://localhost:7687",
+        "--neo4j-uri",
+        help="Neo4j connection URI (used with --backend neo4j)",
+        envvar="TASKER_NEO4J_URI",
+    ),
+    neo4j_password: str = typer.Option(
+        "",
+        "--neo4j-password",
+        help="Neo4j password (used with --backend neo4j)",
+        envvar="TASKER_NEO4J_PASSWORD",
+    ),
 ) -> None:
     """SocialSeed Tasker CLI.
 
@@ -107,6 +119,10 @@ def main(
     global _cli_container
     os.environ["TASKER_STORAGE_BACKEND"] = backend
     os.environ["TASKER_FILE_PATH"] = file_path
+    if neo4j_uri:
+        os.environ["TASKER_NEO4J_URI"] = neo4j_uri
+    if neo4j_password:
+        os.environ["TASKER_NEO4J_PASSWORD"] = neo4j_password
     _cli_container = None
 
 

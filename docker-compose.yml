@@ -3,8 +3,8 @@ services:
     container_name: socialseed-tasker
     image: neo4j:5.26.15-community    
     ports:
-      - "8082:8082" # Interfaz web (Browser)
-      - "7689:7689" # Puerto de conexión Bolt (Python/Java)
+      - "18082:8082" # Interfaz web (Browser) - mapped to 18082 to avoid conflicts
+      - "17689:7689" # Puerto de conexión Bolt - mapped to 17689 to avoid conflicts
     volumes:
       - ./neo4j/data:/data
       - ./neo4j/logs:/logs
@@ -13,14 +13,14 @@ services:
     environment:
       - NEO4J_AUTH=neo4j/tasker_password
       - NEO4J_server_http_listen__address=:8082
-      - NEO4J_server_http_advertised__address=:8082
+      - NEO4J_server_http_advertised__address=:18082
       - NEO4J_server_bolt_listen__address=:7689
-      - NEO4J_server_bolt_advertised__address=:7689
+      - NEO4J_server_bolt_advertised__address=:17689
       - NEO4J_PLUGINS=["apoc"]
-      - NEO4J_dbms_memory_heap_max__size=4G
-      - NEO4J_dbms_memory_pagecache_size=2G
+      - NEO4J_dbms_memory_heap_max__size=2G
+      - NEO4J_dbms_memory_pagecache_size=1G
     healthcheck:
-      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "tasker_password", "RETURN 1"]
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p tasker_password 'RETURN 1' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
