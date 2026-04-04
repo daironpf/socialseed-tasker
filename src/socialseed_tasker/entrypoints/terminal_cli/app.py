@@ -103,7 +103,7 @@ def main(
         envvar="TASKER_FILE_PATH",
     ),
     neo4j_uri: str = typer.Option(
-        "bolt://localhost:7687",
+        "bolt://localhost:17689",
         "--neo4j-uri",
         help="Neo4j connection URI (used with --backend neo4j)",
         envvar="TASKER_NEO4J_URI",
