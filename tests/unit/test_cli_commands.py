@@ -142,3 +142,51 @@ class TestComponentListJson:
         )
         assert result.exit_code == 0
         assert result.stdout.startswith("[") or "[" in result.stdout
+
+
+class TestInitCommand:
+    def test_init_creates_scaffold_files(self, runner, tmp_path):
+        target_dir = tmp_path / "project"
+        target_dir.mkdir()
+        result = runner.invoke(
+            app,
+            ["init", str(target_dir)],
+        )
+        assert result.exit_code == 0
+        assert (target_dir / "tasker").exists()
+        assert (target_dir / "tasker" / "docker-compose.yml").exists()
+
+    def test_init_force_overwrites_existing(self, runner, tmp_path):
+        target_dir = tmp_path / "project"
+        target_dir.mkdir()
+        tasker_dir = target_dir / "tasker"
+        tasker_dir.mkdir()
+        (tasker_dir / "docker-compose.yml").write_text("old content")
+
+        result = runner.invoke(
+            app,
+            ["init", str(target_dir), "--force"],
+        )
+        assert result.exit_code == 0
+        assert "Overwritten" in result.stdout
+
+    def test_init_nonexistent_directory(self, runner, tmp_path):
+        target_dir = tmp_path / "nonexistent"
+        result = runner.invoke(
+            app,
+            ["init", str(target_dir)],
+        )
+        assert result.exit_code == 1
+        assert "does not exist" in result.stdout
+
+    def test_init_short_flag_force(self, runner, tmp_path):
+        target_dir = tmp_path / "project"
+        target_dir.mkdir()
+        tasker_dir = target_dir / "tasker"
+        tasker_dir.mkdir()
+
+        result = runner.invoke(
+            app,
+            ["init", str(target_dir), "-f"],
+        )
+        assert result.exit_code == 0
