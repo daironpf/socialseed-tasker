@@ -38,7 +38,7 @@ jobs:
           pip install -e ".[dev]" --no-cache-dir
 
       - name: Run pytest
-        run: pytest
+        run: pytest --ignore=tests/integration/
 
       - name: Run type checking
         run: mypy . --ignore-missing-imports

@@ -217,20 +217,35 @@ class FileTaskRepository(TaskRepositoryInterface):
     @contextmanager
     def transaction(self):
         """Execute file operations atomically using a lock file."""
-        import msvcrt
+        import sys
 
         lock_path = self._data_dir / ".tasker.lock"
         lock_path.parent.mkdir(parents=True, exist_ok=True)
 
         lock_fd = None
         try:
-            lock_fd = open(lock_path, "w")
-            msvcrt.locking(lock_fd.fileno(), msvcrt.LK_LOCK, 1)
+            if sys.platform == "win32":
+                import msvcrt
+
+                lock_fd = open(lock_path, "w")
+                msvcrt.locking(lock_fd.fileno(), msvcrt.LK_LOCK, 1)
+            else:
+                import fcntl
+
+                lock_fd = open(lock_path, "w")
+                fcntl.flock(lock_fd.fileno(), fcntl.LOCK_EX)
             yield
         finally:
             if lock_fd:
                 try:
-                    msvcrt.locking(lock_fd.fileno(), msvcrt.LK_UNLCK, 1)
+                    if sys.platform == "win32":
+                        import msvcrt
+
+                        msvcrt.locking(lock_fd.fileno(), msvcrt.LK_UNLCK, 1)
+                    else:
+                        import fcntl
+
+                        fcntl.flock(lock_fd.fileno(), fcntl.LOCK_UN)
                     lock_fd.close()
                 except OSError:
                     pass

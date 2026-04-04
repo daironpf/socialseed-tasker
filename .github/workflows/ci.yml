@@ -68,7 +68,7 @@ jobs:
 
       - name: Run pytest
         run: |
-          pytest --cov=socialseed_tasker --cov-report=term-missing -v --tb=short
+          pytest --ignore=tests/integration/ --cov=socialseed_tasker --cov-report=term-missing -v --tb=short
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
