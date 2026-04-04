@@ -63,7 +63,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include-package-data = true
 
 [tool.setuptools.package-data]
 socialseed_tasker = [
