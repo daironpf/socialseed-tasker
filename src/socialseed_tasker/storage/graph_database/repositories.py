@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
 from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
 
 
-def _node_to_issue(node) -> Issue:
+def _node_to_issue(node: dict[str, Any]) -> Issue:
     """Convert a Neo4j node to a domain Issue."""
     data = dict(node)
     return Issue(
@@ -32,14 +32,14 @@ def _node_to_issue(node) -> Issue:
         dependencies=data.get("dependencies", []),
         blocks=data.get("blocks", []),
         affects=data.get("affects", []),
-        created_at=data.get("created_at"),
-        updated_at=data.get("updated_at"),
+        created_at=data.get("created_at") or datetime.now(timezone.utc),
+        updated_at=data.get("updated_at") or datetime.now(timezone.utc),
         closed_at=data.get("closed_at"),
         architectural_constraints=data.get("architectural_constraints", []),
     )
 
 
-def _node_to_component(node) -> Component:
+def _node_to_component(node: dict[str, Any]) -> Component:
     """Convert a Neo4j node to a domain Component."""
     data = dict(node)
     return Component(
@@ -47,8 +47,8 @@ def _node_to_component(node) -> Component:
         name=data["name"],
         description=data.get("description"),
         project=data["project"],
-        created_at=data.get("created_at"),
-        updated_at=data.get("updated_at"),
+        created_at=data.get("created_at") or datetime.now(timezone.utc),
+        updated_at=data.get("updated_at") or datetime.now(timezone.utc),
     )
 
 
@@ -92,7 +92,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             result = session.run(queries.LIST_COMPONENTS, project=project)
             return [_node_to_component(r["c"]) for r in result]
 
-    def update_component(self, component_id: str, updates: dict) -> Component:
+    def update_component(self, component_id: str, updates: dict[str, Any]) -> Component:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.UPDATE_COMPONENT,
@@ -101,6 +101,8 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 updated_at=_now_iso(),
             )
             record = result.single()
+            if record is None:
+                raise ValueError(f"Component {component_id} not found")
             return _node_to_component(record["c"])
 
     def delete_component(self, component_id: str) -> None:
@@ -133,9 +135,11 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(queries.GET_ISSUE, id=issue_id)
             record = result.single()
-            return _node_to_issue(record["i"]) if record else None
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return _node_to_issue(record["i"])
 
-    def update_issue(self, issue_id: str, updates: dict) -> Issue:
+    def update_issue(self, issue_id: str, updates: dict[str, Any]) -> Issue:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.UPDATE_ISSUE,
@@ -144,6 +148,8 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 updated_at=_now_iso(),
             )
             record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
             return _node_to_issue(record["i"])
 
     def close_issue(self, issue_id: str) -> Issue:
@@ -155,6 +161,8 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 updated_at=_now_iso(),
             )
             record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
             return _node_to_issue(record["i"])
 
     def delete_issue(self, issue_id: str) -> None:
@@ -215,7 +223,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
     # -- Transactions ----------------------------------------------------------
 
     @contextmanager
-    def transaction(self):
+    def transaction(self):  # type: ignore[misc]
         """Execute Neo4j operations atomically using a real transaction."""
         with self._driver.driver.session(database=self._driver.database) as session:
             tx = session.begin_transaction()

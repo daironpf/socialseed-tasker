@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
 
 
-@asynccontextmanager
+@asynccontextmanager  # type: ignore[misc]
 async def lifespan(app: FastAPI):
     """Application lifecycle hook.
 
@@ -106,7 +106,7 @@ def create_app(repository: TaskRepositoryInterface | None = None) -> FastAPI:
 
     # Health endpoint
     @app.get("/health", tags=["health"])
-    def health_check():
+    def health_check() -> dict[str, str]:
         return {"status": "healthy", "version": "0.1.0"}
 
     # Dependency injection - provide repository to all routes
@@ -114,49 +114,49 @@ def create_app(repository: TaskRepositoryInterface | None = None) -> FastAPI:
 
     # Global exception handlers
     @app.exception_handler(IssueNotFoundError)
-    async def issue_not_found_handler(request: Request, exc: IssueNotFoundError):
+    async def issue_not_found_handler(request: Request, exc: IssueNotFoundError) -> JSONResponse:
         return JSONResponse(
             status_code=404,
             content=_error_response("ISSUE_NOT_FOUND", str(exc)),
         )
 
     @app.exception_handler(ComponentNotFoundError)
-    async def component_not_found_handler(request: Request, exc: ComponentNotFoundError):
+    async def component_not_found_handler(request: Request, exc: ComponentNotFoundError) -> JSONResponse:
         return JSONResponse(
             status_code=404,
             content=_error_response("COMPONENT_NOT_FOUND", str(exc)),
         )
 
     @app.exception_handler(CircularDependencyError)
-    async def circular_dependency_handler(request: Request, exc: CircularDependencyError):
+    async def circular_dependency_handler(request: Request, exc: CircularDependencyError) -> JSONResponse:
         return JSONResponse(
             status_code=409,
             content=_error_response("CIRCULAR_DEPENDENCY", str(exc)),
         )
 
     @app.exception_handler(IssueAlreadyClosedError)
-    async def issue_already_closed_handler(request: Request, exc: IssueAlreadyClosedError):
+    async def issue_already_closed_handler(request: Request, exc: IssueAlreadyClosedError) -> JSONResponse:
         return JSONResponse(
             status_code=409,
             content=_error_response("ISSUE_ALREADY_CLOSED", str(exc)),
         )
 
     @app.exception_handler(OpenDependenciesError)
-    async def open_dependencies_handler(request: Request, exc: OpenDependenciesError):
+    async def open_dependencies_handler(request: Request, exc: OpenDependenciesError) -> JSONResponse:
         return JSONResponse(
             status_code=409,
             content=_error_response("OPEN_DEPENDENCIES", str(exc)),
         )
 
     @app.exception_handler(ValueError)
-    async def value_error_handler(request: Request, exc: ValueError):
+    async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
         return JSONResponse(
             status_code=400,
             content=_error_response("VALIDATION_ERROR", str(exc)),
         )
 
     @app.exception_handler(Exception)
-    async def generic_error_handler(request: Request, exc: Exception):
+    async def generic_error_handler(request: Request, exc: Exception) -> JSONResponse:
         return JSONResponse(
             status_code=500,
             content=_error_response(
@@ -169,7 +169,7 @@ def create_app(repository: TaskRepositoryInterface | None = None) -> FastAPI:
     return app
 
 
-def _error_response(code: str, message: str, details: dict | None = None) -> dict:
+def _error_response(code: str, message: str, details: dict[str, Any] | None = None) -> dict[str, Any]:
     """Build a consistent error response envelope."""
     return {
         "data": None,

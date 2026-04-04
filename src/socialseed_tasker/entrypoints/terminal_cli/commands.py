@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 from contextlib import suppress
 from pathlib import Path
+from typing import Any
 
 import typer
 from rich.box import SIMPLE
@@ -714,7 +715,7 @@ def project_detect(
         console.print(f"[error]Path does not exist: {project_path}[/error]")
         raise typer.Exit(code=1) from None
 
-    discovered_modules: list[dict] = []
+    discovered_modules: list[dict[str, Any]] = []
 
     docker_compose = project_path / "docker-compose.yml"
     if not docker_compose.exists():
@@ -722,7 +723,7 @@ def project_detect(
 
     if docker_compose.exists():
         try:
-            import yaml
+            import yaml  # type: ignore[import-untyped]
 
             with open(docker_compose) as f:
                 compose_data = yaml.safe_load(f)

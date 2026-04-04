@@ -5,7 +5,7 @@ All routes delegate to core actions - no business logic lives here.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter, Depends, Query, Request  # noqa: B008
 
@@ -25,7 +25,7 @@ from socialseed_tasker.core.task_management.actions import (
     get_dependency_chain_action,
     remove_dependency_action,
 )
-from socialseed_tasker.core.task_management.entities import IssueStatus
+from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
 from socialseed_tasker.entrypoints.web_api.schemas import (
     APIResponse,
     CausalLinkResponse,
@@ -58,7 +58,7 @@ class RepositoryDependency:
 get_repo = RepositoryDependency()
 
 
-def _issue_to_response(issue) -> IssueResponse:
+def _issue_to_response(issue: Issue) -> IssueResponse:
     """Convert a domain Issue to an API response model."""
     return IssueResponse(
         id=str(issue.id),
@@ -78,7 +78,7 @@ def _issue_to_response(issue) -> IssueResponse:
     )
 
 
-def _component_to_response(comp) -> ComponentResponse:
+def _component_to_response(comp: Component) -> ComponentResponse:
     """Convert a domain Component to an API response model."""
     return ComponentResponse(
         id=str(comp.id),
@@ -90,7 +90,7 @@ def _component_to_response(comp) -> ComponentResponse:
     )
 
 
-def _paginated(items, page: int, limit: int, total: int) -> PaginatedResponse:
+def _paginated(items: list[Any], page: int, limit: int, total: int) -> PaginatedResponse[Any]:
     """Build a paginated response."""
     return PaginatedResponse(
         items=items,
@@ -130,7 +130,7 @@ issues_router = APIRouter()
 def create_issue(
     body: IssueCreateRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
-):
+) -> APIResponse[IssueResponse]:
     issue = create_issue_action(
         repo,
         title=body.title,
@@ -140,7 +140,7 @@ def create_issue(
         labels=body.labels,
         architectural_constraints=body.architectural_constraints,
     )
-    return APIResponse(data=_issue_to_response(issue), meta=Meta())
+    return APIResponse(data=_issue_to_response(issue), meta=Meta(request_id=None))
 
 
 @issues_router.get(
@@ -168,7 +168,7 @@ def list_issues(
 
     return APIResponse(
         data=_paginated([_issue_to_response(i) for i in page_items], page, limit, total),
-        meta=Meta(),
+        meta=Meta(request_id=None),
     )
 
 
@@ -186,7 +186,7 @@ def get_issue(
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
-    return APIResponse(data=_issue_to_response(issue), meta=Meta())
+    return APIResponse(data=_issue_to_response(issue), meta=Meta(request_id=None))
 
 
 @issues_router.patch(
@@ -207,10 +207,10 @@ def update_issue(
 
     updates = body.model_dump(exclude_unset=True)
     if not updates:
-        return APIResponse(data=_issue_to_response(existing), meta=Meta())
+        return APIResponse(data=_issue_to_response(existing), meta=Meta(request_id=None))
 
     updated = repo.update_issue(issue_id, updates)
-    return APIResponse(data=_issue_to_response(updated), meta=Meta())
+    return APIResponse(data=_issue_to_response(updated), meta=Meta(request_id=None))
 
 
 @issues_router.delete(
@@ -245,7 +245,7 @@ def close_issue(
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     issue = close_issue_action(repo, issue_id)
-    return APIResponse(data=_issue_to_response(issue), meta=Meta())
+    return APIResponse(data=_issue_to_response(issue), meta=Meta(request_id=None))
 
 
 # ---------------------------------------------------------------------------
@@ -274,7 +274,7 @@ def add_dependency(
     add_dependency_action(repo, issue_id, body.depends_on_id)
     return APIResponse(
         data=DependencyResponse(issue_id=issue_id, depends_on_id=body.depends_on_id),
-        meta=Meta(),
+        meta=Meta(request_id=None),
     )
 
 
@@ -307,7 +307,7 @@ def list_dependencies(
     if issue is None:
         raise IssueNotFoundError(issue_id)
     deps = repo.get_dependencies(issue_id)
-    return APIResponse(data=[_issue_to_response(d) for d in deps], meta=Meta())
+    return APIResponse(data=[_issue_to_response(d) for d in deps], meta=Meta(request_id=None))
 
 
 @dependencies_router.get(
@@ -324,7 +324,7 @@ def list_dependents(
     if issue is None:
         raise IssueNotFoundError(issue_id)
     dependents = repo.get_dependents(issue_id)
-    return APIResponse(data=[_issue_to_response(d) for d in dependents], meta=Meta())
+    return APIResponse(data=[_issue_to_response(d) for d in dependents], meta=Meta(request_id=None))
 
 
 @dependencies_router.get(
@@ -338,7 +338,7 @@ def get_dependency_chain(
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     chain = get_dependency_chain_action(repo, issue_id)
-    return APIResponse(data=[_issue_to_response(i) for i in chain], meta=Meta())
+    return APIResponse(data=[_issue_to_response(i) for i in chain], meta=Meta(request_id=None))
 
 
 @dependencies_router.get(
@@ -351,7 +351,7 @@ def list_blocked_issues(
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     blocked = get_blocked_issues_action(repo)
-    return APIResponse(data=[_issue_to_response(i) for i in blocked], meta=Meta())
+    return APIResponse(data=[_issue_to_response(i) for i in blocked], meta=Meta(request_id=None))
 
 
 # ---------------------------------------------------------------------------
@@ -376,7 +376,7 @@ def create_component(
 
     comp = Component(name=body.name, description=body.description, project=body.project)
     repo.create_component(comp)
-    return APIResponse(data=_component_to_response(comp), meta=Meta())
+    return APIResponse(data=_component_to_response(comp), meta=Meta(request_id=None))
 
 
 @components_router.get(
@@ -390,7 +390,7 @@ def list_components(
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     components = repo.list_components(project=project)
-    return APIResponse(data=[_component_to_response(c) for c in components], meta=Meta())
+    return APIResponse(data=[_component_to_response(c) for c in components], meta=Meta(request_id=None))
 
 
 @components_router.get(
@@ -407,7 +407,7 @@ def get_component(
     comp = repo.get_component(component_id)
     if comp is None:
         raise ComponentNotFoundError(component_id)
-    return APIResponse(data=_component_to_response(comp), meta=Meta())
+    return APIResponse(data=_component_to_response(comp), meta=Meta(request_id=None))
 
 
 @components_router.patch(
@@ -418,9 +418,9 @@ def get_component(
 )
 def update_component(
     component_id: str,
-    body: dict,
+    body: dict[str, Any],
     repo: TaskRepositoryInterface = Depends(get_repo),
-):
+) -> APIResponse[ComponentResponse]:
 
     try:
         updates = {}
@@ -435,7 +435,7 @@ def update_component(
             raise ValueError("At least one field to update must be provided")
 
         updated = repo.update_component(component_id, updates)
-        return APIResponse(data=_component_to_response(updated), meta=Meta())
+        return APIResponse(data=_component_to_response(updated), meta=Meta(request_id=None))
     except FileNotFoundError:
         raise ComponentNotFoundError(component_id)
     except ValueError as e:
@@ -446,7 +446,7 @@ def update_component(
 
 @components_router.delete(
     "/components/{component_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[str, Any]],
     summary="Delete a component",
     description="Delete a component. Fails if component has issues unless force=true.",
 )
@@ -454,12 +454,12 @@ def delete_component(
     component_id: str,
     force: bool = Query(False, description="Force deletion even if component has issues"),
     repo: TaskRepositoryInterface = Depends(get_repo),
-):
+) -> APIResponse[dict[str, str]]:
     from socialseed_tasker.core.task_management.actions import ComponentHasIssuesError, delete_component_action
 
     try:
         delete_component_action(repo, component_id, force=force)
-        return APIResponse(data={"deleted": component_id}, meta=Meta())
+        return APIResponse(data={"deleted": component_id}, meta=Meta(request_id=None))
     except FileNotFoundError:
         raise ComponentNotFoundError(component_id)
     except ComponentHasIssuesError as e:
@@ -477,7 +477,7 @@ analysis_router = APIRouter()
 
 @analysis_router.post(
     "/analyze/root-cause",
-    response_model=APIResponse[list],
+    response_model=APIResponse[list[CausalLinkResponse]],
     summary="Find root cause of test failure",
     description=(
         "Submit a test failure and get potential root causes ranked by "
@@ -488,7 +488,7 @@ analysis_router = APIRouter()
 def analyze_root_cause(
     body: TestFailureRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
-):
+) -> APIResponse[list[CausalLinkResponse]]:
     analyzer = RootCauseAnalyzer(repo)
     test_failure = TestFailure(
         test_id=body.test_id,
@@ -513,7 +513,7 @@ def analyze_root_cause(
         )
         for link in causal_links
     ]
-    return APIResponse(data=link_data, meta=Meta())
+    return APIResponse(data=link_data, meta=Meta(request_id=None))
 
 
 @analysis_router.get(
@@ -525,7 +525,7 @@ def analyze_root_cause(
 def analyze_impact(
     issue_id: str,
     repo: TaskRepositoryInterface = Depends(get_repo),
-):
+) -> APIResponse[ImpactAnalysisResponse]:
     analyzer = RootCauseAnalyzer(repo)
     impact: ImpactAnalysis = analyzer.analyze_impact(issue_id)
 
@@ -543,4 +543,4 @@ def analyze_impact(
         affected_components=impact.affected_components,
         risk_level=impact.risk_level.value,
     )
-    return APIResponse(data=impact_data, meta=Meta())
+    return APIResponse(data=impact_data, meta=Meta(request_id=None))

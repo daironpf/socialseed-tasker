@@ -30,8 +30,8 @@ class Neo4jConnectionMode(str):
     production database environments.
     """
 
-    LOCAL = "local"
-    AURA = "aura"
+    LOCAL: str = "local"
+    AURA: str = "aura"
 
 
 @dataclass
@@ -46,7 +46,7 @@ class Neo4jConfig:
     connection_mode: Neo4jConnectionMode = Neo4jConnectionMode.LOCAL
 
     @classmethod
-    def from_uri(cls, uri: str, **kwargs) -> Neo4jConfig:
+    def from_uri(cls, uri: str, **kwargs: Any) -> Neo4jConfig:
         """Create configuration by inferring connection mode from URI.
 
         Args:
@@ -57,8 +57,8 @@ class Neo4jConfig:
             Neo4jConfig with inferred connection mode.
         """
         is_aura = uri.startswith(("bolt+s://", "neo4j+s://")) or "aura" in uri.lower()
-        mode = Neo4jConnectionMode.AURA if is_aura else Neo4jConnectionMode.LOCAL
-        return cls(uri=uri, connection_mode=mode, **kwargs)
+        mode: Neo4jConnectionMode = Neo4jConnectionMode.AURA if is_aura else Neo4jConnectionMode.LOCAL
+        return cls(uri=uri, connection_mode=mode, **kwargs)  # type: ignore[arg-type]
 
 
 @dataclass
