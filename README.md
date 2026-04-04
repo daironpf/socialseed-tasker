@@ -146,6 +146,21 @@ tasker analyze impact <issue-id>
 
 ## 🛠️ Installation
 
+### From PyPI (Recommended)
+
+```bash
+# Install the latest version
+pip install socialseed-tasker
+
+# With Neo4j support (optional)
+pip install socialseed-tasker[neo4j]
+
+# With all dependencies
+pip install socialseed-tasker[dev]
+```
+
+### From Source
+
 ```bash
 # Clone and install
 git clone https://github.com/daironpf/socialseed-tasker.git
@@ -157,7 +172,6 @@ docker compose up -d
 
 # Verify installation
 tasker --help
-```
 
 ---
 
