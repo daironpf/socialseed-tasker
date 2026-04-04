@@ -118,8 +118,8 @@ def _issues_table(issues: list[Issue]) -> Table:
     table = Table(show_header=True, header_style="bold cyan", min_width=120)
     table.add_column("ID", style="dim", width=8)
     table.add_column("Title", width=30)
-    table.add_column("Status", width=10)
-    table.add_column("Priority", width=10)
+    table.add_column("Status", width=12)
+    table.add_column("Priority", width=12)
     table.add_column("Component", width=36)
 
     for issue in issues:
