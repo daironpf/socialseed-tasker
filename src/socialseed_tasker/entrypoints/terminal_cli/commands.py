@@ -116,12 +116,12 @@ def _format_issue_card(issue: Issue) -> Panel:
 
 def _issues_table(issues: list[Issue]) -> Table:
     """Format a list of issues as a Rich table."""
-    table = Table(show_header=True, header_style="bold cyan", min_width=120, box=SIMPLE)
-    table.add_column("ID", style="dim", width=8)
-    table.add_column("Title", width=30)
+    table = Table(show_header=True, header_style="bold cyan", box=SIMPLE, min_width=130)
+    table.add_column("ID", style="dim", width=10)
+    table.add_column("Title", min_width=25)
     table.add_column("Status", width=12)
     table.add_column("Priority", width=12)
-    table.add_column("Component", width=36)
+    table.add_column("Component", width=40)
 
     for issue in issues:
         table.add_row(
@@ -136,11 +136,11 @@ def _issues_table(issues: list[Issue]) -> Table:
 
 def _components_table(components: list[Component]) -> Table:
     """Format a list of components as a Rich table."""
-    table = Table(show_header=True, header_style="bold cyan", box=SIMPLE)
+    table = Table(show_header=True, header_style="bold cyan", box=SIMPLE, min_width=100)
     table.add_column("ID", style="dim", width=10)
-    table.add_column("Name", width=30)
-    table.add_column("Project", width=30)
-    table.add_column("Description", width=40)
+    table.add_column("Name", min_width=20)
+    table.add_column("Project", min_width=20)
+    table.add_column("Description", min_width=30)
 
     for comp in components:
         table.add_row(
@@ -289,21 +289,37 @@ def issue_delete(
     force: bool = typer.Option(False, "--force", "-f", help="Skip confirmation"),
 ) -> None:
     """Delete an issue (with confirmation)."""
+    from uuid import UUID
+
     repo = get_repository()
-    issue = repo.get_issue(issue_id)
+
+    resolved_id = issue_id
+    try:
+        UUID(issue_id)
+    except ValueError:
+        all_issues = repo.list_issues()
+        for issue in all_issues:
+            if issue.title.lower() == issue_id.lower() or issue_id.lower() in issue.title.lower():
+                resolved_id = str(issue.id)
+                break
+        else:
+            console.print(f"[error]Issue '{issue_id}' not found.[/error]")
+            raise typer.Exit(code=1) from None
+
+    issue = repo.get_issue(resolved_id)
 
     if issue is None:
         console.print(f"[error]Issue '{issue_id}' not found.[/error]")
         raise typer.Exit(code=1) from None
 
     if not force:
-        confirm = typer.confirm(f"Delete issue '{issue.title}' ({issue_id[:8]})?")
+        confirm = typer.confirm(f"Delete issue '{issue.title}' ({resolved_id[:8]})?")
         if not confirm:
             console.print("[info]Cancelled.[/info]")
             return
 
-    repo.delete_issue(issue_id)
-    console.print(f"[success]Issue deleted:[/success] {issue_id[:8]}")
+    repo.delete_issue(resolved_id)
+    console.print(f"[success]Issue deleted:[/success] {resolved_id[:8]}")
 
 
 # ---------------------------------------------------------------------------
@@ -513,36 +529,49 @@ def component_update(
 
 @component_app.command("delete")
 def component_delete(
-    component_id: str = typer.Argument(..., help="Component ID to delete"),
+    component_id: str = typer.Argument(..., help="Component ID or name to delete"),
     force: bool = typer.Option(False, "--force", "-f", help="Force deletion, issues become unassigned"),
     yes: bool = typer.Option(False, "--yes", "-y", help="Confirm deletion without prompting"),
 ) -> None:
     """Delete a component."""
+    from uuid import UUID
     from socialseed_tasker.core.task_management.actions import delete_component_action, ComponentHasIssuesError
 
     repo = get_repository()
 
+    resolved_id = component_id
+    try:
+        UUID(component_id)
+    except ValueError:
+        components = repo.list_components()
+        for comp in components:
+            if comp.name.lower() == component_id.lower():
+                resolved_id = str(comp.id)
+                break
+        else:
+            console.print(f"[error]Component '{component_id}' not found.[/error]")
+            raise typer.Exit(code=1) from None
+
     if not force and not yes:
-        component = repo.get_component(component_id)
+        component = repo.get_component(resolved_id)
         if component:
-            issues = repo.list_issues(component_id=component_id)
+            issues = repo.list_issues(component_id=resolved_id)
             if issues:
                 console.print(
-                    f"[warning]Component '{component_id}' has {len(issues)} issue(s).[/warning]\n"
+                    f"[warning]Component '{component.name}' has {len(issues)} issue(s).[/warning]\n"
                     f"Issues will become unassigned after deletion.\n"
-                    f"Use [cyan]--force[/cyan] or [cyan]--yes[/cyan] to confirm, or [cyan]--force[/cyan] to delete anyway."
+                    f"Use [cyan]--force[/cyan] or [cyan]--yes[/cyan] to confirm."
                 )
                 raise typer.Exit(code=1) from None
 
     try:
-        delete_component_action(repo, component_id, force=True)
-        console.print(f"[success]Component deleted:[/success] {component_id}")
+        delete_component_action(repo, resolved_id, force=True)
+        console.print(f"[success]Component deleted:[/success] {resolved_id}")
     except ComponentNotFoundError:
         console.print(f"[error]Component '{component_id}' not found.[/error]")
         raise typer.Exit(code=1) from None
     except ComponentHasIssuesError as e:
         console.print(f"[error]{e}[/error]")
-        raise typer.Exit(code=1) from None
         raise typer.Exit(code=1) from None
 
 
