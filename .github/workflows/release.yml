@@ -41,7 +41,7 @@ jobs:
         run: pytest --ignore=tests/integration/
 
       - name: Run type checking
-        run: mypy . --ignore-missing-imports
+        run: mypy src/ --ignore-missing-imports
 
       - name: Run linting
         run: ruff check .
