@@ -72,7 +72,11 @@ app.add_typer(commands.issue_app, name="issue", help="Manage issues")
 app.add_typer(commands.dependency_app, name="dependency", help="Manage dependencies")
 app.add_typer(commands.component_app, name="component", help="Manage components")
 app.add_typer(commands.analyze_app, name="analyze", help="Analyze issues and root causes")
-app.add_typer(init_app, name="init", help="Initialize Tasker in an external project")
+
+# Register init as a standalone command to avoid nested typer issues
+from socialseed_tasker.entrypoints.cli.init_command import scaffold_command
+
+app.command(name="init", help="Initialize Tasker in an external project")(scaffold_command)
 
 
 # Register status as a standalone command (not a typer)

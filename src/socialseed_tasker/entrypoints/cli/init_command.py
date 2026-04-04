@@ -23,7 +23,6 @@ console = Console()
 
 init_app = typer.Typer(
     help="Initialize Tasker infrastructure in an external project",
-    invoke_without_command=True,
 )
 
 
@@ -32,7 +31,32 @@ def _get_template_dir() -> Path:
     return Path(__file__).parent.parent.parent / "assets" / "templates"
 
 
-@init_app.callback()
+def scaffold_command(
+    target: str = typer.Argument(
+        ".",
+        help="Target project directory (default: current directory)",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Overwrite existing files with latest templates",
+    ),
+) -> None:
+    """Scaffold Tasker infrastructure into a project.
+
+    Creates a tasker/ directory with AI skills, Docker Compose,
+    and configuration templates.
+
+    Examples:
+        tasker init                     # scaffold in current directory
+        tasker init /path/to/project    # scaffold in specific directory
+        tasker init --force             # overwrite existing templates
+    """
+    _run_scaffold(target, force)
+
+
+@init_app.command()
 def init(
     ctx: typer.Context,
     target: str = typer.Argument(
@@ -56,6 +80,10 @@ def init(
         tasker init /path/to/project    # scaffold in specific directory
         tasker init --force             # overwrite existing templates
     """
+    _run_scaffold(target, force)
+
+
+def _run_scaffold(target: str, force: bool) -> None:
     target_path = Path(target).resolve()
 
     if not target_path.exists():
