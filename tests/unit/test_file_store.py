@@ -8,11 +8,11 @@ import pytest
 
 from socialseed_tasker.storage.local_files.file_store import (
     atomic_write,
-    read_json,
-    delete_file,
     backup_data,
-    restore_data,
+    delete_file,
     list_backups,
+    read_json,
+    restore_data,
 )
 
 

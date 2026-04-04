@@ -1,7 +1,5 @@
 """Tests for CLI commands using Typer CliRunner."""
 
-import tempfile
-from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner

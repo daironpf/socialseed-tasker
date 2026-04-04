@@ -15,7 +15,6 @@ from rich.console import Console
 from rich.theme import Theme
 
 from socialseed_tasker.bootstrap.container import Container
-from socialseed_tasker.entrypoints.cli.init_command import init_app
 from socialseed_tasker.entrypoints.terminal_cli import commands
 
 if TYPE_CHECKING:

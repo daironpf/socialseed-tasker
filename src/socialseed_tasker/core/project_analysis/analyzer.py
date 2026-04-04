@@ -26,7 +26,6 @@ if TYPE_CHECKING:
 
 from socialseed_tasker.core.task_management.entities import Issue
 
-
 # --- Data Models for Root Cause Analysis ---
 
 
@@ -319,7 +318,7 @@ class RootCauseAnalyzer:
             graph_distance = self._calculate_graph_distance(issue, failed_test)
             if graph_distance == 0:
                 score += 0.2
-                reasons.append(f"Same component")
+                reasons.append("Same component")
             elif graph_distance <= 1:
                 score += 0.2
                 reasons.append(f"Direct graph proximity (distance={graph_distance})")

@@ -7,7 +7,6 @@ No business logic lives here - only presentation and user interaction.
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import typer
@@ -541,7 +540,8 @@ def component_delete(
 ) -> None:
     """Delete a component."""
     from uuid import UUID
-    from socialseed_tasker.core.task_management.actions import delete_component_action, ComponentHasIssuesError
+
+    from socialseed_tasker.core.task_management.actions import ComponentHasIssuesError, delete_component_action
 
     repo = get_repository()
 

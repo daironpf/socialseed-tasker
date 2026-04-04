@@ -232,5 +232,5 @@ class FileTaskRepository(TaskRepositoryInterface):
                 try:
                     msvcrt.locking(lock_fd.fileno(), msvcrt.LK_UNLCK, 1)
                     lock_fd.close()
-                except (OSError, IOError):
+                except OSError:
                     pass

@@ -5,8 +5,6 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
-import pytest
-
 from socialseed_tasker.core.project_analysis.analyzer import (
     CausalLink,
     ImpactAnalysis,
@@ -19,7 +17,6 @@ from socialseed_tasker.core.task_management.entities import (
     IssuePriority,
     IssueStatus,
 )
-
 
 # --- Test helpers ---
 

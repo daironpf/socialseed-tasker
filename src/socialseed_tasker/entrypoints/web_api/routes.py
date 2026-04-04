@@ -421,7 +421,6 @@ def update_component(
     body: dict,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
-    from socialseed_tasker.core.task_management.actions import update_component_action
 
     try:
         updates = {}
@@ -456,7 +455,7 @@ def delete_component(
     force: bool = Query(False, description="Force deletion even if component has issues"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
-    from socialseed_tasker.core.task_management.actions import delete_component_action, ComponentHasIssuesError
+    from socialseed_tasker.core.task_management.actions import ComponentHasIssuesError, delete_component_action
 
     try:
         delete_component_action(repo, component_id, force=force)

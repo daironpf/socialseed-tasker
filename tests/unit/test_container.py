@@ -1,17 +1,15 @@
 """Tests for container and configuration."""
 
-import os
-import tempfile
 from pathlib import Path
 
 import pytest
 
 from socialseed_tasker.bootstrap.container import (
     AppConfig,
-    StorageConfig,
+    Container,
     Neo4jConfig,
     Neo4jConnectionMode,
-    Container,
+    StorageConfig,
 )
 
 

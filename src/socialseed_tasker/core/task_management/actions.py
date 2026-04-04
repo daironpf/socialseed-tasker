@@ -7,8 +7,9 @@ actions that enforce business rules regardless of storage backend.
 from __future__ import annotations
 
 from collections import deque
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Protocol, Iterator
+from typing import Protocol
 
 from socialseed_tasker.core.task_management.entities import (
     Component,
