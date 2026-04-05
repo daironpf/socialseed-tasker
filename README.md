@@ -1,11 +1,14 @@
 # SocialSeed Tasker
 
-**A graph-based task management framework designed for AI agents to manage issues with infinite context and architectural governance.**
+## 🔭 Implementing GraphRAG for Autonomous Agent Governance
+
+A graph-based task management framework designed for AI agents to manage issues with infinite context and architectural governance.
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10+-blue.svg" alt="Python 3.10+">
   <img src="https://img.shields.io/badge/Architecture-Hexagonal-green.svg" alt="Hexagonal Architecture">
   <img src="https://img.shields.io/badge/Storage-File%20or%20Neo4j-orange.svg" alt="File or Neo4j">
+  <img src="https://img.shields.io/badge/GraphRAG-Enabled-purple.svg" alt="GraphRAG">
 </p>
 
 ---
