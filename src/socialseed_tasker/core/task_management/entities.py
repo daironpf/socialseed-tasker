@@ -89,3 +89,4 @@ class Issue(BaseModel):
     updated_at: datetime = Field(default_factory=_now)
     closed_at: datetime | None = None
     architectural_constraints: list[str] = Field(default_factory=list)
+    agent_working: bool = False

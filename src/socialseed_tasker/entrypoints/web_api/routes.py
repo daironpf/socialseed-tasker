@@ -75,6 +75,7 @@ def _issue_to_response(issue: Issue) -> IssueResponse:
         updated_at=issue.updated_at,
         closed_at=issue.closed_at,
         architectural_constraints=issue.architectural_constraints,
+        agent_working=issue.agent_working if hasattr(issue, "agent_working") else None,
     )
 
 

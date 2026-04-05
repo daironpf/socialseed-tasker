@@ -133,6 +133,7 @@ class IssueUpdateRequest(BaseModel):
     component_id: str | None = None
     labels: list[str] | None = None
     architectural_constraints: list[str] | None = None
+    agent_working: bool | None = None
 
 
 class DependencyRequest(BaseModel):
@@ -200,6 +201,7 @@ class IssueResponse(BaseModel):
     updated_at: datetime
     closed_at: datetime | None
     architectural_constraints: list[str]
+    agent_working: bool | None = None
 
 
 class ComponentResponse(BaseModel):
