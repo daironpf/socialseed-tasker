@@ -1,10 +1,44 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-    <div class="flex items-center justify-center min-h-screen">
-      <div class="text-center">
-        <h1 class="text-3xl font-bold text-brand-600 dark:text-brand-400">SocialSeed Tasker</h1>
-        <p class="mt-2 text-gray-500 dark:text-gray-400">Loading...</p>
-      </div>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col">
+    <AppHeader @new-issue="openNewIssue" />
+    <div class="flex flex-1 overflow-hidden">
+      <Sidebar />
+      <RouterView />
+    </div>
+
+    <div
+      v-if="showCreateModal"
+      class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+      @click.self="showCreateModal = false"
+    >
+      <CreateIssueModal @close="showCreateModal = false" @created="onIssueCreated" />
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { RouterView } from 'vue-router'
+import AppHeader from '@/components/layout/AppHeader.vue'
+import Sidebar from '@/components/layout/Sidebar.vue'
+import CreateIssueModal from '@/components/issue/CreateIssueModal.vue'
+import { useUiStore } from '@/stores/uiStore'
+import { useIssuesStore } from '@/stores/issuesStore'
+
+const uiStore = useUiStore()
+const issuesStore = useIssuesStore()
+const showCreateModal = ref(false)
+
+function openNewIssue() {
+  showCreateModal.value = true
+}
+
+function onIssueCreated() {
+  showCreateModal.value = false
+  issuesStore.fetchIssues()
+}
+
+onMounted(() => {
+  uiStore.initDarkMode()
+})
+</script>
