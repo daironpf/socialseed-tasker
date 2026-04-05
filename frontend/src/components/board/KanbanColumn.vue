@@ -18,7 +18,6 @@
         :key="issue.id"
         :issue="issue"
         :component-name="getComponentName(issue.component_id)"
-        draggable="true"
         @select="$emit('openIssue', issue)"
         @dragstart="onDragStart($event, issue)"
       />
@@ -66,15 +65,20 @@ function getComponentName(id: string): string {
 }
 
 function onDragStart(event: DragEvent, issue: Issue) {
-  event.dataTransfer?.setData('text/plain', issue.id)
+  event.dataTransfer?.setData('application/json', JSON.stringify(issue))
+  event.dataTransfer!.effectAllowed = 'move'
 }
 
 function onDrop(event: DragEvent) {
-  const issueId = event.dataTransfer?.getData('text/plain')
-  if (!issueId) return
-  const issue = props.issues.find((i) => i.id === issueId)
-  if (issue && issue.status !== props.status) {
-    emit('dropIssue', issue, props.status)
+  const data = event.dataTransfer?.getData('application/json')
+  if (!data) return
+  try {
+    const issue: Issue = JSON.parse(data)
+    if (issue.status !== props.status) {
+      emit('dropIssue', issue, props.status)
+    }
+  } catch (e) {
+    console.error('Failed to parse drag data', e)
   }
 }
 </script>

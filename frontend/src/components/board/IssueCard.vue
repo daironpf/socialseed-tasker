@@ -1,11 +1,14 @@
 <template>
   <div
-    class="rounded-lg border bg-white p-3 shadow-sm cursor-pointer transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700 relative"
+    class="rounded-lg border bg-white p-3 shadow-sm transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700 relative"
     :class="{
       'border-l-4 border-l-red-500': issue.priority === 'CRITICAL',
       'border-l-4 border-l-orange-400': issue.priority === 'HIGH',
+      'cursor-grab active:cursor-grabbing': true
     }"
-    @click="$emit('select', issue)"
+    draggable="true"
+    @dragstart="onDragStart"
+    @click="onClick"
   >
     <!-- Agent working indicator -->
     <div
@@ -44,10 +47,21 @@ import type { Issue } from '@/types'
 import PriorityBadge from '@/components/ui/PriorityBadge.vue'
 import LabelTag from '@/components/ui/LabelTag.vue'
 
-defineProps<{
+const props = defineProps<{
   issue: Issue
   componentName?: string
 }>()
 
-defineEmits<{ select: [issue: Issue] }>()
+const emit = defineEmits<{
+  select: [issue: Issue]
+}>()
+
+function onDragStart(event: DragEvent) {
+  event.dataTransfer?.setData('application/json', JSON.stringify(props.issue))
+  event.dataTransfer!.effectAllowed = 'move'
+}
+
+function onClick() {
+  emit('select', props.issue)
+}
 </script>

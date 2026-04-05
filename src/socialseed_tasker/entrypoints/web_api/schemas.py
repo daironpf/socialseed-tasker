@@ -129,6 +129,7 @@ class IssueUpdateRequest(BaseModel):
 
     title: str | None = Field(None, min_length=1, max_length=200)
     description: str | None = None
+    status: str | None = None
     priority: str | None = None
     component_id: str | None = None
     labels: list[str] | None = None

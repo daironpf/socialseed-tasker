@@ -3,13 +3,14 @@
     <div v-if="issuesStore.loading" class="flex items-center justify-center h-64">
       <LoadingSpinner />
     </div>
-    <div v-else class="flex gap-4 p-4 min-w-[800px]">
+    <div v-else class="flex gap-4 p-4">
       <KanbanColumn
         v-for="col in columns"
         :key="col.status"
         :title="col.title"
         :status="col.status"
         :issues="issuesByStatus(col.status)"
+        class="flex-1 min-w-[280px] max-w-[400px]"
         @openIssue="openIssue"
         @dropIssue="onDropIssue"
       />
