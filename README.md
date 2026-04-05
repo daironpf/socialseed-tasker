@@ -184,8 +184,59 @@ requests.patch(
 
 ```python
 import requests
+from datetime import datetime
 
 API_BASE = "http://localhost:8000/api/v1"
+
+def start_working_on_issue(issue_id, todo_items):
+    """AI agent starts working on an issue - updates status and sets todo."""
+    
+    # 1. Create a detailed TODO list in the description
+    todo_text = "## TODO:\n" + "\n".join([f"- [ ] {item}" for item in todo_items])
+    todo_text += f"\n\n## Progress (started {datetime.now().strftime('%Y-%m-%d %H:%M')}):\n"
+    
+    requests.patch(f"{API_BASE}/issues/{issue_id}", json={
+        "description": todo_text,
+        "agent_working": True,
+        "status": "IN_PROGRESS"
+    })
+
+def update_progress(issue_id, completed_item, next_step):
+    """Update progress on the issue."""
+    
+    # Get current description
+    issue = requests.get(f"{API_BASE}/issues/{issue_id}").json()["data"]
+    desc = issue.get("description", "")
+    
+    # Mark completed item
+    desc = desc.replace(f"- [ ] {completed_item}", f"- [x] {completed_item}")
+    
+    # Add progress note
+    desc += f"\n- **In progress**: {next_step}"
+    
+    requests.patch(f"{API_BASE}/issues/{issue_id}", json={
+        "description": desc
+    })
+
+def finish_issue(issue_id, solution_summary):
+    """Mark issue as completed with solution summary."""
+    
+    # Get current description
+    issue = requests.get(f"{API_BASE}/issues/{issue_id}").json()["data"]
+    desc = issue.get("description", "")
+    
+    # Add solution summary
+    desc += f"\n\n## Solution:\n{solution_summary}"
+    
+    # Close the issue
+    requests.post(f"{API_BASE}/issues/{issue_id}/close")
+    
+    # Clear agent working flag
+    requests.patch(f"{API_BASE}/issues/{issue_id}", json={
+        "description": desc,
+        "agent_working": False
+    })
+```
 
 def create_issue_and_work(title, component_id, description=""):
     """Create an issue and start working on it."""
@@ -215,6 +266,106 @@ def create_issue_and_work(title, component_id, description=""):
     requests.patch(f"{API_BASE}/{issue_id}", json={"agent_working": False})
     
     return issue_id
+```
+
+### Full Example: AI Agent Solving an Issue
+
+```python
+import requests
+
+API_BASE = "http://localhost:8000/api/v1"
+
+def solve_issue(issue_id, problem_description):
+    """
+    AI agent solves an issue, keeping the board updated with progress.
+    """
+    
+    # Step 1: Analyze and plan
+    todo_items = [
+        "Analyze the problem and identify root cause",
+        "Write test to reproduce the issue",
+        "Implement the fix",
+        "Run tests to verify the solution",
+        "Update documentation if needed"
+    ]
+    
+    # Step 2: Start working - update status and add TODO to description
+    initial_desc = f"## Problem\n{problem_description}\n\n"
+    initial_desc += "## TODO:\n" + "\n".join([f"- [ ] {item}" for item in todo_items])
+    initial_desc += f"\n\n## Started at: {datetime.now().isoformat()}"
+    
+    requests.patch(f"{API_BASE}/issues/{issue_id}", json={
+        "description": initial_desc,
+        "status": "IN_PROGRESS",
+        "agent_working": True
+    })
+    
+    # Step 3: First TODO complete - Analyze
+    update_issue_description(issue_id, todo_items[0], "Analyzing root cause...")
+    
+    # Step 4: Found the issue - update with findings
+    update_issue_description(issue_id, todo_items[0], 
+        "Root cause: Missing null check in auth handler")
+    
+    # Step 5: Write test
+    update_issue_description(issue_id, todo_items[1], 
+        "Test written: test_login_with_special_chars")
+    
+    # Step 6: Implement fix
+    update_issue_description(issue_id, todo_items[2], 
+        "Fix implemented: Added null validation")
+    
+    # Step 7: Tests pass
+    update_issue_description(issue_id, todo_items[3], 
+        "All 45 tests pass")
+    
+    # Step 8: Close issue with summary
+    solution_summary = """
+## Solution Applied
+- Added null validation for password field
+- Added test case with special characters: !@#$%^&*()
+- All existing tests continue to pass
+
+## Files Changed
+- src/auth/handlers.py (line 45-47)
+- tests/test_auth.py (added test_login_with_special_chars)
+"""
+    
+    requests.post(f"{API_BASE}/issues/{issue_id}/close")
+    requests.patch(f"{API_BASE}/issues/{issue_id}", json={
+        "description": initial_desc + solution_summary,
+        "agent_working": False
+    })
+
+
+def update_issue_description(issue_id, completed_item, next_action):
+    """Helper to mark a TODO complete and note next action."""
+    
+    # Get current description
+    issue = requests.get(f"{API_BASE}/issues/{issue_id}").json()["data"]
+    desc = issue.get("description", "")
+    
+    # Mark completed item
+    desc = desc.replace(f"- [ ] {completed_item}", f"- [x] {completed_item}")
+    
+    # Add progress note with timestamp
+    timestamp = datetime.now().strftime("%H:%M")
+    desc += f"\n[{timestamp}] **Next**: {next_action}"
+    
+    requests.patch(f"{API_BASE}/issues/{issue_id}", json={
+        "description": desc
+    })
+```
+
+### Why Keep the Board Updated?
+
+| Reason | Description |
+|--------|-------------|
+| **Transparency** | Humans can see what the AI is doing |
+| **Traceability** | Full history of the solution is in the issue |
+| **Collaboration** | Other agents or humans can see progress |
+| **Debugging** | If something goes wrong, the trail is clear |
+| **State Sync** | The Kanban board always reflects reality |
 
 
 def get_workable_issues():
