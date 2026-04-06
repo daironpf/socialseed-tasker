@@ -229,3 +229,4 @@ neo4j/plugins/
 *.log
 
 .tasker-data
+.issues
