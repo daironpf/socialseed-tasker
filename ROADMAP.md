@@ -4,7 +4,7 @@ SocialSeed Tasker is an **AI-Native Project Management Framework** powered by **
 
 This roadmap outlines our journey from a core utility to a global standard for AI-driven development.
 
-**Last updated:** 2026-04-06 (Full functional audit)
+**Last updated:** 2026-04-06 (Graph-Only Platform - File Storage Removed)
 
 ---
 
@@ -25,10 +25,10 @@ This roadmap outlines our journey from a core utility to a global standard for A
 * [x] **REST API - Analysis Endpoints:** `POST /analyze/root-cause` and `GET /analyze/impact/{id}` with typed schemas.
 * [x] **REST API - Consistent Envelopes:** All responses use `{data, error, meta}` format with pagination support.
 * [x] **Dependency Injection Container:** Environment-based configuration with wiring.
-* [x] **File Storage Backend:** JSON file persistence with atomic writes, backup/restore.
 * [x] **Neo4j Storage Backend:** Graph database with Cypher queries, relationship management.
-* [x] **Docker Compose Setup:** API + Frontend services with file-based storage volume.
+* [x] **Docker Compose Setup:** API + Frontend + Neo4j (tasker-db) services.
 * [x] **Entry Points:** Both `tasker` and `socialseed-tasker` CLI commands available.
+* [x] **REST API Health Endpoint:** `/health` for container health checks.
 
 ---
 
@@ -38,6 +38,10 @@ This roadmap outlines our journey from a core utility to a global standard for A
 * [x] **Causal Traceability:** Root cause analysis links test failures to closed issues via component match, temporal recency, label overlap, semantic similarity, and graph proximity (BFS bidirectional).
 * [x] **The Human-Centric Board:** Vue.js Kanban board with drag & drop, auto-refresh (10s), responsive columns, and real-time agent activity indicator.
 * [ ] **AI Reasoning Logs:** In-issue Markdown summaries explaining *why* the AI chose a specific architectural path based on the graph.
+* [ ] **Live Agent Documentation:** Agents must maintain a "Dynamic Progress Manifest" within the issue description, including:
+    * **Live TODO List:** Checkboxes updated as the agent completes sub-tasks.
+    * **Affected Files:** Real-time list of created or modified files.
+    * **Technical Debt Notes:** Observations made by the agent during implementation.
 * [x] **Advanced Cypher Queries:** Impact analysis with BFS for direct/transitive dependents, blocked issues detection, affected components collection, and risk level calculation (LOW/MEDIUM/HIGH/CRITICAL).
 * [x] **Architectural Analysis Module:** Rule-based analyzer for forbidden technologies, required patterns, forbidden dependencies, and max dependency depth validation.
 * [ ] **Graph Visualization:** Interactive graph view of issues, components, and dependencies (beyond Kanban).
@@ -49,6 +53,7 @@ This roadmap outlines our journey from a core utility to a global standard for A
 *Goal: Prevent AI from introducing technical debt or breaking system constraints.*
 
 * [x] **Architectural Rule Engine:** Define rules for forbidden technologies, required patterns, forbidden dependencies, max depth. Violation reporting with errors/warnings. *(Note: exists in `core/project_analysis/` but not yet enforced at API/CLI level)*
+* [ ] **Self-Documenting Enforcement:** Governance policy that blocks an agent from closing an issue if the "Solution Summary" and "Modified Files" sections are missing or incomplete.
 * [ ] **Graph Policy Engine:** Define "Rules of the Graph" (e.g., *Layer A cannot touch Layer C*) enforced at write time.
 * [ ] **Pre-Execution Validation:** Tasker automatically blocks agent actions that violate defined architectural policies.
 * [ ] **Automated Self-Healing:** Integration with `socialseed-e2e` to trigger "Fix Issues" automatically when tests fail.
@@ -85,11 +90,9 @@ This roadmap outlines our journey from a core utility to a global standard for A
 |---|-------|----------|----------|
 | 1 | `issue show` requires full UUID, short ID fails | Low | CLI commands |
 | 2 | `component show` requires full UUID, short ID fails | Low | CLI commands |
-| 3 | API root `/` returns 404 (no health endpoint) | Low | `app.py` |
-| 4 | `POST /dependencies` route not mounted at `/api/v1/dependencies` | Medium | Route prefix mismatch |
-| 5 | `POST /analyze/root-cause` requires `test_id` field not documented in CLI help | Low | Schema vs CLI mismatch |
-| 6 | No transaction support in file backend (race condition risk) | High | `FileTaskRepository` |
-| 7 | Architectural rules exist but not enforced at API/CLI write level | Medium | Integration gap |
+| 3 | `POST /dependencies` route not mounted at `/api/v1/dependencies` | Medium | Route prefix mismatch |
+| 4 | `POST /analyze/root-cause` requires `test_id` field not documented in CLI help | Low | Schema vs CLI mismatch |
+| 5 | Architectural rules exist but not enforced at API/CLI write level | Medium | Integration gap |
 
 ---
 

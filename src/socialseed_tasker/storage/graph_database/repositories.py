@@ -36,6 +36,7 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
         updated_at=data.get("updated_at") or datetime.now(timezone.utc),
         closed_at=data.get("closed_at"),
         architectural_constraints=data.get("architectural_constraints", []),
+        agent_working=data.get("agent_working", False),
     )
 
 

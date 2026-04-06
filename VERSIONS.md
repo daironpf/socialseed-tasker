@@ -31,15 +31,17 @@ This document defines the versioning milestones for **SocialSeed Tasker**. We st
 * [ ] **Documentation Sync:** Align CLI help strings with actual API schemas.
 * [ ] **Neo4j Performance:** Optimization of Cypher queries for deep relationship traversal.
 
-### v0.8.0 — The "Active Governance" Release
-**Focus:** Moving from "Observation" to "Enforcement."
+### v0.8.0 — The "Observability & Active Governance" Release
+**Focus:** Human-in-the-loop transparency and enforcement.
+* [ ] **Agent Progress Manifest:** Implementation of dynamic Markdown updates within issues (TODO lists, modified files, reasoning logs).
 * [ ] **Active Policy Enforcement:** Block API/CLI writes if they violate defined Architectural Rules (forbidden tech, depth, etc.).
+* [ ] **Agent Lifecycle Integration:** Full tracking of the `agent_working` state with start/finish timestamps.
 * [ ] **Dependency Guard:** Real-time prevention of circular dependencies during issue creation.
-* [ ] **Agent Lifecycle Integration:** Full tracking of the `agent_working` state from start to finish.
 * [ ] **Graph Visualization:** Interactive node-link view in the Dashboard using the Neo4j schema.
 
 ### v1.0.0 — The "Architect" (Production Ready)
 **Focus:** Reliability, Concurrency, and Global Scale.
+* [ ] **Governance Closure Validation:** Mandatory check for "Solution Summary" and "File Impact" documentation before allowing an agent to close an issue.
 * [ ] **Transaction Boundaries:** Implement atomic multi-operation commits (ACID) natively in Neo4j.
 * [ ] **Neo4j Aura Stability:** 100% test pass rate on cloud-managed graph instances with full encryption.
 * [ ] **E2E Test Suite:** Complete end-to-end testing of the Tasker workflow from CLI to Aura DB.
