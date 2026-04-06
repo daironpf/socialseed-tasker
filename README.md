@@ -485,8 +485,10 @@ This enables the agent to make **informed decisions** based on the complete arch
 |----------|---------|-------------|
 | `TASKER_NEO4J_URI` | `bolt://localhost:7687` | Neo4j connection URI |
 | `TASKER_NEO4J_USER` | `neo4j` | Neo4j username |
-| `TASKER_NEO4J_PASSWORD` | `` | Neo4j password |
+| `TASKER_NEO4J_PASSWORD` | (none) | Neo4j password (required) |
 | `API_PORT` | `8000` | API server port |
+
+> **Note:** When using Docker Compose, credentials are set via `NEO4J_PASSWORD` in the compose file. Default is `neo4j/neoSocial`.
 
 ---
 

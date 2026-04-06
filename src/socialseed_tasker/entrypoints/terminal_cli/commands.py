@@ -680,13 +680,12 @@ def status_command() -> None:
 
     config = AppConfig.from_env()
 
-    backend = config.storage.backend
     console.print(
         Panel(
-            f"[bold]Backend:[/bold] {backend}\n"
-            f"[bold]File path:[/bold] {config.storage.file_path}\n"
-            f"[bold]Neo4j URI:[/bold] {config.storage.neo4j.uri}\n"
-            f"[bold]Neo4j DB:[/bold] {config.storage.neo4j.database}",
+            f"[bold]Backend:[/bold] neo4j (Graph Only)\n"
+            f"[bold]Neo4j URI:[/bold] {config.neo4j.uri}\n"
+            f"[bold]Neo4j User:[/bold] {config.neo4j.user}\n"
+            f"[bold]Neo4j DB:[/bold] {config.neo4j.database}",
             title="[bold]Tasker Status[/bold]",
             border_style="cyan",
         )
