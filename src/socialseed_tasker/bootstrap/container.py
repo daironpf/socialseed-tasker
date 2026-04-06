@@ -1,7 +1,7 @@
 """Dependency injection container and configuration management.
 
 Provides a central container for managing service lifecycles,
-configuration loading from environment variables, and storage backend selection.
+configuration loading from environment variables, and Neo4j database connection.
 """
 
 from __future__ import annotations
@@ -62,15 +62,6 @@ class Neo4jConfig:
 
 
 @dataclass
-class StorageConfig:
-    """Storage backend configuration."""
-
-    backend: Literal["neo4j", "file"] = "file"
-    neo4j: Neo4jConfig = field(default_factory=Neo4jConfig)
-    file_path: Path = Path(".tasker-data")
-
-
-@dataclass
 class AppConfig:
     """Application-wide configuration.
 
@@ -80,7 +71,7 @@ class AppConfig:
     (development, testing, production) without code changes.
     """
 
-    storage: StorageConfig = field(default_factory=StorageConfig)
+    neo4j: Neo4jConfig = field(default_factory=Neo4jConfig)
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     debug: bool = False
@@ -100,18 +91,8 @@ class AppConfig:
             max_connection_lifetime=int(os.environ.get("TASKER_NEO4J_MAX_CONN_LIFETIME", "3600")),
         )
 
-        storage_backend = os.environ.get("TASKER_STORAGE_BACKEND", "file")
-        if storage_backend not in ("neo4j", "file"):
-            raise ValueError(f"Invalid storage backend '{storage_backend}'. Must be 'neo4j' or 'file'.")
-
-        storage = StorageConfig(
-            backend=storage_backend,  # type: ignore[arg-type]
-            neo4j=neo4j,
-            file_path=Path(os.environ.get("TASKER_FILE_PATH", ".tasker-data")),
-        )
-
         return cls(
-            storage=storage,
+            neo4j=neo4j,
             api_host=os.environ.get("TASKER_API_HOST", "0.0.0.0"),
             api_port=int(os.environ.get("TASKER_API_PORT", "8000")),
             debug=os.environ.get("TASKER_DEBUG", "").lower() in ("1", "true", "yes"),
@@ -149,25 +130,15 @@ class Container:
     def get_repository(self) -> TaskRepositoryInterface:
         """Get the task repository, initializing it if needed.
 
-        Selects the storage backend based on configuration.
+        Only Neo4j storage backend is supported.
         """
         if self._repository is None:
-            backend = self._config.storage.backend
+            driver = self._get_neo4j_driver()
+            from socialseed_tasker.storage.graph_database.repositories import (
+                Neo4jTaskRepository,
+            )
 
-            if backend == "neo4j":
-                driver = self._get_neo4j_driver()
-                from socialseed_tasker.storage.graph_database.repositories import (
-                    Neo4jTaskRepository,
-                )
-
-                self._repository = Neo4jTaskRepository(driver)
-            else:
-                from socialseed_tasker.storage.local_files.repositories import (
-                    FileTaskRepository,
-                )
-
-                self._config.storage.file_path.mkdir(parents=True, exist_ok=True)
-                self._repository = FileTaskRepository(self._config.storage.file_path)
+            self._repository = Neo4jTaskRepository(driver)
 
         return self._repository
 
@@ -176,7 +147,7 @@ class Container:
         if self._neo4j_driver is None:
             from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
 
-            neo4j_cfg = self._config.storage.neo4j
+            neo4j_cfg = self._config.neo4j
             self._neo4j_driver = Neo4jDriver(
                 uri=neo4j_cfg.uri,
                 user=neo4j_cfg.user,
@@ -206,12 +177,8 @@ class Container:
         self._repository = None
 
     def health_check(self) -> bool:
-        """Verify the storage backend is accessible."""
+        """Verify the Neo4j database is accessible."""
         try:
-            backend = self._config.storage.backend
-            if backend == "neo4j":
-                return self._get_neo4j_driver().health_check()
-            else:
-                return self._config.storage.file_path.exists()
+            return self._get_neo4j_driver().health_check()
         except Exception:
             return False

@@ -80,47 +80,31 @@ from socialseed_tasker.entrypoints.cli.init_command import scaffold_command
 
 app.command(name="init", help="Initialize Tasker in an external project")(scaffold_command)
 
-
 # Register status as a standalone command (not a typer)
 app.command(name="status", help="Show CLI status and configuration")(commands.status_command)
 
 
 @app.callback()
 def main(
-    backend: str = typer.Option(
-        "file",
-        "--backend",
-        "-b",
-        help="Storage backend: 'file' or 'neo4j'",
-        envvar="TASKER_STORAGE_BACKEND",
-    ),
-    file_path: str = typer.Option(
-        ".tasker-data",
-        "--file-path",
-        "-f",
-        help="Path for file-based storage",
-        envvar="TASKER_FILE_PATH",
-    ),
     neo4j_uri: str = typer.Option(
-        "bolt://localhost:17689",
+        "bolt://localhost:7687",
         "--neo4j-uri",
-        help="Neo4j connection URI (used with --backend neo4j)",
+        help="Neo4j connection URI",
         envvar="TASKER_NEO4J_URI",
     ),
     neo4j_password: str = typer.Option(
         "",
         "--neo4j-password",
-        help="Neo4j password (used with --backend neo4j)",
+        help="Neo4j password",
         envvar="TASKER_NEO4J_PASSWORD",
     ),
 ) -> None:
     """SocialSeed Tasker CLI.
 
     A graph-based task management framework for AI agents.
+    Only Neo4j storage backend is supported.
     """
     global _cli_container
-    os.environ["TASKER_STORAGE_BACKEND"] = backend
-    os.environ["TASKER_FILE_PATH"] = file_path
     if neo4j_uri:
         os.environ["TASKER_NEO4J_URI"] = neo4j_uri
     if neo4j_password:

@@ -1,80 +1,73 @@
 services:
-  
-  # =============================================================================
-  # Neo4j Database (Database for Graph)
-  # All storage in this 
-  # =============================================================================
-  tasker-db:
-    container_name: tasker-db
-    image: neo4j:5.26.15-community
-    ports:
-      - "7474:7474"
-      - "7687:7687"
-    #    restart: always
-    environment:
-      - NEO4J_AUTH=${NEO4J_USERNAME:-neo4j}/${NEO4J_PASSWORD:-neoSocial}
-      - NEO4J_dbms_memory_heap_initial__size=100M
-      - NEO4J_dbms_memory_heap_max__size=100M
-      - NEO4J_dbms_memory_pagecache_size=50M
-    volumes:
-      - ./infrastructure/volumes/neo4j_data:/var/lib/neo4j/data
-    healthcheck:
-      # ping via cypher-shell
-      test: [ "CMD-SHELL", "echo 'RETURN 1' | cypher-shell -u neo4j -p neoSocial || exit 1" ]
-      interval: 10s
-      timeout: 10s
-      retries: 30
-    networks:
-      - net
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-  # =============================================================================
-  # FastAPI Backend (REST API for AI agents)
-  # Using file-based storage - works out of the box
-  # =============================================================================
-  tasker-api:
-    container_name: tasker-api
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000" # REST API
-    environment:
-      - TASKER_STORAGE_BACKEND=file
-      - TASKER_FILE_PATH=/app/data
-      - API_HOST=0.0.0.0
-      - API_PORT=8000
-    volumes:
-      - tasker-data:/app/data
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "8000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    networks:
-      - tasker-net
+   
+   # =============================================================================
+   # Neo4j Database (Database for Graph)
+   # All storage in this 
+   # =============================================================================
+   tasker-db:
+     container_name: tasker-db
+     image: neo4j:5.26.15-community
+     ports:
+       - "7474:7474"
+       - "7687:7687"
+     environment:
+       - NEO4J_AUTH=${NEO4J_USERNAME:-neo4j}/${NEO4J_PASSWORD:-neoSocial}
+       - NEO4J_dbms_memory_heap_initial__size=100M
+       - NEO4J_dbms_memory_heap_max__size=100M
+       - NEO4J_dbms_memory_pagecache_size=50M
+     volumes:
+       - ./infrastructure/volumes/neo4j_data:/var/lib/neo4j/data
+     healthcheck:
+       test: [ "CMD-SHELL", "echo 'RETURN 1' | cypher-shell -u neo4j -p neoSocial || exit 1" ]
+       interval: 10s
+       timeout: 10s
+       retries: 30
+     networks:
+       - tasker-net
+     deploy:
+       resources:
+         limits:
+           memory: 512M
 
-  # =============================================================================
-  # Vue.js Frontend (Human UI - Kanban Board)
-  # =============================================================================
-  tasker-board:
-    container_name: tasker-board
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-    ports:
-      - "8080:80" # Web UI
-    depends_on:
-      - api
-    networks:
-      - tasker-net
+   # =============================================================================
+   # FastAPI Backend (REST API for AI agents)
+   # Using Neo4j storage only - graph database
+   # =============================================================================
+   tasker-api:
+     container_name: tasker-api
+     build:
+       context: .
+       dockerfile: Dockerfile
+     ports:
+       - "8000:8000"
+     environment:
+       - TASKER_STORAGE_BACKEND=neo4j
+       - TASKER_NEO4J_URI=bolt://tasker-db:7687
+       - TASKER_NEO4J_USERNAME=neo4j
+       - TASKER_NEO4J_PASSWORD=neoSocial
+       - API_HOST=0.0.0.0
+       - API_PORT=8000
+     depends_on:
+       tasker-db:
+         condition: service_healthy
+     networks:
+       - tasker-net
 
-volumes:
-  tasker-data:
+   # =============================================================================
+   # Vue.js Frontend (Human UI - Kanban Board)
+   # =============================================================================
+   tasker-board:
+     container_name: tasker-board
+     build:
+       context: .
+       dockerfile: frontend/Dockerfile
+     ports:
+       - "8080:80"
+     depends_on:
+       - tasker-api
+     networks:
+       - tasker-net
 
 networks:
-  tasker-net:
-    driver: bridge
+   tasker-net:
+     driver: bridge
