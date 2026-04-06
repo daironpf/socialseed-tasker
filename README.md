@@ -1,14 +1,16 @@
 # SocialSeed Tasker
 
-## 🔭 Implementing GraphRAG for Autonomous Agent Governance
+## 🔭 Graph-Native Engineering & Autonomous Agent Governance
 
-A graph-based task management framework designed for AI agents to manage issues with infinite context and architectural governance.
+A specialized framework that leverages **Neo4j** to provide AI agents with infinite architectural context and strict governance.
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10+-blue.svg" alt="Python 3.10+">
   <img src="https://img.shields.io/badge/Architecture-Hexagonal-green.svg" alt="Hexagonal Architecture">
-  <img src="https://img.shields.io/badge/Storage-File%20or%20Neo4j-orange.svg" alt="File or Neo4j">
+  <img src="https://img.shields.io/badge/Storage-Neo4j%20Only-orange.svg" alt="Neo4j Only">
   <img src="https://img.shields.io/badge/GraphRAG-Enabled-purple.svg" alt="GraphRAG">
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT">
+  <img src="https://img.shields.io/badge/PRs-Welcome-green.svg" alt="PRs Welcome">
 </p>
 
 ---
@@ -18,7 +20,7 @@ A graph-based task management framework designed for AI agents to manage issues 
 ### Starting the Server
 
 ```bash
-# Using Docker Compose (recommended - starts API and frontend)
+# Using Docker Compose (recommended - starts API, Frontend, and Neo4j)
 docker compose up -d
 
 # Or start only the API directly
@@ -30,6 +32,7 @@ uvicorn socialseed_tasker.entrypoints.web_api.api:app --host 0.0.0.0 --port 8000
 
 | Service | URL | Description |
 |---------|-----|-------------|
+| **Neo4j Browser** | `http://localhost:7474` | Graph database UI (neo4j/neoSocial) |
 | **REST API** | `http://localhost:8000` | For AI agents to manage issues |
 | **Frontend** | `http://localhost:8080` | Human UI (Kanban board) |
 | **API Docs** | `http://localhost:8000/docs` | OpenAPI documentation |
@@ -126,6 +129,8 @@ curl -X POST http://localhost:8000/api/v1/issues/<issue-id>/close
 ```
 
 **Status values**: `OPEN`, `IN_PROGRESS`, `BLOCKED`, `CLOSED`
+
+> **Note:** Currently, `issue show` and `update` endpoints require the full UUID. Short ID support is planned for v0.6.0.
 
 #### Delete Issue
 ```bash
@@ -446,13 +451,39 @@ curl "http://localhost:8000/api/v1/issues/<id>/dependencies"
 
 ---
 
+## 🧠 GraphRAG: Infinite Context for AI Agents
+
+The Tasker graph isn't just for tracking issues—it's a **knowledge graph** that provides AI agents with infinite context before proposing solutions.
+
+### How It Works
+
+1. **Dependency Tracking**: Every issue relationship is stored as a directed edge in Neo4j
+2. **Impact Analysis**: Before working on an issue, agents can query the full dependency chain to understand downstream effects
+3. **Root Cause Discovery**: Closed issues are linked to test failures, enabling automated root cause analysis
+
+### Example: Impact Analysis Before a Fix
+
+```python
+# Before refactoring the Auth module, check what would be affected
+import requests
+
+issue_id = "<auth-module-issue-id>"
+impact = requests.get(f"{API_BASE}/analyze/impact/{issue_id}").json()["data"]
+
+print(f"Directly affected: {len(impact['directly_affected'])} issues")
+print(f"Transitively affected: {len(impact['transitively_affected'])} issues")
+print(f"Risk level: {impact['risk_level']}")
+```
+
+This enables the agent to make **informed decisions** based on the complete architectural context, not just the isolated issue.
+
+---
+
 ## 🔧 Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `TASKER_STORAGE_BACKEND` | `file` | Storage: `file` or `neo4j` |
-| `TASKER_FILE_PATH` | `.tasker-data` | Path for file storage |
-| `TASKER_NEO4J_URI` | `bolt://localhost:7687` | Neo4j connection |
+| `TASKER_NEO4J_URI` | `bolt://localhost:7687` | Neo4j connection URI |
 | `TASKER_NEO4J_USER` | `neo4j` | Neo4j username |
 | `TASKER_NEO4J_PASSWORD` | `` | Neo4j password |
 | `API_PORT` | `8000` | API server port |
@@ -462,6 +493,7 @@ curl "http://localhost:8000/api/v1/issues/<id>/dependencies"
 ## 🐳 Docker Compose
 
 The included `docker-compose.yml` starts:
+- **Neo4j** (port 7474/7687) - Graph database
 - **API** (port 8000) - REST API for AI agents
 - **Frontend** (port 8080) - Human Kanban board
 
@@ -481,40 +513,31 @@ docker compose down
 ## 📊 Architecture
 
 ```
-┌─────────────────────────┐
-│   AI Agent / CLI        │
-│   REST API (port 8000)  │
-└───────────┬─────────────┘
-            ▼
-┌───────────────────────────────┐
-│      Application Core          │
-│  • Issue Management            │
-│  • Dependency Graph           │
-│  • Agent Working Tracking     │
-└───────────────┬───────────────┘
-                ▼
-┌─────────────────────┐  ┌─────────────────────┐
-│   File Storage      │  │   Neo4j (optional)  │
-│   (default)         │  │   Graph queries     │
-│   Simple JSON       │  │   Advanced features │
-└─────────────────────┘  └─────────────────────┘
+┌──────────────────────────┐
+│   AI Agent / Human UI    │
+│   REST API (port 8000)   │
+└────────────┬─────────────┘
+             ▼
+┌──────────────────────────────┐
+│      Application Core        │
+│  (Hexagonal Architecture)    │
+│ • Governance Engine           │
+│ • Dependency BFS Analysis     │
+│ • Root Cause Detection        │
+└────────────┬─────────────────┘
+             ▼
+┌──────────────────────────────┐
+│      Neo4j Graph DB          │
+│ (The Source of Truth)        │
+│ • Relationship Tracking       │
+│ • Causal Traceability         │
+└──────────────────────────────┘
 ```
-
----
-
-## 💾 Storage Backends
-
-| Backend | Command | Use Case |
-|---------|---------|----------|
-| **File** (default) | `TASKER_STORAGE_BACKEND=file` | Development, simple setup |
-| **Neo4j** | `TASKER_STORAGE_BACKEND=neo4j` | Production, complex graphs |
-
-For file-based storage, data persists in the Docker volume `tasker-data`.
 
 ---
 
 ## 🔗 Related Documentation
 
 - **[CLI Reference](#)** - Command-line interface
-- **[API Endpoints](#]** - Detailed API documentation
+- **[API Endpoints](#)** - Detailed API documentation
 - **[Development](#)** - Running tests, contributing
