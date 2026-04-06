@@ -6,7 +6,7 @@ readme = "README.md"
 license = {text = "Apache-2.0"}
 requires-python = ">=3.10"
 authors = [
-    {name = "SocialSeed"}
+    {name = "Dairon Pérez Frías", email = "dairon.perezfrias@gmail.com"},
 ]
 keywords = ["task-management", "neo4j", "graph-database", "ai-agents", "cli"]
 classifiers = [
