@@ -156,12 +156,13 @@ def create_issue(
 def list_issues(
     status: str | None = Query(None, description="Filter by status"),
     component: str | None = Query(None, description="Filter by component ID"),
+    project: str | None = Query(None, description="Filter by project name"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=100, description="Items per page"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     status_filter = IssueStatus(status) if status else None
-    all_issues = repo.list_issues(component_id=component, status=status_filter)
+    all_issues = repo.list_issues(component_id=component, status=status_filter, project=project)
     total = len(all_issues)
     start = (page - 1) * limit
     end = start + limit

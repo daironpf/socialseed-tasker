@@ -174,12 +174,14 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
         self,
         component_id: str | None = None,
         status: IssueStatus | None = None,
+        project: str | None = None,
     ) -> list[Issue]:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.LIST_ISSUES,
                 component_id=component_id,
                 status=status.value if status else None,
+                project=project,
             )
             issues = []
             for r in result:

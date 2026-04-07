@@ -213,13 +213,14 @@ def issue_create(
 def issue_list(
     status: str | None = typer.Option(None, "--status", "-s", help="Filter by status"),
     component: str | None = typer.Option(None, "--component", "-c", help="Filter by component ID"),
+    project: str | None = typer.Option(None, "--project", "-p", help="Filter by project name"),
     as_json: bool = typer.Option(False, "--json", help="Output as JSON"),
 ) -> None:
     """List issues with optional filters."""
     repo = get_repository()
     status_filter = IssueStatus(status) if status else None
 
-    issues = repo.list_issues(component_id=component, status=status_filter)
+    issues = repo.list_issues(component_id=component, status=status_filter, project=project)
 
     if as_json:
         data = [issue.model_dump(mode="json") for issue in issues]
@@ -231,7 +232,7 @@ def issue_list(
         return
 
     # Build component name lookup
-    components = repo.list_components()
+    components = repo.list_components(project=project)
     component_names = {str(c.id): c.name for c in components}
 
     console.print(_issues_table(issues, component_names))

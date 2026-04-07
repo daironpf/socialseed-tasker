@@ -70,6 +70,7 @@ class _MockRepo:
         self,
         component_id: str | None = None,
         status: IssueStatus | None = None,
+        project: str | None = None,
     ) -> list[Issue]:
         result = list(self._issues.values())
         if status:

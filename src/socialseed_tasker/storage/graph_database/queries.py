@@ -106,8 +106,10 @@ DETACH DELETE i
 
 LIST_ISSUES = """
 MATCH (i:Issue)
+OPTIONAL MATCH (i)-[:BELONGS_TO]->(c:Component)
 WHERE ($component_id IS NULL OR i.component_id = $component_id)
   AND ($status IS NULL OR i.status = $status)
+  AND ($project IS NULL OR c.project = $project)
 OPTIONAL MATCH (i)-[:DEPENDS_ON]->(dep:Issue)
 OPTIONAL MATCH (i)<-[:DEPENDS_ON]-(blocked:Issue)
 WITH i, collect(DISTINCT dep.id) AS dep_ids, collect(DISTINCT blocked.id) AS blocked_ids

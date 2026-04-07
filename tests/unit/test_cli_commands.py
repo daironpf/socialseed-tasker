@@ -50,12 +50,19 @@ class MockRepository(TaskRepositoryInterface):
         self,
         component_id: str | None = None,
         status: IssueStatus | None = None,
+        project: str | None = None,
     ) -> list[Issue]:
         issues = list(self._issues.values())
         if component_id:
             issues = [i for i in issues if str(i.component_id) == component_id]
         if status:
             issues = [i for i in issues if i.status == status]
+        if project:
+            issues = [
+                i
+                for i in issues
+                if self._components.get(str(i.component_id), Component(name="", project="")).project == project
+            ]
         return issues
 
     def add_dependency(self, issue_id: str, depends_on_id: str) -> None:

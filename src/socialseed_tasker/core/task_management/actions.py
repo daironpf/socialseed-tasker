@@ -92,6 +92,7 @@ class TaskRepositoryInterface(Protocol):
         self,
         component_id: str | None = None,
         status: IssueStatus | None = None,
+        project: str | None = None,
     ) -> list[Issue]:
         """List issues with optional filters."""
 
