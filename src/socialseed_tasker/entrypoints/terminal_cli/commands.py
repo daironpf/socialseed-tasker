@@ -100,12 +100,13 @@ def _priority_style(priority: IssuePriority) -> str:
     return f"[{color}]{priority.value}[/{color}]"
 
 
-def _format_issue_card(issue: Issue) -> Panel:
+def _format_issue_card(issue: Issue, component_name: str | None = None) -> Panel:
     """Format a single issue as a Rich panel card."""
+    comp_display = component_name if component_name else str(issue.component_id)[:8]
     lines = [
         f"[bold]Status:[/bold] {_status_style(issue.status)}",
         f"[bold]Priority:[/bold] {_priority_style(issue.priority)}",
-        f"[bold]Component:[/bold] {issue.component_id}",
+        f"[bold]Component:[/bold] {comp_display}",
         f"[bold]Labels:[/bold] {', '.join(issue.labels) if issue.labels else 'none'}",
         f"[bold]Created:[/bold] {issue.created_at.isoformat()}",
     ]
@@ -121,7 +122,7 @@ def _format_issue_card(issue: Issue) -> Panel:
     return Panel("\n".join(lines), title=f"[bold]{issue.title}[/bold] ({str(issue.id)[:8]})", border_style="cyan")
 
 
-def _issues_table(issues: list[Issue]) -> Table:
+def _issues_table(issues: list[Issue], component_names: dict[str, str] | None = None) -> Table:
     """Format a list of issues as a Rich table."""
     table = Table(show_header=True, header_style="bold cyan", box=SIMPLE, min_width=130)
     table.add_column("ID", style="dim", width=10)
@@ -131,12 +132,14 @@ def _issues_table(issues: list[Issue]) -> Table:
     table.add_column("Component", width=40)
 
     for issue in issues:
+        comp_id = str(issue.component_id)
+        comp_name = (component_names or {}).get(comp_id, comp_id[:8])
         table.add_row(
             str(issue.id)[:8],
             issue.title,
             issue.status.value,
             issue.priority.value,
-            str(issue.component_id)[:8],
+            comp_name,
         )
     return table
 
@@ -196,7 +199,8 @@ def issue_create(
             labels=label_list,
         )
         console.print(f"[success]Issue created:[/success] {issue.id}")
-        console.print(_format_issue_card(issue))
+        comp = repo.get_component(component)
+        console.print(_format_issue_card(issue, comp.name if comp else None))
     except ComponentNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
         raise typer.Exit(code=2) from exc
@@ -226,39 +230,78 @@ def issue_list(
         console.print("[info]No issues found.[/info]")
         return
 
-    console.print(_issues_table(issues))
+    # Build component name lookup
+    components = repo.list_components()
+    component_names = {str(c.id): c.name for c in components}
+
+    console.print(_issues_table(issues, component_names))
 
 
 @issue_app.command("show")
 def issue_show(issue_id: str) -> None:
     """Show detailed issue information."""
+    from uuid import UUID
+
     repo = get_repository()
-    issue = repo.get_issue(issue_id)
+
+    resolved_id = issue_id
+    try:
+        UUID(issue_id)
+    except ValueError:
+        all_issues = repo.list_issues()
+        for issue in all_issues:
+            if str(issue.id).startswith(issue_id):
+                resolved_id = str(issue.id)
+                break
+        else:
+            console.print(f"[error]Issue '{issue_id}' not found.[/error]")
+            raise typer.Exit(code=1) from None
+
+    issue = repo.get_issue(resolved_id)
 
     if issue is None:
         console.print(f"[error]Issue '{issue_id}' not found.[/error]")
         raise typer.Exit(code=1) from None
 
-    console.print(_format_issue_card(issue))
+    # Resolve component name
+    component = repo.get_component(str(issue.component_id))
+    comp_name = component.name if component else None
+
+    console.print(_format_issue_card(issue, comp_name))
 
     # Show dependencies
-    deps = repo.get_dependencies(issue_id)
+    deps = repo.get_dependencies(resolved_id)
     if deps:
-        console.print(_dependency_tree(issue_id, deps, "Dependencies"))
+        console.print(_dependency_tree(resolved_id, deps, "Dependencies"))
 
     # Show dependents
-    dependents = repo.get_dependents(issue_id)
+    dependents = repo.get_dependents(resolved_id)
     if dependents:
-        console.print(_dependency_tree(issue_id, dependents, "Dependents"))
+        console.print(_dependency_tree(resolved_id, dependents, "Dependents"))
 
 
 @issue_app.command("close")
 def issue_close(issue_id: str) -> None:
     """Close an issue (validates no open dependencies)."""
+    from uuid import UUID
+
     repo = get_repository()
 
+    resolved_id = issue_id
     try:
-        issue = close_issue_action(repo, issue_id)
+        UUID(issue_id)
+    except ValueError:
+        all_issues = repo.list_issues()
+        for issue in all_issues:
+            if str(issue.id).startswith(issue_id):
+                resolved_id = str(issue.id)
+                break
+        else:
+            console.print(f"[error]Issue '{issue_id}' not found.[/error]")
+            raise typer.Exit(code=1) from None
+
+    try:
+        issue = close_issue_action(repo, resolved_id)
         console.print(f"[success]Issue closed:[/success] {issue.id}")
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
@@ -430,8 +473,12 @@ def dependency_blocked() -> None:
         console.print("[success]No blocked issues.[/success]")
         return
 
+    # Build component name lookup
+    components = repo.list_components()
+    component_names = {str(c.id): c.name for c in components}
+
     console.print("[warning]Blocked issues:[/warning]")
-    console.print(_issues_table(blocked))
+    console.print(_issues_table(blocked, component_names))
 
 
 # ---------------------------------------------------------------------------
@@ -504,7 +551,7 @@ def component_show(component_id: str) -> None:
     issues = repo.list_issues(component_id=component_id)
     if issues:
         console.print("\n[bold]Issues:[/bold]")
-        console.print(_issues_table(issues))
+        console.print(_issues_table(issues, {str(component.id): component.name}))
     else:
         console.print("\n[info]No issues in this component.[/info]")
 
