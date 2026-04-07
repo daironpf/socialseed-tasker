@@ -83,6 +83,9 @@ app.command(name="init", help="Initialize Tasker in an external project")(scaffo
 # Register status as a standalone command (not a typer)
 app.command(name="status", help="Show CLI status and configuration")(commands.status_command)
 
+# Register seed command
+app.add_typer(commands.seed_app, name="seed", help="Seed demo data for first-time users")
+
 
 @app.callback()
 def main(
