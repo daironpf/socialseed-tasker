@@ -181,7 +181,20 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 component_id=component_id,
                 status=status.value if status else None,
             )
-            return [_node_to_issue(r["i"]) for r in result]
+            issues = []
+            for r in result:
+                issue = _node_to_issue(r["i"])
+                dep_ids = r.get("dep_ids") or []
+                blocked_ids = r.get("blocked_ids") or []
+                updates: dict[str, Any] = {}
+                if dep_ids:
+                    updates["dependencies"] = dep_ids
+                if blocked_ids:
+                    updates["blocks"] = blocked_ids
+                if updates:
+                    issue = issue.model_copy(update=updates)
+                issues.append(issue)
+            return issues
 
     # -- Dependency management -----------------------------------------------
 

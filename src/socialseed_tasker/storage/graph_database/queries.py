@@ -108,7 +108,10 @@ LIST_ISSUES = """
 MATCH (i:Issue)
 WHERE ($component_id IS NULL OR i.component_id = $component_id)
   AND ($status IS NULL OR i.status = $status)
-RETURN i
+OPTIONAL MATCH (i)-[:DEPENDS_ON]->(dep:Issue)
+OPTIONAL MATCH (i)<-[:DEPENDS_ON]-(blocked:Issue)
+WITH i, collect(DISTINCT dep.id) AS dep_ids, collect(DISTINCT blocked.id) AS blocked_ids
+RETURN i, dep_ids, blocked_ids
 ORDER BY i.created_at DESC
 """
 
