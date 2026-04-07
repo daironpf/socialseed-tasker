@@ -1,8 +1,7 @@
 services:
-   
+
    # =============================================================================
-   # Neo4j Database (Database for Graph)
-   # All storage in this 
+   # Neo4j Database (Graph Database - Exclusive Storage)
    # =============================================================================
    tasker-db:
      container_name: tasker-db
@@ -16,9 +15,9 @@ services:
        - NEO4J_dbms_memory_heap_max__size=100M
        - NEO4J_dbms_memory_pagecache_size=50M
      volumes:
-       - ./infrastructure/volumes/neo4j_data:/var/lib/neo4j/data
+       - neo4j-data:/var/lib/neo4j/data
      healthcheck:
-       test: [ "CMD-SHELL", "echo 'RETURN 1' | cypher-shell -u neo4j -p neoSocial || exit 1" ]
+       test: ["CMD-SHELL", "echo 'RETURN 1' | cypher-shell -u neo4j -p neoSocial || exit 1"]
        interval: 10s
        timeout: 10s
        retries: 30
@@ -31,7 +30,7 @@ services:
 
    # =============================================================================
    # FastAPI Backend (REST API for AI agents)
-   # Using Neo4j storage only - graph database
+   # Neo4j-only storage - graph database
    # =============================================================================
    tasker-api:
      container_name: tasker-api
@@ -41,12 +40,11 @@ services:
      ports:
        - "8000:8000"
      environment:
-       - TASKER_STORAGE_BACKEND=neo4j
        - TASKER_NEO4J_URI=bolt://tasker-db:7687
        - TASKER_NEO4J_USERNAME=neo4j
        - TASKER_NEO4J_PASSWORD=neoSocial
-       - API_HOST=0.0.0.0
-       - API_PORT=8000
+       - TASKER_API_HOST=0.0.0.0
+       - TASKER_API_PORT=8000
      depends_on:
        tasker-db:
          condition: service_healthy
@@ -71,3 +69,6 @@ services:
 networks:
    tasker-net:
      driver: bridge
+
+volumes:
+   neo4j-data:

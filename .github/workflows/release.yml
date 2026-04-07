@@ -13,7 +13,6 @@ env:
   PYTHON_VERSION: '3.11'
 
 jobs:
-  # Skip tests for initial release - focus on publishing
   test:
     name: Quick Tests
     runs-on: ubuntu-latest
@@ -83,9 +82,47 @@ jobs:
           path: dist/
           retention-days: 30
 
+  build-docker:
+    name: Build and Push Docker Image
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/socialseed-tasker:latest
+            ghcr.io/${{ github.repository_owner }}/socialseed-tasker:${{ steps.version.outputs.VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   create-release:
     name: Create GitHub Release
-    needs: build-and-publish
+    needs: [build-and-publish, build-docker]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -118,10 +155,15 @@ jobs:
           fi
 
           echo "" >> release_notes.md
-          echo "## Installation" >> release_notes.md
-          echo "\`\`\`bash" >> release_notes.md
-          echo "pip install socialseed-tasker==${GITHUB_REF#refs/tags/v}" >> release_notes.md
-          echo "\`\`\`" >> release_notes.md
+            echo "## Installation" >> release_notes.md
+            echo '```bash' >> release_notes.md
+            echo "pip install socialseed-tasker==${GITHUB_REF#refs/tags/v}" >> release_notes.md
+            echo '```' >> release_notes.md
+            echo "" >> release_notes.md
+            echo "## Docker" >> release_notes.md
+            echo '```bash' >> release_notes.md
+            echo "docker pull ghcr.io/${{ github.repository_owner }}/socialseed-tasker:${GITHUB_REF#refs/tags/v}" >> release_notes.md
+            echo '```' >> release_notes.md
 
           echo "release_notes<<EOF" >> $GITHUB_OUTPUT
           cat release_notes.md >> $GITHUB_OUTPUT
@@ -157,7 +199,7 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "Verifying socialseed-tasker==$VERSION from PyPI..."
-          
+
           for i in 1 2 3 4; do
             echo "Attempt $i..."
             if pip install socialseed-tasker==$VERSION; then
@@ -166,6 +208,6 @@ jobs:
             fi
             sleep 20
           done
-          
+
           echo "⚠️ Could not verify package on PyPI"
           exit 0

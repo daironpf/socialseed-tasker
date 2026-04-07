@@ -8,7 +8,6 @@ WORKDIR /build
 # Install build tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy dependency definitions first (layer caching)
@@ -33,24 +32,19 @@ COPY --from=builder /install /usr/local
 # Copy application source
 COPY src/ ./src/
 
-# Create data directory and set permissions BEFORE switching to non-root
-RUN mkdir -p /app/data && chown -R root:root /app/data
-
-# Environment variables for configuration
-ENV TASKER_STORAGE_BACKEND=file
-ENV TASKER_FILE_PATH=/app/data
-ENV API_HOST=0.0.0.0
-ENV API_PORT=8000
+# Environment variables for Neo4j configuration
+ENV TASKER_NEO4J_URI=bolt://localhost:7687
+ENV TASKER_NEO4J_USERNAME=neo4j
+ENV TASKER_NEO4J_PASSWORD=
+ENV TASKER_API_HOST=0.0.0.0
+ENV TASKER_API_PORT=8000
 
 # Expose the API port
 EXPOSE 8000
 
-# Health check
+# Health check - verifies both API and Neo4j connectivity
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
-# Default command: start the FastAPI server with file-based storage
-CMD ["uvicorn", "socialseed_tasker.entrypoints.web_api.api:app", "--host", "0.0.0.0", "--port", "8000"]
-
-# Switch to non-root user
-USER root
+# Default command: start the FastAPI server with Neo4j repository
+CMD ["python", "-m", "socialseed_tasker.entrypoints.web_api"]
