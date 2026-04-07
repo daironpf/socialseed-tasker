@@ -147,6 +147,28 @@ class DependencyRequest(BaseModel):
     )
 
 
+class BulkDependencyRequest(BaseModel):
+    """Request body for adding multiple dependencies at once."""
+
+    depends_on_ids: list[str] = Field(
+        ...,
+        min_length=1,
+        max_length=50,
+        description="List of UUIDs this issue depends on",
+        examples=[["550e8400-e29b-41d4-a716-446655440000", "660e8400-e29b-41d4-a716-446655440001"]],
+    )
+
+
+class BulkDependencyResponse(BaseModel):
+    """Response for bulk dependency creation."""
+
+    issue_id: str
+    total_requested: int
+    successful: int
+    failed: int
+    results: list[dict[str, Any]]
+
+
 class ComponentCreateRequest(BaseModel):
     """Request body for creating a new component."""
 

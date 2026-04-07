@@ -28,6 +28,8 @@ from socialseed_tasker.core.task_management.actions import (
 from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
 from socialseed_tasker.entrypoints.web_api.schemas import (
     APIResponse,
+    BulkDependencyRequest,
+    BulkDependencyResponse,
     CausalLinkResponse,
     ComponentCreateRequest,
     ComponentResponse,
@@ -276,6 +278,61 @@ def add_dependency(
     add_dependency_action(repo, issue_id, body.depends_on_id)
     return APIResponse(
         data=DependencyResponse(issue_id=issue_id, depends_on_id=body.depends_on_id),
+        meta=Meta(request_id=None),
+    )
+
+
+@dependencies_router.post(
+    "/issues/{issue_id}/dependencies/bulk",
+    response_model=APIResponse[BulkDependencyResponse],
+    summary="Add multiple dependencies",
+    description="Add multiple [:DEPENDS_ON] relationships in a single request. Validates all dependencies and returns detailed results.",
+    responses={
+        404: {"description": "Issue not found"},
+        409: {"description": "Circular dependency detected"},
+    },
+)
+def add_dependencies_bulk(
+    issue_id: str,
+    body: BulkDependencyRequest,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    from socialseed_tasker.core.task_management.actions import (
+        CircularDependencyError,
+        IssueNotFoundError,
+    )
+
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+
+    successful = 0
+    failed = 0
+    results = []
+
+    for dep_id in body.depends_on_ids:
+        try:
+            add_dependency_action(repo, issue_id, dep_id)
+            successful += 1
+            results.append({"depends_on_id": dep_id, "status": "created"})
+        except IssueNotFoundError:
+            failed += 1
+            results.append({"depends_on_id": dep_id, "status": "error", "message": "Target issue not found"})
+        except CircularDependencyError as e:
+            failed += 1
+            results.append({"depends_on_id": dep_id, "status": "error", "message": str(e)})
+        except Exception as e:
+            failed += 1
+            results.append({"depends_on_id": dep_id, "status": "error", "message": str(e)})
+
+    return APIResponse(
+        data=BulkDependencyResponse(
+            issue_id=issue_id,
+            total_requested=len(body.depends_on_ids),
+            successful=successful,
+            failed=failed,
+            results=results,
+        ),
         meta=Meta(request_id=None),
     )
 
