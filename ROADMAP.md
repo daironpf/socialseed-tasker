@@ -4,7 +4,7 @@ SocialSeed Tasker is an **AI-Native Project Management Framework** powered by **
 
 This roadmap outlines our journey from a core utility to a global standard for AI-driven development.
 
-**Last updated:** 2026-04-06 (Graph-Only Platform - File Storage Removed)
+**Last updated:** 2026-04-07 (v0.5.0 Released - All Checklist Items Complete)
 
 ---
 
@@ -76,9 +76,9 @@ This roadmap outlines our journey from a core utility to a global standard for A
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Unit Tests | ✅ 178 passed | Entities, actions, API, CLI, file repo, scaffolder, analyzers |
-| Neo4j Integration | ⚠️ 11 errors | Requires Docker/Neo4j running |
-| CLI Functional | ✅ All commands | Tested in isolated environment |
+| Unit Tests | ✅ 147 passed | Entities, actions, API, CLI, Neo4j repo, scaffolder, analyzers |
+| Neo4j Integration | ✅ Working | All queries functional with graph storage |
+| CLI Functional | ✅ All commands | Tested with mock repositories |
 | API Functional | ✅ All endpoints | Tested via TestClient |
 | E2E | ❌ Not implemented | No end-to-end test suite yet |
 
@@ -86,13 +86,16 @@ This roadmap outlines our journey from a core utility to a global standard for A
 
 ## 🔍 Known Issues (from audit)
 
-| # | Issue | Severity | Location |
-|---|-------|----------|----------|
-| 1 | `issue show` requires full UUID, short ID fails | Low | CLI commands |
-| 2 | `component show` requires full UUID, short ID fails | Low | CLI commands |
-| 3 | `POST /dependencies` route not mounted at `/api/v1/dependencies` | Medium | Route prefix mismatch |
-| 4 | `POST /analyze/root-cause` requires `test_id` field not documented in CLI help | Low | Schema vs CLI mismatch |
-| 5 | Architectural rules exist but not enforced at API/CLI write level | Medium | Integration gap |
+| # | Issue | Severity | Location | Status |
+|---|-------|----------|----------|--------|
+| 1 | `issue show` requires full UUID, short ID fails | Low | CLI commands | ✅ RESOLVED (v0.5.0) |
+| 2 | `component show` requires full UUID, short ID fails | Low | CLI commands | ✅ RESOLVED |
+| 3 | `POST /dependencies` route not mounted at `/api/v1/dependencies` | Medium | Route prefix mismatch | ✅ RESOLVED |
+| 4 | `POST /analyze/root-cause` requires `test_id` field not documented in CLI help | Low | Schema vs CLI mismatch | ⚠️ OPEN |
+| 5 | Architectural rules exist but not enforced at API/CLI write level | Medium | Integration gap | ⚠️ OPEN |
+| 6 | No filtering by project in issue list | Low | API & CLI | ✅ RESOLVED (v0.5.0) |
+| 7 | Dependencies not populated in issue list response | Low | API | ✅ RESOLVED (v0.5.0) |
+| 8 | No bulk dependency creation | Low | API | ✅ RESOLVED (v0.5.0) |
 
 ---
 

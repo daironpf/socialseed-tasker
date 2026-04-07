@@ -5,6 +5,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.5.1] - 2026-04-07 (Post-Release Updates)
+
+### Added
+- **Project Filter:** Filter issues by project name in both API (`?project=`) and CLI (`--project`).
+- **Seed Data:** `tasker seed run` command to populate demo data (4 components, 8 issues, 6 dependencies).
+- **Demo Mode:** `TASKER_DEMO_MODE=true` env var to auto-seed data on API startup.
+- **Bulk Dependencies:** `POST /api/v1/issues/{id}/dependencies/bulk` endpoint for batch operations.
+- **Component Names in CLI:** Issues now display component names instead of UUIDs in list outputs.
+- **Dependencies in List Response:** Issue list API now populates `dependencies` and `blocks` fields from graph.
+
+### Changed
+- **Dockerfile:** Updated to use `__main__.py` with proper Neo4j repository initialization.
+- **Release Workflow:** Added Docker image build and push to GitHub Container Registry (ghcr.io).
+- **README Quick Start:** Added copy-paste demo flow with working curl commands.
+
+### Fixed
+- **Short UUID Resolution:** CLI `show` and `close` commands now support short UUID prefixes.
+- **Docker Image Version:** Fixed stale version in Docker health endpoint (now reports v0.5.0).
+
+---
+
 ## [0.5.0] - 2026-04-06 (Full Functional Audit)
 
 ### Added

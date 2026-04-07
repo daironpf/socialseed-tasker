@@ -45,10 +45,13 @@ SocialSeed Tasker is a **Graph-Only** platform, leveraging Neo4j as its exclusiv
 
 **Focus:** Quality Assurance and Developer Experience (DX).
 
-* [ ] **Short ID Resolution:** Support for short UUID aliases in `show` and `update` commands.
-* [ ] **API Health Endpoint:** Implement `/health` with Neo4j connectivity status.
+* [x] **Short ID Resolution:** Support for short UUID aliases in `show` and `update` commands.
+* [x] **API Health Endpoint:** Implement `/health` with Neo4j connectivity status.
 * [ ] **Documentation Sync:** Align CLI help strings with actual API schemas.
 * [ ] **Neo4j Performance:** Optimization of Cypher queries for deep relationship traversal.
+* [ ] **Project Filter:** Add filtering by project name to issue list API and CLI.
+* [ ] **Demo Mode:** Auto-seed sample data on first startup with `TASKER_DEMO_MODE` env var.
+* [ ] **Bulk Dependencies:** API endpoint to create multiple dependencies in one request.
 
 ### v0.8.0 - The "Observability & Active Governance" Release
 
