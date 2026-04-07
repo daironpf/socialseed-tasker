@@ -15,20 +15,26 @@ A specialized framework that leverages **Neo4j** to provide AI agents with infin
 
 ---
 
-## 🚀 Quick Start for AI Agents
+## 🚀 Quick Start
 
-### Starting the Server
+### 1. Start the Services
 
 ```bash
-# Using Docker Compose (recommended - starts API, Frontend, and Neo4j)
+# Clone and start everything with Docker Compose
+git clone https://github.com/daironpf/socialseed-tasker.git
+cd socialseed-tasker
 docker compose up -d
-
-# Or start only the API directly
-pip install socialseed-tasker
-uvicorn socialseed_tasker.entrypoints.web_api.api:app --host 0.0.0.0 --port 8000
 ```
 
-### Services Available
+### 2. Verify Everything Is Running
+
+```bash
+# Check API health
+curl http://localhost:8000/health
+# Expected: {"status":"healthy","version":"0.5.0"}
+```
+
+### 3. Services Available
 
 | Service | URL | Description |
 |---------|-----|-------------|
@@ -36,6 +42,58 @@ uvicorn socialseed_tasker.entrypoints.web_api.api:app --host 0.0.0.0 --port 8000
 | **REST API** | `http://localhost:8000` | For AI agents to manage issues |
 | **Frontend** | `http://localhost:8080` | Human UI (Kanban board) |
 | **API Docs** | `http://localhost:8000/docs` | OpenAPI documentation |
+
+### 4. Try It Now - 30-Second Demo
+
+```bash
+# Create a component
+COMP_ID=$(curl -s -X POST http://localhost:8000/api/v1/components \
+  -H "Content-Type: application/json" \
+  -d '{"name":"backend","project":"my-app"}' | python -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+
+# Create an issue in that component
+ISSUE_ID=$(curl -s -X POST http://localhost:8000/api/v1/issues \
+  -H "Content-Type: application/json" \
+  -d "{\"title\":\"Fix login bug\",\"component_id\":\"$COMP_ID\",\"priority\":\"HIGH\"}" \
+  | python -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+
+# Create a second issue
+DEP_ID=$(curl -s -X POST http://localhost:8000/api/v1/issues \
+  -H "Content-Type: application/json" \
+  -d "{\"title\":\"Add unit tests\",\"component_id\":\"$COMP_ID\",\"priority\":\"MEDIUM\"}" \
+  | python -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+
+# Link them: Fix login bug depends on Add unit tests
+curl -s -X POST "http://localhost:8000/api/v1/issues/$ISSUE_ID/dependencies" \
+  -H "Content-Type: application/json" \
+  -d "{\"depends_on_id\":\"$DEP_ID\"}"
+
+# See the dependency chain
+curl -s "http://localhost:8000/api/v1/issues/$ISSUE_ID/dependency-chain" | python -m json.tool
+
+# Try to close the issue (will fail - dependency is still open)
+curl -s -X POST "http://localhost:8000/api/v1/issues/$ISSUE_ID/close" | python -m json.tool
+```
+
+### 5. Or Load Full Demo Data
+
+```bash
+# Via CLI (requires local install)
+pip install socialseed-tasker
+tasker seed run
+
+# Via API env var (auto-seeds on restart)
+TASKER_DEMO_MODE=true docker compose restart tasker-api
+```
+
+### 6. Explore the Graph
+
+Open **http://localhost:7474** in your browser and run this Cypher query to visualize your data:
+
+```cypher
+MATCH (i:Issue)-[:BELONGS_TO]->(c:Component)
+RETURN i, c
+```
 
 ---
 
@@ -69,6 +127,9 @@ curl -X POST http://localhost:8000/api/v1/components \
 #### List Components
 ```bash
 curl http://localhost:8000/api/v1/components
+
+# Filter by project
+curl "http://localhost:8000/api/v1/components?project=social-network"
 ```
 
 ---
@@ -77,13 +138,17 @@ curl http://localhost:8000/api/v1/components
 
 #### Create Issue
 ```bash
+# First, get a component ID from the list above
+COMPONENT_ID=$(curl -s http://localhost:8000/api/v1/components | python -c "import sys,json; print(json.load(sys.stdin)['data'][0]['id'])")
+
+# Then create an issue
 curl -X POST http://localhost:8000/api/v1/issues \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Fix login bug with special characters",
     "description": "Users cannot login when password contains special chars",
     "priority": "HIGH",
-    "component_id": "<component-uuid>",
+    "component_id": "'"$COMPONENT_ID"'",
     "labels": ["bug", "security"]
   }'
 ```
@@ -97,6 +162,9 @@ curl http://localhost:8000/api/v1/issues
 
 # Filter by status
 curl "http://localhost:8000/api/v1/issues?status=OPEN"
+
+# Filter by project
+curl "http://localhost:8000/api/v1/issues?project=my-app"
 
 # Filter by component
 curl "http://localhost:8000/api/v1/issues?component=<component-id>"
@@ -506,9 +574,14 @@ docker compose up -d
 # View logs
 docker compose logs -f
 
-# Stop everything
+# Stop everything (data persists in Docker volume)
 docker compose down
+
+# Stop and remove all data
+docker compose down -v
 ```
+
+> **Data Persistence**: All data is stored in Neo4j and persists between `docker compose down` and `docker compose up` cycles. Use `docker compose down -v` to completely reset the database.
 
 ---
 
