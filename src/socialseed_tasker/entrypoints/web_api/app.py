@@ -52,7 +52,7 @@ def create_app(repository: TaskRepositoryInterface | None = None) -> FastAPI:
             "with the task management system. All endpoints return consistent "
             "JSON envelopes and support filtering, pagination, and discovery."
         ),
-        version="0.1.0",
+        version="0.5.0",
         license_info={
             "name": "Apache 2.0",
             "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
@@ -107,7 +107,7 @@ def create_app(repository: TaskRepositoryInterface | None = None) -> FastAPI:
     # Health endpoint
     @app.get("/health", tags=["health"])
     def health_check() -> dict[str, str]:
-        return {"status": "healthy", "version": "0.1.0"}
+        return {"status": "healthy", "version": "0.5.0"}
 
     # Dependency injection - provide repository to all routes
     app.state.repository = repository

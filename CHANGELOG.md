@@ -29,6 +29,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Removed
 - **File Storage Backend:** Deprecated and removed support for local JSON file persistence. The project is now **Neo4j-Exclusive** to ensure data integrity and relationship-first logic.
 
+### Testing
+- **147 Unit Tests Passing:** Full test suite refactored with in-memory mock repositories for CLI, API, and bootstrap layers.
+- **API Test Coverage:** All REST endpoints tested including health, CRUD, dependencies, analysis, and error envelopes.
+- **CLI Test Coverage:** All commands tested (issue, component, dependency, status, init) with mock repository injection.
+
 ---
 
 ## [0.1.0] - 2026-01-15

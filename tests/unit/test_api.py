@@ -1,19 +1,123 @@
-"""Tests for the FastAPI REST API."""
+"""Tests for the FastAPI REST API using in-memory mock repository."""
 
-import tempfile
-from pathlib import Path
+from __future__ import annotations
+
+from collections.abc import Iterator
+from contextlib import contextmanager
+from typing import Any
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 
+from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
+from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
 from socialseed_tasker.entrypoints.web_api.app import create_app
-from socialseed_tasker.storage.local_files.repositories import FileTaskRepository
+
+
+class MockRepository(TaskRepositoryInterface):
+    """In-memory mock repository for API testing."""
+
+    def __init__(self) -> None:
+        self._issues: dict[str, Issue] = {}
+        self._components: dict[str, Component] = {}
+        self._dependencies: dict[str, set[str]] = {}
+
+    def create_issue(self, issue: Issue) -> None:
+        self._issues[str(issue.id)] = issue
+
+    def get_issue(self, issue_id: str) -> Issue | None:
+        return self._issues.get(issue_id)
+
+    def update_issue(self, issue_id: str, updates: dict[str, Any]) -> Issue:
+        issue = self._issues[issue_id]
+        updated = issue.model_copy(update=updates)
+        self._issues[issue_id] = updated
+        return updated
+
+    def close_issue(self, issue_id: str) -> Issue:
+        issue = self._issues[issue_id]
+        updated = issue.model_copy(update={"status": IssueStatus.CLOSED})
+        self._issues[issue_id] = updated
+        return updated
+
+    def delete_issue(self, issue_id: str) -> None:
+        self._issues.pop(issue_id, None)
+        self._dependencies.pop(issue_id, None)
+        for deps in self._dependencies.values():
+            deps.discard(issue_id)
+
+    def list_issues(
+        self,
+        component_id: str | None = None,
+        status: IssueStatus | None = None,
+    ) -> list[Issue]:
+        issues = list(self._issues.values())
+        if component_id:
+            issues = [i for i in issues if str(i.component_id) == component_id]
+        if status:
+            issues = [i for i in issues if i.status == status]
+        return issues
+
+    def add_dependency(self, issue_id: str, depends_on_id: str) -> None:
+        self._dependencies.setdefault(issue_id, set()).add(depends_on_id)
+
+    def remove_dependency(self, issue_id: str, depends_on_id: str) -> None:
+        if issue_id in self._dependencies:
+            self._dependencies[issue_id].discard(depends_on_id)
+
+    def get_dependencies(self, issue_id: str) -> list[Issue]:
+        dep_ids = self._dependencies.get(issue_id, set())
+        return [self._issues[d] for d in dep_ids if d in self._issues]
+
+    def get_dependents(self, issue_id: str) -> list[Issue]:
+        return [
+            self._issues[issuer_id]
+            for issuer_id, deps in self._dependencies.items()
+            if issue_id in deps and issuer_id in self._issues
+        ]
+
+    def get_blocked_issues(self) -> list[Issue]:
+        blocked = []
+        for issue_id, deps in self._dependencies.items():
+            issue = self._issues.get(issue_id)
+            if issue and issue.status != IssueStatus.CLOSED:
+                for dep_id in deps:
+                    dep = self._issues.get(dep_id)
+                    if dep and dep.status != IssueStatus.CLOSED:
+                        blocked.append(issue)
+                        break
+        return blocked
+
+    def create_component(self, component: Component) -> None:
+        self._components[str(component.id)] = component
+
+    def get_component(self, component_id: str) -> Component | None:
+        return self._components.get(component_id)
+
+    def list_components(self, project: str | None = None) -> list[Component]:
+        components = list(self._components.values())
+        if project:
+            components = [c for c in components if c.project == project]
+        return components
+
+    def update_component(self, component_id: str, updates: dict[str, Any]) -> Component:
+        component = self._components[component_id]
+        updated = component.model_copy(update=updates)
+        self._components[component_id] = updated
+        return updated
+
+    def delete_component(self, component_id: str) -> None:
+        self._components.pop(component_id, None)
+
+    @contextmanager
+    def transaction(self) -> Iterator[None]:
+        yield
 
 
 @pytest.fixture()
 def repo():
-    tmp = Path(tempfile.mkdtemp())
-    return FileTaskRepository(tmp)
+    return MockRepository()
 
 
 @pytest.fixture()
@@ -264,7 +368,6 @@ class TestDependencies:
 
         client.post(f"/api/v1/issues/{a_id}/dependencies", json={"depends_on_id": b_id})
         client.post(f"/api/v1/issues/{b_id}/dependencies", json={"depends_on_id": c_id})
-        # c -> a would create cycle
         resp = client.post(
             f"/api/v1/issues/{c_id}/dependencies",
             json={"depends_on_id": a_id},
@@ -387,7 +490,6 @@ class TestErrorEnvelope:
             json={"title": "A", "component_id": component_id},
         )
         a_id = resp_a.json()["data"]["id"]
-        # Close then try to close again
         client.post(f"/api/v1/issues/{a_id}/close")
         resp = client.post(f"/api/v1/issues/{a_id}/close")
         body = resp.json()
@@ -402,7 +504,6 @@ class TestErrorEnvelope:
 
 class TestAnalysis:
     def test_root_cause_with_matching_issue(self, client, component_id):
-        # Create and close an issue with matching title
         resp_issue = client.post(
             "/api/v1/issues",
             json={
@@ -414,7 +515,6 @@ class TestAnalysis:
         issue_id = resp_issue.json()["data"]["id"]
         client.post(f"/api/v1/issues/{issue_id}/close")
 
-        # Submit a test failure that matches the issue
         resp = client.post(
             "/api/v1/analyze/root-cause",
             json={
@@ -437,7 +537,6 @@ class TestAnalysis:
         assert resp.status_code == 422
 
     def test_root_cause_response_structure(self, client, component_id):
-        # Create an issue
         resp_issue = client.post(
             "/api/v1/issues",
             json={
@@ -448,7 +547,6 @@ class TestAnalysis:
         issue_id = resp_issue.json()["data"]["id"]
         client.post(f"/api/v1/issues/{issue_id}/close")
 
-        # Test returns proper envelope
         resp = client.post(
             "/api/v1/analyze/root-cause",
             json={
@@ -464,7 +562,6 @@ class TestAnalysis:
         assert "meta" in data
 
     def test_impact_analysis_with_dependents(self, client, component_id):
-        # Create two issues with a dependency
         resp_a = client.post(
             "/api/v1/issues",
             json={"title": "Feature A", "component_id": component_id},
@@ -477,7 +574,6 @@ class TestAnalysis:
         )
         id_b = resp_b.json()["data"]["id"]
 
-        # Add dependency: A depends on B
         client.post(
             f"/api/v1/issues/{id_a}/dependencies",
             json={"depends_on_id": id_b},
@@ -490,7 +586,6 @@ class TestAnalysis:
         assert "risk_level" in data["data"]
 
     def test_impact_analysis_for_nonexistent_returns_empty(self, client):
-        # The analyzer returns empty results for non-existent issues
         resp = client.get("/api/v1/analyze/impact/00000000-0000-0000-0000-000000000000")
         assert resp.status_code == 200
         data = resp.json()

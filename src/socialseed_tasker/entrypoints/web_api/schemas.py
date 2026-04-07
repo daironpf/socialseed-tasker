@@ -256,5 +256,5 @@ class HealthResponse(BaseModel):
     """Health check response."""
 
     status: str = "healthy"
-    version: str = "0.1.0"
-    storage_backend: str = "file"
+    version: str = "0.5.0"
+    storage_backend: str = "neo4j"
