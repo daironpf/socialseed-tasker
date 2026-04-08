@@ -498,13 +498,18 @@ def create_component(
     "/components",
     response_model=APIResponse[list[ComponentResponse]],
     summary="List components",
-    description="List all components, optionally filtered by project.",
+    description="List all components, optionally filtered by project or name.",
 )
 def list_components(
     project: str | None = Query(None, description="Filter by project"),
+    name: str | None = Query(None, description="Filter by exact name"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
-    components = repo.list_components(project=project)
+    if name:
+        comp = repo.get_component_by_name(name, project)
+        components = [comp] if comp else []
+    else:
+        components = repo.list_components(project=project)
     return APIResponse(data=[_component_to_response(c) for c in components], meta=Meta(request_id=None))
 
 

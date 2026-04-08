@@ -93,6 +93,22 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             result = session.run(queries.LIST_COMPONENTS, project=project)
             return [_node_to_component(r["c"]) for r in result]
 
+    def get_component_by_name(self, name: str, project: str | None = None) -> Component | None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            if project:
+                result = session.run(
+                    "MATCH (c:Component {name: $name, project: $project}) RETURN c",
+                    name=name,
+                    project=project,
+                )
+            else:
+                result = session.run(
+                    "MATCH (c:Component {name: $name}) RETURN c",
+                    name=name,
+                )
+            record = result.single()
+            return _node_to_component(record["c"]) if record else None
+
     def update_component(self, component_id: str, updates: dict[str, Any]) -> Component:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(

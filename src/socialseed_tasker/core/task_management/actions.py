@@ -137,6 +137,9 @@ class TaskRepositoryInterface(Protocol):
     def delete_component(self, component_id: str) -> None:
         """Permanently remove a component."""
 
+    def get_component_by_name(self, name: str, project: str | None = None) -> Component | None:
+        """Retrieve a component by exact name, optionally filtered by project."""
+
     def find_issues_by_title(
         self,
         title: str,
