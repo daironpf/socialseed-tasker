@@ -17,5 +17,6 @@ from socialseed_tasker.entrypoints.web_api.app import create_app
 
 container = Container.from_env()
 repository = container.get_repository()
+driver = container._neo4j_driver
 
-app = create_app(repository)
+app = create_app(repository, neo4j_driver=driver)

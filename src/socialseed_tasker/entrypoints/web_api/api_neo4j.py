@@ -27,4 +27,4 @@ driver = Neo4jDriver(uri=uri, user=user, password=password, database=database)
 driver.connect()
 repository = Neo4jTaskRepository(driver)
 
-app = create_app(repository)
+app = create_app(repository, neo4j_driver=driver)

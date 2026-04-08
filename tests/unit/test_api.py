@@ -96,6 +96,25 @@ class MockRepository(TaskRepositoryInterface):
                         break
         return blocked
 
+    def get_workable_issues(
+        self,
+        priority: str | None = None,
+        component_id: str | None = None,
+    ) -> list[Issue]:
+        workable = []
+        for issue in self._issues.values():
+            if issue.status == IssueStatus.CLOSED:
+                continue
+            if priority and issue.priority.value != priority:
+                continue
+            if component_id and str(issue.component_id) != component_id:
+                continue
+            deps = self._dependencies.get(str(issue.id), [])
+            all_closed = all(self._issues.get(d) and self._issues.get(d).status == IssueStatus.CLOSED for d in deps)
+            if all_closed or not deps:
+                workable.append(issue)
+        return workable
+
     def create_component(self, component: Component) -> None:
         self._components[str(component.id)] = component
 
@@ -116,6 +135,17 @@ class MockRepository(TaskRepositoryInterface):
 
     def delete_component(self, component_id: str) -> None:
         self._components.pop(component_id, None)
+
+    def reset_data(self, scope: str = "all") -> dict[str, int]:
+        result: dict[str, int] = {}
+        if scope in ("all", "issues"):
+            result["issues_deleted"] = len(self._issues)
+            self._issues.clear()
+            self._dependencies.clear()
+        if scope in ("all", "components"):
+            result["components_deleted"] = len(self._components)
+            self._components.clear()
+        return result
 
     @contextmanager
     def transaction(self) -> Iterator[None]:
@@ -475,6 +505,44 @@ class TestDependencies:
         resp = client.get("/api/v1/blocked-issues")
         assert resp.status_code == 200
         assert len(resp.json()["data"]) == 1
+
+    def test_workable_issues(self, client, component_id):
+        resp_open = client.post(
+            "/api/v1/issues",
+            json={"title": "Open issue", "component_id": component_id},
+        )
+        resp_blocked = client.post(
+            "/api/v1/issues",
+            json={"title": "Blocked issue", "component_id": component_id},
+        )
+        open_id = resp_open.json()["data"]["id"]
+        blocked_id = resp_blocked.json()["data"]["id"]
+
+        client.post(
+            f"/api/v1/issues/{blocked_id}/dependencies",
+            json={"depends_on_id": open_id},
+        )
+
+        resp = client.get("/api/v1/workable-issues")
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert any(i["id"] == open_id for i in data)
+        assert not any(i["id"] == blocked_id for i in data)
+
+    def test_workable_issues_with_priority_filter(self, client, component_id):
+        client.post(
+            "/api/v1/issues",
+            json={"title": "High priority", "component_id": component_id, "priority": "HIGH"},
+        )
+        client.post(
+            "/api/v1/issues",
+            json={"title": "Low priority", "component_id": component_id, "priority": "LOW"},
+        )
+
+        resp = client.get("/api/v1/workable-issues?priority=HIGH")
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert all(i["priority"] == "HIGH" for i in data)
 
 
 # ---------------------------------------------------------------------------

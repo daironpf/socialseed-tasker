@@ -236,6 +236,39 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             )
             return [_node_to_issue(r["i"]) for r in result]
 
+    def get_workable_issues(
+        self,
+        priority: str | None = None,
+        component_id: str | None = None,
+    ) -> list[Issue]:
+        """Return issues that are ready to work on.
+
+        An issue is workable if:
+        - status != CLOSED
+        - All its dependencies are CLOSED or it has no dependencies
+        """
+        with self._driver.driver.session(database=self._driver.database) as session:
+            cypher = """
+            MATCH (i:Issue)
+            WHERE i.status <> 'CLOSED'
+            OPTIONAL MATCH (i)-[:DEPENDS_ON]->(d:Issue)
+            WITH i, COLLECT(DISTINCT d.status) AS dep_statuses
+            WHERE ALL(status IN dep_statuses WHERE status = 'CLOSED') OR size(dep_statuses) = 0
+            """
+            params: dict[str, Any] = {}
+
+            if priority:
+                cypher += " AND i.priority = $priority"
+                params["priority"] = priority
+
+            if component_id:
+                cypher += " AND i.component_id = $component_id"
+                params["component_id"] = component_id
+
+            cypher += " RETURN i"
+            result = session.run(cypher, params)
+            return [_node_to_issue(r["i"]) for r in result]
+
     # -- Transactions ----------------------------------------------------------
 
     @contextmanager
@@ -249,3 +282,18 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             except Exception:
                 tx.rollback()
                 raise
+
+    def reset_data(self, scope: str = "all") -> dict[str, int]:
+        """Reset data in the repository."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result: dict[str, int] = {}
+
+            if scope in ("all", "issues"):
+                res = session.run("MATCH (i:Issue) DETACH DELETE i RETURN count(*) as count")
+                result["issues_deleted"] = res.single()["count"] if res.single() else 0
+
+            if scope in ("all", "components"):
+                res = session.run("MATCH (c:Component) DETACH DELETE c RETURN count(*) as count")
+                result["components_deleted"] = res.single()["count"] if res.single() else 0
+
+            return result

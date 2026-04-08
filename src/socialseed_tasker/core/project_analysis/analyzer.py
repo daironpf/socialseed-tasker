@@ -73,6 +73,28 @@ class ImpactAnalysis(BaseModel):
     risk_level: RiskLevel = RiskLevel.LOW
 
 
+class ComponentImpactSummary(BaseModel):
+    """Summary of an issue within component impact analysis."""
+
+    id: str
+    title: str
+    status: str
+
+
+class ComponentImpactAnalysis(BaseModel):
+    """Represents the impact analysis of an entire component."""
+
+    component_id: UUID
+    component_name: str
+    total_issues: int
+    directly_affected_components: list[str] = Field(default_factory=list)
+    transitively_affected_components: list[str] = Field(default_factory=list)
+    total_blocked_issues: int = 0
+    criticality_score: int = 0
+    risk_level: RiskLevel = RiskLevel.LOW
+    affected_issues_summary: list[ComponentImpactSummary] = Field(default_factory=list)
+
+
 class ArchitecturalAnalyzer:
     """Evaluates architectural rules against issues and dependencies.
 
@@ -455,4 +477,88 @@ class RootCauseAnalyzer:
             return RiskLevel.HIGH
         if total_impact >= 2 or blocked_count >= 1:
             return RiskLevel.MEDIUM
+
         return RiskLevel.LOW
+
+    def analyze_component_impact(self, component_id: str) -> ComponentImpactAnalysis:
+        """Analyze the impact of an entire component.
+
+        Traverses all issues in the component and computes:
+        - Combined impact across all issues
+        - Directly affected components
+        - Transitively affected components
+        - Total blocked issues
+        - Criticality score (how many other components depend on this one)
+        - Overall risk level
+        """
+        component = self._repository.get_component(component_id)
+        if component is None:
+            return ComponentImpactAnalysis(
+                component_id=UUID(component_id),
+                component_name="Unknown",
+                total_issues=0,
+                risk_level=RiskLevel.LOW,
+            )
+
+        issues = self._repository.list_issues(component_id=component_id)
+        total_issues = len(issues)
+
+        all_directly_affected_ids: set[str] = set()
+        all_transitively_affected_ids: set[str] = set()
+        all_blocked_issue_ids: set[str] = set()
+
+        for issue in issues:
+            impact = self.analyze_impact(str(issue.id))
+            for da in impact.directly_affected:
+                all_directly_affected_ids.add(str(da.id))
+            for ta in impact.transitively_affected:
+                all_transitively_affected_ids.add(str(ta.id))
+            for bi in impact.blocked_issues:
+                all_blocked_issue_ids.add(str(bi.id))
+
+        directly_affected_components: set[str] = set()
+        transitively_affected_components: set[str] = set()
+
+        for issue_id in all_directly_affected_ids:
+            issue = self._repository.get_issue(issue_id)
+            if issue:
+                directly_affected_components.add(str(issue.component_id))
+
+        for issue_id in all_transitively_affected_ids:
+            issue = self._repository.get_issue(issue_id)
+            if issue:
+                transitively_affected_components.add(str(issue.component_id))
+
+        directly_affected_components.discard(component_id)
+        transitively_affected_components.discard(component_id)
+
+        all_affected_components = directly_affected_components | transitively_affected_components
+
+        criticality_score = len(all_affected_components)
+
+        direct_count = len(all_directly_affected_ids)
+        transitive_count = len(all_transitively_affected_ids)
+        blocked_count = len(all_blocked_issue_ids)
+        risk_level = self._calculate_risk_level(direct_count, transitive_count, blocked_count)
+
+        affected_summary = []
+        for issue in issues:
+            affected_summary.append(
+                ComponentImpactSummary(
+                    id=str(issue.id),
+                    title=issue.title,
+                    status=issue.status.value,
+                )
+            )
+
+        return ComponentImpactAnalysis(
+            component_id=component.id,
+            component_name=component.name,
+            total_issues=total_issues,
+            directly_affected_components=sorted(directly_affected_components),
+            transitively_affected_components=sorted(transitively_affected_components),
+            total_blocked_issues=len(all_blocked_issue_ids),
+            criticality_score=criticality_score,
+            risk_level=risk_level,
+            affected_issues_summary=affected_summary,
+        )

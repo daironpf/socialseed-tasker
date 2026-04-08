@@ -113,6 +113,13 @@ class TaskRepositoryInterface(Protocol):
     def get_blocked_issues(self) -> list[Issue]:
         """Return all issues that are blocked by at least one open dependency."""
 
+    def get_workable_issues(
+        self,
+        priority: str | None = None,
+        component_id: str | None = None,
+    ) -> list[Issue]:
+        """Return all issues that can be worked on (not closed and all dependencies closed)."""
+
     # -- Component CRUD ------------------------------------------------------
 
     def create_component(self, component: Component) -> None:
@@ -129,6 +136,16 @@ class TaskRepositoryInterface(Protocol):
 
     def delete_component(self, component_id: str) -> None:
         """Permanently remove a component."""
+
+    def reset_data(self, scope: str = "all") -> dict[str, int]:
+        """Reset data in the repository.
+
+        Args:
+            scope: What to reset - "all", "issues", or "components"
+
+        Returns:
+            Dict with counts of deleted items
+        """
 
     # -- Transactions ----------------------------------------------------------
 
@@ -296,6 +313,22 @@ def get_blocked_issues_action(
     return repository.get_blocked_issues()
 
 
+def get_workable_issues_action(
+    repository: TaskRepositoryInterface,
+    priority: str | None = None,
+    component_id: str | None = None,
+) -> list[Issue]:
+    """Return all issues that are ready to work on.
+
+    Intent: Surface issues that are not blocked by open dependencies.
+    This is the inverse of get_blocked_issues - it returns issues where
+    status != CLOSED AND all dependencies are CLOSED.
+    Business Value: Enables AI agents to efficiently find work without
+    checking each issue's dependencies individually.
+    """
+    return repository.get_workable_issues(priority=priority, component_id=component_id)
+
+
 def get_dependency_chain_action(
     repository: TaskRepositoryInterface,
     issue_id: str,
@@ -396,6 +429,22 @@ class ComponentHasIssuesError(Exception):
         super().__init__(
             f"Cannot delete component '{component_id}' because it has {len(issue_ids)} issue(s): {issue_ids}"
         )
+
+
+def reset_data_action(
+    repository: TaskRepositoryInterface,
+    scope: str = "all",
+) -> dict[str, int]:
+    """Reset data in the repository.
+
+    Intent: Allow cleanup of all data for testing or demos.
+    Business Value: Enables fresh start without manual cleanup or
+    restarting the database.
+    """
+    if scope not in ("all", "issues", "components"):
+        raise ValueError("scope must be 'all', 'issues', or 'components'")
+
+    return repository.reset_data(scope)
 
 
 # ---------------------------------------------------------------------------

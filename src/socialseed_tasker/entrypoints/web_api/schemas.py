@@ -274,9 +274,70 @@ class ImpactAnalysisResponse(BaseModel):
     risk_level: str
 
 
+class ComponentImpactIssueSummary(BaseModel):
+    """Summary of an issue within component impact analysis."""
+
+    id: str
+    title: str
+    status: str
+
+
+class ComponentImpactAnalysisResponse(BaseModel):
+    """Impact analysis result for an entire component."""
+
+    component_id: str
+    component_name: str
+    total_issues: int
+    directly_affected_components: list[str]
+    transitively_affected_components: list[str]
+    total_blocked_issues: int
+    criticality_score: int
+    risk_level: str
+    affected_issues_summary: list[ComponentImpactIssueSummary]
+
+
 class HealthResponse(BaseModel):
     """Health check response."""
 
     status: str = "healthy"
     version: str = "0.5.0"
     storage_backend: str = "neo4j"
+
+
+class GraphNode(BaseModel):
+    """Node in the dependency graph."""
+
+    id: str
+    title: str
+    component: str | None = None
+    status: str
+    priority: str
+
+
+class GraphEdge(BaseModel):
+    """Edge in the dependency graph."""
+
+    from_node: str
+    to_node: str
+
+
+class DependencyGraphResponse(BaseModel):
+    """Full dependency graph for the project."""
+
+    nodes: list[GraphNode]
+    edges: list[GraphEdge]
+
+
+class ProjectSummaryResponse(BaseModel):
+    """Summary dashboard for a project."""
+
+    project: str
+    total_issues: int
+    by_status: dict[str, int]
+    by_priority: dict[str, int]
+    components_count: int
+    blocked_issues_count: int
+    workable_issues_count: int
+    dependency_health: float
+    top_blocked_components: list[dict[str, int]]
+    critical_path_length: int

@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 from fastapi import APIRouter, Depends, Query, Request  # noqa: B008
 
 from socialseed_tasker.core.project_analysis.analyzer import (
+    ComponentImpactAnalysis,
     ImpactAnalysis,
     RootCauseAnalyzer,
     TestFailure,
@@ -23,7 +24,9 @@ from socialseed_tasker.core.task_management.actions import (
     create_issue_action,
     get_blocked_issues_action,
     get_dependency_chain_action,
+    get_workable_issues_action,
     remove_dependency_action,
+    reset_data_action,
 )
 from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
 from socialseed_tasker.entrypoints.web_api.schemas import (
@@ -32,7 +35,9 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     BulkDependencyResponse,
     CausalLinkResponse,
     ComponentCreateRequest,
+    ComponentImpactAnalysisResponse,
     ComponentResponse,
+    DependencyGraphResponse,
     DependencyRequest,
     DependencyResponse,
     ImpactAnalysisResponse,
@@ -43,6 +48,7 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     Meta,
     PaginatedResponse,
     PaginationMeta,
+    ProjectSummaryResponse,
     TestFailureRequest,
 )
 
@@ -197,14 +203,19 @@ def get_issue(
     "/issues/{issue_id}",
     response_model=APIResponse[IssueResponse],
     summary="Update an issue",
-    description="Partially update an issue's fields.",
-    responses={404: {"description": "Issue not found"}},
+    description="Partially update an issue's fields. Supports: status, priority, labels, description, agent_working.",
+    responses={
+        404: {"description": "Issue not found"},
+        400: {"description": "Invalid status transition or validation error"},
+    },
 )
 def update_issue(
     issue_id: str,
     body: IssueUpdateRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
+    from fastapi import HTTPException
+
     existing = repo.get_issue(issue_id)
     if existing is None:
         raise IssueNotFoundError(issue_id)
@@ -212,6 +223,30 @@ def update_issue(
     updates = body.model_dump(exclude_unset=True)
     if not updates:
         return APIResponse(data=_issue_to_response(existing), meta=Meta(request_id=None))
+
+    if "status" in updates:
+        new_status = IssueStatus(updates["status"])
+        if existing.status == IssueStatus.CLOSED and new_status != IssueStatus.CLOSED:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot reopen a closed issue. Use a separate reopen endpoint or create a new issue.",
+            )
+        if "agent_working" in updates and new_status not in (
+            IssueStatus.OPEN,
+            IssueStatus.IN_PROGRESS,
+            IssueStatus.BLOCKED,
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="agent_working can only be set on OPEN, IN_PROGRESS, or BLOCKED issues.",
+            )
+
+    if "agent_working" in updates and "status" not in updates:
+        if existing.status not in (IssueStatus.OPEN, IssueStatus.IN_PROGRESS, IssueStatus.BLOCKED):
+            raise HTTPException(
+                status_code=400,
+                detail="agent_working can only be set on OPEN, IN_PROGRESS, or BLOCKED issues.",
+            )
 
     updated = repo.update_issue(issue_id, updates)
     return APIResponse(data=_issue_to_response(updated), meta=Meta(request_id=None))
@@ -413,6 +448,25 @@ def list_blocked_issues(
     return APIResponse(data=[_issue_to_response(i) for i in blocked], meta=Meta(request_id=None))
 
 
+@dependencies_router.get(
+    "/workable-issues",
+    response_model=APIResponse[list[IssueResponse]],
+    summary="List workable issues",
+    description=(
+        "List all issues that are ready to work on. "
+        "An issue is workable if its status is not CLOSED and all its dependencies are CLOSED. "
+        "Supports filtering by priority and component."
+    ),
+)
+def list_workable_issues(
+    priority: str | None = Query(None, description="Filter by priority (HIGH, MEDIUM, LOW)"),
+    component: str | None = Query(None, description="Filter by component ID"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    workable = get_workable_issues_action(repo, priority=priority, component_id=component)
+    return APIResponse(data=[_issue_to_response(i) for i in workable], meta=Meta(request_id=None))
+
+
 # ---------------------------------------------------------------------------
 # Components router
 # ---------------------------------------------------------------------------
@@ -603,3 +657,180 @@ def analyze_impact(
         risk_level=impact.risk_level.value,
     )
     return APIResponse(data=impact_data, meta=Meta(request_id=None))
+
+
+@analysis_router.get(
+    "/analyze/component-impact/{component_id}",
+    response_model=APIResponse[ComponentImpactAnalysisResponse],
+    summary="Get component impact analysis",
+    description="Analyse the impact of an entire component across the project.",
+)
+def analyze_component_impact(
+    component_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[ComponentImpactAnalysisResponse]:
+    analyzer = RootCauseAnalyzer(repo)
+    impact: ComponentImpactAnalysis = analyzer.analyze_component_impact(component_id)
+
+    impact_data = ComponentImpactAnalysisResponse(
+        component_id=str(impact.component_id),
+        component_name=impact.component_name,
+        total_issues=impact.total_issues,
+        directly_affected_components=impact.directly_affected_components,
+        transitively_affected_components=impact.transitively_affected_components,
+        total_blocked_issues=impact.total_blocked_issues,
+        criticality_score=impact.criticality_score,
+        risk_level=impact.risk_level.value,
+        affected_issues_summary=[
+            ComponentImpactIssueSummary(id=i.id, title=i.title, status=i.status) for i in impact.affected_issues_summary
+        ],
+    )
+    return APIResponse(data=impact_data, meta=Meta(request_id=None))
+
+
+@analysis_router.get(
+    "/graph/dependencies",
+    response_model=APIResponse[DependencyGraphResponse],
+    summary="Get full dependency graph",
+    description="Return the complete dependency graph for visualization. Supports filtering by project.",
+)
+def get_full_dependency_graph(
+    project: str | None = Query(None, description="Filter by project name"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[DependencyGraphResponse]:
+    all_issues = repo.list_issues(project=project)
+    components = {str(c.id): c.name for c in repo.list_components(project=project)}
+
+    nodes = []
+    edges = []
+
+    for issue in all_issues:
+        nodes.append(
+            {
+                "id": str(issue.id),
+                "title": issue.title,
+                "component": components.get(str(issue.component_id)),
+                "status": issue.status.value,
+                "priority": issue.priority.value,
+            }
+        )
+
+    for issue in all_issues:
+        for dep_id in issue.dependencies:
+            edges.append(
+                {
+                    "from_node": str(issue.id),
+                    "to_node": str(dep_id),
+                }
+            )
+
+    return APIResponse(
+        data=DependencyGraphResponse(nodes=nodes, edges=edges),
+        meta=Meta(request_id=None),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Project router
+# ---------------------------------------------------------------------------
+
+project_router = APIRouter()
+
+
+@project_router.get(
+    "/projects/{project_name}/summary",
+    response_model=APIResponse[ProjectSummaryResponse],
+    summary="Get project summary",
+    description="Get an aggregated overview of a project including issue counts, dependency health, and critical path.",
+)
+def get_project_summary(
+    project_name: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[ProjectSummaryResponse]:
+    components = repo.list_components(project=project_name)
+    all_issues = repo.list_issues(project=project_name)
+
+    total_issues = len(all_issues)
+    by_status: dict[str, int] = {}
+    by_priority: dict[str, int] = {}
+
+    for issue in all_issues:
+        status = issue.status.value
+        priority = issue.priority.value
+        by_status[status] = by_status.get(status, 0) + 1
+        by_priority[priority] = by_priority.get(priority, 0) + 1
+
+    blocked_issues = get_blocked_issues_action(repo)
+    blocked_filtered = [i for i in blocked_issues if any(str(i.component_id) == str(c.id) for c in components)]
+    workable_issues = get_workable_issues_action(repo, component_id=None)
+    workable_filtered = [i for i in workable_issues if any(str(i.component_id) == str(c.id) for c in components)]
+
+    dependency_health = 0.0
+    if total_issues > 0:
+        issues_with_deps = sum(1 for i in all_issues if i.dependencies)
+        if issues_with_deps > 0:
+            closed_deps = sum(
+                1
+                for i in all_issues
+                if i.dependencies
+                and all(
+                    next((d for d in all_issues if str(d.id) == str(dep_id) and d.status.value == "CLOSED"), None)
+                    for dep_id in i.dependencies
+                )
+            )
+            dependency_health = (closed_deps / issues_with_deps) * 100
+
+    component_blocked_counts: dict[str, int] = {}
+    for issue in blocked_filtered:
+        comp_id = str(issue.component_id)
+        component_blocked_counts[comp_id] = component_blocked_counts.get(comp_id, 0) + 1
+
+    top_blocked = sorted(component_blocked_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+    top_blocked_components = []
+    for comp_id, count in top_blocked:
+        comp = repo.get_component(comp_id)
+        if comp:
+            top_blocked_components.append({comp.name: count})
+
+    critical_path_length = 0
+    for issue in all_issues:
+        chain = get_dependency_chain_action(repo, str(issue.id))
+        if len(chain) > critical_path_length:
+            critical_path_length = len(chain)
+
+    return APIResponse(
+        data=ProjectSummaryResponse(
+            project=project_name,
+            total_issues=total_issues,
+            by_status=by_status,
+            by_priority=by_priority,
+            components_count=len(components),
+            blocked_issues_count=len(blocked_filtered),
+            workable_issues_count=len(workable_filtered),
+            dependency_health=round(dependency_health, 1),
+            top_blocked_components=top_blocked_components,
+            critical_path_length=critical_path_length,
+        ),
+        meta=Meta(request_id=None),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Admin router
+# ---------------------------------------------------------------------------
+
+admin_router = APIRouter()
+
+
+@admin_router.post(
+    "/admin/reset",
+    response_model=APIResponse[dict[str, Any]],
+    summary="Reset data",
+    description="Clear all or partial data from the database. Use with caution in production.",
+)
+def reset_data(
+    scope: str = Query("all", description="What to reset: 'all', 'issues', or 'components'"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    result = reset_data_action(repo, scope=scope)
+    return APIResponse(data=result, meta=Meta(request_id=None))

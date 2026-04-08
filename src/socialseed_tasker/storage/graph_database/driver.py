@@ -61,6 +61,10 @@ class Neo4jDriver:
     def database(self) -> str:
         return self._database
 
+    @property
+    def uri(self) -> str:
+        return self._uri
+
     def connect(self) -> None:
         """Initialize the Neo4j driver and verify connectivity.
 
