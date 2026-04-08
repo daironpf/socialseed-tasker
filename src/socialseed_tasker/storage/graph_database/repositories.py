@@ -236,6 +236,32 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             )
             return [_node_to_issue(r["i"]) for r in result]
 
+    def find_issues_by_title(
+        self,
+        title: str,
+        component_id: str | None = None,
+    ) -> list[Issue]:
+        """Find issues by exact title, optionally filtered by component."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            if component_id:
+                result = session.run(
+                    """
+                    MATCH (i:Issue {title: $title, component_id: $component_id})
+                    RETURN i
+                    """,
+                    title=title,
+                    component_id=component_id,
+                )
+            else:
+                result = session.run(
+                    """
+                    MATCH (i:Issue {title: $title})
+                    RETURN i
+                    """,
+                    title=title,
+                )
+            return [_node_to_issue(r["i"]) for r in result]
+
     def get_workable_issues(
         self,
         priority: str | None = None,

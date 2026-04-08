@@ -137,6 +137,13 @@ class TaskRepositoryInterface(Protocol):
     def delete_component(self, component_id: str) -> None:
         """Permanently remove a component."""
 
+    def find_issues_by_title(
+        self,
+        title: str,
+        component_id: str | None = None,
+    ) -> list[Issue]:
+        """Find issues by exact title, optionally filtered by component."""
+
     def reset_data(self, scope: str = "all") -> dict[str, int]:
         """Reset data in the repository.
 
@@ -173,19 +180,30 @@ def create_issue_action(
     priority: str = "MEDIUM",
     labels: list[str] | None = None,
     architectural_constraints: list[str] | None = None,
-) -> Issue:
+) -> tuple[Issue, list[str]]:
     """Create a new issue after validating inputs.
 
     Intent: Ensure every issue is valid and belongs to an existing component
     before persisting it.
     Business Value: Prevents orphaned issues and enforces data quality at
     the domain boundary.
+
+    Returns:
+        Tuple of (Issue, warnings list)
     """
     from socialseed_tasker.core.task_management.entities import Issue, IssuePriority
 
     component = repository.get_component(component_id)
     if component is None:
         raise ComponentNotFoundError(component_id)
+
+    warnings: list[str] = []
+    existing = repository.find_issues_by_title(title, component_id)
+    if existing:
+        existing_ids = [str(i.id) for i in existing]
+        warnings.append(
+            f"Issue with title '{title}' already exists in this component. Existing IDs: {', '.join(existing_ids)}"
+        )
 
     issue = Issue(
         title=title,
@@ -196,7 +214,7 @@ def create_issue_action(
         architectural_constraints=architectural_constraints or [],
     )
     repository.create_issue(issue)
-    return issue
+    return issue, warnings
 
 
 def close_issue_action(

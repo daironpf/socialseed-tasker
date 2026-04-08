@@ -33,13 +33,19 @@ class ErrorDetail(BaseModel):
 class Meta(BaseModel):
     """Response metadata."""
 
+    model_config = {"populate_by_name": True}
+
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="Response generation timestamp",
     )
     request_id: str | None = Field(
-        None,
+        default=None,
         description="Unique request identifier for tracing",
+    )
+    warnings: list[str] | None = Field(
+        default=None,
+        description="Non-critical warnings for the client",
     )
 
 
@@ -54,7 +60,7 @@ class APIResponse(BaseModel, Generic[T]):
 
     data: T | None = Field(None, description="The response payload")
     error: ErrorDetail | None = Field(
-        None,
+        default=None,
         description="Error information (present only on failure)",
     )
     meta: Meta = Field(default_factory=Meta, description="Response metadata")

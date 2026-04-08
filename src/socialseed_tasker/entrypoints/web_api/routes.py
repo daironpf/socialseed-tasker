@@ -140,7 +140,7 @@ def create_issue(
     body: IssueCreateRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[IssueResponse]:
-    issue = create_issue_action(
+    issue, warnings = create_issue_action(
         repo,
         title=body.title,
         component_id=body.component_id,
@@ -149,7 +149,9 @@ def create_issue(
         labels=body.labels,
         architectural_constraints=body.architectural_constraints,
     )
-    return APIResponse(data=_issue_to_response(issue), meta=Meta(request_id=None))
+    return APIResponse(
+        data=_issue_to_response(issue), meta=Meta(request_id=None, warnings=warnings if warnings else None)
+    )
 
 
 @issues_router.get(
