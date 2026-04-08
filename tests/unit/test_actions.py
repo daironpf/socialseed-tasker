@@ -155,6 +155,31 @@ class FakeRepository:
                     return comp
         return None
 
+    def get_workable_issues(
+        self,
+        priority: str | None = None,
+        component_id: str | None = None,
+    ) -> list[Issue]:
+        """Return issues that can be worked on."""
+        result = [i for i in self._issues.values() if i.status != IssueStatus.CLOSED]
+        for issue in result:
+            deps = self.get_dependencies(str(issue.id))
+            if any(d.status != IssueStatus.CLOSED for d in deps):
+                result.remove(issue)
+        return result
+
+    def reset_data(self, scope: str = "all") -> dict[str, int]:
+        """Reset data in the repository."""
+        count = {"issues": 0, "components": 0}
+        if scope in ("all", "issues"):
+            count["issues"] = len(self._issues)
+            self._issues.clear()
+            self._dependencies.clear()
+        if scope in ("all", "components"):
+            count["components"] = len(self._components)
+            self._components.clear()
+        return count
+
     @contextmanager
     def transaction(self):
         """No-op transaction for tests."""
@@ -188,7 +213,7 @@ def component2(repo: FakeRepository) -> Component:
 
 class TestCreateIssueAction:
     def test_creates_issue_successfully(self, repo: FakeRepository, component: Component):
-        issue = create_issue_action(
+        issue, _ = create_issue_action(
             repo,
             title="Fix login",
             component_id=str(component.id),
@@ -203,7 +228,7 @@ class TestCreateIssueAction:
             create_issue_action(repo, title="Test", component_id="nonexistent")
 
     def test_sets_priority(self, repo: FakeRepository, component: Component):
-        issue = create_issue_action(
+        issue, _ = create_issue_action(
             repo,
             title="Urgent fix",
             component_id=str(component.id),
@@ -212,7 +237,7 @@ class TestCreateIssueAction:
         assert issue.priority.value == "CRITICAL"
 
     def test_sets_labels(self, repo: FakeRepository, component: Component):
-        issue = create_issue_action(
+        issue, _ = create_issue_action(
             repo,
             title="Test",
             component_id=str(component.id),
@@ -223,7 +248,7 @@ class TestCreateIssueAction:
 
 class TestCloseIssueAction:
     def test_closes_issue(self, repo: FakeRepository, component: Component):
-        issue = create_issue_action(repo, title="Test", component_id=str(component.id))
+        issue, _ = create_issue_action(repo, title="Test", component_id=str(component.id))
         closed = close_issue_action(repo, str(issue.id))
         assert closed.status == IssueStatus.CLOSED
 
@@ -232,22 +257,22 @@ class TestCloseIssueAction:
             close_issue_action(repo, "nonexistent")
 
     def test_raises_when_already_closed(self, repo: FakeRepository, component: Component):
-        issue = create_issue_action(repo, title="Test", component_id=str(component.id))
+        issue, _ = create_issue_action(repo, title="Test", component_id=str(component.id))
         close_issue_action(repo, str(issue.id))
         with pytest.raises(IssueAlreadyClosedError):
             close_issue_action(repo, str(issue.id))
 
     def test_raises_when_open_dependencies_exist(self, repo: FakeRepository, component: Component):
-        dep = create_issue_action(repo, title="Dependency", component_id=str(component.id))
-        issue = create_issue_action(repo, title="Main", component_id=str(component.id))
+        dep, _ = create_issue_action(repo, title="Dependency", component_id=str(component.id))
+        issue, _ = create_issue_action(repo, title="Main", component_id=str(component.id))
         repo.add_dependency(str(issue.id), str(dep.id))
 
         with pytest.raises(OpenDependenciesError):
             close_issue_action(repo, str(issue.id))
 
     def test_closes_when_dependencies_are_closed(self, repo: FakeRepository, component: Component):
-        dep = create_issue_action(repo, title="Dependency", component_id=str(component.id))
-        issue = create_issue_action(repo, title="Main", component_id=str(component.id))
+        dep, _ = create_issue_action(repo, title="Dependency", component_id=str(component.id))
+        issue, _ = create_issue_action(repo, title="Main", component_id=str(component.id))
         repo.add_dependency(str(issue.id), str(dep.id))
         close_issue_action(repo, str(dep.id))
 
@@ -257,7 +282,7 @@ class TestCloseIssueAction:
 
 class TestMoveIssueAction:
     def test_moves_issue_to_new_component(self, repo: FakeRepository, component: Component, component2: Component):
-        issue = create_issue_action(repo, title="Test", component_id=str(component.id))
+        issue, _ = create_issue_action(repo, title="Test", component_id=str(component.id))
         moved = move_issue_action(repo, str(issue.id), str(component2.id))
         assert moved.component_id == component2.id
 
@@ -266,15 +291,15 @@ class TestMoveIssueAction:
             move_issue_action(repo, "nonexistent", str(component2.id))
 
     def test_raises_when_target_component_not_found(self, repo: FakeRepository, component: Component):
-        issue = create_issue_action(repo, title="Test", component_id=str(component.id))
+        issue, _ = create_issue_action(repo, title="Test", component_id=str(component.id))
         with pytest.raises(ComponentNotFoundError):
             move_issue_action(repo, str(issue.id), "nonexistent")
 
 
 class TestAddDependencyAction:
     def test_adds_dependency(self, repo: FakeRepository, component: Component):
-        a = create_issue_action(repo, title="A", component_id=str(component.id))
-        b = create_issue_action(repo, title="B", component_id=str(component.id))
+        a, _ = create_issue_action(repo, title="A", component_id=str(component.id))
+        b, _ = create_issue_action(repo, title="B", component_id=str(component.id))
         add_dependency_action(repo, str(a.id), str(b.id))
 
         deps = repo.get_dependencies(str(a.id))
@@ -282,24 +307,24 @@ class TestAddDependencyAction:
         assert deps[0].id == b.id
 
     def test_raises_when_issue_not_found(self, repo: FakeRepository, component: Component):
-        b = create_issue_action(repo, title="B", component_id=str(component.id))
+        b, _ = create_issue_action(repo, title="B", component_id=str(component.id))
         with pytest.raises(IssueNotFoundError):
             add_dependency_action(repo, "nonexistent", str(b.id))
 
     def test_raises_when_target_not_found(self, repo: FakeRepository, component: Component):
-        a = create_issue_action(repo, title="A", component_id=str(component.id))
+        a, _ = create_issue_action(repo, title="A", component_id=str(component.id))
         with pytest.raises(IssueNotFoundError):
             add_dependency_action(repo, str(a.id), "nonexistent")
 
     def test_raises_on_self_dependency(self, repo: FakeRepository, component: Component):
-        a = create_issue_action(repo, title="A", component_id=str(component.id))
+        a, _ = create_issue_action(repo, title="A", component_id=str(component.id))
         with pytest.raises(CircularDependencyError):
             add_dependency_action(repo, str(a.id), str(a.id))
 
     def test_raises_on_circular_dependency(self, repo: FakeRepository, component: Component):
-        a = create_issue_action(repo, title="A", component_id=str(component.id))
-        b = create_issue_action(repo, title="B", component_id=str(component.id))
-        c = create_issue_action(repo, title="C", component_id=str(component.id))
+        a, _ = create_issue_action(repo, title="A", component_id=str(component.id))
+        b, _ = create_issue_action(repo, title="B", component_id=str(component.id))
+        c, _ = create_issue_action(repo, title="C", component_id=str(component.id))
 
         add_dependency_action(repo, str(a.id), str(b.id))
         add_dependency_action(repo, str(b.id), str(c.id))
@@ -311,8 +336,8 @@ class TestAddDependencyAction:
 
 class TestRemoveDependencyAction:
     def test_removes_dependency(self, repo: FakeRepository, component: Component):
-        a = create_issue_action(repo, title="A", component_id=str(component.id))
-        b = create_issue_action(repo, title="B", component_id=str(component.id))
+        a, _ = create_issue_action(repo, title="A", component_id=str(component.id))
+        b, _ = create_issue_action(repo, title="B", component_id=str(component.id))
         add_dependency_action(repo, str(a.id), str(b.id))
         remove_dependency_action(repo, str(a.id), str(b.id))
 
@@ -320,15 +345,15 @@ class TestRemoveDependencyAction:
         assert len(deps) == 0
 
     def test_raises_when_issue_not_found(self, repo: FakeRepository, component: Component):
-        b = create_issue_action(repo, title="B", component_id=str(component.id))
+        b, _ = create_issue_action(repo, title="B", component_id=str(component.id))
         with pytest.raises(IssueNotFoundError):
             remove_dependency_action(repo, "nonexistent", str(b.id))
 
 
 class TestGetBlockedIssuesAction:
     def test_returns_blocked_issues(self, repo: FakeRepository, component: Component):
-        dep = create_issue_action(repo, title="Blocker", component_id=str(component.id))
-        blocked = create_issue_action(repo, title="Blocked", component_id=str(component.id))
+        dep, _ = create_issue_action(repo, title="Blocker", component_id=str(component.id))
+        blocked, _ = create_issue_action(repo, title="Blocked", component_id=str(component.id))
         repo.add_dependency(str(blocked.id), str(dep.id))
 
         result = get_blocked_issues_action(repo)
@@ -336,8 +361,8 @@ class TestGetBlockedIssuesAction:
         assert result[0].id == blocked.id
 
     def test_excludes_closed_issues(self, repo: FakeRepository, component: Component):
-        dep = create_issue_action(repo, title="Blocker", component_id=str(component.id))
-        blocked = create_issue_action(repo, title="Blocked", component_id=str(component.id))
+        dep, _ = create_issue_action(repo, title="Blocker", component_id=str(component.id))
+        blocked, _ = create_issue_action(repo, title="Blocked", component_id=str(component.id))
         repo.add_dependency(str(blocked.id), str(dep.id))
         close_issue_action(repo, str(dep.id))
         close_issue_action(repo, str(blocked.id))
@@ -355,9 +380,9 @@ class TestGetBlockedIssuesAction:
 
 class TestGetDependencyChainAction:
     def test_returns_transitive_chain(self, repo: FakeRepository, component: Component):
-        c = create_issue_action(repo, title="C", component_id=str(component.id))
-        b = create_issue_action(repo, title="B", component_id=str(component.id))
-        a = create_issue_action(repo, title="A", component_id=str(component.id))
+        c, _ = create_issue_action(repo, title="C", component_id=str(component.id))
+        b, _ = create_issue_action(repo, title="B", component_id=str(component.id))
+        a, _ = create_issue_action(repo, title="A", component_id=str(component.id))
 
         repo.add_dependency(str(a.id), str(b.id))
         repo.add_dependency(str(b.id), str(c.id))
@@ -373,6 +398,6 @@ class TestGetDependencyChainAction:
             get_dependency_chain_action(repo, "nonexistent")
 
     def test_empty_chain_when_no_dependencies(self, repo: FakeRepository, component: Component):
-        a = create_issue_action(repo, title="A", component_id=str(component.id))
+        a, _ = create_issue_action(repo, title="A", component_id=str(component.id))
         chain = get_dependency_chain_action(repo, str(a.id))
         assert len(chain) == 0
