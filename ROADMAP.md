@@ -4,7 +4,7 @@ SocialSeed Tasker is an **AI-Native Project Management Framework** powered by **
 
 This roadmap outlines our journey from a core utility to a global standard for AI-driven development.
 
-**Last updated:** 2026-04-07 (v0.5.0 Released - All Checklist Items Complete)
+**Last updated:** 2026-04-08 (v0.5.1 Released - Issue #74-76 resolved)
 
 ---
 
@@ -91,11 +91,23 @@ This roadmap outlines our journey from a core utility to a global standard for A
 | 1 | `issue show` requires full UUID, short ID fails | Low | CLI commands | ✅ RESOLVED (v0.5.0) |
 | 2 | `component show` requires full UUID, short ID fails | Low | CLI commands | ✅ RESOLVED |
 | 3 | `POST /dependencies` route not mounted at `/api/v1/dependencies` | Medium | Route prefix mismatch | ✅ RESOLVED |
-| 4 | `POST /analyze/root-cause` requires `test_id` field not documented in CLI help | Low | Schema vs CLI mismatch | ⚠️ OPEN |
+| 4 | `POST /analyze/root-cause` requires `test_id` field not documented in CLI help | Low | Schema vs CLI mismatch | ✅ RESOLVED (v0.5.1) - Added /analyze/link-test |
 | 5 | Architectural rules exist but not enforced at API/CLI write level | Medium | Integration gap | ⚠️ OPEN |
 | 6 | No filtering by project in issue list | Low | API & CLI | ✅ RESOLVED (v0.5.0) |
 | 7 | Dependencies not populated in issue list response | Low | API | ✅ RESOLVED (v0.5.0) |
 | 8 | No bulk dependency creation | Low | API | ✅ RESOLVED (v0.5.0) |
+| 9 | CLI output has extra blank lines at start (Typer/Rich bug) | Low | CLI rendering | ⚠️ LIMITACIÓN CONOCIDA - No hay solución sin cambiar de framework CLI |
+
+---
+
+## 📋 Limitaciones Conocidas
+
+### CLI Blank Lines Issue
+La salida del CLI (`tasker --help`, `tasker issue list`, etc.) muestra líneas en blanco adicionales al inicio de cada comando. Este es un problema conocido a nivel de la integración Typer + Rich que no tiene solución directa sin migrar a otro framework CLI (como Click o argparse básico).
+
+**Estado:** No resuelto - Limitación conocida
+**Impacto:** Bajo - Solo afecta la presentación visual
+**Workaround:** Ninguno disponible actualmente
 
 ---
 
