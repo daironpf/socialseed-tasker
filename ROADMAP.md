@@ -52,6 +52,18 @@ This roadmap outlines our journey from a core utility to a global standard for A
 ## 🛡️ Phase 3: Architectural Governance (Q4 2026)
 *Goal: Prevent AI from introducing technical debt or breaking system constraints.*
 
+* **[ ] Cloud Sync & GitHub Integration:**
+    * [ ] **GitHub API Adapter:** Implementation of a Hexagonal Adapter to map Tasker Issues to GitHub Issues/Milestones.
+    * [ ] **Bidirectional Webhook Listener:** API endpoint to receive real-time updates from GitHub (comments, label changes, status updates).
+    * [ ] **Causal Mirroring:** Automated sync of Tasker's "Analysis" (Root Cause/Impact) as comments in GitHub Issues for human reviewers.
+    * [ ] **Offline-First Sync Engine:** Queue system to batch local changes and push them to GitHub once internet connection is restored (Critical for intermittent connectivity).
+    * [ ] **Label-to-Graph Mapping:** Syncing GitHub Labels directly into Neo4j nodes for enhanced filtering
+    * [ ] **`GitHubIssueMapper`:** Implement domain service to map Neo4j UUIDs to GitHub Issue numbers and metadata.    
+    ### ☁️ GitHub Cloud Integration (High Priority)
+    * [ ] **`ConnectivityManager` & `SyncQueue`:** Implement an offline-first "Guard" that queues agent actions during power/internet outages and flushes them to the cloud upon reconnection.
+    * [ ] **`WebhookSignatureValidator`:** Secure endpoint for real-time bidirectional sync from GitHub.
+    * [ ] **`MarkdownTransformer`:** Convert Graph Analysis results into GitHub-flavored Markdown (Tables and Mermaid diagrams).
+    * [ ] **`SecretManager`:** Secure handling of GitHub Personal Access Tokens (PAT) via environment injection.
 * [x] **Architectural Rule Engine:** Define rules for forbidden technologies, required patterns, forbidden dependencies, max depth. Violation reporting with errors/warnings. *(Note: exists in `core/project_analysis/` but not yet enforced at API/CLI level)*
 * [ ] **Self-Documenting Enforcement:** Governance policy that blocks an agent from closing an issue if the "Solution Summary" and "Modified Files" sections are missing or incomplete.
 * [ ] **Graph Policy Engine:** Define "Rules of the Graph" (e.g., *Layer A cannot touch Layer C*) enforced at write time.

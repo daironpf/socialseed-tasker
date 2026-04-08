@@ -12,9 +12,9 @@ This document defines the versioning milestones for **SocialSeed Tasker**. We st
 
 ---
 
-## Current Milestone: v0.5.x (The Graph-Native Foundation)
+## Current Milestone: v0.6.x (The "Polish & Alignment" Release)
 
-**Status:** *Complete*
+**Status:** *Complete* as of 2026-04-08
 
 SocialSeed Tasker is a **Graph-Only** platform, leveraging Neo4j as its exclusive source of truth.
 
@@ -47,11 +47,14 @@ SocialSeed Tasker is a **Graph-Only** platform, leveraging Neo4j as its exclusiv
 
 * [x] **Short ID Resolution:** Support for short UUID aliases in `show` and `update` commands.
 * [x] **API Health Endpoint:** Implement `/health` with Neo4j connectivity status.
-* [ ] **Documentation Sync:** Align CLI help strings with actual API schemas.
-* [ ] **Neo4j Performance:** Optimization of Cypher queries for deep relationship traversal.
-* [ ] **Project Filter:** Add filtering by project name to issue list API and CLI.
-* [ ] **Demo Mode:** Auto-seed sample data on first startup with `TASKER_DEMO_MODE` env var.
-* [ ] **Bulk Dependencies:** API endpoint to create multiple dependencies in one request.
+* [x] **Documentation Sync:** Align CLI help strings with actual API schemas. (Added /analyze/link-test endpoint)
+* [x] **Neo4j Performance:** Optimization of Cypher queries for deep relationship traversal.
+* [x] **Project Filter:** Add filtering by project name to issue list API and CLI.
+* [x] **Demo Mode:** Auto-seed sample data on first startup with `TASKER_DEMO_MODE` env var.
+* [x] **Bulk Dependencies:** API endpoint to create multiple dependencies in one request.
+* [x] **Component Name Lookup:** Add name query parameter to GET /components endpoint.
+* [x] **Optional Component:** Allow creating issues without component (uses 'uncategorized' default).
+* [x] **Duplicate Detection:** Warn when creating issues with duplicate titles in same component.
 
 ### v0.8.0 - The "Observability & Active Governance" Release
 

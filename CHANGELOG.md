@@ -5,6 +5,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.6.0] - 2026-04-08 (Polish & Alignment Release)
+
+### Added
+- **Duplicate Issue Detection:** API now warns when creating issues with duplicate titles in the same component. The warning is returned in the response `meta.warnings` field.
+- **Component Name Lookup:** Added `name` query parameter to `GET /components` endpoint to filter by exact component name.
+- **Optional Component ID:** Issues can now be created without a `component_id`. If not provided, a default "uncategorized" component in the "system" project is created automatically.
+- **New Analysis Endpoint:** Added `/api/v1/analyze/link-test` endpoint with clearer documentation. The old `/analyze/root-cause` is now marked as deprecated.
+
+### Changed
+- **API Response Meta:** Added `warnings` field to the response metadata for non-critical client notifications.
+- **CLI Console:** Improved Console configuration with explicit width, no_color, and force_terminal settings.
+
+### Known Limitations
+- **CLI Blank Lines:** The CLI output shows extra blank lines at the start of commands. This is a known Typer/Rich integration issue with no current workaround.
+
+---
+
 ## [0.5.1] - 2026-04-07 (Post-Release Updates)
 
 ### Added

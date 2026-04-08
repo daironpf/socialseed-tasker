@@ -31,7 +31,7 @@ docker compose up -d
 ```bash
 # Check API health
 curl http://localhost:8000/health
-# Expected: {"status":"healthy","version":"0.5.0"}
+# Expected: {"status":"healthy","version":"0.6.0"}
 ```
 
 ### 3. Services Available

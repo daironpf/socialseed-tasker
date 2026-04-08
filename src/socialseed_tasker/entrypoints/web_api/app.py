@@ -57,7 +57,7 @@ def create_app(
             "with the task management system. All endpoints return consistent "
             "JSON envelopes and support filtering, pagination, and discovery."
         ),
-        version="0.5.0",
+        version="0.6.0",
         license_info={
             "name": "Apache 2.0",
             "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
@@ -136,7 +136,7 @@ def create_app(
     # Health endpoint with Neo4j connectivity check
     @app.get("/health", tags=["health"])
     def health_check() -> dict[str, Any]:
-        result = {"status": "healthy", "version": "0.5.0"}
+        result = {"status": "healthy", "version": "0.6.0"}
 
         if neo4j_driver is not None:
             neo4j_connected = neo4j_driver.health_check()
