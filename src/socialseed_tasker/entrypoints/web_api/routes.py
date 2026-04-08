@@ -593,14 +593,58 @@ analysis_router = APIRouter()
 @analysis_router.post(
     "/analyze/root-cause",
     response_model=APIResponse[list[CausalLinkResponse]],
-    summary="Find root cause of test failure",
+    summary="Find root cause of test failure (DEPRECATED)",
     description=(
+        "DEPRECATED: Use /analyze/link-test instead. "
         "Submit a test failure and get potential root causes ranked by "
         "confidence. Uses graph proximity analysis to link failed tests "
         "to recently closed issues."
     ),
+    deprecated=True,
 )
 def analyze_root_cause(
+    body: TestFailureRequest,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list[CausalLinkResponse]]:
+    analyzer = RootCauseAnalyzer(repo)
+    test_failure = TestFailure(
+        test_id=body.test_id,
+        test_name=body.test_name,
+        error_message=body.error_message,
+        stack_trace=body.stack_trace,
+        component=body.component,
+        labels=body.labels,
+    )
+
+    all_issues = repo.list_issues()
+    closed_issues = [i for i in all_issues if i.status.value == "CLOSED"]
+    causal_links = analyzer.find_root_cause(test_failure, closed_issues)
+
+    link_data = [
+        CausalLinkResponse(
+            issue_id=str(link.issue.id),
+            issue_title=link.issue.title,
+            confidence=link.confidence,
+            reasons=link.reasons,
+            graph_distance=link.graph_distance,
+        )
+        for link in causal_links
+    ]
+    return APIResponse(data=link_data, meta=Meta(request_id=None))
+
+
+@analysis_router.post(
+    "/analyze/link-test",
+    response_model=APIResponse[list[CausalLinkResponse]],
+    summary="Link test failure to root cause",
+    description=(
+        "Submit a test failure and get potential root causes ranked by "
+        "confidence. Uses graph proximity analysis to link failed tests "
+        "to recently closed issues. Use this endpoint when you have a "
+        "failing test and want to find which closed issue might have caused it."
+    ),
+)
+def link_test_failure(
     body: TestFailureRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[list[CausalLinkResponse]]:
