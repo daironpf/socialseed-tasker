@@ -38,7 +38,14 @@ cli_theme = Theme(
     }
 )
 
-console = Console(theme=cli_theme)
+console = Console(
+    theme=cli_theme,
+    width=80,
+    no_color=False,
+    force_terminal=True,
+    soft_wrap=False,
+    highlight=False,
+)
 
 # Global CLI state - shared container instance
 _cli_container: Container | None = None

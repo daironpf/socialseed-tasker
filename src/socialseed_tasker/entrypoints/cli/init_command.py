@@ -19,7 +19,12 @@ from rich.table import Table
 from socialseed_tasker.core.system_init.entities import FileOperation, ScaffoldStatus
 from socialseed_tasker.core.system_init.scaffolder import ScaffolderService
 
-console = Console()
+console = Console(
+    width=80,
+    no_color=None,
+    force_terminal=None,
+    soft_wrap=False,
+)
 
 init_app = typer.Typer(
     help="Initialize Tasker infrastructure in an external project",

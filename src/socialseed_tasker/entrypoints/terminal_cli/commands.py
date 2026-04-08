@@ -39,7 +39,12 @@ from socialseed_tasker.core.task_management.entities import (
     IssueStatus,
 )
 
-console = Console()
+console = Console(
+    width=80,
+    no_color=None,
+    force_terminal=None,
+    soft_wrap=False,
+)
 
 # ---------------------------------------------------------------------------
 # Status app (standalone, not under a subcommand group)
@@ -190,7 +195,7 @@ def issue_create(
     label_list = [x.strip() for x in labels.split(",")] if labels else []
 
     try:
-        issue = create_issue_action(
+        issue, warnings = create_issue_action(
             repo,
             title=title,
             component_id=component,
@@ -201,6 +206,9 @@ def issue_create(
         console.print(f"[success]Issue created:[/success] {issue.id}")
         comp = repo.get_component(component)
         console.print(_format_issue_card(issue, comp.name if comp else None))
+        if warnings:
+            for w in warnings:
+                console.print(f"[warning]Warning:[/warning] {w}")
     except ComponentNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
         raise typer.Exit(code=2) from exc
@@ -1141,7 +1149,7 @@ def seed_run(
     issue_map: dict[str, str] = {}
     for issue_data in _SEED_ISSUES:
         comp_id = comp_map[issue_data["component"]]
-        issue = create_issue_action(
+        issue, _ = create_issue_action(
             repo,
             title=issue_data["title"],
             component_id=comp_id,
