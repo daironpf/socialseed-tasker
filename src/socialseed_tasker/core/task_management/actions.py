@@ -178,7 +178,7 @@ class TaskRepositoryInterface(Protocol):
 def create_issue_action(
     repository: TaskRepositoryInterface,
     title: str,
-    component_id: str,
+    component_id: str | None = None,
     description: str = "",
     priority: str = "MEDIUM",
     labels: list[str] | None = None,
@@ -187,20 +187,40 @@ def create_issue_action(
     """Create a new issue after validating inputs.
 
     Intent: Ensure every issue is valid and belongs to an existing component
-    before persisting it.
+    before persisting it. If no component is provided, creates or uses
+    an 'uncategorized' component.
     Business Value: Prevents orphaned issues and enforces data quality at
     the domain boundary.
 
     Returns:
         Tuple of (Issue, warnings list)
     """
-    from socialseed_tasker.core.task_management.entities import Issue, IssuePriority
+    from uuid import uuid4
 
-    component = repository.get_component(component_id)
-    if component is None:
-        raise ComponentNotFoundError(component_id)
+    from socialseed_tasker.core.task_management.entities import Component, Issue, IssuePriority
 
     warnings: list[str] = []
+
+    if component_id:
+        component = repository.get_component(component_id)
+        if component is None:
+            raise ComponentNotFoundError(component_id)
+    else:
+        comp = repository.get_component_by_name("uncategorized", "system")
+        if comp:
+            component_id = str(comp.id)
+            component = comp
+        else:
+            component = Component(
+                id=uuid4(),
+                name="uncategorized",
+                project="system",
+                description="Default component for issues without assignment",
+            )
+            repository.create_component(component)
+            component_id = str(component.id)
+            warnings.append("Created default 'uncategorized' component for unassigned issues")
+
     existing = repository.find_issues_by_title(title, component_id)
     if existing:
         existing_ids = [str(i.id) for i in existing]

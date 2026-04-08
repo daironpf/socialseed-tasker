@@ -113,9 +113,9 @@ class IssueCreateRequest(BaseModel):
         description="Priority level: LOW, MEDIUM, HIGH, CRITICAL",
         examples=["HIGH"],
     )
-    component_id: str = Field(
-        ...,
-        description="UUID of the component this issue belongs to",
+    component_id: str | None = Field(
+        None,
+        description="UUID of the component this issue belongs to. If not provided, issue will be created in 'uncategorized' component.",
         examples=["550e8400-e29b-41d4-a716-446655440000"],
     )
     labels: list[str] = Field(
