@@ -136,6 +136,25 @@ class FakeRepository:
         key = self._key(component_id)
         self._components.pop(key, None)
 
+    def find_issues_by_title(
+        self,
+        title: str,
+        component_id: str | None = None,
+    ) -> list[Issue]:
+        """Find issues by exact title, optionally filtered by component."""
+        result = [i for i in self._issues.values() if i.title == title]
+        if component_id:
+            result = [i for i in result if str(i.component_id) == self._key(component_id)]
+        return result
+
+    def get_component_by_name(self, name: str, project: str | None = None) -> Component | None:
+        """Retrieve a component by exact name, optionally filtered by project."""
+        for comp in self._components.values():
+            if comp.name == name:
+                if project is None or comp.project == project:
+                    return comp
+        return None
+
     @contextmanager
     def transaction(self):
         """No-op transaction for tests."""
