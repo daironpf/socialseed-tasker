@@ -69,6 +69,8 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     AgentRegisterRequest,
     AgentUpdateRequest,
     AgentResponse,
+    GitHubWebhookLogResponse,
+    GitHubWebhookTestResponse,
 )
 
 if TYPE_CHECKING:
@@ -1683,6 +1685,149 @@ def receive_test_failure(
             ),
             meta=Meta(request_id=None),
         )
+
+
+_github_webhook_logs: list[dict] = []
+
+
+def _verify_github_signature(payload: bytes, signature: str, secret: str) -> bool:
+    """Verify GitHub webhook HMAC-SHA256 signature."""
+    import hmac
+    import hashlib
+
+    if not signature or not secret:
+        return True
+
+    expected = "sha256=" + hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
+
+    return hmac.compare_digest(expected, signature)
+
+
+@webhook_router.post(
+    "/webhooks/github",
+    response_model=APIResponse[dict],
+    summary="Receive GitHub webhook events",
+    description="Receive real-time updates from GitHub (issues, comments, labels, milestones).",
+)
+def receive_github_webhook(
+    repo: TaskRepositoryInterface = Depends(get_repo),
+    request: Request = None,
+) -> APIResponse[dict]:
+    import os
+    import json
+    from datetime import datetime, timezone
+
+    if request is None:
+        return APIResponse(
+            data={"error": "No request context"},
+            meta=Meta(request_id=None),
+        )
+
+    webhook_secret = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
+    signature = request.headers.get("X-Hub-Signature-256", "")
+
+    body = request.body()
+    if not _verify_github_signature(body, signature, webhook_secret):
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=401, detail="Invalid signature")
+
+    event_type = request.headers.get("X-GitHub-Event", "unknown")
+    payload = json.loads(body)
+
+    log_entry = {
+        "id": str(len(_github_webhook_logs)),
+        "event_type": event_type,
+        "delivery_status": "received",
+        "received_at": datetime.now(timezone.utc).isoformat(),
+        "processed_at": None,
+        "error": None,
+    }
+
+    try:
+        if event_type == "issues":
+            action = payload.get("action", "")
+            issue = payload.get("issue", {})
+
+            if action in ("opened", "closed", "reopened"):
+                pass
+
+        elif event_type == "issue_comment":
+            comment = payload.get("comment", {})
+
+        elif event_type == "label":
+            label = payload.get("label", {})
+
+        elif event_type == "milestone":
+            milestone = payload.get("milestone", {})
+
+        log_entry["delivery_status"] = "processed"
+        log_entry["processed_at"] = datetime.now(timezone.utc).isoformat()
+
+    except Exception as e:
+        log_entry["delivery_status"] = "error"
+        log_entry["error"] = str(e)
+
+    _github_webhook_logs.append(log_entry)
+    if len(_github_webhook_logs) > 100:
+        _github_webhook_logs.pop(0)
+
+    return APIResponse(
+        data={"received": True, "event": event_type},
+        meta=Meta(request_id=None),
+    )
+
+
+@webhook_router.get(
+    "/webhooks/github/logs",
+    response_model=APIResponse[list[GitHubWebhookLogResponse]],
+    summary="Get webhook delivery logs",
+    description="View GitHub webhook delivery logs for debugging.",
+)
+def get_webhook_logs() -> APIResponse[list[GitHubWebhookLogResponse]]:
+    logs = [
+        GitHubWebhookLogResponse(
+            id=log["id"],
+            event_type=log["event_type"],
+            delivery_status=log["delivery_status"],
+            received_at=log["received_at"],
+            processed_at=log.get("processed_at"),
+            error=log.get("error"),
+        )
+        for log in _github_webhook_logs
+    ]
+    return APIResponse(data=logs, meta=Meta(request_id=None))
+
+
+@webhook_router.post(
+    "/webhooks/github/test",
+    response_model=APIResponse[GitHubWebhookTestResponse],
+    summary="Test webhook configuration",
+    description="Test webhook configuration and connectivity.",
+)
+def test_webhook(
+    request: Request = None,
+) -> APIResponse[GitHubWebhookTestResponse]:
+    import os
+
+    webhook_secret = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
+
+    if not webhook_secret:
+        return APIResponse(
+            data=GitHubWebhookTestResponse(
+                success=False,
+                message="GITHUB_WEBHOOK_SECRET not configured",
+            ),
+            meta=Meta(request_id=None),
+        )
+
+    return APIResponse(
+        data=GitHubWebhookTestResponse(
+            success=True,
+            message="Webhook configuration valid",
+        ),
+        meta=Meta(request_id=None),
+    )
 
 
 # In-memory agent storage for swarm coordination

@@ -585,3 +585,21 @@ class ProjectSummaryResponse(BaseModel):
     dependency_health: float
     top_blocked_components: list[dict[str, int]]
     critical_path_length: int
+
+
+class GitHubWebhookLogResponse(BaseModel):
+    """Webhook delivery log entry."""
+
+    id: str
+    event_type: str
+    delivery_status: str
+    received_at: datetime
+    processed_at: datetime | None
+    error: str | None
+
+
+class GitHubWebhookTestResponse(BaseModel):
+    """Response for webhook test."""
+
+    success: bool
+    message: str
