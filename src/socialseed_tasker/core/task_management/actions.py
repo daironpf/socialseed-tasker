@@ -39,8 +39,17 @@ class ComponentNotFoundError(Exception):
 class CircularDependencyError(Exception):
     """Raised when adding a dependency would create a cycle in the graph."""
 
-    def __init__(self, issue_id: str, depends_on_id: str) -> None:
-        super().__init__(f"Adding dependency from '{issue_id}' to '{depends_on_id}' would create a circular dependency")
+    def __init__(self, issue_id: str, depends_on_id: str, cycle_path: list[str] | None = None) -> None:
+        if cycle_path:
+            path_str = " -> ".join(cycle_path)
+            super().__init__(
+                f"Adding dependency from '{issue_id}' to '{depends_on_id}' would create a cycle: {path_str}"
+            )
+        else:
+            super().__init__(
+                f"Adding dependency from '{issue_id}' to '{depends_on_id}' would create a circular dependency"
+            )
+        self.cycle_path = cycle_path
 
 
 class IssueAlreadyClosedError(Exception):
@@ -347,8 +356,9 @@ def add_dependency_action(
         if issue_id == depends_on_id:
             raise CircularDependencyError(issue_id, depends_on_id)
 
-        if _would_create_cycle(repository, issue_id, depends_on_id):
-            raise CircularDependencyError(issue_id, depends_on_id)
+        cycle_path = _would_create_cycle(repository, issue_id, depends_on_id)
+        if cycle_path:
+            raise CircularDependencyError(issue_id, depends_on_id, cycle_path)
 
         repository.add_dependency(issue_id, depends_on_id)
 
@@ -530,19 +540,20 @@ def _would_create_cycle(
     repository: TaskRepositoryInterface,
     issue_id: str,
     depends_on_id: str,
-) -> bool:
+) -> list[str]:
     """Check if adding issue_id -> depends_on_id would create a cycle.
 
     Uses BFS to check if depends_on_id can already reach issue_id through
     existing [:DEPENDS_ON] edges.
+    Returns the cycle path if a cycle is found, empty list otherwise.
     """
     visited: set[str] = set()
-    queue = deque([depends_on_id])
+    queue = deque([(depends_on_id, [depends_on_id])])
 
     while queue:
-        current = queue.popleft()
+        current, path = queue.popleft()
         if current == issue_id:
-            return True
+            return path + [issue_id]
         if current in visited:
             continue
         visited.add(current)
@@ -550,6 +561,6 @@ def _would_create_cycle(
         for dep in repository.get_dependencies(current):
             dep_key = str(dep.id)
             if dep_key not in visited:
-                queue.append(dep_key)
+                queue.append((dep_key, path + [dep_key]))
 
-    return False
+    return []

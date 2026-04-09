@@ -498,27 +498,29 @@ def dependency_add(
     issue_id: str,
     depends_on: str,
     enforce: str = typer.Option("warn", "--enforce", "-e", help="Policy enforcement: warn, block, disabled"),
+    force: bool = typer.Option(False, "--force", "-f", help="Bypass cycle validation"),
 ) -> None:
     """Add a DEPENDS_ON relationship."""
     repo = get_repository()
 
     from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
 
-    analyzer = ArchitecturalAnalyzer(repo)
-    result = analyzer.validate_dependency(issue_id, depends_on)
-    if result.has_errors:
-        console.print(f"[error]Policy violations found:[/error]")
-        for v in result.violations:
-            console.print(f"  - {v.rule_name}: {v.message}")
-            if v.suggestion:
-                console.print(f"    Suggestion: {v.suggestion}")
-        if enforce == "block":
-            console.print("[error]Blocking due to policy violations.[/error]")
-            raise typer.Exit(code=1)
-    elif result.has_warnings:
-        console.print(f"[warning]Policy warnings:[/warning]")
-        for v in result.violations:
-            console.print(f"  - {v.rule_name}: {v.message}")
+    if not force:
+        analyzer = ArchitecturalAnalyzer(repo)
+        result = analyzer.validate_dependency(issue_id, depends_on)
+        if result.has_errors:
+            console.print(f"[error]Policy violations found:[/error]")
+            for v in result.violations:
+                console.print(f"  - {v.rule_name}: {v.message}")
+                if v.suggestion:
+                    console.print(f"    Suggestion: {v.suggestion}")
+            if enforce == "block":
+                console.print("[error]Blocking due to policy violations.[/error]")
+                raise typer.Exit(code=1)
+        elif result.has_warnings:
+            console.print(f"[warning]Policy warnings:[/warning]")
+            for v in result.violations:
+                console.print(f"  - {v.rule_name}: {v.message}")
 
     try:
         add_dependency_action(repo, issue_id, depends_on)
@@ -528,6 +530,8 @@ def dependency_add(
         raise typer.Exit(code=1) from exc
     except CircularDependencyError as exc:
         console.print(f"[error]{exc}[/error]")
+        if hasattr(exc, "cycle_path") and exc.cycle_path:
+            console.print(f"[error]Cycle path: {' -> '.join(exc.cycle_path)}[/error]")
         raise typer.Exit(code=2) from exc
 
 
