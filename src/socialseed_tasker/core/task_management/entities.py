@@ -99,3 +99,47 @@ class Issue(BaseModel):
     manifest_todo: list[dict[str, str]] = Field(default_factory=list)
     manifest_files: list[str] = Field(default_factory=list)
     manifest_notes: list[str] = Field(default_factory=list)
+
+
+class AgentRole(str, Enum):
+    """Roles for multi-agent coordination.
+
+    Intent: Define specialized responsibilities for different AI agents.
+    Business Value: Enables coordinated workflows where agents specialize
+    in planning, development, and review.
+    """
+
+    PLANNER = "planner"
+    DEVELOPER = "developer"
+    REVIEWER = "reviewer"
+    OBSERVER = "observer"
+
+
+class AgentStatus(str, Enum):
+    """Status of an agent in the swarm."""
+
+    IDLE = "idle"
+    WORKING = "working"
+    BLOCKED = "blocked"
+    OFFLINE = "offline"
+
+
+class Agent(BaseModel):
+    """An AI agent in the swarm coordination system.
+
+    Intent: Represent an AI agent with specific role and capabilities
+    for coordinated multi-agent work.
+    Business Value: Enables role-based work distribution and
+    inter-agent coordination.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str = Field(..., description="Unique agent identifier")
+    name: str = Field(..., min_length=1, max_length=100)
+    role: AgentRole = AgentRole.DEVELOPER
+    status: AgentStatus = AgentStatus.IDLE
+    current_issue_id: str | None = None
+    capabilities: list[str] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=_now)
+    last_heartbeat: datetime = Field(default_factory=_now)

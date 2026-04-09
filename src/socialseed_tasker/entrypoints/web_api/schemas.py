@@ -290,6 +290,35 @@ class TestFailureWebhookResponse(BaseModel):
     success: bool
 
 
+class AgentRegisterRequest(BaseModel):
+    """Request body for registering an agent."""
+
+    agent_id: str = Field(..., description="Unique agent identifier", examples=["agent-001"])
+    name: str = Field(..., min_length=1, max_length=100, description="Agent name")
+    role: str = Field("developer", description="Agent role: planner, developer, reviewer, observer")
+    capabilities: list[str] = Field(default_factory=list, description="Agent capabilities")
+
+
+class AgentUpdateRequest(BaseModel):
+    """Request body for updating agent status."""
+
+    status: str | None = Field(None, description="Agent status: idle, working, blocked, offline")
+    current_issue_id: str | None = Field(None, description="Issue ID currently being worked on")
+
+
+class AgentResponse(BaseModel):
+    """Agent in API responses."""
+
+    agent_id: str
+    name: str
+    role: str
+    status: str
+    current_issue_id: str | None
+    capabilities: list[str]
+    created_at: datetime
+    last_heartbeat: datetime
+
+
 # ---------------------------------------------------------------------------
 # Request schemas
 # ---------------------------------------------------------------------------

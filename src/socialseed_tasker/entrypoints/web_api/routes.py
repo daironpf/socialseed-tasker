@@ -66,6 +66,9 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     TestFailureRequest,
     TestFailureWebhookRequest,
     TestFailureWebhookResponse,
+    AgentRegisterRequest,
+    AgentUpdateRequest,
+    AgentResponse,
 )
 
 if TYPE_CHECKING:
