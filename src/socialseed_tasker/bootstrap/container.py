@@ -14,6 +14,9 @@ from typing import TYPE_CHECKING, Literal
 if TYPE_CHECKING:
     from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
     from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
+    from socialseed_tasker.core.services.webhook_validator import WebhookSignatureValidator
+    from socialseed_tasker.core.services.markdown_transformer import MarkdownTransformer
+    from socialseed_tasker.core.services.secret_manager import SecretManager
 
 
 # ---------------------------------------------------------------------------
@@ -203,3 +206,11 @@ class Container:
         )
 
         return MarkdownTransformer()
+
+    def get_secret_manager(self) -> SecretManager:
+        """Get the secret manager for GitHub credentials."""
+        from socialseed_tasker.core.services.secret_manager import (
+            SecretManager,
+        )
+
+        return SecretManager()
