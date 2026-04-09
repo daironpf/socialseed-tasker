@@ -92,6 +92,9 @@ class Issue(BaseModel):
     closed_at: datetime | None = None
     architectural_constraints: list[str] = Field(default_factory=list)
     agent_working: bool = False
+    agent_started_at: datetime | None = None
+    agent_finished_at: datetime | None = None
+    agent_id: str | None = None
     reasoning_logs: list[ReasoningLogEntry] = Field(default_factory=list)
     manifest_todo: list[dict[str, str]] = Field(default_factory=list)
     manifest_files: list[str] = Field(default_factory=list)

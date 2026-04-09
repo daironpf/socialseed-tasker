@@ -55,6 +55,8 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     ProjectSummaryResponse,
     ReasoningLogEntryRequest,
     ReasoningLogEntryResponse,
+    AgentStartRequest,
+    AgentStatusResponse,
     TestFailureRequest,
 )
 
@@ -103,6 +105,9 @@ def _issue_to_response(issue: Issue) -> IssueResponse:
         manifest_todo=issue.manifest_todo if hasattr(issue, "manifest_todo") else [],
         manifest_files=issue.manifest_files if hasattr(issue, "manifest_files") else [],
         manifest_notes=issue.manifest_notes if hasattr(issue, "manifest_notes") else [],
+        agent_started_at=issue.agent_started_at if hasattr(issue, "agent_started_at") else None,
+        agent_finished_at=issue.agent_finished_at if hasattr(issue, "agent_finished_at") else None,
+        agent_id=issue.agent_id if hasattr(issue, "agent_id") else None,
     )
 
 
@@ -469,6 +474,98 @@ def get_manifest(
             todo=manifest.get("todo", []),
             files=manifest.get("files", []),
             notes=manifest.get("notes", []),
+        ),
+        meta=Meta(request_id=None),
+    )
+
+
+@issues_router.post(
+    "/issues/{issue_id}/agent/start",
+    response_model=APIResponse[IssueResponse],
+    summary="Start agent work",
+    description="Start agent work on an issue. Requires agent_working=false.",
+    responses={
+        404: {"description": "Issue not found"},
+        409: {"description": "Agent is already working on this issue"},
+    },
+)
+def start_agent_work(
+    issue_id: str,
+    body: AgentStartRequest,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[IssueResponse]:
+    try:
+        issue = repo.get_issue(issue_id)
+        if issue is None:
+            raise IssueNotFoundError(issue_id)
+
+        if hasattr(issue, "agent_working") and issue.agent_working:
+            from fastapi import HTTPException
+
+            raise HTTPException(
+                status_code=409,
+                detail=f"Agent is already working on issue {issue_id}",
+            )
+
+        updated_issue = repo.start_agent_work(issue_id, body.agent_id)
+        return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
+    except ValueError as e:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=409, detail=str(e))
+
+
+@issues_router.post(
+    "/issues/{issue_id}/agent/finish",
+    response_model=APIResponse[IssueResponse],
+    summary="Finish agent work",
+    description="Finish agent work on an issue. Requires agent_working=true.",
+    responses={
+        404: {"description": "Issue not found"},
+        409: {"description": "Agent is not working on this issue"},
+    },
+)
+def finish_agent_work(
+    issue_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[IssueResponse]:
+    try:
+        issue = repo.get_issue(issue_id)
+        if issue is None:
+            raise IssueNotFoundError(issue_id)
+
+        updated_issue = repo.finish_agent_work(issue_id)
+        return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
+    except ValueError as e:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=409, detail=str(e))
+
+
+@issues_router.get(
+    "/issues/{issue_id}/agent/status",
+    response_model=APIResponse[AgentStatusResponse],
+    summary="Get agent status",
+    description="Get agent work status for an issue.",
+    responses={
+        404: {"description": "Issue not found"},
+    },
+)
+def get_agent_status(
+    issue_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[AgentStatusResponse]:
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+
+    status = repo.get_agent_status(issue_id)
+    return APIResponse(
+        data=AgentStatusResponse(
+            agent_working=status.get("agent_working", False),
+            agent_started_at=status.get("agent_started_at"),
+            agent_finished_at=status.get("agent_finished_at"),
+            agent_id=status.get("agent_id"),
         ),
         meta=Meta(request_id=None),
     )

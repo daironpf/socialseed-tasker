@@ -274,3 +274,46 @@ class TestIssueManifest:
         assert len(issue.manifest_todo) == 1
         assert len(issue.manifest_files) == 1
         assert len(issue.manifest_notes) == 1
+
+
+class TestAgentLifecycle:
+    def test_issue_with_agent_lifecycle_fields(self):
+        from datetime import datetime
+
+        component_id = UUID("00000000-0000-0000-0000-000000000001")
+        issue = Issue(
+            title="Test issue",
+            component_id=component_id,
+            agent_working=True,
+            agent_started_at=datetime.now(),
+            agent_id="agent-001",
+        )
+        assert issue.agent_working == True
+        assert issue.agent_started_at is not None
+        assert issue.agent_id == "agent-001"
+
+    def test_issue_agent_lifecycle_defaults(self):
+        component_id = UUID("00000000-0000-0000-0000-000000000001")
+        issue = Issue(title="Test", component_id=component_id)
+        assert issue.agent_working == False
+        assert issue.agent_started_at is None
+        assert issue.agent_finished_at is None
+        assert issue.agent_id is None
+
+    def test_issue_agent_finish_fields(self):
+        from datetime import datetime
+
+        component_id = UUID("00000000-0000-0000-0000-000000000001")
+        start_time = datetime.now()
+        finish_time = datetime.now()
+        issue = Issue(
+            title="Test issue",
+            component_id=component_id,
+            agent_working=False,
+            agent_started_at=start_time,
+            agent_finished_at=finish_time,
+            agent_id="agent-001",
+        )
+        assert issue.agent_working == False
+        assert issue.agent_started_at == start_time
+        assert issue.agent_finished_at == finish_time

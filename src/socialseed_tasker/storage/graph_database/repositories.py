@@ -64,6 +64,9 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
         closed_at=data.get("closed_at"),
         architectural_constraints=data.get("architectural_constraints", []),
         agent_working=data.get("agent_working", False),
+        agent_started_at=data.get("agent_started_at"),
+        agent_finished_at=data.get("agent_finished_at"),
+        agent_id=data.get("agent_id"),
         reasoning_logs=reasoning_logs,
         manifest_todo=data.get("manifest_todo", []),
         manifest_files=data.get("manifest_files", []),
@@ -188,6 +191,10 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 updated_at=issue.updated_at.isoformat(),
                 closed_at=issue.closed_at.isoformat() if issue.closed_at else None,
                 architectural_constraints=issue.architectural_constraints,
+                agent_working=issue.agent_working,
+                agent_started_at=issue.agent_started_at.isoformat() if issue.agent_started_at else None,
+                agent_finished_at=issue.agent_finished_at.isoformat() if issue.agent_finished_at else None,
+                agent_id=issue.agent_id,
                 reasoning_logs=reasoning_logs_data,
                 manifest_todo=issue.manifest_todo,
                 manifest_files=issue.manifest_files,
@@ -492,6 +499,84 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 "todo": record["i"].get("manifest_todo", []),
                 "files": record["i"].get("manifest_files", []),
                 "notes": record["i"].get("manifest_notes", []),
+            }
+
+    # -- Agent lifecycle --------------------------------------------------------
+
+    def start_agent_work(self, issue_id: str, agent_id: str) -> Issue:
+        """Start agent work on an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+
+            node_data = dict(record["i"])
+            if node_data.get("agent_working", False):
+                raise ValueError(f"Agent is already working on issue {issue_id}")
+
+            update_result = session.run(
+                queries.UPDATE_ISSUE,
+                id=issue_id,
+                updates={
+                    "agent_working": True,
+                    "agent_started_at": _now_iso(),
+                    "agent_id": agent_id,
+                },
+                updated_at=_now_iso(),
+            )
+            updated_record = update_result.single()
+            if updated_record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return _node_to_issue(updated_record["i"])
+
+    def finish_agent_work(self, issue_id: str) -> Issue:
+        """Finish agent work on an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+
+            node_data = dict(record["i"])
+            if not node_data.get("agent_working", False):
+                raise ValueError(f"Agent is not working on issue {issue_id}")
+
+            update_result = session.run(
+                queries.UPDATE_ISSUE,
+                id=issue_id,
+                updates={
+                    "agent_working": False,
+                    "agent_finished_at": _now_iso(),
+                },
+                updated_at=_now_iso(),
+            )
+            updated_record = update_result.single()
+            if updated_record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return _node_to_issue(updated_record["i"])
+
+    def get_agent_status(self, issue_id: str) -> dict[str, Any]:
+        """Get agent work status for an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return {
+                "agent_working": record["i"].get("agent_working", False),
+                "agent_started_at": record["i"].get("agent_started_at"),
+                "agent_finished_at": record["i"].get("agent_finished_at"),
+                "agent_id": record["i"].get("agent_id"),
             }
 
     # -- Transactions ----------------------------------------------------------

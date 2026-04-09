@@ -171,6 +171,15 @@ class TaskRepositoryInterface(Protocol):
     def get_manifest(self, issue_id: str) -> dict[str, Any]:
         """Get the full manifest for an issue."""
 
+    def start_agent_work(self, issue_id: str, agent_id: str) -> Issue:
+        """Start agent work on an issue."""
+
+    def finish_agent_work(self, issue_id: str) -> Issue:
+        """Finish agent work on an issue."""
+
+    def get_agent_status(self, issue_id: str) -> dict[str, Any]:
+        """Get agent work status for an issue."""
+
     def reset_data(self, scope: str = "all") -> dict[str, int]:
         """Reset data in the repository.
 

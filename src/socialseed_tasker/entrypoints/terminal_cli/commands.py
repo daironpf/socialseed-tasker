@@ -381,6 +381,81 @@ def issue_delete(
     console.print(f"[success]Issue deleted:[/success] {resolved_id[:8]}")
 
 
+@issue_app.command("start")
+def issue_start(
+    issue_id: str,
+    agent_id: str = typer.Option(..., "--agent-id", "-a", help="Agent identifier"),
+) -> None:
+    """Start agent work on an issue."""
+    from uuid import UUID
+
+    repo = get_repository()
+
+    resolved_id = issue_id
+    try:
+        UUID(issue_id)
+    except ValueError:
+        all_issues = repo.list_issues()
+        for issue in all_issues:
+            if issue.title.lower() == issue_id.lower() or issue_id.lower() in issue.title.lower():
+                resolved_id = str(issue.id)
+                break
+        else:
+            console.print(f"[error]Issue '{issue_id}' not found.[/error]")
+            raise typer.Exit(code=1)
+
+    try:
+        issue = repo.get_issue(resolved_id)
+        if issue is None:
+            console.print(f"[error]Issue '{issue_id}' not found.[/error]")
+            raise typer.Exit(code=1)
+
+        if hasattr(issue, "agent_working") and issue.agent_working:
+            console.print(f"[error]Agent is already working on issue '{issue_id}'.[/error]")
+            raise typer.Exit(code=1)
+
+        updated_issue = repo.start_agent_work(resolved_id, agent_id)
+        console.print(f"[success]Agent work started:[/success] {agent_id} on issue {resolved_id[:8]}")
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1)
+
+
+@issue_app.command("finish")
+def issue_finish(
+    issue_id: str,
+) -> None:
+    """Finish agent work on an issue."""
+    from uuid import UUID
+
+    repo = get_repository()
+
+    resolved_id = issue_id
+    try:
+        UUID(issue_id)
+    except ValueError:
+        all_issues = repo.list_issues()
+        for issue in all_issues:
+            if issue.title.lower() == issue_id.lower() or issue_id.lower() in issue.title.lower():
+                resolved_id = str(issue.id)
+                break
+        else:
+            console.print(f"[error]Issue '{issue_id}' not found.[/error]")
+            raise typer.Exit(code=1)
+
+    try:
+        issue = repo.get_issue(resolved_id)
+        if issue is None:
+            console.print(f"[error]Issue '{issue_id}' not found.[/error]")
+            raise typer.Exit(code=1)
+
+        updated_issue = repo.finish_agent_work(resolved_id)
+        console.print(f"[success]Agent work finished:[/success] issue {resolved_id[:8]}")
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1)
+
+
 # ---------------------------------------------------------------------------
 # Dependency commands
 # ---------------------------------------------------------------------------

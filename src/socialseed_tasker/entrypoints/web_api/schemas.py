@@ -174,6 +174,25 @@ class ManifestResponse(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class AgentStartRequest(BaseModel):
+    """Request body for starting agent work on an issue."""
+
+    agent_id: str = Field(
+        ...,
+        description="Identifier for the agent",
+        examples=["agent-001", "claude-code-abc123"],
+    )
+
+
+class AgentStatusResponse(BaseModel):
+    """Agent work status in API responses."""
+
+    agent_working: bool
+    agent_started_at: datetime | None
+    agent_finished_at: datetime | None
+    agent_id: str | None
+
+
 # ---------------------------------------------------------------------------
 # Request schemas
 # ---------------------------------------------------------------------------
@@ -317,6 +336,9 @@ class IssueResponse(BaseModel):
     closed_at: datetime | None
     architectural_constraints: list[str]
     agent_working: bool | None = None
+    agent_started_at: datetime | None = None
+    agent_finished_at: datetime | None = None
+    agent_id: str | None = None
     reasoning_logs: list[ReasoningLogEntryResponse] = Field(default_factory=list)
     manifest_todo: list[dict[str, str]] = Field(default_factory=list)
     manifest_files: list[str] = Field(default_factory=list)
