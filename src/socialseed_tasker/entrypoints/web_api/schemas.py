@@ -229,6 +229,47 @@ class PolicyValidationResponse(BaseModel):
     enforcement_mode: str
 
 
+class PolicyRuleRequest(BaseModel):
+    """Request body for a policy rule."""
+
+    rule_type: str = Field(
+        ...,
+        description="Type of rule: forbidden_path, required_dependency, max_depth, forbidden_label_dependency",
+        examples=["forbidden_path"],
+    )
+    from_pattern: str = Field(
+        "",
+        description="Pattern to match source (e.g., component.type:frontend, label:backend)",
+    )
+    to_pattern: str = Field(
+        "",
+        description="Pattern to match target (e.g., component.type:database)",
+    )
+    max_depth: int = Field(default=5, description="Maximum depth for max_depth rules")
+    description: str = ""
+
+
+class PolicyCreateRequest(BaseModel):
+    """Request body for creating a policy."""
+
+    name: str = Field(..., min_length=1, max_length=100, description="Policy name")
+    description: str = Field("", description="Policy description")
+    rules: list[PolicyRuleRequest] = Field(default_factory=list, description="List of rules")
+    is_active: bool = Field(default=True, description="Whether policy is active")
+
+
+class PolicyResponse(BaseModel):
+    """Policy in API responses."""
+
+    id: str
+    name: str
+    description: str
+    rules: list[dict]
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+
 # ---------------------------------------------------------------------------
 # Request schemas
 # ---------------------------------------------------------------------------

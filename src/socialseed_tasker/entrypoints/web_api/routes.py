@@ -60,6 +60,8 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     PolicyValidationRequest,
     PolicyValidationResponse,
     PolicyViolationResponse,
+    PolicyCreateRequest,
+    PolicyResponse,
     TestFailureRequest,
 )
 
@@ -1242,6 +1244,134 @@ def get_policy_rules(
     ]
 
     return APIResponse(data=rules_data, meta=Meta(request_id=None))
+
+
+# In-memory policy storage for demonstration
+_policy_engine: dict[str, Any] = {"policies": []}
+
+
+@policy_router.post(
+    "/policies",
+    response_model=APIResponse[PolicyResponse],
+    status_code=201,
+    summary="Create a policy",
+    description="Create a new policy with rules for architectural governance.",
+)
+def create_policy(
+    body: PolicyCreateRequest,
+) -> APIResponse[PolicyResponse]:
+    from uuid import UUID
+    from socialseed_tasker.core.project_analysis.policy import Policy, PolicyRule, PolicyRuleType
+
+    rules = []
+    for rule_req in body.rules:
+        rules.append(
+            PolicyRule(
+                rule_type=PolicyRuleType(rule_req.rule_type),
+                from_pattern=rule_req.from_pattern,
+                to_pattern=rule_req.to_pattern,
+                max_depth=rule_req.max_depth,
+                description=rule_req.description,
+            )
+        )
+
+    policy = Policy(
+        name=body.name,
+        description=body.description,
+        rules=rules,
+        is_active=body.is_active,
+    )
+
+    _policy_engine["policies"].append(policy)
+
+    return APIResponse(
+        data=PolicyResponse(
+            id=str(policy.id),
+            name=policy.name,
+            description=policy.description,
+            rules=[
+                {"rule_type": r.rule_type.value, "from_pattern": r.from_pattern, "to_pattern": r.to_pattern}
+                for r in policy.rules
+            ],
+            is_active=policy.is_active,
+            created_at=policy.created_at,
+            updated_at=policy.updated_at,
+        ),
+        meta=Meta(request_id=None),
+    )
+
+
+@policy_router.get(
+    "/policies",
+    response_model=APIResponse[list[PolicyResponse]],
+    summary="List policies",
+    description="List all policies.",
+)
+def list_policies() -> APIResponse[list[PolicyResponse]]:
+    policies = _policy_engine.get("policies", [])
+    return APIResponse(
+        data=[
+            PolicyResponse(
+                id=str(p.id),
+                name=p.name,
+                description=p.description,
+                rules=[
+                    {"rule_type": r.rule_type.value, "from_pattern": r.from_pattern, "to_pattern": r.to_pattern}
+                    for r in p.rules
+                ],
+                is_active=p.is_active,
+                created_at=p.created_at,
+                updated_at=p.updated_at,
+            )
+            for p in policies
+        ],
+        meta=Meta(request_id=None),
+    )
+
+
+@policy_router.get(
+    "/policies/{policy_id}",
+    response_model=APIResponse[PolicyResponse],
+    summary="Get a policy",
+    description="Get a policy by ID.",
+)
+def get_policy(policy_id: str) -> APIResponse[PolicyResponse]:
+    from uuid import UUID
+
+    policies = _policy_engine.get("policies", [])
+    for p in policies:
+        if str(p.id) == policy_id:
+            return APIResponse(
+                data=PolicyResponse(
+                    id=str(p.id),
+                    name=p.name,
+                    description=p.description,
+                    rules=[
+                        {"rule_type": r.rule_type.value, "from_pattern": r.from_pattern, "to_pattern": r.to_pattern}
+                        for r in p.rules
+                    ],
+                    is_active=p.is_active,
+                    created_at=p.created_at,
+                    updated_at=p.updated_at,
+                ),
+                meta=Meta(request_id=None),
+            )
+
+    from fastapi import HTTPException
+
+    raise HTTPException(status_code=404, detail=f"Policy {policy_id} not found")
+
+
+@policy_router.delete(
+    "/policies/{policy_id}",
+    response_model=APIResponse[dict],
+    summary="Delete a policy",
+    description="Delete a policy by ID.",
+)
+def delete_policy(policy_id: str) -> APIResponse[dict]:
+    policies = _policy_engine.get("policies", [])
+    _policy_engine["policies"] = [p for p in policies if str(p.id) != policy_id]
+    return APIResponse(data={"deleted": policy_id}, meta=Meta(request_id=None))
 
 
 # ---------------------------------------------------------------------------
