@@ -270,6 +270,26 @@ class PolicyResponse(BaseModel):
     updated_at: datetime
 
 
+class TestFailureWebhookRequest(BaseModel):
+    """Request body for test failure webhook."""
+
+    test_name: str = Field(..., description="Name of the failed test")
+    test_file: str = Field("", description="Path to the test file")
+    error_message: str = Field("", description="Error message from test failure")
+    stack_trace: str = Field("", description="Full stack trace")
+    test_type: str = Field("integration", description="Type of test: unit, integration, e2e")
+    commit_sha: str = Field("", description="Git commit SHA")
+    branch: str = Field("", description="Git branch name")
+
+
+class TestFailureWebhookResponse(BaseModel):
+    """Response for test failure webhook."""
+
+    issue_id: str | None = None
+    message: str
+    success: bool
+
+
 # ---------------------------------------------------------------------------
 # Request schemas
 # ---------------------------------------------------------------------------

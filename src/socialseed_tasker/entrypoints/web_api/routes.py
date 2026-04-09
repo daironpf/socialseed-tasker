@@ -64,6 +64,8 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     PolicyCreateRequest,
     PolicyResponse,
     TestFailureRequest,
+    TestFailureWebhookRequest,
+    TestFailureWebhookResponse,
 )
 
 if TYPE_CHECKING:
@@ -1555,6 +1557,129 @@ def get_project_summary(
         ),
         meta=Meta(request_id=None),
     )
+
+
+# ---------------------------------------------------------------------------
+# Webhook router
+# ---------------------------------------------------------------------------
+
+webhook_router = APIRouter()
+
+
+@webhook_router.post(
+    "/webhooks/test-failure",
+    response_model=APIResponse[TestFailureWebhookResponse],
+    summary="Receive test failure events",
+    description="Webhook endpoint to receive test failure events from socialseed-e2e. Automatically creates issues for failed tests.",
+)
+def receive_test_failure(
+    body: TestFailureWebhookRequest,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+    request: Request = None,
+) -> APIResponse[TestFailureWebhookResponse]:
+    import os
+
+    webhook_api_key = os.environ.get("TASKER_WEBHOOK_API_KEY", "")
+    if webhook_api_key:
+        auth_header = request.headers.get("X-API-Key", "") if request else ""
+        if auth_header != webhook_api_key:
+            from fastapi import HTTPException
+
+            raise HTTPException(status_code=401, detail="Invalid API key")
+
+    component_id = None
+    test_file = body.test_file
+    if test_file:
+        parts = test_file.replace("\\", "/").split("/")
+        for part in parts:
+            if part in ("src", "tests", "test"):
+                continue
+            if part.endswith(".py"):
+                component_name = part.replace(".py", "").replace("test_", "")
+                components = repo.list_components()
+                for comp in components:
+                    if comp.name.lower() == component_name.lower():
+                        component_id = str(comp.id)
+                        break
+                if component_id:
+                    break
+        if not component_id:
+            components = repo.list_components()
+            if components:
+                component_id = str(components[0].id)
+
+    title = f"Test Failure: {body.test_name}"
+    description = f"""## Test Failure Details
+
+**Test Name:** {body.test_name}
+**Test File:** {body.test_file}
+**Test Type:** {body.test_type}
+**Error Message:** {body.error_message}
+
+**Stack Trace:**
+```
+{body.stack_trace}
+```
+
+**Commit:** {body.commit_sha}
+**Branch:** {body.branch}
+"""
+
+    labels = ["test-failure", "auto-created", body.test_type]
+
+    try:
+        issue, warnings = create_issue_action(
+            repo,
+            title=title,
+            component_id=component_id or "default",
+            description=description,
+            priority="HIGH",
+            labels=labels,
+        )
+        return APIResponse(
+            data=TestFailureWebhookResponse(
+                issue_id=str(issue.id),
+                message=f"Issue created for test failure: {body.test_name}",
+                success=True,
+            ),
+            meta=Meta(request_id=None),
+        )
+    except ComponentNotFoundError:
+        components = repo.list_components()
+        if components:
+            issue, warnings = create_issue_action(
+                repo,
+                title=title,
+                component_id=str(components[0].id),
+                description=description,
+                priority="HIGH",
+                labels=labels,
+            )
+            return APIResponse(
+                data=TestFailureWebhookResponse(
+                    issue_id=str(issue.id),
+                    message=f"Issue created for test failure: {body.test_name}",
+                    success=True,
+                ),
+                meta=Meta(request_id=None),
+            )
+        return APIResponse(
+            data=TestFailureWebhookResponse(
+                issue_id=None,
+                message="No components found to assign issue",
+                success=False,
+            ),
+            meta=Meta(request_id=None),
+        )
+    except Exception as e:
+        return APIResponse(
+            data=TestFailureWebhookResponse(
+                issue_id=None,
+                message=f"Failed to create issue: {str(e)}",
+                success=False,
+            ),
+            meta=Meta(request_id=None),
+        )
 
 
 # ---------------------------------------------------------------------------

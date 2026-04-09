@@ -126,6 +126,7 @@ def create_app(
         issues_router,
         policy_router,
         project_router,
+        webhook_router,
     )
 
     app.include_router(issues_router, prefix="/api/v1", tags=["issues"])
@@ -134,6 +135,7 @@ def create_app(
     app.include_router(analysis_router, prefix="/api/v1", tags=["analysis"])
     app.include_router(project_router, prefix="/api/v1", tags=["projects"])
     app.include_router(policy_router, prefix="/api/v1", tags=["policies"])
+    app.include_router(webhook_router, prefix="/api/v1", tags=["webhooks"])
     app.include_router(admin_router, prefix="/api/v1", tags=["admin"])
 
     # Health endpoint with Neo4j connectivity check
