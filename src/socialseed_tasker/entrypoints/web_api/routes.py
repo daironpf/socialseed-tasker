@@ -327,6 +327,154 @@ def close_issue(
 
 
 @issues_router.post(
+    "/issues/{issue_id}/link-github",
+    response_model=APIResponse[IssueResponse],
+    summary="Link GitHub issue",
+    description="Link a Tasker issue to a GitHub issue for causal mirroring.",
+)
+def link_github_issue(
+    issue_id: str,
+    github_issue_url: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[IssueResponse]:
+    import re
+
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+
+    match = re.search(r"github\.com/([^/]+)/([^/]+)/issues/(\d+)", github_issue_url)
+    if not match:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=400, detail="Invalid GitHub issue URL")
+
+    github_issue_number = int(match.group(3))
+
+    updates = {
+        "github_issue_url": github_issue_url,
+        "github_issue_number": github_issue_number,
+    }
+    updated_issue = repo.update_issue(issue_id, updates)
+    return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
+
+
+@issues_router.post(
+    "/issues/{issue_id}/unlink-github",
+    response_model=APIResponse[IssueResponse],
+    summary="Unlink GitHub issue",
+    description="Unlink a Tasker issue from its GitHub issue.",
+)
+def unlink_github_issue(
+    issue_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[IssueResponse]:
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+
+    updates = {
+        "github_issue_url": None,
+        "github_issue_number": None,
+    }
+    updated_issue = repo.update_issue(issue_id, updates)
+    return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
+
+
+@issues_router.post(
+    "/issues/{issue_id}/mirror-root-cause",
+    response_model=APIResponse[dict],
+    summary="Mirror root cause analysis to GitHub",
+    description="Post root cause analysis as a comment on the linked GitHub issue.",
+)
+def mirror_root_cause(
+    issue_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[dict]:
+    from socialseed_tasker.core.services.github_mirror import GitHubMirroringService
+
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+
+    if not hasattr(issue, "github_issue_number") or not issue.github_issue_number:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=400, detail="Issue not linked to GitHub")
+
+    from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
+
+    analyzer = ArchitecturalAnalyzer(repo)
+
+    causal_links = analyzer.analyze_root_cause_issues([issue])
+
+    if not causal_links:
+        return APIResponse(
+            data={"mirrored": False, "message": "No causal links found"},
+            meta=Meta(request_id=None),
+        )
+
+    analysis_data = {
+        "confidence": max([c.confidence for c in causal_links]) if causal_links else 0.0,
+        "primary_factor": "Multiple causal factors identified",
+        "causal_links": [{"issue_id": str(c.issue.id), "issue_title": c.issue.title} for c in causal_links[:5]],
+    }
+
+    mirror = GitHubMirroringService()
+    result = mirror.mirror_root_cause(issue.github_issue_number, analysis_data)
+    mirror.close()
+
+    return APIResponse(
+        data={"mirrored": True, "comment_url": result.get("html_url")},
+        meta=Meta(request_id=None),
+    )
+
+
+@issues_router.post(
+    "/issues/{issue_id}/mirror-impact",
+    response_model=APIResponse[dict],
+    summary="Mirror impact analysis to GitHub",
+    description="Post impact analysis as a comment on the linked GitHub issue.",
+)
+def mirror_impact(
+    issue_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[dict]:
+    from socialseed_tasker.core.services.github_mirror import GitHubMirroringService
+
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+
+    if not hasattr(issue, "github_issue_number") or not issue.github_issue_number:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=400, detail="Issue not linked to GitHub")
+
+    from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
+
+    analyzer = ArchitecturalAnalyzer(repo)
+    analysis = analyzer.analyze_impact(issue.id)
+
+    analysis_data = {
+        "directly_affected": [{"id": str(i.id), "title": i.title} for i in analysis.directly_affected],
+        "transitively_affected": [{"id": str(i.id), "title": i.title} for i in analysis.transitively_affected],
+        "blocked_issues": [{"id": str(i.id), "title": i.title} for i in analysis.blocked_issues],
+        "affected_components": analysis.affected_components,
+        "risk_level": analysis.risk_level.value,
+    }
+
+    mirror = GitHubMirroringService()
+    result = mirror.mirror_impact(issue.github_issue_number, analysis_data)
+    mirror.close()
+
+    return APIResponse(
+        data={"mirrored": True, "comment_url": result.get("html_url")},
+        meta=Meta(request_id=None),
+    )
+
+
+@issues_router.post(
     "/issues/{issue_id}/reasoning",
     response_model=APIResponse[IssueResponse],
     summary="Add reasoning log entry",

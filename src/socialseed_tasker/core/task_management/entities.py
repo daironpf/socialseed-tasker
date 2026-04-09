@@ -99,6 +99,9 @@ class Issue(BaseModel):
     manifest_todo: list[dict[str, str]] = Field(default_factory=list)
     manifest_files: list[str] = Field(default_factory=list)
     manifest_notes: list[str] = Field(default_factory=list)
+    github_issue_url: str | None = None
+    github_issue_number: int | None = None
+    last_mirrored_at: datetime | None = None
 
 
 class AgentRole(str, Enum):
