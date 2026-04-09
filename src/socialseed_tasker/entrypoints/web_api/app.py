@@ -125,6 +125,7 @@ def create_app(
         components_router,
         dependencies_router,
         issues_router,
+        label_router,
         policy_router,
         project_router,
         sync_router,
@@ -134,6 +135,7 @@ def create_app(
     app.include_router(issues_router, prefix="/api/v1", tags=["issues"])
     app.include_router(dependencies_router, prefix="/api/v1", tags=["dependencies"])
     app.include_router(components_router, prefix="/api/v1", tags=["components"])
+    app.include_router(label_router, prefix="/api/v1", tags=["labels"])
     app.include_router(analysis_router, prefix="/api/v1", tags=["analysis"])
     app.include_router(project_router, prefix="/api/v1", tags=["projects"])
     app.include_router(policy_router, prefix="/api/v1", tags=["policies"])

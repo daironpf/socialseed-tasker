@@ -1068,6 +1068,84 @@ def delete_component(
 
 
 # ---------------------------------------------------------------------------
+# Label router
+# ---------------------------------------------------------------------------
+
+label_router = APIRouter()
+
+
+@label_router.get(
+    "/labels",
+    response_model=APIResponse[list[dict]],
+    summary="List all labels",
+    description="List all labels synced from GitHub or created in Tasker.",
+)
+def list_labels(
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list[dict]]:
+    labels = repo.get_all_labels() if hasattr(repo, "get_all_labels") else []
+    return APIResponse(data=labels, meta=Meta(request_id=None))
+
+
+@label_router.post(
+    "/labels/sync",
+    response_model=APIResponse[dict],
+    summary="Sync labels from GitHub",
+    description="Force sync labels from GitHub repository to Neo4j.",
+)
+def sync_labels(
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[dict]:
+    from socialseed_tasker.storage.adapters.github import GitHubAdapter
+
+    try:
+        adapter = GitHubAdapter()
+        synced = repo.sync_labels_from_github(adapter)
+        adapter.close()
+        return APIResponse(data={"synced": synced}, meta=Meta(request_id=None))
+    except Exception as e:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@label_router.get(
+    "/issues",
+    response_model=APIResponse[list[IssueResponse]],
+    summary="List issues",
+    description="List issues with optional filtering by labels, status, component, or project.",
+)
+def list_issues(
+    labels: str | None = Query(None, description="Filter by comma-separated labels"),
+    status: str | None = Query(None, description="Filter by status"),
+    component_id: str | None = Query(None, description="Filter by component"),
+    project: str | None = Query(None, description="Filter by project"),
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list[IssueResponse]]:
+    label_list = [l.strip() for l in labels.split(",")] if labels else []
+
+    if label_list and hasattr(repo, "get_issues_by_labels"):
+        issues = repo.get_issues_by_labels(label_list)
+    else:
+        issues = repo.list_issues(
+            component_id=component_id,
+            status=status,
+            project=project,
+        )
+
+    start = (page - 1) * limit
+    end = start + limit
+    paginated = issues[start:end]
+
+    return APIResponse(
+        data=[_issue_to_response(i) for i in paginated],
+        meta=Meta(request_id=None),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Analysis router (root-cause analysis and impact assessment)
 # ---------------------------------------------------------------------------
 

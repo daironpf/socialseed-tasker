@@ -271,3 +271,16 @@ class GitHubAdapter:
     def close(self) -> None:
         """Close the HTTP client."""
         self._client.close()
+
+    def list_labels(self) -> list[dict]:
+        """List all labels in the repository."""
+        data = self._request("GET", "/labels")
+        return [
+            {
+                "name": label["name"],
+                "color": label.get("color", ""),
+                "description": label.get("description", ""),
+                "default": label.get("default", False),
+            }
+            for label in data
+        ]

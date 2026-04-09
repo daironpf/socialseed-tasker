@@ -607,3 +607,54 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 result["components_deleted"] = res.single()["count"] if res.single() else 0
 
             return result
+
+    # -- Label management --------------------------------------------------------
+
+    def sync_labels_from_github(self, github_adapter) -> int:
+        """Sync labels from GitHub repository."""
+        from datetime import datetime, timezone
+
+        labels = github_adapter.list_labels() if github_adapter else []
+        synced = 0
+
+        with self._driver.driver.session(database=self._driver.database) as session:
+            for label in labels:
+                session.run(
+                    queries.CREATE_LABEL,
+                    name=label.get("name", ""),
+                    color=label.get("color", ""),
+                    description=label.get("description", ""),
+                    is_default=label.get("default", False),
+                    updated_at=datetime.now(timezone.utc).isoformat(),
+                )
+                synced += 1
+
+        return synced
+
+    def get_all_labels(self) -> list[dict]:
+        """Get all labels from Neo4j."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.GET_ALL_LABELS)
+            return [dict(r["l"]) for r in result]
+
+    def link_issue_to_labels(self, issue_id: str, label_names: list[str]) -> None:
+        """Link an issue to labels."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            for label_name in label_names:
+                session.run(
+                    queries.LINK_ISSUE_TO_LABEL,
+                    issue_id=issue_id,
+                    label_name=label_name,
+                )
+
+    def get_issues_by_labels(self, labels: list[str]) -> list[Issue]:
+        """Get issues filtered by labels."""
+        if not labels:
+            return []
+
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUES_BY_LABELS,
+                labels=labels,
+            )
+            return [_node_to_issue(r["i"]) for r in result]
