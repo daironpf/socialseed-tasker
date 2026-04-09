@@ -89,6 +89,42 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
 
 # ---------------------------------------------------------------------------
+# Reasoning log schemas
+# ---------------------------------------------------------------------------
+
+
+class ReasoningLogEntryRequest(BaseModel):
+    """Request body for adding a reasoning log entry."""
+
+    context: str = Field(
+        ...,
+        description="Type of reasoning: component_selection, dependency_analysis, architecture_choice, impact_assessment, priority_decision",
+        examples=["architecture_choice"],
+    )
+    reasoning: str = Field(
+        ...,
+        min_length=1,
+        description="Explanation of the decision",
+        examples=["Selected Neo4j for storage due to graph-based dependency tracking requirements"],
+    )
+    related_nodes: list[str] = Field(
+        default_factory=list,
+        description="Related issue/component UUIDs",
+        examples=[["550e8400-e29b-41d4-a716-446655440000"]],
+    )
+
+
+class ReasoningLogEntryResponse(BaseModel):
+    """Single reasoning log entry in API responses."""
+
+    id: str
+    timestamp: datetime
+    context: str
+    reasoning: str
+    related_nodes: list[str]
+
+
+# ---------------------------------------------------------------------------
 # Request schemas
 # ---------------------------------------------------------------------------
 
@@ -231,6 +267,7 @@ class IssueResponse(BaseModel):
     closed_at: datetime | None
     architectural_constraints: list[str]
     agent_working: bool | None = None
+    reasoning_logs: list[ReasoningLogEntryResponse] = Field(default_factory=list)
 
 
 class ComponentResponse(BaseModel):

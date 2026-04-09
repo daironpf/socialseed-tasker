@@ -76,7 +76,8 @@ CREATE (i:Issue {
     created_at: $created_at,
     updated_at: $updated_at,
     closed_at: $closed_at,
-    architectural_constraints: $architectural_constraints
+    architectural_constraints: $architectural_constraints,
+    reasoning_logs: $reasoning_logs
 })
 CREATE (i)-[:BELONGS_TO]->(c)
 """

@@ -13,6 +13,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from socialseed_tasker.core.task_management.value_objects import ReasoningLogEntry
+
 
 def _now() -> datetime:
     """Return the current UTC timestamp."""
@@ -90,3 +92,4 @@ class Issue(BaseModel):
     closed_at: datetime | None = None
     architectural_constraints: list[str] = Field(default_factory=list)
     agent_working: bool = False
+    reasoning_logs: list[ReasoningLogEntry] = Field(default_factory=list)

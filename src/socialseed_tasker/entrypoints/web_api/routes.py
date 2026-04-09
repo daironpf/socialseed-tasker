@@ -49,6 +49,8 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     PaginatedResponse,
     PaginationMeta,
     ProjectSummaryResponse,
+    ReasoningLogEntryRequest,
+    ReasoningLogEntryResponse,
     TestFailureRequest,
 )
 
@@ -84,6 +86,16 @@ def _issue_to_response(issue: Issue) -> IssueResponse:
         closed_at=issue.closed_at,
         architectural_constraints=issue.architectural_constraints,
         agent_working=issue.agent_working if hasattr(issue, "agent_working") else None,
+        reasoning_logs=[
+            {
+                "id": str(log.id),
+                "timestamp": log.timestamp,
+                "context": log.context.value,
+                "reasoning": log.reasoning,
+                "related_nodes": [str(n) for n in log.related_nodes],
+            }
+            for log in issue.reasoning_logs
+        ],
     )
 
 
@@ -287,6 +299,70 @@ def close_issue(
 ):
     issue = close_issue_action(repo, issue_id)
     return APIResponse(data=_issue_to_response(issue), meta=Meta(request_id=None))
+
+
+@issues_router.post(
+    "/issues/{issue_id}/reasoning",
+    response_model=APIResponse[IssueResponse],
+    summary="Add reasoning log entry",
+    description=(
+        "Add a reasoning log entry to an issue. "
+        "Captures the AI's decision-making process for transparency and auditability."
+    ),
+    responses={
+        404: {"description": "Issue not found"},
+    },
+)
+def add_reasoning_log(
+    issue_id: str,
+    body: ReasoningLogEntryRequest,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[IssueResponse]:
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+
+    from uuid import UUID
+
+    related_nodes = [UUID(n) for n in body.related_nodes] if body.related_nodes else []
+    updated_issue = repo.add_reasoning_log(
+        issue_id=issue_id,
+        context=body.context,
+        reasoning=body.reasoning,
+        related_nodes=body.related_nodes,
+    )
+    return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
+
+
+@issues_router.get(
+    "/issues/{issue_id}/reasoning",
+    response_model=APIResponse[list[ReasoningLogEntryResponse]],
+    summary="Get reasoning logs",
+    description="Get all reasoning log entries for an issue.",
+    responses={
+        404: {"description": "Issue not found"},
+    },
+)
+def get_reasoning_logs(
+    issue_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list[ReasoningLogEntryResponse]]:
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+
+    logs = repo.get_reasoning_logs(issue_id)
+    log_responses = [
+        ReasoningLogEntryResponse(
+            id=log.get("id", ""),
+            timestamp=log.get("timestamp", ""),
+            context=log.get("context", ""),
+            reasoning=log.get("reasoning", ""),
+            related_nodes=log.get("related_nodes", []),
+        )
+        for log in logs
+    ]
+    return APIResponse(data=log_responses, meta=Meta(request_id=None))
 
 
 # ---------------------------------------------------------------------------

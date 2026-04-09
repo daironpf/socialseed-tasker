@@ -9,18 +9,45 @@ from __future__ import annotations
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
+from uuid import uuid4
+
+from pydantic import BaseModel
 
 from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
 from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
+from socialseed_tasker.core.task_management.value_objects import ReasoningContext, ReasoningLogEntry
 from socialseed_tasker.storage.graph_database import queries
 
 if TYPE_CHECKING:
     from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
 
 
+class _ReasoningLogEntryDTO(BaseModel):
+    id: str
+    timestamp: str
+    context: str
+    reasoning: str
+    related_nodes: list[str]
+
+
 def _node_to_issue(node: dict[str, Any]) -> Issue:
     """Convert a Neo4j node to a domain Issue."""
     data = dict(node)
+    reasoning_logs = []
+    if "reasoning_logs" in data and data["reasoning_logs"]:
+        for log_data in data["reasoning_logs"]:
+            if isinstance(log_data, dict):
+                reasoning_logs.append(
+                    ReasoningLogEntry(
+                        id=log_data.get("id"),
+                        timestamp=datetime.fromisoformat(
+                            log_data.get("timestamp", datetime.now(timezone.utc).isoformat())
+                        ),
+                        context=ReasoningContext(log_data.get("context", "architecture_choice")),
+                        reasoning=log_data.get("reasoning", ""),
+                        related_nodes=log_data.get("related_nodes", []),
+                    )
+                )
     return Issue(
         id=data["id"],
         title=data["title"],
@@ -37,6 +64,7 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
         closed_at=data.get("closed_at"),
         architectural_constraints=data.get("architectural_constraints", []),
         agent_working=data.get("agent_working", False),
+        reasoning_logs=reasoning_logs,
     )
 
 
@@ -130,6 +158,17 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
 
     def create_issue(self, issue: Issue) -> None:
         with self._driver.driver.session(database=self._driver.database) as session:
+            reasoning_logs_data = []
+            for log in issue.reasoning_logs:
+                reasoning_logs_data.append(
+                    {
+                        "id": str(log.id),
+                        "timestamp": log.timestamp.isoformat(),
+                        "context": log.context.value,
+                        "reasoning": log.reasoning,
+                        "related_nodes": [str(n) for n in log.related_nodes],
+                    }
+                )
             session.run(
                 queries.CREATE_ISSUE,
                 id=str(issue.id),
@@ -146,6 +185,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 updated_at=issue.updated_at.isoformat(),
                 closed_at=issue.closed_at.isoformat() if issue.closed_at else None,
                 architectural_constraints=issue.architectural_constraints,
+                reasoning_logs=reasoning_logs_data,
             )
 
     def get_issue(self, issue_id: str) -> Issue | None:
@@ -310,6 +350,59 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             cypher += " RETURN i"
             result = session.run(cypher, params)
             return [_node_to_issue(r["i"]) for r in result]
+
+    # -- Reasoning log ---------------------------------------------------------
+
+    def add_reasoning_log(
+        self,
+        issue_id: str,
+        context: str,
+        reasoning: str,
+        related_nodes: list[str] | None = None,
+    ) -> Issue:
+        """Add a reasoning log entry to an issue and return the updated issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+
+            node_data = dict(record["i"])
+            existing_logs = node_data.get("reasoning_logs", [])
+            new_log = {
+                "id": str(uuid4()),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "context": context,
+                "reasoning": reasoning,
+                "related_nodes": related_nodes or [],
+            }
+            existing_logs.append(new_log)
+
+            update_result = session.run(
+                queries.UPDATE_ISSUE,
+                id=issue_id,
+                updates={"reasoning_logs": existing_logs},
+                updated_at=_now_iso(),
+            )
+            updated_record = update_result.single()
+            if updated_record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return _node_to_issue(updated_record["i"])
+
+    def get_reasoning_logs(self, issue_id: str) -> list[dict[str, Any]]:
+        """Get all reasoning log entries for an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return record["i"].get("reasoning_logs", [])
 
     # -- Transactions ----------------------------------------------------------
 

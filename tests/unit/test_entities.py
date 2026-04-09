@@ -12,6 +12,7 @@ from socialseed_tasker.core.task_management.entities import (
     IssuePriority,
     IssueStatus,
 )
+from socialseed_tasker.core.task_management.value_objects import ReasoningContext, ReasoningLogEntry
 
 
 class TestIssueStatus:
@@ -143,3 +144,81 @@ class TestIssue:
         restored = Issue(**data)
         assert restored.id == issue.id
         assert restored.title == issue.title
+
+
+class TestReasoningLogEntry:
+    def test_create_minimal_reasoning_log(self):
+        log = ReasoningLogEntry(
+            context=ReasoningContext.ARCHITECTURE_CHOICE,
+            reasoning="Selected Neo4j for graph-based dependency tracking",
+        )
+        assert isinstance(log.id, UUID)
+        assert log.context == ReasoningContext.ARCHITECTURE_CHOICE
+        assert log.reasoning == "Selected Neo4j for graph-based dependency tracking"
+        assert log.related_nodes == []
+        assert isinstance(log.timestamp, datetime)
+
+    def test_create_full_reasoning_log(self):
+        related_id = UUID("00000000-0000-0000-0000-000000000001")
+        log = ReasoningLogEntry(
+            context=ReasoningContext.COMPONENT_SELECTION,
+            reasoning="Chose auth-service for authentication features",
+            related_nodes=[related_id],
+        )
+        assert log.context == ReasoningContext.COMPONENT_SELECTION
+        assert log.related_nodes == [related_id]
+
+    def test_reasoning_log_is_frozen(self):
+        log = ReasoningLogEntry(
+            context=ReasoningContext.DEPENDENCY_ANALYSIS,
+            reasoning="Test reasoning",
+        )
+        with pytest.raises(ValidationError):
+            log.reasoning = "Changed"
+
+    def test_all_reasoning_contexts_exist(self):
+        assert ReasoningContext.COMPONENT_SELECTION.value == "component_selection"
+        assert ReasoningContext.DEPENDENCY_ANALYSIS.value == "dependency_analysis"
+        assert ReasoningContext.ARCHITECTURE_CHOICE.value == "architecture_choice"
+        assert ReasoningContext.IMPACT_ASSESSMENT.value == "impact_assessment"
+        assert ReasoningContext.PRIORITY_DECISION.value == "priority_decision"
+
+
+class TestIssueWithReasoningLogs:
+    def test_issue_with_reasoning_logs(self):
+        component_id = UUID("00000000-0000-0000-0000-000000000001")
+        log = ReasoningLogEntry(
+            context=ReasoningContext.ARCHITECTURE_CHOICE,
+            reasoning="Selected microservices architecture for scalability",
+        )
+        issue = Issue(
+            title="Design system architecture",
+            component_id=component_id,
+            reasoning_logs=[log],
+        )
+        assert len(issue.reasoning_logs) == 1
+        assert issue.reasoning_logs[0].context == ReasoningContext.ARCHITECTURE_CHOICE
+
+    def test_issue_reasoning_logs_default_empty(self):
+        component_id = UUID("00000000-0000-0000-0000-000000000001")
+        issue = Issue(title="Test", component_id=component_id)
+        assert issue.reasoning_logs == []
+
+    def test_issue_with_multiple_reasoning_logs(self):
+        component_id = UUID("00000000-0000-0000-0000-000000000001")
+        log1 = ReasoningLogEntry(
+            context=ReasoningContext.COMPONENT_SELECTION,
+            reasoning="Selected backend component",
+        )
+        log2 = ReasoningLogEntry(
+            context=ReasoningContext.DEPENDENCY_ANALYSIS,
+            reasoning="Analyzed dependencies between services",
+        )
+        issue = Issue(
+            title="Project setup",
+            component_id=component_id,
+            reasoning_logs=[log1, log2],
+        )
+        assert len(issue.reasoning_logs) == 2
+        assert issue.reasoning_logs[0].context == ReasoningContext.COMPONENT_SELECTION
+        assert issue.reasoning_logs[1].context == ReasoningContext.DEPENDENCY_ANALYSIS

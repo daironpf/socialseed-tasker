@@ -147,6 +147,18 @@ class TaskRepositoryInterface(Protocol):
     ) -> list[Issue]:
         """Find issues by exact title, optionally filtered by component."""
 
+    def add_reasoning_log(
+        self,
+        issue_id: str,
+        context: str,
+        reasoning: str,
+        related_nodes: list[str] | None = None,
+    ) -> Issue:
+        """Add a reasoning log entry to an issue and return the updated issue."""
+
+    def get_reasoning_logs(self, issue_id: str) -> list[dict[str, Any]]:
+        """Get all reasoning log entries for an issue."""
+
     def reset_data(self, scope: str = "all") -> dict[str, int]:
         """Reset data in the repository.
 
