@@ -1685,6 +1685,194 @@ def receive_test_failure(
         )
 
 
+# In-memory agent storage for swarm coordination
+_agents: dict[str, dict] = {}
+
+
+# ---------------------------------------------------------------------------
+# Agent router
+# ---------------------------------------------------------------------------
+
+agent_router = APIRouter()
+
+
+@agent_router.post(
+    "/agents/register",
+    response_model=APIResponse[AgentResponse],
+    status_code=201,
+    summary="Register an agent",
+    description="Register a new agent in the swarm coordination system.",
+)
+def register_agent(
+    body: AgentRegisterRequest,
+) -> APIResponse[AgentResponse]:
+    from datetime import datetime, timezone
+
+    agent_data = {
+        "agent_id": body.agent_id,
+        "name": body.name,
+        "role": body.role,
+        "status": "idle",
+        "current_issue_id": None,
+        "capabilities": body.capabilities,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "last_heartbeat": datetime.now(timezone.utc).isoformat(),
+    }
+    _agents[body.agent_id] = agent_data
+
+    return APIResponse(
+        data=AgentResponse(
+            agent_id=body.agent_id,
+            name=body.name,
+            role=body.role,
+            status="idle",
+            current_issue_id=None,
+            capabilities=body.capabilities,
+            created_at=agent_data["created_at"],
+            last_heartbeat=agent_data["last_heartbeat"],
+        ),
+        meta=Meta(request_id=None),
+    )
+
+
+@agent_router.get(
+    "/agents",
+    response_model=APIResponse[list[AgentResponse]],
+    summary="List agents",
+    description="List all registered agents.",
+)
+def list_agents() -> APIResponse[list[AgentResponse]]:
+    from datetime import datetime, timezone
+
+    agents = []
+    for agent_data in _agents.values():
+        agents.append(
+            AgentResponse(
+                agent_id=agent_data["agent_id"],
+                name=agent_data["name"],
+                role=agent_data["role"],
+                status=agent_data["status"],
+                current_issue_id=agent_data["current_issue_id"],
+                capabilities=agent_data["capabilities"],
+                created_at=agent_data["created_at"],
+                last_heartbeat=agent_data["last_heartbeat"],
+            )
+        )
+    return APIResponse(data=agents, meta=Meta(request_id=None))
+
+
+@agent_router.get(
+    "/agents/{agent_id}",
+    response_model=APIResponse[AgentResponse],
+    summary="Get agent",
+    description="Get details of a specific agent.",
+)
+def get_agent(agent_id: str) -> APIResponse[AgentResponse]:
+    from datetime import datetime, timezone
+
+    if agent_id not in _agents:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail=f"Agent {agent_id} not found")
+
+    agent_data = _agents[agent_id]
+    return APIResponse(
+        data=AgentResponse(
+            agent_id=agent_data["agent_id"],
+            name=agent_data["name"],
+            role=agent_data["role"],
+            status=agent_data["status"],
+            current_issue_id=agent_data["current_issue_id"],
+            capabilities=agent_data["capabilities"],
+            created_at=agent_data["created_at"],
+            last_heartbeat=agent_data["last_heartbeat"],
+        ),
+        meta=Meta(request_id=None),
+    )
+
+
+@agent_router.post(
+    "/agents/{agent_id}/heartbeat",
+    response_model=APIResponse[AgentResponse],
+    summary="Agent heartbeat",
+    description="Update agent heartbeat and status.",
+)
+def agent_heartbeat(
+    agent_id: str,
+    body: AgentUpdateRequest,
+) -> APIResponse[AgentResponse]:
+    from datetime import datetime, timezone
+
+    if agent_id not in _agents:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail=f"Agent {agent_id} not found")
+
+    agent_data = _agents[agent_id]
+    if body.status:
+        agent_data["status"] = body.status
+    if body.current_issue_id is not None:
+        agent_data["current_issue_id"] = body.current_issue_id
+    agent_data["last_heartbeat"] = datetime.now(timezone.utc).isoformat()
+
+    return APIResponse(
+        data=AgentResponse(
+            agent_id=agent_data["agent_id"],
+            name=agent_data["name"],
+            role=agent_data["role"],
+            status=agent_data["status"],
+            current_issue_id=agent_data["current_issue_id"],
+            capabilities=agent_data["capabilities"],
+            created_at=agent_data["created_at"],
+            last_heartbeat=agent_data["last_heartbeat"],
+        ),
+        meta=Meta(request_id=None),
+    )
+
+
+@agent_router.delete(
+    "/agents/{agent_id}",
+    response_model=APIResponse[dict],
+    summary="Deregister agent",
+    description="Deregister an agent from the swarm.",
+)
+def deregister_agent(agent_id: str) -> APIResponse[dict]:
+    if agent_id not in _agents:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail=f"Agent {agent_id} not found")
+
+    del _agents[agent_id]
+    return APIResponse(data={"deleted": agent_id}, meta=Meta(request_id=None))
+
+
+@agent_router.get(
+    "/agents/role/{role}",
+    response_model=APIResponse[list[AgentResponse]],
+    summary="List agents by role",
+    description="List all agents with a specific role.",
+)
+def list_agents_by_role(role: str) -> APIResponse[list[AgentResponse]]:
+    from datetime import datetime, timezone
+
+    agents = []
+    for agent_data in _agents.values():
+        if agent_data["role"] == role:
+            agents.append(
+                AgentResponse(
+                    agent_id=agent_data["agent_id"],
+                    name=agent_data["name"],
+                    role=agent_data["role"],
+                    status=agent_data["status"],
+                    current_issue_id=agent_data["current_issue_id"],
+                    capabilities=agent_data["capabilities"],
+                    created_at=agent_data["created_at"],
+                    last_heartbeat=agent_data["last_heartbeat"],
+                )
+            )
+    return APIResponse(data=agents, meta=Meta(request_id=None))
+
+
 # ---------------------------------------------------------------------------
 # Admin router
 # ---------------------------------------------------------------------------
