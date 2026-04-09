@@ -2185,3 +2185,70 @@ def reset_data(
 ):
     result = reset_data_action(repo, scope=scope)
     return APIResponse(data=result, meta=Meta(request_id=None))
+
+
+# ---------------------------------------------------------------------------
+# Sync router
+# ---------------------------------------------------------------------------
+
+sync_router = APIRouter()
+
+
+@sync_router.get(
+    "/sync/status",
+    response_model=APIResponse[dict],
+    summary="Get sync status",
+    description="Get current sync status (online/offline, queue size).",
+)
+def get_sync_status() -> APIResponse[dict]:
+    from socialseed_tasker.core.services.sync_engine import get_sync_engine
+
+    engine = get_sync_engine()
+    engine.check_connectivity()
+    status = engine.get_status()
+
+    return APIResponse(data=status, meta=Meta(request_id=None))
+
+
+@sync_router.get(
+    "/sync/queue",
+    response_model=APIResponse[list[dict]],
+    summary="Get sync queue",
+    description="View pending sync queue items.",
+)
+def get_sync_queue() -> APIResponse[list[dict]]:
+    from socialseed_tasker.core.services.sync_engine import get_sync_engine
+
+    engine = get_sync_engine()
+    queue = engine.get_queue()
+
+    items = [
+        {
+            "id": str(item.id),
+            "operation": item.operation.value,
+            "entity_type": item.entity_type.value,
+            "entity_id": str(item.entity_id),
+            "status": item.status.value,
+            "retry_count": item.retry_count,
+            "created_at": item.created_at.isoformat(),
+        }
+        for item in queue
+    ]
+
+    return APIResponse(data=items, meta=Meta(request_id=None))
+
+
+@sync_router.post(
+    "/sync/force",
+    response_model=APIResponse[dict],
+    summary="Force sync",
+    description="Force a sync attempt to process the queue.",
+)
+def force_sync() -> APIResponse[dict]:
+    from socialseed_tasker.core.services.sync_engine import get_sync_engine
+
+    engine = get_sync_engine()
+    engine.check_connectivity()
+    result = engine.process_queue()
+
+    return APIResponse(data=result, meta=Meta(request_id=None))

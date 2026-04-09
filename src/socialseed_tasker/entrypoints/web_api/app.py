@@ -127,6 +127,7 @@ def create_app(
         issues_router,
         policy_router,
         project_router,
+        sync_router,
         webhook_router,
     )
 
@@ -137,6 +138,7 @@ def create_app(
     app.include_router(project_router, prefix="/api/v1", tags=["projects"])
     app.include_router(policy_router, prefix="/api/v1", tags=["policies"])
     app.include_router(agent_router, prefix="/api/v1", tags=["agents"])
+    app.include_router(sync_router, prefix="/api/v1", tags=["sync"])
     app.include_router(webhook_router, prefix="/api/v1", tags=["webhooks"])
     app.include_router(admin_router, prefix="/api/v1", tags=["admin"])
 
