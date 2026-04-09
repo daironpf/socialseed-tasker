@@ -187,3 +187,11 @@ class Container:
             return self._get_neo4j_driver().health_check()
         except Exception:
             return False
+
+    def get_webhook_validator(self) -> WebhookSignatureValidator:
+        """Get the webhook signature validator."""
+        from socialseed_tasker.core.services.webhook_validator import (
+            WebhookSignatureValidator,
+        )
+
+        return WebhookSignatureValidator(secret=os.environ.get("GITHUB_WEBHOOK_SECRET", ""))
