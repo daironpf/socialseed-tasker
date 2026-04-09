@@ -77,7 +77,10 @@ CREATE (i:Issue {
     updated_at: $updated_at,
     closed_at: $closed_at,
     architectural_constraints: $architectural_constraints,
-    reasoning_logs: $reasoning_logs
+    reasoning_logs: $reasoning_logs,
+    manifest_todo: $manifest_todo,
+    manifest_files: $manifest_files,
+    manifest_notes: $manifest_notes
 })
 CREATE (i)-[:BELONGS_TO]->(c)
 """

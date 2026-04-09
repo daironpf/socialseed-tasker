@@ -159,6 +159,18 @@ class TaskRepositoryInterface(Protocol):
     def get_reasoning_logs(self, issue_id: str) -> list[dict[str, Any]]:
         """Get all reasoning log entries for an issue."""
 
+    def update_manifest_todo(self, issue_id: str, todo: list[dict[str, str]]) -> Issue:
+        """Update the manifest TODO list for an issue."""
+
+    def update_manifest_files(self, issue_id: str, files: list[str]) -> Issue:
+        """Update the manifest affected files list for an issue."""
+
+    def update_manifest_notes(self, issue_id: str, notes: list[str]) -> Issue:
+        """Update the manifest technical debt notes for an issue."""
+
+    def get_manifest(self, issue_id: str) -> dict[str, Any]:
+        """Get the full manifest for an issue."""
+
     def reset_data(self, scope: str = "all") -> dict[str, int]:
         """Reset data in the repository.
 

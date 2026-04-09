@@ -45,6 +45,10 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     IssueCreateRequest,
     IssueResponse,
     IssueUpdateRequest,
+    ManifestFilesRequest,
+    ManifestNotesRequest,
+    ManifestResponse,
+    ManifestTodoRequest,
     Meta,
     PaginatedResponse,
     PaginationMeta,
@@ -96,6 +100,9 @@ def _issue_to_response(issue: Issue) -> IssueResponse:
             }
             for log in issue.reasoning_logs
         ],
+        manifest_todo=issue.manifest_todo if hasattr(issue, "manifest_todo") else [],
+        manifest_files=issue.manifest_files if hasattr(issue, "manifest_files") else [],
+        manifest_notes=issue.manifest_notes if hasattr(issue, "manifest_notes") else [],
     )
 
 
@@ -363,6 +370,108 @@ def get_reasoning_logs(
         for log in logs
     ]
     return APIResponse(data=log_responses, meta=Meta(request_id=None))
+
+
+@issues_router.patch(
+    "/issues/{issue_id}/manifest/todo",
+    response_model=APIResponse[IssueResponse],
+    summary="Update manifest TODO list",
+    description=(
+        "Update the agent progress manifest TODO list. "
+        "Maintains real-time documentation of sub-tasks with completion status."
+    ),
+    responses={
+        404: {"description": "Issue not found"},
+    },
+)
+def update_manifest_todo(
+    issue_id: str,
+    body: ManifestTodoRequest,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[IssueResponse]:
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+
+    todo_list = [{"task": item.task, "completed": str(item.completed)} for item in body.todo]
+    updated_issue = repo.update_manifest_todo(issue_id, todo_list)
+    return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
+
+
+@issues_router.patch(
+    "/issues/{issue_id}/manifest/files",
+    response_model=APIResponse[IssueResponse],
+    summary="Update manifest affected files",
+    description=(
+        "Update the agent progress manifest with affected files. Tracks created or modified file paths in real-time."
+    ),
+    responses={
+        404: {"description": "Issue not found"},
+    },
+)
+def update_manifest_files(
+    issue_id: str,
+    body: ManifestFilesRequest,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[IssueResponse]:
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+
+    updated_issue = repo.update_manifest_files(issue_id, body.files)
+    return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
+
+
+@issues_router.patch(
+    "/issues/{issue_id}/manifest/notes",
+    response_model=APIResponse[IssueResponse],
+    summary="Update manifest technical debt notes",
+    description=(
+        "Update the agent progress manifest with technical debt notes. Records observations made during implementation."
+    ),
+    responses={
+        404: {"description": "Issue not found"},
+    },
+)
+def update_manifest_notes(
+    issue_id: str,
+    body: ManifestNotesRequest,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[IssueResponse]:
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+
+    updated_issue = repo.update_manifest_notes(issue_id, body.notes)
+    return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
+
+
+@issues_router.get(
+    "/issues/{issue_id}/manifest",
+    response_model=APIResponse[ManifestResponse],
+    summary="Get manifest",
+    description="Get the full agent progress manifest for an issue.",
+    responses={
+        404: {"description": "Issue not found"},
+    },
+)
+def get_manifest(
+    issue_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[ManifestResponse]:
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+
+    manifest = repo.get_manifest(issue_id)
+    return APIResponse(
+        data=ManifestResponse(
+            todo=manifest.get("todo", []),
+            files=manifest.get("files", []),
+            notes=manifest.get("notes", []),
+        ),
+        meta=Meta(request_id=None),
+    )
 
 
 # ---------------------------------------------------------------------------

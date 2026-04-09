@@ -93,3 +93,6 @@ class Issue(BaseModel):
     architectural_constraints: list[str] = Field(default_factory=list)
     agent_working: bool = False
     reasoning_logs: list[ReasoningLogEntry] = Field(default_factory=list)
+    manifest_todo: list[dict[str, str]] = Field(default_factory=list)
+    manifest_files: list[str] = Field(default_factory=list)
+    manifest_notes: list[str] = Field(default_factory=list)

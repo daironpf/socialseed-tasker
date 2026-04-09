@@ -125,6 +125,56 @@ class ReasoningLogEntryResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Manifest schemas
+# ---------------------------------------------------------------------------
+
+
+class ManifestTodoItem(BaseModel):
+    """Single TODO item in the agent progress manifest."""
+
+    task: str = Field(..., description="Task description")
+    completed: bool = Field(default=False, description="Whether the task is completed")
+
+
+class ManifestTodoRequest(BaseModel):
+    """Request body for updating the manifest TODO list."""
+
+    todo: list[ManifestTodoItem] = Field(
+        ...,
+        description="List of TODO items",
+        examples=[[{"task": "Implement feature X", "completed": False}, {"task": "Write tests", "completed": True}]],
+    )
+
+
+class ManifestFilesRequest(BaseModel):
+    """Request body for updating the manifest affected files list."""
+
+    files: list[str] = Field(
+        ...,
+        description="List of affected file paths",
+        examples=[["src/core/module.ts", "tests/unit/test_module.py"]],
+    )
+
+
+class ManifestNotesRequest(BaseModel):
+    """Request body for updating the manifest technical debt notes."""
+
+    notes: list[str] = Field(
+        ...,
+        description="List of technical debt notes",
+        examples=[["Temporary workaround for edge case", "TODO: refactor validation logic"]],
+    )
+
+
+class ManifestResponse(BaseModel):
+    """Agent progress manifest in API responses."""
+
+    todo: list[dict[str, str]] = Field(default_factory=list)
+    files: list[str] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
 # Request schemas
 # ---------------------------------------------------------------------------
 
@@ -268,6 +318,9 @@ class IssueResponse(BaseModel):
     architectural_constraints: list[str]
     agent_working: bool | None = None
     reasoning_logs: list[ReasoningLogEntryResponse] = Field(default_factory=list)
+    manifest_todo: list[dict[str, str]] = Field(default_factory=list)
+    manifest_files: list[str] = Field(default_factory=list)
+    manifest_notes: list[str] = Field(default_factory=list)
 
 
 class ComponentResponse(BaseModel):

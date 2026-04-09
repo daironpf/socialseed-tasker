@@ -65,6 +65,9 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
         architectural_constraints=data.get("architectural_constraints", []),
         agent_working=data.get("agent_working", False),
         reasoning_logs=reasoning_logs,
+        manifest_todo=data.get("manifest_todo", []),
+        manifest_files=data.get("manifest_files", []),
+        manifest_notes=data.get("manifest_notes", []),
     )
 
 
@@ -186,6 +189,9 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 closed_at=issue.closed_at.isoformat() if issue.closed_at else None,
                 architectural_constraints=issue.architectural_constraints,
                 reasoning_logs=reasoning_logs_data,
+                manifest_todo=issue.manifest_todo,
+                manifest_files=issue.manifest_files,
+                manifest_notes=issue.manifest_notes,
             )
 
     def get_issue(self, issue_id: str) -> Issue | None:
@@ -403,6 +409,90 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             if record is None:
                 raise ValueError(f"Issue {issue_id} not found")
             return record["i"].get("reasoning_logs", [])
+
+    # -- Manifest ---------------------------------------------------------------
+
+    def update_manifest_todo(self, issue_id: str, todo: list[dict[str, str]]) -> Issue:
+        """Update the manifest TODO list for an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+
+            update_result = session.run(
+                queries.UPDATE_ISSUE,
+                id=issue_id,
+                updates={"manifest_todo": todo},
+                updated_at=_now_iso(),
+            )
+            updated_record = update_result.single()
+            if updated_record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return _node_to_issue(updated_record["i"])
+
+    def update_manifest_files(self, issue_id: str, files: list[str]) -> Issue:
+        """Update the manifest affected files list for an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+
+            update_result = session.run(
+                queries.UPDATE_ISSUE,
+                id=issue_id,
+                updates={"manifest_files": files},
+                updated_at=_now_iso(),
+            )
+            updated_record = update_result.single()
+            if updated_record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return _node_to_issue(updated_record["i"])
+
+    def update_manifest_notes(self, issue_id: str, notes: list[str]) -> Issue:
+        """Update the manifest technical debt notes for an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+
+            update_result = session.run(
+                queries.UPDATE_ISSUE,
+                id=issue_id,
+                updates={"manifest_notes": notes},
+                updated_at=_now_iso(),
+            )
+            updated_record = update_result.single()
+            if updated_record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return _node_to_issue(updated_record["i"])
+
+    def get_manifest(self, issue_id: str) -> dict[str, Any]:
+        """Get the full manifest for an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return {
+                "todo": record["i"].get("manifest_todo", []),
+                "files": record["i"].get("manifest_files", []),
+                "notes": record["i"].get("manifest_notes", []),
+            }
 
     # -- Transactions ----------------------------------------------------------
 

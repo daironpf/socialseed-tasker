@@ -222,3 +222,55 @@ class TestIssueWithReasoningLogs:
         assert len(issue.reasoning_logs) == 2
         assert issue.reasoning_logs[0].context == ReasoningContext.COMPONENT_SELECTION
         assert issue.reasoning_logs[1].context == ReasoningContext.DEPENDENCY_ANALYSIS
+
+
+class TestIssueManifest:
+    def test_issue_with_manifest_todo(self):
+        component_id = UUID("00000000-0000-0000-0000-000000000001")
+        issue = Issue(
+            title="Test issue",
+            component_id=component_id,
+            manifest_todo=[{"task": "Implement feature", "completed": "false"}],
+        )
+        assert len(issue.manifest_todo) == 1
+        assert issue.manifest_todo[0]["task"] == "Implement feature"
+
+    def test_issue_with_manifest_files(self):
+        component_id = UUID("00000000-0000-0000-0000-000000000001")
+        issue = Issue(
+            title="Test issue",
+            component_id=component_id,
+            manifest_files=["src/core/module.ts", "tests/test_module.py"],
+        )
+        assert len(issue.manifest_files) == 2
+        assert "src/core/module.ts" in issue.manifest_files
+
+    def test_issue_with_manifest_notes(self):
+        component_id = UUID("00000000-0000-0000-0000-000000000001")
+        issue = Issue(
+            title="Test issue",
+            component_id=component_id,
+            manifest_notes=["Temporary workaround", "TODO: refactor"],
+        )
+        assert len(issue.manifest_notes) == 2
+        assert "Temporary workaround" in issue.manifest_notes
+
+    def test_issue_manifest_defaults_empty(self):
+        component_id = UUID("00000000-0000-0000-0000-000000000001")
+        issue = Issue(title="Test", component_id=component_id)
+        assert issue.manifest_todo == []
+        assert issue.manifest_files == []
+        assert issue.manifest_notes == []
+
+    def test_issue_with_full_manifest(self):
+        component_id = UUID("00000000-0000-0000-0000-000000000001")
+        issue = Issue(
+            title="Test issue",
+            component_id=component_id,
+            manifest_todo=[{"task": "Step 1", "completed": "true"}],
+            manifest_files=["src/main.py"],
+            manifest_notes=["Note 1"],
+        )
+        assert len(issue.manifest_todo) == 1
+        assert len(issue.manifest_files) == 1
+        assert len(issue.manifest_notes) == 1
