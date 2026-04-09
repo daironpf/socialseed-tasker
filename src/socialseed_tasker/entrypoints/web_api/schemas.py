@@ -193,6 +193,42 @@ class AgentStatusResponse(BaseModel):
     agent_id: str | None
 
 
+class PolicyViolationResponse(BaseModel):
+    """Single policy violation in API responses."""
+
+    rule_id: str
+    rule_name: str
+    severity: str
+    message: str
+    suggestion: str
+
+
+class PolicyValidationRequest(BaseModel):
+    """Request body for validating a potential action against policies."""
+
+    action_type: str = Field(
+        ...,
+        description="Type of action: create_issue, add_dependency, update_issue",
+        examples=["create_issue", "add_dependency"],
+    )
+    issue_data: dict[str, Any] | None = Field(
+        None,
+        description="Issue data for create/update actions",
+    )
+    dependency_data: dict[str, Any] | None = Field(
+        None,
+        description="Dependency data for add_dependency action",
+    )
+
+
+class PolicyValidationResponse(BaseModel):
+    """Response for policy validation."""
+
+    is_valid: bool
+    violations: list[PolicyViolationResponse]
+    enforcement_mode: str
+
+
 # ---------------------------------------------------------------------------
 # Request schemas
 # ---------------------------------------------------------------------------

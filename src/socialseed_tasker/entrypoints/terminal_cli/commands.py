@@ -189,10 +189,40 @@ def issue_create(
     description: str = typer.Option("", "--description", "-d", help="Issue description"),
     priority: str = typer.Option("MEDIUM", "--priority", "-p", help="Priority: LOW, MEDIUM, HIGH, CRITICAL"),
     labels: str | None = typer.Option(None, "--labels", "-l", help="Comma-separated labels"),
+    enforce: str = typer.Option("warn", "--enforce", "-e", help="Policy enforcement: warn, block, disabled"),
 ) -> None:
     """Create a new issue."""
     repo = get_repository()
     label_list = [x.strip() for x in labels.split(",")] if labels else []
+
+    from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
+    from socialseed_tasker.core.task_management.entities import Issue, IssuePriority, IssueStatus
+    from uuid import UUID
+
+    analyzer = ArchitecturalAnalyzer(repo)
+    temp_issue = Issue(
+        id=UUID(),
+        title=title,
+        description=description,
+        status=IssueStatus.OPEN,
+        priority=IssuePriority(priority),
+        component_id=UUID(component),
+        labels=label_list,
+    )
+    result = analyzer.validate_issue_creation(temp_issue)
+    if result.has_errors:
+        console.print(f"[error]Policy violations found:[/error]")
+        for v in result.violations:
+            console.print(f"  - {v.rule_name}: {v.message}")
+            if v.suggestion:
+                console.print(f"    Suggestion: {v.suggestion}")
+        if enforce == "block":
+            console.print("[error]Blocking due to policy violations.[/error]")
+            raise typer.Exit(code=1)
+    elif result.has_warnings:
+        console.print(f"[warning]Policy warnings:[/warning]")
+        for v in result.violations:
+            console.print(f"  - {v.rule_name}: {v.message}")
 
     try:
         issue, warnings = create_issue_action(
@@ -464,9 +494,31 @@ dependency_app = typer.Typer(help="Manage dependencies between issues")
 
 
 @dependency_app.command("add")
-def dependency_add(issue_id: str, depends_on: str) -> None:
+def dependency_add(
+    issue_id: str,
+    depends_on: str,
+    enforce: str = typer.Option("warn", "--enforce", "-e", help="Policy enforcement: warn, block, disabled"),
+) -> None:
     """Add a DEPENDS_ON relationship."""
     repo = get_repository()
+
+    from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
+
+    analyzer = ArchitecturalAnalyzer(repo)
+    result = analyzer.validate_dependency(issue_id, depends_on)
+    if result.has_errors:
+        console.print(f"[error]Policy violations found:[/error]")
+        for v in result.violations:
+            console.print(f"  - {v.rule_name}: {v.message}")
+            if v.suggestion:
+                console.print(f"    Suggestion: {v.suggestion}")
+        if enforce == "block":
+            console.print("[error]Blocking due to policy violations.[/error]")
+            raise typer.Exit(code=1)
+    elif result.has_warnings:
+        console.print(f"[warning]Policy warnings:[/warning]")
+        for v in result.violations:
+            console.print(f"  - {v.rule_name}: {v.message}")
 
     try:
         add_dependency_action(repo, issue_id, depends_on)

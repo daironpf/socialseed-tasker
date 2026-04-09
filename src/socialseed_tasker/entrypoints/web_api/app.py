@@ -123,6 +123,7 @@ def create_app(
         components_router,
         dependencies_router,
         issues_router,
+        policy_router,
         project_router,
     )
 
@@ -131,6 +132,7 @@ def create_app(
     app.include_router(components_router, prefix="/api/v1", tags=["components"])
     app.include_router(analysis_router, prefix="/api/v1", tags=["analysis"])
     app.include_router(project_router, prefix="/api/v1", tags=["projects"])
+    app.include_router(policy_router, prefix="/api/v1", tags=["policies"])
     app.include_router(admin_router, prefix="/api/v1", tags=["admin"])
 
     # Health endpoint with Neo4j connectivity check
@@ -149,6 +151,14 @@ def create_app(
 
     # Dependency injection - provide repository to all routes
     app.state.repository = repository
+
+    # Provide config to routes for policy enforcement mode
+    if hasattr(repository, "_driver") and hasattr(repository._driver, "_config"):
+        app.state.config = repository._driver._config
+    else:
+        from socialseed_tasker.bootstrap.container import AppConfig
+
+        app.state.config = AppConfig()
 
     # Global exception handlers
     @app.exception_handler(IssueNotFoundError)

@@ -75,6 +75,7 @@ class AppConfig:
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     debug: bool = False
+    policy_enforcement_mode: str = "warn"
 
     @classmethod
     def from_env(cls) -> AppConfig:
@@ -90,12 +91,16 @@ class AppConfig:
             database=os.environ.get("TASKER_NEO4J_DATABASE", "neo4j"),
             max_connection_lifetime=int(os.environ.get("TASKER_NEO4J_MAX_CONN_LIFETIME", "3600")),
         )
+        enforcement_mode = os.environ.get("TASKER_POLICY_ENFORCEMENT_MODE", "warn")
+        if enforcement_mode not in ("warn", "block", "disabled"):
+            enforcement_mode = "warn"
 
         return cls(
             neo4j=neo4j,
             api_host=os.environ.get("TASKER_API_HOST", "0.0.0.0"),
             api_port=int(os.environ.get("TASKER_API_PORT", "8000")),
             debug=os.environ.get("TASKER_DEBUG", "").lower() in ("1", "true", "yes"),
+            policy_enforcement_mode=enforcement_mode,
         )
 
 

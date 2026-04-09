@@ -57,6 +57,9 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     ReasoningLogEntryResponse,
     AgentStartRequest,
     AgentStatusResponse,
+    PolicyValidationRequest,
+    PolicyValidationResponse,
+    PolicyViolationResponse,
     TestFailureRequest,
 )
 
@@ -1129,6 +1132,116 @@ def get_subgraph(
         data=DependencyGraphResponse(nodes=list(nodes.values()), edges=edges),
         meta=Meta(request_id=None),
     )
+
+
+# ---------------------------------------------------------------------------
+# Policy router
+# ---------------------------------------------------------------------------
+
+policy_router = APIRouter()
+
+
+@policy_router.post(
+    "/policies/validate",
+    response_model=APIResponse[PolicyValidationResponse],
+    summary="Validate action against policies",
+    description="Check if an action would violate any architectural rules without actually performing the action.",
+)
+def validate_policy(
+    body: PolicyValidationRequest,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+    request: Request = None,
+) -> APIResponse[PolicyValidationResponse]:
+    from uuid import UUID
+    from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
+    from socialseed_tasker.core.project_analysis.rules import Severity
+    from socialseed_tasker.core.task_management.entities import Issue, IssuePriority, IssueStatus
+
+    enforcement_mode = "warn"
+    if request and hasattr(request.app.state, "config"):
+        enforcement_mode = getattr(request.app.state.config, "policy_enforcement_mode", "warn")
+
+    analyzer = ArchitecturalAnalyzer(repo)
+    violations = []
+
+    if body.action_type == "create_issue" and body.issue_data:
+        issue_data = body.issue_data
+        issue = Issue(
+            id=UUID(),
+            title=issue_data.get("title", ""),
+            description=issue_data.get("description", ""),
+            status=IssueStatus.OPEN,
+            priority=IssuePriority(issue_data.get("priority", "MEDIUM")),
+            component_id=UUID(issue_data.get("component_id", "")),
+            labels=issue_data.get("labels", []),
+        )
+        result = analyzer.validate_issue_creation(issue)
+        for v in result.violations:
+            violations.append(
+                PolicyViolationResponse(
+                    rule_id=str(v.rule_id),
+                    rule_name=v.rule_name,
+                    severity=v.severity.value,
+                    message=v.message,
+                    suggestion=v.suggestion,
+                )
+            )
+    elif body.action_type == "add_dependency" and body.dependency_data:
+        dep_data = body.dependency_data
+        issue_id = dep_data.get("issue_id", "")
+        depends_on_id = dep_data.get("depends_on_id", "")
+        result = analyzer.validate_dependency(issue_id, depends_on_id)
+        for v in result.violations:
+            violations.append(
+                PolicyViolationResponse(
+                    rule_id=str(v.rule_id),
+                    rule_name=v.rule_name,
+                    severity=v.severity.value,
+                    message=v.message,
+                    suggestion=v.suggestion,
+                )
+            )
+
+    has_errors = any(v.severity == "ERROR" for v in violations)
+
+    return APIResponse(
+        data=PolicyValidationResponse(
+            is_valid=not has_errors or enforcement_mode == "disabled",
+            violations=violations,
+            enforcement_mode=enforcement_mode,
+        ),
+        meta=Meta(request_id=None),
+    )
+
+
+@policy_router.get(
+    "/policies/rules",
+    response_model=APIResponse[list[dict]],
+    summary="Get active policy rules",
+    description="List all active architectural rules.",
+)
+def get_policy_rules(
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list[dict]]:
+    from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
+    from socialseed_tasker.core.task_management.entities import Issue, IssueStatus
+
+    analyzer = ArchitecturalAnalyzer(repo)
+    rules = analyzer.list_rules()
+
+    rules_data = [
+        {
+            "id": str(r.id),
+            "name": r.name,
+            "description": r.description,
+            "rule_type": r.rule_type.value,
+            "severity": r.severity.value,
+            "is_active": r.is_active,
+        }
+        for r in rules
+    ]
+
+    return APIResponse(data=rules_data, meta=Meta(request_id=None))
 
 
 # ---------------------------------------------------------------------------
