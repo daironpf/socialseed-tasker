@@ -22,6 +22,7 @@ from socialseed_tasker.core.task_management.actions import (
     IssueAlreadyClosedError,
     IssueNotFoundError,
     OpenDependenciesError,
+    PolicyViolationError,
 )
 
 if TYPE_CHECKING:
@@ -180,6 +181,24 @@ def create_app(
         return JSONResponse(
             status_code=409,
             content=_error_response("CIRCULAR_DEPENDENCY", str(exc)),
+        )
+
+    @app.exception_handler(PolicyViolationError)
+    async def policy_violation_handler(request: Request, exc: PolicyViolationError) -> JSONResponse:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "code": "POLICY_VIOLATION",
+                    "message": f"Operation blocked by policy '{exc.policy_name}'",
+                    "details": {
+                        "policy": exc.policy_name,
+                        "rule_type": exc.rule_type,
+                        "message": exc.message,
+                        "suggestion": exc.suggestion,
+                    },
+                },
+            },
         )
 
     @app.exception_handler(IssueAlreadyClosedError)

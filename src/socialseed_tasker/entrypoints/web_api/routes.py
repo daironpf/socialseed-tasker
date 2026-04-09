@@ -18,6 +18,7 @@ from socialseed_tasker.core.project_analysis.analyzer import (
 from socialseed_tasker.core.task_management.actions import (
     ComponentNotFoundError,
     IssueNotFoundError,
+    PolicyViolationError,
     TaskRepositoryInterface,
     add_dependency_action,
     close_issue_action,
@@ -598,7 +599,43 @@ def add_dependency(
     issue_id: str,
     body: DependencyRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
+    request: Request = None,
 ):
+    from socialseed_tasker.core.project_analysis.policy import PolicyEngine
+    from socialseed_tasker.core.task_management.actions import PolicyViolationError
+
+    policies = _policy_engine.get("policies", [])
+    if policies and request and hasattr(request.app.state, "config"):
+        enforcement_mode = getattr(request.app.state.config, "policy_enforcement_mode", "warn")
+
+        if enforcement_mode != "disabled":
+            engine = PolicyEngine(policies)
+
+            issue = repo.get_issue(issue_id)
+            target = repo.get_issue(body.depends_on_id)
+
+            if issue and target:
+                from_component = repo.get_component(str(issue.component_id))
+                to_component = repo.get_component(str(target.component_id))
+
+                result = engine.validate_dependency(
+                    from_component_name=from_component.name if from_component else "",
+                    from_component_type=from_component.project if from_component else "",
+                    from_labels=issue.labels,
+                    to_component_name=to_component.name if to_component else "",
+                    to_component_type=to_component.project if to_component else "",
+                    to_labels=target.labels,
+                )
+
+                if result.has_violations and enforcement_mode == "block":
+                    violation = result.violations[0]
+                    raise PolicyViolationError(
+                        policy_name=violation.policy_name,
+                        rule_type=violation.rule_type.value,
+                        message=violation.message,
+                        suggestion=violation.suggestion,
+                    )
+
     add_dependency_action(repo, issue_id, body.depends_on_id)
     return APIResponse(
         data=DependencyResponse(issue_id=issue_id, depends_on_id=body.depends_on_id),
@@ -1372,6 +1409,67 @@ def delete_policy(policy_id: str) -> APIResponse[dict]:
     policies = _policy_engine.get("policies", [])
     _policy_engine["policies"] = [p for p in policies if str(p.id) != policy_id]
     return APIResponse(data={"deleted": policy_id}, meta=Meta(request_id=None))
+
+
+@policy_router.post(
+    "/policies/dry-run",
+    response_model=APIResponse[PolicyValidationResponse],
+    summary="Dry-run validation",
+    description="Validate an action against policies without actually executing it.",
+)
+def dry_run_policy(
+    body: PolicyValidationRequest,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[PolicyValidationResponse]:
+    from uuid import UUID
+    from socialseed_tasker.core.project_analysis.policy import PolicyEngine
+
+    violations = []
+
+    if body.action_type == "add_dependency" and body.dependency_data:
+        dep_data = body.dependency_data
+        issue_id = dep_data.get("issue_id", "")
+        depends_on_id = dep_data.get("depends_on_id", "")
+
+        if issue_id and depends_on_id:
+            issue = repo.get_issue(issue_id)
+            target = repo.get_issue(depends_on_id)
+
+            if issue and target:
+                from_component = repo.get_component(str(issue.component_id))
+                to_component = repo.get_component(str(target.component_id))
+
+                policies = _policy_engine.get("policies", [])
+                engine = PolicyEngine(policies)
+
+                result = engine.validate_dependency(
+                    from_component_name=from_component.name if from_component else "",
+                    from_component_type=from_component.project if from_component else "",
+                    from_labels=issue.labels,
+                    to_component_name=to_component.name if to_component else "",
+                    to_component_type=to_component.project if to_component else "",
+                    to_labels=target.labels,
+                )
+
+                for v in result.violations:
+                    violations.append(
+                        PolicyViolationResponse(
+                            rule_id=str(v.policy_id),
+                            rule_name=v.policy_name,
+                            severity="ERROR",
+                            message=v.message,
+                            suggestion=v.suggestion,
+                        )
+                    )
+
+    return APIResponse(
+        data=PolicyValidationResponse(
+            is_valid=len(violations) == 0,
+            violations=violations,
+            enforcement_mode="dry-run",
+        ),
+        meta=Meta(request_id=None),
+    )
 
 
 # ---------------------------------------------------------------------------

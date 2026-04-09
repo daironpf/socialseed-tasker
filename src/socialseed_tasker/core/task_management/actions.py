@@ -59,6 +59,17 @@ class IssueAlreadyClosedError(Exception):
         super().__init__(f"Issue '{issue_id}' is already closed")
 
 
+class PolicyViolationError(Exception):
+    """Raised when an action violates an architectural policy."""
+
+    def __init__(self, policy_name: str, rule_type: str, message: str, suggestion: str = "") -> None:
+        super().__init__(f"Policy violation: {policy_name} - {message}")
+        self.policy_name = policy_name
+        self.rule_type = rule_type
+        self.message = message
+        self.suggestion = suggestion
+
+
 class OpenDependenciesError(Exception):
     """Raised when closing an issue that still has open dependencies."""
 
@@ -519,16 +530,66 @@ def reset_data_action(
     repository: TaskRepositoryInterface,
     scope: str = "all",
 ) -> dict[str, int]:
-    """Reset data in the repository.
+    """Reset data in the repository."""
 
-    Intent: Allow cleanup of all data for testing or demos.
-    Business Value: Enables fresh start without manual cleanup or
-    restarting the database.
-    """
     if scope not in ("all", "issues", "components"):
         raise ValueError("scope must be 'all', 'issues', or 'components'")
 
     return repository.reset_data(scope)
+
+
+# ---------------------------------------------------------------------------
+# Policy validation
+# ---------------------------------------------------------------------------
+
+
+def validate_action_against_policies(
+    repository: TaskRepositoryInterface,
+    action_type: str,
+    action_data: dict,
+    policy_engine: Any = None,
+) -> None:
+    """Validate an action against defined policies.
+
+    Raises PolicyViolationError if the action violates any policy.
+    """
+    if policy_engine is None:
+        return
+
+    from socialseed_tasker.core.project_analysis.policy import PolicyEngine
+
+    if not isinstance(policy_engine, PolicyEngine):
+        return
+
+    if action_type == "add_dependency":
+        issue_id = action_data.get("issue_id")
+        depends_on_id = action_data.get("depends_on_id")
+
+        if issue_id and depends_on_id:
+            issue = repository.get_issue(issue_id)
+            target = repository.get_issue(depends_on_id)
+
+            if issue and target:
+                from_component = repository.get_component(str(issue.component_id))
+                to_component = repository.get_component(str(target.component_id))
+
+                result = policy_engine.validate_dependency(
+                    from_component_name=from_component.name if from_component else "",
+                    from_component_type=from_component.project if from_component else "",
+                    from_labels=issue.labels,
+                    to_component_name=to_component.name if to_component else "",
+                    to_component_type=to_component.project if to_component else "",
+                    to_labels=target.labels,
+                )
+
+                if result.has_violations:
+                    violation = result.violations[0]
+                    raise PolicyViolationError(
+                        policy_name=violation.policy_name,
+                        rule_type=violation.rule_type.value,
+                        message=violation.message,
+                        suggestion=violation.suggestion,
+                    )
 
 
 # ---------------------------------------------------------------------------
