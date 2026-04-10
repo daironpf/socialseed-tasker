@@ -120,6 +120,65 @@ def create_app(
 
         return await call_next(request)
 
+    # Rate limiting
+    rate_limit_enabled = os.getenv("TASKER_RATE_LIMIT_ENABLED", "false").lower() == "true"
+    rate_limit_per_minute = int(os.getenv("TASKER_RATE_LIMIT_PER_MINUTE", "100"))
+    rate_limit_per_hour = int(os.getenv("TASKER_RATE_LIMIT_PER_HOUR", "1000"))
+
+    _rate_limit_store: dict[str, list[float]] = {}
+
+    @app.middleware("http")
+    async def rate_limit_middleware(request: Request, call_next):
+        from time import time
+
+        if not rate_limit_enabled:
+            return await call_next(request)
+
+        if request.url.path in ("/health", "/docs", "/openapi.json", "/redoc"):
+            return await call_next(request)
+
+        client_ip = request.client.host if request.client else "unknown"
+        now = time()
+        window_start = now - 60
+
+        if client_ip not in _rate_limit_store:
+            _rate_limit_store[client_ip] = []
+
+        _rate_limit_store[client_ip] = [ts for ts in _rate_limit_store[client_ip] if ts > window_start]
+
+        if len(_rate_limit_store[client_ip]) >= rate_limit_per_minute:
+            return JSONResponse(
+                status_code=429,
+                content={
+                    "error": {
+                        "code": "RATE_LIMIT_EXCEEDED",
+                        "message": "Rate limit exceeded. Try again later.",
+                        "details": {
+                            "limit": rate_limit_per_minute,
+                            "remaining": 0,
+                            "reset": int(window_start + 60),
+                        },
+                    }
+                },
+                headers={
+                    "X-RateLimit-Limit": str(rate_limit_per_minute),
+                    "X-RateLimit-Remaining": "0",
+                    "X-RateLimit-Reset": str(int(window_start + 60)),
+                },
+            )
+
+        _rate_limit_store[client_ip].append(now)
+
+        remaining = rate_limit_per_minute - len(_rate_limit_store[client_ip])
+        reset_time = int(window_start + 60)
+
+        response = await call_next(request)
+        response.headers["X-RateLimit-Limit"] = str(rate_limit_per_minute)
+        response.headers["X-RateLimit-Remaining"] = str(remaining)
+        response.headers["X-RateLimit-Reset"] = str(reset_time)
+
+        return response
+
     # Register routers
     from socialseed_tasker.entrypoints.web_api.routes import (
         admin_router,
@@ -156,6 +215,11 @@ def create_app(
             "authentication": {
                 "enabled": auth_enabled,
                 "configured": api_key is not None,
+            },
+            "rate_limiting": {
+                "enabled": rate_limit_enabled,
+                "per_minute": rate_limit_per_minute,
+                "per_hour": rate_limit_per_hour,
             },
         }
 
