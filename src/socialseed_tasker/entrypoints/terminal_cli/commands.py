@@ -197,7 +197,28 @@ def issue_create(
 
     from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
     from socialseed_tasker.core.task_management.entities import Issue, IssuePriority, IssueStatus
+    from socialseed_tasker.core.validation import (
+        IssueDescriptionValidationError,
+        IssueTitleValidationError,
+        sanitize_issue_description,
+        sanitize_issue_title,
+        validate_issue_title,
+    )
     from uuid import UUID, uuid4
+
+    try:
+        validated_title = validate_issue_title(title)
+    except IssueTitleValidationError as e:
+        console.print(f"[error]Validation error: {e}[/error]")
+        raise typer.Exit(code=2)
+
+    try:
+        sanitized_description = sanitize_issue_description(description)
+    except IssueDescriptionValidationError as e:
+        console.print(f"[error]Validation error: {e}[/error]")
+        raise typer.Exit(code=2)
+
+    sanitized_title = sanitize_issue_title(validated_title)
 
     try:
         component_uuid = UUID(component)
@@ -233,9 +254,9 @@ def issue_create(
     try:
         issue, warnings = create_issue_action(
             repo,
-            title=title,
+            title=sanitized_title,
             component_id=component,
-            description=description,
+            description=sanitized_description,
             priority=priority,
             labels=label_list,
         )
@@ -641,8 +662,24 @@ def component_create(
     description: str | None = typer.Option(None, "--description", "-d", help="Component description"),
 ) -> None:
     """Create a new component."""
+    from socialseed_tasker.core.validation import (
+        ComponentNameValidationError,
+        sanitize_component_name,
+        validate_component_name,
+    )
+
     repo = get_repository()
-    component = Component(name=name, project=project, description=description)
+
+    try:
+        validated_name = validate_component_name(name)
+    except ComponentNameValidationError as e:
+        console.print(f"[error]Validation error: {e}[/error]")
+        raise typer.Exit(code=2)
+
+    sanitized_name = sanitize_component_name(validated_name)
+    sanitized_description = sanitize_component_name(description or "")
+
+    component = Component(name=sanitized_name, project=project, description=sanitized_description)
     repo.create_component(component)
     console.print(f"[success]Component created:[/success] {component.id}")
 

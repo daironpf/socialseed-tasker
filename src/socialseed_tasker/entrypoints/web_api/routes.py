@@ -177,11 +177,32 @@ def create_issue(
     body: IssueCreateRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[IssueResponse]:
+    from fastapi import HTTPException
+    from socialseed_tasker.core.validation import (
+        IssueDescriptionValidationError,
+        IssueTitleValidationError,
+        sanitize_issue_description,
+        sanitize_issue_title,
+        validate_issue_title,
+    )
+
+    try:
+        validated_title = validate_issue_title(body.title)
+    except IssueTitleValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    try:
+        sanitized_description = sanitize_issue_description(body.description or "")
+    except IssueDescriptionValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    sanitized_title = sanitize_issue_title(validated_title)
+
     issue, warnings = create_issue_action(
         repo,
-        title=body.title,
+        title=sanitized_title,
         component_id=body.component_id,
-        description=body.description,
+        description=sanitized_description,
         priority=body.priority,
         labels=body.labels,
         architectural_constraints=body.architectural_constraints,
@@ -975,9 +996,23 @@ def create_component(
     body: ComponentCreateRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
+    from fastapi import HTTPException
     from socialseed_tasker.core.task_management.entities import Component
+    from socialseed_tasker.core.validation import (
+        ComponentNameValidationError,
+        sanitize_component_name,
+        validate_component_name,
+    )
 
-    comp = Component(name=body.name, description=body.description, project=body.project)
+    try:
+        validated_name = validate_component_name(body.name)
+    except ComponentNameValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    sanitized_name = sanitize_component_name(validated_name)
+    sanitized_description = sanitize_component_name(body.description or "")
+
+    comp = Component(name=sanitized_name, description=sanitized_description, project=body.project)
     repo.create_component(comp)
     return APIResponse(data=_component_to_response(comp), meta=Meta(request_id=None))
 
@@ -1000,12 +1035,12 @@ def list_components(
         components = [comp] if comp else []
     else:
         components = repo.list_components(project=project)
-    
+
     total = len(components)
     start = (page - 1) * limit
     end = start + limit
     page_items = components[start:end]
-    
+
     return APIResponse(
         data=_paginated([_component_to_response(c) for c in page_items], page, limit, total),
         meta=Meta(request_id=None),
