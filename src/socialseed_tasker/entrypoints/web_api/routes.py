@@ -2080,15 +2080,13 @@ def get_webhook_logs() -> APIResponse[list[GitHubWebhookLogResponse]]:
     return APIResponse(data=logs, meta=Meta(request_id=None))
 
 
-@webhook_router.post(
+@webhook_router.get(
     "/webhooks/github/test",
     response_model=APIResponse[GitHubWebhookTestResponse],
     summary="Test webhook configuration",
     description="Test webhook configuration and connectivity.",
 )
-def test_webhook(
-    request: Request = None,
-) -> APIResponse[GitHubWebhookTestResponse]:
+def test_webhook() -> APIResponse[GitHubWebhookTestResponse]:
     import os
 
     webhook_secret = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
