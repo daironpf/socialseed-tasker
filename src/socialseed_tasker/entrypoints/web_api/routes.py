@@ -2081,9 +2081,9 @@ def get_webhook_logs() -> APIResponse[list[GitHubWebhookLogResponse]]:
     description="Test webhook configuration and connectivity.",
 )
 def test_webhook() -> APIResponse[GitHubWebhookTestResponse]:
-    import os
+    from socialseed_tasker.core.services.secret_manager import get_webhook_secret
 
-    webhook_secret = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
+    webhook_secret = get_webhook_secret()
 
     if not webhook_secret:
         return APIResponse(

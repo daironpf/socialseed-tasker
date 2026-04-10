@@ -91,7 +91,10 @@ class GitHubAdapter:
         repo: str | None = None,
         api_url: str | None = None,
     ) -> None:
-        self._token = token or os.environ.get("GITHUB_TOKEN", "")
+        from socialseed_tasker.core.services.secret_manager import get_secret_manager
+
+        sm = get_secret_manager()
+        self._token = token or sm.get_github_token(repo or "") or os.environ.get("GITHUB_TOKEN", "")
         self._repo = repo or os.environ.get("GITHUB_REPO", "")
         self._api_url = api_url or os.environ.get("GITHUB_API_URL", "https://api.github.com")
         self._rate_limiter = RateLimiter()

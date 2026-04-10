@@ -196,8 +196,9 @@ class Container:
         from socialseed_tasker.core.services.webhook_validator import (
             WebhookSignatureValidator,
         )
+        from socialseed_tasker.core.services.secret_manager import get_webhook_secret
 
-        return WebhookSignatureValidator(secret=os.environ.get("GITHUB_WEBHOOK_SECRET", ""))
+        return WebhookSignatureValidator(secret=get_webhook_secret())
 
     def get_markdown_transformer(self) -> MarkdownTransformer:
         """Get the markdown transformer for analysis results."""
