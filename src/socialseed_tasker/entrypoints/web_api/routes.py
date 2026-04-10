@@ -870,19 +870,28 @@ def remove_dependency(
 
 @dependencies_router.get(
     "/issues/{issue_id}/dependencies",
-    response_model=APIResponse[list[IssueResponse]],
+    response_model=APIResponse[PaginatedResponse[IssueResponse]],
     summary="List dependencies",
     description="List all issues that this issue depends on.",
 )
 def list_dependencies(
     issue_id: str,
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
     deps = repo.get_dependencies(issue_id)
-    return APIResponse(data=[_issue_to_response(d) for d in deps], meta=Meta(request_id=None))
+    total = len(deps)
+    start = (page - 1) * limit
+    end = start + limit
+    page_items = deps[start:end]
+    return APIResponse(
+        data=_paginated([_issue_to_response(d) for d in page_items], page, limit, total),
+        meta=Meta(request_id=None),
+    )
 
 
 @dependencies_router.get(
@@ -975,13 +984,15 @@ def create_component(
 
 @components_router.get(
     "/components",
-    response_model=APIResponse[list[ComponentResponse]],
+    response_model=APIResponse[PaginatedResponse[ComponentResponse]],
     summary="List components",
-    description="List all components, optionally filtered by project or name.",
+    description="List all components, optionally filtered by project or name. Supports pagination.",
 )
 def list_components(
     project: str | None = Query(None, description="Filter by project"),
     name: str | None = Query(None, description="Filter by exact name"),
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     if name:
@@ -989,7 +1000,16 @@ def list_components(
         components = [comp] if comp else []
     else:
         components = repo.list_components(project=project)
-    return APIResponse(data=[_component_to_response(c) for c in components], meta=Meta(request_id=None))
+    
+    total = len(components)
+    start = (page - 1) * limit
+    end = start + limit
+    page_items = components[start:end]
+    
+    return APIResponse(
+        data=_paginated([_component_to_response(c) for c in page_items], page, limit, total),
+        meta=Meta(request_id=None),
+    )
 
 
 @components_router.get(
