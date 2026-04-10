@@ -34,7 +34,7 @@ class GitHubCredentials:
 class SecretManager:
     """Manages secure GitHub credentials from environment variables."""
 
-    TOKEN_PATTERN = re.compile(r"^gh(p|o|s|u|sa|sr)_[A-Za-z0-9_]{20,251}$")
+    TOKEN_PATTERN = re.compile(r"^gh(p|o|s|u|sa|sr)_[A-Za-z0-9_]{36,251}$")
 
     def __init__(self) -> None:
         self._credentials: dict[str, GitHubCredentials] = {}
@@ -69,7 +69,7 @@ class SecretManager:
 
     def _validate_token_format(self, token: str) -> bool:
         """Validate token format (ghp_, gho_, ghsa_, ghsr_, ghusr_)."""
-        if not token or len(token) < 20:
+        if not token or len(token) < 36:
             return False
         return bool(self.TOKEN_PATTERN.match(token))
 
