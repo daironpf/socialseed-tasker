@@ -33,6 +33,9 @@ dependencies = [
     # Database
     "neo4j>=5.15.0",
     
+    # Sync
+    "httpx>=0.26.0",
+    
     # Utilities
     "python-dotenv>=1.0.0",
 ]
