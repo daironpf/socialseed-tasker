@@ -197,16 +197,22 @@ def issue_create(
 
     from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
     from socialseed_tasker.core.task_management.entities import Issue, IssuePriority, IssueStatus
-    from uuid import UUID
+    from uuid import UUID, uuid4
+
+    try:
+        component_uuid = UUID(component)
+    except ValueError:
+        console.print(f"[error]Invalid component ID format: {component}[/error]")
+        raise typer.Exit(code=2)
 
     analyzer = ArchitecturalAnalyzer(repo)
     temp_issue = Issue(
-        id=UUID(),
+        id=uuid4(),
         title=title,
         description=description,
         status=IssueStatus.OPEN,
         priority=IssuePriority(priority),
-        component_id=UUID(component),
+        component_id=component_uuid,
         labels=label_list,
     )
     result = analyzer.validate_issue_creation(temp_issue)

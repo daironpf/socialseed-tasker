@@ -116,6 +116,58 @@ class MockRepository(TaskRepositoryInterface):
     def delete_component(self, component_id: str) -> None:
         self._components.pop(component_id, None)
 
+    def get_component_by_name(self, name: str, project: str | None = None) -> Component | None:
+        for comp in self._components.values():
+            if comp.name == name and (project is None or comp.project == project):
+                return comp
+        return None
+
+    def find_issues_by_title(self, title: str, component_id: str | None = None) -> list[Issue]:
+        issues = [i for i in self._issues.values() if i.title == title]
+        if component_id:
+            issues = [i for i in issues if str(i.component_id) == component_id]
+        return issues
+
+    def add_reasoning_log(
+        self,
+        issue_id: str,
+        context: str,
+        reasoning: str,
+        related_nodes: list[str] | None = None,
+    ) -> Issue:
+        return self._issues[issue_id]
+
+    def get_reasoning_logs(self, issue_id: str) -> list[dict[str, Any]]:
+        return []
+
+    def update_manifest_todo(self, issue_id: str, todo: list[dict[str, str]]) -> Issue:
+        return self._issues[issue_id]
+
+    def update_manifest_files(self, issue_id: str, files: list[str]) -> Issue:
+        return self._issues[issue_id]
+
+    def update_manifest_notes(self, issue_id: str, notes: list[str]) -> Issue:
+        return self._issues[issue_id]
+
+    def get_manifest(self, issue_id: str) -> dict[str, Any]:
+        return {}
+
+    def start_agent_work(self, issue_id: str, agent_id: str) -> Issue:
+        return self._issues[issue_id]
+
+    def finish_agent_work(self, issue_id: str) -> Issue:
+        return self._issues[issue_id]
+
+    def get_agent_status(self, issue_id: str) -> dict[str, Any]:
+        return {}
+
+    def reset_data(self, scope: str = "all") -> dict[str, int]:
+        count = {"issues": len(self._issues), "components": len(self._components)}
+        self._issues.clear()
+        self._components.clear()
+        self._dependencies.clear()
+        return count
+
     @contextmanager
     def transaction(self) -> Iterator[None]:
         yield
