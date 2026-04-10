@@ -100,10 +100,12 @@ def create_app(
 
     # API Key authentication
     api_key = os.getenv("TASKER_API_KEY")
+    auth_enabled = os.getenv("TASKER_AUTH_ENABLED", "false").lower() == "true"
 
     @app.middleware("http")
     async def api_key_auth_middleware(request: Request, call_next):
-        if api_key is None:
+        # Skip auth if no API key configured or auth disabled in development
+        if api_key is None or not auth_enabled:
             return await call_next(request)
 
         if request.url.path in ("/health", "/docs", "/openapi.json", "/redoc"):
@@ -148,7 +150,14 @@ def create_app(
     # Health endpoint with Neo4j connectivity check
     @app.get("/health", tags=["health"])
     def health_check() -> dict[str, Any]:
-        result = {"status": "healthy", "version": __version__}
+        result = {
+            "status": "healthy",
+            "version": __version__,
+            "authentication": {
+                "enabled": auth_enabled,
+                "configured": api_key is not None,
+            },
+        }
 
         if neo4j_driver is not None:
             neo4j_connected = neo4j_driver.health_check()
