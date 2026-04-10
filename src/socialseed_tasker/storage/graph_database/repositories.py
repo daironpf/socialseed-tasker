@@ -206,7 +206,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             result = session.run(queries.GET_ISSUE, id=issue_id)
             record = result.single()
             if record is None:
-                raise ValueError(f"Issue {issue_id} not found")
+                return None
             return _node_to_issue(record["i"])
 
     def update_issue(self, issue_id: str, updates: dict[str, Any]) -> Issue:
