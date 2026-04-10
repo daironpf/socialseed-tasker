@@ -228,7 +228,7 @@ class TestComponents:
         client.post("/api/v1/components", json={"name": "A", "project": "proj1"})
         client.post("/api/v1/components", json={"name": "B", "project": "proj2"})
         resp = client.get("/api/v1/components", params={"project": "proj1"})
-        assert len(resp.json()["data"]) == 1
+        assert len(resp.json()["data"]["items"]) == 1
 
     def test_get_component(self, client, component_id):
         resp = client.get(f"/api/v1/components/{component_id}")
@@ -442,7 +442,7 @@ class TestDependencies:
         client.post(f"/api/v1/issues/{a_id}/dependencies", json={"depends_on_id": b_id})
         resp = client.get(f"/api/v1/issues/{a_id}/dependencies")
         assert resp.status_code == 200
-        assert len(resp.json()["data"]) == 1
+        assert len(resp.json()["data"]["items"]) == 1
 
     def test_list_dependents(self, client, component_id):
         resp_a = client.post(
