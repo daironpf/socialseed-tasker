@@ -2326,7 +2326,7 @@ sync_router = APIRouter()
 
 
 @sync_router.get(
-    "/sync/status",
+    "/status",
     response_model=APIResponse[dict],
     summary="Get sync status",
     description="Get current sync status (online/offline, queue size).",
@@ -2342,7 +2342,7 @@ def get_sync_status() -> APIResponse[dict]:
 
 
 @sync_router.get(
-    "/sync/queue",
+    "/queue",
     response_model=APIResponse[list[dict]],
     summary="Get sync queue",
     description="View pending sync queue items.",
@@ -2370,7 +2370,7 @@ def get_sync_queue() -> APIResponse[list[dict]]:
 
 
 @sync_router.post(
-    "/sync/force",
+    "/force",
     response_model=APIResponse[dict],
     summary="Force sync",
     description="Force a sync attempt to process the queue.",
