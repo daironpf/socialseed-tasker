@@ -5,9 +5,12 @@ All routes delegate to core actions - no business logic lives here.
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter, Depends, Query, Request  # noqa: B008
+
+logger = logging.getLogger(__name__)
 
 from socialseed_tasker.core.project_analysis.analyzer import (
     ComponentImpactAnalysis,
@@ -1971,19 +1974,6 @@ def receive_test_failure(
 _github_webhook_logs: list[dict] = []
 
 
-def _verify_github_signature(payload: bytes, signature: str, secret: str) -> bool:
-    """Verify GitHub webhook HMAC-SHA256 signature."""
-    import hmac
-    import hashlib
-
-    if not signature or not secret:
-        return True
-
-    expected = "sha256=" + hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
-
-    return hmac.compare_digest(expected, signature)
-
-
 @webhook_router.post(
     "/webhooks/github",
     response_model=APIResponse[dict],
@@ -1994,9 +1984,9 @@ def receive_github_webhook(
     repo: TaskRepositoryInterface = Depends(get_repo),
     request: Request = None,
 ) -> APIResponse[dict]:
-    import os
     import json
     from datetime import datetime, timezone
+    from socialseed_tasker.core.services.webhook_validator import get_webhook_validator
 
     if request is None:
         return APIResponse(
@@ -2004,13 +1994,17 @@ def receive_github_webhook(
             meta=Meta(request_id=None),
         )
 
-    webhook_secret = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
+    validator = get_webhook_validator()
     signature = request.headers.get("X-Hub-Signature-256", "")
 
     body = request.body()
-    if not _verify_github_signature(body, signature, webhook_secret):
+    if not validator.validate(body, signature):
         from fastapi import HTTPException
 
+        rejected_logs = validator.get_rejected_log()
+        logger.warning(
+            f"Webhook rejected: signature={signature[:20] if signature else 'none'}, rejected_count={len(rejected_logs)}"
+        )
         raise HTTPException(status_code=401, detail="Invalid signature")
 
     event_type = request.headers.get("X-GitHub-Event", "unknown")
