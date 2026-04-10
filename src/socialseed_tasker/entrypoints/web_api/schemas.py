@@ -11,6 +11,8 @@ from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
+from socialseed_tasker import __version__  # noqa: E402
+
 T = TypeVar("T")
 
 
@@ -544,7 +546,7 @@ class HealthResponse(BaseModel):
     """Health check response."""
 
     status: str = "healthy"
-    version: str = "0.6.0"
+    version: str = __version__
     storage_backend: str = "neo4j"
 
 

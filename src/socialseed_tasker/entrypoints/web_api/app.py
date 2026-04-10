@@ -16,6 +16,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from socialseed_tasker import __version__  # noqa: E402
 from socialseed_tasker.core.task_management.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
@@ -58,7 +59,7 @@ def create_app(
             "with the task management system. All endpoints return consistent "
             "JSON envelopes and support filtering, pagination, and discovery."
         ),
-        version="0.6.0",
+        version=__version__,
         license_info={
             "name": "Apache 2.0",
             "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
@@ -147,7 +148,7 @@ def create_app(
     # Health endpoint with Neo4j connectivity check
     @app.get("/health", tags=["health"])
     def health_check() -> dict[str, Any]:
-        result = {"status": "healthy", "version": "0.6.0"}
+        result = {"status": "healthy", "version": __version__}
 
         if neo4j_driver is not None:
             neo4j_connected = neo4j_driver.health_check()
