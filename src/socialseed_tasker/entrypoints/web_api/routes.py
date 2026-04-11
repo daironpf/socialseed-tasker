@@ -228,8 +228,8 @@ def list_issues(
     status: str | None = Query(None, description="Filter by status"),
     component: str | None = Query(None, description="Filter by component ID"),
     project: str | None = Query(None, description="Filter by project name"),
-    page: int = Query(1, ge=1, description="Page number"),
-    limit: int = Query(20, ge=1, le=100, description="Items per page"),
+    page: int = Query(1, ge=1, description="Page number (starts at 1, default: 1)"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page (default: 20, max: 100)"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     status_filter = IssueStatus(status) if status else None
@@ -900,8 +900,8 @@ def remove_dependency(
 )
 def list_dependencies(
     issue_id: str,
-    page: int = Query(1, ge=1, description="Page number"),
-    limit: int = Query(20, ge=1, le=100, description="Items per page"),
+    page: int = Query(1, ge=1, description="Page number (starts at 1, default: 1)"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page (default: 20, max: 100)"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     issue = repo.get_issue(issue_id)
@@ -1029,8 +1029,8 @@ def create_component(
 def list_components(
     project: str | None = Query(None, description="Filter by project"),
     name: str | None = Query(None, description="Filter by exact name"),
-    page: int = Query(1, ge=1, description="Page number"),
-    limit: int = Query(20, ge=1, le=100, description="Items per page"),
+    page: int = Query(1, ge=1, description="Page number (starts at 1, default: 1)"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page (default: 20, max: 100)"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     if name:
@@ -1178,8 +1178,8 @@ def list_issues(
     status: str | None = Query(None, description="Filter by status"),
     component_id: str | None = Query(None, description="Filter by component"),
     project: str | None = Query(None, description="Filter by project"),
-    page: int = Query(1, ge=1, description="Page number"),
-    limit: int = Query(20, ge=1, le=100, description="Items per page"),
+    page: int = Query(1, ge=1, description="Page number (starts at 1, default: 1)"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page (default: 20, max: 100)"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[list[IssueResponse]]:
     label_list = [l.strip() for l in labels.split(",")] if labels else []

@@ -74,13 +74,56 @@ class APIResponse(BaseModel, Generic[T]):
 
 
 class PaginationMeta(BaseModel):
-    """Pagination information for list endpoints."""
+    """Pagination information for list endpoints.
 
-    page: int = Field(..., ge=1, description="Current page number")
-    limit: int = Field(..., ge=1, le=100, description="Items per page")
-    total: int = Field(..., ge=0, description="Total number of items")
-    has_next: bool = Field(..., description="Whether a next page exists")
-    has_prev: bool = Field(..., description="Whether a previous page exists")
+    All paginated endpoints return this structure within the data.pagination field.
+
+    Example:
+    ```json
+    {
+      "data": {
+        "items": [...],
+        "pagination": {
+          "page": 1,
+          "limit": 20,
+          "total": 100,
+          "has_next": true,
+          "has_prev": false
+        }
+      }
+    }
+    ```
+    """
+
+    page: int = Field(
+        ...,
+        ge=1,
+        description="Current page number (starts at 1)",
+        examples=[1],
+    )
+    limit: int = Field(
+        ...,
+        ge=1,
+        le=100,
+        description="Items per page (default: 20, max: 100)",
+        examples=[20],
+    )
+    total: int = Field(
+        ...,
+        ge=0,
+        description="Total number of items available across all pages",
+        examples=[100],
+    )
+    has_next: bool = Field(
+        ...,
+        description="Whether more pages exist after the current page",
+        examples=[True],
+    )
+    has_prev: bool = Field(
+        ...,
+        description="Whether previous pages exist before the current page",
+        examples=[False],
+    )
 
 
 class PaginatedResponse(BaseModel, Generic[T]):
