@@ -142,6 +142,7 @@ class PolicyEngine:
                     to_component_name,
                     to_component_type,
                     to_labels,
+                    policy,
                 )
                 if violation:
                     violations.append(violation)
@@ -160,14 +161,15 @@ class PolicyEngine:
         to_comp_name: str,
         to_comp_type: str,
         to_labels: list[str],
+        policy: Policy | None = None,
     ) -> PolicyViolation | None:
         """Check a single rule against the given components."""
         if rule.rule_type == PolicyRuleType.FORBIDDEN_PATH:
             return self._check_forbidden_path(
-                rule, from_comp_name, from_comp_type, from_labels, to_comp_name, to_comp_type, to_labels
+                rule, from_comp_name, from_comp_type, from_labels, to_comp_name, to_comp_type, to_labels, policy
             )
         elif rule.rule_type == PolicyRuleType.FORBIDDEN_LABEL_DEPENDENCY:
-            return self._check_forbidden_label(rule, from_labels, to_labels)
+            return self._check_forbidden_label(rule, from_labels, to_labels, policy)
         return None
 
     def _check_forbidden_path(
@@ -179,6 +181,7 @@ class PolicyEngine:
         to_comp_name: str,
         to_comp_type: str,
         to_labels: list[str],
+        policy: Policy | None = None,
     ) -> PolicyViolation | None:
         """Check if the dependency creates a forbidden path."""
         from_matches = self._pattern_matches(rule.from_pattern, from_comp_name, from_comp_type, from_labels)
@@ -186,8 +189,8 @@ class PolicyEngine:
 
         if from_matches and to_matches:
             return PolicyViolation(
-                policy_id=UUID(),
-                policy_name="",
+                policy_id=policy.id if policy else uuid4(),
+                policy_name=policy.name if policy else "",
                 rule_type=rule.rule_type,
                 message=f"Forbidden path: {rule.from_pattern} cannot depend on {rule.to_pattern}",
                 suggestion=f"Remove the dependency or restructure to avoid {rule.to_pattern}",
@@ -199,6 +202,7 @@ class PolicyEngine:
         rule: PolicyRule,
         from_labels: list[str],
         to_labels: list[str],
+        policy: Policy | None = None,
     ) -> PolicyViolation | None:
         """Check if labels create a forbidden dependency."""
         from_matches = any(label in from_labels for label in rule.from_pattern.split(","))
@@ -206,8 +210,8 @@ class PolicyEngine:
 
         if from_matches and to_matches:
             return PolicyViolation(
-                policy_id=UUID(),
-                policy_name="",
+                policy_id=policy.id if policy else uuid4(),
+                policy_name=policy.name if policy else "",
                 rule_type=rule.rule_type,
                 message=f"Forbidden label dependency: labels matching '{rule.from_pattern}' cannot depend on '{rule.to_pattern}'",
                 suggestion="Remove the label dependency or use a different approach",
