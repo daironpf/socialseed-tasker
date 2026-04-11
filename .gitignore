@@ -230,3 +230,10 @@ neo4j/plugins/
 
 .tasker-data
 infrastructure/
+
+#history
+.history/
+.history
+history
+history/
+report.md
