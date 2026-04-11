@@ -71,9 +71,113 @@ def get_repository() -> TaskRepositoryInterface:
     both file and neo4j backends.
     Business Value: Unifies CLI and API to use the same configuration.
     """
+    import os
     from socialseed_tasker.entrypoints.terminal_cli.app import get_cli_container
 
+    password = os.environ.get("TASKER_NEO4J_PASSWORD", "")
+    if not password:
+        console.print("[error]Error:[/error] Neo4j password is required.")
+        console.print("[info]Please provide it via:[/info]")
+        console.print("  - Environment variable: [bold]TASKER_NEO4J_PASSWORD[/bold]")
+        console.print("  - CLI flag: [bold]--neo4j-password[/bold] or [bold]-pw[/bold]")
+        console.print("")
+        console.print("[info]Example:[/info]")
+        console.print("  [bold]tasker -pw neoSocial component list[/bold]")
+        raise typer.Exit(code=2)
+
     return get_cli_container().get_repository()
+
+
+# ---------------------------------------------------------------------------
+# UUID Resolution Helpers
+# ---------------------------------------------------------------------------
+
+
+def resolve_component_id(partial_id: str, repo: TaskRepositoryInterface) -> UUID:
+    """Resolve a partial component ID to a full UUID.
+
+    Args:
+        partial_id: Full UUID or partial (at least 4 characters) or name (exact match)
+        repo: Task repository to search
+
+    Returns:
+        Full UUID
+
+    Raises:
+        ValueError: If ID format is invalid or not found
+    """
+    from uuid import UUID
+
+    # Try full UUID first
+    try:
+        return UUID(partial_id)
+    except ValueError:
+        pass
+
+    # Minimum 4 characters for partial lookup OR exact name match
+    if len(partial_id) < 4:
+        raise ValueError(f"Invalid component ID format: {partial_id}. Need at least 4 characters.")
+
+    # Try to find by exact name match first (names can be short)
+    try:
+        comp = repo.get_component_by_name(partial_id)
+        if comp:
+            return comp.id
+    except Exception:
+        pass
+
+    # Search for matching component by prefix (UUID-like patterns need 8+)
+    if len(partial_id) >= 8:
+        components = repo.list_components(project=None)
+        for comp in components:
+            comp_id_str = str(comp.id)
+            if comp_id_str.startswith(partial_id):
+                return comp.id
+
+    raise ValueError(f"Component not found: {partial_id}")
+
+
+def resolve_issue_id(partial_id: str, repo: TaskRepositoryInterface) -> UUID:
+    """Resolve a partial issue ID to a full UUID.
+
+    Args:
+        partial_id: Full UUID or partial (at least 4 characters) or title (exact match)
+        repo: Task repository to search
+
+    Returns:
+        Full UUID
+
+    Raises:
+        ValueError: If ID format is invalid or not found
+    """
+    from uuid import UUID
+
+    # Try full UUID first
+    try:
+        return UUID(partial_id)
+    except ValueError:
+        pass
+
+    # Minimum 4 characters for any lookup
+    if len(partial_id) < 4:
+        raise ValueError(f"Invalid issue ID format: {partial_id}. Need at least 4 characters.")
+
+    # Get all issues once
+    issues = repo.list_issues(status=None, project=None)
+
+    # Try exact title match first
+    for issue in issues:
+        if issue.title.lower() == partial_id.lower():
+            return issue.id
+
+    # Search for matching issue by prefix (4+ chars)
+    if len(partial_id) >= 4:
+        for issue in issues:
+            issue_id_str = str(issue.id)
+            if issue_id_str.startswith(partial_id):
+                return issue.id
+
+    raise ValueError(f"Issue not found: {partial_id}")
 
 
 # ---------------------------------------------------------------------------
@@ -221,9 +325,10 @@ def issue_create(
     sanitized_title = sanitize_issue_title(validated_title)
 
     try:
-        component_uuid = UUID(component)
-    except ValueError:
-        console.print(f"[error]Invalid component ID format: {component}[/error]")
+        component_uuid = resolve_component_id(component, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        console.print("[info]You can use full UUID, 8+ character prefix, or component name.[/info]")
         raise typer.Exit(code=2)
 
     analyzer = ArchitecturalAnalyzer(repo)
@@ -233,7 +338,7 @@ def issue_create(
         description=description,
         status=IssueStatus.OPEN,
         priority=IssuePriority(priority),
-        component_id=component_uuid,
+        component_id=str(component_uuid),
         labels=label_list,
     )
     result = analyzer.validate_issue_creation(temp_issue)
@@ -255,13 +360,13 @@ def issue_create(
         issue, warnings = create_issue_action(
             repo,
             title=sanitized_title,
-            component_id=component,
+            component_id=str(component_uuid),
             description=sanitized_description,
             priority=priority,
             labels=label_list,
         )
         console.print(f"[success]Issue created:[/success] {issue.id}")
-        comp = repo.get_component(component)
+        comp = repo.get_component(str(component_uuid))
         console.print(_format_issue_card(issue, comp.name if comp else None))
         if warnings:
             for w in warnings:
@@ -530,11 +635,26 @@ def dependency_add(
     """Add a DEPENDS_ON relationship."""
     repo = get_repository()
 
+    try:
+        resolved_issue_id = resolve_issue_id(issue_id, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=2)
+
+    try:
+        resolved_dep_id = resolve_issue_id(depends_on, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=2)
+
     from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
+
+    issue_str = str(resolved_issue_id)
+    dep_str = str(resolved_dep_id)
 
     if not force:
         analyzer = ArchitecturalAnalyzer(repo)
-        result = analyzer.validate_dependency(issue_id, depends_on)
+        result = analyzer.validate_dependency(issue_str, dep_str)
         if result.has_errors:
             console.print(f"[error]Policy violations found:[/error]")
             for v in result.violations:
@@ -550,8 +670,8 @@ def dependency_add(
                 console.print(f"  - {v.rule_name}: {v.message}")
 
     try:
-        add_dependency_action(repo, issue_id, depends_on)
-        console.print(f"[success]Dependency added:[/success] {issue_id[:8]} -> {depends_on[:8]}")
+        add_dependency_action(repo, issue_str, dep_str)
+        console.print(f"[success]Dependency added:[/success] {issue_str[:8]} -> {dep_str[:8]}")
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
         raise typer.Exit(code=1) from exc
@@ -871,15 +991,22 @@ def analyze_root_cause(
 
 @analyze_app.command("impact")
 def analyze_impact(
-    issue_id: str = typer.Argument(..., help="Issue ID to analyze"),
+    issue_id: str = typer.Argument(..., help="Issue ID (full UUID, 4+ prefix, or exact title)"),
 ) -> None:
     """Analyze what other issues would be affected by this issue."""
     from socialseed_tasker.core.project_analysis.analyzer import RootCauseAnalyzer
 
     repo = get_repository()
-    analyzer = RootCauseAnalyzer(repo)
 
-    impact = analyzer.analyze_impact(issue_id)
+    try:
+        resolved_id = resolve_issue_id(issue_id, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        console.print("[info]You can use full UUID, 4+ character prefix, or exact title.[/info]")
+        raise typer.Exit(code=2)
+
+    analyzer = RootCauseAnalyzer(repo)
+    impact = analyzer.analyze_impact(str(resolved_id))
 
     console.print(
         Panel(
@@ -887,7 +1014,7 @@ def analyze_impact(
             f"[bold]Transitively affected:[/bold] {len(impact.transitively_affected)} issues\n"
             f"[bold]Blocked issues:[/bold] {len(impact.blocked_issues)} issues\n"
             f"[bold]Risk level:[/bold] {impact.risk_level.value}",
-            title=f"[bold]Impact Analysis for {issue_id[:8]}[/bold]",
+            title=f"[bold]Impact Analysis for {resolved_id}[/bold]",
             border_style="cyan",
         )
     )

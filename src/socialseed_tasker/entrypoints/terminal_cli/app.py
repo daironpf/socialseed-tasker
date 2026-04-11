@@ -99,13 +99,21 @@ def main(
     neo4j_uri: str = typer.Option(
         "bolt://localhost:7687",
         "--neo4j-uri",
-        help="Neo4j connection URI",
+        help="Neo4j connection URI (default: bolt://localhost:7687)",
         envvar="TASKER_NEO4J_URI",
+    ),
+    neo4j_user: str = typer.Option(
+        "neo4j",
+        "--neo4j-user",
+        "-u",
+        help="Neo4j username (default: neo4j)",
+        envvar="TASKER_NEO4J_USER",
     ),
     neo4j_password: str = typer.Option(
         "",
         "--neo4j-password",
-        help="Neo4j password",
+        "-pw",
+        help="Neo4j password (required)",
         envvar="TASKER_NEO4J_PASSWORD",
     ),
 ) -> None:
@@ -113,10 +121,16 @@ def main(
 
     A graph-based task management framework for AI agents.
     Only Neo4j storage backend is supported.
+
+    Examples:
+        tasker --neo4j-password secret component create mycomp -p myproj
+        tasker -pw secret issue create "Fix bug" -c <id>
     """
     global _cli_container
     if neo4j_uri:
         os.environ["TASKER_NEO4J_URI"] = neo4j_uri
+    if neo4j_user:
+        os.environ["TASKER_NEO4J_USER"] = neo4j_user
     if neo4j_password:
         os.environ["TASKER_NEO4J_PASSWORD"] = neo4j_password
     _cli_container = None

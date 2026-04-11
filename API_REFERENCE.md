@@ -459,7 +459,7 @@ tasker issue list
 tasker issue close <id>
 
 # Dependencies
-tasker dependency add <issue> --depends-on <dep>
+tasker dependency add <issue_id> <depends_on>
 tasker dependency chain <issue>
 
 # Analysis
