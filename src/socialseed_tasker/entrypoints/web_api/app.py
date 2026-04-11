@@ -230,6 +230,14 @@ def create_app(
             if not neo4j_connected:
                 result["status"] = "degraded"
 
+        try:
+            import httpx
+
+            result["httpx"] = "available"
+        except ImportError:
+            result["httpx"] = "not_available"
+            result["status"] = "degraded"
+
         return result
 
     # Dependency injection - provide repository to all routes

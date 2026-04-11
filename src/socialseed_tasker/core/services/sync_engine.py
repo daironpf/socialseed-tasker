@@ -6,12 +6,16 @@ and conflict resolution.
 
 from __future__ import annotations
 
+import logging
 import os
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from uuid import UUID, uuid4
+
+
+logger = logging.getLogger(__name__)
 
 
 def _now() -> datetime:
@@ -91,13 +95,19 @@ class OfflineFirstSyncEngine:
 
     def check_connectivity(self) -> bool:
         """Check network connectivity."""
-        import httpx
+        try:
+            import httpx
+        except ImportError:
+            logger.warning("httpx not available, sync limited")
+            self._is_online = False
+            return False
 
         try:
             response = httpx.get("https://api.github.com", timeout=5.0)
             self._is_online = response.status_code < 500
             return self._is_online
-        except Exception:
+        except Exception as e:
+            logger.error(f"Sync connectivity check failed: {e}")
             self._is_online = False
             return False
 
