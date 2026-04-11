@@ -41,6 +41,10 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     ComponentCreateRequest,
     ComponentImpactAnalysisResponse,
     ComponentResponse,
+    ConstraintLoadResponse,
+    ConstraintResponse,
+    ConstraintValidationResponse,
+    ConstraintViolationResponse,
     DependencyGraphResponse,
     DependencyRequest,
     DependencyResponse,
@@ -2401,3 +2405,104 @@ def force_sync() -> APIResponse[dict]:
     result = engine.process_queue()
 
     return APIResponse(data=result, meta=Meta(request_id=None))
+
+
+# ---------------------------------------------------------------------------
+# Constraints router
+# ---------------------------------------------------------------------------
+
+constraints_router = APIRouter()
+
+
+@constraints_router.post(
+    "",
+    response_model=APIResponse[ConstraintLoadResponse],
+    summary="Load constraints from config",
+    description="Load constraints from a YAML config file and store in Neo4j.",
+)
+def load_constraints(
+    config: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[ConstraintLoadResponse]:
+    from socialseed_tasker.core.task_management.constraints import ConstraintConfig
+    from socialseed_tasker.core.task_management.actions import load_constraints_from_config_action
+
+    constraint_config = ConstraintConfig(**config)
+    result = load_constraints_from_config_action(repo, constraint_config)
+
+    return APIResponse(
+        data=ConstraintLoadResponse(**result),
+        meta=Meta(request_id=None),
+    )
+
+
+@constraints_router.get(
+    "",
+    response_model=APIResponse[list[ConstraintResponse]],
+    summary="List constraints",
+    description="List all constraints, optionally filtered by category.",
+)
+def list_constraints(
+    category: str | None = Query(None, description="Filter by category"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list[ConstraintResponse]]:
+    from socialseed_tasker.core.task_management.actions import list_constraints_action
+
+    constraints = list_constraints_action(repo, category=category)
+
+    return APIResponse(
+        data=[
+            ConstraintResponse(
+                id=str(c.id),
+                category=c.category.value,
+                level=c.level.value,
+                pattern=c.pattern,
+                service=c.service,
+                target=c.target,
+                from_layer=c.from_layer,
+                to_layer=c.to_layer,
+                rule_type=c.rule_type,
+                max_depth=c.max_depth,
+                required=c.required,
+                description=c.description,
+                status=c.status.value,
+            )
+            for c in constraints
+        ],
+        meta=Meta(request_id=None),
+    )
+
+
+@constraints_router.get(
+    "/validate",
+    response_model=APIResponse[ConstraintValidationResponse],
+    summary="Validate constraints",
+    description="Validate all active constraints against current project state.",
+)
+def validate_constraints(
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[ConstraintValidationResponse]:
+    from socialseed_tasker.core.task_management.actions import validate_constraints_action
+
+    result = validate_constraints_action(repo)
+
+    return APIResponse(
+        data=ConstraintValidationResponse(
+            is_valid=result.is_valid,
+            violations=[
+                ConstraintViolationResponse(
+                    constraint_id=str(v.constraint_id),
+                    constraint_description=v.constraint_description,
+                    level=v.level.value,
+                    category=v.category.value,
+                    affected_resource=v.affected_resource,
+                    message=v.message,
+                    suggestion=v.suggestion,
+                )
+                for v in result.violations
+            ],
+            hard_violations_count=len(result.hard_violations),
+            soft_violations_count=len(result.soft_violations),
+        ),
+        meta=Meta(request_id=None),
+    )

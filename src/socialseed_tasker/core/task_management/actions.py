@@ -16,6 +16,13 @@ from socialseed_tasker.core.task_management.entities import (
     Issue,
     IssueStatus,
 )
+from socialseed_tasker.core.task_management.constraints import (
+    Constraint,
+    ConstraintConfig,
+    ConstraintLevel,
+    ConstraintValidationResult,
+    ConstraintViolation,
+)
 
 # ---------------------------------------------------------------------------
 # Custom exceptions
@@ -199,6 +206,23 @@ class TaskRepositoryInterface(Protocol):
 
     def get_agent_status(self, issue_id: str) -> dict[str, Any]:
         """Get agent work status for an issue."""
+
+    # -- Constraints -----------------------------------------------------------
+
+    def create_constraint(self, constraint: Constraint) -> None:
+        """Persist a new constraint."""
+
+    def list_constraints(self, category: str | None = None) -> list[Constraint]:
+        """List constraints, optionally filtered by category."""
+
+    def get_constraint(self, constraint_id: str) -> Constraint | None:
+        """Retrieve a constraint by ID."""
+
+    def delete_constraint(self, constraint_id: str) -> None:
+        """Permanently remove a constraint."""
+
+    def update_constraint(self, constraint_id: str, updates: dict) -> Constraint:
+        """Update a constraint."""
 
     def reset_data(self, scope: str = "all") -> dict[str, int]:
         """Reset data in the repository.
@@ -625,3 +649,175 @@ def _would_create_cycle(
                 queue.append((dep_key, path + [dep_key]))
 
     return []
+
+
+# ---------------------------------------------------------------------------
+# Constraint actions
+# ---------------------------------------------------------------------------
+
+
+class ConstraintNotFoundError(Exception):
+    """Raised when a constraint with the given ID does not exist."""
+
+    def __init__(self, constraint_id: str) -> None:
+        super().__init__(f"Constraint with id '{constraint_id}' was not found")
+
+
+def create_constraint_action(
+    repository: TaskRepositoryInterface,
+    constraint: Constraint,
+) -> Constraint:
+    """Create a new constraint after validating inputs.
+
+    Returns:
+        The created constraint
+    """
+    repository.create_constraint(constraint)
+    return constraint
+
+
+def list_constraints_action(
+    repository: TaskRepositoryInterface,
+    category: str | None = None,
+) -> list[Constraint]:
+    """List constraints, optionally filtered by category."""
+    return repository.list_constraints(category=category)
+
+
+def get_constraint_action(
+    repository: TaskRepositoryInterface,
+    constraint_id: str,
+) -> Constraint:
+    """Get a constraint by ID or raise not found."""
+    constraint = repository.get_constraint(constraint_id)
+    if constraint is None:
+        raise ConstraintNotFoundError(constraint_id)
+    return constraint
+
+
+def delete_constraint_action(
+    repository: TaskRepositoryInterface,
+    constraint_id: str,
+) -> None:
+    """Delete a constraint by ID."""
+    constraint = repository.get_constraint(constraint_id)
+    if constraint is None:
+        raise ConstraintNotFoundError(constraint_id)
+    repository.delete_constraint(constraint_id)
+
+
+def load_constraints_from_config_action(
+    repository: TaskRepositoryInterface,
+    config: ConstraintConfig,
+) -> dict[str, int]:
+    """Load constraints from config file, replacing existing ones.
+
+    Returns:
+        Dict with counts of created/updated constraints
+    """
+    existing = repository.list_constraints()
+    for c in existing:
+        repository.delete_constraint(str(c.id))
+
+    constraints = config.to_constraints()
+    for constraint in constraints:
+        constraint.status = "active"
+        repository.create_constraint(constraint)
+
+    return {
+        "created": len(constraints),
+        "deleted": len(existing),
+    }
+
+
+def validate_constraints_action(
+    repository: TaskRepositoryInterface,
+) -> ConstraintValidationResult:
+    """Validate all active constraints against current state.
+
+    Returns:
+        Validation result with any violations
+    """
+    constraints = repository.list_constraints()
+    violations: list[ConstraintViolation] = []
+
+    for constraint in constraints:
+        if constraint.category == "dependencies" and constraint.rule_type == "max_depth":
+            if constraint.max_depth:
+                depth = _check_max_dependency_depth(repository, constraint.max_depth)
+                if depth > constraint.max_depth:
+                    violations.append(
+                        ConstraintViolation(
+                            constraint_id=constraint.id,
+                            constraint_description=constraint.description,
+                            level=constraint.level,
+                            category=constraint.category,
+                            affected_resource="dependency_graph",
+                            message=f"Dependency depth {depth} exceeds max {constraint.max_depth}",
+                            suggestion="Restructure dependencies to reduce depth",
+                        )
+                    )
+
+    return ConstraintValidationResult(
+        is_valid=len(violations) == 0,
+        violations=violations,
+    )
+
+
+def _check_max_dependency_depth(repository: TaskRepositoryInterface, max_depth: int) -> int:
+    """Check max dependency depth in the repository."""
+    issues = repository.list_issues()
+    max_found = 0
+
+    for issue in issues:
+        depth = _get_dependency_depth(repository, str(issue.id), set())
+        max_found = max(max_found, depth)
+
+    return max_found
+
+
+def _get_dependency_depth(repository: TaskRepositoryInterface, issue_id: str, visited: set[str]) -> int:
+    """Get the max depth of dependencies for an issue."""
+    if issue_id in visited:
+        return 0
+    visited.add(issue_id)
+
+    deps = repository.get_dependencies(issue_id)
+    if not deps:
+        return 0
+
+    max_depth = 0
+    for dep in deps:
+        dep_depth = _get_dependency_depth(repository, str(dep.id), visited.copy())
+        max_depth = max(max_depth, dep_depth + 1)
+
+    return max_depth
+
+
+def check_soft_constraints_for_closure(
+    repository: TaskRepositoryInterface,
+    issue_id: str,
+) -> list[ConstraintViolation]:
+    """Check soft constraints before allowing issue closure.
+
+    Returns list of violated soft constraints - if any exist, the issue
+    cannot be closed until the agent confirms compliance.
+    """
+    constraints = repository.list_constraints()
+    violations: list[ConstraintViolation] = []
+
+    for constraint in constraints:
+        if constraint.level == "soft" and constraint.status == "active":
+            violations.append(
+                ConstraintViolation(
+                    constraint_id=constraint.id,
+                    constraint_description=constraint.description,
+                    level=constraint.level,
+                    category=constraint.category,
+                    affected_resource=issue_id,
+                    message=f"Soft constraint '{constraint.description}' may be violated",
+                    suggestion="Confirm compliance or document why this constraint does not apply",
+                )
+            )
+
+    return violations

@@ -648,3 +648,49 @@ class GitHubWebhookTestResponse(BaseModel):
 
     success: bool
     message: str
+
+
+class ConstraintResponse(BaseModel):
+    """Response for a single constraint."""
+
+    id: str
+    category: str
+    level: str
+    pattern: str = ""
+    service: str = ""
+    target: str = ""
+    from_layer: str = ""
+    to_layer: str = ""
+    rule_type: str = ""
+    max_depth: int | None = None
+    required: bool = True
+    description: str = ""
+    status: str = "inactive"
+
+
+class ConstraintViolationResponse(BaseModel):
+    """Response for a constraint violation."""
+
+    constraint_id: str
+    constraint_description: str
+    level: str
+    category: str
+    affected_resource: str
+    message: str
+    suggestion: str = ""
+
+
+class ConstraintValidationResponse(BaseModel):
+    """Response for constraint validation."""
+
+    is_valid: bool
+    violations: list[ConstraintViolationResponse] = Field(default_factory=list)
+    hard_violations_count: int = 0
+    soft_violations_count: int = 0
+
+
+class ConstraintLoadResponse(BaseModel):
+    """Response for loading constraints from config."""
+
+    created: int
+    deleted: int
