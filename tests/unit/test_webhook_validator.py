@@ -12,15 +12,15 @@ from socialseed_tasker.core.services.webhook_validator import (
 class TestWebhookSignatureValidator:
     """Test cases for WebhookSignatureValidator class."""
 
-    def test_validate_with_no_secret_returns_true(self):
-        """Should return True when no secret is configured."""
+    def test_validate_with_no_secret_returns_false(self):
+        """Should return False when no secret is configured (security requirement)."""
         validator = WebhookSignatureValidator(secret="")
         payload = b'{"action": "opened"}'
         signature = "sha256=abc123"
 
         result = validator.validate(payload, signature)
 
-        assert result is True
+        assert result is False
 
     def test_validate_with_valid_signature(self):
         """Should return True for valid HMAC-SHA256 signature."""
@@ -149,17 +149,17 @@ class TestValidateSignatureFunction:
 
         assert result is True
 
-    def test_empty_secret_returns_true(self):
-        """Should return True when secret is empty."""
+    def test_empty_secret_returns_false(self):
+        """Should return False when secret is empty (security requirement)."""
         result = validate_signature(b"payload", "", "sha256=signature")
 
-        assert result is True
+        assert result is False
 
-    def test_empty_signature_returns_true(self):
-        """Should return True when signature is empty."""
+    def test_empty_signature_returns_false(self):
+        """Should return False when signature is empty (security requirement)."""
         result = validate_signature(b"payload", "secret", "")
 
-        assert result is True
+        assert result is False
 
     def test_invalid_signature_returns_false(self):
         """Should return False for invalid signature."""

@@ -43,11 +43,12 @@ class WebhookSignatureValidator:
             signature: Signature from X-Hub-Signature-256 header
 
         Returns:
-            True if signature is valid or no secret configured
+            True if signature is valid, False otherwise
         """
         if not self._secret:
-            logger.warning("Webhook signature validation skipped - no secret configured")
-            return True
+            self._log_rejected("none", "Webhook secret not configured")
+            logger.warning("Webhook rejected: secret not configured")
+            return False
 
         if not signature:
             self._log_rejected("missing", "No signature provided")
@@ -94,10 +95,13 @@ def validate_signature(payload: bytes, secret: str, signature: str) -> bool:
         signature: Signature from header
 
     Returns:
-        True if signature is valid
+        True if signature is valid, False otherwise
     """
-    if not secret or not signature:
-        return True
+    if not secret:
+        return False
+
+    if not signature:
+        return False
 
     expected = f"sha256={hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()}"
     return hmac.compare_digest(expected, signature)
