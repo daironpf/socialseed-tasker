@@ -1,59 +1,160 @@
 {
   "name": "tasker-api",
-  "version": "1.0.0",
-  "description": "AI Agent Skill for interacting with SocialSeed Tasker REST API",
+  "version": "0.8.0",
+  "description": "AI Agent Skill for interacting with SocialSeed Tasker REST API v0.8.0",
+  "api_version": "0.8.0",
   "functions": [
     {
+      "name": "create_component",
+      "description": "Create a new component to group issues",
+      "category": "components"
+    },
+    {
+      "name": "list_components",
+      "description": "List components with optional filters",
+      "category": "components"
+    },
+    {
+      "name": "get_component",
+      "description": "Get full details of a single component",
+      "category": "components"
+    },
+    {
+      "name": "update_component",
+      "description": "Update component fields",
+      "category": "components"
+    },
+    {
+      "name": "delete_component",
+      "description": "Delete a component and all associated issues",
+      "category": "components"
+    },
+    {
       "name": "create_issue",
-      "description": "Create a new issue in the task management system",
-      "parameters": {
-        "title": "string (required) - Issue title",
-        "component_id": "string (required) - UUID of the target component",
-        "description": "string (optional) - Detailed description",
-        "priority": "string (optional) - LOW, MEDIUM, HIGH, CRITICAL",
-        "labels": "array (optional) - Tags for categorisation"
-      }
+      "description": "Create a new issue",
+      "category": "issues"
     },
     {
       "name": "list_issues",
-      "description": "List issues with optional filters",
-      "parameters": {
-        "status": "string (optional) - Filter by status",
-        "component": "string (optional) - Filter by component ID",
-        "page": "integer (optional) - Page number",
-        "limit": "integer (optional) - Items per page"
-      }
+      "description": "List issues with filters and pagination",
+      "category": "issues"
     },
     {
-      "name": "add_dependency",
-      "description": "Create a DEPENDS_ON relationship between two issues",
-      "parameters": {
-        "issue_id": "string (required) - Source issue UUID",
-        "depends_on_id": "string (required) - Target issue UUID"
-      }
+      "name": "get_issue",
+      "description": "Get full details of a single issue",
+      "category": "issues"
     },
     {
-      "name": "get_dependency_chain",
-      "description": "Get the full transitive dependency chain for an issue",
-      "parameters": {
-        "issue_id": "string (required) - Issue UUID"
-      }
+      "name": "update_issue",
+      "description": "Update issue fields (status, priority, description, labels, agent_working)",
+      "category": "issues"
     },
     {
       "name": "close_issue",
       "description": "Close an issue (validates no open dependencies)",
-      "parameters": {
-        "issue_id": "string (required) - Issue UUID"
-      }
+      "category": "issues"
     },
     {
-      "name": "create_component",
-      "description": "Create a new component to group issues",
-      "parameters": {
-        "name": "string (required) - Component name",
-        "project": "string (required) - Project name",
-        "description": "string (optional) - Component description"
-      }
+      "name": "delete_issue",
+      "description": "Permanently delete an issue",
+      "category": "issues"
+    },
+    {
+      "name": "get_workable_issues",
+      "description": "Get issues where all dependencies are closed (ready to work on)",
+      "category": "issues"
+    },
+    {
+      "name": "add_dependency",
+      "description": "Create a DEPENDS_ON relationship between two issues",
+      "category": "dependencies"
+    },
+    {
+      "name": "remove_dependency",
+      "description": "Remove a DEPENDS_ON relationship",
+      "category": "dependencies"
+    },
+    {
+      "name": "get_dependencies",
+      "description": "List issues that the given issue depends on",
+      "category": "dependencies"
+    },
+    {
+      "name": "get_dependency_chain",
+      "description": "Get the full transitive dependency chain for an issue",
+      "category": "dependencies"
+    },
+    {
+      "name": "get_blocked_issues",
+      "description": "List all issues blocked by open dependencies",
+      "category": "dependencies"
+    },
+    {
+      "name": "get_dependency_graph",
+      "description": "Get full dependency graph for visualization",
+      "category": "dependencies"
+    },
+    {
+      "name": "analyze_impact",
+      "description": "Analyze downstream impact of an issue",
+      "category": "analysis"
+    },
+    {
+      "name": "analyze_component_impact",
+      "description": "Analyze impact for a component",
+      "category": "analysis"
+    },
+    {
+      "name": "analyze_root_cause",
+      "description": "Find likely root causes for a test failure",
+      "category": "analysis"
+    },
+    {
+      "name": "get_project_summary",
+      "description": "Get complete project summary dashboard",
+      "category": "dashboard"
+    },
+    {
+      "name": "health_check",
+      "description": "Check API and Neo4j health",
+      "category": "system"
+    },
+    {
+      "name": "admin_reset",
+      "description": "Reset data (all, issues, or components)",
+      "category": "admin"
+    },
+    {
+      "name": "get_sync_status",
+      "description": "Get GitHub sync status",
+      "category": "sync"
+    },
+    {
+      "name": "get_sync_queue",
+      "description": "Get pending sync queue items",
+      "category": "sync"
+    },
+    {
+      "name": "force_sync",
+      "description": "Force GitHub sync attempt",
+      "category": "sync"
+    },
+    {
+      "name": "test_webhook",
+      "description": "Test webhook configuration",
+      "category": "sync"
     }
-  ]
+  ],
+  "enums": {
+    "priority": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+    "status": ["OPEN", "IN_PROGRESS", "BLOCKED", "CLOSED"],
+    "reset_scope": ["all", "issues", "components"]
+  },
+  "environment": {
+    "TASKER_API_URL": "http://localhost:8000",
+    "TASKER_API_KEY": "optional API key",
+    "TASKER_NEO4J_URI": "bolt://localhost:7687",
+    "GITHUB_TOKEN": "optional for GitHub sync",
+    "GITHUB_REPO": "optional for GitHub sync"
+  }
 }

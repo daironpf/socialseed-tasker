@@ -10,6 +10,7 @@ A specialized framework that leverages **Neo4j** to provide AI agents with infin
   <img src="https://img.shields.io/badge/Storage-Neo4j%20Only-orange.svg" alt="Neo4j Only">
   <img src="https://img.shields.io/badge/GraphRAG-Enabled-purple.svg" alt="GraphRAG">
   <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0">
+  <img src="https://img.shields.io/badge/Version-0.8.0-green.svg" alt="Version: 0.8.0">
   <img src="https://img.shields.io/badge/PRs-Welcome-green.svg" alt="PRs Welcome">
 </p>
 
@@ -31,13 +32,13 @@ docker compose up -d
 ```bash
 # Check API health
 curl http://localhost:8000/health
-# Expected: {"status":"healthy","version":"0.6.0"}
+# Expected: {"status":"healthy","version":"0.8.0","neo4j":"connected"}
 ```
 
 ### 3. Services Available
 
 | Service | URL | Description |
-|---------|-----|-------------|
+|--------|-----|-------------|
 | **Neo4j Browser** | `http://localhost:7474` | Graph database UI (neo4j/neoSocial) |
 | **REST API** | `http://localhost:8000` | For AI agents to manage issues |
 | **Frontend** | `http://localhost:8080` | Human UI (Kanban board) |
@@ -105,7 +106,8 @@ http://localhost:8000/api/v1
 ```
 
 ### Authentication
-Currently no authentication required. Set `ALLOWED_ORIGINS` env var in production.
+
+Set `TASKER_API_KEY` and `TASKER_AUTH_ENABLED=true` for production authentication. Health and docs endpoints remain open.
 
 ---
 
@@ -155,10 +157,13 @@ curl -X POST http://localhost:8000/api/v1/issues \
 
 **Priority values**: `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`
 
-#### List Issues
+#### List Issues (Paginated)
 ```bash
-# All issues
-curl http://localhost:8000/api/v1/issues
+# All issues (paginated)
+curl "http://localhost:8000/api/v1/issues"
+
+# Response format: {"data": {"items": [...], "total": N, "page": 1, "page_size": 50}}
+curl "http://localhost:8000/api/v1/issues?page=1&page_size=20"
 
 # Filter by status
 curl "http://localhost:8000/api/v1/issues?status=OPEN"
@@ -168,6 +173,18 @@ curl "http://localhost:8000/api/v1/issues?project=my-app"
 
 # Filter by component
 curl "http://localhost:8000/api/v1/issues?component=<component-id>"
+
+# Filter by priority
+curl "http://localhost:8000/api/v1/issues?priority=HIGH"
+```
+
+#### Get Workable Issues
+```bash
+# Get issues where all dependencies are closed (ready to work on)
+curl "http://localhost:8000/api/v1/workable-issues"
+
+# With filters
+curl "http://localhost:8000/api/v1/workable-issues?priority=HIGH&component=<component-id>"
 ```
 
 #### Update Issue
@@ -197,8 +214,6 @@ curl -X POST http://localhost:8000/api/v1/issues/<issue-id>/close
 ```
 
 **Status values**: `OPEN`, `IN_PROGRESS`, `BLOCKED`, `CLOSED`
-
-> **Note:** Currently, `issue show` and `update` endpoints require the full UUID. Short ID support is planned for v0.6.0.
 
 #### Delete Issue
 ```bash
@@ -230,6 +245,14 @@ curl http://localhost:8000/api/v1/issues/<issue-id>/dependencies
 curl -X DELETE http://localhost:8000/api/v1/issues/<issue-a-id>/dependencies/<issue-b-id>
 ```
 
+#### Get Dependency Graph
+```bash
+# Get full dependency graph for a project
+curl "http://localhost:8000/api/v1/graph/dependencies?project=my-app"
+
+# Response: {"nodes": [...], "edges": [...]}
+```
+
 ---
 
 ### Agent Working Indicator
@@ -250,6 +273,70 @@ requests.patch(
     "http://localhost:8000/api/v1/issues/<issue-id>",
     json={"agent_working": False}
 )
+```
+
+---
+
+### Analysis Endpoints
+
+#### Impact Analysis
+```bash
+# Analyze what would be affected by an issue
+curl "http://localhost:8000/api/v1/analyze/impact/<issue-id>"
+# Returns: directly_affected, transitively_affected, blocked_issues, risk_level
+```
+
+#### Component Impact
+```bash
+# Analyze impact for a component
+curl "http://localhost:8000/api/v1/analyze/component-impact/<component-id>"
+# Returns: total_issues, affected_components, criticality_score, risk_level
+```
+
+---
+
+### Project Dashboard
+
+#### Project Summary
+```bash
+# Get complete project summary
+curl "http://localhost:8000/api/v1/projects/<project-name>/summary"
+# Returns: total_issues, by_status, by_priority, components_count, blocked_issues_count,
+#          workable_issues_count, dependency_health, top_blocked_components, critical_path_length
+```
+
+---
+
+### Admin Endpoints
+
+#### Reset Data
+```bash
+# Reset all data or specific scope
+curl -X POST "http://localhost:8000/api/v1/admin/reset" \
+  -H "Content-Type: application/json" \
+  -d '{"scope": "all"}'  # "all", "issues", or "components"
+```
+
+#### Health Check
+```bash
+# Detailed health with Neo4j connection status
+curl http://localhost:8000/health
+# Returns: status, version, neo4j (connected/disconnected), neo4j_uri, auth_enabled
+```
+
+---
+
+### Sync Service Endpoints
+
+```bash
+# Check sync status
+curl http://localhost:8000/api/v1/sync/status
+
+# Get sync queue
+curl http://localhost:8000/api/v1/sync/queue
+
+# Force sync
+curl -X POST http://localhost:8000/api/v1/sync/force
 ```
 
 ---
@@ -314,49 +401,17 @@ def finish_issue(issue_id, solution_summary):
     })
 ```
 
-def create_issue_and_work(title, component_id, description=""):
-    """Create an issue and start working on it."""
-    
-    # 1. Create the issue
-    response = requests.post(f"{API_BASE}/issues", json={
-        "title": title,
-        "description": description,
-        "component_id": component_id,
-        "priority": "MEDIUM"
-    })
-    issue = response.json()["data"]
-    issue_id = issue["id"]
-    
-    # 2. Mark as agent working (shows on board)
-    requests.patch(f"{API_BASE}/{issue_id}", json={"agent_working": True})
-    
-    # 3. Move to in progress
-    requests.patch(f"{API_BASE}/{issue_id}", json={"status": "IN_PROGRESS"})
-    
-    # 4. Do the work...
-    
-    # 5. Mark as done
-    requests.post(f"{API_BASE}/{issue_id}/close")
-    
-    # 6. Clear agent working flag
-    requests.patch(f"{API_BASE}/{issue_id}", json={"agent_working": False})
-    
-    return issue_id
-```
-
 ### Full Example: AI Agent Solving an Issue
 
 ```python
 import requests
+from datetime import datetime
 
 API_BASE = "http://localhost:8000/api/v1"
 
 def solve_issue(issue_id, problem_description):
-    """
-    AI agent solves an issue, keeping the board updated with progress.
-    """
+    """AI agent solves an issue, keeping the board updated with progress."""
     
-    # Step 1: Analyze and plan
     todo_items = [
         "Analyze the problem and identify root cause",
         "Write test to reproduce the issue",
@@ -365,7 +420,6 @@ def solve_issue(issue_id, problem_description):
         "Update documentation if needed"
     ]
     
-    # Step 2: Start working - update status and add TODO to description
     initial_desc = f"## Problem\n{problem_description}\n\n"
     initial_desc += "## TODO:\n" + "\n".join([f"- [ ] {item}" for item in todo_items])
     initial_desc += f"\n\n## Started at: {datetime.now().isoformat()}"
@@ -376,174 +430,29 @@ def solve_issue(issue_id, problem_description):
         "agent_working": True
     })
     
-    # Step 3: First TODO complete - Analyze
-    update_issue_description(issue_id, todo_items[0], "Analyzing root cause...")
-    
-    # Step 4: Found the issue - update with findings
-    update_issue_description(issue_id, todo_items[0], 
-        "Root cause: Missing null check in auth handler")
-    
-    # Step 5: Write test
-    update_issue_description(issue_id, todo_items[1], 
-        "Test written: test_login_with_special_chars")
-    
-    # Step 6: Implement fix
-    update_issue_description(issue_id, todo_items[2], 
-        "Fix implemented: Added null validation")
-    
-    # Step 7: Tests pass
-    update_issue_description(issue_id, todo_items[3], 
-        "All 45 tests pass")
-    
-    # Step 8: Close issue with summary
+    # Do work and update progress...
+    # Close with summary
     solution_summary = """
 ## Solution Applied
 - Added null validation for password field
-- Added test case with special characters: !@#$%^&*()
+- Added test case with special characters
 - All existing tests continue to pass
-
-## Files Changed
-- src/auth/handlers.py (line 45-47)
-- tests/test_auth.py (added test_login_with_special_chars)
 """
-    
     requests.post(f"{API_BASE}/issues/{issue_id}/close")
     requests.patch(f"{API_BASE}/issues/{issue_id}", json={
         "description": initial_desc + solution_summary,
         "agent_working": False
     })
-
-
-def update_issue_description(issue_id, completed_item, next_action):
-    """Helper to mark a TODO complete and note next action."""
-    
-    # Get current description
-    issue = requests.get(f"{API_BASE}/issues/{issue_id}").json()["data"]
-    desc = issue.get("description", "")
-    
-    # Mark completed item
-    desc = desc.replace(f"- [ ] {completed_item}", f"- [x] {completed_item}")
-    
-    # Add progress note with timestamp
-    timestamp = datetime.now().strftime("%H:%M")
-    desc += f"\n[{timestamp}] **Next**: {next_action}"
-    
-    requests.patch(f"{API_BASE}/issues/{issue_id}", json={
-        "description": desc
-    })
 ```
 
-### Why Keep the Board Updated?
-
-| Reason | Description |
-|--------|-------------|
-| **Transparency** | Humans can see what the AI is doing |
-| **Traceability** | Full history of the solution is in the issue |
-| **Collaboration** | Other agents or humans can see progress |
-| **Debugging** | If something goes wrong, the trail is clear |
-| **State Sync** | The Kanban board always reflects reality |
-
-
-def get_workable_issues():
-    """Get issues that can be worked on (not blocked)."""
-    all_issues = requests.get(f"{API_BASE}/issues").json()["data"]["items"]
-    
-    workable = []
-    for issue in all_issues:
-        if issue["status"] == "CLOSED":
-            continue
-        
-        # Check dependencies - if all dependencies are closed, it's workable
-        deps = requests.get(f"{API_BASE}/issues/{issue['id']}/dependencies").json()["data"]
-        
-        if not deps or all(d["status"] == "CLOSED" for d in deps):
-            workable.append(issue)
-    
-    return workable
-```
-
----
-
-## 📋 Complete Example: Full Workflow
-
-```bash
-# 1. Create a component
-COMPONENT=$(curl -s -X POST http://localhost:8000/api/v1/components \
-  -H "Content-Type: application/json" \
-  -d '{"name": "api-service", "project": "myapp"}' | jq -r '.data.id')
-
-echo "Created component: $COMPONENT"
-
-# 2. Create multiple issues
-ISSUE1=$(curl -s -X POST http://localhost:8000/api/v1/issues \
-  -H "Content-Type: application/json" \
-  -d "{\"title\": \"Setup database schema\", \"component_id\": \"$COMPONENT\", \"priority\": \"HIGH\"}" | jq -r '.data.id')
-
-ISSUE2=$(curl -s -X POST http://localhost:8000/api/v1/issues \
-  -H "Content-Type: application/json" \
-  -d "{\"title\": \"Create API endpoints\", \"component_id\": \"$COMPONENT\", \"priority\": \"HIGH\"}" | jq -r '.data.id')
-
-# 3. Add dependency: API endpoints depend on database schema
-curl -X POST "http://localhost:8000/api/v1/issues/$ISSUE2/dependencies" \
-  -H "Content-Type: application/json" \
-  -d "{\"depends_on_id\": \"$ISSUE1\"}"
-
-# 4. Mark AI is working on database schema
-curl -X PATCH "http://localhost:8000/api/v1/issues/$ISSUE1" \
-  -H "Content-Type: application/json" \
-  -d '{"agent_working": true, "status": "IN_PROGRESS"}'
-
-# 5. After completing database, close it and work on API
-curl -X POST "http://localhost:8000/api/v1/issues/$ISSUE1/close"
-curl -X PATCH "http://localhost:8000/api/v1/issues/$ISSUE2" \
-  -H "Content-Type: application/json" \
-  -d '{"agent_working": true, "status": "IN_PROGRESS"}'
-
-# 6. Check all issues
-curl http://localhost:8000/api/v1/issues | jq '.data.items[] | {title, status, agent_working, dependencies}'
-```
-
----
-
-## 🔍 Finding Workable Issues
-
-AI agents can query to find issues that are ready to work on:
-
-```bash
-# Get all open issues
-curl "http://localhost:8000/api/v1/issues?status=OPEN" | jq '.data.items[] | .title'
-
-# For each, check if dependencies are resolved
-curl "http://localhost:8000/api/v1/issues/<id>/dependencies"
-```
-
----
-
-## 🧠 GraphRAG: Infinite Context for AI Agents
-
-The Tasker graph isn't just for tracking issues—it's a **knowledge graph** that provides AI agents with infinite context before proposing solutions.
-
-### How It Works
-
-1. **Dependency Tracking**: Every issue relationship is stored as a directed edge in Neo4j
-2. **Impact Analysis**: Before working on an issue, agents can query the full dependency chain to understand downstream effects
-3. **Root Cause Discovery**: Closed issues are linked to test failures, enabling automated root cause analysis
-
-### Example: Impact Analysis Before a Fix
+### Finding Workable Issues
 
 ```python
-# Before refactoring the Auth module, check what would be affected
-import requests
-
-issue_id = "<auth-module-issue-id>"
-impact = requests.get(f"{API_BASE}/analyze/impact/{issue_id}").json()["data"]
-
-print(f"Directly affected: {len(impact['directly_affected'])} issues")
-print(f"Transitively affected: {len(impact['transitively_affected'])} issues")
-print(f"Risk level: {impact['risk_level']}")
+def get_workable_issues():
+    """Get issues that can be worked on (not blocked)."""
+    response = requests.get(f"{API_BASE}/workable-issues")
+    return response.json()["data"]["items"]
 ```
-
-This enables the agent to make **informed decisions** based on the complete architectural context, not just the isolated issue.
 
 ---
 
@@ -555,8 +464,10 @@ This enables the agent to make **informed decisions** based on the complete arch
 | `TASKER_NEO4J_USER` | `neo4j` | Neo4j username |
 | `TASKER_NEO4J_PASSWORD` | (none) | Neo4j password (required) |
 | `API_PORT` | `8000` | API server port |
-
-> **Note:** When using Docker Compose, credentials are set via `NEO4J_PASSWORD` in the compose file. Default is `neo4j/neoSocial`.
+| `TASKER_API_KEY` | (none) | API key for authentication |
+| `TASKER_AUTH_ENABLED` | `false` | Enable API authentication |
+| `TASKER_DEMO_MODE` | `false` | Load demo data on startup |
+| `TASKER_RATE_LIMIT` | `100` | Requests per minute limit |
 
 ---
 
@@ -597,15 +508,17 @@ docker compose down -v
 │      Application Core        │
 │  (Hexagonal Architecture)    │
 │ • Governance Engine           │
-│ • Dependency BFS Analysis     │
-│ • Root Cause Detection        │
+│ • Dependency BFS Analysis │
+│ • Root Cause Detection     │
+│ • Input Validation        │
+│ • Rate Limiting          │
 └────────────┬─────────────────┘
              ▼
 ┌──────────────────────────────┐
-│      Neo4j Graph DB          │
-│ (The Source of Truth)        │
-│ • Relationship Tracking       │
-│ • Causal Traceability         │
+│      Neo4j Graph DB        │
+│ (The Source of Truth)         │
+│ • Relationship Tracking    │
+│ • Causal Traceability    │
 └──────────────────────────────┘
 ```
 
@@ -614,5 +527,6 @@ docker compose down -v
 ## 🔗 Related Documentation
 
 - **[CLI Reference](#)** - Command-line interface
-- **[API Endpoints](#)** - Detailed API documentation
+- **[API_REFERENCE.md](API_REFERENCE.md)** - Complete API endpoint reference for AI agents
+- **[VERSIONS.md](VERSIONS.md)** - Release milestones and feature checklists
 - **[Development](#)** - Running tests, contributing
