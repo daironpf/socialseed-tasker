@@ -2298,11 +2298,35 @@ def list_agents_by_role(role: str) -> APIResponse[list[AgentResponse]]:
 admin_router = APIRouter()
 
 
+def require_admin_auth(request: Request):
+    """Require admin authentication for protected endpoints."""
+    import os
+    from fastapi import HTTPException
+
+    admin_api_key = os.getenv("TASKER_ADMIN_API_KEY")
+    if not admin_api_key:
+        admin_api_key = os.getenv("TASKER_API_KEY", "")
+
+    if not admin_api_key:
+        raise HTTPException(
+            status_code=500,
+            detail="Admin authentication not configured",
+        )
+
+    provided_key = request.headers.get("X-API-Key")
+    if provided_key != admin_api_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing admin API key",
+        )
+
+
 @admin_router.post(
     "/admin/reset",
     response_model=APIResponse[dict[str, Any]],
     summary="Reset data",
     description="Clear all or partial data from the database. Use with caution in production.",
+    dependencies=[Depends(require_admin_auth)],
 )
 def reset_data(
     scope: str = Query("all", description="What to reset: 'all', 'issues', or 'components'"),
