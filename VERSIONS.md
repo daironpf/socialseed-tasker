@@ -12,17 +12,17 @@ This document defines the versioning milestones for **SocialSeed Tasker**. We st
 
 ---
 
-## Current Milestone: v0.6.0 (The "Polish & Alignment" Release)
+## Current Milestone: v0.8.0 (The "Observability & Active Governance" Release)
 
-**Status:** *Released* on 2026-04-08
+**Status:** *Released* on 2026-04-11
 
 SocialSeed Tasker is a **Graph-Only** platform, leveraging Neo4j as its exclusive source of truth.
 
-* **Focus:** Stabilizing the Neo4j engine, Graph traversal (BFS), and the Human-Centric UI.
-* **Audit Status:** 147 unit tests passing (0 failures).
-* **Key Goal:** Providing high-performance, relationship-aware infrastructure for AI-native development.
+* **Focus:** Human-in-the-loop transparency and enforcement.
+* **Audit Status:** 270 unit tests passing (0 failures).
+* **Key Goal:** GitHub integration, policy enforcement, and AI agent observability.
 
-### v0.5.x Checklist (Completed in previous releases)
+### v0.6.x Checklist (Completed in previous releases)
 
 * [x] **Neo4j as Exclusive Storage:** File storage removed, only Neo4j backend supported.
 * [x] **Graph Traversal (BFS):** Dependency chain analysis, circular dependency detection, blocked issues.
@@ -57,30 +57,30 @@ SocialSeed Tasker is a **Graph-Only** platform, leveraging Neo4j as its exclusiv
 
 **Focus:** Human-in-the-loop transparency and enforcement.
 
-* [ ] **AI Reasoning Logs:** In-issue Markdown summaries explaining why the AI chose a specific architectural path based on the graph.
-* [ ] **Live Agent Documentation:** Agents must maintain a "Dynamic Progress Manifest" within the issue description, including:
+* [x] **AI Reasoning Logs:** In-issue Markdown summaries explaining why the AI chose a specific architectural path based on the graph.
+* [x] **Live Agent Documentation:** Agents must maintain a "Dynamic Progress Manifest" within the issue description, including:
     * Live TODO List: Checkboxes updated as the agent completes sub-tasks.
     * Affected Files: Real-time list of created or modified files.
     * Technical Debt Notes: Observations made by the agent during implementation.
 * [ ] **Graph Visualization:** Interactive graph view of issues, components, and dependencies (beyond Kanban).
-* [ ] **Agent Lifecycle Integration:** Full tracking of the `agent_working` state with start/finish timestamps.
-* [ ] **Active Policy Enforcement:** Block API/CLI writes if they violate defined Architectural Rules (forbidden tech, depth, etc.).
-* [ ] **Dependency Guard:** Real-time prevention of circular dependencies during issue creation.
-* [ ] **Graph Policy Engine:** Define "Rules of the Graph" (e.g., Layer A cannot touch Layer C) enforced at write time.
-* [ ] **Pre-Execution Validation:** Tasker automatically blocks agent actions that violate defined architectural policies.
+* [x] **Agent Lifecycle Integration:** Full tracking of the `agent_working` state with start/finish timestamps.
+* [x] **Active Policy Enforcement:** Block API/CLI writes if they violate defined Architectural Rules (forbidden tech, depth, etc.).
+* [x] **Dependency Guard:** Real-time prevention of circular dependencies during issue creation.
+* [x] **Graph Policy Engine:** Define "Rules of the Graph" (e.g., Layer A cannot touch Layer C) enforced at write time.
+* [x] **Pre-Execution Validation:** Tasker automatically blocks agent actions that violate defined architectural policies.
 * [ ] **Automated Self-Healing:** Integration with `socialseed-e2e` to trigger "Fix Issues" automatically when tests fail.
 * [ ] **Swarm Coordination:** Multi-agent role management (Planner, Developer, Reviewer) synchronized via Graph states.
-* [ ] **GitHub Integration:** 
-    * GitHub API Adapter: Implementation of a Hexagonal Adapter to map Tasker Issues to GitHub Issues/Milestones.
-    * Bidirectional Webhook Listener: API endpoint to receive real-time updates from GitHub (comments, label changes, status updates).
-    * Causal Mirroring: Automated sync of Tasker's "Analysis" (Root Cause/Impact) as comments in GitHub Issues for human reviewers.
-    * Offline-First Sync Engine: Queue system to batch local changes and push them to GitHub once internet connection is restored.
-    * Label-to-Graph Mapping: Syncing GitHub Labels directly into Neo4j nodes for enhanced filtering.
-    * GitHubIssueMapper: Domain service to map Neo4j UUIDs to GitHub Issue numbers and metadata.
-    * ConnectivityManager & SyncQueue: Offline-first "Guard" that queues agent actions during power/internet outages and flushes them to the cloud upon reconnection.
-    * WebhookSignatureValidator: Secure endpoint for real-time bidirectional sync from GitHub.
-    * MarkdownTransformer: Convert Graph Analysis results into GitHub-flavored Markdown (Tables and Mermaid diagrams).
-    * SecretManager: Secure handling of GitHub Personal Access Tokens (PAT) via environment injection.
+* [x] **GitHub Integration:** 
+    * [x] GitHub API Adapter: Implementation of a Hexagonal Adapter to map Tasker Issues to GitHub Issues/Milestones.
+    * [x] Bidirectional Webhook Listener: API endpoint to receive real-time updates from GitHub (comments, label changes, status updates).
+    * [x] Causal Mirroring: Automated sync of Tasker's "Analysis" (Root Cause/Impact) as comments in GitHub Issues for human reviewers.
+    * [x] Offline-First Sync Engine: Queue system to batch local changes and push them to GitHub once internet connection is restored.
+    * [x] Label-to-Graph Mapping: Syncing GitHub Labels directly into Neo4j nodes for enhanced filtering.
+    * [x] GitHubIssueMapper: Domain service to map Neo4j UUIDs to GitHub Issue numbers and metadata.
+    * [x] ConnectivityManager & SyncQueue: Offline-first "Guard" that queues agent actions during power/internet outages and flushes them to the cloud upon reconnection.
+    * [x] WebhookSignatureValidator: Secure endpoint for real-time bidirectional sync from GitHub.
+    * [x] MarkdownTransformer: Convert Graph Analysis results into GitHub-flavored Markdown (Tables and Mermaid diagrams).
+    * [x] SecretManager: Secure handling of GitHub Personal Access Tokens (PAT) via environment injection.
 
 ### v1.0.0 - The "Architect" (Production Ready)
 
