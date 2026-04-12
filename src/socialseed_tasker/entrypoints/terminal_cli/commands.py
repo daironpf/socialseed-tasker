@@ -314,13 +314,13 @@ def issue_create(
         validated_title = validate_issue_title(title)
     except IssueTitleValidationError as e:
         console.print(f"[error]Validation error: {e}[/error]")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from e
 
     try:
         sanitized_description = sanitize_issue_description(description)
     except IssueDescriptionValidationError as e:
         console.print(f"[error]Validation error: {e}[/error]")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from e
 
     sanitized_title = sanitize_issue_title(validated_title)
 
@@ -329,7 +329,7 @@ def issue_create(
     except ValueError as e:
         console.print(f"[error]{e}[/error]")
         console.print("[info]You can use full UUID, 8+ character prefix, or component name.[/info]")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from e
 
     normalized_priority = priority.upper()
     valid_priorities = [p.value for p in IssuePriority]
@@ -349,7 +349,7 @@ def issue_create(
     )
     result = analyzer.validate_issue_creation(temp_issue)
     if result.has_errors:
-        console.print(f"[error]Policy violations found:[/error]")
+        console.print("[error]Policy violations found:[/error]")
         for v in result.violations:
             console.print(f"  - {v.rule_name}: {v.message}")
             if v.suggestion:
@@ -358,7 +358,7 @@ def issue_create(
             console.print("[error]Blocking due to policy violations.[/error]")
             raise typer.Exit(code=1)
     elif result.has_warnings:
-        console.print(f"[warning]Policy warnings:[/warning]")
+        console.print("[warning]Policy warnings:[/warning]")
         for v in result.violations:
             console.print(f"  - {v.rule_name}: {v.message}")
 
@@ -586,7 +586,7 @@ def issue_start(
         console.print(f"[success]Agent work started:[/success] {agent_id} on issue {resolved_id[:8]}")
     except ValueError as e:
         console.print(f"[error]{e}[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from e
 
 
 @issue_app.command("finish")
@@ -621,7 +621,7 @@ def issue_finish(
         console.print(f"[success]Agent work finished:[/success] issue {resolved_id[:8]}")
     except ValueError as e:
         console.print(f"[error]{e}[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from e
 
 
 # ---------------------------------------------------------------------------
@@ -645,13 +645,13 @@ def dependency_add(
         resolved_issue_id = resolve_issue_id(issue_id, repo)
     except ValueError as e:
         console.print(f"[error]{e}[/error]")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from e
 
     try:
         resolved_dep_id = resolve_issue_id(depends_on, repo)
     except ValueError as e:
         console.print(f"[error]{e}[/error]")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from e
 
     from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
 
@@ -662,7 +662,7 @@ def dependency_add(
         analyzer = ArchitecturalAnalyzer(repo)
         result = analyzer.validate_dependency(issue_str, dep_str)
         if result.has_errors:
-            console.print(f"[error]Policy violations found:[/error]")
+            console.print("[error]Policy violations found:[/error]")
             for v in result.violations:
                 console.print(f"  - {v.rule_name}: {v.message}")
                 if v.suggestion:
@@ -671,7 +671,7 @@ def dependency_add(
                 console.print("[error]Blocking due to policy violations.[/error]")
                 raise typer.Exit(code=1)
         elif result.has_warnings:
-            console.print(f"[warning]Policy warnings:[/warning]")
+            console.print("[warning]Policy warnings:[/warning]")
             for v in result.violations:
                 console.print(f"  - {v.rule_name}: {v.message}")
 
@@ -819,7 +819,7 @@ def component_create(
         validated_name = validate_component_name(name)
     except ComponentNameValidationError as e:
         console.print(f"[error]Validation error: {e}[/error]")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from e
 
     sanitized_name = sanitize_component_name(validated_name)
     sanitized_description = sanitize_component_name(description or "")
@@ -863,7 +863,7 @@ def component_show(component: str) -> None:
     except ValueError as e:
         console.print(f"[error]{e}[/error]")
         console.print("[info]You can use full UUID, 8+ character prefix, or component name.[/info]")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from e
 
     component = repo.get_component(str(component_uuid))
 
@@ -1052,7 +1052,7 @@ def analyze_impact(
     except ValueError as e:
         console.print(f"[error]{e}[/error]")
         console.print("[info]You can use full UUID, 4+ character prefix, or exact title.[/info]")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=2) from e
 
     analyzer = RootCauseAnalyzer(repo)
     impact = analyzer.analyze_impact(str(resolved_id))
@@ -1569,7 +1569,7 @@ def constraints_set(
             config_data = yaml.safe_load(f)
     except Exception as e:
         console.print(f"[error]Failed to parse config file: {e}[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from e
 
     if not config_data:
         console.print("[warning]Config file is empty. No constraints to load.[/warning]")

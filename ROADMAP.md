@@ -118,6 +118,7 @@ This roadmap outlines our journey from a core utility to a global standard for A
 | 14 | `test_component_show_missing` expects wrong exit code | Low | Test | ✅ RESOLVED (v0.8.0 #140) |
 | 15 | Linter F821 - undefined UUID and Any | Low | Code | ✅ RESOLVED (v0.8.0 #141) |
 | 16 | Linter F401 - unused imports | Low | Code | ✅ RESOLVED (v0.8.0 #142) |
+| 17 | Linter F541, B904 - code quality | Low | Code | ✅ RESOLVED (v0.8.0 #143) |
 
 ---
 

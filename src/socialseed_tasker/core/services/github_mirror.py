@@ -113,7 +113,7 @@ class GitHubMirroringService:
         for link in data.get("causal_links", [])[:5]:
             body += f"- [{link.get('issue_title', 'Unknown')}]({link.get('issue_id', '#')})\n"
 
-        body += f"""
+        body += """
 ---
 _Analysis performed by Tasker_
 """
@@ -139,7 +139,7 @@ _Analysis performed by Tasker_
         for comp in data.get("affected_components", [])[:5]:
             body += f"- {comp}\n"
 
-        body += f"""
+        body += """
 ---
 _Analysis performed by Tasker_
 """
