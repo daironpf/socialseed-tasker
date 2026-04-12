@@ -228,6 +228,7 @@ def create_issue(
         "List issues with optional filters for status, component, and labels. "
         "Supports pagination via page and limit query parameters."
     ),
+    operation_id="list_all_issues",
 )
 def list_issues(
     status: str | None = Query(None, description="Filter by status"),
@@ -1175,8 +1176,9 @@ def sync_labels(
 @label_router.get(
     "/issues",
     response_model=APIResponse[list[IssueResponse]],
-    summary="List issues",
+    summary="List issues by labels",
     description="List issues with optional filtering by labels, status, component, or project.",
+    operation_id="list_issues_by_labels",
 )
 def list_issues(
     labels: str | None = Query(None, description="Filter by comma-separated labels"),
