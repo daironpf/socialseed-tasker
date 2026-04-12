@@ -7,10 +7,8 @@ with caching and rate limiting handling.
 from __future__ import annotations
 
 import os
-import time
 from datetime import datetime, timezone
 from typing import Protocol
-from uuid import UUID
 
 
 def _now() -> datetime:

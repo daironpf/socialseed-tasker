@@ -19,7 +19,6 @@ from socialseed_tasker.core.task_management.entities import (
 from socialseed_tasker.core.task_management.constraints import (
     Constraint,
     ConstraintConfig,
-    ConstraintLevel,
     ConstraintValidationResult,
     ConstraintViolation,
 )

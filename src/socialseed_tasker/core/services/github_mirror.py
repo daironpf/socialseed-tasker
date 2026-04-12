@@ -91,13 +91,23 @@ class GitHubMirroringService:
         """Format root cause analysis as GitHub-flavored Markdown."""
         score = data.get("confidence", 0.0)
         reasons = data.get("reasons", [])
+        primary_factor = data.get("primary_factor", "N/A")
 
         body = f"""## 🔍 Tasker Root Cause Analysis
 
 ### Analysis Result
 - **Confidence Score**: {score:.2f}
-- **Primary Factor**: {data.get("primary_factor", "N/A")}
+- **Primary Factor**: {primary_factor}
 
+### Contributing Factors
+"""
+        if reasons:
+            for reason in reasons[:5]:
+                body += f"- {reason}\n"
+        else:
+            body += "_No specific factors identified_\n"
+
+        body += """
 ### Contributing Issues
 """
         for link in data.get("causal_links", [])[:5]:

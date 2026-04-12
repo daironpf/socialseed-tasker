@@ -308,7 +308,7 @@ def issue_create(
         sanitize_issue_title,
         validate_issue_title,
     )
-    from uuid import UUID, uuid4
+    from uuid import uuid4
 
     try:
         validated_title = validate_issue_title(title)
@@ -582,7 +582,7 @@ def issue_start(
             console.print(f"[error]Agent is already working on issue '{issue_id}'.[/error]")
             raise typer.Exit(code=1)
 
-        updated_issue = repo.start_agent_work(resolved_id, agent_id)
+        repo.start_agent_work(resolved_id, agent_id)
         console.print(f"[success]Agent work started:[/success] {agent_id} on issue {resolved_id[:8]}")
     except ValueError as e:
         console.print(f"[error]{e}[/error]")
@@ -617,7 +617,7 @@ def issue_finish(
             console.print(f"[error]Issue '{issue_id}' not found.[/error]")
             raise typer.Exit(code=1)
 
-        updated_issue = repo.finish_agent_work(resolved_id)
+        repo.finish_agent_work(resolved_id)
         console.print(f"[success]Agent work finished:[/success] issue {resolved_id[:8]}")
     except ValueError as e:
         console.print(f"[error]{e}[/error]")

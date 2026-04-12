@@ -22,7 +22,6 @@ from socialseed_tasker.core.project_analysis.analyzer import (
 from socialseed_tasker.core.task_management.actions import (
     ComponentNotFoundError,
     IssueNotFoundError,
-    PolicyViolationError,
     TaskRepositoryInterface,
     add_dependency_action,
     close_issue_action,
@@ -567,9 +566,6 @@ def add_reasoning_log(
     if issue is None:
         raise IssueNotFoundError(issue_id)
 
-    from uuid import UUID
-
-    related_nodes = [UUID(n) for n in body.related_nodes] if body.related_nodes else []
     updated_issue = repo.add_reasoning_log(
         issue_id=issue_id,
         context=body.context,
@@ -1540,7 +1536,6 @@ def validate_policy(
 ) -> APIResponse[PolicyValidationResponse]:
     from uuid import UUID
     from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
-    from socialseed_tasker.core.project_analysis.rules import Severity
     from socialseed_tasker.core.task_management.entities import Issue, IssuePriority, IssueStatus
 
     enforcement_mode = "warn"
@@ -1610,7 +1605,6 @@ def get_policy_rules(
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[list[dict]]:
     from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
-    from socialseed_tasker.core.task_management.entities import Issue, IssueStatus
 
     analyzer = ArchitecturalAnalyzer(repo)
     rules = analyzer.list_rules()
@@ -1644,7 +1638,6 @@ _policy_engine: dict[str, Any] = {"policies": []}
 def create_policy(
     body: PolicyCreateRequest,
 ) -> APIResponse[PolicyResponse]:
-    from uuid import UUID
     from socialseed_tasker.core.project_analysis.policy import Policy, PolicyRule, PolicyRuleType
 
     rules = []
@@ -1720,7 +1713,6 @@ def list_policies() -> APIResponse[list[PolicyResponse]]:
     description="Get a policy by ID.",
 )
 def get_policy(policy_id: str) -> APIResponse[PolicyResponse]:
-    from uuid import UUID
 
     policies = _policy_engine.get("policies", [])
     for p in policies:
@@ -1768,7 +1760,6 @@ def dry_run_policy(
     body: PolicyValidationRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[PolicyValidationResponse]:
-    from uuid import UUID
     from socialseed_tasker.core.project_analysis.policy import PolicyEngine
 
     violations = []
@@ -2216,7 +2207,6 @@ def register_agent(
     description="List all registered agents.",
 )
 def list_agents() -> APIResponse[list[AgentResponse]]:
-    from datetime import datetime, timezone
 
     agents = []
     for agent_data in _agents.values():
@@ -2242,7 +2232,6 @@ def list_agents() -> APIResponse[list[AgentResponse]]:
     description="Get details of a specific agent.",
 )
 def get_agent(agent_id: str) -> APIResponse[AgentResponse]:
-    from datetime import datetime, timezone
 
     if agent_id not in _agents:
         from fastapi import HTTPException
@@ -2327,7 +2316,6 @@ def deregister_agent(agent_id: str) -> APIResponse[dict]:
     description="List all agents with a specific role.",
 )
 def list_agents_by_role(role: str) -> APIResponse[list[AgentResponse]]:
-    from datetime import datetime, timezone
 
     agents = []
     for agent_data in _agents.values():
