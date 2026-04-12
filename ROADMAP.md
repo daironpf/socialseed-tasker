@@ -103,7 +103,7 @@ This roadmap outlines our journey from a core utility to a global standard for A
 | # | Issue | Severity | Location | Status |
 |---|-------|----------|----------|--------|
 | 1 | `issue show` requires full UUID, short ID fails | Low | CLI commands | ✅ RESOLVED (v0.5.0) |
-| 2 | `component show` requires full UUID, short ID fails | Low | CLI commands | ✅ RESOLVED (v0.8.0 #134) - Now accepts name, partial ID (8+ chars), or UUID |
+| 2 | `component show` requires full UUID, short ID fails | Low | CLI commands | ✅ RESOLVED (v0.8.0 #134) |
 | 3 | `POST /dependencies` route not mounted at `/api/v1/dependencies` | Medium | Route prefix mismatch | ✅ RESOLVED |
 | 4 | `POST /analyze/root-cause` requires `test_id` field not documented in CLI help | Low | Schema vs CLI mismatch | ✅ RESOLVED (v0.5.1) - Added /analyze/link-test |
 | 5 | Architectural rules exist but not enforced at API/CLI write level | Medium | Integration gap | ⚠️ OPEN |
@@ -111,13 +111,13 @@ This roadmap outlines our journey from a core utility to a global standard for A
 | 7 | Dependencies not populated in issue list response | Low | API | ✅ RESOLVED (v0.5.0) |
 | 8 | No bulk dependency creation | Low | API | ✅ RESOLVED (v0.5.0) |
 | 9 | CLI output has extra blank lines at start (Typer/Rich bug) | Low | CLI rendering | ⚠️ LIMITACIÓN CONOCIDA - No hay solución sin cambiar de framework CLI |
-| 10 | `component update` requires full UUID | Low | CLI commands | ✅ RESOLVED (v0.8.0 #136) - Now accepts name, partial ID (4+ chars), or UUID |
-| 11 | `dependency add` requires full UUID for issue titles | Low | CLI commands | ✅ RESOLVED (v0.8.0 #137) - Now accepts titles of any length |
-| 12 | `component delete` requires full UUID | Low | CLI commands | ✅ RESOLVED (v0.8.0 #138) - Now accepts name, partial ID, or UUID |
-| 13 | `/analyze/component-impact` API requires full UUID | Low | API routes | ✅ RESOLVED (v0.8.0 #139) - Now accepts name or partial ID (8+ chars) |
-| 14 | `test_component_show_missing` expects wrong exit code | Low | Test | ✅ RESOLVED (v0.8.0 #140) - Now expects exit code 2 |
-| 15 | Linter F821 - undefined UUID and Any | Low | Code | ✅ RESOLVED (v0.8.0 #141) - Added required imports |
-| 16 | Linter F401 - unused imports | Low | Code | ✅ RESOLVED (v0.8.0 #142) - Removed 23+ unused imports |
+| 10 | `component update` requires full UUID | Low | CLI commands | ✅ RESOLVED (v0.8.0 #136) |
+| 11 | `dependency add` requires full UUID for issue titles | Low | CLI commands | ✅ RESOLVED (v0.8.0 #137) |
+| 12 | `component delete` requires full UUID | Low | CLI commands | ✅ RESOLVED (v0.8.0 #138) |
+| 13 | `/analyze/component-impact` API requires full UUID | Low | API routes | ✅ RESOLVED (v0.8.0 #139) |
+| 14 | `test_component_show_missing` expects wrong exit code | Low | Test | ✅ RESOLVED (v0.8.0 #140) |
+| 15 | Linter F821 - undefined UUID and Any | Low | Code | ✅ RESOLVED (v0.8.0 #141) |
+| 16 | Linter F401 - unused imports | Low | Code | ✅ RESOLVED (v0.8.0 #142) |
 
 ---
 
