@@ -331,13 +331,19 @@ def issue_create(
         console.print("[info]You can use full UUID, 8+ character prefix, or component name.[/info]")
         raise typer.Exit(code=2)
 
+    normalized_priority = priority.upper()
+    valid_priorities = [p.value for p in IssuePriority]
+    if normalized_priority not in valid_priorities:
+        console.print(f"[error]Invalid priority '{priority}'. Valid options: {', '.join(valid_priorities)}[/error]")
+        raise typer.Exit(code=2)
+
     analyzer = ArchitecturalAnalyzer(repo)
     temp_issue = Issue(
         id=uuid4(),
         title=title,
         description=description,
         status=IssueStatus.OPEN,
-        priority=IssuePriority(priority),
+        priority=IssuePriority(normalized_priority),
         component_id=str(component_uuid),
         labels=label_list,
     )
@@ -362,7 +368,7 @@ def issue_create(
             title=sanitized_title,
             component_id=str(component_uuid),
             description=sanitized_description,
-            priority=priority,
+            priority=normalized_priority,
             labels=label_list,
         )
         console.print(f"[success]Issue created:[/success] {issue.id}")
