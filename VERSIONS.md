@@ -130,18 +130,18 @@ SocialSeed Tasker is a **Graph-Only** platform, leveraging Neo4j as its exclusiv
 - [x] **#123 Webhook Secret Validation:** Enforce webhook secrets.
 - [x] **#124 Coverage 70%:** Increased test coverage.
 - [x] **#125 Document Pagination:** API docs format documented.
-- [x] **#131 CLI Priority Case Insensitive:** Accept case-insensitive priority input.
+- [x] **#131 CLI Priority Case Insensitive:** Accept case-insensitive priority input (now accepts "low", "HIGH", etc.)
 - [x] **#132 API Missing Import:** Add ComponentImpactIssueSummary to imports.
 - [x] **#133 API Router Fix:** Fix router path registrations.
-- [x] **#134 CLI Component Name Lookup:** Support component name lookup in show command.
+- [x] **#134 CLI Component Name Lookup:** `component show` now accepts name, partial ID (8+ chars), or full UUID.
 - [x] **#135 API Duplicate Routes:** Add unique operation_id to duplicate routes.
-- [x] **#136 CLI Component Update Name:** Support name lookup in component update command.
-- [x] **#137 CLI Dependency Add Title:** Support title lookup for short issue IDs.
-- [x] **#138 CLI Component Delete Name:** Use resolve_component_id in delete command.
-- [x] **#139 API Component Impact Short ID:** Support short IDs and names in component-impact endpoint.
-- [x] **#140 Test Exit Code Fix:** Update test_component_show_missing to expect exit code 2.
-- [x] **#141 Linter F821 Fix:** Add UUID and Any imports to resolve undefined name errors.
-- [x] **#142 Linter F401 Fix:** Remove unused imports and variables.
+- [x] **#136 CLI Component Update Name:** `component update` now accepts name, partial ID (4+ chars), or UUID.
+- [x] **#137 CLI Dependency Add Title:** `dependency add` now accepts issue titles of any length (not just full UUID).
+- [x] **#138 CLI Component Delete Name:** `component delete` now accepts name, partial ID, or UUID.
+- [x] **#139 API Component Impact Short ID:** `/analyze/component-impact` now accepts name or partial ID (8+ chars).
+- [x] **#140 Test Exit Code Fix:** `test_component_show_missing` now expects exit code 2 (ValueError handling).
+- [x] **#141 Linter F821 Fix:** Added `UUID` import to commands.py, `Any` import to actions.py and container.py.
+- [x] **#142 Linter F401 Fix:** Removed 23+ unused imports and variables across codebase.
 
 ---
 
