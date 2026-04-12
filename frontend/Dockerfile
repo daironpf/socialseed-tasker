@@ -8,8 +8,9 @@ WORKDIR /app
 # Copy dependency definitions
 COPY frontend/package.json frontend/package-lock.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies with retry logic for network resilience
+# Use npm ci for deterministic builds, with fallback retry
+RUN npm ci || npm ci || npm install
 
 # Copy source code
 COPY frontend/ ./
