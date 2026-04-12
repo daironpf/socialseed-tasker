@@ -874,7 +874,7 @@ def component_show(component: str) -> None:
 
 @component_app.command("update")
 def component_update(
-    component_id: str = typer.Argument(..., help="Component ID to update"),
+    component_id: str = typer.Argument(..., help="Component ID, name, or partial ID to update"),
     name: str | None = typer.Option(None, "--name", "-n", help="New component name"),
     description: str | None = typer.Option(None, "--description", "-d", help="New component description"),
     project: str | None = typer.Option(None, "--project", "-p", help="New project name"),
@@ -890,10 +890,14 @@ def component_update(
 
     repo = get_repository()
     try:
-        updated = update_component_action(repo, component_id, name=name, description=description, project=project)
+        resolved_id = resolve_component_id(component_id, repo)
+        updated = update_component_action(repo, str(resolved_id), name=name, description=description, project=project)
         console.print(f"[success]Component updated:[/success] {updated.name} ({updated.id})")
     except ComponentNotFoundError:
         console.print(f"[error]Component '{component_id}' not found.[/error]")
+        raise typer.Exit(code=1) from None
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
         raise typer.Exit(code=1) from None
 
 
