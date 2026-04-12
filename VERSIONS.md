@@ -125,16 +125,21 @@ SocialSeed Tasker is a **Graph-Only** platform, leveraging Neo4j as its exclusiv
 - [x] **#118 Webhook Test 404:** Fixed route.
 - [x] **#119 Sync Status 404:** Added httpx to runtime deps.
 - [x] **#120 Docker Integration Tests:** Verified dependencies in container.
-
----
-
-### v0.8.0 New Services
-
 - [x] **#121 Sync Dependency Health:** Health check for httpx dependency.
 - [x] **#122 Admin Endpoint Authentication:** Admin routes require auth.
 - [x] **#123 Webhook Secret Validation:** Enforce webhook secrets.
 - [x] **#124 Coverage 70%:** Increased test coverage.
 - [x] **#125 Document Pagination:** API docs format documented.
+- [x] **#131 CLI Priority Case Insensitive:** Accept case-insensitive priority input.
+- [x] **#132 API Missing Import:** Add ComponentImpactIssueSummary to imports.
+- [x] **#133 API Router Fix:** Fix router path registrations.
+- [x] **#134 CLI Component Name Lookup:** Support component name lookup in show command.
+- [x] **#135 API Duplicate Routes:** Add unique operation_id to duplicate routes.
+- [x] **#136 CLI Component Update Name:** Support name lookup in component update command.
+- [x] **#137 CLI Dependency Add Title:** Support title lookup for short issue IDs.
+- [x] **#138 CLI Component Delete Name:** Use resolve_component_id in delete command.
+- [x] **#139 API Component Impact Short ID:** Support short IDs and names in component-impact endpoint.
+- [x] **#140 Test Exit Code Fix:** Update test_component_show_missing to expect exit code 2.
 
 ---
 
@@ -168,6 +173,7 @@ SocialSeed Tasker is a **Graph-Only** platform, leveraging Neo4j as its exclusiv
 | 0.6.0 | 2025-04 | Docker |
 | 0.7.0 | 2025-10 | GitHub |
 | **0.8.0** | **2026-04-11** | **Current** |
+| 0.8.1 | 2026-04-12 | Upcoming - Lint cleanup |
 
 ---
 
