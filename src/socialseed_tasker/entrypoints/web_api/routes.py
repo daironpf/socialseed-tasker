@@ -40,6 +40,7 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     CausalLinkResponse,
     ComponentCreateRequest,
     ComponentImpactAnalysisResponse,
+    ComponentImpactIssueSummary,
     ComponentResponse,
     ConstraintLoadResponse,
     ConstraintResponse,
