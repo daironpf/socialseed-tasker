@@ -835,14 +835,22 @@ def component_list(
 
 
 @component_app.command("show")
-def component_show(component_id: str) -> None:
+def component_show(component: str) -> None:
     """Show component details and its issues."""
     repo = get_repository()
-    component = repo.get_component(component_id)
+
+    try:
+        component_uuid = resolve_component_id(component, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        console.print("[info]You can use full UUID, 8+ character prefix, or component name.[/info]")
+        raise typer.Exit(code=2)
+
+    component = repo.get_component(str(component_uuid))
 
     if component is None:
-        console.print(f"[error]Component '{component_id}' not found.[/error]")
-        raise typer.Exit(code=1) from None
+        console.print(f"[error]Component '{component}' not found.[/error]")
+        raise typer.Exit(code=1)
 
     lines = [
         f"[bold]Name:[/bold] {component.name}",
@@ -856,11 +864,10 @@ def component_show(component_id: str) -> None:
         Panel("\n".join(lines), title=f"[bold]{component.name}[/bold] ({str(component.id)[:8]})", border_style="cyan")
     )
 
-    # Show issues in this component
-    issues = repo.list_issues(component_id=component_id)
+    issues = repo.list_issues(component_id=str(component_uuid))
     if issues:
         console.print("\n[bold]Issues:[/bold]")
-        console.print(_issues_table(issues, {str(component.id): component.name}))
+        console.print(_issues_table(issues, {str(component_uuid): component.name}))
     else:
         console.print("\n[info]No issues in this component.[/info]")
 
