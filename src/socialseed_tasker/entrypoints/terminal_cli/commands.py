@@ -73,6 +73,7 @@ def get_repository() -> TaskRepositoryInterface:
     Business Value: Unifies CLI and API to use the same configuration.
     """
     import os
+
     from socialseed_tasker.entrypoints.terminal_cli.app import get_cli_container
 
     password = os.environ.get("TASKER_NEO4J_PASSWORD", "")
@@ -299,6 +300,8 @@ def issue_create(
     repo = get_repository()
     label_list = [x.strip() for x in labels.split(",")] if labels else []
 
+    from uuid import uuid4
+
     from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
     from socialseed_tasker.core.task_management.entities import Issue, IssuePriority, IssueStatus
     from socialseed_tasker.core.validation import (
@@ -308,7 +311,6 @@ def issue_create(
         sanitize_issue_title,
         validate_issue_title,
     )
-    from uuid import uuid4
 
     try:
         validated_title = validate_issue_title(title)
@@ -1555,9 +1557,11 @@ def constraints_set(
 ) -> None:
     """Load constraints from a YAML config file into Neo4j."""
     from pathlib import Path
-    from socialseed_tasker.core.task_management.constraints import ConstraintConfig
-    from socialseed_tasker.core.task_management.actions import load_constraints_from_config_action
+
     import yaml
+
+    from socialseed_tasker.core.task_management.actions import load_constraints_from_config_action
+    from socialseed_tasker.core.task_management.constraints import ConstraintConfig
 
     config_file = Path(config_path)
     if not config_file.exists():

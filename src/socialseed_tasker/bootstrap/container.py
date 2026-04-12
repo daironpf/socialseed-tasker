@@ -11,11 +11,11 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
-    from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
-    from socialseed_tasker.core.services.webhook_validator import WebhookSignatureValidator
     from socialseed_tasker.core.services.markdown_transformer import MarkdownTransformer
     from socialseed_tasker.core.services.secret_manager import SecretManager
+    from socialseed_tasker.core.services.webhook_validator import WebhookSignatureValidator
+    from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
+    from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
 
 
 # ---------------------------------------------------------------------------
@@ -192,10 +192,10 @@ class Container:
 
     def get_webhook_validator(self) -> WebhookSignatureValidator:
         """Get the webhook signature validator."""
+        from socialseed_tasker.core.services.secret_manager import get_webhook_secret
         from socialseed_tasker.core.services.webhook_validator import (
             WebhookSignatureValidator,
         )
-        from socialseed_tasker.core.services.secret_manager import get_webhook_secret
 
         return WebhookSignatureValidator(secret=get_webhook_secret())
 

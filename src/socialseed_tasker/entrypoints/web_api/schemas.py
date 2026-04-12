@@ -143,7 +143,10 @@ class ReasoningLogEntryRequest(BaseModel):
 
     context: str = Field(
         ...,
-        description="Type of reasoning: component_selection, dependency_analysis, architecture_choice, impact_assessment, priority_decision",
+        description=(
+            "Type of reasoning: component_selection, dependency_analysis, "
+            "architecture_choice, impact_assessment, priority_decision"
+        ),
         examples=["architecture_choice"],
     )
     reasoning: str = Field(
@@ -391,7 +394,7 @@ class IssueCreateRequest(BaseModel):
     )
     component_id: str | None = Field(
         None,
-        description="UUID of the component this issue belongs to. If not provided, issue will be created in 'uncategorized' component.",
+        description="UUID of the component this issue belongs to.",
         examples=["550e8400-e29b-41d4-a716-446655440000"],
     )
     labels: list[str] = Field(

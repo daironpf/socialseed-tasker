@@ -213,7 +213,10 @@ class PolicyEngine:
                 policy_id=policy.id if policy else uuid4(),
                 policy_name=policy.name if policy else "",
                 rule_type=rule.rule_type,
-                message=f"Forbidden label dependency: labels matching '{rule.from_pattern}' cannot depend on '{rule.to_pattern}'",
+                message=(
+                    f"Forbidden label dependency: labels matching "
+                    f"'{rule.from_pattern}' cannot depend on '{rule.to_pattern}'"
+                ),
                 suggestion="Remove the label dependency or use a different approach",
             )
         return None

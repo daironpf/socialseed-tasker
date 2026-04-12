@@ -34,6 +34,11 @@ from socialseed_tasker.core.task_management.actions import (
 )
 from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
 from socialseed_tasker.entrypoints.web_api.schemas import (
+    AgentRegisterRequest,
+    AgentResponse,
+    AgentStartRequest,
+    AgentStatusResponse,
+    AgentUpdateRequest,
     APIResponse,
     BulkDependencyRequest,
     BulkDependencyResponse,
@@ -49,6 +54,8 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     DependencyGraphResponse,
     DependencyRequest,
     DependencyResponse,
+    GitHubWebhookLogResponse,
+    GitHubWebhookTestResponse,
     ImpactAnalysisResponse,
     ImpactIssueSummary,
     IssueCreateRequest,
@@ -61,24 +68,17 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     Meta,
     PaginatedResponse,
     PaginationMeta,
-    ProjectSummaryResponse,
-    ReasoningLogEntryRequest,
-    ReasoningLogEntryResponse,
-    AgentStartRequest,
-    AgentStatusResponse,
+    PolicyCreateRequest,
+    PolicyResponse,
     PolicyValidationRequest,
     PolicyValidationResponse,
     PolicyViolationResponse,
-    PolicyCreateRequest,
-    PolicyResponse,
+    ProjectSummaryResponse,
+    ReasoningLogEntryRequest,
+    ReasoningLogEntryResponse,
     TestFailureRequest,
     TestFailureWebhookRequest,
     TestFailureWebhookResponse,
-    AgentRegisterRequest,
-    AgentUpdateRequest,
-    AgentResponse,
-    GitHubWebhookLogResponse,
-    GitHubWebhookTestResponse,
 )
 
 if TYPE_CHECKING:
@@ -227,6 +227,7 @@ def create_issue(
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[IssueResponse]:
     from fastapi import HTTPException
+
     from socialseed_tasker.core.validation import (
         IssueDescriptionValidationError,
         IssueTitleValidationError,
@@ -870,7 +871,7 @@ def add_dependency(
     "/issues/{issue_id}/dependencies/bulk",
     response_model=APIResponse[BulkDependencyResponse],
     summary="Add multiple dependencies",
-    description="Add multiple [:DEPENDS_ON] relationships in a single request. Validates all dependencies and returns detailed results.",
+    description="Add multiple [:DEPENDS_ON] relationships in a single request.",
     responses={
         404: {"description": "Issue not found"},
         409: {"description": "Circular dependency detected"},
@@ -1044,6 +1045,7 @@ def create_component(
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     from fastapi import HTTPException
+
     from socialseed_tasker.core.task_management.entities import Component
     from socialseed_tasker.core.validation import (
         ComponentNameValidationError,
@@ -1374,7 +1376,7 @@ def analyze_impact(
     "/analyze/component-impact/{component_id}",
     response_model=APIResponse[ComponentImpactAnalysisResponse],
     summary="Get component impact analysis",
-    description="Analyse the impact of an entire component across the project. Supports full UUID, partial ID (8+ chars), or component name.",
+    description="Analyse the impact of an entire component across the project.",
 )
 def analyze_component_impact(
     component_id: str,
@@ -1535,6 +1537,7 @@ def validate_policy(
     request: Request = None,
 ) -> APIResponse[PolicyValidationResponse]:
     from uuid import UUID
+
     from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
     from socialseed_tasker.core.task_management.entities import Issue, IssuePriority, IssueStatus
 
@@ -1906,7 +1909,7 @@ webhook_router = APIRouter()
     "/webhooks/test-failure",
     response_model=APIResponse[TestFailureWebhookResponse],
     summary="Receive test failure events",
-    description="Webhook endpoint to receive test failure events from socialseed-e2e. Automatically creates issues for failed tests.",
+    description="Webhook endpoint to receive test failure events from socialseed-e2e.",
 )
 def receive_test_failure(
     body: TestFailureWebhookRequest,
@@ -2033,6 +2036,7 @@ def receive_github_webhook(
 ) -> APIResponse[dict]:
     import json
     from datetime import datetime, timezone
+
     from socialseed_tasker.core.services.webhook_validator import get_webhook_validator
 
     if request is None:
@@ -2049,9 +2053,8 @@ def receive_github_webhook(
         from fastapi import HTTPException
 
         rejected_logs = validator.get_rejected_log()
-        logger.warning(
-            f"Webhook rejected: signature={signature[:20] if signature else 'none'}, rejected_count={len(rejected_logs)}"
-        )
+        sig_preview = signature[:20] if signature else "none"
+        logger.warning(f"Webhook rejected: signature={sig_preview}, rejected_count={len(rejected_logs)}")
         raise HTTPException(status_code=401, detail="Invalid signature")
 
     event_type = request.headers.get("X-GitHub-Event", "unknown")
@@ -2345,6 +2348,7 @@ admin_router = APIRouter()
 def require_admin_auth(request: Request):
     """Require admin authentication for protected endpoints."""
     import os
+
     from fastapi import HTTPException
 
     admin_api_key = os.getenv("TASKER_ADMIN_API_KEY")
@@ -2464,8 +2468,8 @@ def load_constraints(
     config: dict,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[ConstraintLoadResponse]:
-    from socialseed_tasker.core.task_management.constraints import ConstraintConfig
     from socialseed_tasker.core.task_management.actions import load_constraints_from_config_action
+    from socialseed_tasker.core.task_management.constraints import ConstraintConfig
 
     constraint_config = ConstraintConfig(**config)
     result = load_constraints_from_config_action(repo, constraint_config)

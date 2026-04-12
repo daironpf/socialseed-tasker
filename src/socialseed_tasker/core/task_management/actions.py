@@ -11,16 +11,16 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any, Protocol
 
-from socialseed_tasker.core.task_management.entities import (
-    Component,
-    Issue,
-    IssueStatus,
-)
 from socialseed_tasker.core.task_management.constraints import (
     Constraint,
     ConstraintConfig,
     ConstraintValidationResult,
     ConstraintViolation,
+)
+from socialseed_tasker.core.task_management.entities import (
+    Component,
+    Issue,
+    IssueStatus,
 )
 
 # ---------------------------------------------------------------------------

@@ -14,13 +14,13 @@ from uuid import uuid4
 from pydantic import BaseModel
 
 from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
-from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
 from socialseed_tasker.core.task_management.constraints import (
     Constraint,
     ConstraintCategory,
     ConstraintLevel,
     ConstraintStatus,
 )
+from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
 from socialseed_tasker.core.task_management.value_objects import ReasoningContext, ReasoningLogEntry
 from socialseed_tasker.storage.graph_database import queries
 

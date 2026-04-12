@@ -14,7 +14,6 @@ from datetime import datetime, timezone
 from enum import Enum
 from uuid import UUID, uuid4
 
-
 logger = logging.getLogger(__name__)
 
 
