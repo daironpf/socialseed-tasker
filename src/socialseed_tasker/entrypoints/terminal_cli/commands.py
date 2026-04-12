@@ -902,29 +902,42 @@ def component_update(
 
 @component_app.command("delete")
 def component_delete(
-    component_id: str = typer.Argument(..., help="Component ID or name to delete"),
+    component_id: str = typer.Argument(..., help="Component ID, name, or partial ID to delete"),
     force: bool = typer.Option(False, "--force", "-f", help="Force deletion, issues become unassigned"),
     yes: bool = typer.Option(False, "--yes", "-y", help="Confirm deletion without prompting"),
 ) -> None:
     """Delete a component."""
-    from uuid import UUID
-
     from socialseed_tasker.core.task_management.actions import ComponentHasIssuesError, delete_component_action
 
     repo = get_repository()
 
-    resolved_id = component_id
     try:
-        UUID(component_id)
-    except ValueError:
-        components = repo.list_components()
-        for comp in components:
-            if comp.name.lower() == component_id.lower():
-                resolved_id = str(comp.id)
-                break
-        else:
-            console.print(f"[error]Component '{component_id}' not found.[/error]")
-            raise typer.Exit(code=1) from None
+        resolved_id = resolve_component_id(component_id, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from None
+
+    if not force and not yes:
+        component = repo.get_component(str(resolved_id))
+        if component:
+            issues = repo.list_issues(component_id=str(resolved_id))
+            if issues:
+                console.print(
+                    f"[warning]Component '{component.name}' has {len(issues)} issue(s).[/warning]\n"
+                    f"Issues will become unassigned after deletion.\n"
+                    f"Use [cyan]--force[/cyan] or [cyan]--yes[/cyan] to confirm."
+                )
+                raise typer.Exit(code=1) from None
+
+    try:
+        delete_component_action(repo, str(resolved_id), force=True)
+        console.print(f"[success]Component deleted:[/success] {resolved_id}")
+    except ComponentNotFoundError:
+        console.print(f"[error]Component '{component_id}' not found.[/error]")
+        raise typer.Exit(code=1) from None
+    except ComponentHasIssuesError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from None
 
     if not force and not yes:
         component = repo.get_component(resolved_id)
