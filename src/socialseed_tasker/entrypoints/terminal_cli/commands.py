@@ -10,6 +10,7 @@ import json
 from contextlib import suppress
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 import typer
 from rich.box import SIMPLE

@@ -116,6 +116,7 @@ This roadmap outlines our journey from a core utility to a global standard for A
 | 12 | `component delete` requires full UUID | Low | CLI commands | ✅ RESOLVED (v0.8.0 #138) |
 | 13 | `/analyze/component-impact` API requires full UUID | Low | API routes | ✅ RESOLVED (v0.8.0 #139) |
 | 14 | `test_component_show_missing` expects wrong exit code | Low | Test | ✅ RESOLVED (v0.8.0 #140) |
+| 15 | Linter F821 - undefined UUID and Any | Low | Code | ✅ RESOLVED (v0.8.0 #141) |
 
 ---
 

@@ -140,6 +140,7 @@ SocialSeed Tasker is a **Graph-Only** platform, leveraging Neo4j as its exclusiv
 - [x] **#138 CLI Component Delete Name:** Use resolve_component_id in delete command.
 - [x] **#139 API Component Impact Short ID:** Support short IDs and names in component-impact endpoint.
 - [x] **#140 Test Exit Code Fix:** Update test_component_show_missing to expect exit code 2.
+- [x] **#141 Linter F821 Fix:** Add UUID and Any imports to resolve undefined name errors.
 
 ---
 

@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections import deque
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Protocol
+from typing import Any, Protocol
 
 from socialseed_tasker.core.task_management.entities import (
     Component,
