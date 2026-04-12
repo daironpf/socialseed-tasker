@@ -141,7 +141,7 @@ def resolve_issue_id(partial_id: str, repo: TaskRepositoryInterface) -> UUID:
     """Resolve a partial issue ID to a full UUID.
 
     Args:
-        partial_id: Full UUID or partial (at least 4 characters) or title (exact match)
+        partial_id: Full UUID, partial UUID (4+ chars), or title (any length)
         repo: Task repository to search
 
     Returns:
@@ -158,24 +158,23 @@ def resolve_issue_id(partial_id: str, repo: TaskRepositoryInterface) -> UUID:
     except ValueError:
         pass
 
-    # Minimum 4 characters for any lookup
-    if len(partial_id) < 4:
-        raise ValueError(f"Invalid issue ID format: {partial_id}. Need at least 4 characters.")
-
     # Get all issues once
     issues = repo.list_issues(status=None, project=None)
 
-    # Try exact title match first
+    # Try exact title match first (no length restriction - titles can be short)
     for issue in issues:
         if issue.title.lower() == partial_id.lower():
             return issue.id
 
+    # Minimum 4 characters for partial UUID lookup
+    if len(partial_id) < 4:
+        raise ValueError(f"Invalid issue ID format: {partial_id}. Need at least 4 characters for UUID lookup.")
+
     # Search for matching issue by prefix (4+ chars)
-    if len(partial_id) >= 4:
-        for issue in issues:
-            issue_id_str = str(issue.id)
-            if issue_id_str.startswith(partial_id):
-                return issue.id
+    for issue in issues:
+        issue_id_str = str(issue.id)
+        if issue_id_str.startswith(partial_id):
+            return issue.id
 
     raise ValueError(f"Issue not found: {partial_id}")
 
