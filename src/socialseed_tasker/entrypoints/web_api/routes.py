@@ -2349,7 +2349,7 @@ sync_router = APIRouter()
 
 
 @sync_router.get(
-    "/status",
+    "/sync/status",
     response_model=APIResponse[dict],
     summary="Get sync status",
     description="Get current sync status (online/offline, queue size).",
@@ -2365,7 +2365,7 @@ def get_sync_status() -> APIResponse[dict]:
 
 
 @sync_router.get(
-    "/queue",
+    "/sync/queue",
     response_model=APIResponse[list[dict]],
     summary="Get sync queue",
     description="View pending sync queue items.",
@@ -2393,7 +2393,7 @@ def get_sync_queue() -> APIResponse[list[dict]]:
 
 
 @sync_router.post(
-    "/force",
+    "/sync/force",
     response_model=APIResponse[dict],
     summary="Force sync",
     description="Force a sync attempt to process the queue.",
@@ -2475,7 +2475,7 @@ def list_constraints(
 
 
 @constraints_router.get(
-    "/validate",
+    "/constraints/validate",
     response_model=APIResponse[ConstraintValidationResponse],
     summary="Validate constraints",
     description="Validate all active constraints against current project state.",
