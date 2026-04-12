@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request  # noqa: B008
 
@@ -93,6 +94,47 @@ class RepositoryDependency:
 
 
 get_repo = RepositoryDependency()
+
+
+def resolve_component_id(partial_id: str, repo: TaskRepositoryInterface) -> UUID:
+    """Resolve a partial component ID to a full UUID.
+
+    Args:
+        partial_id: Full UUID, partial UUID (4+ chars), or name (exact match)
+        repo: Task repository to search
+
+    Returns:
+        Full UUID
+
+    Raises:
+        ValueError: If ID format is invalid or not found
+    """
+    # Try full UUID first
+    try:
+        return UUID(partial_id)
+    except ValueError:
+        pass
+
+    # Minimum 4 characters for partial lookup OR exact name match
+    if len(partial_id) < 4:
+        raise ValueError(f"Invalid component ID format: {partial_id}. Need at least 4 characters.")
+
+    # Try to find by exact name match first (names can be short)
+    try:
+        comp = repo.get_component_by_name(partial_id)
+        if comp:
+            return comp.id
+    except Exception:
+        pass
+
+    # Search for matching component by prefix (UUID-like patterns need 8+)
+    if len(partial_id) >= 8:
+        components = repo.list_components()
+        for comp in components:
+            if str(comp.id).startswith(partial_id):
+                return comp.id
+
+    raise ValueError(f"Component not found: {partial_id}")
 
 
 def _issue_to_response(issue: Issue) -> IssueResponse:
@@ -1336,14 +1378,21 @@ def analyze_impact(
     "/analyze/component-impact/{component_id}",
     response_model=APIResponse[ComponentImpactAnalysisResponse],
     summary="Get component impact analysis",
-    description="Analyse the impact of an entire component across the project.",
+    description="Analyse the impact of an entire component across the project. Supports full UUID, partial ID (8+ chars), or component name.",
 )
 def analyze_component_impact(
     component_id: str,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[ComponentImpactAnalysisResponse]:
+    try:
+        resolved_id = resolve_component_id(component_id, repo)
+    except ValueError as e:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=400, detail=str(e))
+
     analyzer = RootCauseAnalyzer(repo)
-    impact: ComponentImpactAnalysis = analyzer.analyze_component_impact(component_id)
+    impact: ComponentImpactAnalysis = analyzer.analyze_component_impact(str(resolved_id))
 
     impact_data = ComponentImpactAnalysisResponse(
         component_id=str(impact.component_id),
