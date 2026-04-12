@@ -269,7 +269,7 @@ class TestComponentCommands:
         original = _patch_commands(mock_repo)
         try:
             result = runner.invoke(app, ["component", "show", "nonexistent-id"])
-            assert result.exit_code == 1
+            assert result.exit_code == 2
         finally:
             _unpatch_commands(original)
 
