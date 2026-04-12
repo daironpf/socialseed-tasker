@@ -693,8 +693,12 @@ def dependency_remove(issue_id: str, depends_on: str) -> None:
     repo = get_repository()
 
     try:
-        remove_dependency_action(repo, issue_id, depends_on)
-        console.print(f"[success]Dependency removed:[/success] {issue_id[:8]} -> {depends_on[:8]}")
+        resolved_issue_id = resolve_issue_id(issue_id, repo)
+        resolved_dep_id = resolve_issue_id(depends_on, repo)
+        remove_dependency_action(repo, str(resolved_issue_id), str(resolved_dep_id))
+        console.print(
+            f"[success]Dependency removed:[/success] {str(resolved_issue_id)[:8]} -> {str(resolved_dep_id)[:8]}"
+        )
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
         raise typer.Exit(code=1) from exc
@@ -707,6 +711,14 @@ def dependency_list(
 ) -> None:
     """List all dependencies and dependents for an issue."""
     repo = get_repository()
+
+    try:
+        resolved_id = resolve_issue_id(issue_id, repo)
+        issue_id = str(resolved_id)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from None
+
     issue = repo.get_issue(issue_id)
 
     if issue is None:
@@ -739,6 +751,13 @@ def dependency_list(
 def dependency_chain(issue_id: str) -> None:
     """Show full transitive dependency chain."""
     repo = get_repository()
+
+    try:
+        resolved_id = resolve_issue_id(issue_id, repo)
+        issue_id = str(resolved_id)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from None
 
     try:
         chain = get_dependency_chain_action(repo, issue_id)
