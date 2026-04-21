@@ -93,8 +93,12 @@ def sanitize_issue_description(description: str) -> str:
         return ""
 
     description = str(description)
+    description = description.strip()
     description = _escape_quotes(description)
     description = _remove_html_tags(description)
     description = _remove_control_characters(description)
+
+    if not description:
+        return ""
 
     return description
