@@ -13,21 +13,28 @@
     >
       <CreateIssueModal @close="showCreateModal = false" @created="onIssueCreated" />
     </div>
+
+    <LoginScreen v-if="showLogin" @logged-in="onLoggedIn" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { RouterView } from 'vue-router'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import Sidebar from '@/components/layout/Sidebar.vue'
 import CreateIssueModal from '@/components/issue/CreateIssueModal.vue'
+import LoginScreen from '@/components/auth/LoginScreen.vue'
 import { useUiStore } from '@/stores/uiStore'
 import { useIssuesStore } from '@/stores/issuesStore'
+import { useAuthStore } from '@/stores/authStore'
 
 const uiStore = useUiStore()
 const issuesStore = useIssuesStore()
+const authStore = useAuthStore()
 const showCreateModal = ref(false)
+
+const showLogin = computed(() => !authStore.isAuthenticated)
 
 function openNewIssue() {
   showCreateModal.value = true
@@ -36,6 +43,10 @@ function openNewIssue() {
 function onIssueCreated() {
   showCreateModal.value = false
   issuesStore.fetchIssues()
+}
+
+function onLoggedIn() {
+  window.location.reload()
 }
 
 onMounted(() => {
