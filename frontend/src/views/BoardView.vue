@@ -66,7 +66,7 @@ const columns = [
 ]
 
 function issuesByStatus(status: IssueStatus) {
-  return uiStore.filteredIssues.filter((i) => i.status === status)
+  return issuesStore.issues.filter((i) => i.status === status)
 }
 
 const selectedIssue = computed(() => {
@@ -97,15 +97,13 @@ async function onCloseIssue(id: string) {
 
 function onIssueCreated() {
   showCreateModal.value = false
-  issuesStore.fetchIssues()
+  const filters = uiStore.getBackendFilters()
+  issuesStore.fetchIssues(1, 100, filters)
 }
 
 async function fetchWithFilters() {
-  await issuesStore.fetchIssues({
-    status: uiStore.filters.status.join(',') || undefined,
-    component: uiStore.filters.component || undefined,
-    project: uiStore.filters.project || undefined,
-  })
+  const filters = uiStore.getBackendFilters()
+  await issuesStore.fetchIssues(1, 100, filters)
 }
 
 onMounted(async () => {

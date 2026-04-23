@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { useIssuesStore } from './issuesStore'
-import { useComponentsStore } from './componentsStore'
+import { ref } from 'vue'
 
 export type ViewMode = 'board' | 'list'
 
@@ -24,45 +22,6 @@ export const useUiStore = defineStore('ui', () => {
     component: null,
     project: null,
     search: '',
-  })
-
-  const issuesStore = useIssuesStore()
-
-  const filteredIssues = computed(() => {
-    let result = Array.isArray(issuesStore.issues) ? [...issuesStore.issues] : []
-    const f = filters.value
-
-    if (f.search) {
-      const q = f.search.toLowerCase()
-      result = result.filter(
-        (i) =>
-          i.title.toLowerCase().includes(q) ||
-          i.description.toLowerCase().includes(q),
-      )
-    }
-
-    if (f.status.length > 0) {
-      result = result.filter((i) => f.status.includes(i.status))
-    }
-
-    if (f.priority.length > 0) {
-      result = result.filter((i) => f.priority.includes(i.priority))
-    }
-
-    if (f.component) {
-      result = result.filter((i) => i.component_id === f.component)
-    }
-
-    if (f.project) {
-      const componentsStore = useComponentsStore()
-      result = result.filter((i) => {
-        const comp = componentsStore.getComponentById(i.component_id)
-        return !comp || comp.project === f.project
-      })
-    }
-
-    console.log('[UIStore] Final filtered issues:', result.length)
-    return result
   })
 
   function setSelectedIssue(id: string | null) {
@@ -112,13 +71,20 @@ export const useUiStore = defineStore('ui', () => {
     }
   }
 
+  function getBackendFilters() {
+    return {
+      status: filters.value.status.length > 0 ? filters.value.status.join(',') : undefined,
+      component: filters.value.component || undefined,
+      project: filters.value.project || undefined,
+    }
+  }
+
   return {
     selectedIssueId,
     sidebarOpen,
     viewMode,
     darkMode,
     filters,
-    filteredIssues,
     setSelectedIssue,
     toggleSidebar,
     setViewMode,
@@ -126,5 +92,6 @@ export const useUiStore = defineStore('ui', () => {
     clearFilters,
     toggleDarkMode,
     initDarkMode,
+    getBackendFilters,
   }
 })
