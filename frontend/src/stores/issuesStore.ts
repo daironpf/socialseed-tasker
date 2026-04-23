@@ -28,13 +28,18 @@ export const useIssuesStore = defineStore('issues', () => {
     return issues.value.filter((i) => i.component_id === componentId)
   }
 
-  async function fetchIssues(filters?: { status?: string; component?: string }) {
+  async function fetchIssues(filters?: { status?: string; component?: string; project?: string }) {
     loading.value = true
     error.value = null
+    console.log('[IssuesStore] Fetching issues with filters:', filters)
     try {
-      issues.value = await api.fetchIssues(1, 100, filters?.status, filters?.component)
+      const result = await api.fetchIssues(1, 100, filters?.status, filters?.component, filters?.project)
+      console.log('[IssuesStore] API returned issues:', result.length)
+      issues.value = Array.isArray(result) ? result : []
     } catch (e) {
+      console.error('[IssuesStore] Fetch failed:', e)
       error.value = (e as Error).message
+      issues.value = []
     } finally {
       loading.value = false
     }

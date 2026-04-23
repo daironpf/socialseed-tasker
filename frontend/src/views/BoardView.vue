@@ -100,15 +100,17 @@ function onIssueCreated() {
   issuesStore.fetchIssues()
 }
 
+async function fetchWithFilters() {
+  await issuesStore.fetchIssues({
+    status: uiStore.filters.status.join(',') || undefined,
+    component: uiStore.filters.component || undefined,
+    project: uiStore.filters.project || undefined,
+  })
+}
+
 onMounted(async () => {
-  await Promise.all([
-    issuesStore.fetchIssues(),
-    componentsStore.fetchComponents(),
-  ])
-  // Auto-refresh every 10 seconds
-  refreshInterval = setInterval(() => {
-    issuesStore.fetchIssues()
-  }, 10000)
+  await componentsStore.fetchComponents()
+  await fetchWithFilters()
 })
 
 onUnmounted(() => {
@@ -117,9 +119,23 @@ onUnmounted(() => {
   }
 })
 
-watch(() => uiStore.filters, () => {
-  issuesStore.fetchIssues()
-}, { deep: true })
+watch(
+  () => uiStore.filters,
+  () => {
+    fetchWithFilters()
+  },
+  { deep: true },
+)
+
+watch(
+  () => componentsStore.projects,
+  (projects) => {
+    if (projects.length > 0 && !uiStore.filters.project) {
+      uiStore.setFilter('project', projects[0])
+    }
+  },
+  { immediate: true },
+)
 
 defineExpose({ showCreateModal })
 </script>

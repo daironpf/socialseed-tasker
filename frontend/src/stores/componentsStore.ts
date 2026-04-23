@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import * as api from '@/api/componentsApi'
 import type { Component, ComponentCreateRequest } from '@/types'
 
@@ -7,6 +7,8 @@ export const useComponentsStore = defineStore('components', () => {
   const components = ref<Component[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  const projects = computed(() => [...new Set(components.value.map((c) => c.project))].sort())
 
   function getComponentById(id: string): Component | undefined {
     return components.value.find((c) => c.id === id)
@@ -76,6 +78,7 @@ export const useComponentsStore = defineStore('components', () => {
 
   return {
     components,
+    projects,
     loading,
     error,
     getComponentById,

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useIssuesStore } from './issuesStore'
+import { useComponentsStore } from './componentsStore'
 
 export type ViewMode = 'board' | 'list'
 
@@ -8,6 +9,7 @@ export interface Filters {
   status: string[]
   priority: string[]
   component: string | null
+  project: string | null
   search: string
 }
 
@@ -20,13 +22,14 @@ export const useUiStore = defineStore('ui', () => {
     status: [],
     priority: [],
     component: null,
+    project: null,
     search: '',
   })
 
   const issuesStore = useIssuesStore()
 
   const filteredIssues = computed(() => {
-    let result = issuesStore.issues
+    let result = Array.isArray(issuesStore.issues) ? [...issuesStore.issues] : []
     const f = filters.value
 
     if (f.search) {
@@ -50,6 +53,15 @@ export const useUiStore = defineStore('ui', () => {
       result = result.filter((i) => i.component_id === f.component)
     }
 
+    if (f.project) {
+      const componentsStore = useComponentsStore()
+      result = result.filter((i) => {
+        const comp = componentsStore.getComponentById(i.component_id)
+        return !comp || comp.project === f.project
+      })
+    }
+
+    console.log('[UIStore] Final filtered issues:', result.length)
     return result
   })
 
@@ -74,6 +86,7 @@ export const useUiStore = defineStore('ui', () => {
       status: [],
       priority: [],
       component: null,
+      project: null,
       search: '',
     }
   }

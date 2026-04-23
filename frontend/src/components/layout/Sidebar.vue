@@ -53,6 +53,22 @@
 
       <div>
         <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+          Project
+        </h3>
+        <select
+          :value="uiStore.filters.project ?? ''"
+          class="w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+          @change="onProjectChange"
+        >
+          <option value="">All Projects</option>
+          <option v-for="p in componentsStore.projects" :key="p" :value="p">
+            {{ p }}
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
           Component
         </h3>
         <select
@@ -61,7 +77,7 @@
           @change="onComponentChange"
         >
           <option value="">All Components</option>
-          <option v-for="c in componentsStore.components" :key="c.id" :value="c.id">
+          <option v-for="c in filteredComponents" :key="c.id" :value="c.id">
             {{ c.name }}
           </option>
         </select>
@@ -78,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useUiStore } from '@/stores/uiStore'
 import { useComponentsStore } from '@/stores/componentsStore'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -91,6 +107,11 @@ const searchQuery = ref('')
 
 const statuses = ['OPEN', 'IN_PROGRESS', 'BLOCKED', 'CLOSED']
 const priorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+
+const filteredComponents = computed(() => {
+  if (!uiStore.filters.project) return componentsStore.components
+  return componentsStore.componentsByProject(uiStore.filters.project)
+})
 
 function toggleStatus(status: string) {
   const current = uiStore.filters.status
@@ -106,6 +127,13 @@ function togglePriority(priority: string) {
     ? current.filter((p) => p !== priority)
     : [...current, priority]
   uiStore.setFilter('priority', updated)
+}
+
+function onProjectChange(event: Event) {
+  const val = (event.target as HTMLSelectElement).value
+  uiStore.setFilter('project', val || null)
+  // Clear component filter when project changes
+  uiStore.setFilter('component', null)
 }
 
 function onComponentChange(event: Event) {

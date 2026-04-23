@@ -1,11 +1,11 @@
 import client from './client'
-import type { APIResponse, Component, ComponentCreateRequest } from '@/types'
+import type { APIResponse, Component, ComponentCreateRequest, PaginatedResponse } from '@/types'
 
 export async function fetchComponents(project?: string): Promise<Component[]> {
   const params: Record<string, string> = {}
   if (project) params.project = project
-  const { data } = await client.get<APIResponse<Component[]>>('/components', { params })
-  return data.data ?? []
+  const { data } = await client.get<APIResponse<PaginatedResponse<Component>>>('/components', { params })
+  return data.data?.items ?? []
 }
 
 export async function fetchComponent(id: string): Promise<Component> {

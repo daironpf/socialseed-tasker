@@ -46,7 +46,7 @@ This roadmap outlines our journey from a core utility to a global standard for A
     * **Technical Debt Notes:** Observations made by the agent during implementation.
 * [x] **Advanced Cypher Queries:** Impact analysis with BFS for direct/transitive dependents, blocked issues detection, affected components collection, and risk level calculation (LOW/MEDIUM/HIGH/CRITICAL).
 * [x] **Architectural Analysis Module:** Rule-based analyzer for forbidden technologies, required patterns, forbidden dependencies, and max dependency depth validation.
-* [ ] **Graph Visualization:** Interactive graph view of issues, components, and dependencies (beyond Kanban).
+* [x] **Graph Visualization:** Interactive graph view of issues, components, and dependencies (beyond Kanban) integrated directly into the UI dashboard.
 * [ ] **Issue `agent_working` Field:** Field exists in entity and API but needs full lifecycle integration (start/finish tracking).
 
 ---

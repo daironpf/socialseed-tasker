@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import type { Issue, IssueUpdateRequest } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useComponentsStore } from '@/stores/componentsStore'
@@ -177,10 +177,24 @@ async function deleteIssue(id: string) {
   }
 }
 
+async function fetchWithFilters() {
+  await issuesStore.fetchIssues({
+    status: uiStore.filters.status.join(',') || undefined,
+    component: uiStore.filters.component || undefined,
+    project: uiStore.filters.project || undefined,
+  })
+}
+
 onMounted(async () => {
-  await Promise.all([
-    issuesStore.fetchIssues(),
-    componentsStore.fetchComponents(),
-  ])
+  await componentsStore.fetchComponents()
+  await fetchWithFilters()
 })
+
+watch(
+  () => uiStore.filters,
+  () => {
+    fetchWithFilters()
+  },
+  { deep: true },
+)
 </script>

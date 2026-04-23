@@ -82,8 +82,8 @@ const statusFilter = ref('')
 const selectedIssue = ref<Issue | null>(null)
 const loading = ref(true)
 let network: Network | null = null
-let nodes: DataSet | null = null
-let edges: DataSet | null = null
+let nodes: DataSet<any> | null = null
+let edges: DataSet<any> | null = null
 let currentLayout = 'force'
 
 const statusColors: Record<string, string> = {
@@ -107,8 +107,9 @@ const filteredIssues = computed(() => {
 
 const graphData = computed(() => {
   const issues = filteredIssues.value
-  const nodeData: Array<{id: string, label: string, color: string, shape: string, title: string}> = []
-  const edgeData: Array<{from: string, to: string, arrows: string}> = []
+  const nodeData: Array<{ id: string; label: string; color: string; shape: string; title: string }> =
+    []
+  const edgeData: Array<{ id: string; from: string; to: string; arrows: string }> = []
 
   for (const issue of issues) {
     nodeData.push({
@@ -120,8 +121,9 @@ const graphData = computed(() => {
     })
 
     for (const depId of issue.dependencies) {
-      if (issues.find(i => i.id === depId)) {
+      if (issues.find((i) => i.id === depId)) {
         edgeData.push({
+          id: `${issue.id}-${depId}`,
           from: issue.id,
           to: depId,
           arrows: 'to',
@@ -155,7 +157,9 @@ function buildGraph() {
       color: '#94a3b8',
       width: 1,
       smooth: {
+        enabled: true,
         type: 'continuous',
+        roundness: 0.5,
       },
     },
     physics: {

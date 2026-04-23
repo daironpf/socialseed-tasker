@@ -248,14 +248,14 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
     def list_issues(
         self,
         component_id: str | None = None,
-        status: IssueStatus | None = None,
+        statuses: list[str] | None = None,
         project: str | None = None,
     ) -> list[Issue]:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.LIST_ISSUES,
                 component_id=component_id,
-                status=status.value if status else None,
+                statuses=statuses or [],
                 project=project,
             )
             issues = []
@@ -589,15 +589,14 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
 
     @contextmanager
     def transaction(self):  # type: ignore[misc]
-        """Execute Neo4j operations atomically using a real transaction."""
-        with self._driver.driver.session(database=self._driver.database) as session:
-            tx = session.begin_transaction()
-            try:
-                yield tx
-                tx.commit()
-            except Exception:
-                tx.rollback()
-                raise
+        """Execute a block of operations as a logical unit.
+
+        Note: Each repository method manages its own Neo4j session internally.
+        This context manager exists to satisfy the TaskRepositoryInterface contract
+        and to allow future refactoring toward explicit transaction passing.
+        Currently behaves as a logical grouping marker (no-op yield).
+        """
+        yield
 
     def reset_data(self, scope: str = "all") -> dict[str, int]:
         """Reset data in the repository."""
@@ -606,11 +605,13 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
 
             if scope in ("all", "issues"):
                 res = session.run("MATCH (i:Issue) DETACH DELETE i RETURN count(*) as count")
-                result["issues_deleted"] = res.single()["count"] if res.single() else 0
+                record = res.single()
+                result["issues_deleted"] = record["count"] if record else 0
 
             if scope in ("all", "components"):
                 res = session.run("MATCH (c:Component) DETACH DELETE c RETURN count(*) as count")
-                result["components_deleted"] = res.single()["count"] if res.single() else 0
+                record = res.single()
+                result["components_deleted"] = record["count"] if record else 0
 
             return result
 

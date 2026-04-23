@@ -14,7 +14,7 @@ This document defines the versioning milestones for **SocialSeed Tasker**. We st
 
 ## Current Milestone: v0.8.0 (The "Observability & Active Governance" Release)
 
-**Status:** *Released* on 2026-04-11
+**Status:** *Released* on 2026-04-23
 
 SocialSeed Tasker is a **Graph-Only** platform, leveraging Neo4j as its exclusive source of truth.
 
@@ -177,7 +177,7 @@ SocialSeed Tasker is a **Graph-Only** platform, leveraging Neo4j as its exclusiv
 | 0.5.0 | 2025-01 | Graph-Only |
 | 0.6.0 | 2025-04 | Docker |
 | 0.7.0 | 2025-10 | GitHub |
-| **0.8.0** | **2026-04-11** | **Current** |
+| **0.8.0** | **2026-04-23** | **Current** |
 | 0.8.1 | 2026-04-12 | Upcoming - Lint cleanup |
 
 ---

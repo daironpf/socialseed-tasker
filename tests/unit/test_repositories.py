@@ -16,32 +16,32 @@ from tests.fakes.fake_neo4j_driver import FakeNeo4jDriver
 def fake_driver():
     """Create a FakeNeo4jDriver with test data."""
     driver = FakeNeo4jDriver()
-    driver.setup_component("comp-1", "Backend", "test-project", "Backend service")
-    driver.setup_component("comp-2", "Frontend", "test-project", "Frontend service")
+    driver.setup_component("11111111-1111-1111-1111-111111111111", "Backend", "test-project", "Backend service")
+    driver.setup_component("22222222-2222-2222-2222-222222222222", "Frontend", "test-project", "Frontend service")
     driver.setup_issue(
-        "issue-1",
+        "33333333-3333-3333-3333-333333333333",
         "Implement login",
-        "comp-1",
+        "11111111-1111-1111-1111-111111111111",
         status="OPEN",
         priority="HIGH",
         description="Add login functionality",
         labels=["auth"],
     )
     driver.setup_issue(
-        "issue-2",
+        "44444444-4444-4444-4444-444444444444",
         "Fix header bug",
-        "comp-1",
+        "11111111-1111-1111-1111-111111111111",
         status="OPEN",
         priority="MEDIUM",
     )
     driver.setup_issue(
-        "issue-3",
+        "55555555-5555-5555-5555-555555555555",
         "Add styles",
-        "comp-2",
+        "22222222-2222-2222-2222-222222222222",
         status="OPEN",
         priority="LOW",
     )
-    driver.add_dependency("issue-1", "issue-2")
+    driver.add_dependency("33333333-3333-3333-3333-333333333333", "44444444-4444-4444-4444-444444444444")
     return driver
 
 
@@ -66,12 +66,12 @@ class TestNeo4jDriverFake:
             assert result.single()["ok"] == 1
 
     def test_add_node(self, fake_driver):
-        node_id = fake_driver.add_node("Test", {"id": "test-1", "name": "test"})
-        assert node_id == "test-1"
-        assert fake_driver.get_node("test-1")["name"] == "test"
+        node_id = fake_driver.add_node("Test", {"id": "66666666-6666-6666-6666-666666666666", "name": "test"})
+        assert node_id == "66666666-6666-6666-6666-666666666666"
+        assert fake_driver.get_node("66666666-6666-6666-6666-666666666666")["name"] == "test"
 
     def test_get_node(self, fake_driver):
-        node = fake_driver.get_node("comp-1")
+        node = fake_driver.get_node("11111111-1111-1111-1111-111111111111")
         assert node is not None
         assert node["name"] == "Backend"
 
@@ -89,13 +89,13 @@ class TestIssueRepositoryWithFake:
     """Tests for IssueRepository using FakeNeo4jDriver."""
 
     def test_get_issue(self, repo):
-        issue = repo.get_issue("issue-1")
+        issue = repo.get_issue("33333333-3333-3333-3333-333333333333")
         assert issue is not None
         assert issue.title == "Implement login"
         assert issue.status == IssueStatus.OPEN
 
     def test_get_missing_issue(self, repo):
-        issue = repo.get_issue("nonexistent")
+        issue = repo.get_issue("00000000-0000-0000-0000-000000000000")
         assert issue is None
 
     def test_list_issues(self, repo):
@@ -107,30 +107,30 @@ class TestIssueRepositoryWithFake:
         assert len(issues) == 3
 
     def test_list_issues_by_component(self, repo):
-        issues = repo.list_issues(component_id="comp-1")
+        issues = repo.list_issues(component_id="11111111-1111-1111-1111-111111111111")
         assert len(issues) == 2
 
     def test_get_dependencies(self, repo):
-        deps = repo.get_dependencies("issue-1")
+        deps = repo.get_dependencies("33333333-3333-3333-3333-333333333333")
         assert len(deps) == 1
-        assert str(deps[0].id) == "issue-2"
+        assert str(deps[0].id) == "44444444-4444-4444-4444-444444444444"
 
     def test_get_blocked_issues(self, repo):
         blocked = repo.get_blocked_issues()
         assert len(blocked) == 1
-        assert str(blocked[0].id) == "issue-1"
+        assert str(blocked[0].id) == "33333333-3333-3333-3333-333333333333"
 
 
 class TestComponentRepositoryWithFake:
     """Tests for ComponentRepository using FakeNeo4jDriver."""
 
     def test_get_component(self, repo):
-        comp = repo.get_component("comp-1")
+        comp = repo.get_component("11111111-1111-1111-1111-111111111111")
         assert comp is not None
         assert comp.name == "Backend"
 
     def test_get_missing_component(self, repo):
-        comp = repo.get_component("nonexistent")
+        comp = repo.get_component("00000000-0000-0000-0000-000000000000")
         assert comp is None
 
     def test_list_components(self, repo):

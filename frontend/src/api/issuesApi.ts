@@ -12,10 +12,12 @@ export async function fetchIssues(
   limit = 50,
   status?: string,
   component?: string,
+  project?: string,
 ): Promise<Issue[]> {
   const params: Record<string, string | number> = { page, limit }
   if (status) params.status = status
   if (component) params.component = component
+  if (project) params.project = project
   const { data } = await client.get<APIResponse<PaginatedResponse<Issue>>>('/issues', { params })
   return data.data?.items ?? []
 }

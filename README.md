@@ -41,7 +41,7 @@ curl http://localhost:8000/health
 |--------|-----|-------------|
 | **Neo4j Browser** | `http://localhost:7474` | Graph database UI (neo4j/neoSocial) |
 | **REST API** | `http://localhost:8000` | For AI agents to manage issues |
-| **Frontend** | `http://localhost:8080` | Human UI (Kanban board) |
+| **Frontend** | `http://localhost:8080` | Human UI (Kanban board & Interactive Graph View) |
 | **API Docs** | `http://localhost:8000/docs` | OpenAPI documentation |
 
 ### 4. Try It Now - 30-Second Demo

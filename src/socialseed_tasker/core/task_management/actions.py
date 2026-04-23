@@ -13,6 +13,7 @@ from typing import Any, Protocol
 
 from socialseed_tasker.core.task_management.constraints import (
     Constraint,
+    ConstraintCategory,
     ConstraintConfig,
     ConstraintValidationResult,
     ConstraintViolation,
@@ -117,7 +118,7 @@ class TaskRepositoryInterface(Protocol):
     def list_issues(
         self,
         component_id: str | None = None,
-        status: IssueStatus | None = None,
+        statuses: list[str] | None = None,
         project: str | None = None,
     ) -> list[Issue]:
         """List issues with optional filters."""
@@ -714,14 +715,17 @@ def load_constraints_from_config_action(
     Returns:
         Dict with counts of created/updated constraints
     """
+    from socialseed_tasker.core.task_management.constraints import ConstraintStatus
+
     existing = repository.list_constraints()
     for c in existing:
         repository.delete_constraint(str(c.id))
 
     constraints = config.to_constraints()
     for constraint in constraints:
-        constraint.status = "active"
-        repository.create_constraint(constraint)
+        # Constraint is frozen=True, use model_copy to create active version
+        active_constraint = constraint.model_copy(update={"status": ConstraintStatus.ACTIVE})
+        repository.create_constraint(active_constraint)
 
     return {
         "created": len(constraints),
@@ -741,7 +745,7 @@ def validate_constraints_action(
     violations: list[ConstraintViolation] = []
 
     for constraint in constraints:
-        if constraint.category == "dependencies" and constraint.rule_type == "max_depth":
+        if constraint.category == ConstraintCategory.DEPENDENCIES and constraint.rule_type == "max_depth":
             if constraint.max_depth:
                 depth = _check_max_dependency_depth(repository, constraint.max_depth)
                 if depth > constraint.max_depth:

@@ -153,7 +153,7 @@ def _issue_to_response(issue: Issue) -> IssueResponse:
         updated_at=issue.updated_at,
         closed_at=issue.closed_at,
         architectural_constraints=issue.architectural_constraints,
-        agent_working=issue.agent_working if hasattr(issue, "agent_working") else None,
+        agent_working=issue.agent_working,
         reasoning_logs=[
             {
                 "id": str(log.id),
@@ -164,13 +164,14 @@ def _issue_to_response(issue: Issue) -> IssueResponse:
             }
             for log in issue.reasoning_logs
         ],
-        manifest_todo=issue.manifest_todo if hasattr(issue, "manifest_todo") else [],
-        manifest_files=issue.manifest_files if hasattr(issue, "manifest_files") else [],
-        manifest_notes=issue.manifest_notes if hasattr(issue, "manifest_notes") else [],
-        agent_started_at=issue.agent_started_at if hasattr(issue, "agent_started_at") else None,
-        agent_finished_at=issue.agent_finished_at if hasattr(issue, "agent_finished_at") else None,
-        agent_id=issue.agent_id if hasattr(issue, "agent_id") else None,
+        manifest_todo=issue.manifest_todo,
+        manifest_files=issue.manifest_files,
+        manifest_notes=issue.manifest_notes,
+        agent_started_at=issue.agent_started_at,
+        agent_finished_at=issue.agent_finished_at,
+        agent_id=issue.agent_id,
     )
+
 
 
 def _component_to_response(comp: Component) -> ComponentResponse:
@@ -280,8 +281,8 @@ def list_issues(
     limit: int = Query(20, ge=1, le=100, description="Items per page (default: 20, max: 100)"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
-    status_filter = IssueStatus(status) if status else None
-    all_issues = repo.list_issues(component_id=component, status=status_filter, project=project)
+    status_list = [s.strip() for s in status.split(",") if s.strip()] if status else []
+    all_issues = repo.list_issues(component_id=component, statuses=status_list, project=project)
     total = len(all_issues)
     start = (page - 1) * limit
     end = start + limit
