@@ -236,7 +236,7 @@ def _issues_table(issues: list[Issue], component_names: dict[str, str] | None = 
     """Format a list of issues as a Rich table."""
     table = Table(show_header=True, header_style="bold cyan", box=SIMPLE, min_width=130)
     table.add_column("ID", style="dim", width=10)
-    table.add_column("Title", min_width=25)
+    table.add_column("Title", width=40)
     table.add_column("Status", width=12)
     table.add_column("Priority", width=12)
     table.add_column("Component", width=40)
@@ -244,9 +244,10 @@ def _issues_table(issues: list[Issue], component_names: dict[str, str] | None = 
     for issue in issues:
         comp_id = str(issue.component_id)
         comp_name = (component_names or {}).get(comp_id, comp_id[:8])
+        title = str(issue.title)[:40] if issue.title else ""
         table.add_row(
             str(issue.id)[:8],
-            issue.title,
+            title,
             issue.status.value,
             issue.priority.value,
             comp_name,
