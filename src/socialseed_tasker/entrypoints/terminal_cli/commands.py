@@ -61,13 +61,66 @@ project_app = typer.Typer(help="Detect project structure and create modules")
 
 
 # ---------------------------------------------------------------------------
-# Repository factory (uses Container from app.py)
+# Credentials persistence
+# ---------------------------------------------------------------------------
+
+_CLI_CONFIG_FILE = Path.home() / ".tasker" / "credentials"
+
+
+def _load_saved_credentials() -> dict[str, str]:
+    """Load saved credentials from local config file."""
+    import json
+    
+    config_file = _CLI_CONFIG_FILE
+    if config_file.exists():
+        try:
+            with open(config_file) as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            pass
+    return {}
+
+
+def _save_credentials(uri: str, user: str, password: str) -> None:
+    """Save credentials to local config file."""
+    import json
+    
+    config_file = _CLI_CONFIG_FILE
+    config_file.parent.mkdir(parents=True, exist_ok=True)
+    credentials = {
+        "uri": uri,
+        "user": user,
+        "password": password,
+    }
+    with open(config_file, "w") as f:
+        json.dump(credentials, f)
+
+
+def _get_password_with_fallback() -> str:
+    """Get password from env or saved credentials."""
+    import os
+    
+    password = os.environ.get("TASKER_NEO4J_PASSWORD", "")
+    if password:
+        return password
+    
+    saved = _load_saved_credentials()
+    if saved and saved.get("password"):
+        uri = os.environ.get("TASKER_NEO4J_URI", "bolt://localhost:7687")
+        if saved.get("uri") == uri:
+            return saved.get("password", "")
+    
+    return ""
+
+
+# ---------------------------------------------------------------------------
+# Repository access
 # ---------------------------------------------------------------------------
 
 
 def get_repository() -> TaskRepositoryInterface:
-    """Get the task repository from the CLI container.
-
+    """Get the task repository for CLI operations.
+    
     Intent: Provide the storage backend for CLI operations, supporting
     both file and neo4j backends.
     Business Value: Unifies CLI and API to use the same configuration.
@@ -76,7 +129,10 @@ def get_repository() -> TaskRepositoryInterface:
 
     from socialseed_tasker.entrypoints.terminal_cli.app import get_cli_container
 
-    password = os.environ.get("TASKER_NEO4J_PASSWORD", "")
+    password = _get_password_with_fallback()
+    if password:
+        os.environ["TASKER_NEO4J_PASSWORD"] = password
+    
     if not password:
         console.print("[error]Error:[/error] Neo4j password is required.")
         console.print("[info]Please provide it via:[/info]")
@@ -1099,6 +1155,50 @@ def status_command() -> None:
             border_style="cyan",
         )
     )
+
+
+@status_app.command("login")
+def login_command(
+    password: str = typer.Option(..., "--password", "-pw", help="Neo4j password"),
+    save: bool = typer.Option(True, "--save/--no-save", help="Save credentials locally"),
+) -> None:
+    """Save credentials for future sessions.
+    
+    Allows you to store your Neo4j credentials locally so you don't
+    need to enter them for every command.
+    """
+    import os
+    
+    from socialseed_tasker.entrypoints.terminal_cli.app import get_cli_container
+    
+    uri = os.environ.get("TASKER_NEO4J_URI", "bolt://localhost:7687")
+    user = os.environ.get("TASKER_NEO4J_USER", "neo4j")
+    
+    os.environ["TASKER_NEO4J_PASSWORD"] = password
+    
+    try:
+        repo = get_cli_container().get_repository()
+        repo.list_components()
+        
+        if save:
+            _save_credentials(uri, user, password)
+            console.print("[success]Credentials saved successfully.[/success]")
+        else:
+            console.print("[success]Credentials valid for this session.[/success]")
+    except Exception as e:
+        console.print(f"[error]Authentication failed: {e}[/error]")
+        raise typer.Exit(code=1)
+
+
+@status_app.command("logout")
+def logout_command() -> None:
+    """Clear saved credentials."""
+    config_file = _CLI_CONFIG_FILE
+    if config_file.exists():
+        config_file.unlink()
+        console.print("[success]Credentials cleared.[/success]")
+    else:
+        console.print("[info]No saved credentials found.[/info]")
 
 
 # ---------------------------------------------------------------------------
