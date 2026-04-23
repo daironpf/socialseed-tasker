@@ -828,7 +828,7 @@ def component_create(
 
     component = Component(name=sanitized_name, project=project, description=sanitized_description)
     repo.create_component(component)
-    console.print(f"[success]Component created:[/success] {component.id}")
+    console.print(f"[success]Component '{sanitized_name}' created successfully (ID: {component.id})")
 
 
 @component_app.command("list")
