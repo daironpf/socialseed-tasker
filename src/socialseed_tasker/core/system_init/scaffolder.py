@@ -46,6 +46,7 @@ class ScaffolderService:
         self,
         target_dir: Path,
         force: bool = False,
+        output_dir: Path | None = None,
     ) -> ScaffoldResult:
         """Copy all template assets into the target directory.
 
@@ -55,11 +56,15 @@ class ScaffolderService:
         Args:
             target_dir: Root of the external project (tasker/ will be created inside).
             force: If True, overwrite existing files. Otherwise skip them.
+            output_dir: Custom output directory. If None, creates tasker/ inside target_dir.
 
         Returns:
             ScaffoldResult with details of all file operations performed.
         """
-        tasker_dir = target_dir / "tasker"
+        if output_dir:
+            tasker_dir = output_dir
+        else:
+            tasker_dir = target_dir / "tasker"
         result = ScaffoldResult(target_dir=tasker_dir)
 
         if not self._template_dir.exists():

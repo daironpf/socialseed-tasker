@@ -47,6 +47,12 @@ def scaffold_command(
         "-f",
         help="Overwrite existing files with latest templates",
     ),
+    inplace: bool = typer.Option(
+        False,
+        "--inplace",
+        "-i",
+        help="Initialize in current directory without creating tasker/ subdirectory",
+    ),
 ) -> None:
     """Scaffold Tasker infrastructure into a project.
 
@@ -57,8 +63,9 @@ def scaffold_command(
         tasker init                     # scaffold in current directory
         tasker init /path/to/project    # scaffold in specific directory
         tasker init --force             # overwrite existing templates
+        tasker init --inplace          # scaffold in current directory (no subdir)
     """
-    _run_scaffold(target, force)
+    _run_scaffold(target, force, inplace)
 
 
 @init_app.command()
@@ -74,6 +81,12 @@ def init(
         "-f",
         help="Overwrite existing files with latest templates",
     ),
+    inplace: bool = typer.Option(
+        False,
+        "--inplace",
+        "-i",
+        help="Initialize in current directory without creating tasker/ subdirectory",
+    ),
 ) -> None:
     """Scaffold Tasker infrastructure into a project.
 
@@ -84,11 +97,12 @@ def init(
         tasker init                     # scaffold in current directory
         tasker init /path/to/project    # scaffold in specific directory
         tasker init --force             # overwrite existing templates
+        tasker init --inplace          # scaffold in current directory (no subdir)
     """
-    _run_scaffold(target, force)
+    _run_scaffold(target, force, inplace)
 
 
-def _run_scaffold(target: str, force: bool) -> None:
+def _run_scaffold(target: str, force: bool, inplace: bool = False) -> None:
     target_path = Path(target).resolve()
 
     if not target_path.exists():
@@ -106,11 +120,14 @@ def _run_scaffold(target: str, force: bool) -> None:
         )
         raise typer.Exit(code=1) from None
 
-    tasker_dir = target_path / "tasker"
-    if tasker_dir.exists() and not force:
-        console.print(f"[warning]Tasker directory already exists at: {tasker_dir}[/warning]")
-        console.print("Use [bold]--force[/bold] to overwrite existing templates.")
-        raise typer.Exit(code=0)
+    if inplace:
+        output_path = target_path
+    else:
+        output_path = target_path / "tasker"
+        if output_path.exists() and not force:
+            console.print(f"[warning]Tasker directory already exists at: {output_path}[/warning]")
+            console.print("Use [bold]--force[/bold] to overwrite existing templates.")
+            raise typer.Exit(code=0)
 
     console.print(f"[info]Scaffolding Tasker into:[/info] [bold]{target_path}[/bold]")
 
@@ -129,7 +146,11 @@ def _run_scaffold(target: str, force: bool) -> None:
             console.print(f"  [error]Error:[/error]       {rel_dest} - {op.error_message}")
 
     service = ScaffolderService(template_dir, progress_callback=_on_progress)
-    result = service.scaffold(target_path, force=force)
+    
+    if inplace:
+        result = service.scaffold(target_path, force=force, output_dir=target_path)
+    else:
+        result = service.scaffold(target_path, force=force)
 
     console.print()
 
