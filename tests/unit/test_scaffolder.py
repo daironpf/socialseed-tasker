@@ -166,3 +166,44 @@ class TestScaffolderService:
 
         assert len(operations) > 0
         assert all(op.status == ScaffoldStatus.CREATED for op in operations)
+
+    def test_scaffold_creates_project_readme(self, template_dir: Path, target_dir: Path) -> None:
+        """Test that project_readme.md is copied to project root as README.md."""
+        project_readme = template_dir / "project_readme.md"
+        project_readme.write_text("# Project Documentation\nQuick start guide.")
+
+        service = ScaffolderService(template_dir)
+        result = service.scaffold(target_dir)
+
+        assert result.success is True
+        readme_path = target_dir / "README.md"
+        assert readme_path.exists()
+        assert "Project Documentation" in readme_path.read_text()
+
+    def test_project_readme_skipped_without_force(self, template_dir: Path, target_dir: Path) -> None:
+        """Test that existing README.md is skipped without force."""
+        project_readme = template_dir / "project_readme.md"
+        project_readme.write_text("# New Content\n")
+
+        target_readme = target_dir / "README.md"
+        target_readme.write_text("# Existing Content\n")
+
+        service = ScaffolderService(template_dir)
+        result = service.scaffold(target_dir)
+
+        assert result.success is True
+        assert target_readme.read_text() == "# Existing Content\n"
+
+    def test_project_readme_overwritten_with_force(self, template_dir: Path, target_dir: Path) -> None:
+        """Test that README.md is overwritten when force=True."""
+        project_readme = template_dir / "project_readme.md"
+        project_readme.write_text("# New Content\n")
+
+        target_readme = target_dir / "README.md"
+        target_readme.write_text("# Existing Content\n")
+
+        service = ScaffolderService(template_dir)
+        result = service.scaffold(target_dir, force=True)
+
+        assert result.success is True
+        assert target_readme.read_text() == "# New Content\n"

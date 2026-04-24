@@ -52,6 +52,7 @@ class ScaffolderService:
 
         Creates the tasker/ directory structure and copies skills,
         configs, and docker-compose.yml from the bundled templates.
+        Also copies project_readme.md to the project root as README.md.
 
         Args:
             target_dir: Root of the external project (tasker/ will be created inside).
@@ -87,7 +88,62 @@ class ScaffolderService:
                 if self._progress_callback:
                     self._progress_callback(op)
 
+        self._copy_project_readme(target_dir, force, result)
+
         return result
+
+    def _copy_project_readme(
+        self,
+        target_dir: Path,
+        force: bool,
+        result: ScaffoldResult,
+    ) -> None:
+        """Copy project_readme.md template to project root as README.md."""
+        project_readme_template = self._template_dir / "project_readme.md"
+        if not project_readme_template.exists():
+            return
+
+        readme_destination = target_dir / "README.md"
+
+        if readme_destination.exists() and not force:
+            result.add_operation(
+                FileOperation(
+                    source=project_readme_template,
+                    destination=readme_destination,
+                    status=ScaffoldStatus.SKIPPED,
+                )
+            )
+            if self._progress_callback:
+                self._progress_callback(
+                    FileOperation(
+                        source=project_readme_template,
+                        destination=readme_destination,
+                        status=ScaffoldStatus.SKIPPED,
+                    )
+                )
+            return
+
+        try:
+            shutil.copy2(str(project_readme_template), str(readme_destination))
+            status = ScaffoldStatus.OVERWRITTEN if readme_destination.exists() else ScaffoldStatus.CREATED
+            op = FileOperation(
+                source=project_readme_template,
+                destination=readme_destination,
+                status=status,
+            )
+            result.add_operation(op)
+            if self._progress_callback:
+                self._progress_callback(op)
+        except (OSError, shutil.Error) as exc:
+            op = FileOperation(
+                source=project_readme_template,
+                destination=readme_destination,
+                status=ScaffoldStatus.ERROR,
+                error_message=str(exc),
+            )
+            result.add_operation(op)
+            if self._progress_callback:
+                self._progress_callback(op)
 
     def _copy_template_file(
         self,
