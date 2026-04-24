@@ -140,18 +140,26 @@ Must include:
   - api_clarity
   - setup_friction
 
-### ⚠️ Confirmation Before Cleanup
+### ⚠️ ASK BEFORE CLEANUP
 
-**ASK USER**: "¿Deseas mantener los servicios corriendo para verificar las issues?"
+**YOU MUST ASK THE USER BEFORE CLEANUP** using the Question tool:
 
-| Option | Action |
+Question: "¿Deseas limpiar los servicios (docker-compose down) o mantenerlos corriendo para continuar probando?"
+
+| Options | Action |
 |--------|--------|
-| **SÍ / YES** | Mantener servicios corriendo. NO hacer cleanup. Información de acceso abajo. |
-| **NO** | Ejecutar cleanup (docker-compose down + deactivate venv) |
+| **Limpiar / Cleanup / NO** | Execute cleanup commands |
+| **Mantener / Keep / YES** | Keep services running, provide access info |
+| **Otra cosa** | Ask what they need |
+
+**IMPORTANT**: 
+- NEVER cleanup without explicit confirmation
+- If user doesn't answer clearly, ask again
+- Default is to NOT cleanup (wait for user response)
 
 ### If YES (Keep Services Running)
 
-Provide access information:
+**Do NOT cleanup.** Provide access information:
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ Services Running (DO NOT CLEANUP)                          │
@@ -180,17 +188,20 @@ curl http://localhost:8000/api/v1/components
 # Ver Neo4j data (cypher-shell)
 docker exec -it tasker-db cypher-shell -u neo4j -p neoSocial
 
-# When done, run: cleanup
+# When done later, run:
 cd real-test/tasker && docker-compose down -v --remove-orphans
 ```
 
-### If NO (Cleanup)
+### If NO (Cleanup) or User Confirms Cleanup
 
+**Only if user explicitly confirms "cleanup" or "limpiar"**:
 ```bash
 # Stop containers: docker-compose down -v --remove-orphans
 # Deactivate venv: deactivate
 # Leave system ready for next iteration
 ```
+
+**IMPORTANT**: Wait for user confirmation before running cleanup commands.
 
 ---
 
@@ -258,13 +269,14 @@ dx_evaluation:
 ## Workflow Execution
 
 ```
-prueba elProyecto
+prueba el proyecto
   → Phase 0: Ask use case + issue count
   → Phase 1: Setup real-test/ + venv
   → Phase 2: tasker init + docker up
-  → Phase 3: Sub-agent creates issues
+  → Phase 3: Create issues via API
   → Phase 4: Generate report.md
-  → ⚠️ Ask: Keep services or cleanup?
+  → ⚠️ ASK: Cleanup or keep running?
+  → WAIT for user response before acting
 ```
 
 ## Checklist
@@ -282,12 +294,12 @@ prueba elProyecto
 - [ ] Phase 3: Issues created via API
 - [ ] Phase 3: Issue count verified
 - [ ] Phase 4: report.md generated
-- [ ] Phase 4: User confirmed (keep or cleanup)
-- [ ] Phase 4: Services cleaned (if NO)
+- [ ] Phase 4: ASK user for cleanup decision ⚠️
+- [ ] Phase 4: Cleanup (only if user confirmed)
 
-## Manual Cleanup (When Ready)
+## Manual Cleanup (When User Confirms)
 
-If user chooses cleanup later or services need restart:
+**IMPORTANT**: Only run cleanup if user explicitly asks for it.
 
 ```bash
 # Clean Docker + volumes
