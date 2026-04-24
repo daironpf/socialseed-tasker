@@ -60,17 +60,18 @@ services:
 
   # =============================================================================
   # Vue.js Frontend (Human UI - Kanban Board)
-  # Uses pre-built image from GitHub Container Registry
-  # To build locally: docker build -t my-board -f frontend/Dockerfile .
+  # Builds from local frontend/ directory for proper proxy configuration
+  # IMPORTANT: Run 'docker compose build tasker-board' first time
+  # Or use: docker build -t tasker-board -f frontend/Dockerfile frontend/
   # =============================================================================
   tasker-board:
     container_name: tasker-board
-    image: ghcr.io/daironpf/socialseed-tasker-board:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: tasker-board:local
     ports:
       - "8080:80"
-    environment:
-      - VITE_API_URL=http://tasker-api:8000/api/v1
-      - VITE_API_KEY=test-token
     depends_on:
       - tasker-api
     networks:
