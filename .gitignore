@@ -238,3 +238,8 @@ report.md
 
 #BlackBox Test
 real-test/
+
+#Local test artifacts
+*.tsbuildinfo
+notas.md
+report.md
