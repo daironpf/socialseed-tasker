@@ -17,6 +17,7 @@ Whenever completing an issue from `.issues/to-do/` - specifically when the fix i
 
 | File | When to Update |
 |------|----------------|
+| `project.md` | New entities, actions, modules, CLI commands, API endpoints, storage changes |
 | `README.md` | New CLI commands, API endpoints, environment variables |
 | `ROADMAP.md` | Resolved known issues, new features completed |
 | `VERSIONS.md` | All issue numbers in the current version checklist |
@@ -29,7 +30,10 @@ Whenever completing an issue from `.issues/to-do/` - specifically when the fix i
 ### Step 1: Identify Documentation Impact
 
 After fixing an issue, ask:
-- Does this add a new CLI command? → Update README.md, skills
+- Does this add a new CLI command? → Update project.md (CLI Interface), README.md
+- Does this add a new API endpoint? → Update project.md (API Interface), API_REFERENCE.md
+- Does this add a new entity or action? → Update project.md (Domain Model, Core Actions)
+- Does this add new validation? → Update project.md (Validation System)
 - Does this fix a known issue? → Update ROADMAP.md known issues table
 - Does this add a feature to current version? → Update VERSIONS.md checklist
 - Does this affect users? → Consider CHANGELOG.md

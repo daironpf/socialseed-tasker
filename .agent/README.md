@@ -20,15 +20,17 @@ This directory contains the operational knowledge for AI agents working on this 
 | Create a new issue | `workflows/create-issue.md` |
 | Test project | `workflows/test-project.md` |
 | Project setup | `workflows/project-setup.md` |
+| **Prueba el proyecto** | `workflows/prueba-el-proyecto.md` |
 
 ## Core Principles
 
-1. **Issue-driven development**: Every piece of work starts from an issue in `.issues/`
-2. **Test before commit**: No code goes in without tests
-3. **Documentation sync**: Always update docs when fixing issues (see `skills/documentation-sync.md`)
-4. **Conventional commits**: Follow the established commit message format
-5. **English only**: All code, comments, docs, and commit messages in English
-6. **No placeholders**: Every line must be production-ready
+1. **Read project.md first**: Before any work, read `project.md` at the root to understand the project structure (see `skills/project-documentation.md`)
+2. **Issue-driven development**: Every piece of work starts from an issue in `.issues/`
+3. **Test before commit**: No code goes in without tests
+4. **Documentation sync**: Always update docs when fixing issues (see `skills/documentation-sync.md`)
+5. **Conventional commits**: Follow the established commit message format
+6. **English only**: All code, comments, docs, and commit messages in English
+7. **No placeholders**: Every line must be production-ready
 
 ## Project Information
 
@@ -184,6 +186,21 @@ docker compose down -v
 ## Skills Reference
 
 See `.agent/skills/` for detailed architecture and workflow documentation.
+
+### Real-Test Evaluation Skills
+| Skill | Purpose |
+|-------|---------|
+| `terminal.md` | Docker, venv, shell management |
+| `api-client.md` | REST API interaction for black-box testing |
+| `reporter.md` | Report generation in YAML format |
+
+### Test Profiles (Real-Test)
+| Profile | Behavior |
+|---------|----------|
+| Junior Dev | Relies on documentation, reports "Doc Gaps" |
+| Senior Architect | Focuses on graph efficiency, reports refactoring |
+| DevOps | Focuses on infrastructure, logs, Docker stability |
+| Chaos Monkey | Uses ONLY `--help` + error messages |
 
 ## Full Documentation
 
