@@ -60,12 +60,16 @@ services:
 
   # =============================================================================
   # Vue.js Frontend (Human UI - Kanban Board)
-  # Commented out by default - requires separate frontend setup
-  # To enable: uncomment and use a pre-built image or separate repo
+  # To enable: replace 'placeholder' with your frontend image
+  # Example: ghcr.io/daironpf/socialseed-tasker-board:latest
+  # Or build from ./frontend/Dockerfile if frontend/ directory exists
   # =============================================================================
   # tasker-board:
   #   container_name: tasker-board
-  #   image: ghcr.io/daironpf/socialseed-tasker-board:latest
+  #   image: placeholder
+  #   build:
+  #     context: .
+  #     dockerfile: frontend/Dockerfile
   #   ports:
   #     - "8080:80"
   #   depends_on:
