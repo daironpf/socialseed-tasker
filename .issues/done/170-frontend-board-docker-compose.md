@@ -21,7 +21,18 @@ resolve: GetFileAttributesEx .../frontend: El sistema no puede encontrar el arch
 3. Run `docker compose up -d`
 4. Observe build failure
 
-## Status: PENDING
+## Status: COMPLETED
+
+## Resolution
+Updated docker-compose template to:
+1. Use pre-built API image (`ghcr.io/daironpf/socialseed-tasker:latest`) instead of `build:`
+2. Comment out tasker-board by default (requires separate frontend repo)
+
+This allows `docker compose up -d` to work immediately without build failures.
+
+To enable frontend later:
+- Uncomment tasker-board section
+- Use a pre-built image or set up separate frontend repo
 
 ## Priority: MEDIUM
 

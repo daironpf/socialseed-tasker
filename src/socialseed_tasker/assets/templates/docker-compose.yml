@@ -37,12 +37,11 @@ services:
   # =============================================================================
   # FastAPI Backend (REST API for AI agents)
   # Neo4j-only storage - graph database
+  # Uses pre-built Docker image from GitHub Container Registry
   # =============================================================================
   tasker-api:
     container_name: tasker-api
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/daironpf/socialseed-tasker:latest
     ports:
       - "8000:8000"
     environment:
@@ -61,18 +60,18 @@ services:
 
   # =============================================================================
   # Vue.js Frontend (Human UI - Kanban Board)
+  # Commented out by default - requires separate frontend setup
+  # To enable: uncomment and use a pre-built image or separate repo
   # =============================================================================
-  tasker-board:
-    container_name: tasker-board
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-    ports:
-      - "8080:80"
-    depends_on:
-      - tasker-api
-    networks:
-      - tasker-net
+  # tasker-board:
+  #   container_name: tasker-board
+  #   image: ghcr.io/daironpf/socialseed-tasker-board:latest
+  #   ports:
+  #     - "8080:80"
+  #   depends_on:
+  #     - tasker-api
+  #   networks:
+  #     - tasker-net
 
 networks:
   tasker-net:
