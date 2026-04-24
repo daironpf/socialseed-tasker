@@ -145,6 +145,7 @@ SocialSeed Tasker is a **Graph-Only** platform, leveraging Neo4j as its exclusiv
 - [x] **#143 Linter F541, B904 Fix:** Fix f-strings without placeholders and add raise from err.
 - [x] **#144 Linter I001, E501 Fix:** Auto-sort imports and fix long lines.
 - [x] **#145 Docker Frontend Fix:** Add retry logic to npm ci in frontend Dockerfile.
+- [x] **#167 Tasker Init docker-compose:** Generate full stack (Neo4j + API + Frontend)
 
 ---
 
