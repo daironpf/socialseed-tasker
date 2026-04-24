@@ -235,3 +235,6 @@ infrastructure/
 history
 history/
 report.md
+
+#BlackBox Test
+real-test/
