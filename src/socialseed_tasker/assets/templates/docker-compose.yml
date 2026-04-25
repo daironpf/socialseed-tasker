@@ -38,6 +38,7 @@ services:
   # FastAPI Backend (REST API for AI agents)
   # Neo4j-only storage - graph database
   # Uses pre-built Docker image from GitHub Container Registry
+  # Note: 'latest' tag is always updated with each release to match PyPI version
   # =============================================================================
   tasker-api:
     container_name: tasker-api
