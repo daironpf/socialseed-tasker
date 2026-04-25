@@ -67,6 +67,43 @@ jobs:
           check-wheel-contents dist/*.whl --ignore=W002
           twine check dist/*
 
+      - name: Verify package contents
+        run: |
+          python -m pip install dist/*.whl --target /tmp/verify-package
+          
+          echo "Checking frontend assets..."
+          if [ ! -d "/tmp/verify-package/socialseed_tasker/assets/frontend/assets" ]; then
+            echo "ERROR: Frontend compiled assets not found in package"
+            exit 1
+          fi
+          
+          FRONTEND_SIZE=$(du -sm /tmp/verify-package/socialseed_tasker/assets/frontend/ 2>/dev/null | cut -f1 || echo "0")
+          if [ "$FRONTEND_SIZE" -lt 100 ]; then
+            echo "ERROR: Frontend assets too small (${FRONTEND_SIZE}KB), missing compiled files"
+            exit 1
+          fi
+          echo "Frontend assets verified: ${FRONTEND_SIZE}KB"
+          
+          echo "Checking template files..."
+          TEMPLATE_FILES=(
+            "socialseed_tasker/assets/templates/docker-compose.yml"
+            "socialseed_tasker/assets/templates/skills/task_skill.py"
+            "socialseed_tasker/assets/templates/project_readme.md"
+          )
+          
+          for file in "${TEMPLATE_FILES[@]}"; do
+            if [ ! -f "/tmp/verify-package/$file" ]; then
+              echo "ERROR: Template file not found: $file"
+              exit 1
+            fi
+          done
+          echo "All template files verified"
+          
+          PACKAGE_SIZE=$(du -sm dist/*.whl 2>/dev/null | cut -f1 | head -1)
+          echo "Package size: ${PACKAGE_SIZE}KB"
+          
+          echo "Package verification complete!"
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
