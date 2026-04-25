@@ -207,3 +207,57 @@ class TestScaffolderService:
 
         assert result.success is True
         assert target_readme.read_text() == "# New Content\n"
+
+    def test_scaffold_copies_frontend_build(self, template_dir: Path, target_dir: Path) -> None:
+        """Test that frontend/dist/ is copied to tasker/frontend/ when it exists."""
+        frontend_dist = target_dir / "frontend" / "dist"
+        frontend_dist.mkdir(parents=True)
+        (frontend_dist / "index.html").write_text("<html>Built App</html>")
+        assets_dir = frontend_dist / "assets"
+        assets_dir.mkdir()
+        (assets_dir / "app.js").write_text("// compiled code")
+
+        service = ScaffolderService(template_dir)
+        result = service.scaffold(target_dir)
+
+        assert result.success is True
+        tasker_frontend = target_dir / "tasker" / "frontend"
+        assert (tasker_frontend / "index.html").exists()
+        assert (tasker_frontend / "assets" / "app.js").exists()
+        assert (tasker_frontend / "index.html").read_text() == "<html>Built App</html>"
+
+    def test_scaffold_skips_frontend_copy_without_force(
+        self, template_dir: Path, target_dir: Path
+    ) -> None:
+        """Test that existing tasker/frontend/ files are skipped without force."""
+        frontend_dist = target_dir / "frontend" / "dist"
+        frontend_dist.mkdir(parents=True)
+        (frontend_dist / "index.html").write_text("<html>New Build</html>")
+
+        tasker_frontend = target_dir / "tasker" / "frontend"
+        tasker_frontend.mkdir(parents=True)
+        (tasker_frontend / "index.html").write_text("<html>Old Build</html>")
+
+        service = ScaffolderService(template_dir)
+        result = service.scaffold(target_dir)
+
+        assert result.success is True
+        assert (tasker_frontend / "index.html").read_text() == "<html>Old Build</html>"
+
+    def test_scaffold_overwrites_frontend_with_force(
+        self, template_dir: Path, target_dir: Path
+    ) -> None:
+        """Test that tasker/frontend/ is overwritten when force=True."""
+        frontend_dist = target_dir / "frontend" / "dist"
+        frontend_dist.mkdir(parents=True)
+        (frontend_dist / "index.html").write_text("<html>New Build</html>")
+
+        tasker_frontend = target_dir / "tasker" / "frontend"
+        tasker_frontend.mkdir(parents=True)
+        (tasker_frontend / "index.html").write_text("<html>Old Build</html>")
+
+        service = ScaffolderService(template_dir)
+        result = service.scaffold(target_dir, force=True)
+
+        assert result.success is True
+        assert (tasker_frontend / "index.html").read_text() == "<html>New Build</html>"

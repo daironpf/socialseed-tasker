@@ -53,6 +53,8 @@ class ScaffolderService:
         Creates the tasker/ directory structure and copies skills,
         configs, and docker-compose.yml from the bundled templates.
         Also copies project_readme.md to the project root as README.md.
+        If frontend/dist/ exists in the project root, copies it to
+        tasker/frontend/ for a working Kanban board.
 
         Args:
             target_dir: Root of the external project (tasker/ will be created inside).
@@ -89,6 +91,8 @@ class ScaffolderService:
                     self._progress_callback(op)
 
         self._copy_project_readme(target_dir, force, result)
+
+        self._copy_frontend_build(target_dir, force, result)
 
         return result
 
@@ -191,3 +195,59 @@ class ScaffolderService:
         if not self._template_dir.exists():
             return []
         return sorted(p for p in self._template_dir.rglob("*") if p.is_file())
+
+    def _copy_frontend_build(
+        self,
+        target_dir: Path,
+        force: bool,
+        result: ScaffoldResult,
+    ) -> None:
+        """Copy frontend/dist/ build to tasker/frontend/ if it exists.
+
+        This ensures users get a working Vue Kanban board immediately
+        after scaffolding, instead of just placeholder HTML files.
+        """
+        frontend_dist = target_dir / "frontend" / "dist"
+        if not frontend_dist.exists():
+            return
+
+        tasker_frontend = target_dir / "tasker" / "frontend"
+        tasker_frontend.mkdir(parents=True, exist_ok=True)
+
+        for src_path in frontend_dist.rglob("*"):
+            if src_path.is_file():
+                relative = src_path.relative_to(frontend_dist)
+                dest_path = tasker_frontend / relative
+
+                if dest_path.exists() and not force:
+                    result.add_operation(
+                        FileOperation(
+                            source=src_path,
+                            destination=dest_path,
+                            status=ScaffoldStatus.SKIPPED,
+                        )
+                    )
+                    continue
+
+                try:
+                    dest_path.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(str(src_path), str(dest_path))
+                    status = ScaffoldStatus.OVERWRITTEN if dest_path.exists() else ScaffoldStatus.CREATED
+                    op = FileOperation(
+                        source=src_path,
+                        destination=dest_path,
+                        status=status,
+                    )
+                    result.add_operation(op)
+                    if self._progress_callback:
+                        self._progress_callback(op)
+                except (OSError, shutil.Error) as exc:
+                    op = FileOperation(
+                        source=src_path,
+                        destination=dest_path,
+                        status=ScaffoldStatus.ERROR,
+                        error_message=str(exc),
+                    )
+                    result.add_operation(op)
+                    if self._progress_callback:
+                        self._progress_callback(op)
