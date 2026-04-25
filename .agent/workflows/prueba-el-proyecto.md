@@ -85,12 +85,31 @@ Ejecuta una evaluación black-box completa del sistema SocialSeed Tasker. Este w
    tasker init .
    ```
 
-2. **Start services**:
+2. **Copy full frontend** (IMPORTANT! - scaffold is just placeholder):
    ```bash
+   # Copy from main project
+   cp -r ../../frontend/dist/* tasker/frontend/
+   cp ../../frontend/nginx.conf tasker/frontend/
+   ```
+
+3. **Update Dockerfile** for full frontend:
+   ```bash
+   # Edit tasker/frontend/Dockerfile to:
+   FROM nginx:alpine
+   COPY index.html /usr/share/nginx/html/index.html
+   COPY assets/ /usr/share/nginx/html/assets/
+   COPY nginx.conf /etc/nginx/conf.d/default.conf
+   EXPOSE 80
+   CMD ["nginx", "-g", "daemon off;"]
+   ```
+
+4. **Start services** (with --no-cache first time):
+   ```bash
+   cd tasker && docker-compose build --no-cache tasker-board
    docker-compose up -d
    ```
 
-3. **Wait for services to be ready**:
+5. **Wait for services to be ready**:
    ```bash
    sleep 10
    # Verify: docker-compose ps

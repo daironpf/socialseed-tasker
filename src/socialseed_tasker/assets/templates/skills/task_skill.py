@@ -34,7 +34,7 @@ def _request(
 
     headers = {"Content-Type": "application/json"}
     if TASKER_API_KEY:
-        headers["X-API-Key"] = TASKER_API_KEY
+        headers["Authorization"] = f"Bearer {TASKER_API_KEY}"
 
     data = json.dumps(body).encode("utf-8") if body else None
     req = Request(url, data=data, headers=headers, method=method)

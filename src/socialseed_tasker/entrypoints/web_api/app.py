@@ -112,6 +112,10 @@ def create_app(
             return await call_next(request)
 
         provided_key = request.headers.get("X-API-Key")
+        if provided_key is None:
+            auth_header = request.headers.get("Authorization", "")
+            if auth_header.startswith("Bearer "):
+                provided_key = auth_header[7:]
         if provided_key != api_key:
             return JSONResponse(
                 status_code=401,

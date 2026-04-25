@@ -238,6 +238,7 @@ report.md
 
 #BlackBox Test
 real-test/
+test-run/
 
 #Local test artifacts
 *.tsbuildinfo

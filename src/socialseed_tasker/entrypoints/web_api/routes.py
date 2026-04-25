@@ -1922,6 +1922,10 @@ def receive_test_failure(
     webhook_api_key = os.environ.get("TASKER_WEBHOOK_API_KEY", "")
     if webhook_api_key:
         auth_header = request.headers.get("X-API-Key", "") if request else ""
+        if not auth_header:
+            auth_header = request.headers.get("Authorization", "") if request else ""
+            if auth_header.startswith("Bearer "):
+                auth_header = auth_header[7:]
         if auth_header != webhook_api_key:
             from fastapi import HTTPException
 
@@ -2363,6 +2367,10 @@ def require_admin_auth(request: Request):
         )
 
     provided_key = request.headers.get("X-API-Key")
+    if provided_key is None:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            provided_key = auth_header[7:]
     if provided_key != admin_api_key:
         raise HTTPException(
             status_code=401,
