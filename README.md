@@ -47,33 +47,43 @@ curl http://localhost:8000/health
 ### 4. Try It Now - 30-Second Demo
 
 ```bash
+# Set your API key
+export TASKER_API_KEY=test-token
+export TASKER_AUTH_ENABLED=true
+
 # Create a component
 COMP_ID=$(curl -s -X POST http://localhost:8000/api/v1/components \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TASKER_API_KEY" \
   -d '{"name":"backend","project":"my-app"}' | python -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
 
 # Create an issue in that component
 ISSUE_ID=$(curl -s -X POST http://localhost:8000/api/v1/issues \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TASKER_API_KEY" \
   -d "{\"title\":\"Fix login bug\",\"component_id\":\"$COMP_ID\",\"priority\":\"HIGH\"}" \
   | python -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
 
 # Create a second issue
 DEP_ID=$(curl -s -X POST http://localhost:8000/api/v1/issues \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TASKER_API_KEY" \
   -d "{\"title\":\"Add unit tests\",\"component_id\":\"$COMP_ID\",\"priority\":\"MEDIUM\"}" \
   | python -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
 
 # Link them: Fix login bug depends on Add unit tests
 curl -s -X POST "http://localhost:8000/api/v1/issues/$ISSUE_ID/dependencies" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TASKER_API_KEY" \
   -d "{\"depends_on_id\":\"$DEP_ID\"}"
 
 # See the dependency chain
-curl -s "http://localhost:8000/api/v1/issues/$ISSUE_ID/dependency-chain" | python -m json.tool
+curl -s "http://localhost:8000/api/v1/issues/$ISSUE_ID/dependency-chain" \
+  -H "Authorization: Bearer $TASKER_API_KEY" | python -m json.tool
 
 # Try to close the issue (will fail - dependency is still open)
-curl -s -X POST "http://localhost:8000/api/v1/issues/$ISSUE_ID/close" | python -m json.tool
+curl -s -X POST "http://localhost:8000/api/v1/issues/$ISSUE_ID/close" \
+  -H "Authorization: Bearer $TASKER_API_KEY" | python -m json.tool
 ```
 
 ### 5. Or Load Full Demo Data
@@ -113,6 +123,11 @@ Supports two header formats:
 - `X-API-Key: your-key` (original)
 - `Authorization: Bearer your-key` (standard)
 
+```bash
+# Example with authentication
+curl -H "Authorization: Bearer your-secret-key" http://localhost:8000/api/v1/issues
+```
+
 ---
 
 ### Components
@@ -123,6 +138,7 @@ Components represent different parts of your project (services, modules, package
 ```bash
 curl -X POST http://localhost:8000/api/v1/components \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
   -d '{
     "name": "auth-service",
     "description": "Authentication microservice",
@@ -132,10 +148,12 @@ curl -X POST http://localhost:8000/api/v1/components \
 
 #### List Components
 ```bash
-curl http://localhost:8000/api/v1/components
+curl http://localhost:8000/api/v1/components \
+  -H "Authorization: Bearer your-secret-key"
 
 # Filter by project
-curl "http://localhost:8000/api/v1/components?project=social-network"
+curl "http://localhost:8000/api/v1/components?project=social-network" \
+  -H "Authorization: Bearer your-secret-key"
 ```
 
 ---
@@ -145,11 +163,13 @@ curl "http://localhost:8000/api/v1/components?project=social-network"
 #### Create Issue
 ```bash
 # First, get a component ID from the list above
-COMPONENT_ID=$(curl -s http://localhost:8000/api/v1/components | python -c "import sys,json; print(json.load(sys.stdin)['data'][0]['id'])")
+COMPONENT_ID=$(curl -s http://localhost:8000/api/v1/components \
+  -H "Authorization: Bearer your-secret-key" | python -c "import sys,json; print(json.load(sys.stdin)['data'][0]['id'])")
 
 # Then create an issue
 curl -X POST http://localhost:8000/api/v1/issues \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
   -d '{
     "title": "Fix login bug with special characters",
     "description": "Users cannot login when password contains special chars",
@@ -164,31 +184,34 @@ curl -X POST http://localhost:8000/api/v1/issues \
 #### List Issues (Paginated)
 ```bash
 # All issues (paginated)
-curl "http://localhost:8000/api/v1/issues"
+curl "http://localhost:8000/api/v1/issues" -H "Authorization: Bearer your-secret-key"
 
 # Response format: {"data": {"items": [...], "total": N, "page": 1, "page_size": 50}}
-curl "http://localhost:8000/api/v1/issues?page=1&page_size=20"
+curl "http://localhost:8000/api/v1/issues?page=1&page_size=20" \
+  -H "Authorization: Bearer your-secret-key"
 
 # Filter by status
-curl "http://localhost:8000/api/v1/issues?status=OPEN"
+curl "http://localhost:8000/api/v1/issues?status=OPEN" -H "Authorization: Bearer your-secret-key"
 
 # Filter by project
-curl "http://localhost:8000/api/v1/issues?project=my-app"
+curl "http://localhost:8000/api/v1/issues?project=my-app" -H "Authorization: Bearer your-secret-key"
 
 # Filter by component
-curl "http://localhost:8000/api/v1/issues?component=<component-id>"
+curl "http://localhost:8000/api/v1/issues?component=<component-id>" \
+  -H "Authorization: Bearer your-secret-key"
 
 # Filter by priority
-curl "http://localhost:8000/api/v1/issues?priority=HIGH"
+curl "http://localhost:8000/api/v1/issues?priority=HIGH" -H "Authorization: Bearer your-secret-key"
 ```
 
 #### Get Workable Issues
 ```bash
 # Get issues where all dependencies are closed (ready to work on)
-curl "http://localhost:8000/api/v1/workable-issues"
+curl "http://localhost:8000/api/v1/workable-issues" -H "Authorization: Bearer your-secret-key"
 
 # With filters
-curl "http://localhost:8000/api/v1/workable-issues?priority=HIGH&component=<component-id>"
+curl "http://localhost:8000/api/v1/workable-issues?priority=HIGH&component=<component-id>" \
+  -H "Authorization: Bearer your-secret-key"
 ```
 
 #### Update Issue
@@ -196,32 +219,36 @@ curl "http://localhost:8000/api/v1/workable-issues?priority=HIGH&component=<comp
 # Update status
 curl -X PATCH http://localhost:8000/api/v1/issues/<issue-id> \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
   -d '{"status": "IN_PROGRESS"}'
 
 # Mark that an AI agent is working on this issue
 curl -X PATCH http://localhost:8000/api/v1/issues/<issue-id> \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
   -d '{"agent_working": true}'
 
 # Update priority
 curl -X PATCH http://localhost:8000/api/v1/issues/<issue-id> \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
   -d '{"priority": "CRITICAL"}'
 
 # Update description
 curl -X PATCH http://localhost:8000/api/v1/issues/<issue-id> \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
   -d '{"description": "Updated description"}'
 
 # Close an issue
-curl -X POST http://localhost:8000/api/v1/issues/<issue-id>/close
+curl -X POST http://localhost:8000/api/v1/issues/<issue-id>/close \
+  -H "Authorization: Bearer your-secret-key"
 ```
-
-**Status values**: `OPEN`, `IN_PROGRESS`, `BLOCKED`, `CLOSED`
 
 #### Delete Issue
 ```bash
-curl -X DELETE http://localhost:8000/api/v1/issues/<issue-id>
+curl -X DELETE http://localhost:8000/api/v1/issues/<issue-id> \
+  -H "Authorization: Bearer your-secret-key"
 ```
 
 ---
@@ -235,26 +262,38 @@ Dependencies define which issues block others. AI agents use this to understand 
 # Issue A depends on Issue B (B must be completed first)
 curl -X POST http://localhost:8000/api/v1/issues/<issue-a-id>/dependencies \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
   -d '{"depends_on_id": "<issue-b-id>"}'
 ```
 
 #### List Dependencies
 ```bash
 # What does this issue depend on?
-curl http://localhost:8000/api/v1/issues/<issue-id>/dependencies
+curl http://localhost:8000/api/v1/issues/<issue-id>/dependencies \
+  -H "Authorization: Bearer your-secret-key"
 ```
 
 #### Remove Dependency
 ```bash
-curl -X DELETE http://localhost:8000/api/v1/issues/<issue-a-id>/dependencies/<issue-b-id>
+curl -X DELETE http://localhost:8000/api/v1/issues/<issue-a-id>/dependencies/<issue-b-id> \
+  -H "Authorization: Bearer your-secret-key"
 ```
 
 #### Get Dependency Graph
 ```bash
 # Get full dependency graph for a project
-curl "http://localhost:8000/api/v1/graph/dependencies?project=my-app"
+curl "http://localhost:8000/api/v1/graph/dependencies?project=my-app" \
+  -H "Authorization: Bearer your-secret-key"
 
 # Response: {"nodes": [...], "edges": [...]}
+```
+
+**Status values**: `OPEN`, `IN_PROGRESS`, `BLOCKED`, `CLOSED`
+
+#### Delete Issue
+```bash
+curl -X DELETE http://localhost:8000/api/v1/issues/<issue-id> \
+  -H "Authorization: Bearer your-secret-key"
 ```
 
 ---
@@ -286,14 +325,16 @@ requests.patch(
 #### Impact Analysis
 ```bash
 # Analyze what would be affected by an issue
-curl "http://localhost:8000/api/v1/analyze/impact/<issue-id>"
+curl "http://localhost:8000/api/v1/analyze/impact/<issue-id>" \
+  -H "Authorization: Bearer your-secret-key"
 # Returns: directly_affected, transitively_affected, blocked_issues, risk_level
 ```
 
 #### Component Impact
 ```bash
 # Analyze impact for a component
-curl "http://localhost:8000/api/v1/analyze/component-impact/<component-id>"
+curl "http://localhost:8000/api/v1/analyze/component-impact/<component-id>" \
+  -H "Authorization: Bearer your-secret-key"
 # Returns: total_issues, affected_components, criticality_score, risk_level
 ```
 
@@ -304,7 +345,8 @@ curl "http://localhost:8000/api/v1/analyze/component-impact/<component-id>"
 #### Project Summary
 ```bash
 # Get complete project summary
-curl "http://localhost:8000/api/v1/projects/<project-name>/summary"
+curl "http://localhost:8000/api/v1/projects/<project-name>/summary" \
+  -H "Authorization: Bearer your-secret-key"
 # Returns: total_issues, by_status, by_priority, components_count, blocked_issues_count,
 #          workable_issues_count, dependency_health, top_blocked_components, critical_path_length
 ```
@@ -318,12 +360,13 @@ curl "http://localhost:8000/api/v1/projects/<project-name>/summary"
 # Reset all data or specific scope
 curl -X POST "http://localhost:8000/api/v1/admin/reset" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
   -d '{"scope": "all"}'  # "all", "issues", or "components"
 ```
 
 #### Health Check
 ```bash
-# Detailed health with Neo4j connection status
+# Detailed health with Neo4j connection status (no auth required)
 curl http://localhost:8000/health
 # Returns: status, version, neo4j (connected/disconnected), neo4j_uri, auth_enabled
 ```
@@ -334,13 +377,16 @@ curl http://localhost:8000/health
 
 ```bash
 # Check sync status
-curl http://localhost:8000/api/v1/sync/status
+curl http://localhost:8000/api/v1/sync/status \
+  -H "Authorization: Bearer your-secret-key"
 
 # Get sync queue
-curl http://localhost:8000/api/v1/sync/queue
+curl http://localhost:8000/api/v1/sync/queue \
+  -H "Authorization: Bearer your-secret-key"
 
 # Force sync
-curl -X POST http://localhost:8000/api/v1/sync/force
+curl -X POST http://localhost:8000/api/v1/sync/force \
+  -H "Authorization: Bearer your-secret-key"
 ```
 
 ---
