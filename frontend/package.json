@@ -6,15 +6,20 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate-types": "openapi-typescript http://localhost:8000/api/v1/openapi.json --output src/api/types.ts"
   },
   "dependencies": {
     "axios": "^1.7.9",
     "pinia": "^2.3.0",
+    "vis-data": "^8.0.3",
+    "vis-network": "^10.0.2",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@openapi-ts/openapi-typescript": "^7.0.0",
+    "@types/node": "^22.0.0",
     "@vitejs/plugin-vue": "^5.2.1",
     "autoprefixer": "^10.4.20",
     "esbuild": "^0.28.0",

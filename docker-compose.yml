@@ -45,6 +45,8 @@ services:
        - TASKER_NEO4J_PASSWORD=neoSocial
        - TASKER_API_HOST=0.0.0.0
        - TASKER_API_PORT=8000
+       - TASKER_API_KEY=test-token
+       - TASKER_AUTH_ENABLED=false
      depends_on:
        tasker-db:
          condition: service_healthy

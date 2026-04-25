@@ -9,18 +9,51 @@ from __future__ import annotations
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
+from uuid import uuid4
+
+from pydantic import BaseModel
 
 from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
+from socialseed_tasker.core.task_management.constraints import (
+    Constraint,
+    ConstraintCategory,
+    ConstraintLevel,
+    ConstraintStatus,
+)
 from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
+from socialseed_tasker.core.task_management.value_objects import ReasoningContext, ReasoningLogEntry
 from socialseed_tasker.storage.graph_database import queries
 
 if TYPE_CHECKING:
     from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
 
 
+class _ReasoningLogEntryDTO(BaseModel):
+    id: str
+    timestamp: str
+    context: str
+    reasoning: str
+    related_nodes: list[str]
+
+
 def _node_to_issue(node: dict[str, Any]) -> Issue:
     """Convert a Neo4j node to a domain Issue."""
     data = dict(node)
+    reasoning_logs = []
+    if "reasoning_logs" in data and data["reasoning_logs"]:
+        for log_data in data["reasoning_logs"]:
+            if isinstance(log_data, dict):
+                reasoning_logs.append(
+                    ReasoningLogEntry(
+                        id=log_data.get("id"),
+                        timestamp=datetime.fromisoformat(
+                            log_data.get("timestamp", datetime.now(timezone.utc).isoformat())
+                        ),
+                        context=ReasoningContext(log_data.get("context", "architecture_choice")),
+                        reasoning=log_data.get("reasoning", ""),
+                        related_nodes=log_data.get("related_nodes", []),
+                    )
+                )
     return Issue(
         id=data["id"],
         title=data["title"],
@@ -37,6 +70,13 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
         closed_at=data.get("closed_at"),
         architectural_constraints=data.get("architectural_constraints", []),
         agent_working=data.get("agent_working", False),
+        agent_started_at=data.get("agent_started_at"),
+        agent_finished_at=data.get("agent_finished_at"),
+        agent_id=data.get("agent_id"),
+        reasoning_logs=reasoning_logs,
+        manifest_todo=data.get("manifest_todo", []),
+        manifest_files=data.get("manifest_files", []),
+        manifest_notes=data.get("manifest_notes", []),
     )
 
 
@@ -130,6 +170,17 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
 
     def create_issue(self, issue: Issue) -> None:
         with self._driver.driver.session(database=self._driver.database) as session:
+            reasoning_logs_data = []
+            for log in issue.reasoning_logs:
+                reasoning_logs_data.append(
+                    {
+                        "id": str(log.id),
+                        "timestamp": log.timestamp.isoformat(),
+                        "context": log.context.value,
+                        "reasoning": log.reasoning,
+                        "related_nodes": [str(n) for n in log.related_nodes],
+                    }
+                )
             session.run(
                 queries.CREATE_ISSUE,
                 id=str(issue.id),
@@ -146,6 +197,14 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 updated_at=issue.updated_at.isoformat(),
                 closed_at=issue.closed_at.isoformat() if issue.closed_at else None,
                 architectural_constraints=issue.architectural_constraints,
+                agent_working=issue.agent_working,
+                agent_started_at=issue.agent_started_at.isoformat() if issue.agent_started_at else None,
+                agent_finished_at=issue.agent_finished_at.isoformat() if issue.agent_finished_at else None,
+                agent_id=issue.agent_id,
+                reasoning_logs=reasoning_logs_data,
+                manifest_todo=issue.manifest_todo,
+                manifest_files=issue.manifest_files,
+                manifest_notes=issue.manifest_notes,
             )
 
     def get_issue(self, issue_id: str) -> Issue | None:
@@ -153,7 +212,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             result = session.run(queries.GET_ISSUE, id=issue_id)
             record = result.single()
             if record is None:
-                raise ValueError(f"Issue {issue_id} not found")
+                return None
             return _node_to_issue(record["i"])
 
     def update_issue(self, issue_id: str, updates: dict[str, Any]) -> Issue:
@@ -189,14 +248,14 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
     def list_issues(
         self,
         component_id: str | None = None,
-        status: IssueStatus | None = None,
+        statuses: list[str] | None = None,
         project: str | None = None,
     ) -> list[Issue]:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.LIST_ISSUES,
                 component_id=component_id,
-                status=status.value if status else None,
+                statuses=statuses or [],
                 project=project,
             )
             issues = []
@@ -311,19 +370,233 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             result = session.run(cypher, params)
             return [_node_to_issue(r["i"]) for r in result]
 
+    # -- Reasoning log ---------------------------------------------------------
+
+    def add_reasoning_log(
+        self,
+        issue_id: str,
+        context: str,
+        reasoning: str,
+        related_nodes: list[str] | None = None,
+    ) -> Issue:
+        """Add a reasoning log entry to an issue and return the updated issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+
+            node_data = dict(record["i"])
+            existing_logs = node_data.get("reasoning_logs", [])
+            new_log = {
+                "id": str(uuid4()),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "context": context,
+                "reasoning": reasoning,
+                "related_nodes": related_nodes or [],
+            }
+            existing_logs.append(new_log)
+
+            update_result = session.run(
+                queries.UPDATE_ISSUE,
+                id=issue_id,
+                updates={"reasoning_logs": existing_logs},
+                updated_at=_now_iso(),
+            )
+            updated_record = update_result.single()
+            if updated_record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return _node_to_issue(updated_record["i"])
+
+    def get_reasoning_logs(self, issue_id: str) -> list[dict[str, Any]]:
+        """Get all reasoning log entries for an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return record["i"].get("reasoning_logs", [])
+
+    # -- Manifest ---------------------------------------------------------------
+
+    def update_manifest_todo(self, issue_id: str, todo: list[dict[str, str]]) -> Issue:
+        """Update the manifest TODO list for an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+
+            update_result = session.run(
+                queries.UPDATE_ISSUE,
+                id=issue_id,
+                updates={"manifest_todo": todo},
+                updated_at=_now_iso(),
+            )
+            updated_record = update_result.single()
+            if updated_record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return _node_to_issue(updated_record["i"])
+
+    def update_manifest_files(self, issue_id: str, files: list[str]) -> Issue:
+        """Update the manifest affected files list for an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+
+            update_result = session.run(
+                queries.UPDATE_ISSUE,
+                id=issue_id,
+                updates={"manifest_files": files},
+                updated_at=_now_iso(),
+            )
+            updated_record = update_result.single()
+            if updated_record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return _node_to_issue(updated_record["i"])
+
+    def update_manifest_notes(self, issue_id: str, notes: list[str]) -> Issue:
+        """Update the manifest technical debt notes for an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+
+            update_result = session.run(
+                queries.UPDATE_ISSUE,
+                id=issue_id,
+                updates={"manifest_notes": notes},
+                updated_at=_now_iso(),
+            )
+            updated_record = update_result.single()
+            if updated_record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return _node_to_issue(updated_record["i"])
+
+    def get_manifest(self, issue_id: str) -> dict[str, Any]:
+        """Get the full manifest for an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return {
+                "todo": record["i"].get("manifest_todo", []),
+                "files": record["i"].get("manifest_files", []),
+                "notes": record["i"].get("manifest_notes", []),
+            }
+
+    # -- Agent lifecycle --------------------------------------------------------
+
+    def start_agent_work(self, issue_id: str, agent_id: str) -> Issue:
+        """Start agent work on an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+
+            node_data = dict(record["i"])
+            if node_data.get("agent_working", False):
+                raise ValueError(f"Agent is already working on issue {issue_id}")
+
+            update_result = session.run(
+                queries.UPDATE_ISSUE,
+                id=issue_id,
+                updates={
+                    "agent_working": True,
+                    "agent_started_at": _now_iso(),
+                    "agent_id": agent_id,
+                },
+                updated_at=_now_iso(),
+            )
+            updated_record = update_result.single()
+            if updated_record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return _node_to_issue(updated_record["i"])
+
+    def finish_agent_work(self, issue_id: str) -> Issue:
+        """Finish agent work on an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+
+            node_data = dict(record["i"])
+            if not node_data.get("agent_working", False):
+                raise ValueError(f"Agent is not working on issue {issue_id}")
+
+            update_result = session.run(
+                queries.UPDATE_ISSUE,
+                id=issue_id,
+                updates={
+                    "agent_working": False,
+                    "agent_finished_at": _now_iso(),
+                },
+                updated_at=_now_iso(),
+            )
+            updated_record = update_result.single()
+            if updated_record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return _node_to_issue(updated_record["i"])
+
+    def get_agent_status(self, issue_id: str) -> dict[str, Any]:
+        """Get agent work status for an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUE,
+                id=issue_id,
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return {
+                "agent_working": record["i"].get("agent_working", False),
+                "agent_started_at": record["i"].get("agent_started_at"),
+                "agent_finished_at": record["i"].get("agent_finished_at"),
+                "agent_id": record["i"].get("agent_id"),
+            }
+
     # -- Transactions ----------------------------------------------------------
 
     @contextmanager
     def transaction(self):  # type: ignore[misc]
-        """Execute Neo4j operations atomically using a real transaction."""
-        with self._driver.driver.session(database=self._driver.database) as session:
-            tx = session.begin_transaction()
-            try:
-                yield tx
-                tx.commit()
-            except Exception:
-                tx.rollback()
-                raise
+        """Execute a block of operations as a logical unit.
+
+        Note: Each repository method manages its own Neo4j session internally.
+        This context manager exists to satisfy the TaskRepositoryInterface contract
+        and to allow future refactoring toward explicit transaction passing.
+        Currently behaves as a logical grouping marker (no-op yield).
+        """
+        yield
 
     def reset_data(self, scope: str = "all") -> dict[str, int]:
         """Reset data in the repository."""
@@ -332,10 +605,196 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
 
             if scope in ("all", "issues"):
                 res = session.run("MATCH (i:Issue) DETACH DELETE i RETURN count(*) as count")
-                result["issues_deleted"] = res.single()["count"] if res.single() else 0
+                record = res.single()
+                result["issues_deleted"] = record["count"] if record else 0
 
             if scope in ("all", "components"):
                 res = session.run("MATCH (c:Component) DETACH DELETE c RETURN count(*) as count")
-                result["components_deleted"] = res.single()["count"] if res.single() else 0
+                record = res.single()
+                result["components_deleted"] = record["count"] if record else 0
 
             return result
+
+    # -- Label management --------------------------------------------------------
+
+    def sync_labels_from_github(self, github_adapter) -> int:
+        """Sync labels from GitHub repository."""
+        from datetime import datetime, timezone
+
+        labels = github_adapter.list_labels() if github_adapter else []
+        synced = 0
+
+        with self._driver.driver.session(database=self._driver.database) as session:
+            for label in labels:
+                session.run(
+                    queries.CREATE_LABEL,
+                    name=label.get("name", ""),
+                    color=label.get("color", ""),
+                    description=label.get("description", ""),
+                    is_default=label.get("default", False),
+                    updated_at=datetime.now(timezone.utc).isoformat(),
+                )
+                synced += 1
+
+        return synced
+
+    def get_all_labels(self) -> list[dict]:
+        """Get all labels from Neo4j."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.GET_ALL_LABELS)
+            return [dict(r["l"]) for r in result]
+
+    def link_issue_to_labels(self, issue_id: str, label_names: list[str]) -> None:
+        """Link an issue to labels."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            for label_name in label_names:
+                session.run(
+                    queries.LINK_ISSUE_TO_LABEL,
+                    issue_id=issue_id,
+                    label_name=label_name,
+                )
+
+    def get_issues_by_labels(self, labels: list[str]) -> list[Issue]:
+        """Get issues filtered by labels."""
+        if not labels:
+            return []
+
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_ISSUES_BY_LABELS,
+                labels=labels,
+            )
+            return [_node_to_issue(r["i"]) for r in result]
+
+    # -- Constraints ----------------------------------------------------------
+
+    def create_constraint(self, constraint: Constraint) -> None:
+        """Persist a new constraint to Neo4j."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(
+                """
+                CREATE (c:Constraint {
+                    id: $id,
+                    category: $category,
+                    level: $level,
+                    pattern: $pattern,
+                    service: $service,
+                    target: $target,
+                    from_layer: $from_layer,
+                    to_layer: $to_layer,
+                    rule_type: $rule_type,
+                    max_depth: $max_depth,
+                    required: $required,
+                    description: $description,
+                    status: $status,
+                    created_at: $created_at,
+                    updated_at: $updated_at
+                })
+                """,
+                id=str(constraint.id),
+                category=constraint.category.value,
+                level=constraint.level.value,
+                pattern=constraint.pattern,
+                service=constraint.service,
+                target=constraint.target,
+                from_layer=constraint.from_layer,
+                to_layer=constraint.to_layer,
+                rule_type=constraint.rule_type,
+                max_depth=constraint.max_depth,
+                required=constraint.required,
+                description=constraint.description,
+                status=constraint.status.value,
+                created_at=constraint.created_at.isoformat(),
+                updated_at=constraint.updated_at.isoformat(),
+            )
+
+    def list_constraints(self, category: str | None = None) -> list[Constraint]:
+        """List constraints from Neo4j, optionally filtered by category."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            if category:
+                result = session.run(
+                    "MATCH (c:Constraint {category: $category}) RETURN c",
+                    category=category,
+                )
+            else:
+                result = session.run("MATCH (c:Constraint) RETURN c")
+
+            constraints = []
+            for r in result:
+                node = dict(r["c"])
+                constraints.append(
+                    Constraint(
+                        id=node.get("id"),
+                        category=ConstraintCategory(node.get("category", "architecture")),
+                        level=ConstraintLevel(node.get("level", "hard")),
+                        pattern=node.get("pattern", ""),
+                        service=node.get("service", ""),
+                        target=node.get("target", ""),
+                        from_layer=node.get("from_layer", ""),
+                        to_layer=node.get("to_layer", ""),
+                        rule_type=node.get("rule_type", ""),
+                        max_depth=node.get("max_depth"),
+                        required=node.get("required", True),
+                        description=node.get("description", ""),
+                        status=ConstraintStatus(node.get("status", "inactive")),
+                    )
+                )
+            return constraints
+
+    def get_constraint(self, constraint_id: str) -> Constraint | None:
+        """Retrieve a constraint by ID."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                "MATCH (c:Constraint {id: $id}) RETURN c",
+                id=constraint_id,
+            )
+            record = result.single()
+            if record is None:
+                return None
+
+            node = dict(record["c"])
+            return Constraint(
+                id=node.get("id"),
+                category=ConstraintCategory(node.get("category", "architecture")),
+                level=ConstraintLevel(node.get("level", "hard")),
+                pattern=node.get("pattern", ""),
+                service=node.get("service", ""),
+                target=node.get("target", ""),
+                from_layer=node.get("from_layer", ""),
+                to_layer=node.get("to_layer", ""),
+                rule_type=node.get("rule_type", ""),
+                max_depth=node.get("max_depth"),
+                required=node.get("required", True),
+                description=node.get("description", ""),
+                status=ConstraintStatus(node.get("status", "inactive")),
+            )
+
+    def delete_constraint(self, constraint_id: str) -> None:
+        """Delete a constraint from Neo4j."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(
+                "MATCH (c:Constraint {id: $id}) DETACH DELETE c",
+                id=constraint_id,
+            )
+
+    def update_constraint(self, constraint_id: str, updates: dict) -> Constraint:
+        """Update a constraint in Neo4j."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            set_clauses = []
+            params = {"id": constraint_id}
+
+            for key, value in updates.items():
+                set_clauses.append(f"c.{key} = ${key}")
+                params[key] = value
+
+            set_clauses.append("c.updated_at = $updated_at")
+            params["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+            query = f"MATCH (c:Constraint {{id: $id}}) SET {', '.join(set_clauses)} RETURN c"
+            result = session.run(query, **params)
+            record = result.single()
+
+            if record is None:
+                raise ValueError(f"Constraint {constraint_id} not found")
+
+            return self.get_constraint(constraint_id)

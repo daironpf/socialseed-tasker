@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import type { Issue, IssueUpdateRequest } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useComponentsStore } from '@/stores/componentsStore'
@@ -122,20 +122,7 @@ const search = ref('')
 const statusFilter = ref('')
 const priorityFilter = ref('')
 
-const filteredList = computed(() => {
-  let list = uiStore.filteredIssues
-  if (search.value) {
-    const q = search.value.toLowerCase()
-    list = list.filter((i) => i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q))
-  }
-  if (statusFilter.value) {
-    list = list.filter((i) => i.status === statusFilter.value)
-  }
-  if (priorityFilter.value) {
-    list = list.filter((i) => i.priority === priorityFilter.value)
-  }
-  return list
-})
+const filteredList = computed(() => issuesStore.issues)
 
 const selectedIssue = computed(() => {
   if (!uiStore.selectedIssueId) return null
@@ -177,10 +164,21 @@ async function deleteIssue(id: string) {
   }
 }
 
+async function fetchWithFilters() {
+  const filters = uiStore.getBackendFilters()
+  await issuesStore.fetchIssues(1, 100, filters)
+}
+
 onMounted(async () => {
-  await Promise.all([
-    issuesStore.fetchIssues(),
-    componentsStore.fetchComponents(),
-  ])
+  await componentsStore.fetchComponents()
+  await fetchWithFilters()
 })
+
+watch(
+  () => uiStore.filters,
+  () => {
+    fetchWithFilters()
+  },
+  { deep: true },
+)
 </script>

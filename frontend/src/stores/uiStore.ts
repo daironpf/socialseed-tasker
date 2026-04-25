@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { useIssuesStore } from './issuesStore'
+import { ref } from 'vue'
 
 export type ViewMode = 'board' | 'list'
 
@@ -8,6 +7,7 @@ export interface Filters {
   status: string[]
   priority: string[]
   component: string | null
+  project: string | null
   search: string
 }
 
@@ -20,37 +20,8 @@ export const useUiStore = defineStore('ui', () => {
     status: [],
     priority: [],
     component: null,
+    project: null,
     search: '',
-  })
-
-  const issuesStore = useIssuesStore()
-
-  const filteredIssues = computed(() => {
-    let result = issuesStore.issues
-    const f = filters.value
-
-    if (f.search) {
-      const q = f.search.toLowerCase()
-      result = result.filter(
-        (i) =>
-          i.title.toLowerCase().includes(q) ||
-          i.description.toLowerCase().includes(q),
-      )
-    }
-
-    if (f.status.length > 0) {
-      result = result.filter((i) => f.status.includes(i.status))
-    }
-
-    if (f.priority.length > 0) {
-      result = result.filter((i) => f.priority.includes(i.priority))
-    }
-
-    if (f.component) {
-      result = result.filter((i) => i.component_id === f.component)
-    }
-
-    return result
   })
 
   function setSelectedIssue(id: string | null) {
@@ -74,6 +45,7 @@ export const useUiStore = defineStore('ui', () => {
       status: [],
       priority: [],
       component: null,
+      project: null,
       search: '',
     }
   }
@@ -99,13 +71,20 @@ export const useUiStore = defineStore('ui', () => {
     }
   }
 
+  function getBackendFilters() {
+    return {
+      status: filters.value.status.length > 0 ? filters.value.status.join(',') : undefined,
+      component: filters.value.component || undefined,
+      project: filters.value.project || undefined,
+    }
+  }
+
   return {
     selectedIssueId,
     sidebarOpen,
     viewMode,
     darkMode,
     filters,
-    filteredIssues,
     setSelectedIssue,
     toggleSidebar,
     setViewMode,
@@ -113,5 +92,6 @@ export const useUiStore = defineStore('ui', () => {
     clearFilters,
     toggleDarkMode,
     initDarkMode,
+    getBackendFilters,
   }
 })

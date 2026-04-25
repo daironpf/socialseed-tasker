@@ -15,6 +15,7 @@ SCHEMA_CONSTRAINTS = [
     "CREATE INDEX issue_component IF NOT EXISTS FOR (i:Issue) ON (i.component_id)",
     "CREATE INDEX issue_priority IF NOT EXISTS FOR (i:Issue) ON (i.priority)",
     "CREATE INDEX issue_labels IF NOT EXISTS FOR (i:Issue) ON i.labels",
+    "CREATE INDEX label_name IF NOT EXISTS FOR (l:Label) ON (l.name)",
 ]
 
 # ---------------------------------------------------------------------------
@@ -76,7 +77,15 @@ CREATE (i:Issue {
     created_at: $created_at,
     updated_at: $updated_at,
     closed_at: $closed_at,
-    architectural_constraints: $architectural_constraints
+    architectural_constraints: $architectural_constraints,
+    agent_working: $agent_working,
+    agent_started_at: $agent_started_at,
+    agent_finished_at: $agent_finished_at,
+    agent_id: $agent_id,
+    reasoning_logs: $reasoning_logs,
+    manifest_todo: $manifest_todo,
+    manifest_files: $manifest_files,
+    manifest_notes: $manifest_notes
 })
 CREATE (i)-[:BELONGS_TO]->(c)
 """
@@ -108,7 +117,7 @@ LIST_ISSUES = """
 MATCH (i:Issue)
 OPTIONAL MATCH (i)-[:BELONGS_TO]->(c:Component)
 WHERE ($component_id IS NULL OR i.component_id = $component_id)
-  AND ($status IS NULL OR i.status = $status)
+  AND (size($statuses) = 0 OR i.status IN $statuses)
   AND ($project IS NULL OR c.project = $project)
 OPTIONAL MATCH (i)-[:DEPENDS_ON]->(dep:Issue)
 OPTIONAL MATCH (i)<-[:DEPENDS_ON]-(blocked:Issue)
@@ -154,4 +163,46 @@ CHECK_CYCLE = """
 MATCH (target:Issue {id: $depends_on_id})
 OPTIONAL MATCH path = (target)-[:DEPENDS_ON*1..]->(source:Issue {id: $issue_id})
 RETURN path IS NOT NULL AS would_cycle
+"""
+
+# ---------------------------------------------------------------------------
+# Label queries
+# ---------------------------------------------------------------------------
+
+CREATE_LABEL = """
+MERGE (l:Label {name: $name})
+SET l.color = $color,
+    l.description = $description,
+    l.is_default = $is_default,
+    l.updated_at = $updated_at
+RETURN l
+"""
+
+GET_ALL_LABELS = """
+MATCH (l:Label)
+RETURN l ORDER BY l.name
+"""
+
+GET_ISSUE_LABELS = """
+MATCH (i:Issue {id: $issue_id})-[r:HAS_LABEL]->(l:Label)
+RETURN l
+"""
+
+LINK_ISSUE_TO_LABEL = """
+MATCH (i:Issue {id: $issue_id})
+MATCH (l:Label {name: $label_name})
+MERGE (i)-[:HAS_LABEL]->(l)
+"""
+
+GET_ISSUES_BY_LABELS = """
+MATCH (i:Issue)-[:HAS_LABEL]->(l:Label)
+WHERE l.name IN $labels
+WITH i, collect(DISTINCT l.name) AS issue_labels
+WHERE size($labels) = size([x IN $labels WHERE x IN issue_labels])
+RETURN i
+"""
+
+DELETE_LABEL = """
+MATCH (l:Label {name: $name})
+DETACH DELETE l
 """

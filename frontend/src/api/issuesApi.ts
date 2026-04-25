@@ -12,12 +12,19 @@ export async function fetchIssues(
   limit = 50,
   status?: string,
   component?: string,
+  project?: string,
 ): Promise<Issue[]> {
   const params: Record<string, string | number> = { page, limit }
   if (status) params.status = status
   if (component) params.component = component
+  if (project) params.project = project
   const { data } = await client.get<APIResponse<PaginatedResponse<Issue>>>('/issues', { params })
-  return data.data?.items ?? []
+  // Handle both paginated and non-paginated responses
+  const responseData = data.data
+  if (Array.isArray(responseData)) {
+    return responseData
+  }
+  return responseData?.items ?? []
 }
 
 export async function fetchIssue(id: string): Promise<Issue> {
@@ -50,5 +57,9 @@ export async function closeIssue(id: string): Promise<Issue> {
 
 export async function fetchBlockedIssues(): Promise<Issue[]> {
   const { data } = await client.get<APIResponse<Issue[]>>('/blocked-issues')
-  return data.data ?? []
+  const responseData = data.data
+  if (Array.isArray(responseData)) {
+    return responseData
+  }
+  return responseData ?? []
 }

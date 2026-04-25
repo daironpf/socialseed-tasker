@@ -12,9 +12,9 @@ from socialseed_tasker.core.task_management.entities import Component, Issue, Is
 from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
 from socialseed_tasker.storage.graph_database.repositories import Neo4jTaskRepository
 
-NEO4J_URI = os.environ.get("NEO4J_URI", "bolt://localhost:7689")
+NEO4J_URI = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
 NEO4J_USER = os.environ.get("NEO4J_USER", "neo4j")
-NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", "tasker_password")
+NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", "neoSocial")
 
 
 @pytest.fixture(scope="module")

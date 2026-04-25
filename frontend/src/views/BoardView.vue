@@ -66,7 +66,7 @@ const columns = [
 ]
 
 function issuesByStatus(status: IssueStatus) {
-  return uiStore.filteredIssues.filter((i) => i.status === status)
+  return issuesStore.issues.filter((i) => i.status === status)
 }
 
 const selectedIssue = computed(() => {
@@ -97,18 +97,18 @@ async function onCloseIssue(id: string) {
 
 function onIssueCreated() {
   showCreateModal.value = false
-  issuesStore.fetchIssues()
+  const filters = uiStore.getBackendFilters()
+  issuesStore.fetchIssues(1, 100, filters)
+}
+
+async function fetchWithFilters() {
+  const filters = uiStore.getBackendFilters()
+  await issuesStore.fetchIssues(1, 100, filters)
 }
 
 onMounted(async () => {
-  await Promise.all([
-    issuesStore.fetchIssues(),
-    componentsStore.fetchComponents(),
-  ])
-  // Auto-refresh every 10 seconds
-  refreshInterval = setInterval(() => {
-    issuesStore.fetchIssues()
-  }, 10000)
+  await componentsStore.fetchComponents()
+  await fetchWithFilters()
 })
 
 onUnmounted(() => {
@@ -117,9 +117,23 @@ onUnmounted(() => {
   }
 })
 
-watch(() => uiStore.filters, () => {
-  issuesStore.fetchIssues()
-}, { deep: true })
+watch(
+  () => uiStore.filters,
+  () => {
+    fetchWithFilters()
+  },
+  { deep: true },
+)
+
+watch(
+  () => componentsStore.projects,
+  (projects) => {
+    if (projects.length > 0 && !uiStore.filters.project) {
+      uiStore.setFilter('project', projects[0])
+    }
+  },
+  { immediate: true },
+)
 
 defineExpose({ showCreateModal })
 </script>

@@ -224,9 +224,23 @@ neo4j/import/
 neo4j/plugins/
 
 # Project specific
-.issues/
-.agent/
 *.log
 
 .tasker-data
 infrastructure/
+
+#history
+.history/
+.history
+history
+history/
+report.md
+
+#BlackBox Test
+real-test/
+test-run/
+
+#Local test artifacts
+*.tsbuildinfo
+notas.md
+report.md

@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from socialseed_tasker.core.services.markdown_transformer import MarkdownTransformer
+    from socialseed_tasker.core.services.secret_manager import SecretManager
+    from socialseed_tasker.core.services.webhook_validator import WebhookSignatureValidator
     from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
     from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
 
@@ -75,6 +77,7 @@ class AppConfig:
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     debug: bool = False
+    policy_enforcement_mode: str = "warn"
 
     @classmethod
     def from_env(cls) -> AppConfig:
@@ -90,12 +93,16 @@ class AppConfig:
             database=os.environ.get("TASKER_NEO4J_DATABASE", "neo4j"),
             max_connection_lifetime=int(os.environ.get("TASKER_NEO4J_MAX_CONN_LIFETIME", "3600")),
         )
+        enforcement_mode = os.environ.get("TASKER_POLICY_ENFORCEMENT_MODE", "warn")
+        if enforcement_mode not in ("warn", "block", "disabled"):
+            enforcement_mode = "warn"
 
         return cls(
             neo4j=neo4j,
             api_host=os.environ.get("TASKER_API_HOST", "0.0.0.0"),
             api_port=int(os.environ.get("TASKER_API_PORT", "8000")),
             debug=os.environ.get("TASKER_DEBUG", "").lower() in ("1", "true", "yes"),
+            policy_enforcement_mode=enforcement_mode,
         )
 
 
@@ -182,3 +189,28 @@ class Container:
             return self._get_neo4j_driver().health_check()
         except Exception:
             return False
+
+    def get_webhook_validator(self) -> WebhookSignatureValidator:
+        """Get the webhook signature validator."""
+        from socialseed_tasker.core.services.secret_manager import get_webhook_secret
+        from socialseed_tasker.core.services.webhook_validator import (
+            WebhookSignatureValidator,
+        )
+
+        return WebhookSignatureValidator(secret=get_webhook_secret())
+
+    def get_markdown_transformer(self) -> MarkdownTransformer:
+        """Get the markdown transformer for analysis results."""
+        from socialseed_tasker.core.services.markdown_transformer import (
+            MarkdownTransformer,
+        )
+
+        return MarkdownTransformer()
+
+    def get_secret_manager(self) -> SecretManager:
+        """Get the secret manager for GitHub credentials."""
+        from socialseed_tasker.core.services.secret_manager import (
+            SecretManager,
+        )
+
+        return SecretManager()

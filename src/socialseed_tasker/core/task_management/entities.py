@@ -13,6 +13,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from socialseed_tasker.core.task_management.value_objects import ReasoningLogEntry
+
 
 def _now() -> datetime:
     """Return the current UTC timestamp."""
@@ -90,3 +92,57 @@ class Issue(BaseModel):
     closed_at: datetime | None = None
     architectural_constraints: list[str] = Field(default_factory=list)
     agent_working: bool = False
+    agent_started_at: datetime | None = None
+    agent_finished_at: datetime | None = None
+    agent_id: str | None = None
+    reasoning_logs: list[ReasoningLogEntry] = Field(default_factory=list)
+    manifest_todo: list[dict[str, str]] = Field(default_factory=list)
+    manifest_files: list[str] = Field(default_factory=list)
+    manifest_notes: list[str] = Field(default_factory=list)
+    github_issue_url: str | None = None
+    github_issue_number: int | None = None
+    last_mirrored_at: datetime | None = None
+
+
+class AgentRole(str, Enum):
+    """Roles for multi-agent coordination.
+
+    Intent: Define specialized responsibilities for different AI agents.
+    Business Value: Enables coordinated workflows where agents specialize
+    in planning, development, and review.
+    """
+
+    PLANNER = "planner"
+    DEVELOPER = "developer"
+    REVIEWER = "reviewer"
+    OBSERVER = "observer"
+
+
+class AgentStatus(str, Enum):
+    """Status of an agent in the swarm."""
+
+    IDLE = "idle"
+    WORKING = "working"
+    BLOCKED = "blocked"
+    OFFLINE = "offline"
+
+
+class Agent(BaseModel):
+    """An AI agent in the swarm coordination system.
+
+    Intent: Represent an AI agent with specific role and capabilities
+    for coordinated multi-agent work.
+    Business Value: Enables role-based work distribution and
+    inter-agent coordination.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str = Field(..., description="Unique agent identifier")
+    name: str = Field(..., min_length=1, max_length=100)
+    role: AgentRole = AgentRole.DEVELOPER
+    status: AgentStatus = AgentStatus.IDLE
+    current_issue_id: str | None = None
+    capabilities: list[str] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=_now)
+    last_heartbeat: datetime = Field(default_factory=_now)

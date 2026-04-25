@@ -10,6 +10,7 @@ import json
 from contextlib import suppress
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 import typer
 from rich.box import SIMPLE
@@ -60,20 +61,180 @@ project_app = typer.Typer(help="Detect project structure and create modules")
 
 
 # ---------------------------------------------------------------------------
-# Repository factory (uses Container from app.py)
+# Credentials persistence
+# ---------------------------------------------------------------------------
+
+_CLI_CONFIG_FILE = Path.home() / ".tasker" / "credentials"
+
+
+def _load_saved_credentials() -> dict[str, str]:
+    """Load saved credentials from local config file."""
+    import json
+    
+    config_file = _CLI_CONFIG_FILE
+    if config_file.exists():
+        try:
+            with open(config_file) as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            pass
+    return {}
+
+
+def _save_credentials(uri: str, user: str, password: str) -> None:
+    """Save credentials to local config file."""
+    import json
+    
+    config_file = _CLI_CONFIG_FILE
+    config_file.parent.mkdir(parents=True, exist_ok=True)
+    credentials = {
+        "uri": uri,
+        "user": user,
+        "password": password,
+    }
+    with open(config_file, "w") as f:
+        json.dump(credentials, f)
+
+
+def _get_password_with_fallback() -> str:
+    """Get password from env or saved credentials."""
+    import os
+    
+    password = os.environ.get("TASKER_NEO4J_PASSWORD", "")
+    if password:
+        return password
+    
+    saved = _load_saved_credentials()
+    if saved and saved.get("password"):
+        uri = os.environ.get("TASKER_NEO4J_URI", "bolt://localhost:7687")
+        if saved.get("uri") == uri:
+            return saved.get("password", "")
+    
+    return ""
+
+
+# ---------------------------------------------------------------------------
+# Repository access
 # ---------------------------------------------------------------------------
 
 
 def get_repository() -> TaskRepositoryInterface:
-    """Get the task repository from the CLI container.
-
+    """Get the task repository for CLI operations.
+    
     Intent: Provide the storage backend for CLI operations, supporting
     both file and neo4j backends.
     Business Value: Unifies CLI and API to use the same configuration.
     """
+    import os
+
     from socialseed_tasker.entrypoints.terminal_cli.app import get_cli_container
 
+    password = _get_password_with_fallback()
+    if password:
+        os.environ["TASKER_NEO4J_PASSWORD"] = password
+    
+    if not password:
+        console.print("[error]Error:[/error] Neo4j password is required.")
+        console.print("[info]Please provide it via:[/info]")
+        console.print("  - Environment variable: [bold]TASKER_NEO4J_PASSWORD[/bold]")
+        console.print("  - CLI flag: [bold]--neo4j-password[/bold] or [bold]-pw[/bold]")
+        console.print("")
+        console.print("[info]Example:[/info]")
+        console.print("  [bold]tasker -pw neoSocial component list[/bold]")
+        raise typer.Exit(code=2)
+
     return get_cli_container().get_repository()
+
+
+# ---------------------------------------------------------------------------
+# UUID Resolution Helpers
+# ---------------------------------------------------------------------------
+
+
+def resolve_component_id(partial_id: str, repo: TaskRepositoryInterface) -> UUID:
+    """Resolve a partial component ID to a full UUID.
+
+    Args:
+        partial_id: Full UUID or partial (at least 4 characters) or name (exact match)
+        repo: Task repository to search
+
+    Returns:
+        Full UUID
+
+    Raises:
+        ValueError: If ID format is invalid or not found
+    """
+    from uuid import UUID
+
+    # Try full UUID first
+    try:
+        return UUID(partial_id)
+    except ValueError:
+        pass
+
+    # Minimum 4 characters for partial lookup OR exact name match
+    if len(partial_id) < 4:
+        raise ValueError(f"Invalid component ID format: {partial_id}. Need at least 4 characters.")
+
+    # Try to find by exact name match first (names can be short)
+    try:
+        comp = repo.get_component_by_name(partial_id)
+        if comp:
+            return comp.id
+    except Exception:
+        pass
+
+    # Search for matching component by prefix (UUID-like patterns need 8+)
+    if len(partial_id) >= 8:
+        components = repo.list_components(project=None)
+        for comp in components:
+            comp_id_str = str(comp.id)
+            if comp_id_str.startswith(partial_id):
+                return comp.id
+
+    raise ValueError(f"Component not found: {partial_id}")
+
+
+def resolve_issue_id(partial_id: str, repo: TaskRepositoryInterface) -> UUID:
+    """Resolve a partial issue ID to a full UUID.
+
+    Args:
+        partial_id: Full UUID, partial UUID (4+ chars), or title (any length)
+        repo: Task repository to search
+
+    Returns:
+        Full UUID
+
+    Raises:
+        ValueError: If ID format is invalid or not found
+    """
+    from uuid import UUID
+
+    # Try full UUID first
+    try:
+        return UUID(partial_id)
+    except ValueError:
+        pass
+
+    # Get all issues once
+    issues = repo.list_issues(status=None, project=None)
+
+    # Try exact title match first (no length restriction - titles can be short)
+    for issue in issues:
+        if issue.title.lower() == partial_id.lower():
+            return issue.id
+
+    # Minimum 4 characters for partial UUID lookup
+    if len(partial_id) < 4:
+        raise ValueError(f"Invalid issue ID format: {partial_id}. Need at least 4 characters for UUID lookup.")
+
+    # Search for matching issue by prefix (4+ chars)
+    for issue in issues:
+        issue_id_str = str(issue.id)
+        if issue_id_str.startswith(partial_id):
+            return issue.id
+
+    raise ValueError(f"Issue not found: {partial_id}")
 
 
 # ---------------------------------------------------------------------------
@@ -131,7 +292,7 @@ def _issues_table(issues: list[Issue], component_names: dict[str, str] | None = 
     """Format a list of issues as a Rich table."""
     table = Table(show_header=True, header_style="bold cyan", box=SIMPLE, min_width=130)
     table.add_column("ID", style="dim", width=10)
-    table.add_column("Title", min_width=25)
+    table.add_column("Title", width=40)
     table.add_column("Status", width=12)
     table.add_column("Priority", width=12)
     table.add_column("Component", width=40)
@@ -139,9 +300,10 @@ def _issues_table(issues: list[Issue], component_names: dict[str, str] | None = 
     for issue in issues:
         comp_id = str(issue.component_id)
         comp_name = (component_names or {}).get(comp_id, comp_id[:8])
+        title = str(issue.title)[:40] if issue.title else ""
         table.add_row(
             str(issue.id)[:8],
-            issue.title,
+            title,
             issue.status.value,
             issue.priority.value,
             comp_name,
@@ -189,22 +351,87 @@ def issue_create(
     description: str = typer.Option("", "--description", "-d", help="Issue description"),
     priority: str = typer.Option("MEDIUM", "--priority", "-p", help="Priority: LOW, MEDIUM, HIGH, CRITICAL"),
     labels: str | None = typer.Option(None, "--labels", "-l", help="Comma-separated labels"),
+    enforce: str = typer.Option("warn", "--enforce", "-e", help="Policy enforcement: warn, block, disabled"),
 ) -> None:
     """Create a new issue."""
     repo = get_repository()
     label_list = [x.strip() for x in labels.split(",")] if labels else []
 
+    from uuid import uuid4
+
+    from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
+    from socialseed_tasker.core.task_management.entities import Issue, IssuePriority, IssueStatus
+    from socialseed_tasker.core.validation import (
+        IssueDescriptionValidationError,
+        IssueTitleValidationError,
+        sanitize_issue_description,
+        sanitize_issue_title,
+        validate_issue_title,
+    )
+
+    try:
+        validated_title = validate_issue_title(title)
+    except IssueTitleValidationError as e:
+        console.print(f"[error]Validation error: {e}[/error]")
+        raise typer.Exit(code=2) from e
+
+    try:
+        sanitized_description = sanitize_issue_description(description)
+    except IssueDescriptionValidationError as e:
+        console.print(f"[error]Validation error: {e}[/error]")
+        raise typer.Exit(code=2) from e
+
+    sanitized_title = sanitize_issue_title(validated_title)
+
+    try:
+        component_uuid = resolve_component_id(component, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        console.print("[info]You can use full UUID, 8+ character prefix, or component name.[/info]")
+        raise typer.Exit(code=2) from e
+
+    normalized_priority = priority.upper()
+    valid_priorities = [p.value for p in IssuePriority]
+    if normalized_priority not in valid_priorities:
+        console.print(f"[error]Invalid priority '{priority}'. Valid options: {', '.join(valid_priorities)}[/error]")
+        raise typer.Exit(code=2)
+
+    analyzer = ArchitecturalAnalyzer(repo)
+    temp_issue = Issue(
+        id=uuid4(),
+        title=title,
+        description=description,
+        status=IssueStatus.OPEN,
+        priority=IssuePriority(normalized_priority),
+        component_id=str(component_uuid),
+        labels=label_list,
+    )
+    result = analyzer.validate_issue_creation(temp_issue)
+    if result.has_errors:
+        console.print("[error]Policy violations found:[/error]")
+        for v in result.violations:
+            console.print(f"  - {v.rule_name}: {v.message}")
+            if v.suggestion:
+                console.print(f"    Suggestion: {v.suggestion}")
+        if enforce == "block":
+            console.print("[error]Blocking due to policy violations.[/error]")
+            raise typer.Exit(code=1)
+    elif result.has_warnings:
+        console.print("[warning]Policy warnings:[/warning]")
+        for v in result.violations:
+            console.print(f"  - {v.rule_name}: {v.message}")
+
     try:
         issue, warnings = create_issue_action(
             repo,
-            title=title,
-            component_id=component,
-            description=description,
-            priority=priority,
+            title=sanitized_title,
+            component_id=str(component_uuid),
+            description=sanitized_description,
+            priority=normalized_priority,
             labels=label_list,
         )
         console.print(f"[success]Issue created:[/success] {issue.id}")
-        comp = repo.get_component(component)
+        comp = repo.get_component(str(component_uuid))
         console.print(_format_issue_card(issue, comp.name if comp else None))
         if warnings:
             for w in warnings:
@@ -228,7 +455,7 @@ def issue_list(
     repo = get_repository()
     status_filter = IssueStatus(status) if status else None
 
-    issues = repo.list_issues(component_id=component, status=status_filter, project=project)
+    issues = repo.list_issues(component_id=component, statuses=[status_filter] if status_filter else None, project=project)
 
     if as_json:
         data = [issue.model_dump(mode="json") for issue in issues]
@@ -381,6 +608,81 @@ def issue_delete(
     console.print(f"[success]Issue deleted:[/success] {resolved_id[:8]}")
 
 
+@issue_app.command("start")
+def issue_start(
+    issue_id: str,
+    agent_id: str = typer.Option(..., "--agent-id", "-a", help="Agent identifier"),
+) -> None:
+    """Start agent work on an issue."""
+    from uuid import UUID
+
+    repo = get_repository()
+
+    resolved_id = issue_id
+    try:
+        UUID(issue_id)
+    except ValueError:
+        all_issues = repo.list_issues()
+        for issue in all_issues:
+            if issue.title.lower() == issue_id.lower() or issue_id.lower() in issue.title.lower():
+                resolved_id = str(issue.id)
+                break
+        else:
+            console.print(f"[error]Issue '{issue_id}' not found.[/error]")
+            raise typer.Exit(code=1)
+
+    try:
+        issue = repo.get_issue(resolved_id)
+        if issue is None:
+            console.print(f"[error]Issue '{issue_id}' not found.[/error]")
+            raise typer.Exit(code=1)
+
+        if hasattr(issue, "agent_working") and issue.agent_working:
+            console.print(f"[error]Agent is already working on issue '{issue_id}'.[/error]")
+            raise typer.Exit(code=1)
+
+        repo.start_agent_work(resolved_id, agent_id)
+        console.print(f"[success]Agent work started:[/success] {agent_id} on issue {resolved_id[:8]}")
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from e
+
+
+@issue_app.command("finish")
+def issue_finish(
+    issue_id: str,
+) -> None:
+    """Finish agent work on an issue."""
+    from uuid import UUID
+
+    repo = get_repository()
+
+    resolved_id = issue_id
+    try:
+        UUID(issue_id)
+    except ValueError:
+        all_issues = repo.list_issues()
+        for issue in all_issues:
+            if issue.title.lower() == issue_id.lower() or issue_id.lower() in issue.title.lower():
+                resolved_id = str(issue.id)
+                break
+        else:
+            console.print(f"[error]Issue '{issue_id}' not found.[/error]")
+            raise typer.Exit(code=1)
+
+    try:
+        issue = repo.get_issue(resolved_id)
+        if issue is None:
+            console.print(f"[error]Issue '{issue_id}' not found.[/error]")
+            raise typer.Exit(code=1)
+
+        repo.finish_agent_work(resolved_id)
+        console.print(f"[success]Agent work finished:[/success] issue {resolved_id[:8]}")
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from e
+
+
 # ---------------------------------------------------------------------------
 # Dependency commands
 # ---------------------------------------------------------------------------
@@ -389,18 +691,59 @@ dependency_app = typer.Typer(help="Manage dependencies between issues")
 
 
 @dependency_app.command("add")
-def dependency_add(issue_id: str, depends_on: str) -> None:
+def dependency_add(
+    issue_id: str,
+    depends_on: str,
+    enforce: str = typer.Option("warn", "--enforce", "-e", help="Policy enforcement: warn, block, disabled"),
+    force: bool = typer.Option(False, "--force", "-f", help="Bypass cycle validation"),
+) -> None:
     """Add a DEPENDS_ON relationship."""
     repo = get_repository()
 
     try:
-        add_dependency_action(repo, issue_id, depends_on)
-        console.print(f"[success]Dependency added:[/success] {issue_id[:8]} -> {depends_on[:8]}")
+        resolved_issue_id = resolve_issue_id(issue_id, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=2) from e
+
+    try:
+        resolved_dep_id = resolve_issue_id(depends_on, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=2) from e
+
+    from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
+
+    issue_str = str(resolved_issue_id)
+    dep_str = str(resolved_dep_id)
+
+    if not force:
+        analyzer = ArchitecturalAnalyzer(repo)
+        result = analyzer.validate_dependency(issue_str, dep_str)
+        if result.has_errors:
+            console.print("[error]Policy violations found:[/error]")
+            for v in result.violations:
+                console.print(f"  - {v.rule_name}: {v.message}")
+                if v.suggestion:
+                    console.print(f"    Suggestion: {v.suggestion}")
+            if enforce == "block":
+                console.print("[error]Blocking due to policy violations.[/error]")
+                raise typer.Exit(code=1)
+        elif result.has_warnings:
+            console.print("[warning]Policy warnings:[/warning]")
+            for v in result.violations:
+                console.print(f"  - {v.rule_name}: {v.message}")
+
+    try:
+        add_dependency_action(repo, issue_str, dep_str)
+        console.print(f"[success]Dependency added:[/success] {issue_str[:8]} -> {dep_str[:8]}")
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
         raise typer.Exit(code=1) from exc
     except CircularDependencyError as exc:
         console.print(f"[error]{exc}[/error]")
+        if hasattr(exc, "cycle_path") and exc.cycle_path:
+            console.print(f"[error]Cycle path: {' -> '.join(exc.cycle_path)}[/error]")
         raise typer.Exit(code=2) from exc
 
 
@@ -410,8 +753,12 @@ def dependency_remove(issue_id: str, depends_on: str) -> None:
     repo = get_repository()
 
     try:
-        remove_dependency_action(repo, issue_id, depends_on)
-        console.print(f"[success]Dependency removed:[/success] {issue_id[:8]} -> {depends_on[:8]}")
+        resolved_issue_id = resolve_issue_id(issue_id, repo)
+        resolved_dep_id = resolve_issue_id(depends_on, repo)
+        remove_dependency_action(repo, str(resolved_issue_id), str(resolved_dep_id))
+        console.print(
+            f"[success]Dependency removed:[/success] {str(resolved_issue_id)[:8]} -> {str(resolved_dep_id)[:8]}"
+        )
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
         raise typer.Exit(code=1) from exc
@@ -424,6 +771,14 @@ def dependency_list(
 ) -> None:
     """List all dependencies and dependents for an issue."""
     repo = get_repository()
+
+    try:
+        resolved_id = resolve_issue_id(issue_id, repo)
+        issue_id = str(resolved_id)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from None
+
     issue = repo.get_issue(issue_id)
 
     if issue is None:
@@ -456,6 +811,13 @@ def dependency_list(
 def dependency_chain(issue_id: str) -> None:
     """Show full transitive dependency chain."""
     repo = get_repository()
+
+    try:
+        resolved_id = resolve_issue_id(issue_id, repo)
+        issue_id = str(resolved_id)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from None
 
     try:
         chain = get_dependency_chain_action(repo, issue_id)
@@ -504,10 +866,26 @@ def component_create(
     description: str | None = typer.Option(None, "--description", "-d", help="Component description"),
 ) -> None:
     """Create a new component."""
+    from socialseed_tasker.core.validation import (
+        ComponentNameValidationError,
+        sanitize_component_name,
+        validate_component_name,
+    )
+
     repo = get_repository()
-    component = Component(name=name, project=project, description=description)
+
+    try:
+        validated_name = validate_component_name(name)
+    except ComponentNameValidationError as e:
+        console.print(f"[error]Validation error: {e}[/error]")
+        raise typer.Exit(code=2) from e
+
+    sanitized_name = sanitize_component_name(validated_name)
+    sanitized_description = sanitize_component_name(description or "")
+
+    component = Component(name=sanitized_name, project=project, description=sanitized_description)
     repo.create_component(component)
-    console.print(f"[success]Component created:[/success] {component.id}")
+    console.print(f"[success]Component '{sanitized_name}' created successfully (ID: {component.id})")
 
 
 @component_app.command("list")
@@ -535,14 +913,22 @@ def component_list(
 
 
 @component_app.command("show")
-def component_show(component_id: str) -> None:
+def component_show(component: str) -> None:
     """Show component details and its issues."""
     repo = get_repository()
-    component = repo.get_component(component_id)
+
+    try:
+        component_uuid = resolve_component_id(component, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        console.print("[info]You can use full UUID, 8+ character prefix, or component name.[/info]")
+        raise typer.Exit(code=2) from e
+
+    component = repo.get_component(str(component_uuid))
 
     if component is None:
-        console.print(f"[error]Component '{component_id}' not found.[/error]")
-        raise typer.Exit(code=1) from None
+        console.print(f"[error]Component '{component}' not found.[/error]")
+        raise typer.Exit(code=1)
 
     lines = [
         f"[bold]Name:[/bold] {component.name}",
@@ -556,18 +942,17 @@ def component_show(component_id: str) -> None:
         Panel("\n".join(lines), title=f"[bold]{component.name}[/bold] ({str(component.id)[:8]})", border_style="cyan")
     )
 
-    # Show issues in this component
-    issues = repo.list_issues(component_id=component_id)
+    issues = repo.list_issues(component_id=str(component_uuid))
     if issues:
         console.print("\n[bold]Issues:[/bold]")
-        console.print(_issues_table(issues, {str(component.id): component.name}))
+        console.print(_issues_table(issues, {str(component_uuid): component.name}))
     else:
         console.print("\n[info]No issues in this component.[/info]")
 
 
 @component_app.command("update")
 def component_update(
-    component_id: str = typer.Argument(..., help="Component ID to update"),
+    component_id: str = typer.Argument(..., help="Component ID, name, or partial ID to update"),
     name: str | None = typer.Option(None, "--name", "-n", help="New component name"),
     description: str | None = typer.Option(None, "--description", "-d", help="New component description"),
     project: str | None = typer.Option(None, "--project", "-p", help="New project name"),
@@ -583,38 +968,55 @@ def component_update(
 
     repo = get_repository()
     try:
-        updated = update_component_action(repo, component_id, name=name, description=description, project=project)
+        resolved_id = resolve_component_id(component_id, repo)
+        updated = update_component_action(repo, str(resolved_id), name=name, description=description, project=project)
         console.print(f"[success]Component updated:[/success] {updated.name} ({updated.id})")
     except ComponentNotFoundError:
         console.print(f"[error]Component '{component_id}' not found.[/error]")
+        raise typer.Exit(code=1) from None
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
         raise typer.Exit(code=1) from None
 
 
 @component_app.command("delete")
 def component_delete(
-    component_id: str = typer.Argument(..., help="Component ID or name to delete"),
+    component_id: str = typer.Argument(..., help="Component ID, name, or partial ID to delete"),
     force: bool = typer.Option(False, "--force", "-f", help="Force deletion, issues become unassigned"),
     yes: bool = typer.Option(False, "--yes", "-y", help="Confirm deletion without prompting"),
 ) -> None:
     """Delete a component."""
-    from uuid import UUID
-
     from socialseed_tasker.core.task_management.actions import ComponentHasIssuesError, delete_component_action
 
     repo = get_repository()
 
-    resolved_id = component_id
     try:
-        UUID(component_id)
-    except ValueError:
-        components = repo.list_components()
-        for comp in components:
-            if comp.name.lower() == component_id.lower():
-                resolved_id = str(comp.id)
-                break
-        else:
-            console.print(f"[error]Component '{component_id}' not found.[/error]")
-            raise typer.Exit(code=1) from None
+        resolved_id = resolve_component_id(component_id, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from None
+
+    if not force and not yes:
+        component = repo.get_component(str(resolved_id))
+        if component:
+            issues = repo.list_issues(component_id=str(resolved_id))
+            if issues:
+                console.print(
+                    f"[warning]Component '{component.name}' has {len(issues)} issue(s).[/warning]\n"
+                    f"Issues will become unassigned after deletion.\n"
+                    f"Use [cyan]--force[/cyan] or [cyan]--yes[/cyan] to confirm."
+                )
+                raise typer.Exit(code=1) from None
+
+    try:
+        delete_component_action(repo, str(resolved_id), force=True)
+        console.print(f"[success]Component deleted:[/success] {resolved_id}")
+    except ComponentNotFoundError:
+        console.print(f"[error]Component '{component_id}' not found.[/error]")
+        raise typer.Exit(code=1) from None
+    except ComponentHasIssuesError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from None
 
     if not force and not yes:
         component = repo.get_component(resolved_id)
@@ -697,15 +1099,22 @@ def analyze_root_cause(
 
 @analyze_app.command("impact")
 def analyze_impact(
-    issue_id: str = typer.Argument(..., help="Issue ID to analyze"),
+    issue_id: str = typer.Argument(..., help="Issue ID (full UUID, 4+ prefix, or exact title)"),
 ) -> None:
     """Analyze what other issues would be affected by this issue."""
     from socialseed_tasker.core.project_analysis.analyzer import RootCauseAnalyzer
 
     repo = get_repository()
-    analyzer = RootCauseAnalyzer(repo)
 
-    impact = analyzer.analyze_impact(issue_id)
+    try:
+        resolved_id = resolve_issue_id(issue_id, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        console.print("[info]You can use full UUID, 4+ character prefix, or exact title.[/info]")
+        raise typer.Exit(code=2) from e
+
+    analyzer = RootCauseAnalyzer(repo)
+    impact = analyzer.analyze_impact(str(resolved_id))
 
     console.print(
         Panel(
@@ -713,7 +1122,7 @@ def analyze_impact(
             f"[bold]Transitively affected:[/bold] {len(impact.transitively_affected)} issues\n"
             f"[bold]Blocked issues:[/bold] {len(impact.blocked_issues)} issues\n"
             f"[bold]Risk level:[/bold] {impact.risk_level.value}",
-            title=f"[bold]Impact Analysis for {issue_id[:8]}[/bold]",
+            title=f"[bold]Impact Analysis for {resolved_id}[/bold]",
             border_style="cyan",
         )
     )
@@ -746,6 +1155,50 @@ def status_command() -> None:
             border_style="cyan",
         )
     )
+
+
+@status_app.command("login")
+def login_command(
+    password: str = typer.Option(..., "--password", "-pw", help="Neo4j password"),
+    save: bool = typer.Option(True, "--save/--no-save", help="Save credentials locally"),
+) -> None:
+    """Save credentials for future sessions.
+    
+    Allows you to store your Neo4j credentials locally so you don't
+    need to enter them for every command.
+    """
+    import os
+    
+    from socialseed_tasker.entrypoints.terminal_cli.app import get_cli_container
+    
+    uri = os.environ.get("TASKER_NEO4J_URI", "bolt://localhost:7687")
+    user = os.environ.get("TASKER_NEO4J_USER", "neo4j")
+    
+    os.environ["TASKER_NEO4J_PASSWORD"] = password
+    
+    try:
+        repo = get_cli_container().get_repository()
+        repo.list_components()
+        
+        if save:
+            _save_credentials(uri, user, password)
+            console.print("[success]Credentials saved successfully.[/success]")
+        else:
+            console.print("[success]Credentials valid for this session.[/success]")
+    except Exception as e:
+        console.print(f"[error]Authentication failed: {e}[/error]")
+        raise typer.Exit(code=1)
+
+
+@status_app.command("logout")
+def logout_command() -> None:
+    """Clear saved credentials."""
+    config_file = _CLI_CONFIG_FILE
+    if config_file.exists():
+        config_file.unlink()
+        console.print("[success]Credentials cleared.[/success]")
+    else:
+        console.print("[info]No saved credentials found.[/info]")
 
 
 # ---------------------------------------------------------------------------
@@ -1026,6 +1479,11 @@ def project_setup(
 
 seed_app = typer.Typer(help="Seed demo data for first-time users")
 
+# Constraints commands
+# ---------------------------------------------------------------------------
+
+constraints_app = typer.Typer(help="Manage project constraints and rules")
+
 _SEED_COMPONENTS = [
     {"name": "api-gateway", "description": "Central API gateway routing requests to microservices"},
     {"name": "user-service", "description": "User authentication, profiles, and permissions"},
@@ -1182,3 +1640,143 @@ def seed_run(
             border_style="green",
         )
     )
+
+
+# ---------------------------------------------------------------------------
+# Constraints commands
+# ---------------------------------------------------------------------------
+
+
+@constraints_app.command("set")
+def constraints_set(
+    config_path: str = typer.Option(
+        "tasker.constraints.yml",
+        "--file",
+        "-f",
+        help="Path to constraints config file",
+    ),
+) -> None:
+    """Load constraints from a YAML config file into Neo4j."""
+    from pathlib import Path
+
+    import yaml
+
+    from socialseed_tasker.core.task_management.actions import load_constraints_from_config_action
+    from socialseed_tasker.core.task_management.constraints import ConstraintConfig
+
+    config_file = Path(config_path)
+    if not config_file.exists():
+        console.print(f"[error]Config file not found: {config_path}[/error]")
+        raise typer.Exit(code=1)
+
+    try:
+        with open(config_file) as f:
+            config_data = yaml.safe_load(f)
+    except Exception as e:
+        console.print(f"[error]Failed to parse config file: {e}[/error]")
+        raise typer.Exit(code=1) from e
+
+    if not config_data:
+        console.print("[warning]Config file is empty. No constraints to load.[/warning]")
+        raise typer.Exit(code=0)
+
+    repo = get_repository()
+
+    constraint_config = ConstraintConfig(**config_data)
+    result = load_constraints_from_config_action(repo, constraint_config)
+
+    console.print(
+        Panel(
+            f"[bold]Constraints loaded successfully![/bold]\n\n"
+            f"Created: {result['created']}\n"
+            f"Deleted: {result['deleted']}\n\n"
+            f"[bold]Next steps:[/bold]\n"
+            f"  tasker constraints list\n"
+            f"  tasker constraints validate",
+            title="[bold]Constraints Loaded[/bold]",
+            border_style="green",
+        )
+    )
+
+
+@constraints_app.command("list")
+def constraints_list(
+    category: str | None = typer.Option(
+        None,
+        "--category",
+        "-c",
+        help="Filter by category (architecture, technology, naming, patterns, dependencies)",
+    ),
+) -> None:
+    """List all active constraints."""
+    from socialseed_tasker.core.task_management.actions import list_constraints_action
+
+    repo = get_repository()
+
+    constraints = list_constraints_action(repo, category=category)
+
+    if not constraints:
+        console.print("[info]No constraints found.[/info]")
+        return
+
+    table = Table(title="Active Constraints", show_header=True, header_style="bold cyan")
+    table.add_column("Category", style="cyan")
+    table.add_column("Level", style="yellow")
+    table.add_column("Pattern/Service", style="green")
+    table.add_column("Description")
+
+    for c in constraints:
+        table.add_row(
+            c.category.value,
+            c.level.value,
+            c.pattern or c.service or c.from_layer or "-",
+            c.description[:50] + "..." if len(c.description) > 50 else c.description,
+        )
+
+    console.print(table)
+    console.print(f"\n[info]Total: {len(constraints)} constraints[/info]")
+
+
+@constraints_app.command("validate")
+def constraints_validate() -> None:
+    """Validate constraints against current project state and report violations."""
+    from socialseed_tasker.core.task_management.actions import validate_constraints_action
+
+    repo = get_repository()
+
+    result = validate_constraints_action(repo)
+
+    if result.is_valid:
+        console.print(
+            Panel(
+                "[bold green]All constraints are satisfied![/bold green]",
+                title="Validation Result",
+                border_style="green",
+            )
+        )
+    else:
+        if result.hard_violations:
+            console.print("[bold red]Hard Violations:[/bold red]")
+            for v in result.hard_violations:
+                console.print(
+                    f"  [red]•[/red] {v.message}\n"
+                    f"    [dim]Resource:[/dim] {v.affected_resource}\n"
+                    f"    [dim]Suggestion:[/dim] {v.suggestion}"
+                )
+
+        if result.soft_violations:
+            console.print("\n[bold yellow]Soft Violations (require agent confirmation):[/bold yellow]")
+            for v in result.soft_violations:
+                console.print(f"  [yellow]•[/yellow] {v.message}\n    [dim]Resource:[/dim] {v.affected_resource}")
+
+        console.print(f"\n[bold]Summary:[/bold] {len(result.hard_violations)} hard, {len(result.soft_violations)} soft")
+
+
+# Create the main app with all command groups
+app = typer.Typer()
+app.add_typer(issue_app, name="issue")
+app.add_typer(component_app, name="component")
+app.add_typer(dependency_app, name="dependency")
+app.add_typer(analyze_app, name="analyze")
+app.add_typer(seed_app, name="seed")
+app.add_typer(constraints_app, name="constraints")

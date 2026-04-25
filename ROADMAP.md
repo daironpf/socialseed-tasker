@@ -4,7 +4,7 @@ SocialSeed Tasker is an **AI-Native Project Management Framework** powered by **
 
 This roadmap outlines our journey from a core utility to a global standard for AI-driven development.
 
-**Last updated:** 2026-04-08 (v0.5.1 Released - Issue #74-76 resolved)
+**Last updated:** 2026-04-12 (v0.8.0 - Issues #136-140 resolved)
 
 ---
 
@@ -16,7 +16,9 @@ This roadmap outlines our journey from a core utility to a global standard for A
 * [x] **Hybrid Persistence:** Seamless toggle between **Local Neo4j (Docker)** and **Neo4j Aura DB (Cloud)** via environment profiles. Auto-detection of encryption from URI.
 * [x] **Asset Templates:** Standardized Python/JSON "Skill" templates for external AI Agent integration.
 * [x] **CLI - Component Management:** `create`, `list`, `show`, `update`, `delete` with Rich output.
+* [x] **CLI - Component Name Lookup:** `show`, `update`, `delete` support name, partial ID (8+ chars), or full UUID.
 * [x] **CLI - Issue Management:** `create`, `list`, `show`, `close` with validation (blocks open dependencies).
+* [x] **CLI - Issue Title Lookup:** Dependency commands (`add`, `remove`, `list`, `chain`) support issue titles of any length.
 * [x] **CLI - Dependency Management:** `add`, `list`, `chain`, `blocked` with circular dependency detection (BFS).
 * [x] **CLI - Analysis:** `root-cause` (graph proximity + temporal + semantic scoring) and `impact` (BFS transitive analysis with risk levels).
 * [x] **CLI - Project Detection:** `project detect` and `project setup` for auto-discovering modules from docker-compose, src/, etc.
@@ -44,7 +46,7 @@ This roadmap outlines our journey from a core utility to a global standard for A
     * **Technical Debt Notes:** Observations made by the agent during implementation.
 * [x] **Advanced Cypher Queries:** Impact analysis with BFS for direct/transitive dependents, blocked issues detection, affected components collection, and risk level calculation (LOW/MEDIUM/HIGH/CRITICAL).
 * [x] **Architectural Analysis Module:** Rule-based analyzer for forbidden technologies, required patterns, forbidden dependencies, and max dependency depth validation.
-* [ ] **Graph Visualization:** Interactive graph view of issues, components, and dependencies (beyond Kanban).
+* [x] **Graph Visualization:** Interactive graph view of issues, components, and dependencies (beyond Kanban) integrated directly into the UI dashboard.
 * [ ] **Issue `agent_working` Field:** Field exists in entity and API but needs full lifecycle integration (start/finish tracking).
 
 ---
@@ -101,7 +103,7 @@ This roadmap outlines our journey from a core utility to a global standard for A
 | # | Issue | Severity | Location | Status |
 |---|-------|----------|----------|--------|
 | 1 | `issue show` requires full UUID, short ID fails | Low | CLI commands | ✅ RESOLVED (v0.5.0) |
-| 2 | `component show` requires full UUID, short ID fails | Low | CLI commands | ✅ RESOLVED |
+| 2 | `component show` requires full UUID, short ID fails | Low | CLI commands | ✅ RESOLVED (v0.8.0 #134) |
 | 3 | `POST /dependencies` route not mounted at `/api/v1/dependencies` | Medium | Route prefix mismatch | ✅ RESOLVED |
 | 4 | `POST /analyze/root-cause` requires `test_id` field not documented in CLI help | Low | Schema vs CLI mismatch | ✅ RESOLVED (v0.5.1) - Added /analyze/link-test |
 | 5 | Architectural rules exist but not enforced at API/CLI write level | Medium | Integration gap | ⚠️ OPEN |
@@ -109,6 +111,16 @@ This roadmap outlines our journey from a core utility to a global standard for A
 | 7 | Dependencies not populated in issue list response | Low | API | ✅ RESOLVED (v0.5.0) |
 | 8 | No bulk dependency creation | Low | API | ✅ RESOLVED (v0.5.0) |
 | 9 | CLI output has extra blank lines at start (Typer/Rich bug) | Low | CLI rendering | ⚠️ LIMITACIÓN CONOCIDA - No hay solución sin cambiar de framework CLI |
+| 10 | `component update` requires full UUID | Low | CLI commands | ✅ RESOLVED (v0.8.0 #136) |
+| 11 | `dependency add` requires full UUID for issue titles | Low | CLI commands | ✅ RESOLVED (v0.8.0 #137) |
+| 12 | `component delete` requires full UUID | Low | CLI commands | ✅ RESOLVED (v0.8.0 #138) |
+| 13 | `/analyze/component-impact` API requires full UUID | Low | API routes | ✅ RESOLVED (v0.8.0 #139) |
+| 14 | `test_component_show_missing` expects wrong exit code | Low | Test | ✅ RESOLVED (v0.8.0 #140) |
+| 15 | Linter F821 - undefined UUID and Any | Low | Code | ✅ RESOLVED (v0.8.0 #141) |
+| 16 | Linter F401 - unused imports | Low | Code | ✅ RESOLVED (v0.8.0 #142) |
+| 17 | Linter F541, B904 - code quality | Low | Code | ✅ RESOLVED (v0.8.0 #143) |
+| 18 | Linter I001, E501 - formatting | Low | Code | ✅ RESOLVED (v0.8.0 #144) |
+| 19 | Docker frontend build failure | Medium | Docker | ✅ RESOLVED (v0.8.0 #145) |
 
 ---
 

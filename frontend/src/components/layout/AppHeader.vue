@@ -54,6 +54,7 @@ const uiStore = useUiStore()
 const navItems = [
   { path: '/board', label: 'Board' },
   { path: '/list', label: 'List' },
+  { path: '/graph', label: 'Graph' },
   { path: '/components', label: 'Components' },
 ]
 </script>

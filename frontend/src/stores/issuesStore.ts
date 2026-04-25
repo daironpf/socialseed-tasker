@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as api from '@/api/issuesApi'
-import type { Issue, IssueCreateRequest, IssueUpdateRequest, IssueStatus } from '@/types'
+import type { Issue, IssueCreateRequest, IssueUpdateRequest, PaginationMeta } from '@/types'
 
 export const useIssuesStore = defineStore('issues', () => {
   const issues = ref<Issue[]>([])
+  const pagination = ref<PaginationMeta | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -16,25 +17,17 @@ export const useIssuesStore = defineStore('issues', () => {
     issues.value.filter((i) => i.status === 'BLOCKED' || i.status === 'OPEN').length,
   )
 
-  function issuesByStatus(status: IssueStatus) {
-    return issues.value.filter((i) => i.status === status)
-  }
-
-  function issuesByPriority(priority: string) {
-    return issues.value.filter((i) => i.priority === priority)
-  }
-
-  function issuesByComponent(componentId: string) {
-    return issues.value.filter((i) => i.component_id === componentId)
-  }
-
-  async function fetchIssues(filters?: { status?: string; component?: string }) {
+  async function fetchIssues(page = 1, limit = 50, filters?: { status?: string; component?: string; project?: string }) {
     loading.value = true
     error.value = null
+    console.log('[IssuesStore] Fetching issues page:', page, 'filters:', filters)
     try {
-      issues.value = await api.fetchIssues(1, 100, filters?.status, filters?.component)
+      const result = await api.fetchIssues(page, limit, filters?.status, filters?.component, filters?.project)
+      issues.value = Array.isArray(result) ? result : []
     } catch (e) {
+      console.error('[IssuesStore] Fetch failed:', e)
       error.value = (e as Error).message
+      issues.value = []
     } finally {
       loading.value = false
     }
@@ -117,13 +110,11 @@ export const useIssuesStore = defineStore('issues', () => {
 
   return {
     issues,
+    pagination,
     loading,
     error,
     openIssuesCount,
     blockedIssuesCount,
-    issuesByStatus,
-    issuesByPriority,
-    issuesByComponent,
     fetchIssues,
     fetchIssue,
     createIssue,

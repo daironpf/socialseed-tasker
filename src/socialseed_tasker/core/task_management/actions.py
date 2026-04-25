@@ -9,8 +9,15 @@ from __future__ import annotations
 from collections import deque
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Protocol
+from typing import Any, Protocol
 
+from socialseed_tasker.core.task_management.constraints import (
+    Constraint,
+    ConstraintCategory,
+    ConstraintConfig,
+    ConstraintValidationResult,
+    ConstraintViolation,
+)
 from socialseed_tasker.core.task_management.entities import (
     Component,
     Issue,
@@ -39,8 +46,17 @@ class ComponentNotFoundError(Exception):
 class CircularDependencyError(Exception):
     """Raised when adding a dependency would create a cycle in the graph."""
 
-    def __init__(self, issue_id: str, depends_on_id: str) -> None:
-        super().__init__(f"Adding dependency from '{issue_id}' to '{depends_on_id}' would create a circular dependency")
+    def __init__(self, issue_id: str, depends_on_id: str, cycle_path: list[str] | None = None) -> None:
+        if cycle_path:
+            path_str = " -> ".join(cycle_path)
+            super().__init__(
+                f"Adding dependency from '{issue_id}' to '{depends_on_id}' would create a cycle: {path_str}"
+            )
+        else:
+            super().__init__(
+                f"Adding dependency from '{issue_id}' to '{depends_on_id}' would create a circular dependency"
+            )
+        self.cycle_path = cycle_path
 
 
 class IssueAlreadyClosedError(Exception):
@@ -48,6 +64,17 @@ class IssueAlreadyClosedError(Exception):
 
     def __init__(self, issue_id: str) -> None:
         super().__init__(f"Issue '{issue_id}' is already closed")
+
+
+class PolicyViolationError(Exception):
+    """Raised when an action violates an architectural policy."""
+
+    def __init__(self, policy_name: str, rule_type: str, message: str, suggestion: str = "") -> None:
+        super().__init__(f"Policy violation: {policy_name} - {message}")
+        self.policy_name = policy_name
+        self.rule_type = rule_type
+        self.message = message
+        self.suggestion = suggestion
 
 
 class OpenDependenciesError(Exception):
@@ -91,7 +118,7 @@ class TaskRepositoryInterface(Protocol):
     def list_issues(
         self,
         component_id: str | None = None,
-        status: IssueStatus | None = None,
+        statuses: list[str] | None = None,
         project: str | None = None,
     ) -> list[Issue]:
         """List issues with optional filters."""
@@ -146,6 +173,56 @@ class TaskRepositoryInterface(Protocol):
         component_id: str | None = None,
     ) -> list[Issue]:
         """Find issues by exact title, optionally filtered by component."""
+
+    def add_reasoning_log(
+        self,
+        issue_id: str,
+        context: str,
+        reasoning: str,
+        related_nodes: list[str] | None = None,
+    ) -> Issue:
+        """Add a reasoning log entry to an issue and return the updated issue."""
+
+    def get_reasoning_logs(self, issue_id: str) -> list[dict[str, Any]]:
+        """Get all reasoning log entries for an issue."""
+
+    def update_manifest_todo(self, issue_id: str, todo: list[dict[str, str]]) -> Issue:
+        """Update the manifest TODO list for an issue."""
+
+    def update_manifest_files(self, issue_id: str, files: list[str]) -> Issue:
+        """Update the manifest affected files list for an issue."""
+
+    def update_manifest_notes(self, issue_id: str, notes: list[str]) -> Issue:
+        """Update the manifest technical debt notes for an issue."""
+
+    def get_manifest(self, issue_id: str) -> dict[str, Any]:
+        """Get the full manifest for an issue."""
+
+    def start_agent_work(self, issue_id: str, agent_id: str) -> Issue:
+        """Start agent work on an issue."""
+
+    def finish_agent_work(self, issue_id: str) -> Issue:
+        """Finish agent work on an issue."""
+
+    def get_agent_status(self, issue_id: str) -> dict[str, Any]:
+        """Get agent work status for an issue."""
+
+    # -- Constraints -----------------------------------------------------------
+
+    def create_constraint(self, constraint: Constraint) -> None:
+        """Persist a new constraint."""
+
+    def list_constraints(self, category: str | None = None) -> list[Constraint]:
+        """List constraints, optionally filtered by category."""
+
+    def get_constraint(self, constraint_id: str) -> Constraint | None:
+        """Retrieve a constraint by ID."""
+
+    def delete_constraint(self, constraint_id: str) -> None:
+        """Permanently remove a constraint."""
+
+    def update_constraint(self, constraint_id: str, updates: dict) -> Constraint:
+        """Update a constraint."""
 
     def reset_data(self, scope: str = "all") -> dict[str, int]:
         """Reset data in the repository.
@@ -314,8 +391,9 @@ def add_dependency_action(
         if issue_id == depends_on_id:
             raise CircularDependencyError(issue_id, depends_on_id)
 
-        if _would_create_cycle(repository, issue_id, depends_on_id):
-            raise CircularDependencyError(issue_id, depends_on_id)
+        cycle_path = _would_create_cycle(repository, issue_id, depends_on_id)
+        if cycle_path:
+            raise CircularDependencyError(issue_id, depends_on_id, cycle_path)
 
         repository.add_dependency(issue_id, depends_on_id)
 
@@ -476,16 +554,66 @@ def reset_data_action(
     repository: TaskRepositoryInterface,
     scope: str = "all",
 ) -> dict[str, int]:
-    """Reset data in the repository.
+    """Reset data in the repository."""
 
-    Intent: Allow cleanup of all data for testing or demos.
-    Business Value: Enables fresh start without manual cleanup or
-    restarting the database.
-    """
     if scope not in ("all", "issues", "components"):
         raise ValueError("scope must be 'all', 'issues', or 'components'")
 
     return repository.reset_data(scope)
+
+
+# ---------------------------------------------------------------------------
+# Policy validation
+# ---------------------------------------------------------------------------
+
+
+def validate_action_against_policies(
+    repository: TaskRepositoryInterface,
+    action_type: str,
+    action_data: dict,
+    policy_engine: Any = None,
+) -> None:
+    """Validate an action against defined policies.
+
+    Raises PolicyViolationError if the action violates any policy.
+    """
+    if policy_engine is None:
+        return
+
+    from socialseed_tasker.core.project_analysis.policy import PolicyEngine
+
+    if not isinstance(policy_engine, PolicyEngine):
+        return
+
+    if action_type == "add_dependency":
+        issue_id = action_data.get("issue_id")
+        depends_on_id = action_data.get("depends_on_id")
+
+        if issue_id and depends_on_id:
+            issue = repository.get_issue(issue_id)
+            target = repository.get_issue(depends_on_id)
+
+            if issue and target:
+                from_component = repository.get_component(str(issue.component_id))
+                to_component = repository.get_component(str(target.component_id))
+
+                result = policy_engine.validate_dependency(
+                    from_component_name=from_component.name if from_component else "",
+                    from_component_type=from_component.project if from_component else "",
+                    from_labels=issue.labels,
+                    to_component_name=to_component.name if to_component else "",
+                    to_component_type=to_component.project if to_component else "",
+                    to_labels=target.labels,
+                )
+
+                if result.has_violations:
+                    violation = result.violations[0]
+                    raise PolicyViolationError(
+                        policy_name=violation.policy_name,
+                        rule_type=violation.rule_type.value,
+                        message=violation.message,
+                        suggestion=violation.suggestion,
+                    )
 
 
 # ---------------------------------------------------------------------------
@@ -497,19 +625,20 @@ def _would_create_cycle(
     repository: TaskRepositoryInterface,
     issue_id: str,
     depends_on_id: str,
-) -> bool:
+) -> list[str]:
     """Check if adding issue_id -> depends_on_id would create a cycle.
 
     Uses BFS to check if depends_on_id can already reach issue_id through
     existing [:DEPENDS_ON] edges.
+    Returns the cycle path if a cycle is found, empty list otherwise.
     """
     visited: set[str] = set()
-    queue = deque([depends_on_id])
+    queue = deque([(depends_on_id, [depends_on_id])])
 
     while queue:
-        current = queue.popleft()
+        current, path = queue.popleft()
         if current == issue_id:
-            return True
+            return path + [issue_id]
         if current in visited:
             continue
         visited.add(current)
@@ -517,6 +646,181 @@ def _would_create_cycle(
         for dep in repository.get_dependencies(current):
             dep_key = str(dep.id)
             if dep_key not in visited:
-                queue.append(dep_key)
+                queue.append((dep_key, path + [dep_key]))
 
-    return False
+    return []
+
+
+# ---------------------------------------------------------------------------
+# Constraint actions
+# ---------------------------------------------------------------------------
+
+
+class ConstraintNotFoundError(Exception):
+    """Raised when a constraint with the given ID does not exist."""
+
+    def __init__(self, constraint_id: str) -> None:
+        super().__init__(f"Constraint with id '{constraint_id}' was not found")
+
+
+def create_constraint_action(
+    repository: TaskRepositoryInterface,
+    constraint: Constraint,
+) -> Constraint:
+    """Create a new constraint after validating inputs.
+
+    Returns:
+        The created constraint
+    """
+    repository.create_constraint(constraint)
+    return constraint
+
+
+def list_constraints_action(
+    repository: TaskRepositoryInterface,
+    category: str | None = None,
+) -> list[Constraint]:
+    """List constraints, optionally filtered by category."""
+    return repository.list_constraints(category=category)
+
+
+def get_constraint_action(
+    repository: TaskRepositoryInterface,
+    constraint_id: str,
+) -> Constraint:
+    """Get a constraint by ID or raise not found."""
+    constraint = repository.get_constraint(constraint_id)
+    if constraint is None:
+        raise ConstraintNotFoundError(constraint_id)
+    return constraint
+
+
+def delete_constraint_action(
+    repository: TaskRepositoryInterface,
+    constraint_id: str,
+) -> None:
+    """Delete a constraint by ID."""
+    constraint = repository.get_constraint(constraint_id)
+    if constraint is None:
+        raise ConstraintNotFoundError(constraint_id)
+    repository.delete_constraint(constraint_id)
+
+
+def load_constraints_from_config_action(
+    repository: TaskRepositoryInterface,
+    config: ConstraintConfig,
+) -> dict[str, int]:
+    """Load constraints from config file, replacing existing ones.
+
+    Returns:
+        Dict with counts of created/updated constraints
+    """
+    from socialseed_tasker.core.task_management.constraints import ConstraintStatus
+
+    existing = repository.list_constraints()
+    for c in existing:
+        repository.delete_constraint(str(c.id))
+
+    constraints = config.to_constraints()
+    for constraint in constraints:
+        # Constraint is frozen=True, use model_copy to create active version
+        active_constraint = constraint.model_copy(update={"status": ConstraintStatus.ACTIVE})
+        repository.create_constraint(active_constraint)
+
+    return {
+        "created": len(constraints),
+        "deleted": len(existing),
+    }
+
+
+def validate_constraints_action(
+    repository: TaskRepositoryInterface,
+) -> ConstraintValidationResult:
+    """Validate all active constraints against current state.
+
+    Returns:
+        Validation result with any violations
+    """
+    constraints = repository.list_constraints()
+    violations: list[ConstraintViolation] = []
+
+    for constraint in constraints:
+        if constraint.category == ConstraintCategory.DEPENDENCIES and constraint.rule_type == "max_depth":
+            if constraint.max_depth:
+                depth = _check_max_dependency_depth(repository, constraint.max_depth)
+                if depth > constraint.max_depth:
+                    violations.append(
+                        ConstraintViolation(
+                            constraint_id=constraint.id,
+                            constraint_description=constraint.description,
+                            level=constraint.level,
+                            category=constraint.category,
+                            affected_resource="dependency_graph",
+                            message=f"Dependency depth {depth} exceeds max {constraint.max_depth}",
+                            suggestion="Restructure dependencies to reduce depth",
+                        )
+                    )
+
+    return ConstraintValidationResult(
+        is_valid=len(violations) == 0,
+        violations=violations,
+    )
+
+
+def _check_max_dependency_depth(repository: TaskRepositoryInterface, max_depth: int) -> int:
+    """Check max dependency depth in the repository."""
+    issues = repository.list_issues()
+    max_found = 0
+
+    for issue in issues:
+        depth = _get_dependency_depth(repository, str(issue.id), set())
+        max_found = max(max_found, depth)
+
+    return max_found
+
+
+def _get_dependency_depth(repository: TaskRepositoryInterface, issue_id: str, visited: set[str]) -> int:
+    """Get the max depth of dependencies for an issue."""
+    if issue_id in visited:
+        return 0
+    visited.add(issue_id)
+
+    deps = repository.get_dependencies(issue_id)
+    if not deps:
+        return 0
+
+    max_depth = 0
+    for dep in deps:
+        dep_depth = _get_dependency_depth(repository, str(dep.id), visited.copy())
+        max_depth = max(max_depth, dep_depth + 1)
+
+    return max_depth
+
+
+def check_soft_constraints_for_closure(
+    repository: TaskRepositoryInterface,
+    issue_id: str,
+) -> list[ConstraintViolation]:
+    """Check soft constraints before allowing issue closure.
+
+    Returns list of violated soft constraints - if any exist, the issue
+    cannot be closed until the agent confirms compliance.
+    """
+    constraints = repository.list_constraints()
+    violations: list[ConstraintViolation] = []
+
+    for constraint in constraints:
+        if constraint.level == "soft" and constraint.status == "active":
+            violations.append(
+                ConstraintViolation(
+                    constraint_id=constraint.id,
+                    constraint_description=constraint.description,
+                    level=constraint.level,
+                    category=constraint.category,
+                    affected_resource=issue_id,
+                    message=f"Soft constraint '{constraint.description}' may be violated",
+                    suggestion="Confirm compliance or document why this constraint does not apply",
+                )
+            )
+
+    return violations

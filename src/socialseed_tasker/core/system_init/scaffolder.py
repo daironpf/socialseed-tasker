@@ -32,34 +32,45 @@ class ScaffolderService:
         self,
         template_dir: Path,
         progress_callback: Callable[[FileOperation], None] | None = None,
+        frontend_dir: Path | None = None,
     ) -> None:
         """Initialize the scaffolder.
 
         Args:
             template_dir: Root directory containing template assets.
             progress_callback: Optional callback invoked for each file operation.
+            frontend_dir: Directory containing frontend build assets (for Kanban board).
         """
         self._template_dir = template_dir
         self._progress_callback = progress_callback
+        self._frontend_dir = frontend_dir
 
     def scaffold(
         self,
         target_dir: Path,
         force: bool = False,
+        output_dir: Path | None = None,
     ) -> ScaffoldResult:
         """Copy all template assets into the target directory.
 
         Creates the tasker/ directory structure and copies skills,
         configs, and docker-compose.yml from the bundled templates.
+        Also copies project_readme.md to the project root as README.md.
+        If frontend/dist/ exists in the project root, copies it to
+        tasker/frontend/ for a working Kanban board.
 
         Args:
             target_dir: Root of the external project (tasker/ will be created inside).
             force: If True, overwrite existing files. Otherwise skip them.
+            output_dir: Custom output directory. If None, creates tasker/ inside target_dir.
 
         Returns:
             ScaffoldResult with details of all file operations performed.
         """
-        tasker_dir = target_dir / "tasker"
+        if output_dir:
+            tasker_dir = output_dir
+        else:
+            tasker_dir = target_dir / "tasker"
         result = ScaffoldResult(target_dir=tasker_dir)
 
         if not self._template_dir.exists():
@@ -82,7 +93,64 @@ class ScaffolderService:
                 if self._progress_callback:
                     self._progress_callback(op)
 
+        self._copy_project_readme(target_dir, force, result)
+
+        self._copy_frontend_build(target_dir, force, result)
+
         return result
+
+    def _copy_project_readme(
+        self,
+        target_dir: Path,
+        force: bool,
+        result: ScaffoldResult,
+    ) -> None:
+        """Copy project_readme.md template to project root as README.md."""
+        project_readme_template = self._template_dir / "project_readme.md"
+        if not project_readme_template.exists():
+            return
+
+        readme_destination = target_dir / "README.md"
+
+        if readme_destination.exists() and not force:
+            result.add_operation(
+                FileOperation(
+                    source=project_readme_template,
+                    destination=readme_destination,
+                    status=ScaffoldStatus.SKIPPED,
+                )
+            )
+            if self._progress_callback:
+                self._progress_callback(
+                    FileOperation(
+                        source=project_readme_template,
+                        destination=readme_destination,
+                        status=ScaffoldStatus.SKIPPED,
+                    )
+                )
+            return
+
+        try:
+            shutil.copy2(str(project_readme_template), str(readme_destination))
+            status = ScaffoldStatus.OVERWRITTEN if readme_destination.exists() else ScaffoldStatus.CREATED
+            op = FileOperation(
+                source=project_readme_template,
+                destination=readme_destination,
+                status=status,
+            )
+            result.add_operation(op)
+            if self._progress_callback:
+                self._progress_callback(op)
+        except (OSError, shutil.Error) as exc:
+            op = FileOperation(
+                source=project_readme_template,
+                destination=readme_destination,
+                status=ScaffoldStatus.ERROR,
+                error_message=str(exc),
+            )
+            result.add_operation(op)
+            if self._progress_callback:
+                self._progress_callback(op)
 
     def _copy_template_file(
         self,
@@ -130,3 +198,65 @@ class ScaffolderService:
         if not self._template_dir.exists():
             return []
         return sorted(p for p in self._template_dir.rglob("*") if p.is_file())
+
+    def _copy_frontend_build(
+        self,
+        target_dir: Path,
+        force: bool,
+        result: ScaffoldResult,
+    ) -> None:
+        """Copy frontend build to tasker/frontend/.
+
+        Copies from self._frontend_dir if set (package assets),
+        or from target_dir/frontend/dist if it exists.
+        This ensures users get a working Vue Kanban board immediately
+        after scaffolding, instead of just placeholder HTML files.
+        """
+        if self._frontend_dir and self._frontend_dir.exists():
+            frontend_source = self._frontend_dir
+        else:
+            frontend_source = target_dir / "frontend" / "dist"
+
+        if not frontend_source.exists():
+            return
+
+        tasker_frontend = target_dir / "tasker" / "frontend"
+        tasker_frontend.mkdir(parents=True, exist_ok=True)
+
+        for src_path in frontend_source.rglob("*"):
+            if src_path.is_file():
+                relative = src_path.relative_to(frontend_source)
+                dest_path = tasker_frontend / relative
+
+                if dest_path.exists() and not force:
+                    result.add_operation(
+                        FileOperation(
+                            source=src_path,
+                            destination=dest_path,
+                            status=ScaffoldStatus.SKIPPED,
+                        )
+                    )
+                    continue
+
+                try:
+                    dest_path.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(str(src_path), str(dest_path))
+                    status = ScaffoldStatus.OVERWRITTEN if dest_path.exists() else ScaffoldStatus.CREATED
+                    op = FileOperation(
+                        source=src_path,
+                        destination=dest_path,
+                        status=status,
+                    )
+                    result.add_operation(op)
+                    if self._progress_callback:
+                        self._progress_callback(op)
+                except (OSError, shutil.Error) as exc:
+                    op = FileOperation(
+                        source=src_path,
+                        destination=dest_path,
+                        status=ScaffoldStatus.ERROR,
+                        error_message=str(exc),
+                    )
+                    result.add_operation(op)
+                    if self._progress_callback:
+                        self._progress_callback(op)

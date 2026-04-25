@@ -5,6 +5,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.8.0] - 2026-04-23 (Observability & UI Enhancements)
+
+### Added
+- **Interactive Dependency Graph:** Integrated `GraphView.vue` into the main dashboard, utilizing `vis-network` to visualize issue dependencies (`[:DEPENDS_ON]`) with force-directed and hierarchical layouts.
+- **Advanced UI Filtering:** Added robust project-level filtering in the Kanban board to dynamically narrow down components and issues based on project context.
+- **Seeding v2:** Upgraded `seed_issues_v2.py` to automatically scaffold connected dependency trees across different projects (e.g., `demo-platform`, `ecommerce-store`).
+
+### Fixed
+- **UI State Management:** Resolved reactive state bugs in `uiStore` to ensure instant visual updates when switching project filters.
+- **Dependency Propagation:** Fixed issue where the initial seed script failed to insert Neo4j relationships.
+
+---
+
 ## [0.6.0] - 2026-04-08 (Polish & Alignment Release)
 
 ### Added

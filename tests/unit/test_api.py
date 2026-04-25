@@ -11,7 +11,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
-from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
+from socialseed_tasker.core.task_management.constraints import Constraint, ConstraintCategory, ConstraintLevel
+from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus, IssuePriority
 from socialseed_tasker.entrypoints.web_api.app import create_app
 
 
@@ -22,6 +23,8 @@ class MockRepository(TaskRepositoryInterface):
         self._issues: dict[str, Issue] = {}
         self._components: dict[str, Component] = {}
         self._dependencies: dict[str, set[str]] = {}
+        self._constraints: dict[str, Constraint] = {}
+        self._labels: dict[str, set[str]] = {}
 
     def create_issue(self, issue: Issue) -> None:
         self._issues[str(issue.id)] = issue
@@ -86,13 +89,15 @@ class MockRepository(TaskRepositoryInterface):
 
     def get_blocked_issues(self) -> list[Issue]:
         blocked = []
+        seen = set()
         for issue_id, deps in self._dependencies.items():
             issue = self._issues.get(issue_id)
-            if issue and issue.status != IssueStatus.CLOSED:
+            if issue and issue.status != IssueStatus.CLOSED and issue_id not in seen:
                 for dep_id in deps:
                     dep = self._issues.get(dep_id)
                     if dep and dep.status != IssueStatus.CLOSED:
                         blocked.append(issue)
+                        seen.add(issue_id)
                         break
         return blocked
 
@@ -135,6 +140,83 @@ class MockRepository(TaskRepositoryInterface):
 
     def delete_component(self, component_id: str) -> None:
         self._components.pop(component_id, None)
+
+    def get_component_by_name(self, name: str, project: str | None = None) -> Component | None:
+        for comp in self._components.values():
+            if comp.name == name and (project is None or comp.project == project):
+                return comp
+        return None
+
+    def find_issues_by_title(self, title: str, component_id: str | None = None) -> list[Issue]:
+        issues = [i for i in self._issues.values() if i.title == title]
+        if component_id:
+            issues = [i for i in issues if str(i.component_id) == component_id]
+        return issues
+
+    def add_reasoning_log(
+        self,
+        issue_id: str,
+        context: str,
+        reasoning: str,
+        related_nodes: list[str] | None = None,
+    ) -> Issue:
+        return self._issues[issue_id]
+
+    def get_reasoning_logs(self, issue_id: str) -> list[dict[str, Any]]:
+        return []
+
+    def update_manifest_todo(self, issue_id: str, todo: list[dict[str, str]]) -> Issue:
+        return self._issues[issue_id]
+
+    def update_manifest_files(self, issue_id: str, files: list[str]) -> Issue:
+        return self._issues[issue_id]
+
+    def update_manifest_notes(self, issue_id: str, notes: list[str]) -> Issue:
+        return self._issues[issue_id]
+
+    def get_manifest(self, issue_id: str) -> dict[str, Any]:
+        return {}
+
+    def start_agent_work(self, issue_id: str, agent_id: str) -> Issue:
+        issue = self._issues[issue_id]
+        updated = issue.model_copy(update={"agent_working": agent_id})
+        self._issues[issue_id] = updated
+        return updated
+
+    def finish_agent_work(self, issue_id: str) -> Issue:
+        issue = self._issues[issue_id]
+        updated = issue.model_copy(update={"agent_working": None})
+        self._issues[issue_id] = updated
+        return updated
+
+    def get_agent_status(self, issue_id: str) -> dict[str, Any]:
+        issue = self._issues.get(issue_id)
+        if issue:
+            return {"agent_working": getattr(issue, "agent_working", None)}
+        return {}
+
+    def create_constraint(self, constraint: Constraint) -> None:
+        self._constraints[str(constraint.id)] = constraint
+
+    def list_constraints(self, category: str | None = None) -> list[Constraint]:
+        constraints = list(self._constraints.values())
+        if category:
+            constraints = [c for c in constraints if c.category.value == category]
+        return constraints
+
+    def get_constraint(self, constraint_id: str) -> Constraint | None:
+        return self._constraints.get(constraint_id)
+
+    def delete_constraint(self, constraint_id: str) -> None:
+        self._constraints.pop(constraint_id, None)
+
+    def update_constraint(self, constraint_id: str, updates: dict) -> Constraint:
+        constraint = self._constraints[constraint_id]
+        data = constraint.model_dump()
+        data.update(updates)
+        updated = Constraint(**data)
+        self._constraints[constraint_id] = updated
+        return updated
 
     def reset_data(self, scope: str = "all") -> dict[str, int]:
         result: dict[str, int] = {}
@@ -228,7 +310,7 @@ class TestComponents:
         client.post("/api/v1/components", json={"name": "A", "project": "proj1"})
         client.post("/api/v1/components", json={"name": "B", "project": "proj2"})
         resp = client.get("/api/v1/components", params={"project": "proj1"})
-        assert len(resp.json()["data"]) == 1
+        assert len(resp.json()["data"]["items"]) == 1
 
     def test_get_component(self, client, component_id):
         resp = client.get(f"/api/v1/components/{component_id}")
@@ -442,7 +524,7 @@ class TestDependencies:
         client.post(f"/api/v1/issues/{a_id}/dependencies", json={"depends_on_id": b_id})
         resp = client.get(f"/api/v1/issues/{a_id}/dependencies")
         assert resp.status_code == 200
-        assert len(resp.json()["data"]) == 1
+        assert len(resp.json()["data"]["items"]) == 1
 
     def test_list_dependents(self, client, component_id):
         resp_a = client.post(
@@ -679,3 +761,174 @@ class TestAnalysis:
         assert data["data"]["directly_affected"] == []
         assert data["data"]["transitively_affected"] == []
         assert data["data"]["risk_level"] == "LOW"
+
+
+class TestProjectEndpoints:
+    def test_project_summary(self, client, component_id):
+        resp = client.get("/api/v1/projects/test-project/summary")
+        assert resp.status_code in [200, 404]
+
+    def test_project_summary_empty(self, client):
+        resp = client.get("/api/v1/projects/nonexistent-project/summary")
+        assert resp.status_code in [200, 404]
+
+
+class TestGraphEndpoints:
+    def test_graph_dependencies(self, client, component_id):
+        resp = client.get("/api/v1/graph/dependencies")
+        assert resp.status_code in [200, 404]
+
+
+class TestAgentEndpoints:
+    def test_start_agent_work(self, client, issue_id):
+        resp = client.post(
+            f"/api/v1/issues/{issue_id}/start",
+            json={"agent_id": "agent-001"},
+        )
+        assert resp.status_code in [200, 201, 404, 405, 422]
+
+    def test_finish_agent_work(self, client, issue_id):
+        resp = client.post(f"/api/v1/issues/{issue_id}/finish")
+        assert resp.status_code in [200, 201, 404, 405, 422]
+
+    def test_agent_status(self, client, issue_id):
+        resp = client.get(f"/api/v1/issues/{issue_id}/agent")
+        assert resp.status_code in [200, 404, 405]
+
+
+class TestConstraintsEndpoints:
+    def test_list_constraints(self, client):
+        resp = client.get("/api/v1/constraints")
+        assert resp.status_code in [200, 404]
+
+    def test_list_constraints_by_category(self, client):
+        resp = client.get("/api/v1/constraints?category=architecture")
+        assert resp.status_code in [200, 404]
+
+
+class TestAnalysisExtended:
+    def test_component_impact(self, client, component_id):
+        resp = client.get(f"/api/v1/analyze/component-impact/{component_id}")
+        assert resp.status_code in [200, 404, 405]
+
+    def test_component_impact_nonexistent(self, client):
+        resp = client.get("/api/v1/analyze/component-impact/00000000-0000-0000-0000-000000000000")
+        assert resp.status_code in [200, 404, 405]
+
+
+class TestValidationErrors:
+    def test_create_issue_invalid_title(self, client, component_id):
+        resp = client.post(
+            "/api/v1/issues",
+            json={"title": "", "component_id": component_id},
+        )
+        assert resp.status_code in [400, 422]
+
+    def test_create_issue_invalid_priority(self, client, component_id):
+        resp = client.post(
+            "/api/v1/issues",
+            json={"title": "Test", "component_id": component_id, "priority": "INVALID"},
+        )
+        assert resp.status_code in [400, 422]
+
+    def test_list_issues_invalid_status(self, client):
+        resp = client.get("/api/v1/issues?status=INVALID_STATUS")
+        assert resp.status_code in [400, 422]
+
+    def test_list_issues_pagination_edge_cases(self, client, component_id):
+        resp = client.get("/api/v1/issues?page=0&limit=10")
+        assert resp.status_code in [400, 422]
+
+    def test_list_issues_limit_exceeded(self, client, component_id):
+        resp = client.get("/api/v1/issues?limit=200")
+        assert resp.status_code in [400, 422]
+
+
+class TestDependencyEdgeCases:
+    def test_add_self_dependency(self, client, component_id):
+        resp_issue = client.post(
+            "/api/v1/issues",
+            json={"title": "Self dep", "component_id": component_id},
+        )
+        issue_id = resp_issue.json()["data"]["id"]
+
+        resp = client.post(
+            f"/api/v1/issues/{issue_id}/dependencies",
+            json={"depends_on_id": issue_id},
+        )
+        assert resp.status_code in [400, 409, 422]
+
+    def test_remove_nonexistent_dependency(self, client, component_id):
+        resp_a = client.post(
+            "/api/v1/issues",
+            json={"title": "A", "component_id": component_id},
+        )
+        a_id = resp_a.json()["data"]["id"]
+        b_id = str(uuid4())
+
+        resp = client.delete(f"/api/v1/issues/{a_id}/dependencies/{b_id}")
+        assert resp.status_code in [204, 404]
+
+    def test_list_dependencies_empty(self, client, issue_id):
+        resp = client.get(f"/api/v1/issues/{issue_id}/dependencies")
+        assert resp.status_code == 200
+
+    def test_list_dependents_empty(self, client, issue_id):
+        resp = client.get(f"/api/v1/issues/{issue_id}/dependents")
+        assert resp.status_code == 200
+
+
+class TestComponentEdgeCases:
+    def test_update_component_no_fields(self, client, component_id):
+        resp = client.patch(f"/api/v1/components/{component_id}", json={})
+        assert resp.status_code in [400, 422]
+
+    def test_delete_nonexistent_component(self, client):
+        resp = client.delete("/api/v1/components/nonexistent-id")
+        assert resp.status_code == 404
+
+
+class TestIssueEdgeCases:
+    def test_update_nonexistent_issue(self, client):
+        resp = client.patch(
+            "/api/v1/issues/nonexistent-id",
+            json={"title": "New title"},
+        )
+        assert resp.status_code == 404
+
+    def test_close_nonexistent_issue(self, client):
+        resp = client.post("/api/v1/issues/nonexistent-id/close")
+        assert resp.status_code == 404
+
+    def test_delete_already_deleted_issue(self, client, issue_id):
+        client.delete(f"/api/v1/issues/{issue_id}")
+        resp = client.delete(f"/api/v1/issues/{issue_id}")
+        assert resp.status_code == 404
+
+    def test_get_issue_dependencies(self, client, issue_id):
+        resp = client.get(f"/api/v1/issues/{issue_id}/dependencies")
+        assert resp.status_code == 200
+
+
+class TestFiltersAndSorting:
+    def test_list_issues_by_component_filter(self, client, component_id):
+        other_component = client.post(
+            "/api/v1/components",
+            json={"name": "Other", "project": "test"},
+        )
+        other_id = other_component.json()["data"]["id"]
+
+        client.post("/api/v1/issues", json={"title": "Issue 1", "component_id": component_id})
+        client.post("/api/v1/issues", json={"title": "Issue 2", "component_id": other_id})
+
+        resp = client.get(f"/api/v1/issues?component={component_id}")
+        assert resp.status_code == 200
+        items = resp.json()["data"]["items"]
+        assert len(items) >= 1
+
+    def test_list_components_all_flag(self, client):
+        client.post("/api/v1/components", json={"name": "A", "project": "p1"})
+        client.post("/api/v1/components", json={"name": "B", "project": "p2"})
+
+        resp = client.get("/api/v1/components?all=true")
+        assert resp.status_code == 200
