@@ -10,12 +10,21 @@ import os
 import sys
 from typing import TYPE_CHECKING
 
+import socialseed_tasker
 import typer
 from rich.console import Console
 from rich.theme import Theme
 
 from socialseed_tasker.bootstrap.container import Container
 from socialseed_tasker.entrypoints.terminal_cli import commands
+
+
+def version_callback(value: bool) -> None:
+    """Display version and exit."""
+    if value:
+        console.print(f"[info]socialseed-tasker {socialseed_tasker.__version__}[/info]")
+        raise typer.Exit()
+
 
 if TYPE_CHECKING:
     pass
@@ -100,6 +109,14 @@ app.add_typer(commands.seed_app, name="seed", help="Seed demo data for first-tim
 
 @app.callback()
 def main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-v",
+        help="Show version information",
+        callback=version_callback,
+        is_eager=True,
+    ),
     neo4j_uri: str = typer.Option(
         "bolt://localhost:7687",
         "--neo4j-uri",
