@@ -35,6 +35,21 @@ curl http://localhost:8000/health
 # Expected: {"status":"healthy","version":"0.8.0","neo4j":"connected"}
 ```
 
+### Checking Your Version
+
+```bash
+# Check CLI version
+tasker --version
+
+# Check PyPI package version
+pip show socialseed-tasker | grep Version
+
+# Check Docker container version
+curl -s http://localhost:8000/health | python -c "import sys,json; print(json.load(sys.stdin)['version'])"
+```
+
+> **Note**: The Docker `latest` tag and PyPI package are always released together from the same commit. They should match for consistent behavior.
+
 ### 3. Services Available
 
 | Service | URL | Description |
