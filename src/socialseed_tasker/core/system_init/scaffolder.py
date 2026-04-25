@@ -32,15 +32,18 @@ class ScaffolderService:
         self,
         template_dir: Path,
         progress_callback: Callable[[FileOperation], None] | None = None,
+        frontend_dir: Path | None = None,
     ) -> None:
         """Initialize the scaffolder.
 
         Args:
             template_dir: Root directory containing template assets.
             progress_callback: Optional callback invoked for each file operation.
+            frontend_dir: Directory containing frontend build assets (for Kanban board).
         """
         self._template_dir = template_dir
         self._progress_callback = progress_callback
+        self._frontend_dir = frontend_dir
 
     def scaffold(
         self,
@@ -202,21 +205,27 @@ class ScaffolderService:
         force: bool,
         result: ScaffoldResult,
     ) -> None:
-        """Copy frontend/dist/ build to tasker/frontend/ if it exists.
+        """Copy frontend build to tasker/frontend/.
 
+        Copies from self._frontend_dir if set (package assets),
+        or from target_dir/frontend/dist if it exists.
         This ensures users get a working Vue Kanban board immediately
         after scaffolding, instead of just placeholder HTML files.
         """
-        frontend_dist = target_dir / "frontend" / "dist"
-        if not frontend_dist.exists():
+        if self._frontend_dir and self._frontend_dir.exists():
+            frontend_source = self._frontend_dir
+        else:
+            frontend_source = target_dir / "frontend" / "dist"
+
+        if not frontend_source.exists():
             return
 
         tasker_frontend = target_dir / "tasker" / "frontend"
         tasker_frontend.mkdir(parents=True, exist_ok=True)
 
-        for src_path in frontend_dist.rglob("*"):
+        for src_path in frontend_source.rglob("*"):
             if src_path.is_file():
-                relative = src_path.relative_to(frontend_dist)
+                relative = src_path.relative_to(frontend_source)
                 dest_path = tasker_frontend / relative
 
                 if dest_path.exists() and not force:

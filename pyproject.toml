@@ -79,6 +79,7 @@ socialseed_tasker = [
     "assets/templates/**/*",
     "assets/templates/skills/**/*",
     "assets/templates/configs/**/*",
+    "assets/frontend/**/*",
 ]
 
 [project.scripts]

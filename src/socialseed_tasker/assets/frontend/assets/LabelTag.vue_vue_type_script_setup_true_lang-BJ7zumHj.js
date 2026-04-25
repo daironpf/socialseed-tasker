@@ -1,0 +1,1 @@
+import{d as t,o as a,c as r,t as n}from"./index-D5p09CyQ.js";const s={class:"inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300"},p=t({__name:"LabelTag",props:{label:{}},setup(e){return(o,l)=>(a(),r("span",s,n(e.label),1))}});export{p as _};

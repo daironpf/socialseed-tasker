@@ -36,6 +36,11 @@ def _get_template_dir() -> Path:
     return Path(__file__).parent.parent.parent / "assets" / "templates"
 
 
+def _get_frontend_dir() -> Path:
+    """Return the path to the bundled frontend build assets."""
+    return Path(__file__).parent.parent.parent / "assets" / "frontend"
+
+
 def scaffold_command(
     target: str = typer.Argument(
         ".",
@@ -145,8 +150,8 @@ def _run_scaffold(target: str, force: bool, inplace: bool = False) -> None:
         elif op.status == ScaffoldStatus.ERROR:
             console.print(f"  [error]Error:[/error]       {rel_dest} - {op.error_message}")
 
-    service = ScaffolderService(template_dir, progress_callback=_on_progress)
-    
+    service = ScaffolderService(template_dir, progress_callback=_on_progress, frontend_dir=_get_frontend_dir())
+
     if inplace:
         result = service.scaffold(target_path, force=force, output_dir=target_path)
     else:
