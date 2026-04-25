@@ -33,8 +33,12 @@ http://localhost:8000/api/v1
 TASKER_AUTH_ENABLED=true
 TASKER_API_KEY=your-secret-key
 
-# All requests require X-API-Key header
+# All requests require authentication header
+# Supports two formats:
+#   - X-API-Key header (original format)
 curl -H "X-API-Key: your-secret-key" http://localhost:8000/api/v1/issues
+#   - Authorization: Bearer header (standard format)
+curl -H "Authorization: Bearer your-secret-key" http://localhost:8000/api/v1/issues
 ```
 
 ### Endpoints Without Auth

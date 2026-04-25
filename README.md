@@ -109,6 +109,10 @@ http://localhost:8000/api/v1
 
 Set `TASKER_API_KEY` and `TASKER_AUTH_ENABLED=true` for production authentication. Health and docs endpoints remain open.
 
+Supports two header formats:
+- `X-API-Key: your-key` (original)
+- `Authorization: Bearer your-key` (standard)
+
 ---
 
 ### Components
@@ -452,6 +456,36 @@ def get_workable_issues():
     """Get issues that can be worked on (not blocked)."""
     response = requests.get(f"{API_BASE}/workable-issues")
     return response.json()["data"]["items"]
+```
+
+---
+
+## 📦 Project Scaffolding
+
+Inject Tasker infrastructure into any project with a single command. Creates `tasker/` directory with skills, Docker compose, and a full working frontend.
+
+```bash
+# Scaffold in current directory
+tasker init .
+
+# With overwrite
+tasker init . --force
+
+# Initialize without subdirectory
+tasker init . --inplace
+```
+
+The scaffolded `tasker/` directory includes:
+- **Frontend** - Full compiled Vue Kanban board (included in package)
+- **API** - Ready to run with Docker Compose
+- **Skills** - AI agent skills for task management
+- **Configs** - Environment templates
+
+```bash
+cd tasker
+cp configs/.env.example configs/.env
+# Edit configs/.env with your settings
+docker compose up -d
 ```
 
 ---

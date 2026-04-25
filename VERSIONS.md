@@ -146,6 +146,9 @@ SocialSeed Tasker is a **Graph-Only** platform, leveraging Neo4j as its exclusiv
 - [x] **#144 Linter I001, E501 Fix:** Auto-sort imports and fix long lines.
 - [x] **#145 Docker Frontend Fix:** Add retry logic to npm ci in frontend Dockerfile.
 - [x] **#167 Tasker Init docker-compose:** Generate full stack (Neo4j + API + Frontend)
+- [x] **#175 Frontend Build in Scaffold:** Scaffolder copies frontend/dist/ to tasker/frontend/
+- [x] **#177 API Auth Header Flexibility:** API accepts both X-API-Key and Authorization: Bearer headers
+- [x] **#178 Frontend Package Assets:** Compiled Vue Kanban board included in package assets for scaffolding
 
 ---
 
