@@ -38,14 +38,22 @@ Ejecuta una evaluación black-box completa del sistema SocialSeed Tasker. Este w
 - **Use Case Description**: e.g., "Dental clinic appointment system"
 - **Number of Issues**: e.g., 50 issues
 - **Issue Type**: Real issues with dependencies vs simple enumerated issues
+- **Architecture Type**: Monolithic / Microservices / Serverless / API-first
+
+- **Quality Guide**: Optional reference for real issues at `skills/issue_quality_guide.json`
 
 ### Process
 1. Ask user for use case description
 2. Ask user for number of issues to generate
 3. Ask user for issue type:
-   - **Real Issues**: Issues with meaningful titles and descriptions, real dependencies that require AI reasoning
-   - **Simple Enumerated**: Simple numbered issues ("Task 1", "Task 2") without complex dependencies
-4. Assign random profile from Section 0:
+   - **Real Issues**: Issues with meaningful titles, descriptions, dependencies (uses quality guide)
+   - **Simple Enumerated**: Task 1, Task 2, etc. (quick test)
+4. Ask user for architecture type:
+   - **Monolithic**: Single deployable unit (e.g., Django, Rails, Laravel)
+   - **Microservices**: Independent services communicating via API (e.g., Go services, Node services)
+   - **Serverless**: Function-based deployment (e.g., AWS Lambda, Cloud Functions)
+   - **API-first**: Backend API with separate frontend (e.g., REST/GraphQL API + SPA)
+5. (Optional) Assign random profile from Section 0:
    - **Junior Dev**: Focus on documentation clarity, "Doc Gaps"
    - **Senior Architect**: Focus on graph efficiency, design patterns, scalability
    - **DevOps**: Focus on infrastructure, logs, response times, Docker stability
@@ -155,12 +163,17 @@ Ejecuta una evaluación black-box completa del sistema SocialSeed Tasker. Este w
 
 **For Real Issues** (requires AI reasoning):
 1. Launch Sub-Agent with assigned profile
-2. Sub-Agent reads documentation from `real-test/docs/` or `real-test/.agent/
-3. Sub-Agent creates issues via REST API with meaningful titles and descriptions
-4. Sub-Agent creates dependencies between issues (10-15% of issues should have dependencies):
+2. Sub-Agent reads:
+   - `skills/issue_quality_guide.json` (quality standards)
+   - Documentation from `real-test/docs/` or `real-test/.agent/`
+3. Sub-Agent creates issues following quality guide standards:
+   - Titles follow pattern: [Component] Action: Expected Result
+   - Descriptions include Context, Acceptance Criteria, Technical Notes
+   - Priority matches guide (CRITICAL/HIGH/MEDIUM/LOW)
+4. Sub-Agent creates dependencies between issues (10-15%):
    - Link high-priority issues to their prerequisites
    - Create dependency chains
-   - Test blocked/blocking relationships
+   - Use add_dependency() for all relationships
 5. Sub-Agent verifies:
    - Issue count via GET endpoint
    - Dependency creation via GET /api/v1/issues/{id}/dependencies
@@ -324,13 +337,11 @@ dx_evaluation:
   agent_friction_points: []
 ```
 
----
-
 ## Workflow Execution
 
 ```
 prueba el proyecto
-  → Phase 0: Ask use case + issue count + issue type
+  → Phase 0: Ask use case + issue count + issue type + architecture
   → Phase 1: Setup real-test/ + venv
   → Phase 2: tasker init + docker up
   → Phase 3: Create issues via API (simple or real)
@@ -344,6 +355,7 @@ prueba el proyecto
 - [ ] Phase 0: Use case captured
 - [ ] Phase 0: Issue count defined
 - [ ] Phase 0: Issue type defined (real vs simple)
+- [ ] Phase 0: Architecture type defined
 - [ ] Phase 0: Profile assigned
 - [ ] Phase 1: Containers stopped
 - [ ] Phase 1: real-test/ created
