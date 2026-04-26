@@ -1045,6 +1045,74 @@ def component_delete(
         raise typer.Exit(code=1) from None
 
 
+@component_app.command("add-dep", name="add-dep")
+def component_add_dependency(
+    component_id: str = typer.Argument(..., help="Component that depends on another"),
+    depends_on: str = typer.Option(..., "--depends-on", "-d", help="Component it depends on"),
+) -> None:
+    """Add a dependency between two components."""
+    from socialseed_tasker.core.task_management.actions import add_component_dependency_action
+
+    repo = get_repository()
+
+    try:
+        from socialseed_tasker.entrypoints.terminal_cli.commands import resolve_component_id
+
+        source_id = resolve_component_id(component_id, repo)
+        target_id = resolve_component_id(depends_on, repo)
+
+        if str(source_id) == str(target_id):
+            console.print("[error]A component cannot depend on itself.[/error]")
+            raise typer.Exit(code=1)
+
+        repo.add_component_dependency(str(source_id), str(target_id))
+        console.print(f"[success]Added dependency:[/success] {component_id} → {depends_on}")
+    except ComponentNotFoundError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from None
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from None
+
+
+@component_app.command("deps", name="deps")
+def component_list_dependencies(
+    component_id: str = typer.Argument(..., help="Component to list dependencies for"),
+) -> None:
+    """List dependencies for a component."""
+    from socialseed_tasker.entrypoints.terminal_cli.commands import resolve_component_id
+
+    repo = get_repository()
+
+    try:
+        resolved_id = resolve_component_id(component_id, repo)
+
+        deps = repo.get_component_dependencies(str(resolved_id))
+        dependents = repo.get_component_dependents(str(resolved_id))
+
+        console.print(f"\n[bold]Component:[/bold] {component_id}")
+        console.print(f"\n[bold]Depends on ({len(deps)}):[/bold]")
+        if deps:
+            for d in deps:
+                console.print(f"  → {d.name}")
+        else:
+            console.print("  (none)")
+
+        console.print(f"\n[bold]Depended on by ({len(dependents)}):[/bold]")
+        if dependents:
+            for d in dependents:
+                console.print(f"  ← {d.name}")
+        else:
+            console.print("  (none)")
+
+    except ComponentNotFoundError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from None
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from None
+
+
 # ---------------------------------------------------------------------------
 # Analyze commands
 # ---------------------------------------------------------------------------

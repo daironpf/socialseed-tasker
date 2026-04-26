@@ -14,9 +14,9 @@ Currently, only Issues can have dependencies. Components are treated as isolated
 - [x] New API endpoint: `POST /components/{id}/dependencies` → **Implemented**
 - [x] New API endpoint: `GET /components/{id}/dependencies` → **Implemented**
 - [x] New API endpoint: `GET /components/{id}/dependents` → **Implemented**
-- [ ] Update CLI: `tasker component add-dep <comp> --depends-on <other>` → **Not implemented**
-- [ ] Update impact analysis to include component dependencies → **Not implemented**
-- [ ] Add `/analysis/component-impact/{id}` endpoint → **Not implemented**
+- [x] Update CLI: `tasker component add-dep <comp> --depends-on <other>` → **Implemented**
+- [x] Update impact analysis to include component dependencies → **Included in analyze_component_impact**
+- [x] Add `/analysis/component-impact/{id}` endpoint → **Already existent**
 
 ## Implementation
 
@@ -36,6 +36,13 @@ Added API endpoints:
 - `POST /api/v1/components/{id}/dependencies` with body `{"depends_on_id": "..."}`
 - `GET /api/v1/components/{id}/dependencies`
 - `GET /api/v1/components/{id}/dependents`
+
+Added CLI commands:
+- `tasker component add-dep <comp> -d <other>` - Add component dependency
+- `tasker component deps <comp>` - List dependencies and dependents
+
+Already implemented (not new):
+- `/api/v1/analyze/component-impact/{id}` endpoint exists
 
 ## API Impact
 
