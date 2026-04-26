@@ -2,315 +2,393 @@
 
 ## Project Summary
 
-**SocialSeed Tasker** is a graph-based task management framework for AI agents with Neo4j storage backend, hexagonal architecture, and comprehensive tooling for CLI and API interfaces.
+**SocialSeed Tasker** (v0.8.0) is a graph-based task management framework for AI agents with Neo4j storage backend, hexagonal architecture, and comprehensive tooling for CLI and API interfaces.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                     TASKER v0.8.0                              │
+├────────────────────────────────────────────────────────────────────────────┬─────────────────┤
+│  CLI (Typer)    │    API (FastAPI)    │    Skills (Python)    │  Neo4j  │
+│  tasker issue   │    /api/v1/issues  │    task_skill.py     │  Graph │
+│  tasker status  │    /projects/sum   │    Quality Guide    │   DB   │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 1. Core Architecture (Hexagonal)
+## 1. Architecture
 
 ### Package Structure
 ```
 src/socialseed_tasker/
-├── core/                      # Domain logic (framework-agnostic)
-│   ├── task_management/        # Entities, actions, value objects
-│   ├── project_analysis/       # Rules, analyzers, policy engine
-│   ├── validation/             # Input validation and sanitization
-│   └── services/              # External integrations (webhooks, Markdown, secrets)
-├── entrypoints/               # External interfaces
-│   ├── terminal_cli/          # Typer-based CLI
-│   └── web_api/              # FastAPI REST API
-├── storage/                   # Neo4j persistence layer
-├── bootstrap/                # Dependency injection & configuration
-└── assets/                   # Templates for scaffolding
+├── core/                          # Domain logic (no external deps)
+│   ├── task_management/             # Entities, actions, constraints
+│   ├── project_analysis/          # Rules, analyzers, policies
+│   ├── validation/               # Input sanitization
+│   ├── services/                # External integrations
+│   └── system_init/              # Scaffolding
+├── entrypoints/                   # External interfaces
+│   ├── terminal_cli/              # Typer CLI (tasker)
+│   ├── web_api/                 # FastAPI REST API
+│   └── cli/                     # Init command
+├── storage/                       # Neo4j persistence
+├── bootstrap/                    # DI container
+└── assets/                      # Templates & skills
+    └── templates/
+        ├── skills/              # AI Agent skill functions
+        └── frontend/            # Vue Kanban board
 ```
-
-### Key Architectural Principles
-- **Hexagonal Architecture**: Strict separation between core domain, entrypoints, and storage
-- **Domain-Driven Design**: Entities, value objects, and services in `core/`
-- **Repository Pattern**: Storage-agnostic interfaces in `core/`, implementations in `storage/`
-- **No Framework Code in Core**: `core/` contains zero imports of FastAPI, Typer, or Neo4j drivers
 
 ---
 
-## 2. Domain Model (Core Entities)
+## 2. Domain Model
 
-### Issue Entity (`core/task_management/entities.py`)
+### Issue Entity
 ```python
-class Issue(BaseModel):
+class Issue:
     id: UUID
     title: str (max 200)
     description: str
-    status: IssueStatus (OPEN, IN_PROGRESS, CLOSED, BLOCKED)
-    priority: IssuePriority (LOW, MEDIUM, HIGH, CRITICAL)
+    status: IssueStatus  # OPEN, IN_PROGRESS, BLOCKED, CLOSED
+    priority: IssuePriority  # LOW, MEDIUM, HIGH, CRITICAL
     component_id: UUID
     labels: list[str]
-    dependencies: list[UUID]      # Issues this depends on
-    blocks: list[UUID]            # Issues that depend on this
-    affects: list[UUID]           # Impact propagation
-    architectural_constraints: list[str]
+    dependencies: list[UUID]  # [:DEPENDS_ON]
+    blocks: list[UUID]       # [:BLOCKS]
+    affects: list[UUID]      # [:AFFECTS]
     agent_working: bool
     reasoning_logs: list[ReasoningLogEntry]
 ```
 
 ### Component Entity
 ```python
-class Component(BaseModel):
+class Component:
     id: UUID
-    name: str (unique per project)
+    name: str
     description: str | None
     project: str
 ```
 
-### Constraint System (`core/task_management/constraints.py`)
-- **Constraint Categories**: ARCHITECTURE, TECHNOLOGY, NAMING, PATTERNS, DEPENDENCIES
-- **Constraint Levels**: HARD (blocks actions), SOFT (warnings)
-- **Constraint Types**:
-  - `FORBIDDEN_DEPENDENCY` - Prevent specific dependency patterns
-  - `FORBIDDEN_TECHNOLOGY` - Block specific technologies
-  - `REQUIRED_PATTERN` - Mandate labels/naming
-  - `MAX_DEPENDENCY_DEPTH` - Limit graph depth
+### Constraint System
+- **Categories**: ARCHITECTURE, TECHNOLOGY, NAMING, PATTERNS, DEPENDENCIES
+- **Levels**: HARD (blocks), SOFT (warnings)
+- **Types**: FORBIDDEN_DEPENDENCY, FORBIDDEN_TECHNOLOGY, REQUIRED_PATTERN, MAX_DEPENDENCY_DEPTH
 
 ---
 
-## 3. Core Actions & Business Logic
+## 3. Core Actions
 
-### Actions Module (`core/task_management/actions.py`)
-Pure domain logic with no external dependencies:
-- `create_issue_action()` - Validates, creates issues with component management
-- `close_issue_action()` - Validates no open dependencies before closing
-- `move_issue_action()` - Cross-component movement with validation
-- `add_dependency_action()` - Cycle detection via BFS
-- `remove_dependency_action()` - Graph edge removal
-- `get_blocked_issues_action()` - Identifies work blockers
-- `get_workable_issues_action()` - Finds ready-to-work issues
-- `get_dependency_chain_action()` - Transitive dependency analysis
-- `update_component_action()` - Component metadata updates
-- `delete_component_action()` - Safe deletion with force flag
+### Domain Actions (`core/task_management/actions.py`)
+- `create_issue_action()` - Create with validation
+- `close_issue_action()` - Validate no open dependencies
+- `move_issue_action()` - Cross-component movement
+- `add_dependency_action()` - Cycle detection (BFS)
+- `remove_dependency_action()` - Edge removal
+- `get_blocked_issues_action()` - Identify blockers
+- `get_workable_issues_action()` - Ready to work
+- `get_dependency_chain_action()` - Transitive analysis
+- `get_dependency_graph_action()` - Full graph
+- `analyze_impact_action()` - Downstream effects
 
-### Validation System (`core/validation/`)
-- `input_sanitizer.py` - XSS prevention, HTML tag removal, control character stripping
-- `validators.py` - Length limits, pattern matching, custom exceptions
-- `exceptions.py` - Domain-specific validation errors
+### Analysis Engine (`core/project_analysis/`)
+- **ArchitecturalAnalyzer**: Rule enforcement at creation time
+- **RootCauseAnalyzer**: Graph + temporal + semantic inference
+- **ImpactAnalyzer**: Transitive effect propagation
 
 ---
 
-## 4. Analysis & Intelligence Engine
+## 4. Storage Layer
 
-### Architectural Analyzer (`core/project_analysis/analyzer.py`)
+### Neo4j Repository
 ```python
-class ArchitecturalAnalyzer:
-    - validate_issue_creation()      # Check before persist
-    - validate_dependency()          # Prevent forbidden relationships
-    - _check_forbidden_technology()  # Regex pattern matching
-    - _check_required_pattern()      # Label enforcement
-    - _check_frozen_dependency()     # Forbidden dependency rules
-    - _check_max_depth()             # Graph depth limits
+class Neo4jTaskRepository:
+    - Implements TaskRepositoryInterface
+    - Uses Cypher queries
+    - Full CRUD + relationships
+    - Cycle detection
 ```
-
-### Root Cause Analyzer (`core/project_analysis/analyzer.py`)
-Advanced causal inference using:
-- **Graph Proximity**: Direct dependencies, shared components
-- **Temporal Analysis**: Recently closed issues as culprits
-- **Semantic Matching**: Keyword overlap (excluding stop words)
-- **Confidence Scoring**: Weighted combination of signals
-- **Impact Analysis**: Transitive effect propagation through graph
-
-### Rules System (`core/project_analysis/rules.py`)
-- `ArchitecturalRule` - Configurable policies with severity levels
-- `RuleType` - FORBIDDEN_DEPENDENCY, FORBIDDEN_TECHNOLOGY, REQUIRED_PATTERN, MAX_DEPENDENCY_DEPTH
-- `Violation` - Structured rule violation reporting
-
----
-
-## 5. Storage Layer (Neo4j Only)
-
-### Repository Implementation (`storage/graph_database/repositories.py`)
-- Implements `TaskRepositoryInterface` protocol
-- Neo4j-specific queries using Cypher
-- Transaction support via context manager
-- All business logic in `core/`, storage only handles persistence
 
 ### Graph Schema
-- **Nodes**: Issues, Components
-- **Relationships**: `[:DEPENDS_ON]`, `[:BLOCKS]`, `[:AFFECTS]`
-- **Properties**: Full issue metadata, timestamps, status, priority
+- **Nodes**: Issue, Component
+- **Rel**: DEPENDS_ON, BLOCKS, AFFECTS, BELONGS_TO
 
 ---
 
-## 6. CLI Interface (`entrypoints/terminal_cli/`)
+## 5. CLI Interface
 
-### Command Structure
+### Commands
 ```
-tasker [global options] <command> [args]
+tasker [global options] <command>
+
+Global Options:
+  --neo4j-uri URI      # bolt://localhost:7687
+  --neo4j-user USER   # neo4j
+  --neo4j-password PW # Required
+  --api-key KEY      # Optional auth
 
 Commands:
-├── issue create/list/show/close/move/delete/start/finish
-├── dependency add/remove/list/chain/blocked
-├── component create/list/show/update/delete
-├── analyze root-cause/impact
-├── project detect/setup
+├── issue
+│   ├── create "title" -c COMP -p PRIORITY
+│   ├── list [--status OPEN|CLOSED]
+│   ├── show ID
+│   ├── close ID
+│   ├── move ID --to COMP
+│   ├── delete ID
+│   ├── start ID
+│   └── finish ID
+├── dependency
+│   ├── add ID --depends-on OTHER
+│   ├── remove ID --from OTHER
+│   ├── list ID
+│   ├── chain ID
+│   └── blocked
+├── component
+│   ├── create NAME -p PROJECT
+│   ├── list [--project P]
+│   ├── show NAME
+│   ├── update NAME [--name N] [--desc D]
+│   └── delete NAME
+├── analyze
+│   ├── root-cause ISSUE
+│   └── impact ISSUE
+├── project
+│   ├── detect
+│   └── setup
 ├── seed run
-├── init <path>
-├── status
-└── [project] detect/setup
+├── init PATH
+├── status           # Graph health dashboard
+├── login
+└── logout
 ```
 
-### Key Design Features
-- **Partial ID Resolution**: Accepts 4+ character prefixes or partial UUIDs
-- **Component Name Lookup**: Exact matches for short names
-- **Rich Terminal UI**: Color-coded status/priority with custom themes
-- **Error Handling**: User-friendly messages without stack traces
-- **Global Options**: Neo4j connection via CLI flags or environment variables
+### Enhanced Status Command
+```bash
+$ tasker status
+┌────────────────────┐
+│ Tasker Status     │
+├────────────────────┤
+Components: 5
+Total Issues: 42
+Dependencies: 15
+Ready to Work: 12
+Blocked: 3
+...
+```
 
 ---
 
-## 7. API Interface (`entrypoints/web_api/`)
+## 6. API Interface
 
-### FastAPI Application
-- **Authentication**: Optional API key via `X-API-Key` header
-- **Rate Limiting**: Configurable per-client request throttling
-- **CORS**: Enabled for browser-based clients
-- **OpenAPI Schema**: Auto-generated with `tags` for discoverability
+### Endpoints
+```
+/api/v1/
+├── issues
+│   ├── POST /              # Create
+│   ├── GET /              # List (filter: status, component, project)
+│   ├── GET /{id}          # Get
+│   ├── PUT /{id}          # Update
+│   ├── DELETE /{id}       # Delete
+│   └── POST /{id}/close   # Close (validates deps)
+├── components
+│   ├── POST /              # Create
+│   ├── GET /              # List
+│   ├── GET /{id}          # Get
+│   ├── PUT /{id}          # Update
+│   └── DELETE /{id}       # Delete
+├── issues/{id}/dependencies
+│   ├── POST /              # Add dependency
+│   ├── GET /              # List dependencies
+│   └── DELETE /{id}       # Remove
+├── issues/{id}/dependents
+│   └── GET /              # Issues depending on this
+├── dependencies
+│   ├── GET /graph         # Full graph
+│   └── GET /blocked      # Blocked issues
+├── analysis
+│   ├── /impact/{id}       # Impact analysis
+│   └── /root-cause/{id}   # Root cause suggestions
+├── projects/{name}/summary
+│   └── GET /              # Project dashboard
+├── health
+│   └── GET /              # Health check
+└── webhooks
+    └── /github            # GitHub integration
+```
 
-### API Endpoints (`routes/` directory)
-- `/api/v1/issues` - CRUD operations
-- `/api/v1/dependencies` - Relationship management
-- `/api/v1/components` - Component management
-- `/api/v1/analysis/impact/{id}` - Impact analysis
-- `/api/v1/analyze/root-cause/{id}` - Root cause suggestions
-- `/api/v1/health` - Health check with Neo4j status
-- `/api/v1/webhooks/github` - GitHub integration
-
-### Middleware Stack
+### Middleware
 1. API Key Authentication (optional)
 2. Rate Limiting (configurable)
-3. Request/Response logging
-4. Global exception handlers (structured error responses)
+3. CORS enabled
+4. Structured error responses
 
 ---
 
-## 8. Testing Infrastructure
+## 7. AI Agent Skills
 
-### Test Organization
+### Skill Functions (`assets/templates/skills/`)
+```python
+# Components
+create_component(name, project, description, labels)
+list_components(project, name)
+get_component(component_id)
+update_component(component_id, updates)
+delete_component(component_id)
+
+# Issues
+create_issue(title, component_id, priority, description, labels)
+list_issues(status, component, project)
+get_issue(issue_id)
+update_issue(issue_id, updates)
+close_issue(issue_id)
+delete_issue(issue_id)
+get_workable_issues()
+
+# Dependencies
+add_dependency(issue_id, depends_on_id)
+remove_dependency(issue_id, depends_on_id)
+get_dependencies(issue_id)
+get_dependency_chain(issue_id)
+get_blocked_issues()
+get_dependency_graph()
+
+# Analysis
+analyze_impact(issue_id)
+analyze_component_impact(component_id)
+analyze_root_cause(failure_description)
+
+# Dashboard
+get_project_summary(project_name)
+
+# System
+health_check()
+admin_reset(scope)
+```
+
+### Quality Guide (`issue_quality_guide.json`)
+Standards for agent-created issues:
+- **Title Format**: `[Component] Action: Expected Result`
+- **Description**: Context + Acceptance Criteria + Technical Notes
+- **Priority Guide**: CRITICAL/HIGH/MEDIUM/LOW with examples
+- **Dependency Guide**: When and how to create dependencies
+
+---
+
+## 8. Testing
+
+### Test Suite
 ```
 tests/
-├── conftest.py                  # Shared fixtures
-├── unit/                        # Fast, isolated tests
-│   ├── test_validation.py
+├── conftest.py           # Shared fixtures
+├── unit/               # 429 tests
+│   ├── test_cli_commands.py
+│   ├── test_api.py
 │   ├── test_actions.py
 │   ├── test_entities.py
-│   └── ... (270+ tests)
-└── integration/                 # Storage/API integration
+│   ├── test_repositories.py
+│   └── ...
+└── integration/        # Neo4j tests
     ├── test_neo4j_repository.py
     └── test_webhooks.py
 ```
 
-### Testing Approach
-- **Unit Tests**: Mock repositories, test pure domain logic
-- **Integration Tests**: Real Neo4j instance (Docker)
-- **Coverage**: Targeted at core logic, validation, and actions
-- **Test Structure**: `Test{ClassName}` classes with `test_{behavior}` methods
+### Test Results
+```
+429 passed, 0 failed
+```
 
 ---
 
-## 9. Configuration & Environment
+## 9. Configuration
 
-### Key Environment Variables
+### Environment Variables
 ```
-TASKER_NEO4J_URI           # Neo4j Bolt URL (default: bolt://localhost:7687)
-TASKER_NEO4J_USER          # Username (default: neo4j)
+TASKER_NEO4J_URI           # bolt://localhost:7687
+TASKER_NEO4J_USER          # neo4j
 TASKER_NEO4J_PASSWORD      # Required
-TASKER_API_KEY             # Optional authentication
-TASKER_AUTH_ENABLED        # Boolean (default: false)
-TASKER_RATE_LIMIT          # Requests/minute (default: 100)
-TASKER_RATE_LIMIT_ENABLED  # Boolean (default: false)
-TASKER_NEO4J_DATABASE      # Database name
+TASKER_NEO4J_DATABASE      # neo4j
+TASKER_API_KEY             # Optional
+TASKER_AUTH_ENABLED       # false
+TASKER_RATE_LIMIT         # 100/min
+TASKER_RATE_LIMIT_ENABLED # false
 ```
 
-### Project Configuration
-- `pyproject.toml` or `package.json` for project detection
-- Docker Compose for multi-service projects
-- Convention-based module discovery
+---
+
+## 10. Docker Services
+
+### docker-compose.yml
+```yaml
+services:
+  tasker-db:      # Neo4j
+  tasker-api:     # FastAPI
+  tasker-board:  # Vue Kanban
+```
+
+### Ports
+- Neo4j Browser: http://localhost:7474
+- REST API: http://localhost:8000
+- Frontend: http://localhost:8080
 
 ---
 
-## 10. Key Design Patterns
+## 11. Key Features (v0.8.0)
 
-1. **Policy Enforcement** - Configurable architectural rules evaluated at action time
-2. **Graph Traversal** - BFS for dependency chains, cycle detection
-3. **Causal Inference** - Multi-factor root cause analysis (graph + temporal + semantic)
-4. **Hexagonal Ports** - `TaskRepositoryInterface` decouples domain from storage
-5. **Deterministic Actions** - All core functions are pure, testable, and side-effect-free
-6. **Progressive Disclosure** - CLI for operations, API for integration
-7. **Zero Placeholders** - All code is production-ready, no TODOs or FIXMEs
-
----
-
-## 11. Project Capabilities
-
-### What It Does
-- **Task Management**: Create, organize, and track issues with dependencies
-- **Architectural Governance**: Enforce design rules automatically
-- **Root Cause Analysis**: Automatically suggest likely culprits for failures
-- **Impact Assessment**: Predict downstream effects of changes
-- **Multi-Storage Support**: Currently Neo4j-only, designed for extensibility
-- **CI/CD Integration**: CLI and API for automation
-- **Demo Data**: Pre-configured seed for quick evaluation
-
-### What Makes It Unique
-- **Graph-Native**: Relationships are first-class citizens, not afterthoughts
-- **Agent-Ready**: Designed for autonomous AI agent coordination
-- **Analysis-Focused**: Built-in causal reasoning, not just task tracking
-- **Policy-Driven**: Architecture as code through configurable rules
+| Feature | Status |
+|--------|--------|
+| Graph-based task management | ✅ |
+| Hexagonal architecture | ✅ |
+| CLI with Rich UI | ✅ |
+| REST API | ✅ |
+| AI Agent skills | ✅ |
+| Quality guide for agents | ✅ |
+| Dependency graph visualization | ✅ |
+| Root cause analysis | ✅ |
+| Impact analysis | ✅ |
+| Architectural constraints | ✅ |
+| GitHub sync | ✅ |
+| Vue Kanban board | ✅ |
 
 ---
 
-## 12. File Organization Summary
+## 12. Development
 
-### Core Domain (`src/socialseed_tasker/core/`)
-- `task_management/entities.py` - Issue, Component, Agent entities
-- `task_management/actions.py` - Core business logic actions
-- `task_management/constraints.py` - Constraint domain models
-- `task_management/value_objects.py` - ReasoningLogEntry, etc.
-- `validation/` - Input sanitization and validation
-- `project_analysis/` - Analyzer, rules, policy engine
-- `services/` - External integrations
+### Quick Start
+```bash
+# Install
+pip install socialseed-tasker
 
-### Entrypoints (`src/socialseed_tasker/entrypoints/`)
-- `terminal_cli/app.py` - Main CLI application
-- `terminal_cli/commands.py` - All CLI command implementations
-- `web_api/app.py` - FastAPI application factory
-- `web_api/routes/` - API endpoint routers
+# Start services
+docker compose up -d
 
-### Storage (`src/socialseed_tasker/storage/`)
-- `graph_database/driver.py` - Neo4j driver management
-- `graph_database/repositories.py` - Repository implementations
-- `graph_database/queries.py` - Cypher query definitions
+# Initialize project
+tasker init .
+tasker login --password neoSocial
 
-### Configuration (`src/socialseed_tasker/bootstrap/`)
-- `container.py` - Dependency injection container
-- `wiring.py` - Application wiring
+# Create issues
+tasker issue create "Fix auth bug" -c backend -p HIGH
+```
+
+### Running Tests
+```bash
+pytest tests/unit/ -v
+```
 
 ---
 
-## 13. Development Workflow
+## 13. CI/CD
 
-1. **Issue Creation**: `tasker issue create "Title" -c component -p priority`
-2. **Dependency Management**: `tasker dependency add issue --depends-on other`
-3. **Analysis**: `tasker analyze root-cause <test-failure>` or `tasker analyze impact <issue>`
-4. **Project Setup**: `tasker project setup` or `tasker project detect`
-5. **Testing**: `python -m pytest tests/`
+### GitHub Actions
+- Auto-publish to PyPI on version tags
+- Docker image build & push
+- GitHub release creation
+- PyPI verification
 
----
-
-## 14. Quality Assurance
-
-- **Code Review**: All changes require review
-- **Testing**: 270+ unit tests, integration tests with real Neo4j
-- **Linting**: Type checking, linting configured
-- **Documentation**: Comprehensive docstrings, CLI help, API docs
-- **Security**: Input validation, XSS prevention, parameterized queries
+### Publishing
+```bash
+git tag v0.8.0
+git push origin v0.8.0
+```
 
 ---
 
-*Generated from comprehensive codebase analysis excluding temporary files and `.agent` directory*
+*Generated: 2026-04-26*
