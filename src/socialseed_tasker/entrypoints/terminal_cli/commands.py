@@ -464,6 +464,7 @@ def issue_list(
 
     if not issues:
         console.print("[info]No issues found.[/info]")
+        console.print("[dim]💡 Tip: Create an issue with: tasker issue create \"Title\" -c <component_id>[/dim]")
         return
 
     # Build component name lookup
@@ -471,6 +472,7 @@ def issue_list(
     component_names = {str(c.id): c.name for c in components}
 
     console.print(_issues_table(issues, component_names))
+    console.print("[dim]💡 Use -s OPEN to see only open issues, or -c <id> to filter by component[/dim]")
 
 
 @issue_app.command("show")
@@ -907,9 +909,11 @@ def component_list(
 
     if not components:
         console.print("[info]No components found.[/info]")
+        console.print("[dim]💡 Tip: Create a component with: tasker component create <name> -p <project>[/dim]")
         return
 
     console.print(_components_table(components))
+    console.print("[dim]💡 Next: Create issues with: tasker issue create \"My Issue\" -c <component>[/dim]")
 
 
 @component_app.command("show")
