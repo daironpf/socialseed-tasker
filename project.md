@@ -2,7 +2,7 @@
 
 ## Project Summary
 
-**SocialSeed Tasker** (v0.8.0) is a graph-based task management framework for AI agents with Neo4j storage backend, hexagonal architecture, and comprehensive tooling for CLI and API interfaces.
+**SocialSeed Tasker** (v0.8.1) is a graph-based task management framework for AI agents with Neo4j storage backend, hexagonal architecture, and comprehensive tooling for CLI and API interfaces.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
