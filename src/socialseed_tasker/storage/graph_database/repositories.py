@@ -166,6 +166,38 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
         with self._driver.driver.session(database=self._driver.database) as session:
             session.run(queries.DELETE_COMPONENT, id=component_id)
 
+    def add_component_dependency(self, component_id: str, depends_on_id: str) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(
+                queries.ADD_COMPONENT_DEPENDENCY,
+                component_id=component_id,
+                depends_on_id=depends_on_id,
+            )
+
+    def remove_component_dependency(self, component_id: str, depends_on_id: str) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(
+                queries.REMOVE_COMPONENT_DEPENDENCY,
+                component_id=component_id,
+                depends_on_id=depends_on_id,
+            )
+
+    def get_component_dependencies(self, component_id: str) -> list[Component]:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_COMPONENT_DEPENDENCIES,
+                component_id=component_id,
+            )
+            return [_node_to_component(r["dep"]) for r in result]
+
+    def get_component_dependents(self, component_id: str) -> list[Component]:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_COMPONENT_DEPENDENTS,
+                component_id=component_id,
+            )
+            return [_node_to_component(r["dependent"]) for r in result]
+
     # -- Issue CRUD ----------------------------------------------------------
 
     def create_issue(self, issue: Issue) -> None:

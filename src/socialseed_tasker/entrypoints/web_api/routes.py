@@ -1194,6 +1194,96 @@ def delete_component(
 
 
 # ---------------------------------------------------------------------------
+# Component Dependency router
+# ---------------------------------------------------------------------------
+
+components_dep_router = APIRouter()
+
+
+@components_dep_router.post(
+    "/components/{component_id}/dependencies",
+    response_model=APIResponse[dict[str, str]],
+    summary="Add component dependency",
+    description="Create a [:DEPENDS_ON] relationship between two components.",
+    responses={
+        404: {"description": "Component not found"},
+        400: {"description": "Cannot depend on self"},
+    },
+)
+def add_component_dependency(
+    component_id: str,
+    body: dict[str, str],
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    from fastapi import HTTPException
+
+    depends_on_id = body.get("depends_on_id")
+    if not depends_on_id:
+        raise HTTPException(status_code=400, detail="depends_on_id is required")
+
+    if component_id == depends_on_id:
+        raise HTTPException(status_code=400, detail="A component cannot depend on itself")
+
+    existing = repo.get_component(component_id)
+    if existing is None:
+        raise ComponentNotFoundError(component_id)
+
+    existing_target = repo.get_component(depends_on_id)
+    if existing_target is None:
+        raise ComponentNotFoundError(depends_on_id)
+
+    repo.add_component_dependency(component_id, depends_on_id)
+    return APIResponse(
+        data={"component_id": component_id, "depends_on_id": depends_on_id},
+        meta=Meta(request_id=None),
+    )
+
+
+@components_dep_router.get(
+    "/components/{component_id}/dependencies",
+    response_model=APIResponse[list[ComponentResponse]],
+    summary="Get component dependencies",
+    description="List components that this component depends on.",
+    responses={404: {"description": "Component not found"}},
+)
+def get_component_dependencies(
+    component_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    existing = repo.get_component(component_id)
+    if existing is None:
+        raise ComponentNotFoundError(component_id)
+
+    deps = repo.get_component_dependencies(component_id)
+    return APIResponse(
+        data=[_component_to_response(c) for c in deps],
+        meta=Meta(request_id=None),
+    )
+
+
+@components_dep_router.get(
+    "/components/{component_id}/dependents",
+    response_model=APIResponse[list[ComponentResponse]],
+    summary="Get component dependents",
+    description="List components that depend on this component.",
+    responses={404: {"description": "Component not found"}},
+)
+def get_component_dependents(
+    component_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    existing = repo.get_component(component_id)
+    if existing is None:
+        raise ComponentNotFoundError(component_id)
+
+    dependents = repo.get_component_dependents(component_id)
+    return APIResponse(
+        data=[_component_to_response(c) for c in dependents],
+        meta=Meta(request_id=None),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Label router
 # ---------------------------------------------------------------------------
 

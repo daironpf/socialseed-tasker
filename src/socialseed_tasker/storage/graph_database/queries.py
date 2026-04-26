@@ -58,6 +58,31 @@ DETACH DELETE c
 """
 
 # ---------------------------------------------------------------------------
+# Component Dependency queries
+# ---------------------------------------------------------------------------
+
+ADD_COMPONENT_DEPENDENCY = """
+MATCH (source:Component {id: $component_id})
+MATCH (target:Component {id: $depends_on_id})
+MERGE (source)-[:DEPENDS_ON]->(target)
+"""
+
+REMOVE_COMPONENT_DEPENDENCY = """
+MATCH (source:Component {id: $component_id})-[r:DEPENDS_ON]->(target:Component {id: $depends_on_id})
+DELETE r
+"""
+
+GET_COMPONENT_DEPENDENCIES = """
+MATCH (c:Component {id: $component_id})-[:DEPENDS_ON]->(dep:Component)
+RETURN dep
+"""
+
+GET_COMPONENT_DEPENDENTS = """
+MATCH (c:Component {id: $component_id})<-[:DEPENDS_ON]-(dependent:Component)
+RETURN dependent
+"""
+
+# ---------------------------------------------------------------------------
 # Issue queries
 # ---------------------------------------------------------------------------
 

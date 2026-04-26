@@ -164,6 +164,18 @@ class TaskRepositoryInterface(Protocol):
     def delete_component(self, component_id: str) -> None:
         """Permanently remove a component."""
 
+    def add_component_dependency(self, component_id: str, depends_on_id: str) -> None:
+        """Create a [:DEPENDS_ON] relationship between components."""
+
+    def remove_component_dependency(self, component_id: str, depends_on_id: str) -> None:
+        """Remove a [:DEPENDS_ON] relationship between components."""
+
+    def get_component_dependencies(self, component_id: str) -> list[Component]:
+        """Get components that this component depends on."""
+
+    def get_component_dependents(self, component_id: str) -> list[Component]:
+        """Get components that depend on this component."""
+
     def get_component_by_name(self, name: str, project: str | None = None) -> Component | None:
         """Retrieve a component by exact name, optionally filtered by project."""
 

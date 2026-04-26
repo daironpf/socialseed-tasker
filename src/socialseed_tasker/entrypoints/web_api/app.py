@@ -189,6 +189,7 @@ def create_app(
         agent_router,
         analysis_router,
         components_router,
+        components_dep_router,
         constraints_router,
         dependencies_router,
         issues_router,
@@ -202,6 +203,7 @@ def create_app(
     app.include_router(issues_router, prefix="/api/v1", tags=["issues"])
     app.include_router(dependencies_router, prefix="/api/v1", tags=["dependencies"])
     app.include_router(components_router, prefix="/api/v1", tags=["components"])
+    app.include_router(components_dep_router, prefix="/api/v1", tags=["components"])
     app.include_router(constraints_router, prefix="/api/v1", tags=["constraints"])
     app.include_router(label_router, prefix="/api/v1", tags=["labels"])
     app.include_router(analysis_router, prefix="/api/v1", tags=["analysis"])
