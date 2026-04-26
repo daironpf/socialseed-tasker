@@ -360,12 +360,27 @@ pip install socialseed-tasker
 # Start services
 docker compose up -d
 
-# Initialize project
-tasker init .
+# Initialize project with architecture
+tasker init . -pn my-app -a api-first -lang python -fw fastapi -db postgresql -gh https://github.com/user/repo
 tasker login --password neoSocial
 
 # Create issues
 tasker issue create "Fix auth bug" -c backend -p HIGH
+```
+
+### Init Command Options
+```
+tasker init [TARGET] [OPTIONS]
+
+Options:
+  --force, -f           Overwrite existing files
+  --inplace, -i         Scaffold in current directory
+  --project-name, -pn    Project name
+  --architecture, -a     Architecture (monolithic|microservices|serverless|api-first)
+  --language, -lang      Programming language
+  --framework, -fw      Framework
+  --database, -db       Database
+  --github-repo, -gh    GitHub repository URL
 ```
 
 ### Running Tests

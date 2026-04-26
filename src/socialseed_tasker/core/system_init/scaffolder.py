@@ -95,6 +95,8 @@ class ScaffolderService:
 
         self._copy_project_readme(target_dir, force, result)
 
+        self._copy_project_context(target_dir, force, result)
+
         self._copy_frontend_build(target_dir, force, result)
 
         return result
@@ -145,6 +147,53 @@ class ScaffolderService:
             op = FileOperation(
                 source=project_readme_template,
                 destination=readme_destination,
+                status=ScaffoldStatus.ERROR,
+                error_message=str(exc),
+            )
+            result.add_operation(op)
+            if self._progress_callback:
+                self._progress_callback(op)
+
+    def _copy_project_context(
+        self,
+        target_dir: Path,
+        force: bool,
+        result: ScaffoldResult,
+    ) -> None:
+        """Copy project.md template as tasker/project.md (agent context)."""
+        project_context_template = self._template_dir / "project.md"
+        if not project_context_template.exists():
+            return
+
+        tasker_dir = target_dir / "tasker"
+        tasker_dir.mkdir(parents=True, exist_ok=True)
+        project_md_destination = tasker_dir / "project.md"
+
+        if project_md_destination.exists() and not force:
+            result.add_operation(
+                FileOperation(
+                    source=project_context_template,
+                    destination=project_md_destination,
+                    status=ScaffoldStatus.SKIPPED,
+                )
+            )
+            return
+
+        try:
+            shutil.copy2(str(project_context_template), str(project_md_destination))
+            status = ScaffoldStatus.OVERWRITTEN if project_md_destination.exists() else ScaffoldStatus.CREATED
+            op = FileOperation(
+                source=project_context_template,
+                destination=project_md_destination,
+                status=status,
+            )
+            result.add_operation(op)
+            if self._progress_callback:
+                self._progress_callback(op)
+        except (OSError, shutil.Error) as exc:
+            op = FileOperation(
+                source=project_context_template,
+                destination=project_md_destination,
                 status=ScaffoldStatus.ERROR,
                 error_message=str(exc),
             )
