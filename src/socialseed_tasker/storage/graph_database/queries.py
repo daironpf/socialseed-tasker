@@ -391,3 +391,48 @@ RETURN SUM(CASE WHEN 'JUNIOR' THEN hours * 75.0
        SUM(hours) AS total_hours,
        COUNT(*) AS total_issues_closed
 """
+
+# ---------------------------------------------------------------------------
+# Deployment queries
+# ---------------------------------------------------------------------------
+
+CREATE_DEPLOYMENT = """
+CREATE (d:Deployment {
+    id: $id,
+    commit_sha: $commit_sha,
+    environment_name: $environment_name,
+    deployed_at: $deployed_at,
+    issue_ids: $issue_ids,
+    channel: $channel,
+    deployed_by: $deployed_by
+})
+WITH d
+MATCH (i:Issue)
+WHERE i.id IN $issue_ids
+CREATE (i)-[:RELEASED_IN]->(d)
+RETURN d
+"""
+
+GET_DEPLOYMENTS = """
+MATCH (d:Deployment)
+WHERE ($environment_name IS NULL OR d.environment_name = $environment_name)
+RETURN d
+ORDER BY d.deployed_at DESC
+LIMIT $limit
+"""
+
+GET_DEPLOYMENT_BY_COMMIT = """
+MATCH (d:Deployment {commit_sha: $commit_sha})
+RETURN d
+"""
+
+GET_ISSUES_DEPLOYMENTS = """
+MATCH (i:Issue {id: $issue_id})-[:RELEASED_IN]->(d:Deployment)
+RETURN d
+ORDER BY d.deployed_at DESC
+"""
+
+GET_DEPLOYMENT_ISSUES = """
+MATCH (d:Deployment {id: $deployment_id})-[:RELEASED_IN]->(i:Issue)
+RETURN i
+"""

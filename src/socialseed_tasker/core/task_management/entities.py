@@ -127,6 +127,33 @@ class ObjectiveStatus(str, Enum):
     COMPLETED = "COMPLETED"
 
 
+class EnvironmentType(str, Enum):
+    """Environment types for deployment tracking."""
+    PROD = "PROD"
+    STAGING = "STAGING"
+    DEV = "DEV"
+    QA = "QA"
+
+
+class Environment(BaseModel):
+    """Deployment environment."""
+    id: UUID
+    name: EnvironmentType
+    url: str | None = None
+    is_active: bool = True
+
+
+class Deployment(BaseModel):
+    """A deployment event."""
+    id: UUID
+    commit_sha: str
+    environment_name: EnvironmentType
+    deployed_at: datetime
+    issue_ids: list[UUID]
+    channel: str | None = None
+    deployed_by: str | None = None
+
+
 class Epic(BaseModel):
     """Group of issues that share a common initiative."""
 

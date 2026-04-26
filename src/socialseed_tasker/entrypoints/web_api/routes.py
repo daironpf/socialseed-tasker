@@ -322,25 +322,48 @@ def get_issue(
 def get_issue_component(
     issue_id: str,
     repo: TaskRepositoryInterface = Depends(get_repo),
-):
-    issue = repo.get_issue(issue_id)
+) -> APIResponse[dict]:
+    from socialseed_tasker.entrypoints.web_api.utils import resolve_issue_id
+
+    try:
+        resolved_id = resolve_issue_id(issue_id, repo)
+    except ValueError as e:
+        raise IssueNotFoundError(issue_id)
+
+    issue = repo.get_issue(str(resolved_id))
     if issue is None:
         raise IssueNotFoundError(issue_id)
-    component = repo.get_component(str(issue.component_id))
-    if component is None:
-        from socialseed_tasker.core.task_management.actions import ComponentNotFoundError
-        raise ComponentNotFoundError(str(issue.component_id))
-    return APIResponse(data=_component_to_response(component), meta=Meta(request_id=None))
+
+    component = repo.get_component(str(issue.component_id)) if issue.component_id else None
+
+    return APIResponse(
+        data={"issue_id": issue_id, "component": component.name if component else None},
+        meta=Meta(request_id=None),
+    )
+
+
+@issues_router.get(
+    "/issues/{issue_id}/deployments",
+    response_model=APIResponse[list],
+    summary="Get deployments for an issue",
+    description="Get all deployments where this issue was released.",
+)
+def get_issue_deployments(
+    issue_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list]:
+    deployments = repo.get_issue_deployments(issue_id)
+    return APIResponse(data=deployments, meta=Meta(request_id=None))
 
 
 @issues_router.patch(
     "/issues/{issue_id}",
     response_model=APIResponse[IssueResponse],
     summary="Update an issue",
-    description="Partially update an issue's fields. Supports: status, priority, labels, description, agent_working.",
+    description="Apply partial updates to an issue. Supports status transitions and field updates.",
     responses={
         404: {"description": "Issue not found"},
-        400: {"description": "Invalid status transition or validation error"},
+        409: {"description": "Conflict - invalid status transition"},
     },
 )
 def update_issue(
@@ -2069,6 +2092,91 @@ def get_project_summary(
 # ---------------------------------------------------------------------------
 
 webhook_router = APIRouter()
+
+
+@webhook_router.post(
+    "/deployments",
+    response_model=APIResponse[dict],
+    summary="Receive CI/CD deployment events",
+    description="Webhook endpoint to receive deployment events from CI/CD systems.",
+)
+def receive_deployment(
+    body: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+    request: Request = None,
+) -> APIResponse[dict]:
+    from uuid import uuid4
+    from datetime import datetime, timezone
+
+    from socialseed_tasker.core.task_management.entities import Deployment, EnvironmentType
+
+    commit_sha = body.get("commit_sha", "")
+    environment = body.get("environment", "DEV")
+    issue_ids = body.get("issue_ids", [])
+    channel = body.get("channel", "webhook")
+    deployed_by = body.get("deployed_by", "ci-cd")
+
+    if not commit_sha:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="commit_sha is required")
+
+    try:
+        env_type = EnvironmentType(environment)
+    except ValueError:
+        env_type = EnvironmentType.DEV
+
+    deployment = Deployment(
+        id=uuid4(),
+        commit_sha=commit_sha,
+        environment_name=env_type,
+        deployed_at=datetime.now(timezone.utc),
+        issue_ids=issue_ids,
+        channel=channel,
+        deployed_by=deployed_by,
+    )
+    repo.create_deployment(deployment)
+
+    return APIResponse(
+        data={
+            "id": str(deployment.id),
+            "commit_sha": deployment.commit_sha,
+            "environment": deployment.environment_name.value,
+            "deployed_at": deployment.deployed_at.isoformat(),
+        },
+        meta=Meta(request_id=None),
+    )
+
+
+@webhook_router.get(
+    "/deployments",
+    response_model=APIResponse[list],
+    summary="List deployments",
+    description="List deployments, optionally filtered by environment.",
+)
+def list_deployments(
+    environment: str | None = Query(None, description="Filter by environment"),
+    limit: int = Query(50, ge=1, le=100, description="Maximum results"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list]:
+    deployments = repo.get_deployments(environment_name=environment, limit=limit)
+    return APIResponse(data=deployments, meta=Meta(request_id=None))
+
+
+@webhook_router.get(
+    "/deployments/by-commit/{commit_sha}",
+    response_model=APIResponse[dict],
+    summary="Get deployment by commit",
+    description="Get deployment details for a specific commit SHA.",
+)
+def get_deployment_by_commit(
+    commit_sha: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[dict]:
+    deployment = repo.get_deployment_by_commit(commit_sha)
+    if deployment is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Deployment not found")
+    return APIResponse(data=deployment, meta=Meta(request_id=None))
 
 
 @webhook_router.post(

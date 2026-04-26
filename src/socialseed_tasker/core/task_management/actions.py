@@ -264,6 +264,17 @@ class TaskRepositoryInterface(Protocol):
     def get_cost_summary(self) -> dict:
         """Get overall cost summary."""
 
+    def get_deployments(
+        self, environment_name: str | None = None, limit: int = 50
+    ) -> list[dict]:
+        """Get deployments, optionally filtered by environment."""
+
+    def get_issue_deployments(self, issue_id: str) -> list[dict]:
+        """Get all deployments for an issue."""
+
+    def create_deployment(self, deployment) -> None:
+        """Record a new deployment."""
+
     def get_agent_status(self, issue_id: str) -> dict[str, Any]:
         """Get agent work status for an issue."""
 
