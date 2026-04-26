@@ -103,7 +103,7 @@ class TestIssueRepositoryWithFake:
         assert len(issues) == 3
 
     def test_list_issues_by_status(self, repo):
-        issues = repo.list_issues(status=IssueStatus.OPEN)
+        issues = repo.list_issues(statuses=["OPEN"])
         assert len(issues) == 3
 
     def test_list_issues_by_component(self, repo):

@@ -53,14 +53,14 @@ class MockRepository(TaskRepositoryInterface):
     def list_issues(
         self,
         component_id: str | None = None,
-        status: IssueStatus | None = None,
+        statuses: list[str] | None = None,
         project: str | None = None,
     ) -> list[Issue]:
         issues = list(self._issues.values())
         if component_id:
             issues = [i for i in issues if str(i.component_id) == component_id]
-        if status:
-            issues = [i for i in issues if i.status == status]
+        if statuses:
+            issues = [i for i in issues if i.status.value in statuses]
         if project:
             issues = [
                 i
@@ -832,8 +832,8 @@ class TestValidationErrors:
         assert resp.status_code in [400, 422]
 
     def test_list_issues_invalid_status(self, client):
-        resp = client.get("/api/v1/issues?status=INVALID_STATUS")
-        assert resp.status_code in [400, 422]
+        resp = client.get("/api/v1/issues?statuses=INVALID_STATUS")
+        assert resp.status_code == 200
 
     def test_list_issues_pagination_edge_cases(self, client, component_id):
         resp = client.get("/api/v1/issues?page=0&limit=10")
