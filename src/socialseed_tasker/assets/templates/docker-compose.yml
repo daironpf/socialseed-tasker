@@ -39,6 +39,12 @@ services:
   # Neo4j-only storage - graph database
   # Uses pre-built Docker image from GitHub Container Registry
   # Note: 'latest' tag is always updated with each release to match PyPI version
+  #
+  # Environment Variables (override with -e or .env file):
+  #   - TASKER_NEO4J_URI: Neo4j connection URI (default: bolt://tasker-db:7687)
+  #   - TASKER_NEO4J_PASSWORD: Neo4j password (default: neoSocial)
+  #   - TASKER_API_KEY: API authentication key
+  #   - TASKER_AUTH_ENABLED: Enable/disable auth (default: false)
   # =============================================================================
   tasker-api:
     container_name: tasker-api
@@ -46,13 +52,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - TASKER_NEO4J_URI=bolt://tasker-db:7687
-      - TASKER_NEO4J_USERNAME=neo4j
-      - TASKER_NEO4J_PASSWORD=neoSocial
+      - TASKER_NEO4J_URI=${TASKER_NEO4J_URI:-bolt://tasker-db:7687}
+      - TASKER_NEO4J_USERNAME=${TASKER_NEO4J_USERNAME:-neo4j}
+      - TASKER_NEO4J_PASSWORD=${TASKER_NEO4J_PASSWORD:-neoSocial}
       - TASKER_API_HOST=0.0.0.0
       - TASKER_API_PORT=8000
-      - TASKER_API_KEY=test-token
-      - TASKER_AUTH_ENABLED=false
+      - TASKER_API_KEY=${TASKER_API_KEY:-test-token}
+      - TASKER_AUTH_ENABLED=${TASKER_AUTH_ENABLED:-false}
     depends_on:
       tasker-db:
         condition: service_healthy

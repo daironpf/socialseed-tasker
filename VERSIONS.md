@@ -149,6 +149,7 @@ SocialSeed Tasker is a **Graph-Only** platform, leveraging Neo4j as its exclusiv
 - [x] **#175 Frontend Build in Scaffold:** Scaffolder copies frontend/dist/ to tasker/frontend/
 - [x] **#177 API Auth Header Flexibility:** API accepts both X-API-Key and Authorization: Bearer headers
 - [x] **#178 Frontend Package Assets:** Compiled Vue Kanban board included in package assets for scaffolding
+- [x] **#183 Reduce Setup Friction:** docker-compose.yml uses env vars with sensible defaults for local dev
 
 ---
 

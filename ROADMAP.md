@@ -4,7 +4,7 @@ SocialSeed Tasker is an **AI-Native Project Management Framework** powered by **
 
 This roadmap outlines our journey from a core utility to a global standard for AI-driven development.
 
-**Last updated:** 2026-04-12 (v0.8.0 - Issues #136-140 resolved)
+**Last updated:** 2026-04-26 (v0.8.0 - Issues #136-143 resolved)
 
 ---
 
@@ -121,6 +121,7 @@ This roadmap outlines our journey from a core utility to a global standard for A
 | 17 | Linter F541, B904 - code quality | Low | Code | ✅ RESOLVED (v0.8.0 #143) |
 | 18 | Linter I001, E501 - formatting | Low | Code | ✅ RESOLVED (v0.8.0 #144) |
 | 19 | Docker frontend build failure | Medium | Docker | ✅ RESOLVED (v0.8.0 #145) |
+| 20 | Setup friction - manual Neo4j config required | Low | CLI | ✅ RESOLVED (v0.8.1 #183) |
 
 ---
 
