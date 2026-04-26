@@ -1118,3 +1118,53 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 }
                 for record in result
             ]
+
+    # ---------------------------------------------------------------------------
+    # Vector Search methods
+    # ---------------------------------------------------------------------------
+
+    def search_by_embedding(
+        self, embedding: list[float], threshold: float = 0.7, limit: int = 10
+    ) -> list[dict]:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.SEARCH_BY_EMBEDDING,
+                embedding=embedding,
+                threshold=threshold,
+                limit=limit,
+            )
+            return [
+                {
+                    "issue_id": record["issue_id"],
+                    "title": record["title"],
+                    "score": record["score"],
+                }
+                for record in result
+            ]
+
+    def find_similar_issues(
+        self, issue_id: str, threshold: float = 0.7, limit: int = 10
+    ) -> list[dict]:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.FIND_SIMILAR_ISSUES,
+                issue_id=issue_id,
+                threshold=threshold,
+                limit=limit,
+            )
+            return [
+                {
+                    "issue_id": record["issue_id"],
+                    "title": record["title"],
+                    "score": record["score"],
+                }
+                for record in result
+            ]
+
+    def update_issue_embedding(self, issue_id: str, embedding: list[float]) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(
+                queries.UPDATE_ISSUE_EMBEDDING,
+                id=issue_id,
+                embedding=embedding,
+            )

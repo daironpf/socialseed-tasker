@@ -275,6 +275,15 @@ class TaskRepositoryInterface(Protocol):
     def create_deployment(self, deployment) -> None:
         """Record a new deployment."""
 
+    def search_by_embedding(self, embedding: list[float], threshold: float = 0.7, limit: int = 10) -> list[dict]:
+        """Search issues by embedding similarity."""
+
+    def find_similar_issues(self, issue_id: str, threshold: float = 0.7, limit: int = 10) -> list[dict]:
+        """Find issues similar to the given issue."""
+
+    def update_issue_embedding(self, issue_id: str, embedding: list[float]) -> None:
+        """Update the embedding for an issue."""
+
     def get_agent_status(self, issue_id: str) -> dict[str, Any]:
         """Get agent work status for an issue."""
 

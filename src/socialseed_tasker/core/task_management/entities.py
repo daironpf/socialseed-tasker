@@ -106,6 +106,7 @@ class Issue(BaseModel):
     hourly_rate_tier: str | None = None
     actual_hours: float | None = None
     epic_id: UUID | None = None
+    description_embedding: list[float] | None = None
 
 
 class HourlyRateTier(str, Enum):

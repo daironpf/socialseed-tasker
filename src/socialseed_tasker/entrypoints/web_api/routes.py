@@ -1706,6 +1706,110 @@ def get_cost_summary(repo: TaskRepositoryInterface = Depends(get_repo)):
 
 
 # ---------------------------------------------------------------------------
+# AI Search router
+# ---------------------------------------------------------------------------
+
+ai_search_router = APIRouter()
+
+
+@ai_search_router.get(
+    "/search-context",
+    response_model=APIResponse[list],
+    summary="Semantic search for context",
+    description="Search issues by semantic similarity to the query text.",
+)
+def search_context(
+    q: str = Query(..., description="Search query text"),
+    threshold: float = Query(0.7, ge=0.0, le=1.0, description="Minimum similarity score"),
+    limit: int = Query(10, ge=1, le=50, description="Maximum results"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list]:
+    try:
+        import os
+        openai_api_key = os.environ.get("OPENAI_API_KEY", "")
+        if not openai_api_key:
+            return APIResponse(
+                data=[],
+                meta=Meta(request_id=None),
+            )
+        from openai import OpenAI
+        client = OpenAI(api_key=openai_api_key)
+        response = client.embeddings.create(
+            model="text-embedding-ada-002",
+            input=q,
+        )
+        embedding = response.data[0].embedding
+        results = repo.search_by_embedding(embedding, threshold=threshold, limit=limit)
+        return APIResponse(data=results, meta=Meta(request_id=None))
+    except Exception:
+        return APIResponse(data=[], meta=Meta(request_id=None))
+
+
+@ai_search_router.get(
+    "/similar-issues/{issue_id}",
+    response_model=APIResponse[list],
+    summary="Find similar issues",
+    description="Find issues similar to the given issue by semantic similarity.",
+)
+def find_similar_issues(
+    issue_id: str,
+    threshold: float = Query(0.7, ge=0.0, le=1.0, description="Minimum similarity score"),
+    limit: int = Query(10, ge=1, le=50, description="Maximum results"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list]:
+    results = repo.find_similar_issues(issue_id, threshold=threshold, limit=limit)
+    return APIResponse(data=results, meta=Meta(request_id=None))
+
+
+@ai_search_router.post(
+    "/issues/{issue_id}/embed",
+    response_model=APIResponse[dict],
+    summary="Generate embedding for issue",
+    description="Generate or regenerate the embedding for an issue description.",
+)
+def generate_issue_embedding(
+    issue_id: str,
+    force: bool = Query(False, description="Force regenerate existing embedding"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[dict]:
+    try:
+        import os
+        openai_api_key = os.environ.get("OPENAI_API_KEY", "")
+        if not openai_api_key:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail="OPENAI_API_KEY not configured")
+
+        issue = repo.get_issue(issue_id)
+        if issue is None:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="Issue not found")
+
+        if issue.description_embedding and not force:
+            return APIResponse(
+                data={"issue_id": issue_id, "embedding_exists": True},
+                meta=Meta(request_id=None),
+            )
+
+        text = issue.description or issue.title
+        from openai import OpenAI
+        client = OpenAI(api_key=openai_api_key)
+        response = client.embeddings.create(
+            model="text-embedding-ada-002",
+            input=text,
+        )
+        embedding = response.data[0].embedding
+        repo.update_issue_embedding(issue_id, embedding)
+
+        return APIResponse(
+            data={"issue_id": issue_id, "embedding_exists": True},
+            meta=Meta(request_id=None),
+        )
+    except Exception as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---------------------------------------------------------------------------
 # Policy router
 # ---------------------------------------------------------------------------
 # Policy router

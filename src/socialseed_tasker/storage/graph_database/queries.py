@@ -436,3 +436,35 @@ GET_DEPLOYMENT_ISSUES = """
 MATCH (d:Deployment {id: $deployment_id})-[:RELEASED_IN]->(i:Issue)
 RETURN i
 """
+
+# ---------------------------------------------------------------------------
+# Vector Search queries
+# ---------------------------------------------------------------------------
+
+SEARCH_BY_EMBEDDING = """
+MATCH (i:Issue)
+WHERE i.description_embedding IS NOT NULL
+WITH i, apoc.algo.similarity(i.description_embedding, $embedding, 'cosine') AS score
+WHERE score > $threshold
+RETURN i.id AS issue_id, i.title AS title, score
+ORDER BY score DESC
+LIMIT $limit
+"""
+
+FIND_SIMILAR_ISSUES = """
+MATCH (i:Issue {id: $issue_id})
+WHERE i.description_embedding IS NOT NULL
+WITH i
+MATCH (other:Issue)
+WHERE other.id <> i.id AND other.description_embedding IS NOT NULL
+WITH other, apoc.algo.similarity(i.description_embedding, other.description_embedding, 'cosine') AS score
+WHERE score > $threshold
+RETURN other.id AS issue_id, other.title AS title, score
+ORDER BY score DESC
+LIMIT $limit
+"""
+
+UPDATE_ISSUE_EMBEDDING = """
+MATCH (i:Issue {id: $id})
+SET i.description_embedding = $embedding
+"""
