@@ -134,10 +134,31 @@ Ejecuta una evaluación black-box completa del sistema SocialSeed Tasker. Este w
 
 ### Process
 1. Launch Sub-Agent with assigned profile
-2. Sub-Agent reads documentation from `real-test/docs/` or `real-test/.agent/`
+2. Sub-Agent reads documentation from `real-test/docs/` or `real-test/.agent/
 3. Sub-Agent creates issues via REST API (NOT CLI - to test API)
-4. Sub-Agent verifies issue count via GET endpoint
-5. If discrepancy found: mark as FINDING with severity HIGH
+4. Sub-Agent creates dependencies between issues (10-15% of issues should have dependencies):
+   - Link high-priority issues to their prerequisites
+   - Create dependency chains
+   - Test blocked/blocking relationships
+5. Sub-Agent verifies:
+   - Issue count via GET endpoint
+   - Dependency creation via GET /api/v1/issues/{id}/dependencies
+6. If discrepancy found: mark as FINDING with severity HIGH
+
+### Test Dependencies
+After creating issues, create dependencies to test the graph functionality:
+```bash
+# For 50 issues, create 5-8 dependencies
+# Example: issue #1 depends on issue #2 (prerequisite)
+curl -X POST http://localhost:8000/api/v1/issues/{id1}/dependencies \
+  -H "Content-Type: application/json" \
+  -d '{"depends_on_id": "{id2}"}'
+```
+
+Verify dependencies were created:
+```bash
+curl http://localhost:8000/api/v1/issues/{id}/dependencies
+```
 
 ---
 
@@ -146,7 +167,7 @@ Ejecuta una evaluación black-box completa del sistema SocialSeed Tasker. Este w
 ### Output: `real-test/report.md`
 
 Must include:
-- **Test Metadata**: date, version, use case, requested vs created issues
+- **Test Metadata**: date, version, use case, requested vs created issues, dependencies created
 - **Findings**:
   - DOC_GAP: Documentation inconsistencies
   - BUG: Code bugs
@@ -158,6 +179,7 @@ Must include:
   - documentation_score
   - api_clarity
   - setup_friction
+  - dependency_graph_score: Ability to create and query dependencies
 
 ### ⚠️ ASK BEFORE CLEANUP
 
