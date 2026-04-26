@@ -107,8 +107,9 @@ app.command(name="logout", help="Clear saved credentials")(commands.logout_comma
 app.add_typer(commands.seed_app, name="seed", help="Seed demo data for first-time users")
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(
+    ctx: typer.Context,
     version: bool = typer.Option(
         False,
         "--version",
@@ -146,6 +147,14 @@ def main(
     Examples:
         tasker --neo4j-password secret component create mycomp -p myproj
         tasker -pw secret issue create "Fix bug" -c <id>
+
+    Quick Start:
+        1. Start Neo4j: docker compose up -d
+        2. Run: tasker -pw neoSocial seed run
+        3. Open UI: http://localhost:8080
+
+    📚 Docs: https://github.com/daironpf/socialseed-tasker#readme
+    💬 Issues: https://github.com/daironpf/socialseed-tasker/issues
     """
     global _cli_container
     if neo4j_uri:
