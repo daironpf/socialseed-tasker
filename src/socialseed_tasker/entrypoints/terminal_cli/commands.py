@@ -1144,21 +1144,67 @@ def analyze_impact(
 
 @status_app.command("status")
 def status_command() -> None:
-    """Show current CLI status, backend, and connection info."""
+    """Show graph health dashboard with issue statistics."""
     from socialseed_tasker.bootstrap.container import AppConfig
+    from socialseed_tasker.entrypoints.terminal_cli.app import get_cli_container
 
     config = AppConfig.from_env()
+    repo = get_repository()
+
+    all_issues = repo.list_issues()
+    components = repo.list_components()
+
+    by_status: dict[str, int] = {}
+    by_priority: dict[str, int] = {}
+
+    for issue in all_issues:
+        status = issue.status.value
+        priority = issue.priority.value
+        by_status[status] = by_status.get(status, 0) + 1
+        by_priority[priority] = by_priority.get(priority, 0) + 1
+
+    from socialseed_tasker.core.task_management.actions import get_workable_issues_action, get_blocked_issues_action
+
+    workable = get_workable_issues_action(repo, component_id=None)
+    blocked = get_blocked_issues_action(repo)
+
+    total_deps = sum(len(i.dependencies) for i in all_issues if i.dependencies)
 
     console.print(
         Panel(
-            f"[bold]Backend:[/bold] neo4j (Graph Only)\n"
+            f"[bold]Backend:[/bold] neo4j (Graph)\n"
             f"[bold]Neo4j URI:[/bold] {config.neo4j.uri}\n"
-            f"[bold]Neo4j User:[/bold] {config.neo4j.user}\n"
-            f"[bold]Neo4j DB:[/bold] {config.neo4j.database}",
-            title="[bold]Tasker Status[/bold]",
+            f"[bold]Database:[/bold] {config.neo4j.database}\n"
+            f"[bold]Connection:[/bold] {config.neo4j.connection_mode}",
+            title="[bold cyan]Tasker Status[/bold cyan]",
             border_style="cyan",
         )
     )
+
+    console.print()
+    console.print(
+        Panel(
+            f"[bold]Components:[/bold] {len(components)}\n"
+            f"[bold]Total Issues:[/bold] {len(all_issues)}\n"
+            f"[bold]Dependencies:[/bold] {total_deps}\n"
+            f"[bold]Ready to Work:[/bold] {len(workable)}\n"
+            f"[bold]Blocked:[/bold] {len(blocked)}",
+            title="[bold cyan]Graph Health[/bold cyan]",
+            border_style="green",
+        )
+    )
+
+    console.print()
+    console.print("[bold]By Status:[/bold]")
+    for status, count in sorted(by_status.items()):
+        color = f"status.{status.lower()}"
+        console.print(f"  [{color}]{status}:[/{color}] {count}")
+
+    console.print()
+    console.print("[bold]By Priority:[/bold]")
+    for priority, count in sorted(by_priority.items(), key=lambda x: -x[1]):
+        color = f"priority.{priority.lower()}"
+        console.print(f"  [{color}]{priority}:[/{color}] {count}")
 
 
 @status_app.command("login")

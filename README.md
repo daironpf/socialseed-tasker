@@ -4,6 +4,24 @@
 
 A specialized framework that leverages **Neo4j** to provide AI agents with infinite architectural context and strict governance.
 
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│                        TASKER ARCHITECTURE                         │
+├─────────────────────────────────────────────────────────────────────────────┬────────────┤
+│                                                               │            │
+│   ┌─────────┐     ┌─────────┐     ┌─────────┐     ┌───────┐  │   AI     │
+│   │  CLI    │────▶│  REST  │────▶│ Action  │────▶│ Repo  │  │   AGENTS │
+│   │ (Typer) │     │  API   │     │ Layer  │     │(Neo4j)│  │            │
+│   └─────────┘     └─────────┘     └─────────┘     └───────┘  │            │
+│        │            │            │            │                 │   Skills  │
+│        │            │            │            ▼                 │  (Python)│
+│        │            │            │     ┌─────────┐           │            │
+│        │            │            │     │ Graph  │           │            │
+│        │            │            │     │ DB     │           │            │
+│        │            │            │     └─────────┘           │            │
+└─────────────────────────────────────────────────────────────────────────────┴────────────┘
+```
+
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10+-blue.svg" alt="Python 3.10+">
   <img src="https://img.shields.io/badge/Architecture-Hexagonal-green.svg" alt="Hexagonal Architecture">
