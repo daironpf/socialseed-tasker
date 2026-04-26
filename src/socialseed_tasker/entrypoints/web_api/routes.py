@@ -311,6 +311,27 @@ def get_issue(
     return APIResponse(data=_issue_to_response(issue), meta=Meta(request_id=None))
 
 
+@issues_router.get(
+    "/issues/{issue_id}/component",
+    response_model=APIResponse[ComponentResponse],
+    summary="Get issue's component via relationship",
+    description="Get the Component that this Issue belongs to, following the BELONGS_TO relationship.",
+    responses={404: {"description": "Issue or Component not found"}},
+)
+def get_issue_component(
+    issue_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+    component = repo.get_component(str(issue.component_id))
+    if component is None:
+        from socialseed_tasker.core.task_management.actions import ComponentNotFoundError
+        raise ComponentNotFoundError(str(issue.component_id))
+    return APIResponse(data=_component_to_response(component), meta=Meta(request_id=None))
+
+
 @issues_router.patch(
     "/issues/{issue_id}",
     response_model=APIResponse[IssueResponse],
