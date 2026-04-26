@@ -200,7 +200,7 @@ def create_app(
         webhook_router,
 )
 
-    # Register routers
+# Register routers
     from socialseed_tasker.entrypoints.web_api.routes import (
         admin_router,
         agent_router,
@@ -208,6 +208,7 @@ def create_app(
         components_router,
         components_dep_router,
         constraints_router,
+        cost_analytics_router,
         dependencies_router,
         epic_router,
         issues_router,
@@ -215,7 +216,7 @@ def create_app(
         objective_router,
         policy_router,
         project_router,
-sync_router,
+        sync_router,
         webhook_router,
     )
 
@@ -234,6 +235,7 @@ sync_router,
     app.include_router(admin_router, prefix="/api/v1", tags=["admin"])
     app.include_router(epic_router, prefix="/api/v1", tags=["epics"])
     app.include_router(objective_router, prefix="/api/v1", tags=["objectives"])
+    app.include_router(cost_analytics_router, prefix="/api/v1", tags=["cost_analytics"])
 
     # Health endpoint with Neo4j connectivity check
     @app.get("/health", tags=["health"])

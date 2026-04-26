@@ -252,6 +252,18 @@ class TaskRepositoryInterface(Protocol):
     def finish_agent_work(self, issue_id: str) -> Issue:
         """Finish agent work on an issue."""
 
+    def get_cost_per_component(self) -> list[dict]:
+        """Get cost breakdown by component for closed issues."""
+
+    def get_cost_per_epic(self) -> list[dict]:
+        """Get cost breakdown by epic for closed issues."""
+
+    def get_cost_per_project(self) -> list[dict]:
+        """Get cost breakdown by project for closed issues."""
+
+    def get_cost_summary(self) -> dict:
+        """Get overall cost summary."""
+
     def get_agent_status(self, issue_id: str) -> dict[str, Any]:
         """Get agent work status for an issue."""
 

@@ -321,3 +321,73 @@ DELETE_LABEL = """
 MATCH (l:Label {name: $name})
 DETACH DELETE l
 """
+
+# ---------------------------------------------------------------------------
+# Cost Analytics queries
+# ---------------------------------------------------------------------------
+
+GET_COST_PER_COMPONENT = """
+MATCH (i:Issue)-[:BELONGS_TO]->(c:Component)
+WHERE i.status = 'CLOSED' AND i.actual_hours IS NOT NULL AND i.hourly_rate_tier IS NOT NULL
+WITH c, i.actual_hours AS hours, i.hourly_rate_tier AS tier
+WITH c, COLLECT({hours: hours, tier: tier}) AS issue_data
+RETURN c.id AS component_id, c.name AS component_name,
+       SUM(CASE WHEN 'JUNIOR' THEN hours * 75.0
+               WHEN 'SENIOR' THEN hours * 125.0
+               WHEN 'STAFF' THEN hours * 175.0
+               WHEN 'PRINCIPAL' THEN hours * 250.0
+               ELSE 0.0 END) AS actual_cost,
+       SUM(CASE WHEN 'JUNIOR' THEN hours * 75.0
+               WHEN 'SENIOR' THEN hours * 125.0
+               WHEN 'STAFF' THEN hours * 175.0
+               WHEN 'PRINCIPAL' THEN hours * 250.0
+               ELSE 0.0 END) / NULLIF(SUM(hours), 0) AS avg_hourly_rate,
+       SUM(hours) AS total_hours,
+       COUNT(*) AS issue_count
+ORDER BY actual_cost DESC
+"""
+
+GET_COST_PER_EPIC = """
+MATCH (i:Issue)-[:PART_OF]->(e:Epic)
+WHERE i.status = 'CLOSED' AND i.actual_hours IS NOT NULL AND i.hourly_rate_tier IS NOT NULL
+WITH e, i.actual_hours AS hours, i.hourly_rate_tier AS tier
+WITH e, COLLECT({hours: hours, tier: tier}) AS issue_data
+RETURN e.id AS epic_id, e.name AS epic_name,
+       SUM(CASE WHEN 'JUNIOR' THEN hours * 75.0
+               WHEN 'SENIOR' THEN hours * 125.0
+               WHEN 'STAFF' THEN hours * 175.0
+               WHEN 'PRINCIPAL' THEN hours * 250.0
+               ELSE 0.0 END) AS actual_cost,
+       SUM(hours) AS total_hours,
+       COUNT(*) AS issue_count
+ORDER BY actual_cost DESC
+"""
+
+GET_COST_PER_PROJECT = """
+MATCH (i:Issue)-[:BELONGS_TO]->(c:Component)-[:BELONGS_TO]->(p:Project)
+WHERE i.status = 'CLOSED' AND i.actual_hours IS NOT NULL AND i.hourly_rate_tier IS NOT NULL
+WITH p, i.actual_hours AS hours, i.hourly_rate_tier AS tier
+WITH p, COLLECT({hours: hours, tier: tier}) AS issue_data
+RETURN p.id AS project_id, p.name AS project_name,
+       SUM(CASE WHEN 'JUNIOR' THEN hours * 75.0
+               WHEN 'SENIOR' THEN hours * 125.0
+               WHEN 'STAFF' THEN hours * 175.0
+               WHEN 'PRINCIPAL' THEN hours * 250.0
+               ELSE 0.0 END) AS actual_cost,
+       SUM(hours) AS total_hours,
+       COUNT(*) AS issue_count
+ORDER BY actual_cost DESC
+"""
+
+GET_COST_SUMMARY = """
+MATCH (i:Issue)
+WHERE i.status = 'CLOSED' AND i.actual_hours IS NOT NULL AND i.hourly_rate_tier IS NOT NULL
+WITH i.actual_hours AS hours, i.hourly_rate_tier AS tier
+RETURN SUM(CASE WHEN 'JUNIOR' THEN hours * 75.0
+              WHEN 'SENIOR' THEN hours * 125.0
+              WHEN 'STAFF' THEN hours * 175.0
+              WHEN 'PRINCIPAL' THEN hours * 250.0
+              ELSE 0.0 END) AS total_actual_cost,
+       SUM(hours) AS total_hours,
+       COUNT(*) AS total_issues_closed
+"""

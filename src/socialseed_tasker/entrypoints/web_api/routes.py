@@ -1626,11 +1626,64 @@ def get_subgraph(
             node_data["component"] = components.get(str(issue.component_id))
 
     return APIResponse(
-        data=DependencyGraphResponse(nodes=list(nodes.values()), edges=edges),
+        data=DependencyGraphResponse(nodes=nodes, edges=edges),
         meta=Meta(request_id=None),
     )
 
 
+# ---------------------------------------------------------------------------
+# Cost Analytics router
+# ---------------------------------------------------------------------------
+
+cost_analytics_router = APIRouter()
+
+
+@cost_analytics_router.get(
+    "/cost-per-component",
+    response_model=APIResponse[list],
+    summary="Get cost per component",
+    description="Get cost breakdown by component for closed issues with time tracking.",
+)
+def get_cost_per_component(repo: TaskRepositoryInterface = Depends(get_repo)):
+    costs = repo.get_cost_per_component()
+    return APIResponse(data=costs, meta=Meta(request_id=None))
+
+
+@cost_analytics_router.get(
+    "/cost-per-epic",
+    response_model=APIResponse[list],
+    summary="Get cost per epic",
+    description="Get cost breakdown by epic for closed issues with time tracking.",
+)
+def get_cost_per_epic(repo: TaskRepositoryInterface = Depends(get_repo)):
+    costs = repo.get_cost_per_epic()
+    return APIResponse(data=costs, meta=Meta(request_id=None))
+
+
+@cost_analytics_router.get(
+    "/cost-per-project",
+    response_model=APIResponse[list],
+    summary="Get cost per project",
+    description="Get cost breakdown by project for closed issues with time tracking.",
+)
+def get_cost_per_project(repo: TaskRepositoryInterface = Depends(get_repo)):
+    costs = repo.get_cost_per_project()
+    return APIResponse(data=costs, meta=Meta(request_id=None))
+
+
+@cost_analytics_router.get(
+    "/cost-summary",
+    response_model=APIResponse[dict],
+    summary="Get cost summary",
+    description="Get overall cost summary for all closed issues with time tracking.",
+)
+def get_cost_summary(repo: TaskRepositoryInterface = Depends(get_repo)):
+    summary = repo.get_cost_summary()
+    return APIResponse(data=summary, meta=Meta(request_id=None))
+
+
+# ---------------------------------------------------------------------------
+# Policy router
 # ---------------------------------------------------------------------------
 # Policy router
 # ---------------------------------------------------------------------------
