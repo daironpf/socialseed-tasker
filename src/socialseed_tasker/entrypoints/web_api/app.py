@@ -236,24 +236,23 @@ def create_app(
             if not neo4j_connected:
                 result["status"] = "degraded"
 
-try:
-        import json
-        from pathlib import Path
+        try:
+            import json
+            from pathlib import Path
 
-        project_json_path = Path(__file__).parent.parent.parent / "assets" / "templates" / "tasker" / "project.json"
-        if project_json_path.exists():
-            result["project_config"] = json.loads(project_json_path.read_text(encoding="utf-8"))
-    except Exception:
-        pass
+            project_json_path = Path(__file__).parent.parent.parent / "assets" / "templates" / "tasker" / "project.json"
+            if project_json_path.exists():
+                result["project_config"] = json.loads(project_json_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
 
-    # Check if httpx is available for external service health
-    try:
-        import httpx
-        result["httpx"] = "available"
-    except ImportError:
-        result["httpx"] = "not installed"
+        try:
+            import httpx
+            result["httpx"] = "available"
+        except ImportError:
+            result["httpx"] = "not installed"
 
-    return result
+        return result
 
     # Dependency injection - provide repository to all routes
     app.state.repository = repository

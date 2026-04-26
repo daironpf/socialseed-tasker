@@ -1,0 +1,40 @@
+{
+  "name": "dental-app",
+  "version": "1.0.0",
+  "created": "2026-04-26",
+  "architecture": {
+    "type": "api-first",
+    "language": "python",
+    "framework": "fastapi",
+    "database": "postgresql",
+    "frontend": "vue",
+    "other_services": ["redis", "celery"]
+  },
+  "components": [
+    "API Gateway", "Backend Service", "Database"
+  ],
+  "github": {
+    "repository": "https://github.com/user/repo",
+    "default_branch": "main"
+  },
+  "external_apis": [],
+  "constraints": {
+    "forbidden_technologies": [],
+    "required_patterns": ["Issues must have acceptance criteria"],
+    "naming_conventions": "kebab-case for files, CamelCase for classes",
+    "max_dependencies_per_issue": 10
+  },
+  "development": {
+    "setup_commands": "pip install -r requirements.txt",
+    "test_commands": "pytest tests/",
+    "build_commands": "docker build ."
+  },
+  "quality": {
+    "code_review_approvals": 1,
+    "use_quality_guide": true
+  },
+  "agent_notes": [
+    "Read tasker/project.json before starting work",
+    "Use skills/task_quality_guide.json for issue creation"
+  ]
+}
