@@ -1,0 +1,40 @@
+{
+  "name": "{project_name}",
+  "version": "{version}",
+  "created": "{created_date}",
+  "architecture": {
+    "type": "{architecture_type}",
+    "language": "{language}",
+    "framework": "{framework}",
+    "database": "{database}",
+    "frontend": "{frontend}",
+    "other_services": ["{other_services}"]
+  },
+  "components": [
+    {key_components}
+  ],
+  "github": {
+    "repository": "{github_repo}",
+    "default_branch": "{default_branch}"
+  },
+  "external_apis": [],
+  "constraints": {
+    "forbidden_technologies": [],
+    "required_patterns": ["Issues must have acceptance criteria"],
+    "naming_conventions": "kebab-case for files, CamelCase for classes",
+    "max_dependencies_per_issue": 10
+  },
+  "development": {
+    "setup_commands": "{setup_commands}",
+    "test_commands": "{test_commands}",
+    "build_commands": "{build_commands}"
+  },
+  "quality": {
+    "code_review_approvals": {code_review_count},
+    "use_quality_guide": true
+  },
+  "agent_notes": [
+    "Read tasker/project.json before starting work",
+    "Use skills/task_quality_guide.json for issue creation"
+  ]
+}

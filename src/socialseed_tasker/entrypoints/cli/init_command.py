@@ -329,3 +329,34 @@ def _fill_project_context(
 
     project_md.write_text(content, encoding="utf-8")
     console.print(f"  [success]Updated:[/success]    tasker/project.md")
+
+    project_json = tasker_dir / "project.json"
+    if not project_json.exists():
+        return
+
+    content = project_json.read_text(encoding="utf-8")
+
+    replacements = {
+        "{project_name}": project_name or "my-project",
+        "{version}": "1.0.0",
+        "{created_date}": date.today().isoformat(),
+        "{architecture_type}": architecture or "api-first",
+        "{language}": language or "python",
+        "{framework}": framework or "fastapi",
+        "{database}": database or "postgresql",
+        "{frontend}": "vue",
+        "{other_services}": "redis, celery",
+        "{key_components}": '"API Gateway", "Backend Service", "Database"',
+        "{github_repo}": github_repo or "https://github.com/user/repo",
+        "{default_branch}": "main",
+        "{setup_commands}": "pip install -r requirements.txt",
+        "{test_commands}": "pytest tests/",
+        "{build_commands}": "docker build .",
+        "{code_review_count}": "1",
+    }
+
+    for key, value in replacements.items():
+        content = content.replace(key, value)
+
+    project_json.write_text(content, encoding="utf-8")
+    console.print(f"  [success]Updated:[/success]    tasker/project.json")
