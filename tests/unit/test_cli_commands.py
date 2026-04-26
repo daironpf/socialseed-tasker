@@ -53,6 +53,7 @@ class MockRepository(TaskRepositoryInterface):
         self,
         component_id: str | None = None,
         status: IssueStatus | None = None,
+        statuses: list[IssueStatus] | None = None,
         project: str | None = None,
     ) -> list[Issue]:
         issues = list(self._issues.values())
@@ -60,6 +61,8 @@ class MockRepository(TaskRepositoryInterface):
             issues = [i for i in issues if str(i.component_id) == component_id]
         if status:
             issues = [i for i in issues if i.status == status]
+        if statuses:
+            issues = [i for i in issues if i.status in statuses]
         if project:
             issues = [
                 i
