@@ -33,6 +33,7 @@ from socialseed_tasker.core.task_management.actions import (
     reset_data_action,
 )
 from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
+from socialseed_tasker.core.task_management.entities import Epic, EpicStatus, Objective, ObjectiveStatus
 from socialseed_tasker.entrypoints.web_api.schemas import (
     AgentRegisterRequest,
     AgentResponse,
@@ -2576,6 +2577,251 @@ def force_sync() -> APIResponse[dict]:
 # ---------------------------------------------------------------------------
 
 constraints_router = APIRouter()
+
+
+# ---------------------------------------------------------------------------
+# Epic router
+# ---------------------------------------------------------------------------
+
+epic_router = APIRouter()
+
+
+@epic_router.post(
+    "/epics",
+    response_model=APIResponse[dict],
+    status_code=201,
+    summary="Create an epic",
+    description="Create a new epic to group related issues.",
+)
+def create_epic(
+    body: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    from uuid import uuid4
+
+    from socialseed_tasker.core.task_management.entities import Epic, EpicStatus
+
+    epic = Epic(
+        id=uuid4(),
+        name=body.get("name", ""),
+        description=body.get("description", ""),
+        objective_id=body.get("objective_id"),
+        status=EpicStatus(body.get("status", "OPEN")),
+    )
+    repo.create_epic(epic)
+    return APIResponse(
+        data={"id": str(epic.id), "name": epic.name},
+        meta=Meta(request_id=None),
+    )
+
+
+@epic_router.get(
+    "/epics",
+    response_model=APIResponse[list],
+    summary="List epics",
+    description="List all epics in the system.",
+)
+def list_epics(repo: TaskRepositoryInterface = Depends(get_repo)):
+    epics = repo.list_epics()
+    return APIResponse(
+        data=[{"id": str(e.id), "name": e.name, "status": e.status.value} for e in epics],
+        meta=Meta(request_id=None),
+    )
+
+
+@epic_router.get(
+    "/epics/{epic_id}",
+    response_model=APIResponse[dict],
+    summary="Get an epic",
+    description="Get details of a specific epic.",
+)
+def get_epic(epic_id: str, repo: TaskRepositoryInterface = Depends(get_repo)):
+    epic = repo.get_epic(epic_id)
+    if epic is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Epic not found")
+    return APIResponse(
+        data={
+            "id": str(epic.id),
+            "name": epic.name,
+            "description": epic.description,
+            "status": epic.status.value,
+            "objective_id": str(epic.objective_id) if epic.objective_id else None,
+        },
+        meta=Meta(request_id=None),
+    )
+
+
+@epic_router.delete(
+    "/epics/{epic_id}",
+    response_model=APIResponse[dict],
+    summary="Delete an epic",
+    description="Delete an epic.",
+)
+def delete_epic(epic_id: str, repo: TaskRepositoryInterface = Depends(get_repo)):
+    repo.delete_epic(epic_id)
+    return APIResponse(data={"deleted": epic_id}, meta=Meta(request_id=None))
+
+
+@epic_router.patch(
+    "/epics/{epic_id}",
+    response_model=APIResponse[dict],
+    summary="Update an epic",
+    description="Update an epic.",
+)
+def update_epic(
+    epic_id: str,
+    body: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    repo.update_epic(epic_id, body)
+    return APIResponse(data={"updated": epic_id}, meta=Meta(request_id=None))
+
+
+@epic_router.post(
+    "/epics/{epic_id}/issues",
+    response_model=APIResponse[dict],
+    summary="Link issues to epic",
+    description="Link multiple issues to an epic.",
+)
+def link_issues_to_epic(
+    epic_id: str,
+    body: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    from fastapi import HTTPException
+
+    issue_ids = body.get("issue_ids", [])
+    for issue_id in issue_ids:
+        repo.link_issue_to_epic(issue_id, epic_id)
+    return APIResponse(
+        data={"epic_id": epic_id, "linked_issues": len(issue_ids)},
+        meta=Meta(request_id=None),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Objective router
+# ---------------------------------------------------------------------------
+
+objective_router = APIRouter()
+
+
+@objective_router.post(
+    "/objectives",
+    response_model=APIResponse[dict],
+    status_code=201,
+    summary="Create an objective",
+    description="Create a new objective (OKR).",
+)
+def create_objective(
+    body: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    from uuid import uuid4
+
+    from socialseed_tasker.core.task_management.entities import Objective, ObjectiveStatus
+
+    objective = Objective(
+        id=uuid4(),
+        name=body.get("name", ""),
+        description=body.get("description", ""),
+        status=ObjectiveStatus(body.get("status", "OPEN")),
+        quarter=body.get("quarter", ""),
+    )
+    repo.create_objective(objective)
+    return APIResponse(
+        data={"id": str(objective.id), "name": objective.name},
+        meta=Meta(request_id=None),
+    )
+
+
+@objective_router.get(
+    "/objectives",
+    response_model=APIResponse[list],
+    summary="List objectives",
+    description="List all objectives in the system.",
+)
+def list_objectives(repo: TaskRepositoryInterface = Depends(get_repo)):
+    objectives = repo.list_objectives()
+    return APIResponse(
+        data=[
+            {"id": str(o.id), "name": o.name, "status": o.status.value, "quarter": o.quarter}
+            for o in objectives
+        ],
+        meta=Meta(request_id=None),
+    )
+
+
+@objective_router.get(
+    "/objectives/{objective_id}",
+    response_model=APIResponse[dict],
+    summary="Get an objective",
+    description="Get details of a specific objective.",
+)
+def get_objective(objective_id: str, repo: TaskRepositoryInterface = Depends(get_repo)):
+    objective = repo.get_objective(objective_id)
+    if objective is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Objective not found")
+    return APIResponse(
+        data={
+            "id": str(objective.id),
+            "name": objective.name,
+            "description": objective.description,
+            "status": objective.status.value,
+            "quarter": objective.quarter,
+        },
+        meta=Meta(request_id=None),
+    )
+
+
+@objective_router.delete(
+    "/objectives/{objective_id}",
+    response_model=APIResponse[dict],
+    summary="Delete an objective",
+    description="Delete an objective.",
+)
+def delete_objective(objective_id: str, repo: TaskRepositoryInterface = Depends(get_repo)):
+    repo.delete_objective(objective_id)
+    return APIResponse(data={"deleted": objective_id}, meta=Meta(request_id=None))
+
+
+@objective_router.patch(
+    "/objectives/{objective_id}",
+    response_model=APIResponse[dict],
+    summary="Update an objective",
+    description="Update an objective.",
+)
+def update_objective(
+    objective_id: str,
+    body: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    repo.update_objective(objective_id, body)
+    return APIResponse(data={"updated": objective_id}, meta=Meta(request_id=None))
+
+
+@objective_router.post(
+    "/objectives/{objective_id}/epics",
+    response_model=APIResponse[dict],
+    summary="Link epics to objective",
+    description="Link multiple epics to an objective.",
+)
+def link_epics_to_objective(
+    objective_id: str,
+    body: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    from fastapi import HTTPException
+
+    epic_ids = body.get("epic_ids", [])
+    for epic_id in epic_ids:
+        repo.link_epic_to_objective(epic_id, objective_id)
+    return APIResponse(
+        data={"objective_id": objective_id, "linked_epics": len(epic_ids)},
+        meta=Meta(request_id=None),
+    )
 
 
 @constraints_router.post(

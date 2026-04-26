@@ -83,6 +83,96 @@ RETURN dependent
 """
 
 # ---------------------------------------------------------------------------
+# Epic queries
+# ---------------------------------------------------------------------------
+
+CREATE_EPIC = """
+CREATE (e:Epic {
+    id: $id,
+    name: $name,
+    description: $description,
+    objective_id: $objective_id,
+    status: $status,
+    created_at: $created_at,
+    updated_at: $updated_at
+})
+"""
+
+GET_EPIC = """
+MATCH (e:Epic {id: $id})
+RETURN e
+"""
+
+LIST_EPICS = """
+MATCH (e:Epic)
+RETURN e
+ORDER BY e.created_at DESC
+"""
+
+UPDATE_EPIC = """
+MATCH (e:Epic {id: $id})
+SET e += $updates
+SET e.updated_at = $updated_at
+RETURN e
+"""
+
+DELETE_EPIC = """
+MATCH (e:Epic {id: $id})
+DETACH DELETE e
+"""
+
+LINK_ISSUE_TO_EPIC = """
+MATCH (i:Issue {id: $issue_id})
+MATCH (e:Epic {id: $epic_id})
+MERGE (i)-[:PART_OF]->(e)
+"""
+
+# ---------------------------------------------------------------------------
+# Objective queries
+# ---------------------------------------------------------------------------
+
+CREATE_OBJECTIVE = """
+CREATE (o:Objective {
+    id: $id,
+    name: $name,
+    description: $description,
+    status: $status,
+    quarter: $quarter,
+    created_at: $created_at,
+    updated_at: $updated_at
+})
+"""
+
+GET_OBJECTIVE = """
+MATCH (o:Objective {id: $id})
+RETURN o
+"""
+
+LIST_OBJECTIVES = """
+MATCH (o:Objective)
+RETURN o
+ORDER BY o.created_at DESC
+"""
+
+UPDATE_OBJECTIVE = """
+MATCH (o:Objective {id: $id})
+SET o += $updates
+SET o.updated_at = $updated_at
+RETURN o
+"""
+
+DELETE_OBJECTIVE = """
+MATCH (o:Objective {id: $id})
+DETACH DELETE o
+"""
+
+LINK_EPIC_TO_OBJECTIVE = """
+MATCH (e:Epic {id: $epic_id})
+MATCH (o:Objective {id: $objective_id})
+MERGE (e)-[:CONTRIBUTES_TO]->(o)
+"""
+
+# ---------------------------------------------------------------------------
 # Issue queries
 # ---------------------------------------------------------------------------
 

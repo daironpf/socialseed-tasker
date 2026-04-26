@@ -1045,7 +1045,7 @@ def component_delete(
         raise typer.Exit(code=1) from None
 
 
-@component_app.command("add-dep", name="add-dep")
+@component_app.command(name="add-dep")
 def component_add_dependency(
     component_id: str = typer.Argument(..., help="Component that depends on another"),
     depends_on: str = typer.Option(..., "--depends-on", "-d", help="Component it depends on"),
@@ -1075,7 +1075,7 @@ def component_add_dependency(
         raise typer.Exit(code=1) from None
 
 
-@component_app.command("deps", name="deps")
+@component_app.command(name="deps")
 def component_list_dependencies(
     component_id: str = typer.Argument(..., help="Component to list dependencies for"),
 ) -> None:

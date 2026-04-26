@@ -830,3 +830,154 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 raise ValueError(f"Constraint {constraint_id} not found")
 
             return self.get_constraint(constraint_id)
+
+    # ---------------------------------------------------------------------------
+    # Epic methods
+    # ---------------------------------------------------------------------------
+
+    def create_epic(self, epic) -> None:
+        from uuid import UUID
+        from datetime import datetime, timezone
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(
+                queries.CREATE_EPIC,
+                id=str(epic.id),
+                name=epic.name,
+                description=epic.description,
+                objective_id=str(epic.objective_id) if epic.objective_id else None,
+                status=epic.status.value,
+                created_at=epic.created_at.isoformat(),
+                updated_at=epic.updated_at.isoformat(),
+            )
+
+    def get_epic(self, epic_id: str):
+        from uuid import UUID
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.GET_EPIC, id=epic_id)
+            record = result.single()
+            if record is None:
+                return None
+            node = record["e"]
+            from socialseed_tasker.core.task_management.entities import Epic, EpicStatus
+            return Epic(
+                id=UUID(node["id"]),
+                name=node["name"],
+                description=node.get("description", ""),
+                objective_id=UUID(node["objective_id"]) if node.get("objective_id") else None,
+                status=EpicStatus(node.get("status", "OPEN")),
+            )
+
+    def list_epics(self):
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.LIST_EPICS)
+            from uuid import UUID
+            from socialseed_tasker.core.task_management.entities import Epic, EpicStatus
+            epics = []
+            for record in result:
+                node = record["e"]
+                epics.append(
+                    Epic(
+                        id=UUID(node["id"]),
+                        name=node["name"],
+                        description=node.get("description", ""),
+                        objective_id=UUID(node["objective_id"]) if node.get("objective_id") else None,
+                        status=EpicStatus(node.get("status", "OPEN")),
+                    )
+                )
+            return epics
+
+    def delete_epic(self, epic_id: str) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(queries.DELETE_EPIC, id=epic_id)
+
+    def link_issue_to_epic(self, issue_id: str, epic_id: str) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(queries.LINK_ISSUE_TO_EPIC, issue_id=issue_id, epic_id=epic_id)
+
+    def update_epic(self, epic_id: str, updates: dict) -> None:
+        from datetime import datetime, timezone
+        with self._driver.driver.session(database=self._driver.database) as session:
+            set_clauses = []
+            params = {"id": epic_id, "updated_at": datetime.now(timezone.utc).isoformat()}
+
+            for key, value in updates.items():
+                set_clauses.append(f"e.{key} = ${key}")
+                params[key] = value
+
+            query = f"MATCH (e:Epic {{id: $id}}) SET {', '.join(set_clauses)} RETURN e"
+            session.run(query, **params)
+
+    # ---------------------------------------------------------------------------
+    # Objective methods
+    # ---------------------------------------------------------------------------
+
+    def create_objective(self, objective) -> None:
+        from uuid import UUID
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(
+                queries.CREATE_OBJECTIVE,
+                id=str(objective.id),
+                name=objective.name,
+                description=objective.description,
+                status=objective.status.value,
+                quarter=objective.quarter,
+                created_at=objective.created_at.isoformat(),
+                updated_at=objective.updated_at.isoformat(),
+            )
+
+    def get_objective(self, objective_id: str):
+        from uuid import UUID
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.GET_OBJECTIVE, id=objective_id)
+            record = result.single()
+            if record is None:
+                return None
+            node = record["o"]
+            from socialseed_tasker.core.task_management.entities import Objective, ObjectiveStatus
+            return Objective(
+                id=UUID(node["id"]),
+                name=node["name"],
+                description=node.get("description", ""),
+                status=ObjectiveStatus(node.get("status", "OPEN")),
+                quarter=node.get("quarter", ""),
+            )
+
+    def list_objectives(self):
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.LIST_OBJECTIVES)
+            from uuid import UUID
+            from socialseed_tasker.core.task_management.entities import Objective, ObjectiveStatus
+            objectives = []
+            for record in result:
+                node = record["o"]
+                objectives.append(
+                    Objective(
+                        id=UUID(node["id"]),
+                        name=node["name"],
+                        description=node.get("description", ""),
+                        status=ObjectiveStatus(node.get("status", "OPEN")),
+                        quarter=node.get("quarter", ""),
+                    )
+                )
+            return objectives
+
+    def delete_objective(self, objective_id: str) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(queries.DELETE_OBJECTIVE, id=objective_id)
+
+    def link_epic_to_objective(self, epic_id: str, objective_id: str) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(queries.LINK_EPIC_TO_OBJECTIVE, epic_id=epic_id, objective_id=objective_id)
+
+    def update_objective(self, objective_id: str, updates: dict) -> None:
+        from datetime import datetime, timezone
+        with self._driver.driver.session(database=self._driver.database) as session:
+            set_clauses = []
+            params = {"id": objective_id, "updated_at": datetime.now(timezone.utc).isoformat()}
+
+            for key, value in updates.items():
+                set_clauses.append(f"o.{key} = ${key}")
+                params[key] = value
+
+            query = f"MATCH (o:Objective {{id: $id}}) SET {', '.join(set_clauses)} RETURN o"
+            session.run(query, **params)

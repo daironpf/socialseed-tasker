@@ -176,6 +176,42 @@ class TaskRepositoryInterface(Protocol):
     def get_component_dependents(self, component_id: str) -> list[Component]:
         """Get components that depend on this component."""
 
+    def create_epic(self, epic: Any) -> None:
+        """Create a new epic."""
+
+    def get_epic(self, epic_id: str) -> Any | None:
+        """Get an epic by ID."""
+
+    def list_epics(self) -> list[Any]:
+        """List all epics."""
+
+    def update_epic(self, epic_id: str, updates: dict) -> Any:
+        """Update an epic."""
+
+    def delete_epic(self, epic_id: str) -> None:
+        """Delete an epic."""
+
+    def link_issue_to_epic(self, issue_id: str, epic_id: str) -> None:
+        """Link an issue to an epic."""
+
+    def create_objective(self, objective: Any) -> None:
+        """Create a new objective."""
+
+    def get_objective(self, objective_id: str) -> Any | None:
+        """Get an objective by ID."""
+
+    def list_objectives(self) -> list[Any]:
+        """List all objectives."""
+
+    def update_objective(self, objective_id: str, updates: dict) -> Any:
+        """Update an objective."""
+
+    def delete_objective(self, objective_id: str) -> None:
+        """Delete an objective."""
+
+    def link_epic_to_objective(self, epic_id: str, objective_id: str) -> None:
+        """Link an epic to an objective."""
+
     def get_component_by_name(self, name: str, project: str | None = None) -> Component | None:
         """Retrieve a component by exact name, optionally filtered by project."""
 
