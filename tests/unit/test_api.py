@@ -932,3 +932,72 @@ class TestFiltersAndSorting:
 
         resp = client.get("/api/v1/components?all=true")
         assert resp.status_code == 200
+
+
+class TestUnicodeAndInternationalization:
+    def test_create_component_with_spanish_accents(self, client):
+        resp = client.post(
+            "/api/v1/components",
+            json={
+                "name": "Gestión de Pacientes",
+                "project": "clínica-dental",
+                "description": "Gestión de citas con clínicas dentales",
+            },
+        )
+        assert resp.status_code == 201
+        data = resp.json()["data"]
+        assert "Gestión" in data["name"]
+        assert "citas con clínicas" in data["description"]
+
+    def test_create_issue_with_spanish_accents(self, client, component_id):
+        resp = client.post(
+            "/api/v1/issues",
+            json={
+                "title": "[pacientes] Acción: Registrar historial médico",
+                "description": "Registrar información de pacientes con acentos: áéíóú ñ",
+                "priority": "HIGH",
+                "component_id": component_id,
+            },
+        )
+        assert resp.status_code == 201
+        data = resp.json()["data"]
+        assert "Registrar historial" in data["title"]
+        assert "acentos: áéíóú ñ" in data["description"]
+
+    def test_create_issue_with_emoji(self, client, component_id):
+        resp = client.post(
+            "/api/v1/issues",
+            json={
+                "title": "Fix login 🔐",
+                "description": "Users cannot login with special chars 🚫",
+                "priority": "CRITICAL",
+                "component_id": component_id,
+            },
+        )
+        assert resp.status_code == 201
+        data = resp.json()["data"]
+        assert "🔐" in data["title"]
+        assert "🚫" in data["description"]
+
+    def test_create_issue_with_international_characters(self, client, component_id):
+        resp = client.post(
+            "/api/v1/issues",
+            json={
+                "title": "Hallo Welt 🌍",
+                "description": "Hello 世界 Привет مرحبا",
+                "priority": "LOW",
+                "component_id": component_id,
+            },
+        )
+        assert resp.status_code == 201
+        data = resp.json()["data"]
+        assert "🌀" in data["title"] or "Hallo" in data["title"]
+
+    def test_update_issue_with_unicode(self, client, issue_id):
+        resp = client.patch(
+            f"/api/v1/issues/{issue_id}",
+            json={"description": "Updated with 日本語 description"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert "日本語" in data["description"]
