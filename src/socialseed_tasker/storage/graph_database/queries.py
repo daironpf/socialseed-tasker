@@ -267,7 +267,7 @@ MATCH (i:Issue)
 OPTIONAL MATCH (i)-[:BELONGS_TO]->(c:Component)
 WHERE ($component_id IS NULL OR i.component_id = $component_id)
   AND (size($statuses) = 0 OR i.status IN $statuses)
-  AND ($project IS NULL OR c.project = $project)
+  AND ($project IS NULL OR (c IS NOT NULL AND c.project = $project))
 OPTIONAL MATCH (i)-[:DEPENDS_ON]->(dep:Issue)
 OPTIONAL MATCH (i)<-[:DEPENDS_ON]-(blocked:Issue)
 WITH i, collect(DISTINCT dep.id) AS dep_ids, collect(DISTINCT blocked.id) AS blocked_ids

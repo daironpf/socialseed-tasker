@@ -1001,3 +1001,12 @@ class TestUnicodeAndInternationalization:
         assert resp.status_code == 200
         data = resp.json()["data"]
         assert "日本語" in data["description"]
+
+
+class TestProjectFiltering:
+    def test_list_issues_by_project_filter(self, client, component_id):
+        resp = client.get("/api/v1/issues?project=test-project")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "data" in data
+        assert "items" in data["data"]
