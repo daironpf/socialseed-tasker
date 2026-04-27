@@ -836,8 +836,6 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
     # ---------------------------------------------------------------------------
 
     def create_epic(self, epic) -> None:
-        from uuid import UUID
-        from datetime import datetime, timezone
         with self._driver.driver.session(database=self._driver.database) as session:
             session.run(
                 queries.CREATE_EPIC,
@@ -852,6 +850,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
 
     def get_epic(self, epic_id: str):
         from uuid import UUID
+
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(queries.GET_EPIC, id=epic_id)
             record = result.single()
@@ -859,6 +858,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 return None
             node = record["e"]
             from socialseed_tasker.core.task_management.entities import Epic, EpicStatus
+
             return Epic(
                 id=UUID(node["id"]),
                 name=node["name"],
@@ -871,7 +871,9 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(queries.LIST_EPICS)
             from uuid import UUID
+
             from socialseed_tasker.core.task_management.entities import Epic, EpicStatus
+
             epics = []
             for record in result:
                 node = record["e"]
@@ -896,6 +898,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
 
     def update_epic(self, epic_id: str, updates: dict) -> None:
         from datetime import datetime, timezone
+
         with self._driver.driver.session(database=self._driver.database) as session:
             set_clauses = []
             params = {"id": epic_id, "updated_at": datetime.now(timezone.utc).isoformat()}
@@ -912,7 +915,6 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
     # ---------------------------------------------------------------------------
 
     def create_objective(self, objective) -> None:
-        from uuid import UUID
         with self._driver.driver.session(database=self._driver.database) as session:
             session.run(
                 queries.CREATE_OBJECTIVE,
@@ -927,6 +929,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
 
     def get_objective(self, objective_id: str):
         from uuid import UUID
+
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(queries.GET_OBJECTIVE, id=objective_id)
             record = result.single()
@@ -934,6 +937,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 return None
             node = record["o"]
             from socialseed_tasker.core.task_management.entities import Objective, ObjectiveStatus
+
             return Objective(
                 id=UUID(node["id"]),
                 name=node["name"],
@@ -946,7 +950,9 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(queries.LIST_OBJECTIVES)
             from uuid import UUID
+
             from socialseed_tasker.core.task_management.entities import Objective, ObjectiveStatus
+
             objectives = []
             for record in result:
                 node = record["o"]
@@ -971,6 +977,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
 
     def update_objective(self, objective_id: str, updates: dict) -> None:
         from datetime import datetime, timezone
+
         with self._driver.driver.session(database=self._driver.database) as session:
             set_clauses = []
             params = {"id": objective_id, "updated_at": datetime.now(timezone.utc).isoformat()}
@@ -1054,7 +1061,6 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
     # ---------------------------------------------------------------------------
 
     def create_deployment(self, deployment) -> None:
-        from uuid import UUID
         with self._driver.driver.session(database=self._driver.database) as session:
             session.run(
                 queries.CREATE_DEPLOYMENT,
@@ -1123,9 +1129,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
     # Vector Search methods
     # ---------------------------------------------------------------------------
 
-    def search_by_embedding(
-        self, embedding: list[float], threshold: float = 0.7, limit: int = 10
-    ) -> list[dict]:
+    def search_by_embedding(self, embedding: list[float], threshold: float = 0.7, limit: int = 10) -> list[dict]:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.SEARCH_BY_EMBEDDING,
@@ -1142,9 +1146,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 for record in result
             ]
 
-    def find_similar_issues(
-        self, issue_id: str, threshold: float = 0.7, limit: int = 10
-    ) -> list[dict]:
+    def find_similar_issues(self, issue_id: str, threshold: float = 0.7, limit: int = 10) -> list[dict]:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.FIND_SIMILAR_ISSUES,

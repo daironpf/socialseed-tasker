@@ -264,9 +264,7 @@ class TaskRepositoryInterface(Protocol):
     def get_cost_summary(self) -> dict:
         """Get overall cost summary."""
 
-    def get_deployments(
-        self, environment_name: str | None = None, limit: int = 50
-    ) -> list[dict]:
+    def get_deployments(self, environment_name: str | None = None, limit: int = 50) -> list[dict]:
         """Get deployments, optionally filtered by environment."""
 
     def get_issue_deployments(self, issue_id: str) -> list[dict]:

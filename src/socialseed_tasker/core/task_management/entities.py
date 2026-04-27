@@ -130,6 +130,7 @@ class ObjectiveStatus(str, Enum):
 
 class EnvironmentType(str, Enum):
     """Environment types for deployment tracking."""
+
     PROD = "PROD"
     STAGING = "STAGING"
     DEV = "DEV"
@@ -138,6 +139,7 @@ class EnvironmentType(str, Enum):
 
 class Environment(BaseModel):
     """Deployment environment."""
+
     id: UUID
     name: EnvironmentType
     url: str | None = None
@@ -146,6 +148,7 @@ class Environment(BaseModel):
 
 class Deployment(BaseModel):
     """A deployment event."""
+
     id: UUID
     commit_sha: str
     environment_name: EnvironmentType
