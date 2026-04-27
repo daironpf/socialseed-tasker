@@ -32,8 +32,15 @@ from socialseed_tasker.core.task_management.actions import (
     remove_dependency_action,
     reset_data_action,
 )
-from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
-from socialseed_tasker.core.task_management.entities import Epic, EpicStatus, Objective, ObjectiveStatus
+from socialseed_tasker.core.task_management.entities import (
+    Component,
+    Epic,
+    EpicStatus,
+    Issue,
+    IssueStatus,
+    Objective,
+    ObjectiveStatus,
+)
 from socialseed_tasker.entrypoints.web_api.schemas import (
     AgentRegisterRequest,
     AgentResponse,
@@ -174,7 +181,6 @@ def _issue_to_response(issue: Issue) -> IssueResponse:
     )
 
 
-
 def _component_to_response(comp: Component) -> ComponentResponse:
     """Convert a domain Component to an API response model."""
     return ComponentResponse(
@@ -228,6 +234,43 @@ def create_issue(
     body: IssueCreateRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[IssueResponse]:
+    """Create a new issue.
+
+    Creates a new issue linked to a component. The issue title is validated
+    and sanitized to prevent XSS attacks. Descriptions are also sanitized.
+
+    Args:
+        body: Issue creation request with title, description, priority, etc.
+        repo: Repository dependency for data access.
+
+    Returns:
+        APIResponse with the created IssueResponse.
+
+    Raises:
+        HTTPException 400: If title validation fails.
+        HTTPException 404: If the specified component doesn't exist.
+
+    Example:
+        ```bash
+        curl -X POST /api/v1/issues \\
+          -H "Content-Type: application/json" \\
+          -d '{"title": "Fix auth bug", "priority": "HIGH", "component_id": "uuid-here"}'
+        ```
+
+        Response:
+        ```json
+        {
+          "data": {
+            "id": "uuid-here",
+            "title": "Fix auth bug",
+            "status": "todo",
+            "priority": "HIGH",
+            ...
+          },
+          "meta": {"timestamp": "...", "warnings": null}
+        }
+        ```
+    """
     from fastapi import HTTPException
 
     from socialseed_tasker.core.validation import (
@@ -282,6 +325,47 @@ def list_issues(
     limit: int = Query(20, ge=1, le=100, description="Items per page (default: 20, max: 100)"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
+    """List issues with optional filters and pagination.
+
+    Retrieves a paginated list of issues. Supports filtering by status,
+    component, and project. Results are sorted by creation date (newest first).
+
+    Args:
+        status: Comma-separated list of statuses to filter (e.g., "todo,in_progress")
+        component: UUID of the component to filter by
+        project: Project name to filter by
+        page: Page number starting at 1
+        limit: Number of items per page (max 100)
+        repo: Repository dependency for data access.
+
+    Returns:
+        APIResponse with PaginatedResponse containing IssueResponse items.
+
+    Example:
+        ```bash
+        # Get first page of open issues
+        curl "/api/v1/issues?status=todo,in_progress&page=1&limit=20"
+
+        # Filter by project
+        curl "/api/v1/issues?project=socialseed-tasker"
+        ```
+
+        Response:
+        ```json
+        {
+          "data": {
+            "items": [...],
+            "pagination": {
+              "page": 1,
+              "limit": 20,
+              "total": 150,
+              "has_next": true,
+              "has_prev": false
+            }
+          }
+        }
+        ```
+    """
     status_list = [s.strip() for s in status.split(",") if s.strip()] if status else []
     all_issues = repo.list_issues(component_id=component, statuses=status_list, project=project)
     total = len(all_issues)
@@ -306,6 +390,42 @@ def get_issue(
     issue_id: str,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
+    """Get a single issue by ID.
+
+    Retrieves full details of an issue including dependencies, blocks,
+    reasoning logs, and agent progress manifest.
+
+    Args:
+        issue_id: UUID or short ID (8+ chars) of the issue.
+        repo: Repository dependency for data access.
+
+    Returns:
+        APIResponse with the IssueResponse containing all issue details.
+
+    Raises:
+        IssueNotFoundError: If the issue doesn't exist.
+
+    Example:
+        ```bash
+        curl /api/v1/issues/550e8400-e29b-41d4-a716-446655440000
+        ```
+
+        Response:
+        ```json
+        {
+          "data": {
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "title": "Fix login bug",
+            "status": "in_progress",
+            "priority": "HIGH",
+            "dependencies": ["uuid-1", "uuid-2"],
+            "reasoning_logs": [...],
+            "manifest_todo": [...],
+            ...
+          }
+        }
+        ```
+    """
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
@@ -327,7 +447,7 @@ def get_issue_component(
 
     try:
         resolved_id = resolve_issue_id(issue_id, repo)
-    except ValueError as e:
+    except ValueError:
         raise IssueNotFoundError(issue_id)
 
     issue = repo.get_issue(str(resolved_id))
@@ -371,6 +491,37 @@ def update_issue(
     body: IssueUpdateRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
+    """Update an issue with partial field updates.
+
+    Applies partial updates to an existing issue. Only fields included in the
+    request body will be updated. Supports status transitions, priority changes,
+    and agent work status updates.
+
+    Args:
+        issue_id: UUID or short ID (8+ chars) of the issue.
+        body: IssueUpdateRequest with fields to update.
+        repo: Repository dependency for data access.
+
+    Returns:
+        APIResponse with the updated IssueResponse.
+
+    Raises:
+        IssueNotFoundError: If the issue doesn't exist.
+        HTTPException 400: If attempting invalid status transitions.
+        HTTPException 409: If closing an issue with open dependencies.
+
+    Example:
+        ```bash
+        # Update status and priority
+        curl -X PATCH /api/v1/issues/uuid-here \\
+          -H "Content-Type: application/json" \\
+          -d '{"status": "in_progress", "priority": "HIGH"}'
+
+        # Mark as agent working
+        curl -X PATCH /api/v1/issues/uuid-here \\
+          -d '{"agent_working": true}'
+        ```
+    """
     from fastapi import HTTPException
 
     existing = repo.get_issue(issue_id)
@@ -398,12 +549,20 @@ def update_issue(
                 detail="agent_working can only be set on OPEN, IN_PROGRESS, or BLOCKED issues.",
             )
 
-    if "agent_working" in updates and "status" not in updates:
-        if existing.status not in (IssueStatus.OPEN, IssueStatus.IN_PROGRESS, IssueStatus.BLOCKED):
-            raise HTTPException(
-                status_code=400,
-                detail="agent_working can only be set on OPEN, IN_PROGRESS, or BLOCKED issues.",
-            )
+    if (
+        "agent_working" in updates
+        and "status" not in updates
+        and existing.status
+        not in (
+            IssueStatus.OPEN,
+            IssueStatus.IN_PROGRESS,
+            IssueStatus.BLOCKED,
+        )
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="agent_working can only be set on OPEN, IN_PROGRESS, or BLOCKED issues.",
+        )
 
     updated = repo.update_issue(issue_id, updates)
     return APIResponse(data=_issue_to_response(updated), meta=Meta(request_id=None))
@@ -1365,7 +1524,7 @@ def list_issues(
     limit: int = Query(20, ge=1, le=100, description="Items per page (default: 20, max: 100)"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[list[IssueResponse]]:
-    label_list = [l.strip() for l in labels.split(",")] if labels else []
+    label_list = [label.strip() for label in labels.split(",")] if labels else []
 
     if label_list and hasattr(repo, "get_issues_by_labels"):
         issues = repo.get_issues_by_labels(label_list)
@@ -1726,6 +1885,7 @@ def search_context(
 ) -> APIResponse[list]:
     try:
         import os
+
         openai_api_key = os.environ.get("OPENAI_API_KEY", "")
         if not openai_api_key:
             return APIResponse(
@@ -1733,6 +1893,7 @@ def search_context(
                 meta=Meta(request_id=None),
             )
         from openai import OpenAI
+
         client = OpenAI(api_key=openai_api_key)
         response = client.embeddings.create(
             model="text-embedding-ada-002",
@@ -1774,14 +1935,17 @@ def generate_issue_embedding(
 ) -> APIResponse[dict]:
     try:
         import os
+
         openai_api_key = os.environ.get("OPENAI_API_KEY", "")
         if not openai_api_key:
             from fastapi import HTTPException
+
             raise HTTPException(status_code=400, detail="OPENAI_API_KEY not configured")
 
         issue = repo.get_issue(issue_id)
         if issue is None:
             from fastapi import HTTPException
+
             raise HTTPException(status_code=404, detail="Issue not found")
 
         if issue.description_embedding and not force:
@@ -1792,6 +1956,7 @@ def generate_issue_embedding(
 
         text = issue.description or issue.title
         from openai import OpenAI
+
         client = OpenAI(api_key=openai_api_key)
         response = client.embeddings.create(
             model="text-embedding-ada-002",
@@ -1806,6 +1971,7 @@ def generate_issue_embedding(
         )
     except Exception as e:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -2209,8 +2375,8 @@ def receive_deployment(
     repo: TaskRepositoryInterface = Depends(get_repo),
     request: Request = None,
 ) -> APIResponse[dict]:
-    from uuid import uuid4
     from datetime import datetime, timezone
+    from uuid import uuid4
 
     from socialseed_tasker.core.task_management.entities import Deployment, EnvironmentType
 
@@ -2222,6 +2388,7 @@ def receive_deployment(
 
     if not commit_sha:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=400, detail="commit_sha is required")
 
     try:
@@ -2279,6 +2446,7 @@ def get_deployment_by_commit(
     deployment = repo.get_deployment_by_commit(commit_sha)
     if deployment is None:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Deployment not found")
     return APIResponse(data=deployment, meta=Meta(request_id=None))
 
@@ -2454,19 +2622,19 @@ def receive_github_webhook(
     try:
         if event_type == "issues":
             action = payload.get("action", "")
-            issue = payload.get("issue", {})
+            _issue = payload.get("issue", {})
 
             if action in ("opened", "closed", "reopened"):
                 pass
 
         elif event_type == "issue_comment":
-            comment = payload.get("comment", {})
+            _comment = payload.get("comment", {})
 
         elif event_type == "label":
-            label = payload.get("label", {})
+            _label = payload.get("label", {})
 
         elif event_type == "milestone":
-            milestone = payload.get("milestone", {})
+            _milestone = payload.get("milestone", {})
 
         log_entry["delivery_status"] = "processed"
         log_entry["processed_at"] = datetime.now(timezone.utc).isoformat()
@@ -2864,8 +3032,6 @@ def create_epic(
 ):
     from uuid import uuid4
 
-    from socialseed_tasker.core.task_management.entities import Epic, EpicStatus
-
     epic = Epic(
         id=uuid4(),
         name=body.get("name", ""),
@@ -2904,6 +3070,7 @@ def get_epic(epic_id: str, repo: TaskRepositoryInterface = Depends(get_repo)):
     epic = repo.get_epic(epic_id)
     if epic is None:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Epic not found")
     return APIResponse(
         data={
@@ -2954,7 +3121,6 @@ def link_issues_to_epic(
     body: dict,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
-    from fastapi import HTTPException
 
     issue_ids = body.get("issue_ids", [])
     for issue_id in issue_ids:
@@ -2985,8 +3151,6 @@ def create_objective(
 ):
     from uuid import uuid4
 
-    from socialseed_tasker.core.task_management.entities import Objective, ObjectiveStatus
-
     objective = Objective(
         id=uuid4(),
         name=body.get("name", ""),
@@ -3010,10 +3174,7 @@ def create_objective(
 def list_objectives(repo: TaskRepositoryInterface = Depends(get_repo)):
     objectives = repo.list_objectives()
     return APIResponse(
-        data=[
-            {"id": str(o.id), "name": o.name, "status": o.status.value, "quarter": o.quarter}
-            for o in objectives
-        ],
+        data=[{"id": str(o.id), "name": o.name, "status": o.status.value, "quarter": o.quarter} for o in objectives],
         meta=Meta(request_id=None),
     )
 
@@ -3028,6 +3189,7 @@ def get_objective(objective_id: str, repo: TaskRepositoryInterface = Depends(get
     objective = repo.get_objective(objective_id)
     if objective is None:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Objective not found")
     return APIResponse(
         data={
@@ -3078,7 +3240,6 @@ def link_epics_to_objective(
     body: dict,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
-    from fastapi import HTTPException
 
     epic_ids = body.get("epic_ids", [])
     for epic_id in epic_ids:

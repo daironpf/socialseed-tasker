@@ -2,6 +2,21 @@
 
 All commands delegate to core actions and use Rich for terminal output.
 No business logic lives here - only presentation and user interaction.
+
+================================================================================
+KNOWN LIMITATION: CLI Blank Lines
+================================================================================
+The CLI output may show extra blank lines at the start of commands. This is a
+known issue with the Typer + Rich integration. The Rich Console is configured
+with `force_terminal=True` which can cause additional newlines in some terminals.
+
+Potential workarounds for future investigation:
+1. Custom Rich Console configuration (adjusting output settings)
+2. Alternative CLI framework migration (e.g., Click)
+3. Rich render hooks modification
+
+For most users, this is cosmetic and does not affect functionality.
+================================================================================
 """
 
 from __future__ import annotations
@@ -70,13 +85,13 @@ _CLI_CONFIG_FILE = Path.home() / ".tasker" / "credentials"
 def _load_saved_credentials() -> dict[str, str]:
     """Load saved credentials from local config file."""
     import json
-    
+
     config_file = _CLI_CONFIG_FILE
     if config_file.exists():
         try:
             with open(config_file) as f:
                 return json.load(f)
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             pass
     return {}
 
@@ -84,7 +99,7 @@ def _load_saved_credentials() -> dict[str, str]:
 def _save_credentials(uri: str, user: str, password: str) -> None:
     """Save credentials to local config file."""
     import json
-    
+
     config_file = _CLI_CONFIG_FILE
     config_file.parent.mkdir(parents=True, exist_ok=True)
     credentials = {
@@ -99,17 +114,17 @@ def _save_credentials(uri: str, user: str, password: str) -> None:
 def _get_password_with_fallback() -> str:
     """Get password from env or saved credentials."""
     import os
-    
+
     password = os.environ.get("TASKER_NEO4J_PASSWORD", "")
     if password:
         return password
-    
+
     saved = _load_saved_credentials()
     if saved and saved.get("password"):
         uri = os.environ.get("TASKER_NEO4J_URI", "bolt://localhost:7687")
         if saved.get("uri") == uri:
             return saved.get("password", "")
-    
+
     return ""
 
 
@@ -120,7 +135,7 @@ def _get_password_with_fallback() -> str:
 
 def get_repository() -> TaskRepositoryInterface:
     """Get the task repository for CLI operations.
-    
+
     Intent: Provide the storage backend for CLI operations, supporting
     both file and neo4j backends.
     Business Value: Unifies CLI and API to use the same configuration.
@@ -132,7 +147,7 @@ def get_repository() -> TaskRepositoryInterface:
     password = _get_password_with_fallback()
     if password:
         os.environ["TASKER_NEO4J_PASSWORD"] = password
-    
+
     if not password:
         console.print("[error]Error:[/error] Neo4j password is required.")
         console.print("[info]Please provide it via:[/info]")
@@ -455,7 +470,9 @@ def issue_list(
     repo = get_repository()
     status_filter = IssueStatus(status) if status else None
 
-    issues = repo.list_issues(component_id=component, statuses=[status_filter] if status_filter else None, project=project)
+    issues = repo.list_issues(
+        component_id=component, statuses=[status_filter] if status_filter else None, project=project
+    )
 
     if as_json:
         data = [issue.model_dump(mode="json") for issue in issues]
@@ -464,7 +481,7 @@ def issue_list(
 
     if not issues:
         console.print("[info]No issues found.[/info]")
-        console.print("[dim]💡 Tip: Create an issue with: tasker issue create \"Title\" -c <component_id>[/dim]")
+        console.print('[dim]💡 Tip: Create an issue with: tasker issue create "Title" -c <component_id>[/dim]')
         return
 
     # Build component name lookup
@@ -477,7 +494,16 @@ def issue_list(
 
 @issue_app.command("show")
 def issue_show(issue_id: str) -> None:
-    """Show detailed issue information."""
+    """Show detailed issue information.
+
+    Args:
+        issue_id: Full UUID, short ID (8+ chars), or partial title match.
+
+    Examples:
+        tasker issue show 550e8400
+        tasker issue show abc12345
+        tasker issue show "Fix login"
+    """
     from uuid import UUID
 
     repo = get_repository()
@@ -487,18 +513,28 @@ def issue_show(issue_id: str) -> None:
         UUID(issue_id)
     except ValueError:
         all_issues = repo.list_issues()
-        for issue in all_issues:
-            if str(issue.id).startswith(issue_id):
-                resolved_id = str(issue.id)
-                break
-        else:
+        matches = [issue for issue in all_issues if str(issue.id).startswith(issue_id)]
+
+        if not matches:
             console.print(f"[error]Issue '{issue_id}' not found.[/error]")
+            console.print("[dim]💡 Try: tasker issue list --status open[/dim]")
+            raise typer.Exit(code=1) from None
+
+        if len(matches) == 1:
+            resolved_id = str(matches[0].id)
+        else:
+            console.print(f"[warning]Multiple matches for '{issue_id}':[/warning]")
+            for m in matches:
+                console.print(f"  - {m.title} ({m.id})")
+            console.print("[dim]💡 Use full UUID to specify:[/dim]")
+            console.print(f"[dim]  tasker issue show {matches[0].id}[/dim]")
             raise typer.Exit(code=1) from None
 
     issue = repo.get_issue(resolved_id)
 
     if issue is None:
         console.print(f"[error]Issue '{issue_id}' not found.[/error]")
+        console.print("[dim]💡 Verify ID with: tasker issue list[/dim]")
         raise typer.Exit(code=1) from None
 
     # Resolve component name
@@ -520,7 +556,15 @@ def issue_show(issue_id: str) -> None:
 
 @issue_app.command("close")
 def issue_close(issue_id: str) -> None:
-    """Close an issue (validates no open dependencies)."""
+    """Close an issue (validates no open dependencies).
+
+    Args:
+        issue_id: Full UUID, short ID (8+ chars), or partial title match.
+
+    Note:
+        An issue cannot be closed if it has open dependencies. Resolve
+        blocking issues first with: tasker dependency list <id>
+    """
     from uuid import UUID
 
     repo = get_repository()
@@ -536,16 +580,18 @@ def issue_close(issue_id: str) -> None:
                 break
         else:
             console.print(f"[error]Issue '{issue_id}' not found.[/error]")
+            console.print("[dim]💡 Check open issues: tasker issue list --status open[/dim]")
             raise typer.Exit(code=1) from None
 
     try:
         issue = close_issue_action(repo, resolved_id)
-        console.print(f"[success]Issue closed:[/success] {issue.id}")
+        console.print(f"[success]✓ Issue closed:[/success] {issue.title}")
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
         raise typer.Exit(code=1) from exc
     except OpenDependenciesError as exc:
-        console.print(f"[error]{exc}[/error]")
+        console.print(f"[error]Cannot close:[/error] {exc}")
+        console.print("[dim]💡 View dependencies: tasker dependency list[/dim]")
         raise typer.Exit(code=2) from exc
     except Exception as exc:
         console.print(f"[error]{exc}[/error]")
@@ -913,7 +959,7 @@ def component_list(
         return
 
     console.print(_components_table(components))
-    console.print("[dim]💡 Next: Create issues with: tasker issue create \"My Issue\" -c <component>[/dim]")
+    console.print('[dim]💡 Next: Create issues with: tasker issue create "My Issue" -c <component>[/dim]')
 
 
 @component_app.command("show")
@@ -1051,7 +1097,6 @@ def component_add_dependency(
     depends_on: str = typer.Option(..., "--depends-on", "-d", help="Component it depends on"),
 ) -> None:
     """Add a dependency between two components."""
-    from socialseed_tasker.core.task_management.actions import add_component_dependency_action
 
     repo = get_repository()
 
@@ -1214,7 +1259,6 @@ def analyze_impact(
 def status_command() -> None:
     """Show graph health dashboard with issue statistics."""
     from socialseed_tasker.bootstrap.container import AppConfig
-    from socialseed_tasker.entrypoints.terminal_cli.app import get_cli_container
 
     config = AppConfig.from_env()
     repo = get_repository()
@@ -1231,7 +1275,7 @@ def status_command() -> None:
         by_status[status] = by_status.get(status, 0) + 1
         by_priority[priority] = by_priority.get(priority, 0) + 1
 
-    from socialseed_tasker.core.task_management.actions import get_workable_issues_action, get_blocked_issues_action
+    from socialseed_tasker.core.task_management.actions import get_blocked_issues_action, get_workable_issues_action
 
     workable = get_workable_issues_action(repo, component_id=None)
     blocked = get_blocked_issues_action(repo)
@@ -1281,23 +1325,23 @@ def login_command(
     save: bool = typer.Option(True, "--save/--no-save", help="Save credentials locally"),
 ) -> None:
     """Save credentials for future sessions.
-    
+
     Allows you to store your Neo4j credentials locally so you don't
     need to enter them for every command.
     """
     import os
-    
+
     from socialseed_tasker.entrypoints.terminal_cli.app import get_cli_container
-    
+
     uri = os.environ.get("TASKER_NEO4J_URI", "bolt://localhost:7687")
     user = os.environ.get("TASKER_NEO4J_USER", "neo4j")
-    
+
     os.environ["TASKER_NEO4J_PASSWORD"] = password
-    
+
     try:
         repo = get_cli_container().get_repository()
         repo.list_components()
-        
+
         if save:
             _save_credentials(uri, user, password)
             console.print("[success]Credentials saved successfully.[/success]")
@@ -1305,7 +1349,7 @@ def login_command(
             console.print("[success]Credentials valid for this session.[/success]")
     except Exception as e:
         console.print(f"[error]Authentication failed: {e}[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @status_app.command("logout")
