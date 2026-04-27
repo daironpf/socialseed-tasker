@@ -2,6 +2,11 @@
 
 All queries are parameterized to prevent Cypher injection.
 Organized by entity: components, issues, relationships.
+
+PERFORMANCE OPTIMIZATION:
+- Schema constraints ensure unique IDs (primary key behavior)
+- Indexes are created for frequently queried properties
+- BFS traversal uses index lookups as starting points
 """
 
 # ---------------------------------------------------------------------------
@@ -11,11 +16,20 @@ Organized by entity: components, issues, relationships.
 SCHEMA_CONSTRAINTS = [
     "CREATE CONSTRAINT issue_id IF NOT EXISTS FOR (i:Issue) REQUIRE i.id IS UNIQUE",
     "CREATE CONSTRAINT component_id IF NOT EXISTS FOR (c:Component) REQUIRE c.id IS UNIQUE",
+]
+
+SCHEMA_INDEXES = [
     "CREATE INDEX issue_status IF NOT EXISTS FOR (i:Issue) ON (i.status)",
     "CREATE INDEX issue_component IF NOT EXISTS FOR (i:Issue) ON (i.component_id)",
     "CREATE INDEX issue_priority IF NOT EXISTS FOR (i:Issue) ON (i.priority)",
     "CREATE INDEX issue_labels IF NOT EXISTS FOR (i:Issue) ON i.labels",
+    "CREATE INDEX issue_created_at IF NOT EXISTS FOR (i:Issue) ON (i.created_at)",
+    "CREATE INDEX issue_project IF NOT EXISTS FOR (i:Issue) ON (i.project)",
+    "CREATE INDEX component_name IF NOT EXISTS FOR (c:Component) ON (c.name)",
+    "CREATE INDEX component_project IF NOT EXISTS FOR (c:Component) ON (c.project)",
     "CREATE INDEX label_name IF NOT EXISTS FOR (l:Label) ON (l.name)",
+    "CREATE INDEX deployment_commit IF NOT EXISTS FOR (d:Deployment) ON (d.commit_sha)",
+    "CREATE INDEX deployment_environment IF NOT EXISTS FOR (d:Deployment) ON (d.environment)",
 ]
 
 # ---------------------------------------------------------------------------
@@ -43,6 +57,26 @@ MATCH (c:Component)
 WHERE $project IS NULL OR c.project = $project
 RETURN c
 ORDER BY c.name
+"""
+
+LIST_ISSUES_PAGINATED = """
+MATCH (i:Issue)
+USING INDEX i:Issue(status)
+WHERE ($component_id IS NULL OR i.component_id = $component_id)
+  AND ($statuses IS NULL OR i.status IN $statuses)
+  AND ($project IS NULL OR i.project = $project)
+RETURN i
+ORDER BY i.created_at DESC
+SKIP $skip
+LIMIT $limit
+"""
+
+COUNT_ISSUES = """
+MATCH (i:Issue)
+WHERE ($component_id IS NULL OR i.component_id = $component_id)
+  AND ($statuses IS NULL OR i.status IN $statuses)
+  AND ($project IS NULL OR i.project = $project)
+RETURN count(i) as total
 """
 
 UPDATE_COMPONENT = """
@@ -239,6 +273,22 @@ OPTIONAL MATCH (i)<-[:DEPENDS_ON]-(blocked:Issue)
 WITH i, collect(DISTINCT dep.id) AS dep_ids, collect(DISTINCT blocked.id) AS blocked_ids
 RETURN i, dep_ids, blocked_ids
 ORDER BY i.created_at DESC
+"""
+
+# BFS for Impact Analysis (optimized)
+# Uses index lookups and limits traversal depth
+IMPACT_ANALYSIS_BFS = """
+// Find all issues transitively affected by an issue
+MATCH path = (start:Issue {id: $issue_id})-[:DEPENDS_ON*1..3]->(affected:Issue)
+WHERE affected.status <> 'CLOSED'
+WITH start, affected, length(path) AS distance
+ORDER BY distance
+WITH start, collect({issue: affected, distance: distance}) AS affected_issues
+RETURN start.id AS issue_id,
+       size(affected_issues) AS total_affected,
+       [a IN affected_issues WHERE a.distance = 1 | a.issue.id] AS directly_affected,
+       [a IN affected_issues WHERE a.distance > 1 | a.issue.id] AS transitively_affected,
+       affected_issues AS all_affected
 """
 
 # ---------------------------------------------------------------------------

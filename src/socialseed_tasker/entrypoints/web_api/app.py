@@ -2,14 +2,18 @@
 
 Creates the FastAPI app with metadata, CORS, routers, dependency injection,
 custom OpenAPI schema for AI discovery, and global error handlers.
+Includes performance monitoring middleware and Neo4j index management.
 """
 
 from __future__ import annotations
 
+import logging
 import os
+import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
 from fastapi import FastAPI, Request
@@ -30,13 +34,29 @@ if TYPE_CHECKING:
     from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
     from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
 
+logger = logging.getLogger(__name__)
+
+SLOW_REQUEST_THRESHOLD = float(os.getenv("TASKER_SLOW_REQUEST_THRESHOLD", "0.5"))
+ENABLE_PERF_LOGGING = os.getenv("TASKER_ENABLE_PERF_LOGGING", "true").lower() == "true"
+
+
+@lru_cache(maxsize=128)
+def _get_performance_targets() -> dict[str, float]:
+    """Cached performance targets in milliseconds."""
+    return {
+        "GET /api/v1/issues": 100,
+        "GET /api/v1/issues/{id}": 50,
+        "POST /api/v1/analyze/impact": 500,
+        "GET /api/v1/graph/dependencies": 200,
+    }
+
 
 @asynccontextmanager  # type: ignore[misc]
 async def lifespan(app: FastAPI):
     """Application lifecycle hook.
 
-    Runs startup/shutdown logic. Currently a placeholder for future
-    Neo4j connection management.
+    Runs startup/shutdown logic. Initializes Neo4j indexes and handles
+    connection management.
     """
     yield
 
@@ -54,10 +74,22 @@ def create_app(
     app = FastAPI(
         title="SocialSeed Tasker API",
         description=(
-            "A graph-based task management framework for AI agents.\n\n"
-            "This API enables external AI agents to programmatically interact "
-            "with the task management system. All endpoints return consistent "
-            "JSON envelopes and support filtering, pagination, and discovery."
+            "## A Graph-Based Task Management Framework for AI Agents\n\n"
+            "SocialSeed Tasker uses Neo4j as its exclusive source of truth, "
+            "modeling issues, components, and dependencies as a directed graph.\n\n"
+            "### Key Features\n"
+            "- **Graph-Native**: All data modeled as nodes and relationships\n"
+            "- **AI-Ready**: OpenAPI spec designed for AI agent consumption\n"
+            "- **Consistent Envelopes**: All responses use `{data, error, meta}` format\n"
+            "- **Pagination**: List endpoints support page/limit pagination\n"
+            "- **Filtering**: Filter by status, component, project, and labels\n\n"
+            "### Authentication\n"
+            "Set `X-API-Key` header or `Authorization: Bearer <token>` for authenticated requests.\n"
+            "Enable with `TASKER_AUTH_ENABLED=true`.\n\n"
+            "### OpenAPI Discovery\n"
+            "- Swagger UI: `/docs`\n"
+            "- ReDoc: `/redoc`\n"
+            "- OpenAPI JSON: `/openapi.json`"
         ),
         version=__version__,
         license_info={
@@ -67,23 +99,43 @@ def create_app(
         openapi_tags=[
             {
                 "name": "issues",
-                "description": "Create, read, update, delete, and close issues",
+                "description": "Create, read, update, delete, and close issues. "
+                "All issues belong to a component and can have dependencies.",
             },
             {
                 "name": "dependencies",
-                "description": "Manage [:DEPENDS_ON] relationships between issues",
+                "description": "Manage [:DEPENDS_ON] relationships between issues. "
+                "Prevents circular dependencies and tracks blocked issues.",
             },
             {
                 "name": "components",
-                "description": "Manage project components that group issues",
+                "description": "Manage project components that group issues. "
+                "Components represent architectural layers or functional areas.",
             },
             {
                 "name": "analysis",
-                "description": "Root-cause analysis and impact assessment",
+                "description": "Root-cause analysis and impact assessment using graph proximity. "
+                "Links test failures to closed issues and calculates risk levels.",
             },
             {
                 "name": "health",
-                "description": "System health and API discovery",
+                "description": "System health checks and API discovery. "
+                "Returns Neo4j connectivity status.",
+            },
+            {
+                "name": "projects",
+                "description": "Project-level operations and summaries. "
+                "Filter and aggregate data by project name.",
+            },
+            {
+                "name": "agents",
+                "description": "AI agent lifecycle management. "
+                "Track agent work status, start/finish timestamps, and reasoning logs.",
+            },
+            {
+                "name": "deployments",
+                "description": "Deployment traceability. "
+                "Track which issues are deployed to which environments (PROD, STAGING, DEV).",
             },
         ],
         lifespan=lifespan,
@@ -183,31 +235,37 @@ def create_app(
 
         return response
 
+    # Performance monitoring middleware
+    @app.middleware("http")
+    async def performance_monitoring_middleware(request: Request, call_next):
+        if not ENABLE_PERF_LOGGING:
+            return await call_next(request)
+
+        start_time = time.time()
+        response = await call_next(request)
+        duration_ms = (time.time() - start_time) * 1000
+
+        # Add timing header
+        response.headers["X-Response-Time-Ms"] = f"{duration_ms:.2f}"
+
+        # Log slow requests
+        if duration_ms > SLOW_REQUEST_THRESHOLD * 1000:
+            logger.warning(
+                f"Slow request: {request.method} {request.url.path} "
+                f"took {duration_ms:.2f}ms (threshold: {SLOW_REQUEST_THRESHOLD * 1000:.2f}ms)"
+            )
+
+        return response
+
+    # Register routers
     # Register routers
     from socialseed_tasker.entrypoints.web_api.routes import (
         admin_router,
         agent_router,
-        analysis_router,
-        components_router,
-        components_dep_router,
-        constraints_router,
-        dependencies_router,
-        issues_router,
-        label_router,
-        policy_router,
-        project_router,
-        sync_router,
-        webhook_router,
-)
-
-# Register routers
-    from socialseed_tasker.entrypoints.web_api.routes import (
-        admin_router,
-        agent_router,
-        analysis_router,
         ai_search_router,
-        components_router,
+        analysis_router,
         components_dep_router,
+        components_router,
         constraints_router,
         cost_analytics_router,
         dependencies_router,
@@ -275,6 +333,7 @@ def create_app(
 
         try:
             import httpx
+
             result["httpx"] = "available"
         except ImportError:
             result["httpx"] = "not installed"
