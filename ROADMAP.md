@@ -1,141 +1,385 @@
 # 🗺️ SocialSeed Tasker: Strategic Roadmap
 
-SocialSeed Tasker is an **AI-Native Project Management Framework** powered by **Neo4j**. Our mission is to move beyond flat task lists and into **Graph-Based Architectural Governance** for autonomous software engineering.
+**SocialSeed Tasker** is an **AI-Native Project Management Framework** powered by **Neo4j**. Our mission is to evolve beyond flat task lists into **Graph-Based Architectural Governance** for autonomous software engineering. The Neo4j graph becomes the "consciousness" of the development process.
 
-This roadmap outlines our journey from a core utility to a global standard for AI-driven development.
-
-**Last updated:** 2026-04-26 (v0.8.0 - Issues #136-143 resolved)
+**Last updated:** 2026-04-27 | **Current Version:** v0.8.1 | **Next:** v0.9.0
 
 ---
 
-## 📍 Phase 1: Foundation & Injected Infrastructure (Q2 2026)
-*Goal: Make Tasker the easiest "Sidecar" to install and configure.*
+## 📍 Phase 1: Foundation & Scaffolding ✅ COMPLETED (Q2 2026)
 
-* [x] **Core Hexagonal Architecture:** Implementation of Feature-Oriented layers (API, Domain, Infrastructure).
-* [x] **Injected Scaffolding (`tasker init`):** CLI command to "seed" existing projects with AI Skills and Docker configurations. Supports `--force` flag for overwriting.
-* [x] **Hybrid Persistence:** Seamless toggle between **Local Neo4j (Docker)** and **Neo4j Aura DB (Cloud)** via environment profiles. Auto-detection of encryption from URI.
-* [x] **Asset Templates:** Standardized Python/JSON "Skill" templates for external AI Agent integration.
-* [x] **CLI - Component Management:** `create`, `list`, `show`, `update`, `delete` with Rich output.
-* [x] **CLI - Component Name Lookup:** `show`, `update`, `delete` support name, partial ID (8+ chars), or full UUID.
-* [x] **CLI - Issue Management:** `create`, `list`, `show`, `close` with validation (blocks open dependencies).
-* [x] **CLI - Issue Title Lookup:** Dependency commands (`add`, `remove`, `list`, `chain`) support issue titles of any length.
-* [x] **CLI - Dependency Management:** `add`, `list`, `chain`, `blocked` with circular dependency detection (BFS).
-* [x] **CLI - Analysis:** `root-cause` (graph proximity + temporal + semantic scoring) and `impact` (BFS transitive analysis with risk levels).
-* [x] **CLI - Project Detection:** `project detect` and `project setup` for auto-discovering modules from docker-compose, src/, etc.
-* [x] **CLI - Status:** `status` command showing current backend configuration.
-* [x] **REST API (FastAPI):** Full CRUD for issues, components, dependencies. OpenAPI docs at `/docs`.
-* [x] **REST API - Analysis Endpoints:** `POST /analyze/root-cause` and `GET /analyze/impact/{id}` with typed schemas.
-* [x] **REST API - Consistent Envelopes:** All responses use `{data, error, meta}` format with pagination support.
-* [x] **Dependency Injection Container:** Environment-based configuration with wiring.
-* [x] **Neo4j Storage Backend:** Graph database with Cypher queries, relationship management.
-* [x] **Docker Compose Setup:** API + Frontend + Neo4j (tasker-db) services.
-* [x] **Entry Points:** Both `tasker` and `socialseed-tasker` CLI commands available.
-* [x] **REST API Health Endpoint:** `/health` for container health checks.
+*Goal: Establish Tasker as the essential "Sidecar" for modern projects.*
 
----
+### Core Infrastructure
+- [x] **Hexagonal Architecture:** Implementation of API, Domain, and Infrastructure layers
+- [x] **Injected Scaffolding:** `tasker init` CLI to inject infrastructure into existing projects
+- [x] **Hybrid Persistence:** Support for local Neo4j and Aura DB Cloud
+- [x] **Base Graph Analysis:** Root-Cause and Impact Analysis using BFS
 
-## 🧠 Phase 2: Graph Intelligence & Observability (Q3 2026)
-*Goal: Provide a "God-View" for humans and a "Reasoning Brain" for AI.*
+### CLI & API
+- [x] Full CLI: `issue`, `component`, `dependency`, `analysis`, `project` commands
+- [x] Short UUID support in all commands (8+ chars)
+- [x] FastAPI REST API with OpenAPI docs at `/docs`
+- [x] Consistent response envelopes `{data, error, meta}` with pagination
+- [x] Entry points: `tasker` and `socialseed-tasker`
+- [x] Health endpoint `/health` with Neo4j connectivity status
 
-* [x] **Causal Traceability:** Root cause analysis links test failures to closed issues via component match, temporal recency, label overlap, semantic similarity, and graph proximity (BFS bidirectional).
-* [x] **The Human-Centric Board:** Vue.js Kanban board with drag & drop, auto-refresh (10s), responsive columns, and real-time agent activity indicator.
-* [ ] **AI Reasoning Logs:** In-issue Markdown summaries explaining *why* the AI chose a specific architectural path based on the graph.
-* [ ] **Live Agent Documentation:** Agents must maintain a "Dynamic Progress Manifest" within the issue description, including:
-    * **Live TODO List:** Checkboxes updated as the agent completes sub-tasks.
-    * **Affected Files:** Real-time list of created or modified files.
-    * **Technical Debt Notes:** Observations made by the agent during implementation.
-* [x] **Advanced Cypher Queries:** Impact analysis with BFS for direct/transitive dependents, blocked issues detection, affected components collection, and risk level calculation (LOW/MEDIUM/HIGH/CRITICAL).
-* [x] **Architectural Analysis Module:** Rule-based analyzer for forbidden technologies, required patterns, forbidden dependencies, and max dependency depth validation.
-* [x] **Graph Visualization:** Interactive graph view of issues, components, and dependencies (beyond Kanban) integrated directly into the UI dashboard.
-* [ ] **Issue `agent_working` Field:** Field exists in entity and API but needs full lifecycle integration (start/finish tracking).
+### UI & Visualization
+- [x] Vue.js Kanban board with drag & drop
+- [x] Auto-refresh every 10 seconds
+- [x] Real-time agent activity indicator
+- [x] Interactive dependency graph with vis-network
+- [x] Advanced project-level filtering
 
 ---
 
-## 🛡️ Phase 3: Architectural Governance (Q4 2026)
-*Goal: Prevent AI from introducing technical debt or breaking system constraints.*
+## 🧠 Phase 2: Graph Intelligence & Long-Term Memory (Q3 2026)
 
-* **[ ] Cloud Sync & GitHub Integration:**
-    * [ ] **GitHub API Adapter:** Implementation of a Hexagonal Adapter to map Tasker Issues to GitHub Issues/Milestones.
-    * [ ] **Bidirectional Webhook Listener:** API endpoint to receive real-time updates from GitHub (comments, label changes, status updates).
-    * [ ] **Causal Mirroring:** Automated sync of Tasker's "Analysis" (Root Cause/Impact) as comments in GitHub Issues for human reviewers.
-    * [ ] **Offline-First Sync Engine:** Queue system to batch local changes and push them to GitHub once internet connection is restored (Critical for intermittent connectivity).
-    * [ ] **Label-to-Graph Mapping:** Syncing GitHub Labels directly into Neo4j nodes for enhanced filtering
-    * [ ] **`GitHubIssueMapper`:** Implement domain service to map Neo4j UUIDs to GitHub Issue numbers and metadata.    
-    ### ☁️ GitHub Cloud Integration (High Priority)
-    * [ ] **`ConnectivityManager` & `SyncQueue`:** Implement an offline-first "Guard" that queues agent actions during power/internet outages and flushes them to the cloud upon reconnection.
-    * [ ] **`WebhookSignatureValidator`:** Secure endpoint for real-time bidirectional sync from GitHub.
-    * [ ] **`MarkdownTransformer`:** Convert Graph Analysis results into GitHub-flavored Markdown (Tables and Mermaid diagrams).
-    * [ ] **`SecretManager`:** Secure handling of GitHub Personal Access Tokens (PAT) via environment injection.
-* [x] **Architectural Rule Engine:** Define rules for forbidden technologies, required patterns, forbidden dependencies, max depth. Violation reporting with errors/warnings. *(Note: exists in `core/project_analysis/` but not yet enforced at API/CLI level)*
-* [ ] **Self-Documenting Enforcement:** Governance policy that blocks an agent from closing an issue if the "Solution Summary" and "Modified Files" sections are missing or incomplete.
-* [ ] **Graph Policy Engine:** Define "Rules of the Graph" (e.g., *Layer A cannot touch Layer C*) enforced at write time.
-* [ ] **Pre-Execution Validation:** Tasker automatically blocks agent actions that violate defined architectural policies.
-* [ ] **Automated Self-Healing:** Integration with `socialseed-e2e` to trigger "Fix Issues" automatically when tests fail.
-* [ ] **Swarm Coordination:** Multi-agent role management (Planner, Developer, Reviewer) synchronized via Graph states.
-* [ ] **Transaction Boundaries:** Atomic multi-operation commits to prevent race conditions (currently no transaction support in file backend).
+*Goal: Provide agents with deep context and historical memory.*
+
+### Code-as-Graph (Tree-sitter Integration)
+Map the entire repository as a graph structure for deep code understanding:
+
+- [ ] **Node Types:**
+  - `File` - Source files with path, language, lines of code
+  - `Class` - Classes with methods and attributes
+  - `Function` - Functions with parameters and return types
+  - `Import` - Import statements and their targets
+  - `Test` - Test files linked to tested units
+
+- [ ] **Relationship Types:**
+  - `[:CALLS]` - Function/Method invocations
+  - `[:DEPENDS_ON]` - Import/Dependency relationships
+  - `[:DEFINES]` - File defines Class/Function
+  - `[:TESTS]` - Test file tests Class/Function
+  - `[:CONTAINS]` - File contains Function/Class
+
+- [ ] **Implementation Details:**
+  - Tree-sitter parser integration for multi-language support
+  - Incremental scanning (only changed files)
+  - Git-aware (track file history)
+  - Symbol index for fast lookups
+
+### RAG Native in Graph (Vector Indexes)
+Enable semantic search across all project knowledge:
+
+- [ ] **Vector Indexes in Neo4j:**
+  - Store embeddings for tasks and past solutions
+  - Support for task similarity matching
+  - Historical solution retrieval
+
+- [ ] **RAG Pipeline:**
+  - Embedding generation service
+  - Chunking strategies for code/documents
+  - Vector similarity search
+  - Context injection for agent prompts
+
+- [ ] **Knowledge Types:**
+  - Past issue solutions
+  - Architectural decisions (ADRs)
+  - Test patterns and examples
+  - Configuration best practices
+
+### Agentic Traceability (Thinking Logs)
+Record agent reasoning in the graph for transparency and learning:
+
+- [ ] **Pattern:** `(Agent)-[:THOUGHT]->(ReasoningNode)-[:DECIDED]->(Task)`
+  
+- [ ] **ReasoningNode Properties:**
+  - `thought`: The agent's reasoning text
+  - `confidence`: Confidence score (0-1)
+  - `alternatives_considered`: Other options evaluated
+  - `rejected_reasons`: Why alternatives were rejected
+  - `timestamp`: When the thought occurred
+
+- [ ] **Trace Integration:**
+  - Automatic capture via API interceptors
+  - Manual logging via agent manifest
+  - Human review and feedback loop
+  - Learning from past decisions
+
+### Live Documentation (v0.8.0 ✅)
+- [x] **Dynamic Progress Manifest** in issue description:
+  - Live TODO List with checkboxes
+  - Affected Files in real-time
+  - Technical Debt Notes
+- [ ] Standardized templates for agent documentation
+
+### Observability (v0.8.0 ✅)
+- [x] Kanban dashboard with activity indicators
+- [x] Root Cause Analysis with scoring system
+- [x] Impact Analysis with BFS and risk levels
+- [x] Interactive Graph View with vis-network
+
+---
+
+## 🛡️ Phase 3: Governance & Agentic Guardrails (Q4 2026)
+
+*Goal: Control AI execution and ensure system integrity.*
+
+### Active Architecture Enforcement
+Prevent AI from introducing technical debt or breaking system constraints:
+
+- [ ] **Cypher Rule Engine:**
+  - Rules encoded as Cypher queries
+  - Blocking commits or tasks that violate design patterns
+  - Circular dependency prevention at write time
+  - Forbidden layer access (e.g., Layer A cannot touch Layer C)
+
+- [ ] **Policy Enforcement Levels:**
+  - `WARN` - Log violations but allow
+  - `BLOCK` - Prevent operation, require override
+  - `STRICT` - No overrides allowed
+
+- [ ] **Self-Documenting Enforcement:**
+  - Verify "Solution Summary" exists before closing
+  - Verify "Modified Files" section is complete
+  - Verify "Technical Debt Notes" documents tradeoffs
+  - Block agent from closing if documentation incomplete
+
+### Dynamic RBAC for Agents
+Role-based access control with agent-specific roles:
+
+- [ ] **Role Definitions:**
+  ```
+  JuniorAgent:
+    - Can: Create issues, update own issues, read all
+    - Cannot: Close issues, modify architecture, delete
+    
+  SeniorAgent:
+    - Can: All JuniorAgent + close issues, modify components
+    - Cannot: Delete projects, modify constraints
+    
+  SecurityAgent:
+    - Can: All SeniorAgent + define rules, block operations
+    - Cannot: Override audit logs
+  ```
+
+- [ ] **Permission Matrix:**
+  - Fine-grained permissions on graph operations
+  - Project-level access control
+  - Time-limited credentials
+
+### Token Budgeting System
+Control AI costs and prevent infinite loops:
+
+- [ ] **Cost Tracking:**
+  - `estimated_cost`: Pre-execution token estimate
+  - `actual_cost`: Post-execution actual usage
+  - `budget_limit`: Per-project or per-agent threshold
+  - `cost_alert`: Notification threshold
+
+- [ ] **Budget Actions:**
+  - Auto-pause when limit reached
+  - Human approval for overruns
+  - Cost attribution by issue/component
+  - Historical cost analytics
+
+### Bidirectional GitHub Synchronization (v0.8.0 ✅)
+- [x] GitHub API Adapter (Hexagonal architecture)
+- [x] Bidirectional Webhook Listener
+- [x] Causal Mirroring (analysis as GitHub comments)
+- [x] Offline-First Sync Engine with ConnectivityManager + SyncQueue
+- [x] Label-to-Graph Mapping
+- [x] WebhookSignatureValidator
+- [x] MarkdownTransformer (GitHub-flavored Markdown)
+- [x] SecretManager (secure PAT handling)
+- [x] GitHubIssueMapper (UUID ↔ GitHub Issue numbers)
+
+### Autonomous Operations
+- [ ] **Self-Healing:** Integration with `socialseed-e2e` for automatic fix task generation
+- [ ] **Swarm Coordination:** Multi-agent role management (Planner, Developer, Reviewer)
+- [ ] **Transaction Boundaries:** ACID multi-operation commits in Neo4j
 
 ---
 
 ## 🚀 Phase 4: Global Ecosystem & Autonomous Execution (2027)
-*Goal: Full autonomy and industry-wide adoption.*
 
-* [ ] **IDE Integration (Plugins):** Native extensions for **Cursor, VS Code, and Windsurf** to interact with the Tasker API.
-* [ ] **Autonomous Git Operations:** Full lifecycle management from Issue creation to PR merging with graph-verified approvals.
-* [ ] **Project "Master Config" (YAML-to-Graph):** A single file that defines the entire system architecture, which Tasker then enforces.
-* [ ] **Community Demos:** Production-ready boilerplate examples (E-commerce, SaaS API) managed entirely by SocialSeed Tasker.
+*Goal: Industry standardization and full supervised autonomy.*
+
+### Model Context Protocol (MCP) Server
+Native server for AI tools to consume graph context directly:
+
+- [ ] **MCP Implementation:**
+  - Standard MCP protocol compliance
+  - Direct graph context access
+  - Claude Desktop integration
+  - Cursor integration
+  - Custom AI assistants
+
+- [ ] **Context Providers:**
+  - Issue context
+  - Dependency graph
+  - Architectural rules
+  - Historical decisions
+  - Code-as-Graph data
+
+### IDE Integration
+Official extensions for popular editors:
+
+- [ ] **VS Code Extension:**
+  - Issue panel
+  - Dependency viewer
+  - Architecture validation
+  - Inline error markers
+
+- [ ] **Cursor/Windsurf Integration:**
+  - Real-time suggestions
+  - Context injection
+  - Architecture enforcement
+
+- [ ] **Features:**
+  - One-click issue assignment
+  - Automatic status updates
+  - Inline dependency visualization
+  - Architectural rule highlights
+
+### Autonomous Git Operations
+Full lifecycle management from Issue to PR:
+
+- [ ] **Automated Workflow:**
+  - Issue → Branch creation
+  - Branch → Development
+  - Development → PR creation
+  - PR → Graph-verified approval
+  - Approval → Merge
+
+- [ ] **Graph-Verified Approvals:**
+  - Architectural rule validation
+  - Test pass verification
+  - Dependency impact check
+  - Security scan validation
+
+### Project Master Config
+Single YAML file defining entire system architecture:
+
+- [ ] **Config Schema:**
+  ```yaml
+  architecture:
+    layers:
+      - name: Presentation
+        can_access: [Application]
+      - name: Application
+        can_access: [Domain]
+      - name: Domain
+        can_access: [Infrastructure]
+    
+    forbidden_dependencies:
+      - from: Presentation
+        to: Infrastructure
+    
+    max_depth: 3
+  
+  agent_roles:
+    junior:
+      max_concurrent_issues: 2
+      requires_approval_for: [close, delete]
+  ```
+
+### Enterprise Features
+- [ ] **Multi-Tenant SaaS:** Advanced Neo4j Aura support for enterprise scale
+- [ ] **Community Demos:** Production-ready boilerplate (E-commerce, SaaS API)
+- [ ] **E2E Test Suite:** Complete end-to-end testing coverage
+
+### Stable API v1
+- [ ] Locked API contracts
+- [ ] Strict SemVer versioning
+- [ ] Deprecation policy
+- [ ] Breaking change communication
 
 ---
 
-## 📊 Test Coverage
+## 📊 Test Coverage (v0.8.0)
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Unit Tests | ✅ 147 passed | Entities, actions, API, CLI, Neo4j repo, scaffolder, analyzers |
+| Unit Tests | ✅ 270+ passing | Entities, actions, API, CLI, Neo4j, scaffolder |
 | Neo4j Integration | ✅ Working | All queries functional with graph storage |
-| CLI Functional | ✅ All commands | Tested with mock repositories |
-| API Functional | ✅ All endpoints | Tested via TestClient |
-| E2E | ❌ Not implemented | No end-to-end test suite yet |
+| CLI Functional | ✅ Complete | All commands tested with mock repositories |
+| API Functional | ✅ Complete | All endpoints via TestClient |
+| Integration Tests | ⚠️ 12/14 | Requires credential adjustments |
+| E2E | ❌ Pending | Not implemented |
 
 ---
 
-## 🔍 Known Issues (from audit)
+## 🔍 Known Issues Audit
 
-| # | Issue | Severity | Location | Status |
-|---|-------|----------|----------|--------|
-| 1 | `issue show` requires full UUID, short ID fails | Low | CLI commands | ✅ RESOLVED (v0.5.0) |
-| 2 | `component show` requires full UUID, short ID fails | Low | CLI commands | ✅ RESOLVED (v0.8.0 #134) |
-| 3 | `POST /dependencies` route not mounted at `/api/v1/dependencies` | Medium | Route prefix mismatch | ✅ RESOLVED |
-| 4 | `POST /analyze/root-cause` requires `test_id` field not documented in CLI help | Low | Schema vs CLI mismatch | ✅ RESOLVED (v0.5.1) - Added /analyze/link-test |
-| 5 | Architectural rules exist but not enforced at API/CLI write level | Medium | Integration gap | ⚠️ OPEN |
-| 6 | No filtering by project in issue list | Low | API & CLI | ✅ RESOLVED (v0.5.0) |
-| 7 | Dependencies not populated in issue list response | Low | API | ✅ RESOLVED (v0.5.0) |
-| 8 | No bulk dependency creation | Low | API | ✅ RESOLVED (v0.5.0) |
-| 9 | CLI output has extra blank lines at start (Typer/Rich bug) | Low | CLI rendering | ⚠️ LIMITACIÓN CONOCIDA - No hay solución sin cambiar de framework CLI |
-| 10 | `component update` requires full UUID | Low | CLI commands | ✅ RESOLVED (v0.8.0 #136) |
-| 11 | `dependency add` requires full UUID for issue titles | Low | CLI commands | ✅ RESOLVED (v0.8.0 #137) |
-| 12 | `component delete` requires full UUID | Low | CLI commands | ✅ RESOLVED (v0.8.0 #138) |
-| 13 | `/analyze/component-impact` API requires full UUID | Low | API routes | ✅ RESOLVED (v0.8.0 #139) |
-| 14 | `test_component_show_missing` expects wrong exit code | Low | Test | ✅ RESOLVED (v0.8.0 #140) |
-| 15 | Linter F821 - undefined UUID and Any | Low | Code | ✅ RESOLVED (v0.8.0 #141) |
-| 16 | Linter F401 - unused imports | Low | Code | ✅ RESOLVED (v0.8.0 #142) |
-| 17 | Linter F541, B904 - code quality | Low | Code | ✅ RESOLVED (v0.8.0 #143) |
-| 18 | Linter I001, E501 - formatting | Low | Code | ✅ RESOLVED (v0.8.0 #144) |
-| 19 | Docker frontend build failure | Medium | Docker | ✅ RESOLVED (v0.8.0 #145) |
-| 20 | Setup friction - manual Neo4j config required | Low | CLI | ✅ RESOLVED (v0.8.1 #183) |
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1-20 | Various bug fixes (short UUID, pagination, etc.) | Low-Medium | ✅ RESOLVED |
+| 21 | CLI blank lines (Typer/Rich) | Low | ⚠️ KNOWN LIMITATION |
+| 22 | Architectural rules not enforced at write time | Medium | ✅ RESOLVED (v0.8.0) |
 
 ---
 
-## 📋 Limitaciones Conocidas
+## 📋 Known Limitations
 
-### CLI Blank Lines Issue
-La salida del CLI (`tasker --help`, `tasker issue list`, etc.) muestra líneas en blanco adicionales al inicio de cada comando. Este es un problema conocido a nivel de la integración Typer + Rich que no tiene solución directa sin migrar a otro framework CLI (como Click o argparse básico).
+### CLI Blank Lines
+CLI output (`tasker --help`, `tasker issue list`, etc.) shows extra blank lines at the start. Known Typer + Rich integration issue with no current workaround.
 
-**Estado:** No resuelto - Limitación conocida
-**Impacto:** Bajo - Solo afecta la presentación visual
-**Workaround:** Ninguno disponible actualmente
+**Status:** Unresolved - Known limitation  
+**Impact:** Low - Only affects visual presentation  
+**Workaround:** None available
+
+---
+
+## 🎯 Version Roadmap
+
+### v0.8.1 (Q2 2026) ✅
+- Lint cleanup and code quality (Ruff config migration, variable naming fixes)
+- Enhanced API documentation (OpenAPI descriptions, endpoint examples)
+- CLI output polish (improved error messages)
+- Performance optimization (monitoring middleware, Neo4j indexes, BFS query)
+- Security enhancements (SECURITY.md, dependency-update workflow, pip-audit)
+- Test coverage enhancement (454 tests, new AI/RAG tests)
+
+### v0.9.0 - "Memory & Intelligence" (Q3 2026)
+- Code-as-Graph with Tree-sitter
+- RAG Native with vector indexes in Neo4j
+- AI Reasoning Logs integrated in graph
+- Enhanced impact analysis
+
+### v1.0.0 - "The Architect" (2027)
+- Native MCP Server
+- Strict Guardrails (block operations violating architecture)
+- Token budget management
+- Stable API v1 (strict SemVer)
+- IDE integrations (VS Code, Cursor, Windsurf)
+- Autonomous Git Operations
+- Complete E2E Test Suite
+
+---
+
+## 📄 Previous Releases
+
+| Version | Date | Focus |
+|---------|------|-------|
+| 0.1.0 | 2024-02 | Initial structure |
+| 0.2.0 | 2024-04 | Graph base |
+| 0.3.0 | 2024-06 | CLI + API |
+| 0.4.0 | 2024-08 | Analysis |
+| 0.5.0 | 2025-01-15 | **Graph-Only** - Neo4j exclusive storage |
+| 0.5.1 | 2026-04-07 | Post-Release Updates |
+| 0.6.0 | 2026-04-08 | Polish & Alignment |
+| 0.7.0 | 2025-10 | GitHub Integration |
+| **0.8.0** | **2026-04-23** | **Observability & Active Governance** |
+
+---
+
+## 💡 CTO Implementation Notes
+
+### Critical Considerations for Phase 2-4:
+
+1. **Atomicity:** All graph updates by agents must be treated as ACID transactions. If architecture validation fails, the change must not persist.
+
+2. **Sanitization:** The RAG system must filter secrets and API keys before generating embeddings to prevent data leaks to LLMs. Never store raw credentials in vector indexes.
+
+3. **Synchronization:** The `WebhookSignatureValidator` implementation is critical for secure and reliable GitHub sync in production environments.
+
+4. **Setup Friction:** Default to Neo4j local with sensible env vars as the happy path. The `docker-compose.yml` must work out-of-the-box for new users.
+
+5. **Agent Trust Levels:** Different agent roles require different trust levels. JuniorAgents need more enforcement; SeniorAgents can override with justification.
 
 ---
 
 **Building the future of software engineering, one node at a time.** 🛡️🕸️
-
----
