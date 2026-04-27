@@ -10,11 +10,11 @@ import os
 import sys
 from typing import TYPE_CHECKING
 
-import socialseed_tasker
 import typer
 from rich.console import Console
 from rich.theme import Theme
 
+import socialseed_tasker
 from socialseed_tasker.bootstrap.container import Container
 from socialseed_tasker.entrypoints.terminal_cli import commands
 

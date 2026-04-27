@@ -328,7 +328,7 @@ def _fill_project_context(
         content = content.replace(key, value)
 
     project_md.write_text(content, encoding="utf-8")
-    console.print(f"  [success]Updated:[/success]    tasker/project.md")
+    console.print("  [success]Updated:[/success]    tasker/project.md")
 
     project_json = tasker_dir / "project.json"
     if not project_json.exists():
@@ -359,4 +359,4 @@ def _fill_project_context(
         content = content.replace(key, value)
 
     project_json.write_text(content, encoding="utf-8")
-    console.print(f"  [success]Updated:[/success]    tasker/project.json")
+    console.print("  [success]Updated:[/success]    tasker/project.json")

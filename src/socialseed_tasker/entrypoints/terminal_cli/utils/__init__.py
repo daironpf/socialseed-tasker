@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-
 _CLI_CONFIG_FILE = Path.home() / ".tasker" / "credentials"
 
 
@@ -16,7 +15,7 @@ def load_saved_credentials() -> dict[str, str]:
         try:
             with open(config_file) as f:
                 return json.load(f)
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             pass
     return {}
 
