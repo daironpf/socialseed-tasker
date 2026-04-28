@@ -133,6 +133,11 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             result = session.run(queries.LIST_COMPONENTS, project=project)
             return [_node_to_component(r["c"]) for r in result]
 
+    def list_projects(self) -> list[str]:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.LIST_PROJECTS)
+            return [r["name"] for r in result]
+
     def get_component_by_name(self, name: str, project: str | None = None) -> Component | None:
         with self._driver.driver.session(database=self._driver.database) as session:
             if project:

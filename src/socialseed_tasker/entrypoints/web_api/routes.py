@@ -1238,6 +1238,19 @@ def list_workable_issues(
 components_router = APIRouter()
 
 
+@components_router.get(
+    "/projects",
+    response_model=APIResponse[list[str]],
+    summary="List projects",
+    description="List all unique project names in the system.",
+)
+def list_projects(
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list[str]]:
+    projects = repo.list_projects()
+    return APIResponse(data=projects, meta=Meta(request_id=None))
+
+
 @components_router.post(
     "/components",
     response_model=APIResponse[ComponentResponse],
@@ -2277,6 +2290,19 @@ def dry_run_policy(
 # ---------------------------------------------------------------------------
 
 project_router = APIRouter()
+
+
+@project_router.get(
+    "/projects",
+    response_model=APIResponse[list[str]],
+    summary="List all projects",
+    description="List all unique project names in the system.",
+)
+def list_all_projects(
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list[str]]:
+    projects = repo.list_projects()
+    return APIResponse(data=projects, meta=Meta(request_id=None))
 
 
 @project_router.get(

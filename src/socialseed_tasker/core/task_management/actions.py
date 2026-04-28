@@ -176,6 +176,11 @@ class TaskRepositoryInterface(Protocol):
     def get_component_dependents(self, component_id: str) -> list[Component]:
         """Get components that depend on this component."""
 
+    # -- Project discovery --------------------------------------------------
+
+    def list_projects(self) -> list[str]:
+        """List all unique project names."""
+
     def create_epic(self, epic: Any) -> None:
         """Create a new epic."""
 

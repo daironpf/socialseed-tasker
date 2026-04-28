@@ -59,6 +59,12 @@ RETURN c
 ORDER BY c.name
 """
 
+LIST_PROJECTS = """
+MATCH (c:Component)
+RETURN DISTINCT c.project AS name
+ORDER BY name
+"""
+
 LIST_ISSUES_PAGINATED = """
 MATCH (i:Issue)
 USING INDEX i:Issue(status)
