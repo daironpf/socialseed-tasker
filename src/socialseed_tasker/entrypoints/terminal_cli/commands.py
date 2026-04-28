@@ -910,7 +910,7 @@ component_app = typer.Typer(help="Manage components")
 @component_app.command("create")
 def component_create(
     name: str = typer.Argument(..., help="Component name"),
-    project: str = typer.Option(..., "--project", "-p", help="Project name"),
+    project: str = typer.Option("default", "--project", "-p", help="Project name (default: 'default')"),
     description: str | None = typer.Option(None, "--description", "-d", help="Component description"),
 ) -> None:
     """Create a new component."""

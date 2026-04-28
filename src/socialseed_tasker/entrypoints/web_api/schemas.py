@@ -492,9 +492,9 @@ class ComponentCreateRequest(BaseModel):
         examples=["REST API and business logic layer", "User interface components"],
     )
     project: str = Field(
-        ...,
+        "default",
         min_length=1,
-        description="Project name this component belongs to",
+        description="Project name this component belongs to (default: 'default')",
         examples=["socialseed-tasker", "ecommerce-store"],
     )
 
