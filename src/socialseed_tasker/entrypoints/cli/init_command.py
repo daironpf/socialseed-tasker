@@ -270,7 +270,7 @@ def _run_scaffold(
             Panel(
                 "[bold]Next steps:[/bold]\n"
                 "  1. cd tasker && cp configs/.env.example configs/.env\n"
-                "  2. Edit configs/.env with your settings\n"
+                "  2. docker compose build tasker-api\n"
                 "  3. docker compose up -d\n"
                 "  4. Import skills from tasker/skills/ in your AI agent",
                 title="[cyan]Tasker Setup[/cyan]",
