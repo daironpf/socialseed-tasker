@@ -1934,6 +1934,183 @@ def constraints_validate() -> None:
         console.print(f"\n[bold]Summary:[/bold] {len(result.hard_violations)} hard, {len(result.soft_violations)} soft")
 
 
+# ---------------------------------------------------------------------------
+# Code Graph commands
+# ---------------------------------------------------------------------------
+
+code_graph_app = typer.Typer(help="Code-as-Graph: scan and analyze source code")
+
+
+@code_graph_app.command("scan")
+def code_graph_scan(
+    path: str = typer.Argument(..., help="Path to repository to scan"),
+    incremental: bool = typer.Option(False, "--incremental", "-i", help="Only scan changed files"),
+    git_aware: bool = typer.Option(True, "--git/--no-git", help="Use git to track changes"),
+) -> None:
+    """Scan a repository and extract code structure into the graph."""
+    from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+    from socialseed_tasker.bootstrap.wiring import get_driver
+
+    console.print(f"[info]Scanning repository:[/info] {path}")
+
+    parser = CodeGraphParser()
+
+    try:
+        files, symbols, imports, relationships = parser.scan_repository(
+            repository_path=path,
+            incremental=incremental,
+            git_aware=git_aware,
+        )
+
+        console.print(f"[success]Found {len(files)} files, {len(symbols)} symbols, {len(imports)} imports[/success]")
+
+        driver = get_driver()
+        if driver:
+            from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+            repo = CodeGraphRepository(driver)
+            repo.save_scan_results(files, symbols, imports, relationships)
+            console.print("[success]Saved to Neo4j graph[/success]")
+        else:
+            console.print("[warning]Neo4j not connected - results not saved[/warning]")
+
+    except Exception as e:
+        console.print(f"[error]Error scanning repository:[/error] {str(e)}")
+
+
+@code_graph_app.command("find")
+def code_graph_find(
+    name: str = typer.Argument(..., help="Symbol name to search for"),
+    symbol_type: str | None = typer.Option(None, "--type", "-t", help="Filter by symbol type"),
+    limit: int = typer.Option(20, "--limit", "-l", help="Maximum results"),
+) -> None:
+    """Find symbols by name in the code graph."""
+    from socialseed_tasker.core.code_analysis.entities import SymbolType
+    from socialseed_tasker.bootstrap.wiring import get_driver
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    repo = CodeGraphRepository(driver)
+
+    sym_type = None
+    if symbol_type:
+        with suppress(ValueError):
+            sym_type = SymbolType(symbol_type)
+
+    results = repo.find_symbols(name=name, symbol_type=sym_type, limit=limit)
+
+    if not results:
+        console.print("[info]No symbols found[/info]")
+        return
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Name", width=30)
+    table.add_column("Type", width=15)
+    table.add_column("File", width=30)
+    table.add_column("Line", width=8)
+
+    for sym in results:
+        table.add_row(
+            sym.get("name", ""),
+            sym.get("symbol_type", ""),
+            "",
+            str(sym.get("start_line", "")),
+        )
+
+    console.print(Panel(table, title=f"[bold]Symbols ({len(results)} found)[/bold]"))
+
+
+@code_graph_app.command("files")
+def code_graph_files(
+    limit: int = typer.Option(50, "--limit", "-l", help="Maximum results"),
+    language: str | None = typer.Option(None, "--language", help="Filter by language"),
+) -> None:
+    """List files in the code graph."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    repo = CodeGraphRepository(driver)
+    files = repo.get_files(limit=limit)
+
+    if not files:
+        console.print("[info]No files in graph[/info]")
+        return
+
+    if language:
+        files = [f for f in files if f.get("language") == language]
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Path", width=50)
+    table.add_column("Language", width=15)
+    table.add_column("Lines", width=8)
+
+    for f in files:
+        table.add_row(
+            f.get("path", ""),
+            f.get("language", ""),
+            str(f.get("lines_of_code", 0)),
+        )
+
+    console.print(Panel(table, title=f"[bold]Files ({len(files)} found)[/bold]"))
+
+
+@code_graph_app.command("stats")
+def code_graph_stats() -> None:
+    """Show code graph statistics."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    repo = CodeGraphRepository(driver)
+    stats = repo.get_stats()
+
+    console.print(Panel(
+        f"[bold]Total Files:[/bold] {stats.total_files}\n"
+        f"[bold]Total Symbols:[/bold] {stats.total_symbols}\n"
+        f"[bold]Total Relationships:[/bold] {stats.total_relationships}",
+        title="[bold]Code Graph Statistics[/bold]",
+    ))
+
+
+@code_graph_app.command("clear")
+def code_graph_clear(
+    confirm: bool = typer.Option(False, "--yes", "-y", help="Confirm deletion"),
+) -> None:
+    """Clear all code graph data from Neo4j."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+
+    if not confirm:
+        console.print("[warning]Use --yes to confirm deletion[/warning]")
+        return
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    repo = CodeGraphRepository(driver)
+    repo.clear()
+    console.print("[success]Code graph cleared[/success]")
+
+
 # Create the main app with all command groups
 app = typer.Typer()
 app.add_typer(issue_app, name="issue")
@@ -1942,3 +2119,4 @@ app.add_typer(dependency_app, name="dependency")
 app.add_typer(analyze_app, name="analyze")
 app.add_typer(seed_app, name="seed")
 app.add_typer(constraints_app, name="constraints")
+app.add_typer(code_graph_app, name="code-graph")

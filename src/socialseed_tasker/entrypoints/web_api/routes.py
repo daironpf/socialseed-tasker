@@ -3368,3 +3368,144 @@ def validate_constraints(
         ),
         meta=Meta(request_id=None),
     )
+
+
+# ---------------------------------------------------------------------------
+# Code Graph Router
+# ---------------------------------------------------------------------------
+
+code_graph_router = APIRouter(tags=["code-graph"])
+
+
+@code_graph_router.post("/scan")
+async def code_graph_scan(
+    path: str,
+    incremental: bool = False,
+    git_aware: bool = True,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> dict[str, Any]:
+    """Scan a repository and extract code structure into the graph."""
+    from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+
+    parser = CodeGraphParser()
+
+    files, symbols, imports, relationships = parser.scan_repository(
+        repository_path=path,
+        incremental=incremental,
+        git_aware=git_aware,
+    )
+
+    try:
+        from socialseed_tasker.storage.graph_database.driver import get_driver
+
+        driver = get_driver()
+        if driver:
+            from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+            code_repo = CodeGraphRepository(driver)
+            code_repo.save_scan_results(files, symbols, imports, relationships)
+            saved = True
+        else:
+            saved = False
+    except Exception:
+        saved = False
+
+    return {
+        "files": len(files),
+        "symbols": len(symbols),
+        "imports": len(imports),
+        "relationships": len(relationships),
+        "saved_to_graph": saved,
+    }
+
+
+@code_graph_router.get("/files")
+async def code_graph_files(
+    limit: int = Query(50, ge=1, le=500),
+    language: str | None = Query(None),
+) -> dict[str, Any]:
+    """List files in the code graph."""
+    from socialseed_tasker.storage.graph_database.driver import get_driver
+
+    driver = get_driver()
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    repo = CodeGraphRepository(driver)
+    files = repo.get_files(limit=limit)
+
+    if language:
+        files = [f for f in files if f.get("language") == language]
+
+    return {"files": files, "total": len(files)}
+
+
+@code_graph_router.get("/symbols")
+async def code_graph_symbols(
+    name: str | None = Query(None),
+    symbol_type: str | None = Query(None),
+    limit: int = Query(20, ge=1, le=100),
+) -> dict[str, Any]:
+    """Find symbols by name in the code graph."""
+    from socialseed_tasker.core.code_analysis.entities import SymbolType
+
+    from socialseed_tasker.storage.graph_database.driver import get_driver
+
+    driver = get_driver()
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    repo = CodeGraphRepository(driver)
+
+    sym_type = None
+    if symbol_type:
+        try:
+            sym_type = SymbolType(symbol_type)
+        except ValueError:
+            pass
+
+    symbols = repo.find_symbols(name=name, symbol_type=sym_type, limit=limit)
+
+    return {"symbols": symbols, "total": len(symbols)}
+
+
+@code_graph_router.get("/stats")
+async def code_graph_stats() -> dict[str, Any]:
+    """Get code graph statistics."""
+    from socialseed_tasker.storage.graph_database.driver import get_driver
+
+    driver = get_driver()
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    repo = CodeGraphRepository(driver)
+    stats = repo.get_stats()
+
+    return {
+        "total_files": stats.total_files,
+        "total_symbols": stats.total_symbols,
+        "total_relationships": stats.total_relationships,
+    }
+
+
+@code_graph_router.delete("")
+async def code_graph_clear() -> dict[str, str]:
+    """Clear all code graph data."""
+    from socialseed_tasker.storage.graph_database.driver import get_driver
+
+    driver = get_driver()
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    repo = CodeGraphRepository(driver)
+    repo.clear()
+
+    return {"status": "cleared"}

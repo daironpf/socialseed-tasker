@@ -264,6 +264,7 @@ def create_app(
         agent_router,
         ai_search_router,
         analysis_router,
+        code_graph_router,
         components_dep_router,
         components_router,
         constraints_router,
@@ -296,6 +297,7 @@ def create_app(
     app.include_router(objective_router, prefix="/api/v1", tags=["objectives"])
     app.include_router(cost_analytics_router, prefix="/api/v1", tags=["cost_analytics"])
     app.include_router(ai_search_router, prefix="/api/v1/ai", tags=["ai_search"])
+    app.include_router(code_graph_router, prefix="/api/v1/code-graph", tags=["code-graph"])
 
     # Health endpoint with Neo4j connectivity check
     @app.get("/health", tags=["health"])
