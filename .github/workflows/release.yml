@@ -77,7 +77,7 @@ jobs:
             exit 1
           fi
           
-          FRONTEND_SIZE=$(du -sm /tmp/verify-package/socialseed_tasker/assets/frontend/ 2>/dev/null | cut -f1 || echo "0")
+          FRONTEND_SIZE=$(du -sk /tmp/verify-package/socialseed_tasker/assets/frontend/ 2>/dev/null | cut -f1 || echo "0")
           if [ "$FRONTEND_SIZE" -lt 100 ]; then
             echo "ERROR: Frontend assets too small (${FRONTEND_SIZE}KB), missing compiled files"
             exit 1
