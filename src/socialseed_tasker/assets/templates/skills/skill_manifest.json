@@ -3,6 +3,11 @@
   "version": "0.8.0",
   "description": "AI Agent Skill for interacting with SocialSeed Tasker REST API v0.8.0",
   "api_version": "0.8.0",
+  "quality_guide": {
+    "file": "issue_quality_guide.json",
+    "required_for": ["create_issue", "update_issue"],
+    "description": "Best practices for creating quality issues in client projects"
+  },
   "functions": [
     {
       "name": "create_component",

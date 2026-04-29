@@ -131,7 +131,7 @@ _Analysis performed by Tasker_
 
 ### Impact Summary
 - **Directly Affected**: {directly} issues
-- **Transitively Affected**: {transitively} issues  
+- **Transitively Affected**: {transitively} issues
 - **Blocked Issues**: {blocked} issues
 - **Risk Level**: {risk}
 

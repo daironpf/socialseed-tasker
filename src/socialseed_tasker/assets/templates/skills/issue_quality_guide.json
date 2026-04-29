@@ -1,0 +1,143 @@
+{
+  "name": "issue-quality-guide",
+  "version": "0.8.0",
+  "description": "Quality standards and best practices for creating issues in client projects",
+  "principles": [
+    {
+      "id": "clarity",
+      "title": "Clarity Over Speed",
+      "description": "Spend time understanding the requirement before creating issues. Vague issues waste development time.",
+      "weight": 10
+    },
+    {
+      "id": "independence",
+      "title": "Independent, Testable Issues",
+      "description": "Each issue should be completable without waiting for other issues. If Issue B depends on Issue A, mark the dependency.",
+      "weight": 10
+    },
+    {
+      "id": "traceability",
+      "title": "Traceability to Business Value",
+      "description": "Every issue should connect to a business requirement or technical debt item. Ask 'Why does this matter?'",
+      "weight": 8
+    },
+    {
+      "id": "realistic",
+      "title": "Realistic Estimation",
+      "description": "Break large issues into smaller ones. A good issue takes 1-4 hours to complete.",
+      "weight": 7
+    }
+  ],
+  "title_format": {
+    "pattern": "[Component] Action: Expected Result",
+    "examples": [
+      "[Auth Service] Implement JWT refresh token rotation",
+      "[Frontend] Add user profile avatar upload",
+      "[API Gateway] Configure rate limiting per endpoint",
+      "[Database] Add index on users.email for login queries",
+      "[Dashboard] Fix timezone display bug for international users"
+    ],
+    "anti_patterns": [
+      "Fix bugs",
+      "Improve performance",
+      "Update documentation",
+      "Refactor code"
+    ]
+  },
+  "description_format": {
+    "required_sections": [
+      "## Context",
+      "## Acceptance Criteria",
+      "## Technical Notes"
+    ],
+    "context_example": "## Context\n\nWhy this issue exists. What business problem does it solve or what feature does it enable.\n\n- Related: JIRA-123 or architectural decision [ADR-004]",
+    "acceptance_example": "## Acceptance Criteria\n\n- [ ] Criterion 1 (testable)\n- [ ] Criterion 2 (testable)\n- [ ] Criterion 3 (testable)",
+    "technical_example": "## Technical Notes\n\nLanguage/framework specific notes:\n- Use PostgreSQL transaction for data consistency\n- Frontend: Use existing API client wrapper\n- API: Follow REST conventions"
+  },
+  "priority_guide": {
+    "CRITICAL": [
+      "Production outage or data loss",
+      "Security vulnerability",
+      "Blocking bug preventing deployment"
+    ],
+    "HIGH": [
+      "Feature requested by client for immediate release",
+      "Regression bug affecting significant user base",
+      "Performance issue causing timeouts"
+    ],
+    "MEDIUM": [
+      "Standard feature implementation",
+      "Improvement to existing functionality",
+      "Non-blocking bug"
+    ],
+    "LOW": [
+      "Nice-to-have improvements",
+      "Documentation updates",
+      "Technical debt cleanup"
+    ]
+  },
+  "dependency_guide": {
+    "when_to_create": [
+      "Issue A cannot be started until Issue B is done",
+      "Issue A requires code from Issue B to compile",
+      "Issue A's tests depend on Issue B's implementation"
+    ],
+    "how_to_express": "Use add_dependency() to create DEPENDS_ON relationship. Never assume implicit dependencies.",
+    "anti_patterns": [
+      "Creating dependencies 'just in case'",
+      "Creating linear chains where issues are independent",
+      "Not marking dependencies when they exist"
+    ]
+  },
+  "component_naming": {
+    "patterns": [
+      "{service-name} - e.g., 'auth-service', 'user-service'",
+      "{layer}-{function} - e.g., 'backend-api', 'frontend-ui'",
+      "{project}-{context} - e.g., 'social-network-auth'"
+    ],
+    "examples": [
+      {"name": "auth-service", "description": "Authentication and authorization logic"},
+      {"name": "user-service", "description": "User profile and account management"},
+      {"name": "frontend-web", "description": "Web UI components"},
+      {"name": "database", "description": "Database schema and migrations"},
+      {"name": "api-gateway", "description": "API routing and middleware"},
+      {"name": "notifications", "description": "Email, push, and in-app notifications"}
+    ]
+  },
+  "quality_checklist": {
+    "before_creating": [
+      "✓ Title follows [Component] Action: Result pattern",
+      "✓ Description has Context (why), Acceptance Criteria (what), Technical Notes (how)",
+      "✓ Each acceptance criterion is testable (can verify with code)",
+      "✓ Issue can be completed independently",
+      "✓ Related issues have dependencies marked",
+      "✓ Priority matches the priority guide"
+    ],
+    "review_questions": [
+      "Can a developer complete this issue in 1-4 hours?",
+      "Is the acceptance criteria verifiable?",
+      "Does this issue connect to business value?",
+      "Are all dependencies to other issues marked?"
+    ]
+  },
+  "anti_patterns": {
+    "titles": [
+      "Fix bug",
+      "Improve performance",
+      "Update code",
+      "Refactor",
+      "Task 1, Task 2, Task 3"
+    ],
+    "descriptions": [
+      "Do something with X",
+      "Make it better",
+      "As discussed",
+      "TBD"
+    ],
+    "dependencies": [
+      "Creating 10+ dependencies for 10 issues (over-coupled)",
+      "No dependencies when they clearly exist",
+      "Creating dependencies to 'future' issues that don't exist yet"
+    ]
+  }
+}

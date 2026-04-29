@@ -23,11 +23,17 @@ docker compose up -d
 docker compose ps
 ```
 
-### 2. Configure Environment
+### 2. Configure Environment (Optional)
 
 ```bash
+# Optional: Copy and customize for production
 cp configs/.env.example configs/.env
 # Edit configs/.env with your settings
+
+# For local development, defaults work out-of-the-box:
+#   - Neo4j: bolt://tasker-db:7687
+#   - Password: neoSocial
+#   - API: http://localhost:8000
 ```
 
 ### 3. Initialize Tasker

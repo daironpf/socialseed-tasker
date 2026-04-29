@@ -14,8 +14,17 @@ import typer
 from rich.console import Console
 from rich.theme import Theme
 
+import socialseed_tasker
 from socialseed_tasker.bootstrap.container import Container
 from socialseed_tasker.entrypoints.terminal_cli import commands
+
+
+def version_callback(value: bool) -> None:
+    """Display version and exit."""
+    if value:
+        console.print(f"[info]socialseed-tasker {socialseed_tasker.__version__}[/info]")
+        raise typer.Exit()
+
 
 if TYPE_CHECKING:
     pass
@@ -98,8 +107,17 @@ app.command(name="logout", help="Clear saved credentials")(commands.logout_comma
 app.add_typer(commands.seed_app, name="seed", help="Seed demo data for first-time users")
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(
+    ctx: typer.Context,
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-v",
+        help="Show version information",
+        callback=version_callback,
+        is_eager=True,
+    ),
     neo4j_uri: str = typer.Option(
         "bolt://localhost:7687",
         "--neo4j-uri",
@@ -129,6 +147,14 @@ def main(
     Examples:
         tasker --neo4j-password secret component create mycomp -p myproj
         tasker -pw secret issue create "Fix bug" -c <id>
+
+    Quick Start:
+        1. Start Neo4j: docker compose up -d
+        2. Run: tasker -pw neoSocial seed run
+        3. Open UI: http://localhost:8080
+
+    📚 Docs: https://github.com/daironpf/socialseed-tasker#readme
+    💬 Issues: https://github.com/daironpf/socialseed-tasker/issues
     """
     global _cli_container
     if neo4j_uri:

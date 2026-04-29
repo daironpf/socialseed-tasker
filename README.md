@@ -1,8 +1,26 @@
 # SocialSeed Tasker
 
-## 🔭 Graph-Native Engineering & Autonomous Agent Governance
+## Graph-Native Engineering & Autonomous Agent Governance
 
 A specialized framework that leverages **Neo4j** to provide AI agents with infinite architectural context and strict governance.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│                        TASKER ARCHITECTURE                         │
+├─────────────────────────────────────────────────────────────────────────────┬────────────┤
+│                                                               │            │
+│   ┌─────────┐     ┌─────────┐     ┌─────────┐     ┌───────┐  │   AI     │
+│   │  CLI    │────▶│  REST  │────▶│ Action  │────▶│ Repo  │  │   AGENTS │
+│   │ (Typer) │     │  API   │     │ Layer  │     │(Neo4j)│  │            │
+│   └─────────┘     └─────────┘     └─────────┘     └───────┘  │            │
+│        │            │            │            │                 │   Skills  │
+│        │            │            │            ▼                 │  (Python)│
+│        │            │            │     ┌─────────┐           │            │
+│        │            │            │     │ Graph  │           │            │
+│        │            │            │     │ DB     │           │            │
+│        │            │            │     └─────────┘           │            │
+└─────────────────────────────────────────────────────────────────────────────┴────────────┘
+```
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10+-blue.svg" alt="Python 3.10+">
@@ -10,13 +28,117 @@ A specialized framework that leverages **Neo4j** to provide AI agents with infin
   <img src="https://img.shields.io/badge/Storage-Neo4j%20Only-orange.svg" alt="Neo4j Only">
   <img src="https://img.shields.io/badge/GraphRAG-Enabled-purple.svg" alt="GraphRAG">
   <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0">
-  <img src="https://img.shields.io/badge/Version-0.8.0-green.svg" alt="Version: 0.8.0">
+  <img src="https://img.shields.io/badge/Version-0.8.1-green.svg" alt="Version: 0.8.1">
   <img src="https://img.shields.io/badge/PRs-Welcome-green.svg" alt="PRs Welcome">
 </p>
 
 ---
 
-## 🚀 Quick Start
+## What's New in v0.8.1
+
+### Performance & Monitoring
+- **Response Time Headers**: `X-Response-Time-Ms` on all API responses
+- **Slow Request Logging**: Configurable threshold for performance monitoring
+- **Optimized Neo4j Indexes**: Faster queries for status, project, and dependency lookups
+- **BFS Optimization**: Limited depth traversal for impact analysis
+
+### Security & Dependencies
+- **Security Policy**: Comprehensive `SECURITY.md` documenting all security measures
+- **Automated Updates**: GitHub Actions workflow for weekly dependency updates
+- **pip-audit Integration**: Vulnerability scanning in CI/CD
+
+### Documentation
+- **Enhanced API Docs**: Better OpenAPI tags, endpoint descriptions, and examples
+- **Performance Targets**: Documented latency goals for all endpoints
+
+---
+
+## Installation
+
+### Prerequisites
+
+- Python 3.10 or higher
+- Neo4j 5.x (running locally or via Docker)
+- pip (Python package manager)
+
+### Install via pip
+
+```bash
+# Install latest release from PyPI
+pip install socialseed-tasker
+
+# Install specific version
+pip install socialseed-tasker==0.8.1
+```
+
+### Install via git (Development)
+
+```bash
+# Clone the repository
+git clone https://github.com/daironpf/socialseed-tasker.git
+cd socialseed-tasker
+
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/Scripts/activate  # Windows
+# source venv/bin/activate    # Linux/Mac
+
+# Install in editable mode
+pip install -e .
+```
+
+### Command Not Found?
+
+After installation, if `tasker` command is not found, add the Scripts directory to your PATH:
+
+**Windows (PowerShell):**
+```powershell
+$env:Path += ";$env:USERPROFILE\AppData\Roaming\Python\Python314\Scripts"
+tasker --help
+```
+
+**Windows (CMD):**
+```cmd
+set PATH=%PATH%;%USERPROFILE%\AppData\Roaming\Python\Python314\Scripts
+tasker --help
+```
+
+**Linux/Mac:**
+```bash
+export PATH="$PATH:$HOME/.local/bin"
+tasker --help
+```
+
+### Alternative: Use Python Module Directly
+
+If the `tasker` command is not available, use Python module invocation:
+
+```bash
+# CLI
+python -m socialseed_tasker.entrypoints.terminal_cli.app --help
+
+# API
+python -m socialseed_tasker.entrypoints.web_api
+```
+
+### Verify Installation
+
+```bash
+# Check CLI version
+tasker --version
+# or
+python -m socialseed_tasker.entrypoints.terminal_cli.app --version
+
+# Check CLI help
+tasker --help
+
+# Check API (requires Neo4j running)
+curl http://localhost:8000/health
+```
+
+---
+
+## Quick Start
 
 ### 1. Start the Services
 
@@ -32,17 +154,18 @@ docker compose up -d
 ```bash
 # Check API health
 curl http://localhost:8000/health
-# Expected: {"status":"healthy","version":"0.8.0","neo4j":"connected"}
+# Expected: {"status":"healthy","version":"0.8.1","neo4j":"connected"}
 ```
 
 ### 3. Services Available
 
 | Service | URL | Description |
-|--------|-----|-------------|
+|---------|-----|-------------|
 | **Neo4j Browser** | `http://localhost:7474` | Graph database UI (neo4j/neoSocial) |
 | **REST API** | `http://localhost:8000` | For AI agents to manage issues |
 | **Frontend** | `http://localhost:8080` | Human UI (Kanban board & Interactive Graph View) |
 | **API Docs** | `http://localhost:8000/docs` | OpenAPI documentation |
+| **ReDoc** | `http://localhost:8000/redoc` | Alternative API documentation |
 
 ### 4. Try It Now - 30-Second Demo
 
@@ -64,40 +187,20 @@ ISSUE_ID=$(curl -s -X POST http://localhost:8000/api/v1/issues \
   -d "{\"title\":\"Fix login bug\",\"component_id\":\"$COMP_ID\",\"priority\":\"HIGH\"}" \
   | python -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
 
-# Create a second issue
+# Link them: Fix login bug depends on Add unit tests
 DEP_ID=$(curl -s -X POST http://localhost:8000/api/v1/issues \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TASKER_API_KEY" \
-  -d "{\"title\":\"Add unit tests\",\"component_id\":\"$COMP_ID\",\"priority\":\"MEDIUM\"}" \
+  -d "{\"title\":\"Add unit tests\",\"component_id\":\"$COMP_ID\"}" \
   | python -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
 
-# Link them: Fix login bug depends on Add unit tests
 curl -s -X POST "http://localhost:8000/api/v1/issues/$ISSUE_ID/dependencies" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TASKER_API_KEY" \
   -d "{\"depends_on_id\":\"$DEP_ID\"}"
-
-# See the dependency chain
-curl -s "http://localhost:8000/api/v1/issues/$ISSUE_ID/dependency-chain" \
-  -H "Authorization: Bearer $TASKER_API_KEY" | python -m json.tool
-
-# Try to close the issue (will fail - dependency is still open)
-curl -s -X POST "http://localhost:8000/api/v1/issues/$ISSUE_ID/close" \
-  -H "Authorization: Bearer $TASKER_API_KEY" | python -m json.tool
 ```
 
-### 5. Or Load Full Demo Data
-
-```bash
-# Via CLI (requires local install)
-pip install socialseed-tasker
-tasker seed run
-
-# Via API env var (auto-seeds on restart)
-TASKER_DEMO_MODE=true docker compose restart tasker-api
-```
-
-### 6. Explore the Graph
+### 5. Explore the Graph
 
 Open **http://localhost:7474** in your browser and run this Cypher query to visualize your data:
 
@@ -108,435 +211,7 @@ RETURN i, c
 
 ---
 
-## 🔌 REST API Reference for AI Agents
-
-### Base URL
-```
-http://localhost:8000/api/v1
-```
-
-### Authentication
-
-Set `TASKER_API_KEY` and `TASKER_AUTH_ENABLED=true` for production authentication. Health and docs endpoints remain open.
-
-Supports two header formats:
-- `X-API-Key: your-key` (original)
-- `Authorization: Bearer your-key` (standard)
-
-```bash
-# Example with authentication
-curl -H "Authorization: Bearer your-secret-key" http://localhost:8000/api/v1/issues
-```
-
----
-
-### Components
-
-Components represent different parts of your project (services, modules, packages).
-
-#### Create Component
-```bash
-curl -X POST http://localhost:8000/api/v1/components \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-secret-key" \
-  -d '{
-    "name": "auth-service",
-    "description": "Authentication microservice",
-    "project": "social-network"
-  }'
-```
-
-#### List Components
-```bash
-curl http://localhost:8000/api/v1/components \
-  -H "Authorization: Bearer your-secret-key"
-
-# Filter by project
-curl "http://localhost:8000/api/v1/components?project=social-network" \
-  -H "Authorization: Bearer your-secret-key"
-```
-
----
-
-### Issues
-
-#### Create Issue
-```bash
-# First, get a component ID from the list above
-COMPONENT_ID=$(curl -s http://localhost:8000/api/v1/components \
-  -H "Authorization: Bearer your-secret-key" | python -c "import sys,json; print(json.load(sys.stdin)['data'][0]['id'])")
-
-# Then create an issue
-curl -X POST http://localhost:8000/api/v1/issues \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-secret-key" \
-  -d '{
-    "title": "Fix login bug with special characters",
-    "description": "Users cannot login when password contains special chars",
-    "priority": "HIGH",
-    "component_id": "'"$COMPONENT_ID"'",
-    "labels": ["bug", "security"]
-  }'
-```
-
-**Priority values**: `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`
-
-#### List Issues (Paginated)
-```bash
-# All issues (paginated)
-curl "http://localhost:8000/api/v1/issues" -H "Authorization: Bearer your-secret-key"
-
-# Response format: {"data": {"items": [...], "total": N, "page": 1, "page_size": 50}}
-curl "http://localhost:8000/api/v1/issues?page=1&page_size=20" \
-  -H "Authorization: Bearer your-secret-key"
-
-# Filter by status
-curl "http://localhost:8000/api/v1/issues?status=OPEN" -H "Authorization: Bearer your-secret-key"
-
-# Filter by project
-curl "http://localhost:8000/api/v1/issues?project=my-app" -H "Authorization: Bearer your-secret-key"
-
-# Filter by component
-curl "http://localhost:8000/api/v1/issues?component=<component-id>" \
-  -H "Authorization: Bearer your-secret-key"
-
-# Filter by priority
-curl "http://localhost:8000/api/v1/issues?priority=HIGH" -H "Authorization: Bearer your-secret-key"
-```
-
-#### Get Workable Issues
-```bash
-# Get issues where all dependencies are closed (ready to work on)
-curl "http://localhost:8000/api/v1/workable-issues" -H "Authorization: Bearer your-secret-key"
-
-# With filters
-curl "http://localhost:8000/api/v1/workable-issues?priority=HIGH&component=<component-id>" \
-  -H "Authorization: Bearer your-secret-key"
-```
-
-#### Update Issue
-```bash
-# Update status
-curl -X PATCH http://localhost:8000/api/v1/issues/<issue-id> \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-secret-key" \
-  -d '{"status": "IN_PROGRESS"}'
-
-# Mark that an AI agent is working on this issue
-curl -X PATCH http://localhost:8000/api/v1/issues/<issue-id> \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-secret-key" \
-  -d '{"agent_working": true}'
-
-# Update priority
-curl -X PATCH http://localhost:8000/api/v1/issues/<issue-id> \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-secret-key" \
-  -d '{"priority": "CRITICAL"}'
-
-# Update description
-curl -X PATCH http://localhost:8000/api/v1/issues/<issue-id> \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-secret-key" \
-  -d '{"description": "Updated description"}'
-
-# Close an issue
-curl -X POST http://localhost:8000/api/v1/issues/<issue-id>/close \
-  -H "Authorization: Bearer your-secret-key"
-```
-
-#### Delete Issue
-```bash
-curl -X DELETE http://localhost:8000/api/v1/issues/<issue-id> \
-  -H "Authorization: Bearer your-secret-key"
-```
-
----
-
-### Dependencies
-
-Dependencies define which issues block others. AI agents use this to understand what can be worked on.
-
-#### Add Dependency
-```bash
-# Issue A depends on Issue B (B must be completed first)
-curl -X POST http://localhost:8000/api/v1/issues/<issue-a-id>/dependencies \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-secret-key" \
-  -d '{"depends_on_id": "<issue-b-id>"}'
-```
-
-#### List Dependencies
-```bash
-# What does this issue depend on?
-curl http://localhost:8000/api/v1/issues/<issue-id>/dependencies \
-  -H "Authorization: Bearer your-secret-key"
-```
-
-#### Remove Dependency
-```bash
-curl -X DELETE http://localhost:8000/api/v1/issues/<issue-a-id>/dependencies/<issue-b-id> \
-  -H "Authorization: Bearer your-secret-key"
-```
-
-#### Get Dependency Graph
-```bash
-# Get full dependency graph for a project
-curl "http://localhost:8000/api/v1/graph/dependencies?project=my-app" \
-  -H "Authorization: Bearer your-secret-key"
-
-# Response: {"nodes": [...], "edges": [...]}
-```
-
-**Status values**: `OPEN`, `IN_PROGRESS`, `BLOCKED`, `CLOSED`
-
-#### Delete Issue
-```bash
-curl -X DELETE http://localhost:8000/api/v1/issues/<issue-id> \
-  -H "Authorization: Bearer your-secret-key"
-```
-
----
-
-### Agent Working Indicator
-
-AI agents can set `agent_working: true` on an issue to signal they're actively working on it. This displays a cyan robot icon on the Kanban board.
-
-```python
-import requests
-
-# Tell the system you're working on this issue
-requests.patch(
-    "http://localhost:8000/api/v1/issues/<issue-id>",
-    json={"agent_working": True}
-)
-
-# When done, clear the flag
-requests.patch(
-    "http://localhost:8000/api/v1/issues/<issue-id>",
-    json={"agent_working": False}
-)
-```
-
----
-
-### Analysis Endpoints
-
-#### Impact Analysis
-```bash
-# Analyze what would be affected by an issue
-curl "http://localhost:8000/api/v1/analyze/impact/<issue-id>" \
-  -H "Authorization: Bearer your-secret-key"
-# Returns: directly_affected, transitively_affected, blocked_issues, risk_level
-```
-
-#### Component Impact
-```bash
-# Analyze impact for a component
-curl "http://localhost:8000/api/v1/analyze/component-impact/<component-id>" \
-  -H "Authorization: Bearer your-secret-key"
-# Returns: total_issues, affected_components, criticality_score, risk_level
-```
-
----
-
-### Project Dashboard
-
-#### Project Summary
-```bash
-# Get complete project summary
-curl "http://localhost:8000/api/v1/projects/<project-name>/summary" \
-  -H "Authorization: Bearer your-secret-key"
-# Returns: total_issues, by_status, by_priority, components_count, blocked_issues_count,
-#          workable_issues_count, dependency_health, top_blocked_components, critical_path_length
-```
-
----
-
-### Admin Endpoints
-
-#### Reset Data
-```bash
-# Reset all data or specific scope
-curl -X POST "http://localhost:8000/api/v1/admin/reset" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-secret-key" \
-  -d '{"scope": "all"}'  # "all", "issues", or "components"
-```
-
-#### Health Check
-```bash
-# Detailed health with Neo4j connection status (no auth required)
-curl http://localhost:8000/health
-# Returns: status, version, neo4j (connected/disconnected), neo4j_uri, auth_enabled
-```
-
----
-
-### Sync Service Endpoints
-
-```bash
-# Check sync status
-curl http://localhost:8000/api/v1/sync/status \
-  -H "Authorization: Bearer your-secret-key"
-
-# Get sync queue
-curl http://localhost:8000/api/v1/sync/queue \
-  -H "Authorization: Bearer your-secret-key"
-
-# Force sync
-curl -X POST http://localhost:8000/api/v1/sync/force \
-  -H "Authorization: Bearer your-secret-key"
-```
-
----
-
-## 🤖 AI Agent Workflow
-
-### Recommended Workflow for AI Agents
-
-```python
-import requests
-from datetime import datetime
-
-API_BASE = "http://localhost:8000/api/v1"
-
-def start_working_on_issue(issue_id, todo_items):
-    """AI agent starts working on an issue - updates status and sets todo."""
-    
-    # 1. Create a detailed TODO list in the description
-    todo_text = "## TODO:\n" + "\n".join([f"- [ ] {item}" for item in todo_items])
-    todo_text += f"\n\n## Progress (started {datetime.now().strftime('%Y-%m-%d %H:%M')}):\n"
-    
-    requests.patch(f"{API_BASE}/issues/{issue_id}", json={
-        "description": todo_text,
-        "agent_working": True,
-        "status": "IN_PROGRESS"
-    })
-
-def update_progress(issue_id, completed_item, next_step):
-    """Update progress on the issue."""
-    
-    # Get current description
-    issue = requests.get(f"{API_BASE}/issues/{issue_id}").json()["data"]
-    desc = issue.get("description", "")
-    
-    # Mark completed item
-    desc = desc.replace(f"- [ ] {completed_item}", f"- [x] {completed_item}")
-    
-    # Add progress note
-    desc += f"\n- **In progress**: {next_step}"
-    
-    requests.patch(f"{API_BASE}/issues/{issue_id}", json={
-        "description": desc
-    })
-
-def finish_issue(issue_id, solution_summary):
-    """Mark issue as completed with solution summary."""
-    
-    # Get current description
-    issue = requests.get(f"{API_BASE}/issues/{issue_id}").json()["data"]
-    desc = issue.get("description", "")
-    
-    # Add solution summary
-    desc += f"\n\n## Solution:\n{solution_summary}"
-    
-    # Close the issue
-    requests.post(f"{API_BASE}/issues/{issue_id}/close")
-    
-    # Clear agent working flag
-    requests.patch(f"{API_BASE}/issues/{issue_id}", json={
-        "description": desc,
-        "agent_working": False
-    })
-```
-
-### Full Example: AI Agent Solving an Issue
-
-```python
-import requests
-from datetime import datetime
-
-API_BASE = "http://localhost:8000/api/v1"
-
-def solve_issue(issue_id, problem_description):
-    """AI agent solves an issue, keeping the board updated with progress."""
-    
-    todo_items = [
-        "Analyze the problem and identify root cause",
-        "Write test to reproduce the issue",
-        "Implement the fix",
-        "Run tests to verify the solution",
-        "Update documentation if needed"
-    ]
-    
-    initial_desc = f"## Problem\n{problem_description}\n\n"
-    initial_desc += "## TODO:\n" + "\n".join([f"- [ ] {item}" for item in todo_items])
-    initial_desc += f"\n\n## Started at: {datetime.now().isoformat()}"
-    
-    requests.patch(f"{API_BASE}/issues/{issue_id}", json={
-        "description": initial_desc,
-        "status": "IN_PROGRESS",
-        "agent_working": True
-    })
-    
-    # Do work and update progress...
-    # Close with summary
-    solution_summary = """
-## Solution Applied
-- Added null validation for password field
-- Added test case with special characters
-- All existing tests continue to pass
-"""
-    requests.post(f"{API_BASE}/issues/{issue_id}/close")
-    requests.patch(f"{API_BASE}/issues/{issue_id}", json={
-        "description": initial_desc + solution_summary,
-        "agent_working": False
-    })
-```
-
-### Finding Workable Issues
-
-```python
-def get_workable_issues():
-    """Get issues that can be worked on (not blocked)."""
-    response = requests.get(f"{API_BASE}/workable-issues")
-    return response.json()["data"]["items"]
-```
-
----
-
-## 📦 Project Scaffolding
-
-Inject Tasker infrastructure into any project with a single command. Creates `tasker/` directory with skills, Docker compose, and a full working frontend.
-
-```bash
-# Scaffold in current directory
-tasker init .
-
-# With overwrite
-tasker init . --force
-
-# Initialize without subdirectory
-tasker init . --inplace
-```
-
-The scaffolded `tasker/` directory includes:
-- **Frontend** - Full compiled Vue Kanban board (included in package)
-- **API** - Ready to run with Docker Compose
-- **Skills** - AI agent skills for task management
-- **Configs** - Environment templates
-
-```bash
-cd tasker
-cp configs/.env.example configs/.env
-# Edit configs/.env with your settings
-docker compose up -d
-```
-
----
-
-## 🔧 Environment Variables
+## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -547,16 +222,70 @@ docker compose up -d
 | `TASKER_API_KEY` | (none) | API key for authentication |
 | `TASKER_AUTH_ENABLED` | `false` | Enable API authentication |
 | `TASKER_DEMO_MODE` | `false` | Load demo data on startup |
-| `TASKER_RATE_LIMIT` | `100` | Requests per minute limit |
+| `TASKER_RATE_LIMIT_ENABLED` | `false` | Enable rate limiting |
+| `TASKER_RATE_LIMIT_PER_MINUTE` | `100` | Requests per minute limit |
+| `TASKER_SLOW_REQUEST_THRESHOLD` | `0.5` | Log requests slower than this (seconds) |
+| `TASKER_ENABLE_PERF_LOGGING` | `true` | Enable performance monitoring |
 
 ---
 
-## 🐳 Docker Compose
+## Performance Monitoring
 
-The included `docker-compose.yml` starts:
-- **Neo4j** (port 7474/7687) - Graph database
-- **API** (port 8000) - REST API for AI agents
-- **Frontend** (port 8080) - Human Kanban board
+All API responses include timing information:
+
+```bash
+# Get response with timing header
+curl -v http://localhost:8000/api/v1/issues 2>&1 | grep X-Response-Time
+# Output: X-Response-Time-Ms: 45.23
+```
+
+Slow requests (>500ms by default) are logged:
+
+```
+WARNING - Slow request: GET /api/v1/analyze/impact took 523.45ms (threshold: 500.00ms)
+```
+
+---
+
+## REST API Reference
+
+### Base URL
+```
+http://localhost:8000/api/v1
+```
+
+### Authentication
+
+Set `TASKER_API_KEY` and `TASKER_AUTH_ENABLED=true` for production authentication.
+
+```bash
+# Example with authentication
+curl -H "Authorization: Bearer your-secret-key" http://localhost:8000/api/v1/issues
+```
+
+### Performance Targets
+
+| Endpoint | Target | Notes |
+|----------|--------|-------|
+| GET /issues | <100ms | Indexed queries |
+| GET /issues/{id} | <50ms | Unique constraint lookup |
+| POST /analyze/impact | <500ms | BFS with depth limit (3) |
+| GET /graph/dependencies | <200ms | Index-based traversal |
+
+### Key Endpoints
+
+- **Issues**: Create, read, update, delete, close
+- **Components**: Organize issues by service/module
+- **Dependencies**: Link issues with [:DEPENDS_ON] relationships
+- **Analysis**: Impact analysis, root cause detection
+- **Projects**: Aggregate statistics by project
+- **Health**: Neo4j connectivity status
+
+For complete endpoint documentation, visit **http://localhost:8000/docs**
+
+---
+
+## Docker Compose
 
 ```bash
 # Start everything
@@ -565,18 +294,113 @@ docker compose up -d
 # View logs
 docker compose logs -f
 
-# Stop everything (data persists in Docker volume)
+# Stop everything (data persists)
 docker compose down
 
 # Stop and remove all data
 docker compose down -v
 ```
 
-> **Data Persistence**: All data is stored in Neo4j and persists between `docker compose down` and `docker compose up` cycles. Use `docker compose down -v` to completely reset the database.
+---
+
+## Isolated Testing (Black-Box Evaluation)
+
+For running isolated tests without the full stack:
+
+### Quick Start (API + Neo4j Only)
+
+```bash
+# 1. Create isolated test directory
+mkdir real-test && cd real-test
+
+# 2. Start only Neo4j (minimal setup)
+cp ../docker-compose-minimal.yml .
+docker compose up -d
+
+# 3. Wait for Neo4j to be ready
+sleep 15
+
+# 4. Verify connectivity
+docker exec real-test-tasker-db-1 cypher-shell -u neo4j -p neoSocial "RETURN 1"
+```
+
+### Full Stack Isolated Testing
+
+```bash
+# 1. Create isolated test directory
+mkdir real-test && cd real-test
+
+# 2. Copy required files
+cp ../docker-compose.yml .
+cp ../Dockerfile .
+cp -r ../frontend .
+cp ../nginx.conf ./frontend/ 2>/dev/null || true
+
+# 3. Install package
+python -m venv venv
+source venv/Scripts/activate  # Windows
+# or: source venv/bin/activate  # Linux/Mac
+pip install -e ..
+
+# 4. Build and start services
+docker compose build
+docker compose up -d
+```
+
+### Required Files for Full Stack
+
+| File | Purpose |
+|------|---------|
+| `docker-compose.yml` | Service orchestration |
+| `Dockerfile` | API container build |
+| `frontend/` | Frontend source (Dockerfile, nginx.conf, dist/) |
 
 ---
 
-## 📊 Architecture
+## Docker Troubleshooting
+
+### Common Issues
+
+**`/frontend/package.json: not found`**
+- Solution: Copy the `frontend/` directory or use `docker-compose-minimal.yml`
+
+**`host not found in upstream "tasker-api"`**
+- Solution: Update `nginx.conf` to use `host.docker.internal:8000`
+
+**Neo4j container not healthy**
+```bash
+# Check logs
+docker compose logs tasker-db
+
+# Reset Neo4j data
+docker compose down -v
+docker compose up -d
+```
+
+**Port already in use**
+```bash
+# Find what's using the port
+netstat -ano | findstr :7474  # Windows
+# lsof -i :7474  # Linux/Mac
+
+# Stop the conflicting service or change port in docker-compose.yml
+```
+
+**`tasker` command not found after pip install**
+```bash
+# Windows: Add Scripts to PATH
+$env:Path += ";$env:USERPROFILE\AppData\Roaming\Python\Python314\Scripts"
+
+# Linux/Mac: Add bin to PATH
+export PATH="$PATH:$HOME/.local/bin"
+
+# Or use Python module directly
+python -m socialseed_tasker.entrypoints.terminal_cli.app --help
+```
+
+---
+
+## Architecture
 
 ```
 ┌──────────────────────────┐
@@ -592,6 +416,7 @@ docker compose down -v
 │ • Root Cause Detection     │
 │ • Input Validation        │
 │ • Rate Limiting          │
+│ • Performance Monitoring  │
 └────────────┬─────────────────┘
              ▼
 ┌──────────────────────────────┐
@@ -604,9 +429,17 @@ docker compose down -v
 
 ---
 
-## 🔗 Related Documentation
+## Related Documentation
 
 - **[CLI Reference](#)** - Command-line interface
-- **[API_REFERENCE.md](API_REFERENCE.md)** - Complete API endpoint reference for AI agents
+- **[API_REFERENCE.md](API_REFERENCE.md)** - Complete API endpoint reference
 - **[VERSIONS.md](VERSIONS.md)** - Release milestones and feature checklists
+- **[ROADMAP.md](ROADMAP.md)** - Strategic roadmap and future features
+- **[SECURITY.md](SECURITY.md)** - Security policy and best practices
 - **[Development](#)** - Running tests, contributing
+
+---
+
+## License
+
+Apache 2.0 - See LICENSE file for details.

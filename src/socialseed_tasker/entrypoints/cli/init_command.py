@@ -9,6 +9,7 @@ external projects without manual setup.
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 import typer
@@ -58,6 +59,42 @@ def scaffold_command(
         "-i",
         help="Initialize in current directory without creating tasker/ subdirectory",
     ),
+    project_name: str = typer.Option(
+        None,
+        "--project-name",
+        "-pn",
+        help="Project name for agent context",
+    ),
+    architecture: str = typer.Option(
+        None,
+        "--architecture",
+        "-a",
+        help="Architecture type: monolithic, microservices, serverless, api-first",
+    ),
+    language: str = typer.Option(
+        None,
+        "--language",
+        "-lang",
+        help="Programming language (e.g., python, go, typescript)",
+    ),
+    framework: str = typer.Option(
+        None,
+        "--framework",
+        "-fw",
+        help="Framework (e.g., fastapi, react, vue)",
+    ),
+    database: str = typer.Option(
+        None,
+        "--database",
+        "-db",
+        help="Database (e.g., postgresql, mongodb, neo4j)",
+    ),
+    github_repo: str = typer.Option(
+        None,
+        "--github-repo",
+        "-gh",
+        help="GitHub repository URL",
+    ),
 ) -> None:
     """Scaffold Tasker infrastructure into a project.
 
@@ -65,12 +102,13 @@ def scaffold_command(
     and configuration templates.
 
     Examples:
-        tasker init                     # scaffold in current directory
-        tasker init /path/to/project    # scaffold in specific directory
-        tasker init --force             # overwrite existing templates
-        tasker init --inplace          # scaffold in current directory (no subdir)
+        tasker init                         # scaffold in current directory
+        tasker init /path/to/project       # scaffold in specific directory
+        tasker init --force               # overwrite existing templates
+        tasker init --inplace            # scaffold in current directory (no subdir)
+        tasker init -pn myapp -a api-first -lang python -fw fastapi -db postgresql
     """
-    _run_scaffold(target, force, inplace)
+    _run_scaffold(target, force, inplace, project_name, architecture, language, framework, database, github_repo)
 
 
 @init_app.command()
@@ -92,6 +130,42 @@ def init(
         "-i",
         help="Initialize in current directory without creating tasker/ subdirectory",
     ),
+    project_name: str = typer.Option(
+        None,
+        "--project-name",
+        "-pn",
+        help="Project name for agent context",
+    ),
+    architecture: str = typer.Option(
+        None,
+        "--architecture",
+        "-a",
+        help="Architecture type: monolithic, microservices, serverless, api-first",
+    ),
+    language: str = typer.Option(
+        None,
+        "--language",
+        "-lang",
+        help="Programming language (e.g., python, go, typescript)",
+    ),
+    framework: str = typer.Option(
+        None,
+        "--framework",
+        "-fw",
+        help="Framework (e.g., fastapi, react, vue)",
+    ),
+    database: str = typer.Option(
+        None,
+        "--database",
+        "-db",
+        help="Database (e.g., postgresql, mongodb, neo4j)",
+    ),
+    github_repo: str = typer.Option(
+        None,
+        "--github-repo",
+        "-gh",
+        help="GitHub repository URL",
+    ),
 ) -> None:
     """Scaffold Tasker infrastructure into a project.
 
@@ -99,15 +173,26 @@ def init(
     and configuration templates.
 
     Examples:
-        tasker init                     # scaffold in current directory
-        tasker init /path/to/project    # scaffold in specific directory
-        tasker init --force             # overwrite existing templates
-        tasker init --inplace          # scaffold in current directory (no subdir)
+        tasker init                         # scaffold in current directory
+        tasker init /path/to/project       # scaffold in specific directory
+        tasker init --force                # overwrite existing templates
+        tasker init --inplace             # scaffold in current directory (no subdir)
+        tasker init -pn myapp -a api-first -lang python -fw fastapi -db postgresql
     """
-    _run_scaffold(target, force, inplace)
+    _run_scaffold(target, force, inplace, project_name, architecture, language, framework, database, github_repo)
 
 
-def _run_scaffold(target: str, force: bool, inplace: bool = False) -> None:
+def _run_scaffold(
+    target: str,
+    force: bool,
+    inplace: bool = False,
+    project_name: str | None = None,
+    architecture: str | None = None,
+    language: str | None = None,
+    framework: str | None = None,
+    database: str | None = None,
+    github_repo: str | None = None,
+) -> None:
     target_path = Path(target).resolve()
 
     if not target_path.exists():
@@ -157,6 +242,17 @@ def _run_scaffold(target: str, force: bool, inplace: bool = False) -> None:
     else:
         result = service.scaffold(target_path, force=force)
 
+    if project_name or architecture or language or framework or database or github_repo:
+        _fill_project_context(
+            target_path if inplace else target_path / "tasker",
+            project_name,
+            architecture,
+            language,
+            framework,
+            database,
+            github_repo,
+        )
+
     console.print()
 
     if result.success:
@@ -174,7 +270,7 @@ def _run_scaffold(target: str, force: bool, inplace: bool = False) -> None:
             Panel(
                 "[bold]Next steps:[/bold]\n"
                 "  1. cd tasker && cp configs/.env.example configs/.env\n"
-                "  2. Edit configs/.env with your settings\n"
+                "  2. docker compose build tasker-api\n"
                 "  3. docker compose up -d\n"
                 "  4. Import skills from tasker/skills/ in your AI agent",
                 title="[cyan]Tasker Setup[/cyan]",
@@ -184,3 +280,83 @@ def _run_scaffold(target: str, force: bool, inplace: bool = False) -> None:
     else:
         console.print(f"[error]Scaffold completed with {result.error_count} error(s).[/error]")
         raise typer.Exit(code=1) from None
+
+
+def _fill_project_context(
+    tasker_dir: Path,
+    project_name: str | None,
+    architecture: str | None,
+    language: str | None,
+    framework: str | None,
+    database: str | None,
+    github_repo: str | None,
+) -> None:
+    """Fill project.md template with user-provided values."""
+    project_md = tasker_dir / "project.md"
+    if not project_md.exists():
+        return
+
+    content = project_md.read_text(encoding="utf-8")
+
+    replacements = {
+        "{project_name}": project_name or "my-project",
+        "{version}": "1.0.0",
+        "{created_date}": date.today().isoformat(),
+        "{architecture_type}": architecture or "api-first",
+        "{language}": language or "python",
+        "{framework}": framework or "fastapi",
+        "{database}": database or "postgresql",
+        "{frontend}": "vue",
+        "{other_services}": "redis, celery",
+        "{key_components}": "- API Gateway\n- Backend Service\n- Database",
+        "{github_repo}": github_repo or "https://github.com/user/repo",
+        "{default_branch}": "main",
+        "{external_apis}": "- None configured",
+        "{k_forbidden_technologies}": "- None",
+        "{k_required_patterns}": "- Issues must have acceptance criteria",
+        "{k_naming_conventions}": "kebab-case for files, CamelCase for classes",
+        "{k_dependency_rules}": "- Max 10 direct dependencies per issue",
+        "{setup_commands}": "pip install -r requirements.txt",
+        "{test_commands}": "pytest tests/",
+        "{build_commands}": "docker build .",
+        "{code_review_count}": "1",
+        "{agent_notes}": "- Read project.md before starting work",
+        "{k_dos_and_donts}": "- DO: Use issue_quality_guide.json\n- DON'T: Create vague issues",
+    }
+
+    for key, value in replacements.items():
+        content = content.replace(key, value)
+
+    project_md.write_text(content, encoding="utf-8")
+    console.print("  [success]Updated:[/success]    tasker/project.md")
+
+    project_json = tasker_dir / "project.json"
+    if not project_json.exists():
+        return
+
+    content = project_json.read_text(encoding="utf-8")
+
+    replacements = {
+        "{project_name}": project_name or "my-project",
+        "{version}": "1.0.0",
+        "{created_date}": date.today().isoformat(),
+        "{architecture_type}": architecture or "api-first",
+        "{language}": language or "python",
+        "{framework}": framework or "fastapi",
+        "{database}": database or "postgresql",
+        "{frontend}": "vue",
+        "{other_services}": "redis, celery",
+        "{key_components}": '"API Gateway", "Backend Service", "Database"',
+        "{github_repo}": github_repo or "https://github.com/user/repo",
+        "{default_branch}": "main",
+        "{setup_commands}": "pip install -r requirements.txt",
+        "{test_commands}": "pytest tests/",
+        "{build_commands}": "docker build .",
+        "{code_review_count}": "1",
+    }
+
+    for key, value in replacements.items():
+        content = content.replace(key, value)
+
+    project_json.write_text(content, encoding="utf-8")
+    console.print("  [success]Updated:[/success]    tasker/project.json")

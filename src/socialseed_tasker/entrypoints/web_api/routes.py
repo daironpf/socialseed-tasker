@@ -32,7 +32,15 @@ from socialseed_tasker.core.task_management.actions import (
     remove_dependency_action,
     reset_data_action,
 )
-from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
+from socialseed_tasker.core.task_management.entities import (
+    Component,
+    Epic,
+    EpicStatus,
+    Issue,
+    IssueStatus,
+    Objective,
+    ObjectiveStatus,
+)
 from socialseed_tasker.entrypoints.web_api.schemas import (
     AgentRegisterRequest,
     AgentResponse,
@@ -173,7 +181,6 @@ def _issue_to_response(issue: Issue) -> IssueResponse:
     )
 
 
-
 def _component_to_response(comp: Component) -> ComponentResponse:
     """Convert a domain Component to an API response model."""
     return ComponentResponse(
@@ -227,6 +234,43 @@ def create_issue(
     body: IssueCreateRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[IssueResponse]:
+    """Create a new issue.
+
+    Creates a new issue linked to a component. The issue title is validated
+    and sanitized to prevent XSS attacks. Descriptions are also sanitized.
+
+    Args:
+        body: Issue creation request with title, description, priority, etc.
+        repo: Repository dependency for data access.
+
+    Returns:
+        APIResponse with the created IssueResponse.
+
+    Raises:
+        HTTPException 400: If title validation fails.
+        HTTPException 404: If the specified component doesn't exist.
+
+    Example:
+        ```bash
+        curl -X POST /api/v1/issues \\
+          -H "Content-Type: application/json" \\
+          -d '{"title": "Fix auth bug", "priority": "HIGH", "component_id": "uuid-here"}'
+        ```
+
+        Response:
+        ```json
+        {
+          "data": {
+            "id": "uuid-here",
+            "title": "Fix auth bug",
+            "status": "todo",
+            "priority": "HIGH",
+            ...
+          },
+          "meta": {"timestamp": "...", "warnings": null}
+        }
+        ```
+    """
     from fastapi import HTTPException
 
     from socialseed_tasker.core.validation import (
@@ -281,6 +325,47 @@ def list_issues(
     limit: int = Query(20, ge=1, le=100, description="Items per page (default: 20, max: 100)"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
+    """List issues with optional filters and pagination.
+
+    Retrieves a paginated list of issues. Supports filtering by status,
+    component, and project. Results are sorted by creation date (newest first).
+
+    Args:
+        status: Comma-separated list of statuses to filter (e.g., "todo,in_progress")
+        component: UUID of the component to filter by
+        project: Project name to filter by
+        page: Page number starting at 1
+        limit: Number of items per page (max 100)
+        repo: Repository dependency for data access.
+
+    Returns:
+        APIResponse with PaginatedResponse containing IssueResponse items.
+
+    Example:
+        ```bash
+        # Get first page of open issues
+        curl "/api/v1/issues?status=todo,in_progress&page=1&limit=20"
+
+        # Filter by project
+        curl "/api/v1/issues?project=socialseed-tasker"
+        ```
+
+        Response:
+        ```json
+        {
+          "data": {
+            "items": [...],
+            "pagination": {
+              "page": 1,
+              "limit": 20,
+              "total": 150,
+              "has_next": true,
+              "has_prev": false
+            }
+          }
+        }
+        ```
+    """
     status_list = [s.strip() for s in status.split(",") if s.strip()] if status else []
     all_issues = repo.list_issues(component_id=component, statuses=status_list, project=project)
     total = len(all_issues)
@@ -305,20 +390,100 @@ def get_issue(
     issue_id: str,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
+    """Get a single issue by ID.
+
+    Retrieves full details of an issue including dependencies, blocks,
+    reasoning logs, and agent progress manifest.
+
+    Args:
+        issue_id: UUID or short ID (8+ chars) of the issue.
+        repo: Repository dependency for data access.
+
+    Returns:
+        APIResponse with the IssueResponse containing all issue details.
+
+    Raises:
+        IssueNotFoundError: If the issue doesn't exist.
+
+    Example:
+        ```bash
+        curl /api/v1/issues/550e8400-e29b-41d4-a716-446655440000
+        ```
+
+        Response:
+        ```json
+        {
+          "data": {
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "title": "Fix login bug",
+            "status": "in_progress",
+            "priority": "HIGH",
+            "dependencies": ["uuid-1", "uuid-2"],
+            "reasoning_logs": [...],
+            "manifest_todo": [...],
+            ...
+          }
+        }
+        ```
+    """
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
     return APIResponse(data=_issue_to_response(issue), meta=Meta(request_id=None))
 
 
+@issues_router.get(
+    "/issues/{issue_id}/component",
+    response_model=APIResponse[ComponentResponse],
+    summary="Get issue's component via relationship",
+    description="Get the Component that this Issue belongs to, following the BELONGS_TO relationship.",
+    responses={404: {"description": "Issue or Component not found"}},
+)
+def get_issue_component(
+    issue_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[dict]:
+    from socialseed_tasker.entrypoints.web_api.utils import resolve_issue_id
+
+    try:
+        resolved_id = resolve_issue_id(issue_id, repo)
+    except ValueError:
+        raise IssueNotFoundError(issue_id)
+
+    issue = repo.get_issue(str(resolved_id))
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+
+    component = repo.get_component(str(issue.component_id)) if issue.component_id else None
+
+    return APIResponse(
+        data={"issue_id": issue_id, "component": component.name if component else None},
+        meta=Meta(request_id=None),
+    )
+
+
+@issues_router.get(
+    "/issues/{issue_id}/deployments",
+    response_model=APIResponse[list],
+    summary="Get deployments for an issue",
+    description="Get all deployments where this issue was released.",
+)
+def get_issue_deployments(
+    issue_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list]:
+    deployments = repo.get_issue_deployments(issue_id)
+    return APIResponse(data=deployments, meta=Meta(request_id=None))
+
+
 @issues_router.patch(
     "/issues/{issue_id}",
     response_model=APIResponse[IssueResponse],
     summary="Update an issue",
-    description="Partially update an issue's fields. Supports: status, priority, labels, description, agent_working.",
+    description="Apply partial updates to an issue. Supports status transitions and field updates.",
     responses={
         404: {"description": "Issue not found"},
-        400: {"description": "Invalid status transition or validation error"},
+        409: {"description": "Conflict - invalid status transition"},
     },
 )
 def update_issue(
@@ -326,6 +491,37 @@ def update_issue(
     body: IssueUpdateRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
+    """Update an issue with partial field updates.
+
+    Applies partial updates to an existing issue. Only fields included in the
+    request body will be updated. Supports status transitions, priority changes,
+    and agent work status updates.
+
+    Args:
+        issue_id: UUID or short ID (8+ chars) of the issue.
+        body: IssueUpdateRequest with fields to update.
+        repo: Repository dependency for data access.
+
+    Returns:
+        APIResponse with the updated IssueResponse.
+
+    Raises:
+        IssueNotFoundError: If the issue doesn't exist.
+        HTTPException 400: If attempting invalid status transitions.
+        HTTPException 409: If closing an issue with open dependencies.
+
+    Example:
+        ```bash
+        # Update status and priority
+        curl -X PATCH /api/v1/issues/uuid-here \\
+          -H "Content-Type: application/json" \\
+          -d '{"status": "in_progress", "priority": "HIGH"}'
+
+        # Mark as agent working
+        curl -X PATCH /api/v1/issues/uuid-here \\
+          -d '{"agent_working": true}'
+        ```
+    """
     from fastapi import HTTPException
 
     existing = repo.get_issue(issue_id)
@@ -353,12 +549,20 @@ def update_issue(
                 detail="agent_working can only be set on OPEN, IN_PROGRESS, or BLOCKED issues.",
             )
 
-    if "agent_working" in updates and "status" not in updates:
-        if existing.status not in (IssueStatus.OPEN, IssueStatus.IN_PROGRESS, IssueStatus.BLOCKED):
-            raise HTTPException(
-                status_code=400,
-                detail="agent_working can only be set on OPEN, IN_PROGRESS, or BLOCKED issues.",
-            )
+    if (
+        "agent_working" in updates
+        and "status" not in updates
+        and existing.status
+        not in (
+            IssueStatus.OPEN,
+            IssueStatus.IN_PROGRESS,
+            IssueStatus.BLOCKED,
+        )
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="agent_working can only be set on OPEN, IN_PROGRESS, or BLOCKED issues.",
+        )
 
     updated = repo.update_issue(issue_id, updates)
     return APIResponse(data=_issue_to_response(updated), meta=Meta(request_id=None))
@@ -1034,6 +1238,19 @@ def list_workable_issues(
 components_router = APIRouter()
 
 
+@components_router.get(
+    "/projects",
+    response_model=APIResponse[list[str]],
+    summary="List projects",
+    description="List all unique project names in the system.",
+)
+def list_projects(
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list[str]]:
+    projects = repo.list_projects()
+    return APIResponse(data=projects, meta=Meta(request_id=None))
+
+
 @components_router.post(
     "/components",
     response_model=APIResponse[ComponentResponse],
@@ -1173,6 +1390,96 @@ def delete_component(
 
 
 # ---------------------------------------------------------------------------
+# Component Dependency router
+# ---------------------------------------------------------------------------
+
+components_dep_router = APIRouter()
+
+
+@components_dep_router.post(
+    "/components/{component_id}/dependencies",
+    response_model=APIResponse[dict[str, str]],
+    summary="Add component dependency",
+    description="Create a [:DEPENDS_ON] relationship between two components.",
+    responses={
+        404: {"description": "Component not found"},
+        400: {"description": "Cannot depend on self"},
+    },
+)
+def add_component_dependency(
+    component_id: str,
+    body: dict[str, str],
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    from fastapi import HTTPException
+
+    depends_on_id = body.get("depends_on_id")
+    if not depends_on_id:
+        raise HTTPException(status_code=400, detail="depends_on_id is required")
+
+    if component_id == depends_on_id:
+        raise HTTPException(status_code=400, detail="A component cannot depend on itself")
+
+    existing = repo.get_component(component_id)
+    if existing is None:
+        raise ComponentNotFoundError(component_id)
+
+    existing_target = repo.get_component(depends_on_id)
+    if existing_target is None:
+        raise ComponentNotFoundError(depends_on_id)
+
+    repo.add_component_dependency(component_id, depends_on_id)
+    return APIResponse(
+        data={"component_id": component_id, "depends_on_id": depends_on_id},
+        meta=Meta(request_id=None),
+    )
+
+
+@components_dep_router.get(
+    "/components/{component_id}/dependencies",
+    response_model=APIResponse[list[ComponentResponse]],
+    summary="Get component dependencies",
+    description="List components that this component depends on.",
+    responses={404: {"description": "Component not found"}},
+)
+def get_component_dependencies(
+    component_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    existing = repo.get_component(component_id)
+    if existing is None:
+        raise ComponentNotFoundError(component_id)
+
+    deps = repo.get_component_dependencies(component_id)
+    return APIResponse(
+        data=[_component_to_response(c) for c in deps],
+        meta=Meta(request_id=None),
+    )
+
+
+@components_dep_router.get(
+    "/components/{component_id}/dependents",
+    response_model=APIResponse[list[ComponentResponse]],
+    summary="Get component dependents",
+    description="List components that depend on this component.",
+    responses={404: {"description": "Component not found"}},
+)
+def get_component_dependents(
+    component_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    existing = repo.get_component(component_id)
+    if existing is None:
+        raise ComponentNotFoundError(component_id)
+
+    dependents = repo.get_component_dependents(component_id)
+    return APIResponse(
+        data=[_component_to_response(c) for c in dependents],
+        meta=Meta(request_id=None),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Label router
 # ---------------------------------------------------------------------------
 
@@ -1230,7 +1537,7 @@ def list_issues(
     limit: int = Query(20, ge=1, le=100, description="Items per page (default: 20, max: 100)"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[list[IssueResponse]]:
-    label_list = [l.strip() for l in labels.split(",")] if labels else []
+    label_list = [label.strip() for label in labels.split(",")] if labels else []
 
     if label_list and hasattr(repo, "get_issues_by_labels"):
         issues = repo.get_issues_by_labels(label_list)
@@ -1514,11 +1821,175 @@ def get_subgraph(
             node_data["component"] = components.get(str(issue.component_id))
 
     return APIResponse(
-        data=DependencyGraphResponse(nodes=list(nodes.values()), edges=edges),
+        data=DependencyGraphResponse(nodes=nodes, edges=edges),
         meta=Meta(request_id=None),
     )
 
 
+# ---------------------------------------------------------------------------
+# Cost Analytics router
+# ---------------------------------------------------------------------------
+
+cost_analytics_router = APIRouter()
+
+
+@cost_analytics_router.get(
+    "/cost-per-component",
+    response_model=APIResponse[list],
+    summary="Get cost per component",
+    description="Get cost breakdown by component for closed issues with time tracking.",
+)
+def get_cost_per_component(repo: TaskRepositoryInterface = Depends(get_repo)):
+    costs = repo.get_cost_per_component()
+    return APIResponse(data=costs, meta=Meta(request_id=None))
+
+
+@cost_analytics_router.get(
+    "/cost-per-epic",
+    response_model=APIResponse[list],
+    summary="Get cost per epic",
+    description="Get cost breakdown by epic for closed issues with time tracking.",
+)
+def get_cost_per_epic(repo: TaskRepositoryInterface = Depends(get_repo)):
+    costs = repo.get_cost_per_epic()
+    return APIResponse(data=costs, meta=Meta(request_id=None))
+
+
+@cost_analytics_router.get(
+    "/cost-per-project",
+    response_model=APIResponse[list],
+    summary="Get cost per project",
+    description="Get cost breakdown by project for closed issues with time tracking.",
+)
+def get_cost_per_project(repo: TaskRepositoryInterface = Depends(get_repo)):
+    costs = repo.get_cost_per_project()
+    return APIResponse(data=costs, meta=Meta(request_id=None))
+
+
+@cost_analytics_router.get(
+    "/cost-summary",
+    response_model=APIResponse[dict],
+    summary="Get cost summary",
+    description="Get overall cost summary for all closed issues with time tracking.",
+)
+def get_cost_summary(repo: TaskRepositoryInterface = Depends(get_repo)):
+    summary = repo.get_cost_summary()
+    return APIResponse(data=summary, meta=Meta(request_id=None))
+
+
+# ---------------------------------------------------------------------------
+# AI Search router
+# ---------------------------------------------------------------------------
+
+ai_search_router = APIRouter()
+
+
+@ai_search_router.get(
+    "/search-context",
+    response_model=APIResponse[list],
+    summary="Semantic search for context",
+    description="Search issues by semantic similarity to the query text.",
+)
+def search_context(
+    q: str = Query(..., description="Search query text"),
+    threshold: float = Query(0.7, ge=0.0, le=1.0, description="Minimum similarity score"),
+    limit: int = Query(10, ge=1, le=50, description="Maximum results"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list]:
+    try:
+        import os
+
+        openai_api_key = os.environ.get("OPENAI_API_KEY", "")
+        if not openai_api_key:
+            return APIResponse(
+                data=[],
+                meta=Meta(request_id=None),
+            )
+        from openai import OpenAI
+
+        client = OpenAI(api_key=openai_api_key)
+        response = client.embeddings.create(
+            model="text-embedding-ada-002",
+            input=q,
+        )
+        embedding = response.data[0].embedding
+        results = repo.search_by_embedding(embedding, threshold=threshold, limit=limit)
+        return APIResponse(data=results, meta=Meta(request_id=None))
+    except Exception:
+        return APIResponse(data=[], meta=Meta(request_id=None))
+
+
+@ai_search_router.get(
+    "/similar-issues/{issue_id}",
+    response_model=APIResponse[list],
+    summary="Find similar issues",
+    description="Find issues similar to the given issue by semantic similarity.",
+)
+def find_similar_issues(
+    issue_id: str,
+    threshold: float = Query(0.7, ge=0.0, le=1.0, description="Minimum similarity score"),
+    limit: int = Query(10, ge=1, le=50, description="Maximum results"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list]:
+    results = repo.find_similar_issues(issue_id, threshold=threshold, limit=limit)
+    return APIResponse(data=results, meta=Meta(request_id=None))
+
+
+@ai_search_router.post(
+    "/issues/{issue_id}/embed",
+    response_model=APIResponse[dict],
+    summary="Generate embedding for issue",
+    description="Generate or regenerate the embedding for an issue description.",
+)
+def generate_issue_embedding(
+    issue_id: str,
+    force: bool = Query(False, description="Force regenerate existing embedding"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[dict]:
+    try:
+        import os
+
+        openai_api_key = os.environ.get("OPENAI_API_KEY", "")
+        if not openai_api_key:
+            from fastapi import HTTPException
+
+            raise HTTPException(status_code=400, detail="OPENAI_API_KEY not configured")
+
+        issue = repo.get_issue(issue_id)
+        if issue is None:
+            from fastapi import HTTPException
+
+            raise HTTPException(status_code=404, detail="Issue not found")
+
+        if issue.description_embedding and not force:
+            return APIResponse(
+                data={"issue_id": issue_id, "embedding_exists": True},
+                meta=Meta(request_id=None),
+            )
+
+        text = issue.description or issue.title
+        from openai import OpenAI
+
+        client = OpenAI(api_key=openai_api_key)
+        response = client.embeddings.create(
+            model="text-embedding-ada-002",
+            input=text,
+        )
+        embedding = response.data[0].embedding
+        repo.update_issue_embedding(issue_id, embedding)
+
+        return APIResponse(
+            data={"issue_id": issue_id, "embedding_exists": True},
+            meta=Meta(request_id=None),
+        )
+    except Exception as e:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---------------------------------------------------------------------------
+# Policy router
 # ---------------------------------------------------------------------------
 # Policy router
 # ---------------------------------------------------------------------------
@@ -1822,6 +2293,19 @@ project_router = APIRouter()
 
 
 @project_router.get(
+    "/projects",
+    response_model=APIResponse[list[str]],
+    summary="List all projects",
+    description="List all unique project names in the system.",
+)
+def list_all_projects(
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list[str]]:
+    projects = repo.list_projects()
+    return APIResponse(data=projects, meta=Meta(request_id=None))
+
+
+@project_router.get(
     "/projects/{project_name}/summary",
     response_model=APIResponse[ProjectSummaryResponse],
     summary="Get project summary",
@@ -1904,6 +2388,93 @@ def get_project_summary(
 # ---------------------------------------------------------------------------
 
 webhook_router = APIRouter()
+
+
+@webhook_router.post(
+    "/deployments",
+    response_model=APIResponse[dict],
+    summary="Receive CI/CD deployment events",
+    description="Webhook endpoint to receive deployment events from CI/CD systems.",
+)
+def receive_deployment(
+    body: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+    request: Request = None,
+) -> APIResponse[dict]:
+    from datetime import datetime, timezone
+    from uuid import uuid4
+
+    from socialseed_tasker.core.task_management.entities import Deployment, EnvironmentType
+
+    commit_sha = body.get("commit_sha", "")
+    environment = body.get("environment", "DEV")
+    issue_ids = body.get("issue_ids", [])
+    channel = body.get("channel", "webhook")
+    deployed_by = body.get("deployed_by", "ci-cd")
+
+    if not commit_sha:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=400, detail="commit_sha is required")
+
+    try:
+        env_type = EnvironmentType(environment)
+    except ValueError:
+        env_type = EnvironmentType.DEV
+
+    deployment = Deployment(
+        id=uuid4(),
+        commit_sha=commit_sha,
+        environment_name=env_type,
+        deployed_at=datetime.now(timezone.utc),
+        issue_ids=issue_ids,
+        channel=channel,
+        deployed_by=deployed_by,
+    )
+    repo.create_deployment(deployment)
+
+    return APIResponse(
+        data={
+            "id": str(deployment.id),
+            "commit_sha": deployment.commit_sha,
+            "environment": deployment.environment_name.value,
+            "deployed_at": deployment.deployed_at.isoformat(),
+        },
+        meta=Meta(request_id=None),
+    )
+
+
+@webhook_router.get(
+    "/deployments",
+    response_model=APIResponse[list],
+    summary="List deployments",
+    description="List deployments, optionally filtered by environment.",
+)
+def list_deployments(
+    environment: str | None = Query(None, description="Filter by environment"),
+    limit: int = Query(50, ge=1, le=100, description="Maximum results"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list]:
+    deployments = repo.get_deployments(environment_name=environment, limit=limit)
+    return APIResponse(data=deployments, meta=Meta(request_id=None))
+
+
+@webhook_router.get(
+    "/deployments/by-commit/{commit_sha}",
+    response_model=APIResponse[dict],
+    summary="Get deployment by commit",
+    description="Get deployment details for a specific commit SHA.",
+)
+def get_deployment_by_commit(
+    commit_sha: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[dict]:
+    deployment = repo.get_deployment_by_commit(commit_sha)
+    if deployment is None:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Deployment not found")
+    return APIResponse(data=deployment, meta=Meta(request_id=None))
 
 
 @webhook_router.post(
@@ -2077,19 +2648,19 @@ def receive_github_webhook(
     try:
         if event_type == "issues":
             action = payload.get("action", "")
-            issue = payload.get("issue", {})
+            _issue = payload.get("issue", {})
 
             if action in ("opened", "closed", "reopened"):
                 pass
 
         elif event_type == "issue_comment":
-            comment = payload.get("comment", {})
+            _comment = payload.get("comment", {})
 
         elif event_type == "label":
-            label = payload.get("label", {})
+            _label = payload.get("label", {})
 
         elif event_type == "milestone":
-            milestone = payload.get("milestone", {})
+            _milestone = payload.get("milestone", {})
 
         log_entry["delivery_status"] = "processed"
         log_entry["processed_at"] = datetime.now(timezone.utc).isoformat()
@@ -2465,6 +3036,244 @@ def force_sync() -> APIResponse[dict]:
 # ---------------------------------------------------------------------------
 
 constraints_router = APIRouter()
+
+
+# ---------------------------------------------------------------------------
+# Epic router
+# ---------------------------------------------------------------------------
+
+epic_router = APIRouter()
+
+
+@epic_router.post(
+    "/epics",
+    response_model=APIResponse[dict],
+    status_code=201,
+    summary="Create an epic",
+    description="Create a new epic to group related issues.",
+)
+def create_epic(
+    body: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    from uuid import uuid4
+
+    epic = Epic(
+        id=uuid4(),
+        name=body.get("name", ""),
+        description=body.get("description", ""),
+        objective_id=body.get("objective_id"),
+        status=EpicStatus(body.get("status", "OPEN")),
+    )
+    repo.create_epic(epic)
+    return APIResponse(
+        data={"id": str(epic.id), "name": epic.name},
+        meta=Meta(request_id=None),
+    )
+
+
+@epic_router.get(
+    "/epics",
+    response_model=APIResponse[list],
+    summary="List epics",
+    description="List all epics in the system.",
+)
+def list_epics(repo: TaskRepositoryInterface = Depends(get_repo)):
+    epics = repo.list_epics()
+    return APIResponse(
+        data=[{"id": str(e.id), "name": e.name, "status": e.status.value} for e in epics],
+        meta=Meta(request_id=None),
+    )
+
+
+@epic_router.get(
+    "/epics/{epic_id}",
+    response_model=APIResponse[dict],
+    summary="Get an epic",
+    description="Get details of a specific epic.",
+)
+def get_epic(epic_id: str, repo: TaskRepositoryInterface = Depends(get_repo)):
+    epic = repo.get_epic(epic_id)
+    if epic is None:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Epic not found")
+    return APIResponse(
+        data={
+            "id": str(epic.id),
+            "name": epic.name,
+            "description": epic.description,
+            "status": epic.status.value,
+            "objective_id": str(epic.objective_id) if epic.objective_id else None,
+        },
+        meta=Meta(request_id=None),
+    )
+
+
+@epic_router.delete(
+    "/epics/{epic_id}",
+    response_model=APIResponse[dict],
+    summary="Delete an epic",
+    description="Delete an epic.",
+)
+def delete_epic(epic_id: str, repo: TaskRepositoryInterface = Depends(get_repo)):
+    repo.delete_epic(epic_id)
+    return APIResponse(data={"deleted": epic_id}, meta=Meta(request_id=None))
+
+
+@epic_router.patch(
+    "/epics/{epic_id}",
+    response_model=APIResponse[dict],
+    summary="Update an epic",
+    description="Update an epic.",
+)
+def update_epic(
+    epic_id: str,
+    body: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    repo.update_epic(epic_id, body)
+    return APIResponse(data={"updated": epic_id}, meta=Meta(request_id=None))
+
+
+@epic_router.post(
+    "/epics/{epic_id}/issues",
+    response_model=APIResponse[dict],
+    summary="Link issues to epic",
+    description="Link multiple issues to an epic.",
+)
+def link_issues_to_epic(
+    epic_id: str,
+    body: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+
+    issue_ids = body.get("issue_ids", [])
+    for issue_id in issue_ids:
+        repo.link_issue_to_epic(issue_id, epic_id)
+    return APIResponse(
+        data={"epic_id": epic_id, "linked_issues": len(issue_ids)},
+        meta=Meta(request_id=None),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Objective router
+# ---------------------------------------------------------------------------
+
+objective_router = APIRouter()
+
+
+@objective_router.post(
+    "/objectives",
+    response_model=APIResponse[dict],
+    status_code=201,
+    summary="Create an objective",
+    description="Create a new objective (OKR).",
+)
+def create_objective(
+    body: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    from uuid import uuid4
+
+    objective = Objective(
+        id=uuid4(),
+        name=body.get("name", ""),
+        description=body.get("description", ""),
+        status=ObjectiveStatus(body.get("status", "OPEN")),
+        quarter=body.get("quarter", ""),
+    )
+    repo.create_objective(objective)
+    return APIResponse(
+        data={"id": str(objective.id), "name": objective.name},
+        meta=Meta(request_id=None),
+    )
+
+
+@objective_router.get(
+    "/objectives",
+    response_model=APIResponse[list],
+    summary="List objectives",
+    description="List all objectives in the system.",
+)
+def list_objectives(repo: TaskRepositoryInterface = Depends(get_repo)):
+    objectives = repo.list_objectives()
+    return APIResponse(
+        data=[{"id": str(o.id), "name": o.name, "status": o.status.value, "quarter": o.quarter} for o in objectives],
+        meta=Meta(request_id=None),
+    )
+
+
+@objective_router.get(
+    "/objectives/{objective_id}",
+    response_model=APIResponse[dict],
+    summary="Get an objective",
+    description="Get details of a specific objective.",
+)
+def get_objective(objective_id: str, repo: TaskRepositoryInterface = Depends(get_repo)):
+    objective = repo.get_objective(objective_id)
+    if objective is None:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Objective not found")
+    return APIResponse(
+        data={
+            "id": str(objective.id),
+            "name": objective.name,
+            "description": objective.description,
+            "status": objective.status.value,
+            "quarter": objective.quarter,
+        },
+        meta=Meta(request_id=None),
+    )
+
+
+@objective_router.delete(
+    "/objectives/{objective_id}",
+    response_model=APIResponse[dict],
+    summary="Delete an objective",
+    description="Delete an objective.",
+)
+def delete_objective(objective_id: str, repo: TaskRepositoryInterface = Depends(get_repo)):
+    repo.delete_objective(objective_id)
+    return APIResponse(data={"deleted": objective_id}, meta=Meta(request_id=None))
+
+
+@objective_router.patch(
+    "/objectives/{objective_id}",
+    response_model=APIResponse[dict],
+    summary="Update an objective",
+    description="Update an objective.",
+)
+def update_objective(
+    objective_id: str,
+    body: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    repo.update_objective(objective_id, body)
+    return APIResponse(data={"updated": objective_id}, meta=Meta(request_id=None))
+
+
+@objective_router.post(
+    "/objectives/{objective_id}/epics",
+    response_model=APIResponse[dict],
+    summary="Link epics to objective",
+    description="Link multiple epics to an objective.",
+)
+def link_epics_to_objective(
+    objective_id: str,
+    body: dict,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+
+    epic_ids = body.get("epic_ids", [])
+    for epic_id in epic_ids:
+        repo.link_epic_to_objective(epic_id, objective_id)
+    return APIResponse(
+        data={"objective_id": objective_id, "linked_epics": len(epic_ids)},
+        meta=Meta(request_id=None),
+    )
 
 
 @constraints_router.post(

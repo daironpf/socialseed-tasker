@@ -164,6 +164,59 @@ class TaskRepositoryInterface(Protocol):
     def delete_component(self, component_id: str) -> None:
         """Permanently remove a component."""
 
+    def add_component_dependency(self, component_id: str, depends_on_id: str) -> None:
+        """Create a [:DEPENDS_ON] relationship between components."""
+
+    def remove_component_dependency(self, component_id: str, depends_on_id: str) -> None:
+        """Remove a [:DEPENDS_ON] relationship between components."""
+
+    def get_component_dependencies(self, component_id: str) -> list[Component]:
+        """Get components that this component depends on."""
+
+    def get_component_dependents(self, component_id: str) -> list[Component]:
+        """Get components that depend on this component."""
+
+    # -- Project discovery --------------------------------------------------
+
+    def list_projects(self) -> list[str]:
+        """List all unique project names."""
+
+    def create_epic(self, epic: Any) -> None:
+        """Create a new epic."""
+
+    def get_epic(self, epic_id: str) -> Any | None:
+        """Get an epic by ID."""
+
+    def list_epics(self) -> list[Any]:
+        """List all epics."""
+
+    def update_epic(self, epic_id: str, updates: dict) -> Any:
+        """Update an epic."""
+
+    def delete_epic(self, epic_id: str) -> None:
+        """Delete an epic."""
+
+    def link_issue_to_epic(self, issue_id: str, epic_id: str) -> None:
+        """Link an issue to an epic."""
+
+    def create_objective(self, objective: Any) -> None:
+        """Create a new objective."""
+
+    def get_objective(self, objective_id: str) -> Any | None:
+        """Get an objective by ID."""
+
+    def list_objectives(self) -> list[Any]:
+        """List all objectives."""
+
+    def update_objective(self, objective_id: str, updates: dict) -> Any:
+        """Update an objective."""
+
+    def delete_objective(self, objective_id: str) -> None:
+        """Delete an objective."""
+
+    def link_epic_to_objective(self, epic_id: str, objective_id: str) -> None:
+        """Link an epic to an objective."""
+
     def get_component_by_name(self, name: str, project: str | None = None) -> Component | None:
         """Retrieve a component by exact name, optionally filtered by project."""
 
@@ -203,6 +256,36 @@ class TaskRepositoryInterface(Protocol):
 
     def finish_agent_work(self, issue_id: str) -> Issue:
         """Finish agent work on an issue."""
+
+    def get_cost_per_component(self) -> list[dict]:
+        """Get cost breakdown by component for closed issues."""
+
+    def get_cost_per_epic(self) -> list[dict]:
+        """Get cost breakdown by epic for closed issues."""
+
+    def get_cost_per_project(self) -> list[dict]:
+        """Get cost breakdown by project for closed issues."""
+
+    def get_cost_summary(self) -> dict:
+        """Get overall cost summary."""
+
+    def get_deployments(self, environment_name: str | None = None, limit: int = 50) -> list[dict]:
+        """Get deployments, optionally filtered by environment."""
+
+    def get_issue_deployments(self, issue_id: str) -> list[dict]:
+        """Get all deployments for an issue."""
+
+    def create_deployment(self, deployment) -> None:
+        """Record a new deployment."""
+
+    def search_by_embedding(self, embedding: list[float], threshold: float = 0.7, limit: int = 10) -> list[dict]:
+        """Search issues by embedding similarity."""
+
+    def find_similar_issues(self, issue_id: str, threshold: float = 0.7, limit: int = 10) -> list[dict]:
+        """Find issues similar to the given issue."""
+
+    def update_issue_embedding(self, issue_id: str, embedding: list[float]) -> None:
+        """Update the embedding for an issue."""
 
     def get_agent_status(self, issue_id: str) -> dict[str, Any]:
         """Get agent work status for an issue."""

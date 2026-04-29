@@ -14,6 +14,43 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+class HourlyRateTier(str, Enum):
+    """Hourly rate tiers for cost attribution.
+
+    Intent: Standardize billing rates for enterprise accounting.
+    Business Value: Enables Capitalized Software Development tracking.
+    """
+
+    JUNIOR = "JUNIOR"
+    SENIOR = "SENIOR"
+    STAFF = "STAFF"
+    PRINCIPAL = "PRINCIPAL"
+
+
+HOURLY_RATES: dict[HourlyRateTier, float] = {
+    HourlyRateTier.JUNIOR: 75.0,
+    HourlyRateTier.SENIOR: 125.0,
+    HourlyRateTier.STAFF: 175.0,
+    HourlyRateTier.PRINCIPAL: 250.0,
+}
+
+
+def calculate_cost(hours: float | None, tier: str | None) -> float:
+    """Calculate cost based on hours and rate tier.
+
+    Args:
+        hours: Actual or estimated hours
+        tier: HourlyRateTier value
+
+    Returns:
+        Total cost in dollars
+    """
+    if hours is None or tier is None:
+        return 0.0
+    rate = HOURLY_RATES.get(HourlyRateTier(tier), 0.0)
+    return hours * rate
+
+
 class ReasoningContext(str, Enum):
     """Context types for reasoning log entries.
 

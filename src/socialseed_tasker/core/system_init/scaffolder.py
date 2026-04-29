@@ -95,6 +95,8 @@ class ScaffolderService:
 
         self._copy_project_readme(target_dir, force, result)
 
+        self._copy_project_context(target_dir, force, result)
+
         self._copy_frontend_build(target_dir, force, result)
 
         return result
@@ -151,6 +153,55 @@ class ScaffolderService:
             result.add_operation(op)
             if self._progress_callback:
                 self._progress_callback(op)
+
+    def _copy_project_context(
+        self,
+        target_dir: Path,
+        force: bool,
+        result: ScaffoldResult,
+    ) -> None:
+        """Copy project.md and project.json templates to tasker/ directory."""
+        tasker_dir = target_dir / "tasker"
+        tasker_dir.mkdir(parents=True, exist_ok=True)
+
+        for filename in ["project.md", "project.json"]:
+            project_context_template = self._template_dir / filename
+            if not project_context_template.exists():
+                continue
+
+            destination = tasker_dir / filename
+
+            if destination.exists() and not force:
+                result.add_operation(
+                    FileOperation(
+                        source=project_context_template,
+                        destination=destination,
+                        status=ScaffoldStatus.SKIPPED,
+                    )
+                )
+                continue
+
+            try:
+                shutil.copy2(str(project_context_template), str(destination))
+                status = ScaffoldStatus.OVERWRITTEN if destination.exists() else ScaffoldStatus.CREATED
+                op = FileOperation(
+                    source=project_context_template,
+                    destination=destination,
+                    status=status,
+                )
+                result.add_operation(op)
+                if self._progress_callback:
+                    self._progress_callback(op)
+            except (OSError, shutil.Error) as exc:
+                op = FileOperation(
+                    source=project_context_template,
+                    destination=destination,
+                    status=ScaffoldStatus.ERROR,
+                    error_message=str(exc),
+                )
+                result.add_operation(op)
+                if self._progress_callback:
+                    self._progress_callback(op)
 
     def _copy_template_file(
         self,

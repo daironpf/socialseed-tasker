@@ -102,6 +102,88 @@ class Issue(BaseModel):
     github_issue_url: str | None = None
     github_issue_number: int | None = None
     last_mirrored_at: datetime | None = None
+    estimated_hours: float | None = None
+    hourly_rate_tier: str | None = None
+    actual_hours: float | None = None
+    epic_id: UUID | None = None
+    description_embedding: list[float] | None = None
+
+
+class HourlyRateTier(str, Enum):
+    JUNIOR = "JUNIOR"
+    SENIOR = "SENIOR"
+    STAFF = "STAFF"
+    PRINCIPAL = "PRINCIPAL"
+
+
+class EpicStatus(str, Enum):
+    OPEN = "OPEN"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+
+
+class ObjectiveStatus(str, Enum):
+    OPEN = "OPEN"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+
+
+class EnvironmentType(str, Enum):
+    """Environment types for deployment tracking."""
+
+    PROD = "PROD"
+    STAGING = "STAGING"
+    DEV = "DEV"
+    QA = "QA"
+
+
+class Environment(BaseModel):
+    """Deployment environment."""
+
+    id: UUID
+    name: EnvironmentType
+    url: str | None = None
+    is_active: bool = True
+
+
+class Deployment(BaseModel):
+    """A deployment event."""
+
+    id: UUID
+    commit_sha: str
+    environment_name: EnvironmentType
+    deployed_at: datetime
+    issue_ids: list[UUID]
+    channel: str | None = None
+    deployed_by: str | None = None
+
+
+class Epic(BaseModel):
+    """Group of issues that share a common initiative."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: UUID = Field(default_factory=uuid4)
+    name: str = Field(..., min_length=1, max_length=200)
+    description: str = ""
+    objective_id: UUID | None = None
+    status: EpicStatus = EpicStatus.OPEN
+    created_at: datetime = Field(default_factory=_now)
+    updated_at: datetime = Field(default_factory=_now)
+
+
+class Objective(BaseModel):
+    """Strategic objective (OKR) that Epics contribute to."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: UUID = Field(default_factory=uuid4)
+    name: str = Field(..., min_length=1, max_length=200)
+    description: str = ""
+    status: ObjectiveStatus = ObjectiveStatus.OPEN
+    quarter: str = ""
+    created_at: datetime = Field(default_factory=_now)
+    updated_at: datetime = Field(default_factory=_now)
 
 
 class AgentRole(str, Enum):

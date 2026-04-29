@@ -133,6 +133,11 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             result = session.run(queries.LIST_COMPONENTS, project=project)
             return [_node_to_component(r["c"]) for r in result]
 
+    def list_projects(self) -> list[str]:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.LIST_PROJECTS)
+            return [r["name"] for r in result]
+
     def get_component_by_name(self, name: str, project: str | None = None) -> Component | None:
         with self._driver.driver.session(database=self._driver.database) as session:
             if project:
@@ -165,6 +170,38 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
     def delete_component(self, component_id: str) -> None:
         with self._driver.driver.session(database=self._driver.database) as session:
             session.run(queries.DELETE_COMPONENT, id=component_id)
+
+    def add_component_dependency(self, component_id: str, depends_on_id: str) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(
+                queries.ADD_COMPONENT_DEPENDENCY,
+                component_id=component_id,
+                depends_on_id=depends_on_id,
+            )
+
+    def remove_component_dependency(self, component_id: str, depends_on_id: str) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(
+                queries.REMOVE_COMPONENT_DEPENDENCY,
+                component_id=component_id,
+                depends_on_id=depends_on_id,
+            )
+
+    def get_component_dependencies(self, component_id: str) -> list[Component]:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_COMPONENT_DEPENDENCIES,
+                component_id=component_id,
+            )
+            return [_node_to_component(r["dep"]) for r in result]
+
+    def get_component_dependents(self, component_id: str) -> list[Component]:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_COMPONENT_DEPENDENTS,
+                component_id=component_id,
+            )
+            return [_node_to_component(r["dependent"]) for r in result]
 
     # -- Issue CRUD ----------------------------------------------------------
 
@@ -798,3 +835,343 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 raise ValueError(f"Constraint {constraint_id} not found")
 
             return self.get_constraint(constraint_id)
+
+    # ---------------------------------------------------------------------------
+    # Epic methods
+    # ---------------------------------------------------------------------------
+
+    def create_epic(self, epic) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(
+                queries.CREATE_EPIC,
+                id=str(epic.id),
+                name=epic.name,
+                description=epic.description,
+                objective_id=str(epic.objective_id) if epic.objective_id else None,
+                status=epic.status.value,
+                created_at=epic.created_at.isoformat(),
+                updated_at=epic.updated_at.isoformat(),
+            )
+
+    def get_epic(self, epic_id: str):
+        from uuid import UUID
+
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.GET_EPIC, id=epic_id)
+            record = result.single()
+            if record is None:
+                return None
+            node = record["e"]
+            from socialseed_tasker.core.task_management.entities import Epic, EpicStatus
+
+            return Epic(
+                id=UUID(node["id"]),
+                name=node["name"],
+                description=node.get("description", ""),
+                objective_id=UUID(node["objective_id"]) if node.get("objective_id") else None,
+                status=EpicStatus(node.get("status", "OPEN")),
+            )
+
+    def list_epics(self):
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.LIST_EPICS)
+            from uuid import UUID
+
+            from socialseed_tasker.core.task_management.entities import Epic, EpicStatus
+
+            epics = []
+            for record in result:
+                node = record["e"]
+                epics.append(
+                    Epic(
+                        id=UUID(node["id"]),
+                        name=node["name"],
+                        description=node.get("description", ""),
+                        objective_id=UUID(node["objective_id"]) if node.get("objective_id") else None,
+                        status=EpicStatus(node.get("status", "OPEN")),
+                    )
+                )
+            return epics
+
+    def delete_epic(self, epic_id: str) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(queries.DELETE_EPIC, id=epic_id)
+
+    def link_issue_to_epic(self, issue_id: str, epic_id: str) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(queries.LINK_ISSUE_TO_EPIC, issue_id=issue_id, epic_id=epic_id)
+
+    def update_epic(self, epic_id: str, updates: dict) -> None:
+        from datetime import datetime, timezone
+
+        with self._driver.driver.session(database=self._driver.database) as session:
+            set_clauses = []
+            params = {"id": epic_id, "updated_at": datetime.now(timezone.utc).isoformat()}
+
+            for key, value in updates.items():
+                set_clauses.append(f"e.{key} = ${key}")
+                params[key] = value
+
+            query = f"MATCH (e:Epic {{id: $id}}) SET {', '.join(set_clauses)} RETURN e"
+            session.run(query, **params)
+
+    # ---------------------------------------------------------------------------
+    # Objective methods
+    # ---------------------------------------------------------------------------
+
+    def create_objective(self, objective) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(
+                queries.CREATE_OBJECTIVE,
+                id=str(objective.id),
+                name=objective.name,
+                description=objective.description,
+                status=objective.status.value,
+                quarter=objective.quarter,
+                created_at=objective.created_at.isoformat(),
+                updated_at=objective.updated_at.isoformat(),
+            )
+
+    def get_objective(self, objective_id: str):
+        from uuid import UUID
+
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.GET_OBJECTIVE, id=objective_id)
+            record = result.single()
+            if record is None:
+                return None
+            node = record["o"]
+            from socialseed_tasker.core.task_management.entities import Objective, ObjectiveStatus
+
+            return Objective(
+                id=UUID(node["id"]),
+                name=node["name"],
+                description=node.get("description", ""),
+                status=ObjectiveStatus(node.get("status", "OPEN")),
+                quarter=node.get("quarter", ""),
+            )
+
+    def list_objectives(self):
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.LIST_OBJECTIVES)
+            from uuid import UUID
+
+            from socialseed_tasker.core.task_management.entities import Objective, ObjectiveStatus
+
+            objectives = []
+            for record in result:
+                node = record["o"]
+                objectives.append(
+                    Objective(
+                        id=UUID(node["id"]),
+                        name=node["name"],
+                        description=node.get("description", ""),
+                        status=ObjectiveStatus(node.get("status", "OPEN")),
+                        quarter=node.get("quarter", ""),
+                    )
+                )
+            return objectives
+
+    def delete_objective(self, objective_id: str) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(queries.DELETE_OBJECTIVE, id=objective_id)
+
+    def link_epic_to_objective(self, epic_id: str, objective_id: str) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(queries.LINK_EPIC_TO_OBJECTIVE, epic_id=epic_id, objective_id=objective_id)
+
+    def update_objective(self, objective_id: str, updates: dict) -> None:
+        from datetime import datetime, timezone
+
+        with self._driver.driver.session(database=self._driver.database) as session:
+            set_clauses = []
+            params = {"id": objective_id, "updated_at": datetime.now(timezone.utc).isoformat()}
+
+            for key, value in updates.items():
+                set_clauses.append(f"o.{key} = ${key}")
+                params[key] = value
+
+            query = f"MATCH (o:Objective {{id: $id}}) SET {', '.join(set_clauses)} RETURN o"
+            session.run(query, **params)
+
+    # ---------------------------------------------------------------------------
+    # Cost Analytics methods
+    # ---------------------------------------------------------------------------
+
+    def get_cost_per_component(self) -> list[dict]:
+        """Get cost breakdown by component for closed issues."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.GET_COST_PER_COMPONENT)
+            return [
+                {
+                    "component_id": record["component_id"],
+                    "component_name": record["component_name"],
+                    "actual_cost": record.get("actual_cost", 0.0) or 0.0,
+                    "avg_hourly_rate": record.get("avg_hourly_rate", 0.0) or 0.0,
+                    "total_hours": record.get("total_hours", 0) or 0,
+                    "issue_count": record.get("issue_count", 0) or 0,
+                }
+                for record in result
+            ]
+
+    def get_cost_per_epic(self) -> list[dict]:
+        """Get cost breakdown by epic for closed issues."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.GET_COST_PER_EPIC)
+            return [
+                {
+                    "epic_id": record["epic_id"],
+                    "epic_name": record["epic_name"],
+                    "actual_cost": record.get("actual_cost", 0.0) or 0.0,
+                    "total_hours": record.get("total_hours", 0) or 0,
+                    "issue_count": record.get("issue_count", 0) or 0,
+                }
+                for record in result
+            ]
+
+    def get_cost_per_project(self) -> list[dict]:
+        """Get cost breakdown by project for closed issues."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.GET_COST_PER_PROJECT)
+            return [
+                {
+                    "project_id": record["project_id"],
+                    "project_name": record["project_name"],
+                    "actual_cost": record.get("actual_cost", 0.0) or 0.0,
+                    "total_hours": record.get("total_hours", 0) or 0,
+                    "issue_count": record.get("issue_count", 0) or 0,
+                }
+                for record in result
+            ]
+
+    def get_cost_summary(self) -> dict:
+        """Get overall cost summary."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.GET_COST_SUMMARY)
+            record = result.single()
+            if record is None:
+                return {
+                    "total_actual_cost": 0.0,
+                    "total_hours": 0,
+                    "total_issues_closed": 0,
+                }
+            return {
+                "total_actual_cost": record.get("total_actual_cost", 0.0) or 0.0,
+                "total_hours": record.get("total_hours", 0) or 0,
+                "total_issues_closed": record.get("total_issues_closed", 0) or 0,
+            }
+
+    # ---------------------------------------------------------------------------
+    # Deployment methods
+    # ---------------------------------------------------------------------------
+
+    def create_deployment(self, deployment) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(
+                queries.CREATE_DEPLOYMENT,
+                id=str(deployment.id),
+                commit_sha=deployment.commit_sha,
+                environment_name=deployment.environment_name.value,
+                deployed_at=deployment.deployed_at.isoformat(),
+                issue_ids=[str(i) for i in deployment.issue_ids],
+                channel=deployment.channel,
+                deployed_by=deployment.deployed_by,
+            )
+
+    def get_deployments(
+        self,
+        environment_name: str | None = None,
+        limit: int = 50,
+    ) -> list[dict]:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.GET_DEPLOYMENTS,
+                environment_name=environment_name,
+                limit=limit,
+            )
+            return [
+                {
+                    "id": record["d"]["id"],
+                    "commit_sha": record["d"]["commit_sha"],
+                    "environment_name": record["d"]["environment_name"],
+                    "deployed_at": record["d"]["deployed_at"],
+                    "issue_ids": record["d"].get("issue_ids", []),
+                    "channel": record["d"].get("channel"),
+                    "deployed_by": record["d"].get("deployed_by"),
+                }
+                for record in result
+            ]
+
+    def get_deployment_by_commit(self, commit_sha: str) -> dict | None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.GET_DEPLOYMENT_BY_COMMIT, commit_sha=commit_sha)
+            record = result.single()
+            if record is None:
+                return None
+            return {
+                "id": record["d"]["id"],
+                "commit_sha": record["d"]["commit_sha"],
+                "environment_name": record["d"]["environment_name"],
+                "deployed_at": record["d"]["deployed_at"],
+                "issue_ids": record["d"].get("issue_ids", []),
+            }
+
+    def get_issue_deployments(self, issue_id: str) -> list[dict]:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.GET_ISSUES_DEPLOYMENTS, issue_id=issue_id)
+            return [
+                {
+                    "id": record["d"]["id"],
+                    "commit_sha": record["d"]["commit_sha"],
+                    "environment_name": record["d"]["environment_name"],
+                    "deployed_at": record["d"]["deployed_at"],
+                    "channel": record["d"].get("channel"),
+                }
+                for record in result
+            ]
+
+    # ---------------------------------------------------------------------------
+    # Vector Search methods
+    # ---------------------------------------------------------------------------
+
+    def search_by_embedding(self, embedding: list[float], threshold: float = 0.7, limit: int = 10) -> list[dict]:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.SEARCH_BY_EMBEDDING,
+                embedding=embedding,
+                threshold=threshold,
+                limit=limit,
+            )
+            return [
+                {
+                    "issue_id": record["issue_id"],
+                    "title": record["title"],
+                    "score": record["score"],
+                }
+                for record in result
+            ]
+
+    def find_similar_issues(self, issue_id: str, threshold: float = 0.7, limit: int = 10) -> list[dict]:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.FIND_SIMILAR_ISSUES,
+                issue_id=issue_id,
+                threshold=threshold,
+                limit=limit,
+            )
+            return [
+                {
+                    "issue_id": record["issue_id"],
+                    "title": record["title"],
+                    "score": record["score"],
+                }
+                for record in result
+            ]
+
+    def update_issue_embedding(self, issue_id: str, embedding: list[float]) -> None:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(
+                queries.UPDATE_ISSUE_EMBEDDING,
+                id=issue_id,
+                embedding=embedding,
+            )

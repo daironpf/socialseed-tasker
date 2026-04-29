@@ -410,20 +410,39 @@ class IssueCreateRequest(BaseModel):
 
 
 class IssueUpdateRequest(BaseModel):
-    """Request body for partially updating an issue."""
+    """Request body for partially updating an issue.
 
-    title: str | None = Field(None, min_length=1, max_length=200)
-    description: str | None = None
-    status: str | None = None
-    priority: str | None = None
-    component_id: str | None = None
-    labels: list[str] | None = None
-    architectural_constraints: list[str] | None = None
-    agent_working: bool | None = None
+    All fields are optional. Only fields included in the request will be updated.
+    """
+
+    title: str | None = Field(None, min_length=1, max_length=200, description="Updated title")
+    description: str | None = Field(None, description="Updated description in Markdown")
+    status: str | None = Field(
+        None,
+        description="Updated status: todo, in_progress, blocked, code_review, done, closed",
+    )
+    priority: str | None = Field(
+        None,
+        description="Updated priority: LOW, MEDIUM, HIGH, CRITICAL",
+    )
+    component_id: str | None = Field(None, description="UUID of target component")
+    labels: list[str] | None = Field(None, description="Updated label list")
+    architectural_constraints: list[str] | None = Field(
+        None,
+        description="Updated architectural constraint list",
+    )
+    agent_working: bool | None = Field(
+        None,
+        description="Whether an AI agent is currently working on this issue",
+    )
 
 
 class DependencyRequest(BaseModel):
-    """Request body for adding a dependency."""
+    """Request body for adding a dependency between issues.
+
+    Creates a [:DEPENDS_ON] relationship. The request will fail if adding
+    the dependency would create a circular dependency chain.
+    """
 
     depends_on_id: str = Field(
         ...,
@@ -455,24 +474,28 @@ class BulkDependencyResponse(BaseModel):
 
 
 class ComponentCreateRequest(BaseModel):
-    """Request body for creating a new component."""
+    """Request body for creating a new component.
+
+    Components represent architectural layers or functional areas within a project.
+    They group related issues and can have dependencies between each other.
+    """
 
     name: str = Field(
         ...,
         min_length=1,
-        description="Component name",
-        examples=["Backend"],
+        description="Component name (unique within a project)",
+        examples=["Backend", "Frontend", "Database", "API"],
     )
     description: str | None = Field(
         None,
         description="Component description",
-        examples=["REST API and business logic layer"],
+        examples=["REST API and business logic layer", "User interface components"],
     )
     project: str = Field(
-        ...,
+        "default",
         min_length=1,
-        description="Project this component belongs to",
-        examples=["socialseed-tasker"],
+        description="Project name this component belongs to (default: 'default')",
+        examples=["socialseed-tasker", "ecommerce-store"],
     )
 
 

@@ -37,21 +37,25 @@ services:
   # =============================================================================
   # FastAPI Backend (REST API for AI agents)
   # Neo4j-only storage - graph database
-  # Uses pre-built Docker image from GitHub Container Registry
+  # Builds from local source for development testing
+  # Note: Use 'docker compose build tasker-api' after modifying src/
   # =============================================================================
   tasker-api:
     container_name: tasker-api
-    image: ghcr.io/daironpf/socialseed-tasker:latest
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: tasker-api:local
     ports:
       - "8000:8000"
     environment:
-      - TASKER_NEO4J_URI=bolt://tasker-db:7687
-      - TASKER_NEO4J_USERNAME=neo4j
-      - TASKER_NEO4J_PASSWORD=neoSocial
+      - TASKER_NEO4J_URI=${TASKER_NEO4J_URI:-bolt://tasker-db:7687}
+      - TASKER_NEO4J_USERNAME=${TASKER_NEO4J_USERNAME:-neo4j}
+      - TASKER_NEO4J_PASSWORD=${TASKER_NEO4J_PASSWORD:-neoSocial}
       - TASKER_API_HOST=0.0.0.0
       - TASKER_API_PORT=8000
-      - TASKER_API_KEY=test-token
-      - TASKER_AUTH_ENABLED=false
+      - TASKER_API_KEY=${TASKER_API_KEY:-test-token}
+      - TASKER_AUTH_ENABLED=${TASKER_AUTH_ENABLED:-false}
     depends_on:
       tasker-db:
         condition: service_healthy

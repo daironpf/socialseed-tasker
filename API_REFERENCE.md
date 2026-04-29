@@ -1,6 +1,102 @@
-# API Reference - SocialSeed Tasker v0.8.0
+# API Reference - SocialSeed Tasker v0.8.1
 
 Complete reference for AI agents to interact with Tasker.
+
+---
+
+## Response Format Standard
+
+The API uses a consistent wrapper structure for all responses:
+
+### List Responses (Paginated)
+```json
+{
+  "data": {
+    "items": [...],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 150,
+      "has_next": true,
+      "has_prev": false
+    }
+  },
+  "error": null,
+  "meta": {
+    "timestamp": "2026-04-27T19:30:00.000Z",
+    "request_id": null,
+    "warnings": null
+  }
+}
+```
+
+### Single Item Responses
+```json
+{
+  "data": {
+    "id": "uuid",
+    "title": "...",
+    "status": "OPEN",
+    ...
+  },
+  "error": null,
+  "meta": {
+    "timestamp": "2026-04-27T19:30:00.000Z",
+    "request_id": null,
+    "warnings": null
+  }
+}
+```
+
+### Embedded List Responses (No Pagination)
+Some endpoints return lists without pagination (e.g., dependencies):
+```json
+{
+  "data": {
+    "items": [...]
+  },
+  "error": null,
+  "meta": {
+    "timestamp": "2026-04-27T19:30:00.000Z",
+    "request_id": null,
+    "warnings": null
+  }
+}
+```
+
+### Error Responses
+```json
+{
+  "data": null,
+  "error": "Error message here",
+  "meta": {
+    "timestamp": "2026-04-27T19:30:00.000Z",
+    "request_id": null,
+    "warnings": null
+  }
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `data` | object/null | Response payload or null on error |
+| `error` | string/null | Error message if request failed |
+| `meta` | object | Request metadata |
+| `meta.timestamp` | ISO 8601 | Server timestamp |
+| `meta.request_id` | string/null | Request tracking ID |
+| `meta.warnings` | array/null | Non-blocking warnings |
+
+### Pagination Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `page` | int | Current page number (1-indexed) |
+| `limit` | int | Items per page |
+| `total` | int | Total items matching query |
+| `has_next` | bool | More pages available |
+| `has_prev` | bool | Previous page available |
 
 ---
 
@@ -209,6 +305,8 @@ curl -X POST http://localhost:8000/api/v1/issues/<issue-a>/dependencies \
 ```bash
 curl http://localhost:8000/api/v1/issues/<issue-id>/dependencies
 ```
+
+**Response**: Returns embedded list without pagination (dependencies are typically few)
 
 ### Remove Dependency
 ```bash

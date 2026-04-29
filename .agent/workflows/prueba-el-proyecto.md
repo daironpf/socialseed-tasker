@@ -37,15 +37,36 @@ Ejecuta una evaluación black-box completa del sistema SocialSeed Tasker. Este w
 ### Input
 - **Use Case Description**: e.g., "Dental clinic appointment system"
 - **Number of Issues**: e.g., 50 issues
+- **Issue Type**: Real issues with dependencies vs simple enumerated issues
+- **Architecture Type**: Monolithic / Microservices / Serverless / API-first
+
+- **Quality Guide**: Optional reference for real issues at `skills/issue_quality_guide.json`
 
 ### Process
 1. Ask user for use case description
 2. Ask user for number of issues to generate
-3. Assign random profile from Section 0:
+3. Ask user for issue type:
+   - **Real Issues**: Issues with meaningful titles, descriptions, dependencies (uses quality guide)
+   - **Simple Enumerated**: Task 1, Task 2, etc. (quick test)
+4. Ask user for architecture type:
+   - **Monolithic**: Single deployable unit (e.g., Django, Rails, Laravel)
+   - **Microservices**: Independent services communicating via API (e.g., Go services, Node services)
+   - **Serverless**: Function-based deployment (e.g., AWS Lambda, Cloud Functions)
+   - **API-first**: Backend API with separate frontend (e.g., REST/GraphQL API + SPA)
+5. (Optional) Assign random profile from Section 0:
    - **Junior Dev**: Focus on documentation clarity, "Doc Gaps"
    - **Senior Architect**: Focus on graph efficiency, design patterns, scalability
    - **DevOps**: Focus on infrastructure, logs, response times, Docker stability
    - **Chaos Monkey**: Ignores documentation, uses only `--help` and error messages
+
+### Issue Type Guide
+
+| Option | Description | Tokens | Use Case |
+|--------|-------------|--------|----------|
+| Real Issues | Meaningful titles, descriptions, real dependencies | High | Test AI reasoning, graph complexity |
+| Simple Enumerated | "Task 1", "Task 2", simple dependencies | Low | Quick API testing, basic functionality |
+
+**Recommendation**: Use Simple Enumerated for quick tests (saves tokens). Use Real Issues for comprehensive testing.
 
 ---
 
@@ -133,11 +154,43 @@ Ejecuta una evaluación black-box completa del sistema SocialSeed Tasker. Este w
 | Chaos Monkey | Uses ONLY `tasker --help` and error messages. NO documentation reading |
 
 ### Process
+
+**For Simple Enumerated Issues** (default - quick test):
+1. Create component with use case name
+2. Create N issues with simple titles: "Task 1: [Use Case] feature", "Task 2: [Use Case] feature", etc.
+3. Create simple dependencies (5-10% of issues)
+4. Verify via API
+
+**For Real Issues** (requires AI reasoning):
 1. Launch Sub-Agent with assigned profile
-2. Sub-Agent reads documentation from `real-test/docs/` or `real-test/.agent/`
-3. Sub-Agent creates issues via REST API (NOT CLI - to test API)
-4. Sub-Agent verifies issue count via GET endpoint
-5. If discrepancy found: mark as FINDING with severity HIGH
+2. Sub-Agent reads:
+   - `skills/issue_quality_guide.json` (quality standards)
+   - Documentation from `real-test/docs/` or `real-test/.agent/`
+3. Sub-Agent creates issues following quality guide standards:
+   - Titles follow pattern: [Component] Action: Expected Result
+   - Descriptions include Context, Acceptance Criteria, Technical Notes
+   - Priority matches guide (CRITICAL/HIGH/MEDIUM/LOW)
+4. Sub-Agent creates dependencies between issues (10-15%):
+   - Link high-priority issues to their prerequisites
+   - Create dependency chains
+   - Use add_dependency() for all relationships
+5. Sub-Agent verifies:
+   - Issue count via GET endpoint
+   - Dependency creation via GET /api/v1/issues/{id}/dependencies
+
+6. If discrepancy found: mark as FINDING with severity HIGH
+
+### Test Dependencies (Simple Enumerated)
+Quick script to create simple dependencies:
+```bash
+# For 50 issues, create 5 simple dependencies
+# Issue N depends on Issue N-1 (linear chain)
+for i in {2..6}; do
+  curl -X POST "http://localhost:8000/api/v1/issues/$ID_$i/dependencies" \
+    -H "Content-Type: application/json" \
+    -d '{"depends_on_id": "$ID_$((i-1))"}'
+done
+```
 
 ---
 
@@ -146,7 +199,7 @@ Ejecuta una evaluación black-box completa del sistema SocialSeed Tasker. Este w
 ### Output: `real-test/report.md`
 
 Must include:
-- **Test Metadata**: date, version, use case, requested vs created issues
+- **Test Metadata**: date, version, use case, requested vs created issues, dependencies created
 - **Findings**:
   - DOC_GAP: Documentation inconsistencies
   - BUG: Code bugs
@@ -158,6 +211,7 @@ Must include:
   - documentation_score
   - api_clarity
   - setup_friction
+  - dependency_graph_score: Ability to create and query dependencies
 
 ### ⚠️ ASK BEFORE CLEANUP
 
@@ -283,16 +337,14 @@ dx_evaluation:
   agent_friction_points: []
 ```
 
----
-
 ## Workflow Execution
 
 ```
 prueba el proyecto
-  → Phase 0: Ask use case + issue count
+  → Phase 0: Ask use case + issue count + issue type + architecture
   → Phase 1: Setup real-test/ + venv
   → Phase 2: tasker init + docker up
-  → Phase 3: Create issues via API
+  → Phase 3: Create issues via API (simple or real)
   → Phase 4: Generate report.md
   → ⚠️ ASK: Cleanup or keep running?
   → WAIT for user response before acting
@@ -302,6 +354,8 @@ prueba el proyecto
 
 - [ ] Phase 0: Use case captured
 - [ ] Phase 0: Issue count defined
+- [ ] Phase 0: Issue type defined (real vs simple)
+- [ ] Phase 0: Architecture type defined
 - [ ] Phase 0: Profile assigned
 - [ ] Phase 1: Containers stopped
 - [ ] Phase 1: real-test/ created
