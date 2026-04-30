@@ -100,6 +100,12 @@ tasker rag index --type issue --id <id> --content <text>
 tasker rag stats
 tasker rag clear
 
+# AI Reasoning Logs (v0.9.0)
+tasker reasoning log --issue <id> --thought <text> --decision <choice>
+tasker reasoning history [--issue <id>] [--limit N]
+tasker reasoning stats
+tasker reasoning clear [--issue <id>]
+
 ## API Endpoints
 
 | Endpoint | Method | Description |
@@ -129,6 +135,14 @@ tasker rag clear
 | `/api/v1/rag/stats` | GET | RAG index statistics |
 | `/api/v1/rag/{source_type}/{source_id}` | DELETE | Delete RAG embeddings |
 | `/api/v1/rag` | DELETE | Clear all RAG embeddings |
+| `/api/v1/reasoning/log` | POST | Log agent reasoning |
+| `/api/v1/reasoning/issue/{id}` | GET | Get reasoning for issue |
+| `/api/v1/reasoning/history` | GET | Get reasoning history |
+| `/api/v1/reasoning/{id}/feedback` | POST | Add feedback |
+| `/api/v1/reasoning/{id}/feedback` | GET | Get feedback |
+| `/api/v1/reasoning/stats` | GET | Decision statistics |
+| `/api/v1/reasoning/issue/{id}` | DELETE | Delete issue reasoning |
+| `/api/v1/reasoning` | DELETE | Clear all reasoning |
 
 ## Environment Variables
 

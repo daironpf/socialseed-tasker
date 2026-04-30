@@ -684,7 +684,77 @@ export OPENAI_API_KEY=sk-...  # Required for real embeddings
 
 ---
 
-## 15. Docker & Deployment
+## 15. AI Reasoning Logs (Agent Decision Tracking)
+
+Transparent logging of AI agent reasoning for human review and learning.
+
+### 15.1 Graph Pattern
+```cypher
+(Agent)-[:THOUGHT {timestamp: datetime()}]->(ReasoningNode)-[:DECIDED]->(Issue)
+```
+
+### 15.2 ReasoningNode Schema
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | UUID | Unique identifier |
+| `thought` | String | Agent's reasoning text |
+| `confidence` | Float | Confidence score (0.0-1.0) |
+| `alternatives_considered` | List[String] | Options evaluated |
+| `rejected_reasons` | List[String] | Why alternatives were rejected |
+| `decision` | String | Decision made |
+| `decision_type` | Enum | Type: solution_selection, architecture_choice, etc. |
+| `created_at` | DateTime | When thought occurred |
+
+### 15.3 Decision Types
+
+| Type | Description |
+|------|-------------|
+| `solution_selection` | Choosing between solution options |
+| `architecture_choice` | Architectural decisions |
+| `priority_decision` | Priority/ordering decisions |
+| `dependency_resolution` | Resolving dependencies |
+| `refactoring_choice` | Refactoring approach decisions |
+| `code_generation` | Code generation decisions |
+| `review_decision` | Code review decisions |
+
+### 15.4 Reasoning Commands (v0.9.0)
+
+```bash
+# Log agent reasoning for an issue
+tasker reasoning log --issue <id> --thought <text> --decision <choice> --confidence 0.8
+
+# View reasoning history
+tasker reasoning history [--issue <id>] [--limit 20]
+
+# Show decision statistics
+tasker reasoning stats
+
+# Clear reasoning data
+tasker reasoning clear [--issue <id>]
+```
+
+### 15.5 Reasoning API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/reasoning/log` | POST | Log agent reasoning |
+| `/api/v1/reasoning/issue/{issue_id}` | GET | Get reasoning for issue |
+| `/api/v1/reasoning/history` | GET | Global reasoning history |
+| `/api/v1/reasoning/{id}/feedback` | POST | Add human feedback |
+| `/api/v1/reasoning/{id}/feedback` | GET | Get feedback for reasoning |
+| `/api/v1/reasoning/stats` | GET | Decision statistics |
+| `/api/v1/reasoning/issue/{issue_id}` | DELETE | Delete issue reasoning |
+| `/api/v1/reasoning` | DELETE | Clear all reasoning |
+
+**Example - Log reasoning:**
+```bash
+curl -X POST "http://localhost:8000/api/v1/reasoning/log?issue_id=issue-123&agent_id=agent-1&agent_name=DevAgent&thought=Using buffer strategy&confidence=0.85&decision=add wrapper&decision_type=solution_selection"
+```
+
+---
+
+## 16. Docker & Deployment
 
 ### 13.1 Docker Compose
 
@@ -765,6 +835,14 @@ tasker rag search <query> [--limit N] [--threshold N]
 tasker rag index --type <source_type> --id <source_id> --content <text>
 tasker rag stats
 tasker rag clear [--yes]
+```
+
+### AI Reasoning (Decision Tracking)
+```bash
+tasker reasoning log --issue <id> --thought <text> [--decision <choice>] [--confidence N]
+tasker reasoning history [--issue <id>] [--limit N]
+tasker reasoning stats
+tasker reasoning clear [--issue <id>] [--yes]
 ```
 
 ### Other
