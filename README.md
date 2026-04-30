@@ -30,11 +30,19 @@ A specialized framework that leverages **Neo4j** to provide AI agents with infin
   <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0">
   <img src="https://img.shields.io/badge/Version-0.8.1-green.svg" alt="Version: 0.8.1">
   <img src="https://img.shields.io/badge/PRs-Welcome-green.svg" alt="PRs Welcome">
+  <img src="https://img.shields.io/badge/Tree--Sitter-Enabled-blue.svg" alt="Tree-Sitter">
+  <img src="https://img.shields.io/badge/Multi--Language-Python%2C%20JS%2C%20Java%2C%20C%2B%2B-cyan.svg" alt="Multi-Language">
 </p>
 
 ---
 
-## What's New in v0.8.1
+## What's New in v0.9.0 (Memory & Intelligence)
+
+### Code-as-Graph (Tree-Sitter Integration)
+- **Deep Code Analysis**: Extract symbols (classes, functions, methods) and relationships (calls, imports, contains) directly from source code.
+- **Multi-Language Support**: Initial support for **Python, JavaScript, TypeScript, Java, and C++**.
+- **Incremental Scanning**: Git-aware scanning that only processes modified files for near-instant graph updates.
+- **Cross-File Dependency Mapping**: Automatically map `CALLS` and `IMPORTS` relationships across the entire repository.
 
 ### Performance & Monitoring
 - **Response Time Headers**: `X-Response-Time-Ms` on all API responses
@@ -274,10 +282,11 @@ curl -H "Authorization: Bearer your-secret-key" http://localhost:8000/api/v1/iss
 
 ### Key Endpoints
 
+- **Code Graph**: Scan repositories, find symbols, and analyze code structure
 - **Issues**: Create, read, update, delete, close
 - **Components**: Organize issues by service/module
 - **Dependencies**: Link issues with [:DEPENDS_ON] relationships
-- **Analysis**: Impact analysis, root cause detection
+- **Analysis**: Impact analysis, root cause detection, and cross-language code analysis
 - **Projects**: Aggregate statistics by project
 - **Health**: Neo4j connectivity status
 

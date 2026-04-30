@@ -26,7 +26,8 @@ src/socialseed_tasker/
 │   ├── project_analysis/          # Rules, analyzers, policies
 │   ├── validation/               # Input sanitization
 │   ├── services/                # External integrations
-│   └── system_init/              # Scaffolding
+│   ├── system_init/              # Scaffolding
+│   └── code_analysis/           # Tree-sitter code parsing (v0.9.0)
 ├── entrypoints/                   # External interfaces
 │   ├── terminal_cli/              # Typer CLI (tasker)
 │   ├── web_api/                 # FastAPI REST API

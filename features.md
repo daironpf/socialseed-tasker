@@ -1,6 +1,6 @@
-# Features - SocialSeed Tasker (v0.8.1)
+# Features - SocialSeed Tasker (v0.9.0)
 
-This document documents all functionalities implemented in version 0.8.1.
+This document documents all functionalities implemented in version 0.9.0.
 
 ---
 
@@ -558,7 +558,7 @@ curl http://localhost:8000/health
 # Response:
 {
   "status": "healthy",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "neo4j": "connected",
   "neo4j_uri": "bolt://localhost:7687",
   "auth_enabled": false
@@ -583,7 +583,44 @@ export TASKER_SLOW_REQUEST_THRESHOLD=0.5
 
 ---
 
-## 13. Docker & Deployment
+---
+
+## 13. Code-as-Graph (Tree-Sitter)
+
+Deep code analysis and mapping of repository structures.
+
+### 13.1 Multi-Language Support
+Automatic AST parsing for multiple languages using Tree-sitter.
+
+| Language | Support Level | Features |
+|----------|---------------|----------|
+| **Python** | ADVANCED | Classes, Methods, Functions, Imports, Calls, Parameters |
+| **JavaScript** | INTERMEDIATE | Classes, Methods, Functions, Imports, Calls |
+| **TypeScript** | INTERMEDIATE | Classes, Methods, Functions, Imports, Calls |
+| **Java** | BASIC | Classes, Methods |
+| **C++** | BASIC | Classes, Structs, Functions |
+
+### 13.2 Code-as-Graph (v0.9.0)
+Advanced static analysis that models the codebase in Neo4j.
+
+**Commands:**
+*   `tasker code-graph scan <path>`: Scans a directory and builds the graph.
+*   `tasker code-graph stats`: Displays graph statistics (files, symbols, relationships).
+*   `tasker code-graph files`: Lists all indexed files.
+*   `tasker code-graph find <symbol>`: Finds a specific symbol (class/function) in the graph.
+*   `tasker code-graph impact <symbol>`: **[NEW]** Analyzes the impact of changing a symbol by finding all its callers.
+*   `tasker code-graph clear`: Wipes the code graph data.
+
+### 13.3 Relationship Mapping
+Automatically extracts and resolves:
+- `[:CONTAINS]`: Class -> Method/Function
+- `[:DEFINES]`: File -> Class/Function
+- `[:IMPORTS]`: File -> Module
+- `[:CALLS]`: Function -> Function (resolved via symbol mapping)
+
+---
+
+## 14. Docker & Deployment
 
 ### 13.1 Docker Compose
 
@@ -647,6 +684,15 @@ tasker dependency list
 ```bash
 tasker analyze root-cause <issue>
 tasker analyze impact <issue>
+```
+
+### Code Graph (v0.9.0)
+```bash
+tasker code-graph scan <path> [--incremental]
+tasker code-graph find <name>
+tasker code-graph files
+tasker code-graph stats
+tasker code-graph clear
 ```
 
 ### Other
@@ -723,4 +769,4 @@ tasker --help
 
 ---
 
-Version: 0.8.1
+Version: 0.9.0
