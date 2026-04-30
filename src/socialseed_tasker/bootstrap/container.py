@@ -140,7 +140,7 @@ class Container:
         Only Neo4j storage backend is supported.
         """
         if self._repository is None:
-            driver = self._get_neo4j_driver()
+            driver = self.get_driver()
             from socialseed_tasker.storage.graph_database.repositories import (
                 Neo4jTaskRepository,
             )
@@ -149,7 +149,7 @@ class Container:
 
         return self._repository
 
-    def _get_neo4j_driver(self) -> Neo4jDriver:
+    def get_driver(self) -> Any:
         """Get or create the Neo4j driver."""
         if self._neo4j_driver is None:
             from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
@@ -172,6 +172,14 @@ class Container:
         are working before serving requests.
         """
         self.get_repository()
+
+    def get_code_graph_repository(self) -> Any:
+        """Get the code graph repository.
+        
+        Business Value: Enables storing and querying code-as-graph structures.
+        """
+        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+        return CodeGraphRepository(self.get_driver())
 
     def cleanup(self) -> None:
         """Release all resources.

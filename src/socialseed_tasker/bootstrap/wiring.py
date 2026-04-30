@@ -54,3 +54,12 @@ def wire_cli(config: Container | None = None) -> None:
         app()
     finally:
         container.cleanup()
+def get_driver() -> Any:
+    """Get the Neo4j driver from the global CLI container."""
+    from socialseed_tasker.entrypoints.terminal_cli.app import get_cli_container
+
+    try:
+        container = get_cli_container()
+        return container.get_driver()
+    except Exception:
+        return None
