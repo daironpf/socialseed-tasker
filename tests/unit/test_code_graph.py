@@ -535,3 +535,155 @@ def call_api():
         assert len(resolved_rels) == 2
         external_count = sum(1 for r in resolved_rels if r.target_id.startswith("external:"))
         assert external_count == 1
+
+
+class TestCodeGraphRepositoryMethods:
+    """Additional tests for CodeGraphRepository methods."""
+
+    def test_get_callers_by_path(self):
+        """Test getting callers by file path."""
+        from unittest.mock import MagicMock
+        from contextlib import contextmanager
+
+        mock_driver = MagicMock()
+        mock_inner_driver = MagicMock()
+
+        class MockRecord:
+            def __init__(self, name, symbol_type, file_path):
+                self._data = {"name": name, "symbol_type": symbol_type, "file_path": file_path}
+
+            def __getitem__(self, key):
+                return self._data[key]
+
+        @contextmanager
+        def mock_session(database=None):
+            mock_session_obj = MagicMock()
+            mock_result = MagicMock()
+            records = [
+                MockRecord("caller1", "function", "src/caller.py"),
+                MockRecord("caller2", "function", "src/other.py"),
+            ]
+            mock_result.__iter__ = MagicMock(return_value=iter(records))
+            mock_session_obj.run.return_value = mock_result
+            yield mock_session_obj
+
+        mock_inner_driver.session = mock_session
+        mock_driver.driver = mock_inner_driver
+        mock_driver.database = "neo4j"
+
+        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+        repo = CodeGraphRepository(mock_driver)
+        callers = repo.get_callers_by_path("src/target.py")
+
+        assert len(callers) == 2
+        assert callers[0]["name"] == "caller1"
+
+    def test_get_dependencies_by_path(self):
+        """Test getting dependencies by file path."""
+        from unittest.mock import MagicMock
+        from contextlib import contextmanager
+
+        mock_driver = MagicMock()
+        mock_inner_driver = MagicMock()
+
+        class MockRecord:
+            def __init__(self, module, line_number, is_from):
+                self._data = {"module": module, "line_number": line_number, "is_from": is_from}
+
+            def __getitem__(self, key):
+                return self._data[key]
+
+        @contextmanager
+        def mock_session(database=None):
+            mock_session_obj = MagicMock()
+            mock_result = MagicMock()
+            records = [
+                MockRecord("os.path", 5, True),
+                MockRecord("json", 10, False),
+            ]
+            mock_result.__iter__ = MagicMock(return_value=iter(records))
+            mock_session_obj.run.return_value = mock_result
+            yield mock_session_obj
+
+        mock_inner_driver.session = mock_session
+        mock_driver.driver = mock_inner_driver
+        mock_driver.database = "neo4j"
+
+        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+        repo = CodeGraphRepository(mock_driver)
+        deps = repo.get_dependencies_by_path("src/main.py")
+
+        assert len(deps) == 2
+        assert deps[0]["module"] == "os.path"
+
+    def test_get_tests_for_file(self):
+        """Test getting test files for a source file."""
+        from unittest.mock import MagicMock
+        from contextlib import contextmanager
+
+        mock_driver = MagicMock()
+        mock_inner_driver = MagicMock()
+
+        class MockRecord:
+            def __init__(self, path, symbol_type):
+                self._data = {"path": path, "symbol_type": symbol_type}
+
+            def __getitem__(self, key):
+                return self._data[key]
+
+        @contextmanager
+        def mock_session(database=None):
+            mock_session_obj = MagicMock()
+            mock_result = MagicMock()
+            records = [
+                MockRecord("tests/test_main.py", "function"),
+            ]
+            mock_result.__iter__ = MagicMock(return_value=iter(records))
+            mock_session_obj.run.return_value = mock_result
+            yield mock_session_obj
+
+        mock_inner_driver.session = mock_session
+        mock_driver.driver = mock_inner_driver
+        mock_driver.database = "neo4j"
+
+        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+        repo = CodeGraphRepository(mock_driver)
+        tests = repo.get_tests_for_file("src/main.py")
+
+        assert len(tests) == 1
+        assert "test" in tests[0]["path"]
+
+    def test_clear_graph(self):
+        """Test clearing graph data."""
+        from unittest.mock import MagicMock
+
+        mock_driver = MagicMock()
+        mock_inner_driver = MagicMock()
+        mock_driver.driver = mock_inner_driver
+        mock_driver.database = "neo4j"
+
+        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+        repo = CodeGraphRepository(mock_driver)
+        repo.clear()
+
+        mock_inner_driver.session.assert_called()
+
+    def test_create_indexes(self):
+        """Test creating indexes."""
+        from unittest.mock import MagicMock
+
+        mock_driver = MagicMock()
+        mock_inner_driver = MagicMock()
+        mock_driver.driver = mock_inner_driver
+        mock_driver.database = "neo4j"
+
+        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+        repo = CodeGraphRepository(mock_driver)
+        repo.create_indexes()
+
+        mock_inner_driver.session.assert_called()
