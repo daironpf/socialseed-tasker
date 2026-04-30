@@ -27,13 +27,23 @@ RAG_QUERIES = {
             e.created_at = timestamp()
         RETURN e
     """,
-    "search_similar_fallback": """
-        MATCH (e:RAGEmbedding)
-        WHERE e.source_type IS NOT NULL
-        RETURN e.id as id, e.content as content,
-               e.source_type as source_type, e.source_id as source_id,
-               0.5 as score
-        LIMIT $limit
+    "create_vector_index": """
+        CREATE VECTOR INDEX rag_index IF NOT EXISTS
+        FOR (e:RAGEmbedding) ON e.embedding
+        OPTIONS {
+            indexConfig: {
+                `vector.dimensions`: 1536,
+                `vector.similarity_function`: 'cosine'
+            }
+        }
+    """,
+    "search_similar_vector": """
+        CALL db.index.vector.searchNodes('rag_index', $limit, $embedding)
+        YIELD node, score
+        RETURN node.id as id, node.content as content,
+               node.source_type as source_type, node.source_id as source_id,
+               score
+        ORDER BY score DESC
     """,
     "search_by_source": """
         MATCH (e:RAGEmbedding {source_type: $source_type, source_id: $source_id})
@@ -154,7 +164,7 @@ class RAGRepository:
     def search(
         self, query: str, limit: int = 5, threshold: float = 0.7
     ) -> list[dict[str, Any]]:
-        """Search for similar content.
+        """Search for similar content using vector similarity.
 
         Args:
             query: Search query
@@ -164,39 +174,68 @@ class RAGRepository:
         Returns:
             List of similar items with scores
         """
+        if not self._embedding_service.is_available():
+            logger.warning("Embedding service not available")
+            return []
+
+        query_embedding = self._embedding_service.generate(query)
+        if query_embedding is None:
+            return []
+
+        try:
+            with self._get_session() as session:
+                result = session.run(
+                    RAG_QUERIES["search_similar_vector"],
+                    {"embedding": query_embedding, "limit": limit},
+                )
+                return [
+                    {
+                        "id": record["id"],
+                        "content": record["content"],
+                        "source_type": record["source_type"],
+                        "source_id": record["source_id"],
+                        "score": record["score"],
+                    }
+                    for record in result
+                    if record["score"] >= threshold
+                ]
+        except Exception as e:
+            logger.warning(f"Vector search failed: {e}, using fallback")
+            return self._fallback_search(query_embedding, limit, threshold)
+
+    def _fallback_search(self, query_embedding: list[float], limit: int, threshold: float) -> list[dict[str, Any]]:
+        """Fallback search computing cosine similarity in Python."""
         with self._get_session() as session:
-            if self._embedding_service.is_available():
-                query_embedding = self._embedding_service.generate(query)
-                if query_embedding:
-                    result = session.run(
-                        RAG_QUERIES["search_similar_fallback"],
-                        {"embedding": query_embedding, "limit": limit, "threshold": threshold},
-                    )
-                    return [
-                        {
+            result = session.run(
+                "MATCH (e:RAGEmbedding) WHERE size(e.embedding) > 0 "
+                "RETURN e.id as id, e.content as content, "
+                "e.source_type as source_type, e.source_id as source_id, e.embedding as embedding",
+            )
+
+            import math
+
+            def cosine_similarity(a: list[float], b: list[float]) -> float:
+                dot = sum(x * y for x, y in zip(a, b))
+                mag_a = math.sqrt(sum(x * x for x in a))
+                mag_b = math.sqrt(sum(x * x for x in b))
+                return dot / (mag_a * mag_b) if mag_a and mag_b else 0
+
+            results = []
+            for record in result:
+                emb = record["embedding"]
+                if emb and len(emb) > 0:
+                    score = cosine_similarity(query_embedding, emb)
+                    if score >= threshold:
+                        results.append({
                             "id": record["id"],
                             "content": record["content"],
                             "source_type": record["source_type"],
                             "source_id": record["source_id"],
-                            "score": record["score"],
-                        }
-                        for record in result
-                    ]
+                            "score": score,
+                        })
 
-            result = session.run(
-                RAG_QUERIES["search_similar_fallback"],
-                {"limit": limit, "threshold": threshold},
-            )
-            return [
-                {
-                    "id": record["id"],
-                    "content": record["content"],
-                    "source_type": record["source_type"],
-                    "source_id": record["source_id"],
-                    "score": record["score"],
-                }
-                for record in result
-            ]
+            results.sort(key=lambda x: x["score"], reverse=True)
+            return results[:limit]
 
     def get_stats(self) -> dict[str, Any]:
         """Get RAG index statistics."""
