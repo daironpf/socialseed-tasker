@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -226,5 +227,44 @@ class Agent(BaseModel):
     status: AgentStatus = AgentStatus.IDLE
     current_issue_id: str | None = None
     capabilities: list[str] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=_now)
+
+
+class DecisionType(str, Enum):
+    """Types of reasoning decisions."""
+
+    SOLUTION_SELECTION = "solution_selection"
+    ARCHITECTURE_CHOICE = "architecture_choice"
+    PRIORITY_DECISION = "priority_decision"
+    DEPENDENCY_RESOLUTION = "dependency_resolution"
+    REFACTORING_CHOICE = "refactoring_choice"
+    CODE_GENERATION = "code_generation"
+    REVIEW_DECISION = "review_decision"
+    UNKNOWN = "unknown"
+
+
+class ReasoningNode(BaseModel):
+    """Records agent reasoning for transparency and learning.
+
+    Pattern: (Agent)-[:THOUGHT]->(ReasoningNode)-[:DECIDED]->(Issue)
+    """
+
+    id: UUID = Field(default_factory=lambda: str(uuid4()))
+    thought: str = Field(..., min_length=1, description="The agent's reasoning text")
+    confidence: float = Field(default=0.5, ge=0.0, le=1.0, description="Confidence score 0.0-1.0")
+    alternatives_considered: list[str] = Field(default_factory=list, description="Options evaluated")
+    rejected_reasons: list[str] = Field(default_factory=list, description="Why alternatives were rejected")
+    decision: str | None = Field(default=None, description="The decision made")
+    decision_type: DecisionType = DecisionType.UNKNOWN
+    created_at: datetime = Field(default_factory=_now)
+
+
+class ReasoningFeedback(BaseModel):
+    """Human feedback on agent reasoning."""
+
+    id: UUID = Field(default_factory=lambda: str(uuid4()))
+    reasoning_id: UUID = Field(..., description="The reasoning node being feedbacked")
+    is_approved: bool = Field(..., description="True for approval, False for disapproval")
+    feedback_text: str | None = None
     created_at: datetime = Field(default_factory=_now)
     last_heartbeat: datetime = Field(default_factory=_now)

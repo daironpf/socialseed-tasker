@@ -3608,3 +3608,199 @@ async def rag_clear(driver: Any = Depends(get_rag_driver)) -> dict[str, str]:
     repo.clear()
 
     return {"status": "cleared"}
+
+
+# ==================== AI Reasoning (Agent Decision Logging) ====================
+
+reasoning_router = APIRouter(tags=["reasoning"])
+
+
+def get_reasoning_driver() -> Any:
+    """Get Neo4j driver for reasoning."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+
+    return get_driver()
+
+
+@reasoning_router.post("/reasoning/log")
+async def log_reasoning(
+    issue_id: str,
+    agent_id: str,
+    agent_name: str,
+    thought: str,
+    confidence: float = 0.5,
+    alternatives_considered: list[str] | None = None,
+    rejected_reasons: list[str] | None = None,
+    decision: str | None = None,
+    decision_type: str = "unknown",
+    context: dict[str, Any] | None = None,
+    driver: Any = Depends(get_reasoning_driver),
+) -> dict[str, Any]:
+    """Log agent reasoning for an issue."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.core.task_management.entities import (
+        DecisionType,
+        ReasoningNode,
+    )
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    try:
+        decision_type_enum = DecisionType(decision_type)
+    except ValueError:
+        decision_type_enum = DecisionType.UNKNOWN
+
+    reasoning = ReasoningNode(
+        thought=thought,
+        confidence=confidence,
+        alternatives_considered=alternatives_considered or [],
+        rejected_reasons=rejected_reasons or [],
+        decision=decision,
+        decision_type=decision_type_enum,
+        context=context or {},
+    )
+
+    repo = ReasoningRepository(driver)
+    reasoning_id = repo.log_reasoning(issue_id, agent_id, agent_name, reasoning)
+
+    return {"id": reasoning_id, "status": "logged"}
+
+
+@reasoning_router.get("/reasoning/issue/{issue_id}")
+async def get_issue_reasoning(
+    issue_id: str,
+    limit: int = 50,
+    driver: Any = Depends(get_reasoning_driver),
+) -> dict[str, Any]:
+    """Get reasoning history for an issue."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    repo = ReasoningRepository(driver)
+    reasoning = repo.get_reasoning_by_issue(issue_id, limit)
+
+    return {"reasoning": reasoning, "count": len(reasoning)}
+
+
+@reasoning_router.get("/reasoning/history")
+async def get_reasoning_history(
+    limit: int = 100,
+    driver: Any = Depends(get_reasoning_driver),
+) -> dict[str, Any]:
+    """Get global reasoning history."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    repo = ReasoningRepository(driver)
+    history = repo.get_reasoning_history(limit)
+
+    return {"history": history, "count": len(history)}
+
+
+@reasoning_router.post("/reasoning/{reasoning_id}/feedback")
+async def add_reasoning_feedback(
+    reasoning_id: str,
+    is_approved: bool,
+    feedback_text: str | None = None,
+    driver: Any = Depends(get_reasoning_driver),
+) -> dict[str, Any]:
+    """Add human feedback to reasoning."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.core.task_management.entities import ReasoningFeedback
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    feedback = ReasoningFeedback(
+        reasoning_id=reasoning_id,
+        is_approved=is_approved,
+        feedback_text=feedback_text,
+    )
+
+    repo = ReasoningRepository(driver)
+    feedback_id = repo.add_feedback(feedback, reasoning_id)
+
+    return {"id": feedback_id, "status": "added"}
+
+
+@reasoning_router.get("/reasoning/{reasoning_id}/feedback")
+async def get_reasoning_feedback(
+    reasoning_id: str,
+    driver: Any = Depends(get_reasoning_driver),
+) -> dict[str, Any]:
+    """Get feedback for a reasoning."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    repo = ReasoningRepository(driver)
+    feedback = repo.get_feedback(reasoning_id)
+
+    return {"feedback": feedback, "count": len(feedback)}
+
+
+@reasoning_router.get("/reasoning/stats")
+async def get_reasoning_stats(driver: Any = Depends(get_reasoning_driver)) -> dict[str, Any]:
+    """Get reasoning decision statistics."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    repo = ReasoningRepository(driver)
+    stats = repo.get_decision_stats()
+
+    return stats
+
+
+@reasoning_router.delete("/reasoning/issue/{issue_id}")
+async def delete_issue_reasoning(
+    issue_id: str,
+    driver: Any = Depends(get_reasoning_driver),
+) -> dict[str, str]:
+    """Delete reasoning for an issue."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    repo = ReasoningRepository(driver)
+    repo.delete_by_issue(issue_id)
+
+    return {"status": "deleted"}
+
+
+@reasoning_router.delete("/reasoning")
+async def clear_all_reasoning(driver: Any = Depends(get_reasoning_driver)) -> dict[str, str]:
+    """Clear all reasoning data."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    repo = ReasoningRepository(driver)
+    repo.clear_all()
+
+    return {"status": "cleared"}
