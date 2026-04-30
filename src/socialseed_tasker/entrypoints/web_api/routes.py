@@ -3495,15 +3495,66 @@ async def code_graph_stats(driver: Any = Depends(get_code_graph_driver)) -> dict
 @code_graph_router.delete("")
 async def code_graph_clear(driver: Any = Depends(get_code_graph_driver)) -> dict[str, str]:
     """Clear all code graph data."""
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
     if not driver:
         return {"error": "Neo4j not connected"}
-
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
 
     repo = CodeGraphRepository(driver)
     repo.clear()
 
     return {"status": "cleared"}
+
+
+@code_graph_router.get("/calls/{symbol_name}")
+async def code_graph_calls(
+    symbol_name: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> dict[str, Any]:
+    """Get all callers of a symbol."""
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    repo = CodeGraphRepository(driver)
+    callers = repo.get_callers(symbol_name)
+
+    return {"symbol": symbol_name, "callers": callers, "total": len(callers)}
+
+
+@code_graph_router.get("/depends/{file_path:path}")
+async def code_graph_depends(
+    file_path: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> dict[str, Any]:
+    """Get dependencies (imports) for a file."""
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    repo = CodeGraphRepository(driver)
+    deps = repo.get_dependencies_by_path(file_path)
+
+    return {"file": file_path, "dependencies": deps, "total": len(deps)}
+
+
+@code_graph_router.get("/tests/{file_path:path}")
+async def code_graph_tests(
+    file_path: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> dict[str, Any]:
+    """Get test files for a source file."""
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    repo = CodeGraphRepository(driver)
+    tests = repo.get_tests_for_file(file_path)
+
+    return {"file": file_path, "tests": tests, "total": len(tests)}
 
 
 # ==================== RAG (Retrieval-Augmented Generation) ====================

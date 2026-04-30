@@ -93,6 +93,9 @@ tasker code-graph files
 tasker code-graph stats
 tasker code-graph clear
 tasker code-graph impact <symbol>
+tasker code-graph calls <path>
+tasker code-graph depends <path>
+tasker code-graph tests <path>
 
 # RAG - Semantic Search (v0.9.0)
 tasker rag search <query> --limit 5
@@ -130,6 +133,9 @@ tasker reasoning clear [--issue <id>]
 | `/api/v1/code-graph/symbols` | GET | Query code symbols |
 | `/api/v1/code-graph/stats` | GET | Code graph statistics |
 | `/api/v1/code-graph` | DELETE | Clear code graph data |
+| `/api/v1/code-graph/calls/{symbol}` | GET | Get callers of symbol |
+| `/api/v1/code-graph/depends/{path}` | GET | Get dependencies of file |
+| `/api/v1/code-graph/tests/{path}` | GET | Get test files for source |
 | `/api/v1/rag/index` | POST | Index content for RAG |
 | `/api/v1/rag/search` | POST | Semantic search |
 | `/api/v1/rag/stats` | GET | RAG index statistics |

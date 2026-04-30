@@ -309,3 +309,61 @@ class CodeGraphRepository:
         """Create indexes for code graph."""
         with self._driver.driver.session(database=self._driver.database) as session:
             session.run(CODE_GRAPH_QUERIES["create_indexes"])
+
+    def get_callers_by_path(self, path: str) -> list[dict[str, Any]]:
+        """Get all functions that call symbols in a file."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                """
+                MATCH (f:CodeFile {path: $path})<-[:DEFINES]-(s:CodeSymbol)
+                MATCH (c:CodeSymbol)-[:CALLS]->(s)
+                MATCH (cf:CodeFile)<-[:DEFINES]-(c)
+                RETURN c.name as name, c.symbol_type as symbol_type, cf.path as file_path
+                """,
+                {"path": path},
+            )
+            return [
+                {
+                    "name": r["name"],
+                    "symbol_type": r["symbol_type"],
+                    "file_path": r["file_path"],
+                }
+                for r in result
+            ]
+
+    def get_dependencies_by_path(self, path: str) -> list[dict[str, Any]]:
+        """Get imports/dependencies for a file."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                """
+                MATCH (f:CodeFile {path: $path})
+                MATCH (f)<-[:IMPORTS]-(i:CodeImport)
+                RETURN i.module as module, i.line_number as line_number, i.is_from as is_from
+                """,
+                {"path": path},
+            )
+            return [
+                {
+                    "module": r["module"],
+                    "line_number": r["line_number"],
+                    "is_from": r["is_from"],
+                }
+                for r in result
+            ]
+
+    def get_tests_for_file(self, path: str) -> list[dict[str, Any]]:
+        """Get test files related to a source file."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                """
+                MATCH (f:CodeFile {path: $path})
+                MATCH (tf:CodeFile)<-[:DEFINES]-(ts:CodeSymbol {is_test: true})
+                WHERE tf.path CONTAINS 'test' OR tf.path CONTAINS 'spec'
+                RETURN tf.path as path, ts.symbol_type as symbol_type
+                """,
+                {"path": path},
+            )
+            return [
+                {"path": r["path"], "symbol_type": r["symbol_type"]}
+                for r in result
+            ]

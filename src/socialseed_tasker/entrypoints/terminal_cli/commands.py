@@ -2148,6 +2148,139 @@ def code_graph_impact(
     console.print(Panel(table, title=f"[bold]Impact Analysis for '{symbol_name}'[/bold]"))
 
 
+@code_graph_app.command("calls")
+def code_graph_calls(
+    path: str = typer.Argument(..., help="File or symbol path"),
+) -> None:
+    """Find all functions that call a specific function/method."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = CodeGraphRepository(driver)
+    callers = repo.get_callers_by_path(path)
+
+    if not callers:
+        console.print(f"[info]No callers found for '{path}'[/info]")
+        return
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Caller", width=30)
+    table.add_column("Type", width=15)
+    table.add_column("File", width=30)
+
+    for caller in callers:
+        table.add_row(
+            caller.get("name", ""),
+            caller.get("symbol_type", ""),
+            caller.get("file_path", ""),
+        )
+
+    console.print(Panel(table, title=f"[bold]Callers of '{path}'[/bold]"))
+
+
+@code_graph_app.command("depends")
+def code_graph_depends(
+    path: str = typer.Argument(..., help="File or symbol path"),
+) -> None:
+    """Find dependencies (imports) for a file."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = CodeGraphRepository(driver)
+    deps = repo.get_dependencies_by_path(path)
+
+    if not deps:
+        console.print(f"[info]No dependencies found for '{path}'[/info]")
+        return
+
+    table = Table(show_header=True, header_style="bold yellow")
+    table.add_column("Module", width=40)
+    table.add_column("Line", width=8)
+    table.add_column("Type", width=10)
+
+    for dep in deps:
+        table.add_row(
+            dep.get("module", ""),
+            str(dep.get("line_number", "-")),
+            "from" if dep.get("is_from") else "import",
+        )
+
+    console.print(Panel(table, title=f"[bold]Dependencies of '{path}'[/bold]"))
+
+
+@code_graph_app.command("tests")
+def code_graph_tests(
+    path: str = typer.Argument(..., help="Source file path"),
+) -> None:
+    """Find test files related to a source file."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = CodeGraphRepository(driver)
+    tests = repo.get_tests_for_file(path)
+
+    if not tests:
+        console.print(f"[info]No test files found for '{path}'[/info]")
+        return
+
+    table = Table(show_header=True, header_style="bold green")
+    table.add_column("Test File", width=50)
+    table.add_column("Type", width=15)
+
+    for test in tests:
+        table.add_row(
+            test.get("path", ""),
+            test.get("symbol_type", ""),
+        )
+
+    console.print(Panel(table, title=f"[bold]Tests for '{path}'[/bold]"))
+
+
+@code_graph_app.command("file")
+def code_graph_file(
+    path: str = typer.Argument(..., help="File path to show details"),
+) -> None:
+    """Show detailed information about a file in the graph."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = CodeGraphRepository(driver)
+    file_data = repo.get_file_by_path(path, "")
+
+    if not file_data:
+        console.print(f"[error]File not found in graph: {path}[/error]")
+        return
+
+    console.print(Panel(
+        f"[bold]File:[/bold] {file_data.get('name', path)}\n"
+        f"[bold]Path:[/bold] {file_data.get('path', 'N/A')}\n"
+        f"[bold]Language:[/bold] {file_data.get('language', 'N/A')}\n"
+        f"[bold]Lines:[/bold] {file_data.get('lines_of_code', 0)}\n"
+        f"[bold]Hash:[/bold] {file_data.get('file_hash', 'N/A')[:16]}...",
+        title=f"[bold]File Details[/bold]",
+    ))
+
+
 # ==================== RAG Commands ====================
 
 rag_app = typer.Typer(help="RAG (Retrieval-Augmented Generation) commands")
