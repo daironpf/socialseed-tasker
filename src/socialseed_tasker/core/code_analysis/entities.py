@@ -37,6 +37,7 @@ class CodeFile(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid4()))
     path: str = Field(..., min_length=1)
+    name: str = Field(..., min_length=1)
     language: str = Field(..., min_length=1)
     lines_of_code: int = Field(default=0, ge=0)
     file_hash: str | None = None

@@ -117,6 +117,7 @@ class CodeGraphParser:
 
             code_file = CodeFile(
                 path=str(file_path.relative_to(repo_path)),
+                name=file_path.name,
                 language=language,
                 lines_of_code=len(file_content.splitlines()),
                 file_hash=file_hash,
@@ -168,12 +169,21 @@ class CodeGraphParser:
     def _iter_source_files(self, repo_path: Path) -> list[Path]:
         """Iterate over source files in the repository."""
         source_files = []
-        exclude_dirs = {".git", "__pycache__", "node_modules", "venv", ".venv", "dist", "build"}
+        exclude_dirs = {
+            ".git", "__pycache__", "node_modules", "venv", ".venv", 
+            "dist", "build", "assets", "static", "public", "vendor",
+            "tests/data", "fixtures"
+        }
 
         for root, dirs, files in os.walk(repo_path):
+            # Modificar dirs in-place para que os.walk no entre en ellos
             dirs[:] = [d for d in dirs if d not in exclude_dirs]
 
             for file in files:
+                # Ignorar archivos minificados o bundles
+                if ".min." in file or "-min." in file:
+                    continue
+                
                 ext = Path(file).suffix
                 if ext in LANGUAGE_EXTENSIONS:
                     source_files.append(Path(root) / file)
@@ -304,7 +314,7 @@ class CodeGraphParser:
                     relationships.append(CodeRelationship(
                         source_id=file_id,
                         target_id=symbol.id,
-                        relationship_type=RelationshipType.CONTAINS
+                        relationship_type=RelationshipType.DEFINES
                     ))
                     # Traverse children with this class as parent
                     for child in node.children:
@@ -378,7 +388,7 @@ class CodeGraphParser:
                     imports.append(imp)
                     relationships.append(CodeRelationship(
                         source_id=file_id,
-                        target_id=file_id, # Simplified, ideally targets the other file
+                        target_id=imp.id,
                         relationship_type=RelationshipType.IMPORTS
                     ))
 
@@ -444,7 +454,7 @@ class CodeGraphParser:
                     )
                     symbols.append(symbol)
                     relationships.append(CodeRelationship(
-                        source_id=file_id, target_id=symbol.id, relationship_type=RelationshipType.CONTAINS
+                        source_id=file_id, target_id=symbol.id, relationship_type=RelationshipType.DEFINES
                     ))
                     for child in node.children: traverse(child, symbol.id)
                     return
@@ -479,8 +489,12 @@ class CodeGraphParser:
                     module_name = content[source_node.start_byte:source_node.end_byte].strip("'\"")
                 
                 if module_name:
-                    imports.append(CodeImport(
+                    imp = CodeImport(
                         file_id=file_id, module=module_name, line_number=node.start_point[0] + 1
+                    )
+                    imports.append(imp)
+                    relationships.append(CodeRelationship(
+                        source_id=file_id, target_id=imp.id, relationship_type=RelationshipType.IMPORTS
                     ))
 
             elif node.type == "call_expression":
@@ -526,6 +540,9 @@ class CodeGraphParser:
                         is_test=is_test, parent_symbol_id=parent_id
                     )
                     symbols.append(symbol)
+                    relationships.append(CodeRelationship(
+                        source_id=file_id, target_id=symbol.id, relationship_type=RelationshipType.DEFINES
+                    ))
                     for child in node.children: traverse(child, symbol.id)
                     return
             elif node.type == "method_declaration":
@@ -539,6 +556,11 @@ class CodeGraphParser:
                         is_test=is_test, parent_symbol_id=parent_id
                     )
                     symbols.append(symbol)
+                    relationships.append(CodeRelationship(
+                        source_id=parent_id or file_id,
+                        target_id=symbol.id,
+                        relationship_type=RelationshipType.DEFINES if not parent_id else RelationshipType.CONTAINS
+                    ))
             for child in node.children: traverse(child, parent_id)
 
         traverse(tree.root_node)
@@ -573,6 +595,9 @@ class CodeGraphParser:
                         is_test=is_test, parent_symbol_id=parent_id
                     )
                     symbols.append(symbol)
+                    relationships.append(CodeRelationship(
+                        source_id=file_id, target_id=symbol.id, relationship_type=RelationshipType.DEFINES
+                    ))
                     for child in node.children: traverse(child, symbol.id)
                     return
             elif node.type == "function_definition":
@@ -587,6 +612,11 @@ class CodeGraphParser:
                         is_test=is_test, parent_symbol_id=parent_id
                     )
                     symbols.append(symbol)
+                    relationships.append(CodeRelationship(
+                        source_id=parent_id or file_id,
+                        target_id=symbol.id,
+                        relationship_type=RelationshipType.DEFINES if not parent_id else RelationshipType.CONTAINS
+                    ))
             for child in node.children: traverse(child, parent_id)
 
         traverse(tree.root_node)

@@ -2052,12 +2052,14 @@ def code_graph_files(
 
     table = Table(show_header=True, header_style="bold cyan")
     table.add_column("Path", width=50)
+    table.add_column("Name", width=30)
     table.add_column("Language", width=15)
     table.add_column("Lines", width=8)
 
     for f in files:
         table.add_row(
             f.get("path", ""),
+            f.get("name", ""),
             f.get("language", ""),
             str(f.get("lines_of_code", 0)),
         )
@@ -2109,6 +2111,41 @@ def code_graph_clear(
     repo = CodeGraphRepository(driver)
     repo.clear()
     console.print("[success]Code graph cleared[/success]")
+
+
+@code_graph_app.command("impact")
+def code_graph_impact(
+    symbol_name: str = typer.Argument(..., help="Symbol name to analyze impact for"),
+) -> None:
+    """Analyze the impact of changing a symbol (find all callers)."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = CodeGraphRepository(driver)
+    callers = repo.get_callers(symbol_name)
+
+    if not callers:
+        console.print(f"[info]No direct callers found for symbol '{symbol_name}'[/info]")
+        return
+
+    table = Table(show_header=True, header_style="bold magenta")
+    table.add_column("Caller Symbol", width=30)
+    table.add_column("Type", width=15)
+    table.add_column("File ID", width=40)
+
+    for caller in callers:
+        table.add_row(
+            caller.get("name", ""),
+            caller.get("symbol_type", ""),
+            caller.get("file_id", ""),
+        )
+
+    console.print(Panel(table, title=f"[bold]Impact Analysis for '{symbol_name}'[/bold]"))
 
 
 # Create the main app with all command groups
