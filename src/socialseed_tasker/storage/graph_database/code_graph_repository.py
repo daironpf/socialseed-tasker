@@ -166,74 +166,51 @@ class CodeGraphRepository:
             relationships: List of relationships to save
         """
         with self._driver.session() as session:
-            with session.begin_transaction() as tx:
-                for file in files:
-                    tx.run(
-                        CODE_GRAPH_QUERIES["create_file"],
-                        id=str(file.id),
-                        path=file.path,
-                        language=file.language,
-                        lines_of_code=file.lines_of_code,
-                        file_hash=file.file_hash,
-                        commit_sha=file.commit_sha,
-                        scanned_at=file.scanned_at.isoformat(),
-                        repository_path=file.repository_path,
-                    )
+            for file in files:
+                session.run(
+                    CODE_GRAPH_QUERIES["create_file"],
+                    {"id": str(file.id), "path": file.path, "language": file.language,
+                     "lines_of_code": file.lines_of_code, "file_hash": file.file_hash,
+                     "commit_sha": file.commit_sha, "scanned_at": file.scanned_at.isoformat(),
+                     "repository_path": file.repository_path}
+                )
 
-                for symbol in symbols:
-                    tx.run(
-                        CODE_GRAPH_QUERIES["create_symbol"],
-                        id=str(symbol.id),
-                        name=symbol.name,
-                        symbol_type=symbol.symbol_type.value,
-                        file_id=str(symbol.file_id),
-                        start_line=symbol.start_line,
-                        end_line=symbol.end_line,
-                        start_column=symbol.start_column,
-                        end_column=symbol.end_column,
-                        parameters=symbol.parameters,
-                        return_type=symbol.return_type,
-                        decorators=symbol.decorators,
-                        is_test=symbol.is_test,
-                        parent_symbol_id=str(symbol.parent_symbol_id) if symbol.parent_symbol_id else None,
-                    )
+            for symbol in symbols:
+                session.run(
+                    CODE_GRAPH_QUERIES["create_symbol"],
+                    {"id": str(symbol.id), "name": symbol.name, "symbol_type": symbol.symbol_type.value,
+                     "file_id": str(symbol.file_id), "start_line": symbol.start_line, "end_line": symbol.end_line,
+                     "start_column": symbol.start_column, "end_column": symbol.end_column,
+                     "parameters": symbol.parameters, "return_type": symbol.return_type,
+                     "decorators": symbol.decorators, "is_test": symbol.is_test,
+                     "parent_symbol_id": str(symbol.parent_symbol_id) if symbol.parent_symbol_id else None}
+                )
 
-                    tx.run(
-                        CODE_GRAPH_QUERIES["link_file_to_symbol"],
-                        file_id=str(symbol.file_id),
-                        symbol_id=str(symbol.id),
-                    )
+                session.run(
+                    CODE_GRAPH_QUERIES["link_file_to_symbol"],
+                    {"file_id": str(symbol.file_id), "symbol_id": str(symbol.id)}
+                )
 
-                for imp in imports:
-                    tx.run(
-                        CODE_GRAPH_QUERIES["create_import"],
-                        id=str(imp.id),
-                        file_id=str(imp.file_id),
-                        module=imp.module,
-                        names=imp.names,
-                        alias=imp.alias,
-                        line_number=imp.line_number,
-                        is_from=imp.is_from,
-                    )
+            for imp in imports:
+                session.run(
+                    CODE_GRAPH_QUERIES["create_import"],
+                    {"id": str(imp.id), "file_id": str(imp.file_id), "module": imp.module,
+                     "names": imp.names, "alias": imp.alias, "line_number": imp.line_number,
+                     "is_from": imp.is_from}
+                )
 
-                    tx.run(
-                        CODE_GRAPH_QUERIES["link_file_to_import"],
-                        file_id=str(imp.file_id),
-                        import_id=str(imp.id),
-                    )
+                session.run(
+                    CODE_GRAPH_QUERIES["link_file_to_import"],
+                    {"file_id": str(imp.file_id), "import_id": str(imp.id)}
+                )
 
-                for rel in relationships:
-                    tx.run(
-                        CODE_GRAPH_QUERIES["create_relationship"],
-                        id=str(rel.id),
-                        source_id=str(rel.source_id),
-                        target_id=str(rel.target_id),
-                        relationship_type=rel.relationship_type.value,
-                        created_at=rel.created_at.isoformat(),
-                        commit_sha=rel.commit_sha,
-                    )
-
-                tx.commit()
+            for rel in relationships:
+                session.run(
+                    CODE_GRAPH_QUERIES["create_relationship"],
+                    {"id": str(rel.id), "source_id": str(rel.source_id), "target_id": str(rel.target_id),
+                     "relationship_type": rel.relationship_type.value,
+                     "created_at": rel.created_at.isoformat(), "commit_sha": rel.commit_sha}
+                )
 
     def get_files(self, limit: int = 50) -> list[dict[str, Any]]:
         """Get code files from the graph."""

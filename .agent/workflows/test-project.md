@@ -6,21 +6,52 @@ When instructed to "prueba el proyecto" (test the project) or "test the project"
 
 ## Purpose
 
-1. Create a temporary test environment
-2. Test all project features systematically
-3. Identify bugs, issues, or improvements needed
-4. Create actionable issues in `.issues/to-do/` for any problems found
-5. Commit resolved issues and push to remote
+1. Rebuild project containers with latest code
+2. Create a temporary test environment
+3. Test all project features systematically
+4. Identify bugs, issues, or improvements needed
+5. Create actionable issues in `.issues/to-do/` for any problems found
+6. Commit resolved issues and push to remote
 
 ## Prerequisites
 
 - Python 3.10+ installed
 - Git available
 - Access to project source code
+- Docker available
 
 ## Steps
 
-### 1. Setup Temporary Test Environment
+### 1. Rebuild Docker Containers (Always Required)
+
+```bash
+# Navigate to project directory
+cd <project_path>
+
+# Stop any running containers
+docker compose down
+
+# Rebuild containers with latest code
+docker compose build --no-cache
+
+# Start containers
+docker compose up -d
+
+# Wait for services to be ready
+sleep 10
+```
+
+### 2. Verify Services are Running
+
+```bash
+# Check container status
+docker compose ps
+
+# Test API health
+curl -s http://localhost:8000/health
+```
+
+### 3. Setup Temporary Test Environment (Optional - for CLI testing)
 
 ```bash
 # Create temporary directory
@@ -31,7 +62,7 @@ cd temp_test_<project_name>
 pip install -e "<absolute_path_to_project>[dev]"
 ```
 
-### 2. Test Core Functionality
+### 4. Test Core Functionality
 
 Test each feature systematically:
 
@@ -42,7 +73,23 @@ Test each feature systematically:
 - **CLI Analysis**: root-cause, impact
 - **CLI System**: init, status
 - **API Endpoints**: All REST endpoints if testable
-- **Storage Backends**: file, neo4j (if available)
+- **Storage Backends**: Neo4j only (required)
+
+#### Code-as-Graph Testing (Issue #208):
+```bash
+# Test API endpoint - scan repository
+curl -X POST "http://localhost:8000/api/v1/code-graph/scan?repository_path=src&incremental=false"
+
+# Test API endpoint - get files
+curl -s "http://localhost:8000/api/v1/code-graph/files"
+
+# Test API endpoint - get stats
+curl -s "http://localhost:8000/api/v1/code-graph/stats"
+
+# Test CLI command (if CLI container available)
+docker exec tasker-api tasker code-graph scan /app --incremental
+docker exec tasker-api tasker code-graph stats
+```
 
 ### 3. Document Results
 
@@ -84,15 +131,22 @@ If issues are simple fixes, you may:
 ### 6. Cleanup
 
 ```bash
-# Remove temporary test directory
+# Remove temporary test directory (if created)
 cd ..
 rm -rf temp_test_<project_name>
+
+# Optional: Stop containers after testing
+# docker compose down
 ```
 
 ## Important Notes
 
-- Always test with fresh data (don't use production data)
-- Test both storage backends if possible (file and neo4j)
+- **ALWAYS rebuild containers** before testing - new code won't be available otherwise
+- Use `docker compose build --no-cache` to ensure fresh code
+- Always verify services are running before testing (`curl http://localhost:8000/health`)
+- Test Code-as-Graph features by scanning the project itself
+- Test with fresh data (don't use production data)
+- Test both storage backends if possible (Neo4j required for most features)
 - Verify all tests pass before considering testing complete
 - Create clear, actionable issues with reproduction steps
 - Follow project's commit conventions when making fixes

@@ -36,13 +36,13 @@ This directory contains the operational knowledge for AI agents working on this 
 
 | Attribute | Value |
 |-----------|-------|
-| Version | **0.8.0** |
+| Version | **0.9.0** |
 | Storage | Neo4j only |
 | Architecture | Hexagonal (Feature-Oriented) |
 | Entry Points | CLI (Typer), REST API (FastAPI) |
 | Branch | `main` |
 
-## Key Features (v0.8.0)
+## Key Features (v0.9.0)
 
 - **Input Validation**: XSS and Neo4j injection prevention
 - **API Authentication**: `TASKER_API_KEY` + `TASKER_AUTH_ENABLED`
@@ -51,6 +51,7 @@ This directory contains the operational knowledge for AI agents working on this 
 - **Impact Analysis**: Component and issue impact analysis
 - **Project Dashboard**: Summary with dependency health metrics
 - **Dependency Graph**: Full graph visualization endpoint
+- **Code-as-Graph**: Tree-sitter powered code parsing to Neo4j graph
 
 ## CLI Commands
 
@@ -84,6 +85,13 @@ tasker seed run
 # Init (scaffold)
 tasker init <path>
 tasker init <path> --force
+
+# Code-as-Graph (v0.9.0)
+tasker code-graph scan <path> --incremental
+tasker code-graph find <name>
+tasker code-graph files
+tasker code-graph stats
+tasker code-graph clear
 ```
 
 ## API Endpoints
@@ -105,6 +113,11 @@ tasker init <path> --force
 | `/api/v1/sync/status` | GET | Sync status |
 | `/api/v1/sync/queue` | GET | Sync queue |
 | `/api/v1/webhooks/github/test` | GET | Webhook test |
+| `/api/v1/code-graph/scan` | POST | Scan repository to graph |
+| `/api/v1/code-graph/files` | GET | List files in graph |
+| `/api/v1/code-graph/symbols` | GET | Query code symbols |
+| `/api/v1/code-graph/stats` | GET | Code graph statistics |
+| `/api/v1/code-graph` | DELETE | Clear code graph data |
 
 ## Environment Variables
 
@@ -182,6 +195,7 @@ docker compose down -v
 | Agent Lifecycle | ✅ | #81 |
 | Policy Enforcement | ✅ | #82 |
 | Constraints System | ✅ | #126 |
+| Code-as-Graph | ✅ | #208 |
 
 ## Skills Reference
 

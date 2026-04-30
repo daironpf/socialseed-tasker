@@ -132,7 +132,38 @@ class CodeGraphParser:
             imports.extend(file_imports)
             relationships.extend(file_relationships)
 
-        return files, symbols, imports, relationships
+        # Second pass: Resolve CALLS relationships
+        symbol_map = {s.name: s.id for s in symbols}
+
+        # Build import map for external resolution
+        import_map: dict[str, list[str]] = {}
+        for imp in imports:
+            if imp.module not in import_map:
+                import_map[imp.module] = []
+            import_map[imp.module].extend(imp.names)
+
+        resolved_relationships = []
+        for rel in relationships:
+            if rel.relationship_type == RelationshipType.CALLS:
+                if rel.target_id in symbol_map:
+                    resolved_relationships.append(rel.model_copy(update={"target_id": symbol_map[rel.target_id]}))
+                else:
+                    # Check if it's an external call (module.function)
+                    if "." in rel.target_id:
+                        module_name = rel.target_id.split(".")[0]
+                        if module_name in import_map:
+                            prefix = f"imported:{rel.target_id}"
+                        else:
+                            prefix = f"external:{rel.target_id}"
+                        resolved_relationships.append(rel.model_copy(update={"target_id": prefix}))
+                    else:
+                        # Local call but not found - mark as unresolved
+                        unresolved_id = f"unresolved:{rel.target_id}"
+                        resolved_relationships.append(rel.model_copy(update={"target_id": unresolved_id}))
+            else:
+                resolved_relationships.append(rel)
+
+        return files, symbols, imports, resolved_relationships
 
     def _iter_source_files(self, repo_path: Path) -> list[Path]:
         """Iterate over source files in the repository."""
@@ -203,10 +234,362 @@ class CodeGraphParser:
         is_test = any(pattern.match(file_path.name) for pattern in TEST_PATTERNS)
 
         if language == "python":
-            symbols, imports, relationships = self._parse_python(content, file_id, is_test)
+            if self._tree_sitter_available:
+                try:
+                    symbols, imports, relationships = self._parse_python_tree_sitter(content, file_id, is_test)
+                except Exception:
+                    symbols, imports, relationships = self._parse_python(content, file_id, is_test)
+            else:
+                symbols, imports, relationships = self._parse_python(content, file_id, is_test)
         elif language in ("javascript", "typescript"):
-            symbols, imports, relationships = self._parse_js_ts(content, file_id, is_test, language)
+            if self._tree_sitter_available:
+                try:
+                    symbols, imports, relationships = self._parse_js_ts_tree_sitter(content, file_id, is_test, language)
+                except Exception:
+                    symbols, imports, relationships = self._parse_js_ts(content, file_id, is_test, language)
+            else:
+                symbols, imports, relationships = self._parse_js_ts(content, file_id, is_test, language)
+        elif language == "java":
+            if self._tree_sitter_available:
+                try:
+                    symbols, imports, relationships = self._parse_java_tree_sitter(content, file_id, is_test)
+                except Exception:
+                    pass # Basic fallback not implemented
+        elif language == "cpp":
+            if self._tree_sitter_available:
+                try:
+                    symbols, imports, relationships = self._parse_cpp_tree_sitter(content, file_id, is_test)
+                except Exception:
+                    pass
 
+        return symbols, imports, relationships
+
+    def _parse_python_tree_sitter(
+        self,
+        content: str,
+        file_id: str,
+        is_test: bool,
+    ) -> tuple[list[CodeSymbol], list[CodeImport], list[CodeRelationship]]:
+        """Parse Python source code using tree-sitter."""
+        from tree_sitter import Language, Parser
+        import tree_sitter_python as tspython
+
+        PY_LANGUAGE = Language(tspython.language())
+        parser = Parser(PY_LANGUAGE)
+
+        tree = parser.parse(content.encode())
+        root_node = tree.root_node
+
+        symbols: list[CodeSymbol] = []
+        imports: list[CodeImport] = []
+        relationships: list[CodeRelationship] = []
+
+        def traverse(node, parent_id=None):
+            if node.type == "class_definition":
+                name_node = node.child_by_field_name("name")
+                if name_node:
+                    class_name = content[name_node.start_byte:name_node.end_byte]
+                    symbol = CodeSymbol(
+                        name=class_name,
+                        symbol_type=SymbolType.CLASS,
+                        file_id=file_id,
+                        start_line=node.start_point[0] + 1,
+                        end_line=node.end_point[0] + 1,
+                        start_column=node.start_point[1],
+                        end_column=node.end_point[1],
+                        is_test=is_test,
+                        parent_symbol_id=parent_id
+                    )
+                    symbols.append(symbol)
+                    relationships.append(CodeRelationship(
+                        source_id=file_id,
+                        target_id=symbol.id,
+                        relationship_type=RelationshipType.CONTAINS
+                    ))
+                    # Traverse children with this class as parent
+                    for child in node.children:
+                        traverse(child, symbol.id)
+                    return
+
+            elif node.type == "function_definition":
+                name_node = node.child_by_field_name("name")
+                if name_node:
+                    func_name = content[name_node.start_byte:name_node.end_byte]
+                    
+                    # Extract parameters
+                    params = []
+                    params_node = node.child_by_field_name("parameters")
+                    if params_node:
+                        for p in params_node.children:
+                            if p.type in ("identifier", "typed_parameter", "default_parameter"):
+                                params.append(content[p.start_byte:p.end_byte])
+
+                    # Extract return type
+                    return_type = None
+                    return_type_node = node.child_by_field_name("return_type")
+                    if return_type_node:
+                        return_type = content[return_type_node.start_byte:return_type_node.end_byte]
+
+                    symbol = CodeSymbol(
+                        name=func_name,
+                        symbol_type=SymbolType.METHOD if parent_id else SymbolType.FUNCTION,
+                        file_id=file_id,
+                        start_line=node.start_point[0] + 1,
+                        end_line=node.end_point[0] + 1,
+                        start_column=node.start_point[1],
+                        end_column=node.end_point[1],
+                        parameters=params,
+                        return_type=return_type,
+                        is_test=is_test or func_name.startswith("test_"),
+                        parent_symbol_id=parent_id
+                    )
+                    symbols.append(symbol)
+                    relationships.append(CodeRelationship(
+                        source_id=parent_id if parent_id else file_id,
+                        target_id=symbol.id,
+                        relationship_type=RelationshipType.DEFINES if not parent_id else RelationshipType.CONTAINS
+                    ))
+
+            elif node.type in ("import_statement", "import_from_statement"):
+                module_name = ""
+                imported_names = []
+                
+                if node.type == "import_statement":
+                    for child in node.children:
+                        if child.type == "dotted_name":
+                            module_name = content[child.start_byte:child.end_byte]
+                else: # import_from_statement
+                    for child in node.children:
+                        if child.type == "dotted_name":
+                            module_name = content[child.start_byte:child.end_byte]
+                        elif child.type == "import_list":
+                            for name in child.children:
+                                if name.type == "dotted_name":
+                                    imported_names.append(content[name.start_byte:name.end_byte])
+                
+                if module_name:
+                    imp = CodeImport(
+                        file_id=file_id,
+                        module=module_name,
+                        names=imported_names,
+                        line_number=node.start_point[0] + 1,
+                        is_from=(node.type == "import_from_statement")
+                    )
+                    imports.append(imp)
+                    relationships.append(CodeRelationship(
+                        source_id=file_id,
+                        target_id=file_id, # Simplified, ideally targets the other file
+                        relationship_type=RelationshipType.IMPORTS
+                    ))
+
+            elif node.type == "call":
+                # Basic call detection
+                func_node = node.child_by_field_name("function")
+                if func_node:
+                    called_name = content[func_node.start_byte:func_node.end_byte]
+                    # We can't easily resolve the target_id here without a second pass
+                    # So we'll just record it as a relationship if we're inside a function
+                    if parent_id:
+                        relationships.append(CodeRelationship(
+                            source_id=parent_id,
+                            target_id=called_name, # Placeholder, should be resolved later
+                            relationship_type=RelationshipType.CALLS
+                        ))
+
+            for child in node.children:
+                traverse(child, parent_id)
+
+        traverse(root_node)
+        return symbols, imports, relationships
+
+    def _parse_js_ts_tree_sitter(
+        self,
+        content: str,
+        file_id: str,
+        is_test: bool,
+        language: str,
+    ) -> tuple[list[CodeSymbol], list[CodeImport], list[CodeRelationship]]:
+        """Parse JavaScript/TypeScript source code using tree-sitter."""
+        from tree_sitter import Language, Parser
+        if language == "typescript":
+            import tree_sitter_typescript as ts
+            lang = Language(ts.language_typescript())
+        else:
+            import tree_sitter_javascript as js
+            lang = Language(js.language())
+
+        parser = Parser(lang)
+        tree = parser.parse(content.encode())
+        root_node = tree.root_node
+
+        symbols: list[CodeSymbol] = []
+        imports: list[CodeImport] = []
+        relationships: list[CodeRelationship] = []
+
+        def traverse(node, parent_id=None):
+            if node.type == "class_declaration":
+                name_node = node.child_by_field_name("name")
+                if name_node:
+                    class_name = content[name_node.start_byte:name_node.end_byte]
+                    symbol = CodeSymbol(
+                        name=class_name,
+                        symbol_type=SymbolType.CLASS,
+                        file_id=file_id,
+                        start_line=node.start_point[0] + 1,
+                        end_line=node.end_point[0] + 1,
+                        start_column=node.start_point[1],
+                        end_column=node.end_point[1],
+                        is_test=is_test,
+                        parent_symbol_id=parent_id
+                    )
+                    symbols.append(symbol)
+                    relationships.append(CodeRelationship(
+                        source_id=file_id, target_id=symbol.id, relationship_type=RelationshipType.CONTAINS
+                    ))
+                    for child in node.children: traverse(child, symbol.id)
+                    return
+
+            elif node.type in ("function_declaration", "method_definition"):
+                name_node = node.child_by_field_name("name")
+                if name_node:
+                    func_name = content[name_node.start_byte:name_node.end_byte]
+                    symbol = CodeSymbol(
+                        name=func_name,
+                        symbol_type=SymbolType.METHOD if parent_id else SymbolType.FUNCTION,
+                        file_id=file_id,
+                        start_line=node.start_point[0] + 1,
+                        end_line=node.end_point[0] + 1,
+                        start_column=node.start_point[1],
+                        end_column=node.end_point[1],
+                        is_test=is_test or func_name.startswith("test"),
+                        parent_symbol_id=parent_id
+                    )
+                    symbols.append(symbol)
+                    relationships.append(CodeRelationship(
+                        source_id=parent_id or file_id,
+                        target_id=symbol.id,
+                        relationship_type=RelationshipType.DEFINES if not parent_id else RelationshipType.CONTAINS
+                    ))
+
+            elif node.type == "import_statement":
+                # Very basic import extraction for JS
+                module_name = ""
+                source_node = node.child_by_field_name("source")
+                if source_node:
+                    module_name = content[source_node.start_byte:source_node.end_byte].strip("'\"")
+                
+                if module_name:
+                    imports.append(CodeImport(
+                        file_id=file_id, module=module_name, line_number=node.start_point[0] + 1
+                    ))
+
+            elif node.type == "call_expression":
+                func_node = node.child_by_field_name("function")
+                if func_node and parent_id:
+                    called_name = content[func_node.start_byte:func_node.end_byte]
+                    relationships.append(CodeRelationship(
+                        source_id=parent_id, target_id=called_name, relationship_type=RelationshipType.CALLS
+                    ))
+
+            for child in node.children:
+                traverse(child, parent_id)
+
+        traverse(root_node)
+        return symbols, imports, relationships
+
+    def _parse_java_tree_sitter(
+        self,
+        content: str,
+        file_id: str,
+        is_test: bool,
+    ) -> tuple[list[CodeSymbol], list[CodeImport], list[CodeRelationship]]:
+        """Parse Java source code using tree-sitter."""
+        from tree_sitter import Language, Parser
+        import tree_sitter_java as tsjava
+        lang = Language(tsjava.language())
+        parser = Parser(lang)
+        tree = parser.parse(content.encode())
+        
+        symbols: list[CodeSymbol] = []
+        imports: list[CodeImport] = []
+        relationships: list[CodeRelationship] = []
+
+        def traverse(node, parent_id=None):
+            if node.type == "class_declaration":
+                name_node = node.child_by_field_name("name")
+                if name_node:
+                    class_name = content[name_node.start_byte:name_node.end_byte]
+                    symbol = CodeSymbol(
+                        name=class_name, symbol_type=SymbolType.CLASS, file_id=file_id,
+                        start_line=node.start_point[0] + 1, end_line=node.end_point[0] + 1,
+                        start_column=node.start_point[1], end_column=node.end_point[1],
+                        is_test=is_test, parent_symbol_id=parent_id
+                    )
+                    symbols.append(symbol)
+                    for child in node.children: traverse(child, symbol.id)
+                    return
+            elif node.type == "method_declaration":
+                name_node = node.child_by_field_name("name")
+                if name_node:
+                    func_name = content[name_node.start_byte:name_node.end_byte]
+                    symbol = CodeSymbol(
+                        name=func_name, symbol_type=SymbolType.METHOD, file_id=file_id,
+                        start_line=node.start_point[0] + 1, end_line=node.end_point[0] + 1,
+                        start_column=node.start_point[1], end_column=node.end_point[1],
+                        is_test=is_test, parent_symbol_id=parent_id
+                    )
+                    symbols.append(symbol)
+            for child in node.children: traverse(child, parent_id)
+
+        traverse(tree.root_node)
+        return symbols, imports, relationships
+
+    def _parse_cpp_tree_sitter(
+        self,
+        content: str,
+        file_id: str,
+        is_test: bool,
+    ) -> tuple[list[CodeSymbol], list[CodeImport], list[CodeRelationship]]:
+        """Parse C++ source code using tree-sitter."""
+        from tree_sitter import Language, Parser
+        import tree_sitter_cpp as tscpp
+        lang = Language(tscpp.language())
+        parser = Parser(lang)
+        tree = parser.parse(content.encode())
+        
+        symbols: list[CodeSymbol] = []
+        imports: list[CodeImport] = []
+        relationships: list[CodeRelationship] = []
+
+        def traverse(node, parent_id=None):
+            if node.type in ("class_specifier", "struct_specifier"):
+                name_node = node.child_by_field_name("name")
+                if name_node:
+                    class_name = content[name_node.start_byte:name_node.end_byte]
+                    symbol = CodeSymbol(
+                        name=class_name, symbol_type=SymbolType.CLASS, file_id=file_id,
+                        start_line=node.start_point[0] + 1, end_line=node.end_point[0] + 1,
+                        start_column=node.start_point[1], end_column=node.end_point[1],
+                        is_test=is_test, parent_symbol_id=parent_id
+                    )
+                    symbols.append(symbol)
+                    for child in node.children: traverse(child, symbol.id)
+                    return
+            elif node.type == "function_definition":
+                declarator = node.child_by_field_name("declarator")
+                if declarator:
+                    # C++ declarators can be complex, this is a simplification
+                    func_name = content[declarator.start_byte:declarator.end_byte]
+                    symbol = CodeSymbol(
+                        name=func_name, symbol_type=SymbolType.FUNCTION, file_id=file_id,
+                        start_line=node.start_point[0] + 1, end_line=node.end_point[0] + 1,
+                        start_column=node.start_point[1], end_column=node.end_point[1],
+                        is_test=is_test, parent_symbol_id=parent_id
+                    )
+                    symbols.append(symbol)
+            for child in node.children: traverse(child, parent_id)
+
+        traverse(tree.root_node)
         return symbols, imports, relationships
 
     def _parse_python(

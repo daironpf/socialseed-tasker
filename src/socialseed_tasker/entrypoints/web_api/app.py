@@ -342,8 +342,9 @@ def create_app(
 
         return result
 
-    # Dependency injection - provide repository to all routes
+    # Dependency injection - provide repository and driver to all routes
     app.state.repository = repository
+    app.state.driver = neo4j_driver
 
     # Provide config to routes for policy enforcement mode
     if hasattr(repository, "_driver") and hasattr(repository._driver, "_config"):
