@@ -44,6 +44,16 @@ A specialized framework that leverages **Neo4j** to provide AI agents with infin
 - **Incremental Scanning**: Git-aware scanning that only processes modified files for near-instant graph updates.
 - **Cross-File Dependency Mapping**: Automatically map `CALLS` and `IMPORTS` relationships across the entire repository.
 
+### RAG Native (Vector Search)
+- **Semantic Search**: Find similar issues and code using vector embeddings.
+- **Chunking Strategies**: Paragraph, line, and sentence-based chunking.
+- **OpenAI Integration**: Use OpenAI embeddings for production, fallback for development.
+
+### AI Reasoning Logs
+- **Decision Tracking**: Record agent reasoning for transparency.
+- **Confidence Scores**: Track decision confidence levels.
+- **Feedback Loop**: Human approval/rejection of agent decisions.
+
 ### Performance & Monitoring
 - **Response Time Headers**: `X-Response-Time-Ms` on all API responses
 - **Slow Request Logging**: Configurable threshold for performance monitoring
