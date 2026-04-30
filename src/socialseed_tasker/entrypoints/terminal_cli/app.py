@@ -106,6 +106,9 @@ app.command(name="logout", help="Clear saved credentials")(commands.logout_comma
 # Register seed command
 app.add_typer(commands.seed_app, name="seed", help="Seed demo data for first-time users")
 
+# Register code graph commands
+app.add_typer(commands.code_graph_app, name="code-graph", help="Manage code graph analysis")
+
 
 @app.callback(invoke_without_command=True)
 def main(
