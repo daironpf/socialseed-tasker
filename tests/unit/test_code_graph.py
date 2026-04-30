@@ -20,11 +20,13 @@ class TestCodeFileEntity:
         """Test creating a CodeFile entity."""
         file = CodeFile(
             path="src/main.py",
+            name="main.py",
             language="python",
             lines_of_code=100,
         )
 
         assert file.path == "src/main.py"
+        assert file.name == "main.py"
         assert file.language == "python"
         assert file.lines_of_code == 100
         assert file.id is not None
@@ -33,6 +35,7 @@ class TestCodeFileEntity:
         """Test creating a CodeFile with all fields."""
         file = CodeFile(
             path="src/utils/helper.py",
+            name="helper.py",
             language="python",
             lines_of_code=50,
             file_hash="abc123",
@@ -41,6 +44,7 @@ class TestCodeFileEntity:
         )
 
         assert file.file_hash == "abc123"
+        assert file.name == "helper.py"
         assert file.commit_sha == "def456"
         assert file.repository_path == "/repo"
 
@@ -386,6 +390,7 @@ class TestRepositoryStorage:
         files = [
             CodeFile(
                 path="src/main.py",
+                name="main.py",
                 language="python",
                 lines_of_code=100,
             )
@@ -402,9 +407,10 @@ class TestRepositoryStorage:
         from contextlib import contextmanager
 
         mock_driver = MagicMock()
+        mock_inner_driver = MagicMock()
 
         @contextmanager
-        def mock_session():
+        def mock_session(database=None):
             mock_session_obj = MagicMock()
             mock_result = MagicMock()
             mock_record = MagicMock()
@@ -418,7 +424,9 @@ class TestRepositoryStorage:
             mock_session_obj.run.return_value = mock_result
             yield mock_session_obj
 
-        mock_driver.session = mock_session
+        mock_inner_driver.session = mock_session
+        mock_driver.driver = mock_inner_driver
+        mock_driver.database = "neo4j"
 
         from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
 
@@ -435,6 +443,7 @@ class TestRepositoryStorage:
         from contextlib import contextmanager
 
         mock_driver = MagicMock()
+        mock_inner_driver = MagicMock()
 
         class MockRecord:
             def __getitem__(self, key):
@@ -443,7 +452,7 @@ class TestRepositoryStorage:
                 raise KeyError(key)
 
         @contextmanager
-        def mock_session():
+        def mock_session(database=None):
             mock_session_obj = MagicMock()
             mock_result = MagicMock()
             mock_record = MockRecord()
@@ -451,7 +460,9 @@ class TestRepositoryStorage:
             mock_session_obj.run.return_value = mock_result
             yield mock_session_obj
 
-        mock_driver.session = mock_session
+        mock_inner_driver.session = mock_session
+        mock_driver.driver = mock_inner_driver
+        mock_driver.database = "neo4j"
 
         from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
 
