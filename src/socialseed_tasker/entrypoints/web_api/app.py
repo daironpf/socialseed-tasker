@@ -276,6 +276,7 @@ def create_app(
         objective_router,
         policy_router,
         project_router,
+        rag_router,
         sync_router,
         webhook_router,
     )
@@ -298,6 +299,7 @@ def create_app(
     app.include_router(cost_analytics_router, prefix="/api/v1", tags=["cost_analytics"])
     app.include_router(ai_search_router, prefix="/api/v1/ai", tags=["ai_search"])
     app.include_router(code_graph_router, prefix="/api/v1/code-graph", tags=["code-graph"])
+    app.include_router(rag_router, prefix="/api/v1", tags=["rag"])
 
     # Health endpoint with Neo4j connectivity check
     @app.get("/health", tags=["health"])

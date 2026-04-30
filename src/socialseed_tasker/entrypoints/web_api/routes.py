@@ -3504,3 +3504,107 @@ async def code_graph_clear(driver: Any = Depends(get_code_graph_driver)) -> dict
     repo.clear()
 
     return {"status": "cleared"}
+
+
+# ==================== RAG (Retrieval-Augmented Generation) ====================
+
+rag_router = APIRouter(tags=["rag"])
+
+
+def get_rag_driver() -> Any:
+    """Get Neo4j driver for RAG."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+
+    return get_driver()
+
+
+@rag_router.post("/rag/index")
+async def rag_index(
+    source_type: str,
+    source_id: str,
+    content: str,
+    chunking_strategy: str = "paragraph",
+    driver: Any = Depends(get_rag_driver),
+) -> dict[str, Any]:
+    """Index content for RAG semantic search."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    repo = RAGRepository(driver)
+    repo.create_vector_index()
+
+    chunk_ids = repo.index_text(
+        text=content,
+        source_type=source_type,
+        source_id=source_id,
+        chunking_strategy=chunking_strategy,
+    )
+
+    return {"indexed": len(chunk_ids), "chunk_ids": chunk_ids}
+
+
+@rag_router.post("/rag/search")
+async def rag_search(
+    query: str,
+    limit: int = 5,
+    threshold: float = 0.7,
+    driver: Any = Depends(get_rag_driver),
+) -> dict[str, Any]:
+    """Search for similar content using vector similarity."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    repo = RAGRepository(driver)
+    results = repo.search(query=query, limit=limit, threshold=threshold)
+
+    return {"results": results, "count": len(results)}
+
+
+@rag_router.get("/rag/stats")
+async def rag_stats(driver: Any = Depends(get_rag_driver)) -> dict[str, Any]:
+    """Get RAG index statistics."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    repo = RAGRepository(driver)
+    stats = repo.get_stats()
+
+    return stats
+
+
+@rag_router.delete("/rag/{source_type}/{source_id}")
+async def rag_delete(
+    source_type: str,
+    source_id: str,
+    driver: Any = Depends(get_rag_driver),
+) -> dict[str, str]:
+    """Delete RAG embeddings for a source."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    repo = RAGRepository(driver)
+    repo.delete_by_source(source_type, source_id)
+
+    return {"status": "deleted"}
+
+
+@rag_router.delete("/rag")
+async def rag_clear(driver: Any = Depends(get_rag_driver)) -> dict[str, str]:
+    """Clear all RAG embeddings."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    repo = RAGRepository(driver)
+    repo.clear()
+
+    return {"status": "cleared"}

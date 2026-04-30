@@ -92,7 +92,13 @@ tasker code-graph find <name>
 tasker code-graph files
 tasker code-graph stats
 tasker code-graph clear
-```
+tasker code-graph impact <symbol>
+
+# RAG - Semantic Search (v0.9.0)
+tasker rag search <query> --limit 5
+tasker rag index --type issue --id <id> --content <text>
+tasker rag stats
+tasker rag clear
 
 ## API Endpoints
 
@@ -118,6 +124,11 @@ tasker code-graph clear
 | `/api/v1/code-graph/symbols` | GET | Query code symbols |
 | `/api/v1/code-graph/stats` | GET | Code graph statistics |
 | `/api/v1/code-graph` | DELETE | Clear code graph data |
+| `/api/v1/rag/index` | POST | Index content for RAG |
+| `/api/v1/rag/search` | POST | Semantic search |
+| `/api/v1/rag/stats` | GET | RAG index statistics |
+| `/api/v1/rag/{source_type}/{source_id}` | DELETE | Delete RAG embeddings |
+| `/api/v1/rag` | DELETE | Clear all RAG embeddings |
 
 ## Environment Variables
 
@@ -196,6 +207,7 @@ docker compose down -v
 | Policy Enforcement | ✅ | #82 |
 | Constraints System | ✅ | #126 |
 | Code-as-Graph | ✅ | #208 |
+| RAG (Semantic Search) | ✅ | #209 |
 
 ## Skills Reference
 

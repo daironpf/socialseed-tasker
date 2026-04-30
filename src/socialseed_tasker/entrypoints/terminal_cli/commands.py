@@ -2148,6 +2148,115 @@ def code_graph_impact(
     console.print(Panel(table, title=f"[bold]Impact Analysis for '{symbol_name}'[/bold]"))
 
 
+# ==================== RAG Commands ====================
+
+rag_app = typer.Typer(help="RAG (Retrieval-Augmented Generation) commands")
+
+
+@rag_app.command("search")
+def rag_search(
+    query: str = typer.Argument(..., help="Search query"),
+    limit: int = typer.Option(5, "--limit", "-l", help="Maximum results"),
+    threshold: float = typer.Option(0.7, "--threshold", "-t", help="Minimum similarity score"),
+) -> None:
+    """Search for similar content using semantic similarity."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = RAGRepository(driver)
+    results = repo.search(query=query, limit=limit, threshold=threshold)
+
+    if not results:
+        console.print("[info]No results found[/info]")
+        return
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Content", width=60)
+    table.add_column("Source", width=20)
+    table.add_column("Score", width=10)
+
+    for r in results:
+        content_preview = r["content"][:57] + "..." if len(r["content"]) > 60 else r["content"]
+        table.add_row(content_preview, f"{r['source_type']}:{r['source_id'][:8]}", f"{r['score']:.2f}")
+
+    console.print(Panel(table, title=f"[bold]Search Results for '{query}'[/bold]"))
+
+
+@rag_app.command("index")
+def rag_index(
+    source_type: str = typer.Option(..., "--type", "-t", help="Source type (issue, adr, code, doc)"),
+    source_id: str = typer.Option(..., "--id", "-i", help="Source ID"),
+    content: str = typer.Option(..., "--content", "-c", help="Content to index"),
+    strategy: str = typer.Option("paragraph", "--strategy", "-s", help="Chunking strategy (paragraph, lines, sentences)"),
+) -> None:
+    """Index content for RAG semantic search."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = RAGRepository(driver)
+    repo.create_vector_index()
+
+    chunk_ids = repo.index_text(
+        text=content,
+        source_type=source_type,
+        source_id=source_id,
+        chunking_strategy=strategy,
+    )
+
+    console.print(f"[success]Indexed {len(chunk_ids)} chunks for {source_type}:{source_id}[/success]")
+
+
+@rag_app.command("stats")
+def rag_stats() -> None:
+    """Show RAG index statistics."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = RAGRepository(driver)
+    stats = repo.get_stats()
+
+    console.print(f"[bold]Total embeddings:[/bold] {stats['total']}")
+    if stats["by_type"]:
+        console.print("[bold]By type:[/bold]")
+        for source_type, count in stats["by_type"].items():
+            console.print(f"  {source_type}: {count}")
+
+
+@rag_app.command("clear")
+def rag_clear(yes: bool = typer.Option(False, "--yes", "-y", help="Confirm deletion")) -> None:
+    """Clear all RAG embeddings."""
+    if not yes:
+        console.print("[warning]Use --yes to confirm deletion[/warning]")
+        return
+
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = RAGRepository(driver)
+    repo.clear()
+    console.print("[success]RAG embeddings cleared[/success]")
+
+
 # Create the main app with all command groups
 app = typer.Typer()
 app.add_typer(issue_app, name="issue")
@@ -2157,3 +2266,4 @@ app.add_typer(analyze_app, name="analyze")
 app.add_typer(seed_app, name="seed")
 app.add_typer(constraints_app, name="constraints")
 app.add_typer(code_graph_app, name="code-graph")
+app.add_typer(rag_app, name="rag")
