@@ -46,7 +46,7 @@ After fixing an issue, ask:
 2. Add feature to appropriate phase if new
 3. Mark resolved issue in Known Issues table:
    ```
-   | # | Description | Severity | Location | ✅ RESOLVED (v0.8.0 #XXX) |
+   | # | Description | Severity | Location | ✅ RESOLVED (v0.9.0 #XXX) |
    ```
 
 #### VERSIONS.md Updates
@@ -88,10 +88,10 @@ Issue #XXX resolved."
 **Documentation changes needed:**
 1. **ROADMAP.md**: 
    - Update "Last updated" to current date
-   - Add to Known Issues: `| 10 | component update requires full UUID | Low | CLI | ✅ RESOLVED (v0.8.0 #136) |`
+   - Add to Known Issues: `| 10 | component update requires full UUID | Low | CLI | ✅ RESOLVED (v0.9.0 #136) |`
 
 2. **VERSIONS.md**:
-   - Add to v0.8.0 bug fixes: `- [x] **#136 CLI Component Update Name:** Support name lookup in component update command.`
+   - Add to v0.9.0 bug fixes: `- [x] **#136 CLI Component Update Name:** Support name lookup in component update command.`
 
 3. **README.md**:
    - Update command example to show name works: `tasker component update backend -n "New Name"`

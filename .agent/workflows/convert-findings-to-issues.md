@@ -1,18 +1,18 @@
 # Workflow: Convert Findings to Issues
 
 ## Trigger Command
-`convertir hallazgos` or `findings to issues`
+`convert findings` or `findings to issues`
 
 ## Description
-Convierte los FINDings en report.md a issues en .issues/to-do/. Este workflow se ejecuta después de completar una evaluación del proyecto (prueba el proyecto).
+Converts FINDings in report.md to issues in .issues/to-do/. This workflow is executed after completing a project evaluation (test the project).
 
 ---
 
-## ⚠️ REGLAS
+## ⚠️ RULES
 
-1. Solo ejecutar DESPUÉS de que el report.md esté completo
-2. NO crear issues para problemas já resueltos
-3. Mantener correlación de índices con .issues/done/
+1. Only execute AFTER report.md is complete
+2. DO NOT create issues for problems already resolved
+3. Maintain index correlation with .issues/done/
 
 ---
 
@@ -111,7 +111,7 @@ Issues created:
 |----------|------|
 | Title | Version mismatch |
 
-API returns 0.6.0 instead of 0.8.0
+API returns 0.7.0 instead of 0.9.0
 ```
 
 ### Output (.issues/to-do/172-version-mismatch.md)
@@ -119,7 +119,7 @@ API returns 0.6.0 instead of 0.8.0
 # Issue #172: API returns wrong version
 
 ## Description
-API returns 0.6.0 instead of 0.8.0
+API returns 0.7.0 instead of 0.9.0
 
 ## Expected Behavior
 Version should match source code

@@ -20,12 +20,13 @@ This directory contains the operational knowledge for AI agents working on this 
 | Create a new issue | `workflows/create-issue.md` |
 | Test project | `workflows/test-project.md` |
 | Project setup | `workflows/project-setup.md` |
-| **Prueba el proyecto** | `workflows/prueba-el-proyecto.md` |
+| **Update documentation** | `workflows/update-documentation.md` |
+| **Test the project** | `workflows/prueba-el-proyecto.md` |
 
 ## Core Principles
 
 1. **Read project.md first**: Before any work, read `project.md` at the root to understand the project structure (see `skills/project-documentation.md`)
-2. **Issue-driven development**: Every piece of work starts from an issue in `.issues/`
+2. **Issue-driven development**: Every piece of work starts from an issue in `.issues/to-do/`
 3. **Test before commit**: No code goes in without tests
 4. **Documentation sync**: Always update docs when fixing issues (see `skills/documentation-sync.md`)
 5. **Conventional commits**: Follow the established commit message format
@@ -111,9 +112,11 @@ tasker reasoning stats
 tasker reasoning clear [--issue <id>]
 
 # Agent Integration (v0.9.0)
+
 tasker agent context --issue <id>
 tasker agent suggest --issue <id> --limit 5
 tasker agent reasoning --issue <id> --thought <text> --decision <choice>
+tasker reasoning history [--issue <id>] [--limit N]
 tasker reasoning clear [--issue <id>]
 
 ## API Endpoints

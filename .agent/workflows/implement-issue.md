@@ -9,7 +9,7 @@ When instructed to implement a specific issue from `.issues/`.
 ### 1. Read the Issue
 
 ```
-Read .issues/{NN}-{issue-name}.md
+Read .issues/to-do/{NN}-{issue-name}.md
 ```
 
 Understand all requirements before writing any code.
@@ -56,7 +56,7 @@ Change to:
 ### 7. Move Issue to Done
 
 ```bash
-mv ".issues/{NN}-{issue-name}.md" ".issues/done/"
+mv ".issues/to-do/{NN}-{issue-name}.md" ".issues/done/"
 ```
 
 ### 8. Update Documentation (if needed)
@@ -83,7 +83,7 @@ git commit -m "type: short summary
 - Test results and verification
 - Issue reference and completion status
 - Documentation updates if applicable"
-git push origin v0.8.0
+git push origin v0.9.0
 ```
 
 **Commit Message Structure:**

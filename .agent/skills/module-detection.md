@@ -8,8 +8,8 @@ This skill enables AI agents to detect the project structure and create appropri
 
 - "setup project modules"
 - "configure modules"
-- "detectar modulos"
-- "detectar proyecto"
+- "detect modules"
+- "detect project"
 - "analyze project structure"
 - "init modules"
 - When starting to work on a new project

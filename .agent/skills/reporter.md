@@ -14,7 +14,7 @@ The report must follow this YAML schema:
 ```yaml
 test_metadata:
   date: "YYYY-MM-DD"
-  target_version: "0.8.0"
+  target_version: "0.9.0"
   use_case: "Description"
   requested_issues: 50
   created_issues: 0

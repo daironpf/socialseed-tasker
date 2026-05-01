@@ -77,7 +77,7 @@ All tests pass. Issue moved to .issues/done/.
 ### 5. Push to Remote
 
 ```bash
-git push origin v0.8.0
+git push origin v0.9.0
 ```
 
 ## Rules

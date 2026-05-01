@@ -28,7 +28,7 @@ This command returns all direct callers of the symbol. If a symbol has many call
 - `tasker code-graph clear`: Clear all code graph data.
 
 ## Schema Details
-- **Nodes**: `CodeFile`, `CodeSymbol`, `CodeImport`.
+- **Nodes**: `CodeFile` (properties: `path`, `name`), `CodeSymbol`, `CodeImport`.
 - **Relationships**: 
     - `DEFINES`: File -> Symbol.
     - `CONTAINS`: Class -> Method.

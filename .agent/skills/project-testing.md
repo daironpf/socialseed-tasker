@@ -6,11 +6,11 @@ This skill enables AI agents to perform comprehensive testing of the SocialSeed 
 
 ## Trigger Phrases
 
-- "prueba el proyecto"
 - "test the project"
 - "test all functionality"
-- "probar el proyecto"
 - "verify project works"
+- "run black-box evaluation"
+- "test project from pypi"
 
 ## What This Skill Does
 
@@ -31,7 +31,7 @@ This skill enables AI agents to perform comprehensive testing of the SocialSeed 
 ## Usage
 
 When user asks to test the project:
-1. Read `.agent/workflows/test-project.md` for detailed steps
+1. Read `.agent/workflows/prueba-el-proyecto.md` for detailed steps
 2. Follow the workflow to test all functionality
 3. Create issues for any problems found
 4. Optionally fix simple issues and commit them

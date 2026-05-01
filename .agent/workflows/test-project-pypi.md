@@ -1,10 +1,10 @@
 # Workflow: Real-Test Evaluation (PyPI)
 
 ## Trigger Command
-`prueba el proyecto pypi` or `test project from pypi`
+`test the project pypi` or `test project from pypi`
 
 ## Description
-Ejecuta una evaluación black-box completa del sistema SocialSeed Tasker instalando desde **PyPI** en lugar de código local. Este workflow simula cómo un usuario real experimentaría el proyecto después de instalarlo con `pip install socialseed-tasker`.
+Executes a complete black-box evaluation of the SocialSeed Tasker system by installing from **PyPI** instead of local code. This workflow simulates how a real user would experience the project after installing it with `pip install socialseed-tasker`.
 
 ---
 
@@ -157,7 +157,7 @@ Must include:
 
 **YOU MUST ASK THE USER BEFORE CLEANUP** using the Question tool:
 
-Question: "¿Deseas limpiar los servicios (docker-compose down) o mantenerlos corriendo para continuar probando?"
+Question: "Do you want to cleanup services (docker-compose down) or keep them running to continue testing?"
 
 | Options | Action |
 |--------|--------|
@@ -245,7 +245,7 @@ cd real-test/tasker && docker-compose down -v --remove-orphans
 ```yaml
 test_metadata:
   date: "YYYY-MM-DD"
-  target_version: "0.8.0"
+  target_version: "0.9.0"
   use_case: "Description"
   requested_issues: 50
   created_issues: 0
