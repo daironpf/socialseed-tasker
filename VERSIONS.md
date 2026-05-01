@@ -288,7 +288,8 @@ Map the entire repository as a graph structure:
 #### RAG Native in Graph (Vector Indexes)
 Enable semantic search across project knowledge:
 
-- [ ] Neo4j vector indexes for task embeddings
+- [x] Neo4j vector indexes for task embeddings
+- [x] Schema migration script with rollback capability
 - [ ] Solution similarity matching
 - [ ] Historical solution retrieval
 - [ ] Context injection for agent prompts

@@ -332,6 +332,31 @@ services:
 
 ---
 
+## 11. Schema Migration
+
+### v0.9.0 Migration Script
+
+New features in v0.9.0 require Neo4j schema changes (vector indexes, relationship indexes). The migration runs automatically on startup via `driver.py`, or can be run manually:
+
+```bash
+# Run migration
+python scripts/migrate_v090.py --password=your_neo4j_password
+
+# Rollback if needed
+python scripts/migrate_v090.py --password=your_neo4j_password --rollback
+```
+
+### Schema Changes (v0.9.0)
+
+| Index | Purpose |
+|-------|---------|
+| `issue_embeddings` | Vector index for RAG semantic search |
+| `code_calls` | Index on CALLS relationship timestamp |
+| `code_depends_issue` | Index on DEPENDS_ON relationship timestamp |
+| `agent_thought` | Index on THOUGHT relationship timestamp |
+
+---
+
 ## 11. Key Features (v0.8.0)
 
 | Feature | Status |

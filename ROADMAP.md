@@ -2,7 +2,7 @@
 
 **SocialSeed Tasker** is an **AI-Native Project Management Framework** powered by **Neo4j**. Our mission is to evolve beyond flat task lists into **Graph-Based Architectural Governance** for autonomous software engineering. The Neo4j graph becomes the "consciousness" of the development process.
 
-**Last updated:** 2026-04-27 | **Current Version:** v0.8.1 | **Next:** v0.9.0
+**Last updated:** 2026-05-01 | **Current Version:** v0.9.0 | **Next:** v0.9.1
 
 ---
 
@@ -63,10 +63,10 @@ Map the entire repository as a graph structure for deep code understanding:
 ### RAG Native in Graph (Vector Indexes)
 Enable semantic search across all project knowledge:
 
-- [ ] **Vector Indexes in Neo4j:**
+- [x] **Vector Indexes in Neo4j:**
   - Store embeddings for tasks and past solutions
-  - Support for task similarity matching
-  - Historical solution retrieval
+  - Schema migration script with rollback capability
+  - Index: `issue_embeddings` for semantic search
 
 - [ ] **RAG Pipeline:**
   - Embedding generation service
@@ -309,6 +309,7 @@ Single YAML file defining entire system architecture:
 | 1-20 | Various bug fixes (short UUID, pagination, etc.) | Low-Medium | ✅ RESOLVED |
 | 21 | CLI blank lines (Typer/Rich) | Low | ⚠️ KNOWN LIMITATION |
 | 22 | Architectural rules not enforced at write time | Medium | ✅ RESOLVED (v0.8.0) |
+| 23 | Neo4j schema migration for v0.9.0 | High | ✅ RESOLVED (v0.9.0 #214) |
 
 ---
 
