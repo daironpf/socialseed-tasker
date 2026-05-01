@@ -109,6 +109,12 @@ tasker reasoning history [--issue <id>] [--limit N]
 tasker reasoning stats
 tasker reasoning clear [--issue <id>]
 
+# Agent Integration (v0.9.0)
+tasker agent context --issue <id>
+tasker agent suggest --issue <id> --limit 5
+tasker agent reasoning --issue <id> --thought <text> --decision <choice>
+tasker reasoning clear [--issue <id>]
+
 ## API Endpoints
 
 | Endpoint | Method | Description |
@@ -149,6 +155,13 @@ tasker reasoning clear [--issue <id>]
 | `/api/v1/reasoning/stats` | GET | Decision statistics |
 | `/api/v1/reasoning/issue/{id}` | DELETE | Delete issue reasoning |
 | `/api/v1/reasoning` | DELETE | Clear all reasoning |
+
+## Agent Integration (v0.9.0)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/agent/context/{issue_id}` | GET | Get code context for issue |
+| `/api/v1/agent/similar/{issue_id}` | GET | Find similar issues via RAG |
 
 ## Environment Variables
 

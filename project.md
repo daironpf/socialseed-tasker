@@ -357,7 +357,7 @@ python scripts/migrate_v090.py --password=your_neo4j_password --rollback
 
 ---
 
-## 11. Key Features (v0.8.0)
+## 11. Key Features (v0.9.0)
 
 | Feature | Status |
 |--------|--------|
@@ -366,7 +366,33 @@ python scripts/migrate_v090.py --password=your_neo4j_password --rollback
 | CLI with Rich UI | ✅ |
 | REST API | ✅ |
 | AI Agent skills | ✅ |
-| Quality guide for agents | ✅ |
+| Code-as-Graph | ✅ |
+| RAG Semantic Search | ✅ |
+| Agent Integration | ✅ |
+
+---
+
+## 12. Agent Integration (v0.9.0)
+
+### CLI Commands
+
+```bash
+# Get code context for an issue
+tasker agent context --issue <issue_id>
+
+# Find similar issues via RAG
+tasker agent suggest --issue <issue_id> --limit 5
+
+# Log reasoning for issue resolution
+tasker agent reasoning --issue <issue_id> --thought "..." --decision "..."
+```
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/agent/context/{issue_id}` | GET | Code context from Code-as-Graph |
+| `/api/v1/agent/similar/{issue_id}` | GET | Similar issues via RAG |
 | Dependency graph visualization | ✅ |
 | Root cause analysis | ✅ |
 | Impact analysis | ✅ |

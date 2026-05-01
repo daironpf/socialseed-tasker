@@ -28,7 +28,7 @@ A specialized framework that leverages **Neo4j** to provide AI agents with infin
   <img src="https://img.shields.io/badge/Storage-Neo4j%20Only-orange.svg" alt="Neo4j Only">
   <img src="https://img.shields.io/badge/GraphRAG-Enabled-purple.svg" alt="GraphRAG">
   <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0">
-  <img src="https://img.shields.io/badge/Version-0.8.1-green.svg" alt="Version: 0.8.1">
+  <img src="https://img.shields.io/badge/Version-0.9.0-green.svg" alt="Version: 0.9.0">
   <img src="https://img.shields.io/badge/PRs-Welcome-green.svg" alt="PRs Welcome">
   <img src="https://img.shields.io/badge/Tree--Sitter-Enabled-blue.svg" alt="Tree-Sitter">
   <img src="https://img.shields.io/badge/Multi--Language-Python%2C%20JS%2C%20Java%2C%20C%2B%2B-cyan.svg" alt="Multi-Language">
