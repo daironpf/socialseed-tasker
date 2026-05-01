@@ -23,6 +23,28 @@ This directory contains the operational knowledge for AI agents working on this 
 | **Update documentation** | `workflows/update-documentation.md` |
 | **Test the project** | `workflows/prueba-el-proyecto.md` |
 
+## Agent Interaction Guide
+
+To ensure high-quality collaboration and minimize user input errors, agents MUST:
+1.  **Always end with a Service Menu**: At the end of every response where a task was completed or a decision is needed, present a table of available workflows.
+2.  **Suggest Next Steps**: Based on the current state, highlight the most logical next workflow in **bold**.
+3.  **Wait for Choice**: Unless it's an emergency, wait for the user to select an option (e.g., "1", "Create Issue") before proceeding.
+
+### Available Workflows Reference
+
+| Code | Workflow | Description |
+|---|---|---|
+| `SETUP` | `project-setup.md` | Initialize or re-scaffold project modules |
+| `ISSUE` | `create-issue.md` | Create new tasks based on analysis or user request |
+| `WORK` | `implement-issue.md` | Start working on a specific issue |
+| `DOCS` | `update-documentation.md` | Sync all documentation (Code, MD, Web) |
+| `HISTORY`| `daily-log.md` | Update the daily log (bitácora) in `.history/` |
+| `TEST` | `prueba-el-proyecto.md` | Full black-box evaluation of the project |
+| `COMMIT`| `commit-push.md` | Prepare, commit and push changes with docs sync |
+| `FIND` | `convert-findings...` | Convert test report findings into actionable issues |
+
+---
+
 ## Core Principles
 
 1. **Read project.md first**: Before any work, read `project.md` at the root to understand the project structure (see `skills/project-documentation.md`)
