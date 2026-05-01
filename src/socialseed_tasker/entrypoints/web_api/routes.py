@@ -2925,6 +2925,81 @@ def list_agents_by_role(role: str) -> APIResponse[list[AgentResponse]]:
     return APIResponse(data=agents, meta=Meta(request_id=None))
 
 
+@agent_router.get(
+    "/agent/context/{issue_id}",
+    response_model=APIResponse[dict[str, Any]],
+    summary="Get code context for issue",
+    description="Get code files and symbols relevant to an issue from Code-as-Graph.",
+)
+def get_agent_context(
+    issue_id: str,
+    limit: int = Query(20, description="Max files to return"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[dict[str, Any]]:
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+
+    issue = repo.get_issue(issue_id)
+    if not issue:
+        raise HTTPException(status_code=404, detail=f"Issue '{issue_id}' not found")
+
+    neo4j_driver = get_neo4j_driver()
+    if neo4j_driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+
+    cg_repo = CodeGraphRepository(neo4j_driver)
+    files = cg_repo.get_files(limit=limit)
+
+    return APIResponse(
+        data={
+            "issue_id": issue_id,
+            "issue_title": issue.title,
+            "component_id": str(issue.component_id),
+            "files": files,
+            "count": len(files),
+        },
+        meta=Meta(request_id=None),
+    )
+
+
+@agent_router.get(
+    "/agent/similar/{issue_id}",
+    response_model=APIResponse[list[dict[str, Any]]],
+    summary="Find similar issues",
+    description="Find similar past issues via RAG semantic search.",
+)
+def get_similar_issues(
+    issue_id: str,
+    limit: int = Query(5, description="Max similar issues to return"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list[dict[str, Any]]]:
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+
+    issue = repo.get_issue(issue_id)
+    if not issue:
+        raise HTTPException(status_code=404, detail=f"Issue '{issue_id}' not found")
+
+    neo4j_driver = get_neo4j_driver()
+    if neo4j_driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+
+    rag_repo = RAGRepository(neo4j_driver)
+    results = rag_repo.search(f"issue {issue.title}", limit=limit)
+
+    return APIResponse(
+        data=[
+            {
+                "source_id": r.get("source_id", ""),
+                "content": r.get("content", ""),
+                "score": r.get("score", 0.0),
+            }
+            for r in results
+        ],
+        meta=Meta(request_id=None),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Admin router
 # ---------------------------------------------------------------------------

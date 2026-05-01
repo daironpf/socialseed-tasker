@@ -85,8 +85,8 @@ CORE, CLI, API
 - [x] Auto-capture reasoning during work
 - [x] CLI command: `tasker agent context`
 - [x] CLI command: `tasker agent suggest`
-- [ ] API endpoint: GET /api/v1/agent/context/{id}
-- [ ] API endpoint: GET /api/v1/agent/similar/{id}
+- [x] API endpoint: GET /api/v1/agent/context/{id}
+- [x] API endpoint: GET /api/v1/agent/similar/{id}
 - [x] Test integration workflow
 
 ## Related Issues
