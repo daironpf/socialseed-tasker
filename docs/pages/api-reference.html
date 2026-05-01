@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference | SocialSeed Tasker</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container nav-content">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="8" fill="url(#paint0_linear)"/>
+                    <path d="M16 8L22 14L16 20L10 14L16 8Z" fill="white"/>
+                    <circle cx="16" cy="22" r="2" fill="white"/>
+                    <defs>
+                        <linearGradient id="paint0_linear" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#6366F1"/>
+                            <stop offset="1" stop-color="#A855F7"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                SocialSeed Tasker
+            </div>
+            <nav class="nav-links">
+                <a href="../index.html">Home</a>
+                <a href="introduction.html">Docs</a>
+                <a href="api-reference.html" class="active">API</a>
+                <a href="https://github.com/daironpf/socialseed-tasker">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container docs-layout">
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <div class="sidebar-section-title">Core Endpoints</div>
+                <ul>
+                    <li><a href="#issues">Issues</a></li>
+                    <li><a href="#components">Components</a></li>
+                    <li><a href="#dependencies">Dependencies</a></li>
+                </ul>
+                <div class="sidebar-section-title">Advanced</div>
+                <ul>
+                    <li><a href="#analysis">Analysis Engine</a></li>
+                    <li><a href="#agent">Agent Integration</a></li>
+                    <li><a href="#github">GitHub Sync</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="fade-in">
+            <section class="content-section">
+                <h1>API Reference</h1>
+                <p>The SocialSeed Tasker API is a RESTful interface built with FastAPI. It provides comprehensive control over the task graph, analysis engine, and agentic integrations.</p>
+                
+                <div style="background: rgba(99, 102, 241, 0.1); padding: 1.5rem; border-left: 4px solid var(--primary); border-radius: 8px; margin-bottom: 2rem;">
+                    <strong>Base URL:</strong> <code class="inline-code">http://localhost:8000/api/v1</code>
+                </div>
+
+                <h2 id="issues">Issues</h2>
+                <p>Manage lifecycle and metadata of tasks.</p>
+                
+                <h3>Create Issue</h3>
+                <pre><code><span style="color: #ff9cac;">POST</span> /api/v1/issues</code></pre>
+                <p>Body Payload:</p>
+                <pre><code style="color: #f1f5f9;">{
+    "title": "string",
+    "description": "string",
+    "priority": "LOW | MEDIUM | HIGH | CRITICAL",
+    "component_id": "uuid",
+    "labels": ["string"]
+}</code></pre>
+
+                <h3>List Issues</h3>
+                <pre><code><span style="color: #ff9cac;">GET</span> /api/v1/issues?status=OPEN&priority=HIGH</code></pre>
+
+                <h2 id="analysis">Analysis Engine</h2>
+                <p>Leverage the power of the graph to understand your project.</p>
+
+                <h3>Impact Analysis</h3>
+                <pre><code><span style="color: #ff9cac;">GET</span> /api/v1/analyze/impact/{issue_id}</code></pre>
+                <p>Returns a complete map of direct and transitive effects caused by the specified issue.</p>
+
+                <h3>Root Cause Analysis</h3>
+                <pre><code><span style="color: #ff9cac;">POST</span> /api/v1/analyze/root-cause</code></pre>
+                <pre><code style="color: #f1f5f9;">{
+    "test_failure": "Connection timed out",
+    "component_id": "uuid"
+}</code></pre>
+
+                <h2 id="agent">Agent Integration (v0.9.0)</h2>
+                <p>Endpoints specifically designed for autonomous agents.</p>
+
+                <h3>Get Code Context</h3>
+                <pre><code><span style="color: #ff9cac;">GET</span> /api/v1/agent/context/{issue_id}</code></pre>
+                <p>Returns relevant code symbols and files from the Code-as-Graph system based on the issue description.</p>
+
+                <h3>Semantic Search</h3>
+                <pre><code><span style="color: #ff9cac;">POST</span> /api/v1/rag/search</code></pre>
+                <p>Perform vector-based similarity search across the entire task and code graph.</p>
+
+            </section>
+        </main>
+    </div>
+
+    <footer style="padding: 2rem 0; border-top: 1px solid var(--border); text-align: center; margin-top: 2rem;">
+        <p style="font-size: 0.9rem; color: var(--text-muted);">&copy; 2026 SocialSeed Tasker Team.</p>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Schema | SocialSeed Tasker</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container nav-content">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="8" fill="url(#paint0_linear)"/>
+                    <path d="M16 8L22 14L16 20L10 14L16 8Z" fill="white"/>
+                    <circle cx="16" cy="22" r="2" fill="white"/>
+                    <defs>
+                        <linearGradient id="paint0_linear" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#6366F1"/>
+                            <stop offset="1" stop-color="#A855F7"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                SocialSeed Tasker
+            </div>
+            <nav class="nav-links">
+                <a href="../index.html">Home</a>
+                <a href="introduction.html" class="active">Docs</a>
+                <a href="api-reference.html">API</a>
+                <a href="https://github.com/daironpf/socialseed-tasker">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container docs-layout">
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <div class="sidebar-section-title">Getting Started</div>
+                <ul>
+                    <li><a href="introduction.html">Introduction</a></li>
+                    <li><a href="installation.html">Installation</a></li>
+                    <li><a href="quick-start.html">Quick Start</a></li>
+                </ul>
+                <div class="sidebar-section-title">Architecture</div>
+                <ul>
+                    <li><a href="hexagonal.html">Hexagonal Pattern</a></li>
+                    <li><a href="graph-schema.html" class="active">Graph Schema</a></li>
+                    <li><a href="constraints.html">Constraints System</a></li>
+                </ul>
+                <div class="sidebar-section-title">Reference</div>
+                <ul>
+                    <li><a href="cli-reference.html">CLI Commands</a></li>
+                    <li><a href="api-reference.html">API Reference</a></li>
+                    <li><a href="agent-integration.html">Agent Integration</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="fade-in">
+            <section class="content-section">
+                <h1>Graph Schema</h1>
+                <p>SocialSeed Tasker models your project as a rich, directed graph. This allows for complex queries that would be difficult or impossible in a traditional relational database.</p>
+                
+                <h2 id="nodes">Nodes</h2>
+                <p>The primary entities in the graph.</p>
+                
+                <h3>Issue</h3>
+                <p>The central unit of work.</p>
+                <ul>
+                    <li><code class="inline-code">id</code>: Unique identifier (UUID).</li>
+                    <li><code class="inline-code">title</code>: Concise summary.</li>
+                    <li><code class="inline-code">status</code>: OPEN, IN_PROGRESS, CLOSED, BLOCKED.</li>
+                    <li><code class="inline-code">priority</code>: LOW, MEDIUM, HIGH, CRITICAL.</li>
+                </ul>
+                
+                <h3>Component</h3>
+                <p>Structural elements (services, modules, packages).</p>
+                <ul>
+                    <li><code class="inline-code">name</code>: Component name.</li>
+                    <li><code class="inline-code">project</code>: The project it belongs to.</li>
+                </ul>
+
+                <h3>CodeFile (v0.9.0)</h3>
+                <p>Mapped from the source code.</p>
+                <ul>
+                    <li><code class="inline-code">path</code>: Relative path in repo.</li>
+                    <li><code class="inline-code">name</code>: Filename.</li>
+                </ul>
+
+                <h2 id="relationships">Relationships</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Relationship</th>
+                            <th>Direction</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">DEPENDS_ON</code></td>
+                            <td>Issue &rarr; Issue</td>
+                            <td>Hard dependency. Target must be CLOSED for source to move to OPEN.</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">BLOCKS</code></td>
+                            <td>Issue &rarr; Issue</td>
+                            <td>Inverted dependency view.</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">BELONGS_TO</code></td>
+                            <td>Issue &rarr; Component</td>
+                            <td>Defines ownership.</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">DEFINES</code></td>
+                            <td>CodeFile &rarr; Symbol</td>
+                            <td>Code-as-Graph relationship.</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">CALLS</code></td>
+                            <td>Symbol &rarr; Symbol</td>
+                            <td>Functional dependency in code.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2 id="visualize">Visualizing the Schema</h2>
+                <p>You can explore the live schema using the Neo4j Browser at <code class="inline-code">http://localhost:7474</code> with the command:</p>
+                <pre><code>CALL db.schema.visualization()</code></pre>
+
+            </section>
+        </main>
+    </div>
+
+    <footer style="padding: 2rem 0; border-top: 1px solid var(--border); text-align: center; margin-top: 2rem;">
+        <p style="font-size: 0.9rem; color: var(--text-muted);">&copy; 2026 SocialSeed Tasker Team.</p>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+</body>
+</html>

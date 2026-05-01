@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introduction | SocialSeed Tasker</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container nav-content">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="8" fill="url(#paint0_linear)"/>
+                    <path d="M16 8L22 14L16 20L10 14L16 8Z" fill="white"/>
+                    <circle cx="16" cy="22" r="2" fill="white"/>
+                    <defs>
+                        <linearGradient id="paint0_linear" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#6366F1"/>
+                            <stop offset="1" stop-color="#A855F7"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                SocialSeed Tasker
+            </div>
+            <nav class="nav-links">
+                <a href="../index.html">Home</a>
+                <a href="introduction.html" class="active">Docs</a>
+                <a href="api-reference.html">API</a>
+                <a href="https://github.com/daironpf/socialseed-tasker">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container docs-layout">
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <div class="sidebar-section-title">Getting Started</div>
+                <ul>
+                    <li><a href="introduction.html" class="active">Introduction</a></li>
+                    <li><a href="installation.html">Installation</a></li>
+                    <li><a href="quick-start.html">Quick Start</a></li>
+                </ul>
+                <div class="sidebar-section-title">Architecture</div>
+                <ul>
+                    <li><a href="hexagonal.html">Hexagonal Pattern</a></li>
+                    <li><a href="graph-schema.html">Graph Schema</a></li>
+                    <li><a href="constraints.html">Constraints System</a></li>
+                </ul>
+                <div class="sidebar-section-title">Reference</div>
+                <ul>
+                    <li><a href="cli-reference.html">CLI Commands</a></li>
+                    <li><a href="api-reference.html">API Reference</a></li>
+                    <li><a href="agent-integration.html">Agent Integration</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="fade-in">
+            <section class="content-section">
+                <h1>Introduction</h1>
+                <p>Welcome to SocialSeed Tasker, the next-generation task management system designed for the era of autonomous coding agents and high-performance engineering teams.</p>
+                
+                <h2>What is SocialSeed Tasker?</h2>
+                <p>SocialSeed Tasker is a <strong>graph-based</strong> task management framework. Unlike traditional linear task trackers, Tasker uses <strong>Neo4j</strong> to map relationships between issues, components, and code symbols, allowing for deep impact analysis and automated reasoning.</p>
+                
+                <div class="card-grid">
+                    <div class="card">
+                        <h3>Relationship-First</h3>
+                        <p>Track how issues <code class="inline-code">BLOCK</code>, <code class="inline-code">DEPEND_ON</code>, or <code class="inline-code">AFFECT</code> each other in real-time.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Built for Agents</h3>
+                        <p>Native support for AI agent integration, including semantic search and reasoning logs.</p>
+                    </div>
+                </div>
+
+                <h2>Core Philosophies</h2>
+                <ul>
+                    <li style="margin-bottom: 1rem;"><strong>Explicit Context</strong>: No hidden state. Every decision and dependency is explicitly modeled in the graph.</li>
+                    <li style="margin-bottom: 1rem;"><strong>Architectural Integrity</strong>: Built using Hexagonal Architecture to ensure business logic remains isolated and testable.</li>
+                    <li style="margin-bottom: 1rem;"><strong>Offline-First Sync</strong>: Seamlessly sync between local graph data and GitHub issues.</li>
+                </ul>
+
+                <h2>Key Features (v0.9.0)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Code-as-Graph</strong></td>
+                            <td>Tree-sitter powered parsing that maps your source code directly into the Neo4j task graph.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>RAG Semantic Search</strong></td>
+                            <td>Find similar issues or relevant code context using high-performance vector embeddings.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Impact Analysis</strong></td>
+                            <td>Analyze the risk of a change across the entire dependency chain before committing.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Agent Lifecycle</strong></td>
+                            <td>Built-in tracking for autonomous agents working on issues.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Next Steps</h2>
+                <p>Ready to dive in? Check out the <a href="installation.html" style="color: var(--primary);">Installation guide</a> or jump straight to the <a href="quick-start.html" style="color: var(--primary);">Quick Start</a>.</p>
+            </section>
+        </main>
+    </div>
+
+    <footer style="padding: 2rem 0; border-top: 1px solid var(--border); text-align: center; margin-top: 2rem;">
+        <p style="font-size: 0.9rem; color: var(--text-muted);">&copy; 2026 SocialSeed Tasker Team.</p>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+</body>
+</html>

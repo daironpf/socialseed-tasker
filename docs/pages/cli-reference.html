@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLI Reference | SocialSeed Tasker</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container nav-content">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="8" fill="url(#paint0_linear)"/>
+                    <path d="M16 8L22 14L16 20L10 14L16 8Z" fill="white"/>
+                    <circle cx="16" cy="22" r="2" fill="white"/>
+                    <defs>
+                        <linearGradient id="paint0_linear" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#6366F1"/>
+                            <stop offset="1" stop-color="#A855F7"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                SocialSeed Tasker
+            </div>
+            <nav class="nav-links">
+                <a href="../index.html">Home</a>
+                <a href="introduction.html" class="active">Docs</a>
+                <a href="api-reference.html">API</a>
+                <a href="https://github.com/daironpf/socialseed-tasker">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container docs-layout">
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <div class="sidebar-section-title">Common Commands</div>
+                <ul>
+                    <li><a href="#setup">Setup & Init</a></li>
+                    <li><a href="#issue">Issue Management</a></li>
+                    <li><a href="#component">Components</a></li>
+                </ul>
+                <div class="sidebar-section-title">Analysis & Graph</div>
+                <ul>
+                    <li><a href="#analyze">Impact Analysis</a></li>
+                    <li><a href="#code-graph">Code Graph</a></li>
+                    <li><a href="#agent">Agent Tools</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="fade-in">
+            <section class="content-section">
+                <h1>CLI Reference</h1>
+                <p>The <code class="inline-code">tasker</code> CLI is the primary interface for human developers to interact with the Tasker ecosystem.</p>
+                
+                <h2 id="setup">Setup & Init</h2>
+                <p>Prepare your environment and project.</p>
+                <pre><code><span style="color: #c3e88d;"># Initialize a new project scaffold</span>
+tasker init . --project-name "My App" --architecture api-first
+
+<span style="color: #c3e88d;"># Seed with demo data for testing</span>
+tasker seed run
+
+<span style="color: #c3e88d;"># Check system health</span>
+tasker status</code></pre>
+
+                <h2 id="issue">Issue Management</h2>
+                <pre><code><span style="color: #c3e88d;"># Create a new issue</span>
+tasker issue create "Implement Auth" -c backend -p HIGH
+
+<span style="color: #c3e88d;"># List active issues</span>
+tasker issue list --status OPEN
+
+<span style="color: #c3e88d;"># Close an issue (validates dependencies)</span>
+tasker issue close issue_42</code></pre>
+
+                <h2 id="code-graph">Code Graph (v0.9.0)</h2>
+                <p>Manage the code-as-graph features.</p>
+                <pre><code><span style="color: #c3e88d;"># Scan repository and update graph</span>
+tasker code-graph scan src/ --incremental
+
+<span style="color: #c3e88d;"># Find all callers of a symbol</span>
+tasker code-graph calls my_function
+
+<span style="color: #c3e88d;"># Check code-level impact</span>
+tasker code-graph impact my_class</code></pre>
+
+                <h2 id="agent">Agent Integration</h2>
+                <pre><code><span style="color: #c3e88d;"># Get automated context for an issue</span>
+tasker agent context --issue issue_12
+
+<span style="color: #c3e88d;"># Log reasoning for a decision</span>
+tasker agent reasoning --issue issue_12 --thought "Using JWT for stateless auth" --decision "IMPLEMENTED"</code></pre>
+
+            </section>
+        </main>
+    </div>
+
+    <footer style="padding: 2rem 0; border-top: 1px solid var(--border); text-align: center; margin-top: 2rem;">
+        <p style="font-size: 0.9rem; color: var(--text-muted);">&copy; 2026 SocialSeed Tasker Team.</p>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+</body>
+</html>

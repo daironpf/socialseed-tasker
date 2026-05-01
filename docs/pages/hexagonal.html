@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hexagonal Architecture | SocialSeed Tasker</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container nav-content">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="8" fill="url(#paint0_linear)"/>
+                    <path d="M16 8L22 14L16 20L10 14L16 8Z" fill="white"/>
+                    <circle cx="16" cy="22" r="2" fill="white"/>
+                    <defs>
+                        <linearGradient id="paint0_linear" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#6366F1"/>
+                            <stop offset="1" stop-color="#A855F7"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                SocialSeed Tasker
+            </div>
+            <nav class="nav-links">
+                <a href="../index.html">Home</a>
+                <a href="introduction.html" class="active">Docs</a>
+                <a href="api-reference.html">API</a>
+                <a href="https://github.com/daironpf/socialseed-tasker">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container docs-layout">
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <div class="sidebar-section-title">Getting Started</div>
+                <ul>
+                    <li><a href="introduction.html">Introduction</a></li>
+                    <li><a href="installation.html">Installation</a></li>
+                    <li><a href="quick-start.html">Quick Start</a></li>
+                </ul>
+                <div class="sidebar-section-title">Architecture</div>
+                <ul>
+                    <li><a href="hexagonal.html" class="active">Hexagonal Pattern</a></li>
+                    <li><a href="graph-schema.html">Graph Schema</a></li>
+                    <li><a href="constraints.html">Constraints System</a></li>
+                </ul>
+                <div class="sidebar-section-title">Reference</div>
+                <ul>
+                    <li><a href="cli-reference.html">CLI Commands</a></li>
+                    <li><a href="api-reference.html">API Reference</a></li>
+                    <li><a href="agent-integration.html">Agent Integration</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="fade-in">
+            <section class="content-section">
+                <h1>Hexagonal Architecture</h1>
+                <p>Tasker is built using the **Ports and Adapters** pattern, ensuring that core business logic is completely isolated from external frameworks, databases, and delivery mechanisms.</p>
+                
+                <h2 id="structure">Package Structure</h2>
+                <p>The code is divided into three main layers:</p>
+                
+                <h3>1. Core (The Brain)</h3>
+                <p>Contains pure Python code with no external dependencies (except Pydantic for validation). This is where the domain models and business rules live.</p>
+                <ul>
+                    <li><code class="inline-code">core/task_management</code>: Issues, Components, and basic CRUD actions.</li>
+                    <li><code class="inline-code">core/project_analysis</code>: Impact and root-cause analysis logic.</li>
+                </ul>
+                
+                <h3>2. Entrypoints (The Mouth)</h3>
+                <p>External interfaces that allow the world to talk to the project. They never contain business logic; they only translate requests into core actions.</p>
+                <ul>
+                    <li><code class="inline-code">entrypoints/terminal_cli</code>: Typer-based interface.</li>
+                    <li><code class="inline-code">entrypoints/web_api</code>: FastAPI-based interface.</li>
+                </ul>
+                
+                <h3>3. Storage (The Memory)</h3>
+                <p>The persistence layer. Tasker uses Neo4j as its primary adapter for storing the graph.</p>
+                <ul>
+                    <li><code class="inline-code">storage/graph_database</code>: Neo4j repository implementation.</li>
+                </ul>
+
+                <h2 id="rules">Golden Rules</h2>
+                <div class="card" style="border-left: 4px solid var(--primary);">
+                    <p><strong>Dependency Rule:</strong> Outer layers depend on inner layers. Inner layers (Core) must never depend on outer layers (FastAPI, Neo4j, etc.).</p>
+                </div>
+                
+                <ul style="margin-top: 2rem;">
+                    <li><strong>No Business Logic in Entrypoints</strong>: Controllers should only validate inputs and call core actions.</li>
+                    <li><strong>No DB in Core</strong>: Repositories are defined as Protocols in Core and implemented in Storage.</li>
+                    <li><strong>Testable Core</strong>: You should be able to test the entire business logic using only <code class="inline-code">pytest</code> and zero external services.</li>
+                </ul>
+
+            </section>
+        </main>
+    </div>
+
+    <footer style="padding: 2rem 0; border-top: 1px solid var(--border); text-align: center; margin-top: 2rem;">
+        <p style="font-size: 0.9rem; color: var(--text-muted);">&copy; 2026 SocialSeed Tasker Team.</p>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+</body>
+</html>
