@@ -78,6 +78,7 @@ tasker dependency list
 # Analysis
 tasker analyze root-cause <issue>
 tasker analyze impact <issue>
+tasker analyze code-impact --path <file_path>
 
 # Seed
 tasker seed run
@@ -127,6 +128,7 @@ tasker reasoning clear [--issue <id>]
 | `/api/v1/issues/{id}/dependencies` | GET/POST | Dependency CRUD |
 | `/api/v1/workable-issues` | GET | Issues ready to work on |
 | `/api/v1/analyze/impact/{id}` | GET | Impact analysis |
+| `/api/v1/analyze/code-impact` | GET | Code-level impact (callers, deps, tests) |
 | `/api/v1/analyze/component-impact/{id}` | GET | Component impact |
 | `/api/v1/projects/{name}/summary` | GET | Project dashboard |
 | `/api/v1/graph/dependencies` | GET | Dependency graph |

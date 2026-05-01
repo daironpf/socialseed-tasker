@@ -311,6 +311,7 @@ Single YAML file defining entire system architecture:
 | 22 | Architectural rules not enforced at write time | Medium | ✅ RESOLVED (v0.8.0) |
 | 23 | Neo4j schema migration for v0.9.0 | High | ✅ RESOLVED (v0.9.0 #214) |
 | 24 | Agent integration with Code-as-Graph and RAG | High | ✅ RESOLVED (v0.9.0 #215) |
+| 25 | Enhanced impact analysis with code-level granularity | Medium | ✅ RESOLVED (v0.9.0 #216) |
 
 ---
 

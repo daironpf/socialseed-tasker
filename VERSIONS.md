@@ -292,6 +292,7 @@ Enable semantic search across project knowledge:
 - [x] Schema migration script with rollback capability
 - [x] Agent integration CLI: context, suggest, reasoning
 - [x] Agent API endpoints: /agent/context, /agent/similar
+- [x] Enhanced impact analysis: code-level granularity
 - [ ] Solution similarity matching
 - [ ] Historical solution retrieval
 - [ ] Context injection for agent prompts

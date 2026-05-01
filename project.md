@@ -393,6 +393,30 @@ tasker agent reasoning --issue <issue_id> --thought "..." --decision "..."
 |----------|--------|-------------|
 | `/api/v1/agent/context/{issue_id}` | GET | Code context from Code-as-Graph |
 | `/api/v1/agent/similar/{issue_id}` | GET | Similar issues via RAG |
+| `/api/v1/analyze/code-impact` | GET | Code-level impact (callers, deps, tests) |
+
+---
+
+## 13. Enhanced Impact Analysis (v0.9.0)
+
+### CLI Commands
+
+```bash
+# Issue-level impact analysis
+tasker analyze impact <issue_id>
+
+# Code-level impact analysis (new v0.9.0)
+tasker analyze code-impact --path <file_path>
+```
+
+### Risk Levels
+
+| Callers | Risk Level |
+|--------|----------|
+| >5 | CRITICAL |
+| >2 | HIGH |
+| >0 | MEDIUM |
+| 0 | LOW |
 | Dependency graph visualization | ✅ |
 | Root cause analysis | ✅ |
 | Impact analysis | ✅ |
