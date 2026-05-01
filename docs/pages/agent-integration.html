@@ -74,12 +74,24 @@
                     <li>Recent changes in related modules.</li>
                 </ul>
                 
-                <h2 id="reasoning">Reasoning Logs</h2>
-                <p>Agents should log their decision-making process. This allows human architects to review the "Why" behind automated changes.</p>
+                <h2 id="reasoning">Reasoning Logs & History</h2>
+                <p>Agents should log their decision-making process. This allows human architects to review the "Why" behind automated changes. You can also query the historical reasoning of any agent to understand past architectural choices.</p>
+                
+                <h3>Logging Reasoning</h3>
                 <pre><code>tasker agent reasoning --issue login_fix --thought "Refactoring JWT validator to use RS256" --decision "IMPLEMENTED"</code></pre>
 
-                <h2 id="rag">Semantic Search (RAG)</h2>
-                <p>Tasker indexes issues and code symbols using vector embeddings. Agents can use semantic search to find similar past issues and how they were solved.</p>
+                <h3>Viewing History</h3>
+                <pre><code>tasker reasoning history --issue login_fix</code></pre>
+                <p>This command displays a chronological list of thoughts, decisions, and confidence scores provided by agents for a specific issue.</p>
+
+                <h2 id="rag">AI Suggestions & Semantic Search</h2>
+                <p>Tasker indexes issues and code symbols using vector embeddings. Agents can use semantic search to find similar past issues and how they were solved, or get intelligent suggestions for the current task.</p>
+                
+                <h3>Get Suggestions</h3>
+                <pre><code>tasker agent suggest --issue login_fix --limit 3</code></pre>
+                <p>Analyzes the current issue and searches the graph for the most relevant historical context and similar resolved tasks.</p>
+
+                <h3>RAG Search</h3>
                 <pre><code>tasker rag search "how to handle concurrent database connections"</code></pre>
 
                 <h2 id="lifecycle">Agent Lifecycle Tracking</h2>

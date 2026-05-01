@@ -77,15 +77,25 @@ This workflow ensures that documentation remains the "Single Source of Truth" ac
 - **Context**: These are the files that users will see when they run the tool after installing it from PyPI.
 
 ### 2. PyPI Metadata
-- **File**: `pyproject.toml` (if applicable)
-- **Action**:
-    - Verify the `version` field.
-    - Ensure `description` and `README` path are correct.
-    - Check that new data files are included in the package distribution.
+- **File**: `pyproject.toml`
+- **Action**: Verify version and description.
 
 ---
 
-## Phase 5: Verification & Commit
+## Phase 5: Web Documentation (GitHub Pages)
+
+### 1. Synchronize Web Content
+- **Location**: `docs/`
+- **Action**: Update the HTML pages to reflect the changes made in Phase 1 & 2.
+- **Mandatory Skill**: You MUST follow the rules in `skills/web-docs-management.md`.
+- **Constraint**: DO NOT modify the design (CSS/JS) or the site structure. Focus only on the content within the sections.
+
+### 2. Update Sidebars
+- If new pages were added, update the sidebar in ALL files under `docs/pages/`.
+
+---
+
+## Phase 6: Verification & Commit
 
 ### 1. Link & Format Check
 - **Action**:
@@ -113,5 +123,6 @@ This workflow ensures that documentation remains the "Single Source of Truth" ac
 - [ ] `ROADMAP.md` and `VERSIONS.md` updated with resolved issues
 - [ ] `.agent/` skills and workflows are consistent with current version
 - [ ] Distribution assets in `src/.../assets/` are updated
+- [ ] **Web documentation in `docs/` is synchronized and follows `web-docs-management.md`**
 - [ ] No Spanish text remains in documentation
 - [ ] All version references match the current release (v0.9.0)
