@@ -290,6 +290,7 @@ Enable semantic search across project knowledge:
 
 - [x] Neo4j vector indexes for task embeddings
 - [x] Schema migration script with rollback capability
+- [x] Agent integration CLI: context, suggest, reasoning
 - [ ] Solution similarity matching
 - [ ] Historical solution retrieval
 - [ ] Context injection for agent prompts

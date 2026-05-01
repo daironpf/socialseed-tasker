@@ -2533,6 +2533,123 @@ def reasoning_clear(
         console.print("[success]Cleared all reasoning data[/success]")
 
 
+# ---------------------------------------------------------------------------
+# Agent Integration commands (Code-as-Graph + RAG + Reasoning)
+# ---------------------------------------------------------------------------
+
+agent_app = typer.Typer(help="Agent Integration: context, suggestions, and reasoning")
+
+
+@agent_app.command("context")
+def agent_context(
+    issue_id: str = typer.Option(..., "--issue", "-i", help="Issue ID or short ID"),
+) -> None:
+    """Get code context for an issue from Code-as-Graph."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    driver = get_driver()
+    if driver is None:
+        console.print("[error]Neo4j not connected. Run 'tasker login' first.[/error]")
+        raise typer.Exit(1)
+
+    issue_repo = get_repository()
+    issue = issue_repo.get_issue(issue_id)
+    if not issue:
+        console.print(f"[error]Issue '{issue_id}' not found[/error]")
+        raise typer.Exit(1)
+
+    cg_repo = CodeGraphRepository(driver)
+    files = cg_repo.get_files(limit=20)
+
+    console.print(Panel("[bold]Code Context[/bold]", border_style="blue"))
+    console.print(f"[info]Issue:[/info] {issue.title}")
+    console.print(f"[info]Component:[/info] {issue.component_id}")
+    console.print(f"\n[bold]Relevant Files ({len(files)}):[/bold]")
+    for f in files[:10]:
+        console.print(f"  • {f.get('path', 'unknown')}")
+
+
+@agent_app.command("suggest")
+def agent_suggest(
+    issue_id: str = typer.Option(..., "--issue", "-i", help="Issue ID or short ID"),
+    limit: int = typer.Option(5, "--limit", "-l", help="Max similar issues to return"),
+) -> None:
+    """Find similar past issues via RAG."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from socialseed_tasker.core.task_management.entities import ReasoningNode
+
+    driver = get_driver()
+    if driver is None:
+        console.print("[error]Neo4j not connected. Run 'tasker login' first.[/error]")
+        raise typer.Exit(1)
+
+    issue_repo = get_repository()
+    issue = issue_repo.get_issue(issue_id)
+    if not issue:
+        console.print(f"[error]Issue '{issue_id}' not found[/error]")
+        raise typer.Exit(1)
+
+    rag_repo = RAGRepository(driver)
+    results = rag_repo.search(f"issue {issue.title}", limit=limit)
+
+    console.print(Panel("[bold]Similar Past Issues[/bold]", border_style="blue"))
+    console.print(f"[info]Looking for:[/info] {issue.title}")
+    if results:
+        console.print(f"\n[bold]Found {len(results)} similar issues:[/bold]")
+        for r in results:
+            console.print(f"  • {r.get('source_id', 'unknown')}: {str(r.get('content', ''))[:80]}...")
+    else:
+        console.print("[info]No similar issues found[/info]")
+
+
+@agent_app.command("reasoning")
+def agent_reasoning(
+    issue_id: str = typer.Option(..., "--issue", "-i", help="Issue ID"),
+    thought: str = typer.Option(..., "--thought", "-t", help="Thought/decision"),
+    decision: str = typer.Option("", "--decision", "-d", help="Decision made"),
+    decision_type: str = typer.Option("unknown", "--type", "-ty", help="Decision type"),
+) -> None:
+    """Log agent reasoning for issue resolution."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.core.task_management.entities import DecisionType, ReasoningNode
+    from socialseed_tasker.storage.graph_database.reasoning_repository import ReasoningRepository
+
+    driver = get_driver()
+    if driver is None:
+        console.print("[error]Neo4j not connected. Run 'tasker login' first.[/error]")
+        raise typer.Exit(1)
+
+    issue_repo = get_repository()
+    issue = issue_repo.get_issue(issue_id)
+    if not issue:
+        console.print(f"[error]Issue '{issue_id}' not found[/error]")
+        raise typer.Exit(1)
+
+    try:
+        decision_type_enum = DecisionType(decision_type)
+    except ValueError:
+        decision_type_enum = DecisionType.UNKNOWN
+
+    reasoning = ReasoningNode(
+        thought=thought,
+        confidence=0.8,
+        decision=decision,
+        decision_type=decision_type_enum,
+    )
+
+    repo = ReasoningRepository(driver)
+    reasoning_id = repo.log_reasoning(
+        issue_id=issue_id,
+        agent_id="local-agent",
+        agent_name="tasker",
+        reasoning=reasoning,
+    )
+
+    console.print(f"[success]Logged reasoning for issue {issue_id}[/success]")
+
+
 # Create the main app with all command groups
 app = typer.Typer()
 app.add_typer(issue_app, name="issue")
@@ -2544,3 +2661,4 @@ app.add_typer(constraints_app, name="constraints")
 app.add_typer(code_graph_app, name="code-graph")
 app.add_typer(rag_app, name="rag")
 app.add_typer(reasoning_app, name="reasoning")
+app.add_typer(agent_app, name="agent")
