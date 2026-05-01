@@ -1250,6 +1250,53 @@ def analyze_impact(
             console.print(f"  - {issue.title} ({issue.status.value})")
 
 
+@analyze_app.command("code-impact")
+def analyze_code_impact(
+    path: str = typer.Option(..., "--path", "-p", help="File or directory path"),
+) -> None:
+    """Analyze code-level impact using Code-as-Graph."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from rich.table import Table
+
+    driver = get_driver()
+    if driver is None:
+        console.print("[error]Neo4j not connected. Run 'tasker login' first.[/error]")
+        raise typer.Exit(1)
+
+    cg_repo = CodeGraphRepository(driver)
+
+    callers = cg_repo.get_callers_by_path(path)
+    dependencies = cg_repo.get_dependencies_by_path(path)
+    tests = cg_repo.get_tests_for_file(path)
+
+    console.print(
+        Panel(
+            f"[bold]Callers:[/bold] {len(callers)} files\n"
+            f"[bold]Dependencies:[/bold] {len(dependencies)} modules\n"
+            f"[bold]Test files:[/bold] {len(tests)} files\n"
+            f"[bold]Risk level:[/bold] {"CRITICAL" if len(callers) > 5 else "HIGH" if len(callers) > 2 else "MEDIUM" if len(callers) > 0 else "LOW"}",
+            title=f"[bold]Code Impact Analysis for {path}[/bold]",
+            border_style="cyan",
+        )
+    )
+
+    if callers:
+        console.print("\n[bold]Files that call this:[/bold]")
+        for c in callers[:10]:
+            console.print(f"  - {c.get('path', 'unknown')}")
+
+    if dependencies:
+        console.print("\n[bold]Dependencies:[/bold]")
+        for d in dependencies[:10]:
+            console.print(f"  - {d.get('module', 'unknown')}")
+
+    if tests:
+        console.print("\n[bold]Test files:[/bold]")
+        for t in tests[:10]:
+            console.print(f"  - {t.get('path', 'unknown')}")
+
+
 # ---------------------------------------------------------------------------
 # Status command
 # ---------------------------------------------------------------------------

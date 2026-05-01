@@ -1692,6 +1692,54 @@ def analyze_impact(
 
 
 @analysis_router.get(
+    "/analyze/code-impact",
+    response_model=APIResponse[dict[str, Any]],
+    summary="Get code-level impact analysis",
+    description="Analyze code-level impact using Code-as-Graph (callers, dependencies, tests).",
+)
+def analyze_code_impact(
+    path: str = Query(..., description="File or directory path"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[dict[str, Any]]:
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    neo4j_driver = get_driver()
+    if neo4j_driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+
+    cg_repo = CodeGraphRepository(neo4j_driver)
+
+    callers = cg_repo.get_callers_by_path(path)
+    dependencies = cg_repo.get_dependencies_by_path(path)
+    tests = cg_repo.get_tests_for_file(path)
+
+    caller_count = len(callers)
+    if caller_count > 5:
+        risk = "CRITICAL"
+    elif caller_count > 2:
+        risk = "HIGH"
+    elif caller_count > 0:
+        risk = "MEDIUM"
+    else:
+        risk = "LOW"
+
+    return APIResponse(
+        data={
+            "path": path,
+            "callers": callers,
+            "dependencies": dependencies,
+            "tests": tests,
+            "caller_count": caller_count,
+            "dependency_count": len(dependencies),
+            "test_count": len(tests),
+            "risk_level": risk,
+        },
+        meta=Meta(request_id=None),
+    )
+
+
+@analysis_router.get(
     "/analyze/component-impact/{component_id}",
     response_model=APIResponse[ComponentImpactAnalysisResponse],
     summary="Get component impact analysis",
