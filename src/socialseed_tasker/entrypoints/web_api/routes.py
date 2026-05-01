@@ -2665,7 +2665,7 @@ _github_webhook_logs: list[dict] = []
     summary="Receive GitHub webhook events",
     description="Receive real-time updates from GitHub (issues, comments, labels, milestones).",
 )
-def receive_github_webhook(
+async def receive_github_webhook(
     repo: TaskRepositoryInterface = Depends(get_repo),
     request: Request = None,
 ) -> APIResponse[dict]:
@@ -2683,7 +2683,7 @@ def receive_github_webhook(
     validator = get_webhook_validator()
     signature = request.headers.get("X-Hub-Signature-256", "")
 
-    body = request.body()
+    body = await request.body()
     if not validator.validate(body, signature):
         from fastapi import HTTPException
 

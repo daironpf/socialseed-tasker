@@ -59,14 +59,14 @@ class MockRepository(TaskRepositoryInterface):
     def list_issues(
         self,
         component_id: str | None = None,
-        status: IssueStatus | None = None,
+        statuses: list[str] | None = None,
         project: str | None = None,
     ) -> list[Issue]:
         issues = list(self._issues.values())
         if component_id:
             issues = [i for i in issues if str(i.component_id) == component_id]
-        if status:
-            issues = [i for i in issues if i.status == status]
+        if statuses:
+            issues = [i for i in issues if i.status.value in statuses]
         return issues
 
     def add_dependency(self, issue_id: str, depends_on_id: str) -> None:
@@ -434,6 +434,7 @@ class TestTestFailureWebhook:
         data = response.json()
         assert "success" in data["data"]
 
+    @patch.dict(os.environ, {"TASKER_WEBHOOK_API_KEY": "valid-key"})
     def test_test_failure_with_invalid_api_key(self, client):
         """Should reject invalid API key."""
         response = client.post(
