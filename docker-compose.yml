@@ -1,78 +1,57 @@
 services:
 
-   # =============================================================================
-   # Neo4j Database (Graph Database - Exclusive Storage)
-   # =============================================================================
-tasker-db:
-      container_name: tasker-db
-      image: neo4j:5.26.15-community
-      ports:
-        - "7474:7474"
-        - "7687:7687"
-      environment:
-        - NEO4J_AUTH=${NEO4J_USERNAME:-neo4j}/${NEO4J_PASSWORD:-neoSocial}
-        - NEO4J_dbms_memory_heap_initial__size=100M
-        - NEO4J_dbms_memory_heap_max__size=100M
-        - NEO4J_dbms_memory_pagecache_size=50M
-        - NEO4J_PLUGINS=["apoc"]
-      volumes:
-        - neo4j-data:/var/lib/neo4j/data
-      healthcheck:
-        test: ["CMD-SHELL", "echo 'RETURN 1' | cypher-shell -u neo4j -p neoSocial || exit 1"]
-       interval: 10s
-       timeout: 10s
-       retries: 30
-     networks:
-       - tasker-net
-     deploy:
-       resources:
-         limits:
-           memory: 512M
+  tasker-db:
+    container_name: tasker-db
+    image: neo4j:5.26.15-community
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      # IMPORTANT: Neo4j 5.x requires password to differ from username "neo4j" for security.
+      # Using "neoSocial" as default. Do not change to "neo4j" or container will fail to start.
+      - NEO4J_AUTH=neo4j/neoSocial
+      - NEO4J_dbms_memory_heap_initial__size=100M
+      - NEO4J_dbms_memory_heap_max__size=100M
+      - NEO4J_dbms_memory_pagecache_size=50M
+      - NEO4J_PLUGINS=["apoc"]
+    volumes:
+      - neo4j-data:/var/lib/neo4j/data
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'RETURN 1' | cypher-shell -u neo4j -p neoSocial || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+    networks:
+      - tasker-net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
-   # =============================================================================
-   # FastAPI Backend (REST API for AI agents)
-   # Neo4j-only storage - graph database
-   # =============================================================================
-   tasker-api:
-     container_name: tasker-api
-     build:
-       context: .
-       dockerfile: Dockerfile
-     ports:
-       - "8000:8000"
-environment:
-        - TASKER_NEO4J_URI=bolt://tasker-db:7687
-        - TASKER_NEO4J_USERNAME=neo4j
-        - TASKER_NEO4J_PASSWORD=neoSocial
-        - TASKER_API_HOST=0.0.0.0
-        - TASKER_API_PORT=8000
-        - TASKER_API_KEY=test-token
-        - TASKER_AUTH_ENABLED=false
-        - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-     depends_on:
-       tasker-db:
-         condition: service_healthy
-     networks:
-       - tasker-net
-
-   # =============================================================================
-   # Vue.js Frontend (Human UI - Kanban Board)
-   # =============================================================================
-   tasker-board:
-     container_name: tasker-board
-     build:
-       context: .
-       dockerfile: frontend/Dockerfile
-     ports:
-       - "8080:80"
-     depends_on:
-       - tasker-api
-     networks:
-       - tasker-net
+  tasker-api:
+    container_name: tasker-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - TASKER_NEO4J_URI=bolt://tasker-db:7687
+      - TASKER_NEO4J_USERNAME=neo4j
+      - TASKER_NEO4J_PASSWORD=neoSocial
+      - TASKER_API_HOST=0.0.0.0
+      - TASKER_API_PORT=8000
+      - TASKER_API_KEY=test-token
+      - TASKER_AUTH_ENABLED=false
+    depends_on:
+      tasker-db:
+        condition: service_healthy
+    networks:
+      - tasker-net
 
 networks:
-   tasker-net:
-     driver: bridge
+  tasker-net:
+    driver: bridge
 
 volumes:
-   neo4j-data:
+  neo4j-data:

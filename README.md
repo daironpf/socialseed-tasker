@@ -71,6 +71,34 @@ For detailed technical guides, API references, and architectural deep-dives, vis
 
 ---
 
+### 🔧 Troubleshooting
+
+#### Neo4j Container Fails to Start
+
+If you see the error: `Invalid value for password. It cannot be 'neo4j', which is the default.`
+
+**Cause:** Neo4j 5.x security policy prevents using "neo4j" as the password (it must differ from the username).
+
+**Solution:** Use a different password in `docker-compose.yml`:
+
+```yaml
+environment:
+  - NEO4J_AUTH=neo4j/neoSocial  # password must NOT be "neo4j"
+```
+
+Also ensure the API environment variables match:
+```yaml
+- TASKER_NEO4J_PASSWORD=neoSocial
+```
+
+**Restart after changing:**
+```bash
+docker compose down -v
+docker compose up -d
+```
+
+---
+
 ### 🤝 Contributing
 
 We are building the future of autonomous engineering. Join us!
