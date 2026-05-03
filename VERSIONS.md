@@ -293,16 +293,16 @@ Enable semantic search across project knowledge:
 - [x] Agent integration CLI: context, suggest, reasoning
 - [x] Agent API endpoints: /agent/context, /agent/similar
 - [x] Enhanced impact analysis: code-level granularity
-- [ ] Solution similarity matching
-- [ ] Historical solution retrieval
-- [ ] Context injection for agent prompts
+- [x] Solution similarity matching
+- [x] Historical solution retrieval
+- [x] Context injection for agent prompts
 
 #### AI Reasoning Logs
 Record agent reasoning patterns: `(Agent)-[:THOUGHT]->(ReasoningNode)-[:DECIDED]->(Task)`
 
-- [ ] ReasoningNode with `thought`, `confidence`, `alternatives_considered`
-- [ ] Automatic capture via API interceptors
-- [ ] Human review and feedback loop
+- [x] ReasoningNode with `thought`, `confidence`, `alternatives_considered`
+- [x] Automatic capture via API interceptors
+- [x] Human review and feedback loop
 
 ---
 

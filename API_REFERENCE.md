@@ -1,4 +1,4 @@
-# API Reference - SocialSeed Tasker v0.8.1
+# API Reference - SocialSeed Tasker v0.9.0
 
 Complete reference for AI agents to interact with Tasker.
 
@@ -468,6 +468,28 @@ curl http://localhost:8000/api/v1/constraints/validate/<issue-id>
 
 ---
 
+## <a name="rag-reasoning"></a>RAG & AI Reasoning
+
+### RAG Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/rag/index` | POST | Index content for RAG |
+| `/api/v1/rag/search` | POST | Semantic similarity search |
+| `/api/v1/rag/stats` | GET | Index statistics |
+| `/api/v1/rag/{source_type}/{source_id}` | DELETE | Delete embeddings for source |
+| `/api/v1/rag` | DELETE | Clear all RAG embeddings |
+
+### AI Reasoning Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/reasoning/log` | POST | Log agent reasoning |
+| `/api/v1/reasoning/issue/{issue_id}` | GET | Get reasoning for issue |
+| `/api/v1/reasoning/history` | GET | Global reasoning history |
+| `/api/v1/reasoning/{id}/feedback` | POST | Add human feedback |
+| `/api/v1/reasoning/stats` | GET | Decision statistics |
+
+---
+
 ## Admin
 
 ### Reset Data
@@ -488,7 +510,7 @@ curl http://localhost:8000/health
 # Returns:
 # {
 #   "status": "healthy",
-#   "version": "0.8.0",
+#   "version": "0.9.0",
 #   "neo4j": "connected",
 #   "neo4j_uri": "bolt://localhost:7687",
 #   "auth_enabled": false
@@ -570,6 +592,17 @@ tasker analyze impact <issue>
 # Constraints
 tasker constraints list
 tasker constraints validate
+
+# Code-as-Graph
+tasker code-graph scan <path>
+tasker code-graph find <symbol>
+tasker code-graph impact <symbol>
+
+# RAG & Reasoning
+tasker rag index --type <type> --id <id> --content <content>
+tasker rag search <query>
+tasker reasoning log --issue <id> --thought <thought>
+tasker reasoning history
 
 # Seed demo
 tasker seed run

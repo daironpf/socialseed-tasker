@@ -302,11 +302,11 @@ CLI output (`tasker --help`, `tasker issue list`, etc.) shows extra blank lines 
 - Security enhancements (SECURITY.md, dependency-update workflow, pip-audit)
 - Test coverage enhancement (454 tests, new AI/RAG tests)
 
-### v0.9.0 - "Memory & Intelligence" (Q3 2026)
-- Code-as-Graph with Tree-sitter
-- RAG Native with vector indexes in Neo4j
-- AI Reasoning Logs integrated in graph
-- Enhanced impact analysis
+### v0.9.0 - "Memory & Intelligence" (Q3 2026) ✅
+- [x] Code-as-Graph with Tree-sitter
+- [x] RAG Native with vector indexes in Neo4j
+- [x] AI Reasoning Logs integrated in graph
+- [x] Enhanced impact analysis
 
 ### v1.0.0 - "The Architect" (2027)
 - Native MCP Server
@@ -331,7 +331,8 @@ CLI output (`tasker --help`, `tasker issue list`, etc.) shows extra blank lines 
 | 0.5.1 | 2026-04-07 | Post-Release Updates |
 | 0.6.0 | 2026-04-08 | Polish & Alignment |
 | 0.7.0 | 2025-10 | GitHub Integration |
-| **0.8.0** | **2026-04-23** | **Observability & Active Governance** |
+| 0.8.0 | 2026-04-23 | Observability & Active Governance |
+| **0.9.0** | **2026-05-03** | **Memory & Intelligence** |
 
 ---
 
