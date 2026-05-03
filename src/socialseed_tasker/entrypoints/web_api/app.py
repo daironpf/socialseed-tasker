@@ -260,6 +260,64 @@ def create_app(
 
         return response
 
+    # Reasoning Capture Middleware
+    @app.middleware("http")
+    async def reasoning_capture_middleware(request: Request, call_next):
+        response = await call_next(request)
+        
+        reasoning_header = request.headers.get("X-Agent-Reasoning")
+        if reasoning_header and "api/v1/issues/" in request.url.path:
+            parts = request.url.path.split("/")
+            try:
+                issue_idx = parts.index("issues")
+                if len(parts) > issue_idx + 1:
+                    issue_id = parts[issue_idx + 1]
+                    import uuid
+                    try:
+                        uuid.UUID(issue_id)
+                        
+                        from socialseed_tasker.storage.graph_database.reasoning_repository import ReasoningRepository
+                        from socialseed_tasker.core.task_management.entities import ReasoningNode, DecisionType
+                        import json
+                        
+                        driver = getattr(app.state, "driver", None)
+                        if driver:
+                            repo = ReasoningRepository(driver)
+                            try:
+                                data = json.loads(reasoning_header)
+                                thought = data.get("thought", str(reasoning_header))
+                                confidence = float(data.get("confidence", 0.8))
+                                alternatives = data.get("alternatives_considered", [])
+                                decision = data.get("decision", "action_execution")
+                                decision_type = DecisionType.UNKNOWN
+                                try:
+                                    if "decision_type" in data:
+                                        decision_type = DecisionType(data["decision_type"])
+                                except ValueError:
+                                    pass
+                                    
+                                node = ReasoningNode(
+                                    thought=thought,
+                                    confidence=confidence,
+                                    alternatives_considered=alternatives,
+                                    decision=decision,
+                                    decision_type=decision_type
+                                )
+                                agent_id = request.headers.get("X-Agent-ID", "unknown-agent")
+                                agent_name = request.headers.get("X-Agent-Name", "Unknown Agent")
+                                repo.log_reasoning(issue_id, agent_id, agent_name, node)
+                            except json.JSONDecodeError:
+                                node = ReasoningNode(thought=reasoning_header, confidence=0.5, decision="action_execution")
+                                agent_id = request.headers.get("X-Agent-ID", "unknown-agent")
+                                agent_name = request.headers.get("X-Agent-Name", "Unknown Agent")
+                                repo.log_reasoning(issue_id, agent_id, agent_name, node)
+                    except ValueError:
+                        pass
+            except Exception as e:
+                logger.error(f"Failed to capture reasoning: {e}")
+                
+        return response
+
     # Register routers
     # Register routers
     from socialseed_tasker.entrypoints.web_api.routes import (

@@ -90,6 +90,18 @@ This file provides essential context for AI agents working on this project. Agen
 
 ---
 
+## Agent Protocol
+
+### Interaction Guide
+All AI agents MUST follow the protocol defined in [AGENT_GUIDE.md](./AGENT_GUIDE.md).
+
+### Documentation Requirements
+- Update `ROADMAP.md` when issues are resolved.
+- Update `VERSIONS.md` when milestones are reached.
+- Log architectural decisions using `tasker reasoning log`.
+
+---
+
 ## Notes for Agents
 
 ### Important Notes

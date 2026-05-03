@@ -109,6 +109,22 @@ class Issue(BaseModel):
     epic_id: UUID | None = None
     description_embedding: list[float] | None = None
 
+    def to_indexable_text(self) -> str:
+        """Combine fields into a single text block for semantic indexing.
+
+        Business Value: Enables AI agents to find this issue via semantic search
+        by providing a rich text representation of the problem and its solution.
+        """
+        parts = [f"Issue: {self.title}", f"Description: {self.description}"]
+        if self.manifest_notes:
+            parts.append(f"Technical Notes: {' '.join(self.manifest_notes)}")
+        if self.manifest_todo:
+            todos = [t.get("task", "") for t in self.manifest_todo if isinstance(t, dict)]
+            parts.append(f"Work performed: {' '.join(todos)}")
+        if self.labels:
+            parts.append(f"Labels: {', '.join(self.labels)}")
+        return "\n\n".join(parts)
+
 
 class HourlyRateTier(str, Enum):
     JUNIOR = "JUNIOR"

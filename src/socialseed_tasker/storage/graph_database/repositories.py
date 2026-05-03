@@ -22,6 +22,7 @@ from socialseed_tasker.core.task_management.constraints import (
 )
 from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
 from socialseed_tasker.core.task_management.value_objects import ReasoningContext, ReasoningLogEntry
+from socialseed_tasker.core.services.embedding_service import get_embedding_service
 from socialseed_tasker.storage.graph_database import queries
 
 if TYPE_CHECKING:
@@ -244,6 +245,21 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 manifest_notes=issue.manifest_notes,
             )
 
+            # Index for RAG (Native in Graph)
+            embedding_service = get_embedding_service()
+            if embedding_service.is_available():
+                try:
+                    text = issue.to_indexable_text()
+                    embedding = embedding_service.generate(text)
+                    if embedding:
+                        session.run(
+                            queries.UPDATE_ISSUE_EMBEDDING,
+                            id=str(issue.id),
+                            embedding=embedding,
+                        )
+                except Exception:
+                    pass
+
     def get_issue(self, issue_id: str) -> Issue | None:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(queries.GET_ISSUE, id=issue_id)
@@ -263,7 +279,24 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             record = result.single()
             if record is None:
                 raise ValueError(f"Issue {issue_id} not found")
-            return _node_to_issue(record["i"])
+            issue = _node_to_issue(record["i"])
+
+            # Index for RAG (Native in Graph)
+            embedding_service = get_embedding_service()
+            if embedding_service.is_available():
+                try:
+                    text = issue.to_indexable_text()
+                    embedding = embedding_service.generate(text)
+                    if embedding:
+                        session.run(
+                            queries.UPDATE_ISSUE_EMBEDDING,
+                            id=issue_id,
+                            embedding=embedding,
+                        )
+                except Exception:
+                    pass
+
+            return issue
 
     def close_issue(self, issue_id: str) -> Issue:
         with self._driver.driver.session(database=self._driver.database) as session:
@@ -276,7 +309,24 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             record = result.single()
             if record is None:
                 raise ValueError(f"Issue {issue_id} not found")
-            return _node_to_issue(record["i"])
+            issue = _node_to_issue(record["i"])
+
+            # Index for RAG (Native in Graph)
+            embedding_service = get_embedding_service()
+            if embedding_service.is_available():
+                try:
+                    text = issue.to_indexable_text()
+                    embedding = embedding_service.generate(text)
+                    if embedding:
+                        session.run(
+                            queries.UPDATE_ISSUE_EMBEDDING,
+                            id=issue_id,
+                            embedding=embedding,
+                        )
+                except Exception:
+                    pass
+
+            return issue
 
     def delete_issue(self, issue_id: str) -> None:
         with self._driver.driver.session(database=self._driver.database) as session:

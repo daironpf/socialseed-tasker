@@ -1,9 +1,9 @@
 """Scaffolder service - orchestrates file system operations for project injection.
 
 Intent: Provide a pure-domain service that copies template assets from
-the library into an external project's tasker/ directory.
-Business Value: Enables one-command setup of Tasker infrastructure in
-any project without manual file management.
+the library into an external project's .agent/ directory.
+Business Value: Enables one-command adoption of Tasker management in
+external projects without manual file management.
 """
 
 from __future__ import annotations
@@ -53,16 +53,15 @@ class ScaffolderService:
     ) -> ScaffoldResult:
         """Copy all template assets into the target directory.
 
-        Creates the tasker/ directory structure and copies skills,
+        Creates the .agent/ directory structure and copies skills, workflows,
         configs, and docker-compose.yml from the bundled templates.
-        Also copies project_readme.md to the project root as README.md.
-        If frontend/dist/ exists in the project root, copies it to
-        tasker/frontend/ for a working Kanban board.
+        Also copies project_readme.md to the project root as README.md,
+        and ROADMAP.md/VERSIONS.md to the project root.
 
         Args:
-            target_dir: Root of the external project (tasker/ will be created inside).
+            target_dir: Root of the external project (.agent/ will be created inside).
             force: If True, overwrite existing files. Otherwise skip them.
-            output_dir: Custom output directory. If None, creates tasker/ inside target_dir.
+            output_dir: Custom output directory. If None, creates .agent/ inside target_dir.
 
         Returns:
             ScaffoldResult with details of all file operations performed.
@@ -70,7 +69,7 @@ class ScaffolderService:
         if output_dir:
             tasker_dir = output_dir
         else:
-            tasker_dir = target_dir / "tasker"
+            tasker_dir = target_dir / ".agent"
         result = ScaffoldResult(target_dir=tasker_dir)
 
         if not self._template_dir.exists():
@@ -96,6 +95,8 @@ class ScaffolderService:
         self._copy_project_readme(target_dir, force, result)
 
         self._copy_project_context(target_dir, force, result)
+
+        self._copy_documentation_files(target_dir, force, result)
 
         self._copy_frontend_build(target_dir, force, result)
 
@@ -160,8 +161,8 @@ class ScaffolderService:
         force: bool,
         result: ScaffoldResult,
     ) -> None:
-        """Copy project.md and project.json templates to tasker/ directory."""
-        tasker_dir = target_dir / "tasker"
+        """Copy project.md and project.json templates to .agent/ directory."""
+        tasker_dir = target_dir / ".agent"
         tasker_dir.mkdir(parents=True, exist_ok=True)
 
         for filename in ["project.md", "project.json"]:
@@ -195,6 +196,52 @@ class ScaffolderService:
             except (OSError, shutil.Error) as exc:
                 op = FileOperation(
                     source=project_context_template,
+                    destination=destination,
+                    status=ScaffoldStatus.ERROR,
+                    error_message=str(exc),
+                )
+                result.add_operation(op)
+                if self._progress_callback:
+                    self._progress_callback(op)
+
+    def _copy_documentation_files(
+        self,
+        target_dir: Path,
+        force: bool,
+        result: ScaffoldResult,
+    ) -> None:
+        """Copy ROADMAP.md and VERSIONS.md templates to project root."""
+        for filename in ["ROADMAP.md", "VERSIONS.md"]:
+            template = self._template_dir / filename
+            if not template.exists():
+                continue
+
+            destination = target_dir / filename
+
+            if destination.exists() and not force:
+                result.add_operation(
+                    FileOperation(
+                        source=template,
+                        destination=destination,
+                        status=ScaffoldStatus.SKIPPED,
+                    )
+                )
+                continue
+
+            try:
+                shutil.copy2(str(template), str(destination))
+                status = ScaffoldStatus.OVERWRITTEN if destination.exists() else ScaffoldStatus.CREATED
+                op = FileOperation(
+                    source=template,
+                    destination=destination,
+                    status=status,
+                )
+                result.add_operation(op)
+                if self._progress_callback:
+                    self._progress_callback(op)
+            except (OSError, shutil.Error) as exc:
+                op = FileOperation(
+                    source=template,
                     destination=destination,
                     status=ScaffoldStatus.ERROR,
                     error_message=str(exc),
@@ -256,12 +303,10 @@ class ScaffolderService:
         force: bool,
         result: ScaffoldResult,
     ) -> None:
-        """Copy frontend build to tasker/frontend/.
+        """Copy frontend build to .agent/frontend/.
 
         Copies from self._frontend_dir if set (package assets),
         or from target_dir/frontend/dist if it exists.
-        This ensures users get a working Vue Kanban board immediately
-        after scaffolding, instead of just placeholder HTML files.
         """
         if self._frontend_dir and self._frontend_dir.exists():
             frontend_source = self._frontend_dir
@@ -271,7 +316,7 @@ class ScaffolderService:
         if not frontend_source.exists():
             return
 
-        tasker_frontend = target_dir / "tasker" / "frontend"
+        tasker_frontend = target_dir / ".agent" / "frontend"
         tasker_frontend.mkdir(parents=True, exist_ok=True)
 
         for src_path in frontend_source.rglob("*"):

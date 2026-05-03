@@ -1,7 +1,7 @@
 """CLI init command - scaffolds Tasker infrastructure into an external project.
 
 Intent: Provide the 'tasker init' command that injects a pre-configured
-tasker/ directory with AI skills, Docker infrastructure, and configuration
+.agent/ directory with AI skills, workflows, Docker infrastructure, and configuration
 templates into any project.
 Business Value: Enables one-command adoption of Tasker management in
 external projects without manual setup.
@@ -57,7 +57,7 @@ def scaffold_command(
         False,
         "--inplace",
         "-i",
-        help="Initialize in current directory without creating tasker/ subdirectory",
+        help="Initialize in current directory without creating .agent/ subdirectory",
     ),
     project_name: str = typer.Option(
         None,
@@ -98,7 +98,7 @@ def scaffold_command(
 ) -> None:
     """Scaffold Tasker infrastructure into a project.
 
-    Creates a tasker/ directory with AI skills, Docker Compose,
+    Creates a .agent/ directory with AI skills, workflows, Docker Compose,
     and configuration templates.
 
     Examples:
@@ -128,7 +128,7 @@ def init(
         False,
         "--inplace",
         "-i",
-        help="Initialize in current directory without creating tasker/ subdirectory",
+        help="Initialize in current directory without creating .agent/ subdirectory",
     ),
     project_name: str = typer.Option(
         None,
@@ -169,7 +169,7 @@ def init(
 ) -> None:
     """Scaffold Tasker infrastructure into a project.
 
-    Creates a tasker/ directory with AI skills, Docker Compose,
+    Creates a .agent/ directory with AI skills, workflows, Docker Compose,
     and configuration templates.
 
     Examples:
@@ -213,9 +213,9 @@ def _run_scaffold(
     if inplace:
         output_path = target_path
     else:
-        output_path = target_path / "tasker"
+        output_path = target_path / ".agent"
         if output_path.exists() and not force:
-            console.print(f"[warning]Tasker directory already exists at: {output_path}[/warning]")
+            console.print(f"[warning].agent directory already exists at: {output_path}[/warning]")
             console.print("Use [bold]--force[/bold] to overwrite existing templates.")
             raise typer.Exit(code=0)
 
@@ -244,7 +244,8 @@ def _run_scaffold(
 
     if project_name or architecture or language or framework or database or github_repo:
         _fill_project_context(
-            target_path if inplace else target_path / "tasker",
+            target_path,
+            target_path if inplace else target_path / ".agent",
             project_name,
             architecture,
             language,
@@ -269,13 +270,13 @@ def _run_scaffold(
         console.print(
             Panel(
                 "[bold]Next steps:[/bold]\n"
-                "  1. cd tasker && cp configs/.env.example configs/.env\n"
-                "  2. Edit configs/.env and add your OPENAI_API_KEY for RAG features\n"
+                "  1. cd .agent && cp configs/.env.example configs/.env\n"
+                "  2. Edit .agent/configs/.env and add your OPENAI_API_KEY for RAG features\n"
                 "  3. docker compose build tasker-api\n"
                 "  4. docker compose up -d\n"
-                "  5. Import skills from tasker/skills/ in your AI agent\n"
+                "  5. Look at .agent/README.md for Agent Workflows and Skills\n"
                 "\n[dim]Note: RAG semantic search requires OPENAI_API_KEY in .env[/dim]",
-                title="[cyan]Tasker Setup[/cyan]",
+                title="[cyan]Tasker & Agent Setup[/cyan]",
                 border_style="cyan",
             )
         )
@@ -285,6 +286,7 @@ def _run_scaffold(
 
 
 def _fill_project_context(
+    target_root: Path,
     tasker_dir: Path,
     project_name: str | None,
     architecture: str | None,
@@ -293,13 +295,7 @@ def _fill_project_context(
     database: str | None,
     github_repo: str | None,
 ) -> None:
-    """Fill project.md template with user-provided values."""
-    project_md = tasker_dir / "project.md"
-    if not project_md.exists():
-        return
-
-    content = project_md.read_text(encoding="utf-8")
-
+    """Fill project templates with user-provided values."""
     replacements = {
         "{project_name}": project_name or "my-project",
         "{version}": "1.0.0",
@@ -322,43 +318,36 @@ def _fill_project_context(
         "{test_commands}": "pytest tests/",
         "{build_commands}": "docker build .",
         "{code_review_count}": "1",
-        "{agent_notes}": "- Read project.md before starting work",
-        "{k_dos_and_donts}": "- DO: Use issue_quality_guide.json\n- DON'T: Create vague issues",
+        "{agent_notes}": "- Read .agent/project.md before starting work",
+        "{k_dos_and_donts}": "- DO: Use .agent/skills/issue_quality_guide.json\n- DON'T: Create vague issues",
     }
 
-    for key, value in replacements.items():
-        content = content.replace(key, value)
+    # Markdown files
+    md_files = [
+        target_root / "README.md",
+        target_root / "ROADMAP.md",
+        target_root / "VERSIONS.md",
+        tasker_dir / "project.md",
+        tasker_dir / "AGENT_GUIDE.md",
+        tasker_dir / "README.md",
+    ]
 
-    project_md.write_text(content, encoding="utf-8")
-    console.print("  [success]Updated:[/success]    tasker/project.md")
+    for md_file in md_files:
+        if md_file.exists():
+            content = md_file.read_text(encoding="utf-8")
+            for key, value in replacements.items():
+                content = content.replace(key, value)
+            md_file.write_text(content, encoding="utf-8")
+            console.print(f"  [success]Updated:[/success]    {md_file.relative_to(target_root.parent if target_root.parent.exists() else target_root)}")
 
+    # JSON project file (needs different key_components format)
     project_json = tasker_dir / "project.json"
-    if not project_json.exists():
-        return
-
-    content = project_json.read_text(encoding="utf-8")
-
-    replacements = {
-        "{project_name}": project_name or "my-project",
-        "{version}": "1.0.0",
-        "{created_date}": date.today().isoformat(),
-        "{architecture_type}": architecture or "api-first",
-        "{language}": language or "python",
-        "{framework}": framework or "fastapi",
-        "{database}": database or "postgresql",
-        "{frontend}": "vue",
-        "{other_services}": "redis, celery",
-        "{key_components}": '"API Gateway", "Backend Service", "Database"',
-        "{github_repo}": github_repo or "https://github.com/user/repo",
-        "{default_branch}": "main",
-        "{setup_commands}": "pip install -r requirements.txt",
-        "{test_commands}": "pytest tests/",
-        "{build_commands}": "docker build .",
-        "{code_review_count}": "1",
-    }
-
-    for key, value in replacements.items():
-        content = content.replace(key, value)
-
-    project_json.write_text(content, encoding="utf-8")
-    console.print("  [success]Updated:[/success]    tasker/project.json")
+    if project_json.exists():
+        json_replacements = replacements.copy()
+        json_replacements["{key_components}"] = '"API Gateway", "Backend Service", "Database"'
+        
+        content = project_json.read_text(encoding="utf-8")
+        for key, value in json_replacements.items():
+            content = content.replace(key, value)
+        project_json.write_text(content, encoding="utf-8")
+        console.print(f"  [success]Updated:[/success]    {project_json.relative_to(target_root.parent if target_root.parent.exists() else target_root)}")
