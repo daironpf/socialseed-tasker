@@ -108,7 +108,7 @@ class TestScaffolderService:
         assert result.created_count > 0
         assert result.error_count == 0
 
-        tasker_dir = target_dir / "tasker"
+        tasker_dir = target_dir / ".agent"
         assert tasker_dir.exists()
         assert (tasker_dir / "skills" / "test_skill.py").exists()
         assert (tasker_dir / "configs" / ".env.example").exists()
@@ -221,7 +221,7 @@ class TestScaffolderService:
         result = service.scaffold(target_dir)
 
         assert result.success is True
-        tasker_frontend = target_dir / "tasker" / "frontend"
+        tasker_frontend = target_dir / ".agent" / "frontend"
         assert (tasker_frontend / "index.html").exists()
         assert (tasker_frontend / "assets" / "app.js").exists()
         assert (tasker_frontend / "index.html").read_text() == "<html>Built App</html>"
@@ -234,7 +234,7 @@ class TestScaffolderService:
         frontend_dist.mkdir(parents=True)
         (frontend_dist / "index.html").write_text("<html>New Build</html>")
 
-        tasker_frontend = target_dir / "tasker" / "frontend"
+        tasker_frontend = target_dir / ".agent" / "frontend"
         tasker_frontend.mkdir(parents=True)
         (tasker_frontend / "index.html").write_text("<html>Old Build</html>")
 
@@ -252,7 +252,7 @@ class TestScaffolderService:
         frontend_dist.mkdir(parents=True)
         (frontend_dist / "index.html").write_text("<html>New Build</html>")
 
-        tasker_frontend = target_dir / "tasker" / "frontend"
+        tasker_frontend = target_dir / ".agent" / "frontend"
         tasker_frontend.mkdir(parents=True)
         (tasker_frontend / "index.html").write_text("<html>Old Build</html>")
 
