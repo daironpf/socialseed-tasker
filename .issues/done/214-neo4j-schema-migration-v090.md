@@ -84,5 +84,5 @@ STORAGE
 - [x] Add indexes for performance
 - [x] Add rollback capability
 - [x] Document schema changes
-- [ ] Test migration on fresh database
-- [ ] Test migration on existing database
+- [x] Test migration on fresh database
+- [x] Test migration on existing database
