@@ -1,0 +1,313 @@
+# CLI Commands Reference - v0.9.0
+
+This document covers all CLI commands available in SocialSeed Tasker v0.9.0.
+
+## Installation
+
+```bash
+pip install socialseed-tasker
+tasker --help
+```
+
+## Issue Management
+
+### Create Issue
+```bash
+tasker issue create --title "Fix login bug" --component backend --priority HIGH
+```
+
+### List Issues
+```bash
+tasker issue list --status OPEN --project myproject
+```
+
+### Show Issue Details
+```bash
+tasker issue show <issue-id>
+```
+
+### Close Issue
+```bash
+tasker issue close <issue-id>
+```
+
+### Delete Issue
+```bash
+tasker issue delete <issue-id>
+```
+
+### Move Issue
+```bash
+tasker issue move <issue-id> --to-component <component-id>
+```
+
+### Start Working on Issue
+```bash
+tasker issue start <issue-id>
+```
+
+### Finish Working on Issue
+```bash
+tasker issue finish <issue-id>
+```
+
+## Component Management
+
+### Create Component
+```bash
+tasker component create --name api-gateway --project myproject
+```
+
+### List Components
+```bash
+tasker component list --project myproject
+```
+
+### Show Component
+```bash
+tasker component show <component-id>
+```
+
+### Update Component
+```bash
+tasker component update <component-id> --name <new-name>
+```
+
+### Delete Component
+```bash
+tasker component delete <component-id>
+```
+
+### Add Component Dependency
+```bash
+tasker component add-dependency <component-id> --depends-on <dep-id>
+```
+
+### List Component Dependencies
+```bash
+tasker component list-dependencies <component-id>
+```
+
+## Dependency Management
+
+### Add Dependency
+```bash
+tasker dependency add <issue-id> --depends-on <dep-id>
+```
+
+### Remove Dependency
+```bash
+tasker dependency remove <issue-id> <depends-on-id>
+```
+
+### List Dependencies
+```bash
+tasker dependency list <issue-id>
+```
+
+### Dependency Chain
+```bash
+tasker dependency chain <issue-id>
+```
+
+### Blocked Issues
+```bash
+tasker dependency blocked
+```
+
+## Analysis Commands
+
+### Impact Analysis
+```bash
+tasker analyze impact <issue-id>
+```
+
+### Code Impact Analysis
+```bash
+tasker analyze code-impact <file-path>
+```
+
+### Root Cause Analysis
+```bash
+tasker analyze root-cause <issue-id>
+```
+
+## Code Graph (v0.9.0)
+
+### Scan Code Repository
+```bash
+tasker code-graph scan /path/to/repo
+```
+
+### Find Code Symbols
+```bash
+# Find by name
+tasker code-graph find --name "function_name"
+
+# Find by type
+tasker code-graph find --type class --name "UserService"
+
+# Find by language
+tasker code-graph find --language python --name "handler"
+```
+
+### List Code Files
+```bash
+tasker code-graph files
+```
+
+### Code Graph Stats
+```bash
+tasker code-graph stats
+```
+
+### Clear Code Graph
+```bash
+tasker code-graph clear
+```
+
+### Impact Analysis (Code Level)
+```bash
+tasker code-graph impact <symbol-id>
+```
+
+### Find Function Callers
+```bash
+tasker code-graph calls <symbol-id>
+```
+
+### Find Dependencies
+```bash
+tasker code-graph depends <symbol-id>
+```
+
+### Find Tests
+```bash
+tasker code-graph tests <symbol-id>
+```
+
+### Get File Details
+```bash
+tasker code-graph file <file-path>
+```
+
+## RAG Commands (v0.9.0)
+
+### Semantic Search
+```bash
+tasker rag search "how to implement authentication"
+```
+
+### Index Content
+```bash
+tasker rag index --source issue --id <issue-id>
+```
+
+### RAG Stats
+```bash
+tasker rag stats
+```
+
+### Clear RAG Index
+```bash
+tasker rag clear --yes
+```
+
+## Agent Commands (v0.9.0)
+
+### Get Agent Context
+```bash
+tasker agent context --issue <issue-id>
+```
+
+### Get Suggestions
+```bash
+tasker agent suggest --issue <issue-id>
+```
+
+### View Agent Reasoning
+```bash
+tasker agent reasoning --issue <issue-id>
+```
+
+## Reasoning Commands (v0.9.0)
+
+### Log Reasoning
+```bash
+tasker reasoning log --issue <issue-id> --thought "Choosing solution A because..."
+```
+
+### View Reasoning History
+```bash
+tasker reasoning history --issue <issue-id>
+```
+
+### Reasoning Stats
+```bash
+tasker reasoning stats
+```
+
+### Clear Reasoning Logs
+```bash
+tasker reasoning clear
+```
+
+## Constraints
+
+### Set Constraint
+```bash
+tasker constraints set --name no-circular-deps --rule "no_circular_dependencies"
+```
+
+### List Constraints
+```bash
+tasker constraints list
+```
+
+### Validate Constraints
+```bash
+tasker constraints validate
+```
+
+## Storage
+
+### Run Migrations
+```bash
+tasker storage migrate --version 0.9.0
+```
+
+### Rollback Migration
+```bash
+tasker storage rollback --version 0.9.0
+```
+
+## Authentication
+
+### Login
+```bash
+tasker login --uri bolt://localhost:7687 --user neo4j
+```
+
+### Logout
+```bash
+tasker logout
+```
+
+## Project Commands
+
+### Detect Project
+```bash
+tasker project detect --path /path/to/project
+```
+
+### Setup Project
+```bash
+tasker project setup --path /path/to/project
+```
+
+## Seed Data
+
+### Run Seed
+```bash
+tasker seed run
+```
