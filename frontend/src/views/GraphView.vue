@@ -20,6 +20,7 @@
           <option value="CLOSED">Closed</option>
         </select>
         <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-purple-500"></span> Component</span>
           <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500"></span> Open</span>
           <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500"></span> In Progress</span>
           <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500"></span> Blocked</span>
@@ -71,11 +72,13 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { Network, DataSet } from 'vis-network/standalone'
 import { useIssuesStore } from '@/stores/issuesStore'
+import { useComponentsStore } from '@/stores/componentsStore'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
 import type { Issue } from '@/types'
 
 const issuesStore = useIssuesStore()
+const componentsStore = useComponentsStore()
 const networkContainer = ref<HTMLElement | null>(null)
 const searchQuery = ref('')
 const statusFilter = ref('')
@@ -107,9 +110,21 @@ const filteredIssues = computed(() => {
 
 const graphData = computed(() => {
   const issues = filteredIssues.value
-  const nodeData: Array<{ id: string; label: string; color: string; shape: string; title: string }> =
+  const components = componentsStore.components
+  const nodeData: Array<{ id: string; label: string; color: string; shape: string; title: string; group?: string }> =
     []
   const edgeData: Array<{ id: string; from: string; to: string; arrows: string }> = []
+
+  for (const component of components) {
+    nodeData.push({
+      id: component.id,
+      label: component.name.length > 20 ? component.name.slice(0, 20) + '...' : component.name,
+      color: '#8b5cf6',
+      shape: 'box',
+      title: component.name,
+      group: 'component',
+    })
+  }
 
   for (const issue of issues) {
     nodeData.push({
@@ -118,7 +133,20 @@ const graphData = computed(() => {
       color: statusColors[issue.status] ?? '#6b7280',
       shape: 'dot',
       title: issue.title,
+      group: 'issue',
     })
+
+    if (issue.component_id) {
+      const comp = components.find(c => c.id === issue.component_id)
+      if (comp) {
+        edgeData.push({
+          id: `${issue.id}-${issue.component_id}`,
+          from: issue.component_id,
+          to: issue.id,
+          arrows: 'to',
+        })
+      }
+    }
 
     for (const depId of issue.dependencies) {
       if (issues.find((i) => i.id === depId)) {
@@ -235,7 +263,10 @@ async function onCloseIssue(id: string) {
 }
 
 onMounted(async () => {
-  await issuesStore.fetchIssues()
+  await Promise.all([
+    issuesStore.fetchIssues(),
+    componentsStore.fetchComponents(),
+  ])
   await nextTick()
   buildGraph()
 })
