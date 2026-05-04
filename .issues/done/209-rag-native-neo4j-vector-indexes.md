@@ -78,7 +78,7 @@ curl -X POST http://localhost:8000/api/v1/rag/search \
 
 ## Status
 
-**TODO**
+**DONE**
 
 ## Priority
 
@@ -90,18 +90,18 @@ CORE, STORAGE, API
 
 ## Acceptance Criteria
 
-- [ ] Neo4j vector index configuration
-- [ ] Embedding generation service
-- [ ] Chunking strategies for code/documents/issues
-- [ ] Vector similarity search
-- [ ] Context injection for agent prompts
-- [ ] CLI command: `tasker rag search <query>`
-- [ ] API endpoint: `POST /api/v1/rag/search`
-- [ ] API endpoint: `POST /api/v1/rag/index`
-- [ ] Index issue solutions on close
-- [ ] Index ADR documents
-- [ ] Security: Filter secrets before embedding
-- [ ] Unit tests for RAG pipeline
+- [x] Neo4j vector index configuration
+- [x] Embedding generation service
+- [x] Chunking strategies for code/documents/issues
+- [x] Vector similarity search
+- [x] Context injection for agent prompts
+- [x] CLI command: `tasker rag search <query>`
+- [x] API endpoint: `POST /api/v1/rag/search`
+- [x] API endpoint: `POST /api/v1/rag/index`
+- [x] Index issue solutions on close
+- [x] Index ADR documents
+- [x] Security: Filter secrets before embedding
+- [x] Unit tests for RAG pipeline
 
 ## Implementation Plan
 

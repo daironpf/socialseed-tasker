@@ -752,11 +752,23 @@ tasker reasoning clear [--issue <id>]
 curl -X POST "http://localhost:8000/api/v1/reasoning/log?issue_id=issue-123&agent_id=agent-1&agent_name=DevAgent&thought=Using buffer strategy&confidence=0.85&decision=add wrapper&decision_type=solution_selection"
 ```
 
+### 15.6 Automatic Reasoning Capture
+
+An API middleware interceptor automatically captures agent reasoning from the `X-Agent-Reasoning` HTTP header for all requests modifying issues.
+
+**Example Client Flow:**
+```bash
+curl -X PATCH "http://localhost:8000/api/v1/issues/<issue-id>" \
+  -H "X-Agent-Reasoning: {\"thought\": \"Refactoring cache layer\", \"decision\": \"apply_diff\", \"confidence\": 0.9}" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "IN_PROGRESS"}'
+```
+
 ---
 
 ## 16. Docker & Deployment
 
-### 13.1 Docker Compose
+### 16.1 Docker Compose
 
 Start all services.
 
@@ -776,7 +788,7 @@ docker compose down -v
 
 ---
 
-### 13.2 API Documentation
+### 16.2 API Documentation
 
 | Endpoint | Description |
 |----------|-------------|
@@ -786,7 +798,7 @@ docker compose down -v
 
 ---
 
-## 14. CLI Commands Reference
+## 17. CLI Commands Reference
 
 ### Components
 ```bash

@@ -39,6 +39,7 @@ Executes a complete black-box evaluation of the SocialSeed Tasker system. This w
 - **Number of Issues**: e.g., 50 issues
 - **Issue Type**: Real issues with dependencies vs simple enumerated issues
 - **Architecture Type**: Monolithic / Microservices / Serverless / API-first
+- **Implementation Count**: Number of issues to implement (0 to 30) to test doc-sync and registry.
 
 - **Quality Guide**: Optional reference for real issues at `skills/issue_quality_guide.json`
 
@@ -53,7 +54,11 @@ Executes a complete black-box evaluation of the SocialSeed Tasker system. This w
    - **Microservices**: Independent services communicating via API (e.g., Go services, Node services)
    - **Serverless**: Function-based deployment (e.g., AWS Lambda, Cloud Functions)
    - **API-first**: Backend API with separate frontend (e.g., REST/GraphQL API + SPA)
-5. (Optional) Assign random profile from Section 0:
+5. Ask user for implementation count (0-30):
+   - **None (0)**: Only test issue creation and graph storage.
+   - **Partial (1-10)**: Test basic doc-sync and registry reflection.
+   - **Stress (11-30)**: Test performance of documentation updates and registry consistency.
+6. (Optional) Assign random profile from Section 0:
    - **Junior Dev**: Focus on documentation clarity, "Doc Gaps"
    - **Senior Architect**: Focus on graph efficiency, design patterns, scalability
    - **DevOps**: Focus on infrastructure, logs, response times, Docker stability
@@ -194,14 +199,49 @@ done
 
 ---
 
-## Phase 4: Report Generation
+## Phase 4: Implementation & Doc Sync Evaluation
+
+### Objective
+Evaluate how the system handles the transition from "TO-DO" to "DONE", focusing on documentation synchronization and the internal implementation registry.
+
+### Process (For N issues chosen in Phase 0)
+
+1.  **Pick N Created Issues**: Select a subset of the issues created in Phase 3.
+2.  **Execute Implementation Loop**:
+    -   **Simulate Code Change**: Create/modify a dummy file in the `real-test/` project related to the issue.
+    -   **Update Documentation**: Apply `skills/documentation-sync.md` within the `real-test/` environment:
+        -   Update `README.md` (if feature/command).
+        -   Update `ROADMAP.md` (Known Issues -> Resolved).
+        -   Update `VERSIONS.md` (Checklist).
+    -   **Mark as COMPLETED**: Use the CLI or API to close the issue.
+        ```bash
+        tasker issue close <id> --reason "Implemented during real-test evaluation"
+        ```
+3.  **Verify Implementation Registry**:
+    -   **Status Check**: Verify via API that the issue is truly `COMPLETED`.
+    -   **Reasoning Log**: Check if the reasoning for closing the issue was correctly stored.
+        ```bash
+        tasker reasoning history --issue <id>
+        ```
+    -   **Sync Verification**: If the system uses a local-to-graph sync mechanism, verify that the change is reflected in the Neo4j database.
+
+4.  **Audit Results**:
+    -   If documentation files were not updated correctly → `FINDING: DOC_SYNC_FAILURE`
+    -   If the registry (DB/Logs) does not reflect the implementation → `FINDING: REGISTRY_DESYNC`
+    -   If the process causes data corruption or duplicates → `FINDING: INTEGRITY_ERROR`
+
+---
+
+## Phase 5: Report Generation
 
 ### Output: `real-test/report.md`
 
 Must include:
-- **Test Metadata**: date, version, use case, requested vs created issues, dependencies created
+- **Test Metadata**: date, version, use case, requested vs created issues, implementation count, successful implementations.
 - **Findings**:
   - DOC_GAP: Documentation inconsistencies
+  - DOC_SYNC_FAILURE: Errors during automatic doc updates (Phase 4)
+  - REGISTRY_DESYNC: Implementation registry not reflected correctly (Phase 4)
   - BUG: Code bugs
   - REFACTOR: Technical debt suggestions
   - FEATURE_REQ: Missing features
@@ -341,11 +381,12 @@ dx_evaluation:
 
 ```
 test the project
-  → Phase 0: Ask use case + issue count + issue type + architecture
+  → Phase 0: Ask use case + issue count + issue type + architecture + implementation count
   → Phase 1: Setup real-test/ + venv
   → Phase 2: tasker init + docker up
   → Phase 3: Create issues via API (simple or real)
-  → Phase 4: Generate report.md
+  → Phase 4: Implementation & Doc Sync Evaluation (0-30 issues)
+  → Phase 5: Generate report.md
   → ⚠️ ASK: Cleanup or keep running?
   → WAIT for user response before acting
 ```
@@ -366,9 +407,12 @@ test the project
 - [ ] Phase 3: Documentation available
 - [ ] Phase 3: Issues created via API
 - [ ] Phase 3: Issue count verified
-- [ ] Phase 4: report.md generated
-- [ ] Phase 4: ASK user for cleanup decision ⚠️
-- [ ] Phase 4: Cleanup (only if user confirmed)
+- [ ] Phase 4: Implementation subset selected (0-30)
+- [ ] Phase 4: Doc-sync performed and verified
+- [ ] Phase 4: Registry reflection verified (Logs/DB)
+- [ ] Phase 5: report.md generated
+- [ ] Phase 5: ASK user for cleanup decision ⚠️
+- [ ] Phase 5: Cleanup (only if user confirmed)
 
 ## Manual Cleanup (When User Confirms)
 

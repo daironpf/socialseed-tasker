@@ -109,6 +109,22 @@ app.add_typer(commands.seed_app, name="seed", help="Seed demo data for first-tim
 # Register code graph commands
 app.add_typer(commands.code_graph_app, name="code-graph", help="Manage code graph analysis")
 
+# Register RAG commands
+app.add_typer(commands.rag_app, name="rag", help="RAG (Retrieval-Augmented Generation) commands")
+
+# Register reasoning commands
+app.add_typer(commands.reasoning_app, name="reasoning", help="AI Reasoning Log commands")
+
+# Register agent commands
+app.add_typer(commands.agent_app, name="agent", help="Agent Integration: context, suggestions, and reasoning")
+
+# Register constraints commands
+app.add_typer(commands.constraints_app, name="constraints", help="Manage project constraints and rules")
+
+# Register storage commands
+from socialseed_tasker.entrypoints.terminal_cli.cmd.storage import storage_app
+app.add_typer(storage_app, name="storage")
+
 
 @app.callback(invoke_without_command=True)
 def main(

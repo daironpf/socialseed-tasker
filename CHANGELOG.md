@@ -5,6 +5,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [0.9.0] - 2026-05-03 (Memory & Intelligence Release)
+
+### Added
+- **Code-as-Graph:** Tree-sitter integration to parse repositories into Graph Nodes (`CodeFile`, `CodeSymbol`, `CodeImport`).
+- **RAG Native:** Vector Indexes in Neo4j (`issue_embeddings`) for high-performance semantic search.
+- **AI Reasoning Logs:** Agent decision and context capture natively integrated into the graph structure (`ReasoningNode`).
+- **CLI & API Commands:** Full exposure of Graph and Agent-oriented workflows in the core CLI and REST API.
+- **Enhanced Impact Analysis:** Code-level granularity using graph dependency resolution.
+
+### Changed
+- **Schema Migrations:** Updated Neo4j schemas to support vector storage and vector indexes efficiently.
+- **Test Suite:** Exceeded 500+ unit tests with full coverage for Code Graph, RAG, and AI features.
+
+---
+
 ## [0.8.0] - 2026-04-23 (Observability & UI Enhancements)
 
 ### Added

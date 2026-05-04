@@ -96,7 +96,7 @@ curl http://localhost:8000/api/v1/issues/.../reasoning
 
 ## Status
 
-**TODO**
+**DONE**
 
 ## Priority
 
@@ -108,17 +108,17 @@ CORE, API, STORAGE
 
 ## Acceptance Criteria
 
-- [ ] ReasoningNode schema in Neo4j
-- [ ] [:THOUGHT] and [:DECIDED] relationship types
-- [ ] API interceptor for automatic capture
-- [ ] CLI command: `tasker reasoning log <issue>`
-- [ ] CLI command: `tasker reasoning history <issue>`
-- [ ] API endpoint: `POST /api/v1/reasoning/log`
-- [ ] API endpoint: `GET /api/v1/reasoning/{issue_id}`
-- [ ] UI integration in issue detail view
-- [ ] Human feedback mechanism (approve/disapprove)
-- [ ] Decision pattern analysis
-- [ ] Unit tests for reasoning capture
+- [x] ReasoningNode schema in Neo4j
+- [x] [:THOUGHT] and [:DECIDED] relationship types
+- [x] API interceptor for automatic capture
+- [x] CLI command: `tasker reasoning log <issue>`
+- [x] CLI command: `tasker reasoning history <issue>`
+- [x] API endpoint: `POST /api/v1/reasoning/log`
+- [x] API endpoint: `GET /api/v1/reasoning/{issue_id}`
+- [x] UI integration in issue detail view
+- [x] Human feedback mechanism (approve/disapprove)
+- [x] Decision pattern analysis
+- [x] Unit tests for reasoning capture
 
 ## Implementation Plan
 
