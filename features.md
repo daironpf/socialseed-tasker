@@ -1,6 +1,6 @@
-# Features - SocialSeed Tasker (v0.9.0)
+# Features - SocialSeed Tasker (v1.0.0)
 
-This document documents all functionalities implemented in version 0.9.0.
+This document documents all functionalities implemented in version 1.0.0.
 
 ---
 
@@ -558,7 +558,7 @@ curl http://localhost:8000/health
 # Response:
 {
   "status": "healthy",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "neo4j": "connected",
   "neo4j_uri": "bolt://localhost:7687",
   "auth_enabled": false
@@ -830,6 +830,14 @@ tasker dependency list
 ```bash
 tasker analyze root-cause <issue>
 tasker analyze impact <issue>
+tasker analyze similarity <issue-id>
+tasker analyze similarity --issue <issue-id> --threshold 0.7
+```
+
+### Agent Integration (v1.0.0)
+```bash
+tasker agent architect --issue <issue-id>
+tasker agent architect --issue <issue-id> --check
 ```
 
 ### Code Graph (v0.9.0)
@@ -931,4 +939,76 @@ tasker --help
 
 ---
 
-Version: 0.9.0
+## 18. Bidirectional Traceability (v1.0.0)
+
+Link issues to code files when closing for full traceability.
+
+### 18.1 AFFECTS Relationship
+
+```bash
+# CLI - Link files when closing issue
+tasker issue close <issue-id> --affects src/module.py --affects src/utils.py
+
+# API
+curl -X POST "http://localhost:8000/api/v1/issues/<id>/close?affected_files=[src/module.py]"
+```
+
+### 18.2 Code Graph Integration
+
+```bash
+# Scan repository first
+tasker code-graph scan src/
+
+# Query issues affecting a file
+curl "http://localhost:8000/api/v1/code-graph/issues/<file-path>"
+```
+
+---
+
+## 19. Phantom Dependency Detection (v1.0.0)
+
+RAG-powered semantic similarity to find conceptually related but unlinked issues.
+
+### 19.1 Similarity Analysis
+
+```bash
+# CLI
+tasker analyze similarity --issue <issue-id>
+tasker analyze similarity --issue <issue-id> --threshold 0.7 --limit 10
+
+# API
+curl "http://localhost:8000/api/v1/analyze/similarity/<issue-id>?threshold=0.7"
+```
+
+### 19.2 Detection Flow
+- Uses vector embeddings to find semantically similar issues
+- Filters out existing explicit dependencies
+- Suggests potential phantom dependencies
+- Returns similarity scores for review
+
+---
+
+## 20. ARCHITECT Agent (v1.0.0)
+
+Specialized agent role for architectural constraint enforcement.
+
+### 20.1 Agent Role
+
+```bash
+# CLI
+tasker agent architect --issue <issue-id>
+tasker agent architect --issue <issue-id> --check  # Check only, don't veto
+
+# Validates against loaded constraints
+# Returns ARCHITECT APPROVED or VETO
+```
+
+### 20.2 Constraint Validation
+- Validates proposed changes against architectural constraints
+- Checks dependency depth limits
+- Enforces technology restrictions
+- Can block operations with VETO
+
+---
+
+Version: 1.0.0
