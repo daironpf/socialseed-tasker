@@ -1297,53 +1297,6 @@ def analyze_code_impact(
             f"[bold]Dependencies:[/bold] {len(dependencies)} modules\n"
             f"[bold]Test files:[/bold] {len(tests)} files\n"
             f"[bold]Risk level:[/bold] {"CRITICAL" if len(callers) > 5 else "HIGH" if len(callers) > 2 else "MEDIUM" if len(callers) > 0 else "LOW"}",
-
-
-@analyze_app.command("similarity")
-def analyze_similarity(
-    issue_id: str = typer.Option(..., "--issue", "-i", help="Issue ID to analyze"),
-    threshold: float = typer.Option(0.7, "--threshold", "-t", help="Minimum similarity score (0.0-1.0)"),
-    limit: int = typer.Option(10, "--limit", "-l", help="Maximum results"),
-) -> None:
-    """Find phantom dependencies using RAG embeddings."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.repositories import TaskRepository
-    from rich.table import Table
-
-    driver = get_driver()
-    if driver is None:
-        console.print("[error]Neo4j not connected. Run 'tasker login' first.[/error]")
-        raise typer.Exit(1)
-
-    repo = TaskRepository(driver)
-    current_issue = repo.get_issue(issue_id)
-    if current_issue is None:
-        console.print(f"[error]Issue {issue_id} not found.[/error]")
-        raise typer.Exit(1)
-
-    similar = repo.find_similar_issues(issue_id, threshold=threshold, limit=limit)
-    existing_deps = {str(d) for d in current_issue.dependencies}
-
-    phantom_deps = [s for s in similar if s.get("id") not in existing_deps and s.get("id") != issue_id]
-
-    if not phantom_deps:
-        console.print("[info]No phantom dependencies found.[/info]")
-        return
-
-    table = Table(title=f"Phantom Dependencies for {current_issue.title[:40]}")
-    table.add_column("Issue", style="cyan")
-    table.add_column("Title", style="white")
-    table.add_column("Similarity", justify="right", style="green")
-
-    for sim in phantom_deps:
-        table.add_row(
-            sim.get("id", "")[:8],
-            sim.get("title", "")[:40],
-            f"{sim.get('similarity_score', 0):.2f}",
-        )
-
-    console.print(table)
-    console.print("[dim]These issues are semantically similar but lack explicit dependency links.[/dim]")
             title=f"[bold]Code Impact Analysis for {path}[/bold]",
             border_style="cyan",
         )
@@ -2763,6 +2716,44 @@ def agent_reasoning(
     )
 
     console.print(f"[success]Logged reasoning for issue {issue_id}[/success]")
+
+
+@agent_app.command("architect")
+def agent_architect(
+    issue_id: str = typer.Option(..., "--issue", "-i", help="Issue ID to review"),
+    check_only: bool = typer.Option(False, "--check", "-c", help="Only check, don't veto"),
+) -> None:
+    """ARCHITECT agent: Validate changes against architectural constraints."""
+    from rich.panel import Panel
+
+    driver = get_driver()
+    if driver is None:
+        console.print("[error]Neo4j not connected.[/error]")
+        raise typer.Exit(1)
+
+    issue_repo = get_repository()
+    issue = issue_repo.get_issue(issue_id)
+    if not issue:
+        console.print(f"[error]Issue '{issue_id}' not found[/error]")
+        raise typer.Exit(1)
+
+    from socialseed_tasker.core.task_management.actions import validate_constraints_action
+    result = validate_constraints_action(issue_repo)
+
+    if result.violations:
+        violations_text = "\n".join([f"- {v.message}" for v in result.violations[:5]])
+        console.print(Panel(
+            f"[bold red]ARCHITECT VETO: Constraint Violations[/bold red]\n{violations_text}",
+            title=f"Architect Review: {issue.title[:30]}",
+        ))
+        if not check_only:
+            console.print("[bold red]Changes blocked pending review.[/bold red]")
+        raise typer.Exit(1)
+    else:
+        console.print(Panel(
+            "[bold green]ARCHITECT APPROVED[/bold green]",
+            title=f"Architect Review: {issue.title[:30]}",
+        ))
 
 
 # Create the main app with all command groups
