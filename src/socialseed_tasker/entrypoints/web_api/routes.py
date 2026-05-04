@@ -3833,9 +3833,14 @@ async def rag_search(
     query: str,
     limit: int = 5,
     threshold: float = 0.7,
+    max_content_size: int = Query(8000, ge=100, le=50000, description="Max content chars to return"),
     driver: Any = Depends(get_rag_driver),
 ) -> dict[str, Any]:
-    """Search for similar content using vector similarity."""
+    """Search for similar content using vector similarity.
+
+    Args:
+        max_content_size: Maximum characters to return per result (default 8000).
+    """
     if not driver:
         return {"error": "Neo4j not connected"}
 
@@ -3843,6 +3848,12 @@ async def rag_search(
 
     repo = RAGRepository(driver)
     results = repo.search(query=query, limit=limit, threshold=threshold)
+
+    for r in results:
+        content = r.get("content", "")
+        if len(content) > max_content_size:
+            r["content"] = content[:max_content_size] + "... [truncated]"
+        r["content_length"] = len(content)
 
     return {"results": results, "count": len(results)}
 
