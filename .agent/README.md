@@ -77,6 +77,7 @@ To ensure high-quality collaboration and minimize user input errors, agents MUST
 - **Code-as-Graph**: Tree-sitter powered code parsing to Neo4j graph
 - **Bidirectional Traceability**: Link issues to code files on close (AFFECTS relationship)
 - **Phantom Dependency Detection**: RAG-powered similarity analysis
+- **ARCHITECT Agent**: Validate changes against architectural constraints
 
 ## CLI Commands
 

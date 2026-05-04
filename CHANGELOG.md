@@ -10,6 +10,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 - **Bidirectional Traceability:** Link issues to code files (`AFFECTS` relationship) when closing. Use `--affects` option in CLI or `affected_files` in API.
 - **Phantom Dependency Detection:** RAG-powered semantic similarity to find conceptually related but unlinked issues. New `analyze similarity` command.
+- **ARCHITECT Agent:** New agent role to validate changes against architectural constraints. Use `agent architect` command.
 - **v1.0.0 Roadmap:** 12 new issues for Phase 4: High-Level Autonomy.
 
 ### Changed

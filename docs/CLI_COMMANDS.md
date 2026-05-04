@@ -139,6 +139,14 @@ tasker analyze similarity --issue <issue-id>
 tasker analyze similarity --issue <issue-id> --threshold 0.7 --limit 10
 ```
 
+### ARCHITECT Agent (v1.0.0)
+```bash
+tasker agent architect --issue <issue-id>
+tasker agent architect --issue <issue-id> --check
+```
+
+### Agent Integration
+
 ## Code Graph (v0.9.0)
 
 ### Scan Code Repository
