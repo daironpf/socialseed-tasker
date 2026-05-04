@@ -615,10 +615,23 @@ def close_issue(
     issue = close_issue_action(repo, issue_id)
 
     if affected_files and request:
-        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
-        code_repo = CodeGraphRepository(request)
-        for file_path in affected_files:
-            code_repo.link_issue_to_file(issue_id, file_path)
+        try:
+            if hasattr(request, 'driver'):
+                driver = request.driver
+            elif hasattr(request.app.state, 'driver'):
+                driver = request.app.state.driver
+                if hasattr(driver, 'driver'):
+                    driver = driver.driver
+            else:
+                driver = None
+
+            if driver:
+                from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+                code_repo = CodeGraphRepository(driver)
+                for file_path in affected_files:
+                    code_repo.link_issue_to_file(issue_id, file_path)
+        except Exception:
+            pass
 
     return APIResponse(data=_issue_to_response(issue), meta=Meta(request_id=None))
 

@@ -595,7 +595,7 @@ def issue_close(
 
         if affects:
             try:
-                from socialseed_tasker.bootstrap.container import get_driver
+                from socialseed_tasker.bootstrap.wiring import get_driver
                 driver = get_driver()
                 if driver:
                     from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
@@ -603,7 +603,7 @@ def issue_close(
                     for file_path in affects:
                         result = code_repo.link_issue_to_file(resolved_id, file_path)
                         if result.get("success"):
-                            console.print(f"[dim]  ↳ Linked to: {file_path}[/dim]")
+                            console.print(f"[dim]  -> Linked to: {file_path}[/dim]")
             except Exception as e:
                 console.print(f"[dim]  ⚠ Could not link files: {e}[/dim]")
 
