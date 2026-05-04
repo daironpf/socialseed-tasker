@@ -10,7 +10,7 @@
 
 | # | Issue | Priority | Status |
 |---|-------|----------|--------|
-| #220 | Bidirectional Traceability: Link Issues to Code Graph | HIGH | TODO |
+| #220 | Bidirectional Traceability: Link Issues to Code Graph | HIGH | DONE |
 | #221 | RAG-Powered "Phantom Dependency" Detection | MEDIUM | TODO |
 | #222 | Autonomous Architect Agent for Rule Enforcement | HIGH | TODO |
 | #223 | Pre-emptive Impact Analysis during Issue Creation | HIGH | TODO |
@@ -29,7 +29,7 @@
 ## Roadmap
 
 ### Phase 4: High-Level Autonomy
-- [ ] Bidirectional Linkage (Issue-Code)
+- [x] Bidirectional Linkage (Issue-Code)
 - [ ] Autonomous Rule Enforcement
 - [ ] Automated Agent Dispatching
 - [ ] Observability & Reasoning Visualization
