@@ -2006,6 +2006,42 @@ def constraints_validate() -> None:
 # Code Graph commands
 # ---------------------------------------------------------------------------
 
+# Documentation gap detection
+@constraints_app.command("doc-gaps")
+def constraints_doc_gaps() -> None:
+    """Find undocumented API endpoints (compare OpenAPI vs docs)."""
+    from rich.table import Table
+    import httpx
+
+    try:
+        openapi = httpx.get("http://localhost:8000/openapi.json", timeout=5).json()
+    except Exception:
+        console.print("[error]API not running[/error]")
+        return
+
+    try:
+        doc = open("docs/API_REFERENCE.md", encoding="utf-8").read()
+    except FileNotFoundError:
+        console.print("[error]docs/API_REFERENCE.md not found[/error]")
+        return
+
+    gaps = []
+    for path in openapi.get("paths", {}):
+        if path not in doc:
+            for method in openapi["paths"][path]:
+                if method.upper() in ["GET", "POST", "PUT", "PATCH", "DELETE"]:
+                    gaps.append(f"{method.upper()} {path}")
+
+    if not gaps:
+        console.print("[info]All endpoints documented![/info]")
+    else:
+        t = Table(title=f"Doc Gaps ({len(gaps)})")
+        t.add_column("Endpoint", style="cyan")
+        for g in gaps[:15]:
+            t.add_row(g)
+        console.print(t)
+
+
 code_graph_app = typer.Typer(help="Code-as-Graph: scan and analyze source code")
 
 
