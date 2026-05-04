@@ -544,3 +544,35 @@ UPDATE_ISSUE_EMBEDDING = """
 MATCH (i:Issue {id: $id})
 SET i.description_embedding = $embedding
 """
+
+ISSUE_AFFECTS_FILE = """
+MATCH (i:Issue {id: $issue_id})
+MATCH (f:CodeFile {path: $file_path})
+MERGE (i)-[r:AFFECTS]->(f)
+SET r.closed_at = $closed_at
+RETURN i, f
+"""
+
+FIND_ISSUES_AFFECTING_FILE = """
+MATCH (i:Issue)-[r:AFFECTS]->(f:CodeFile {path: $file_path})
+WHERE i.status = 'CLOSED'
+RETURN i.id as issue_id, i.title as title, r.closed_at as closed_at
+ORDER BY r.closed_at DESC
+LIMIT toInteger($limit)
+"""
+
+ISSUE_AFFECTS_SYMBOL = """
+MATCH (i:Issue {id: $issue_id})
+MATCH (s:CodeSymbol {id: $symbol_id})
+MERGE (i)-[r:AFFECTS]->(s)
+SET r.closed_at = $closed_at
+RETURN i, s
+"""
+
+FIND_ISSUES_AFFECTING_SYMBOL = """
+MATCH (i:Issue)-[r:AFFECTS]->(s:CodeSymbol {name: $symbol_name})
+WHERE i.status = 'CLOSED'
+RETURN i.id as issue_id, i.title as title, s.name as symbol_name, r.closed_at as closed_at
+ORDER BY r.closed_at DESC
+LIMIT toInteger($limit)
+"""

@@ -608,9 +608,18 @@ def delete_issue(
 )
 def close_issue(
     issue_id: str,
+    affected_files: list[str] = [],
     repo: TaskRepositoryInterface = Depends(get_repo),
+    request: Request = Depends(get_code_graph_driver),
 ):
     issue = close_issue_action(repo, issue_id)
+
+    if affected_files and request:
+        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+        code_repo = CodeGraphRepository(request)
+        for file_path in affected_files:
+            code_repo.link_issue_to_file(issue_id, file_path)
+
     return APIResponse(data=_issue_to_response(issue), meta=Meta(request_id=None))
 
 
@@ -3678,6 +3687,24 @@ async def code_graph_tests(
     tests = repo.get_tests_for_file(file_path)
 
     return {"file": file_path, "tests": tests, "total": len(tests)}
+
+
+@code_graph_router.get("/issues/{file_path:path}")
+async def get_issues_for_file(
+    file_path: str,
+    limit: int = Query(20, ge=1, le=100),
+    driver: Any = Depends(get_code_graph_driver),
+) -> dict[str, Any]:
+    """Get all issues that affected a file."""
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    if not driver:
+        return {"error": "Neo4j not connected", "issues": []}
+
+    repo = CodeGraphRepository(driver)
+    issues = repo.get_issues_affecting_file(file_path, limit)
+
+    return {"file_path": file_path, "issues": issues, "total": len(issues)}
 
 
 # ==================== RAG (Retrieval-Augmented Generation) ====================

@@ -6,7 +6,7 @@ symbols, imports, and relationships.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -19,6 +19,12 @@ from socialseed_tasker.core.code_analysis.entities import (
     RelationshipType,
     SymbolType,
 )
+from socialseed_tasker.storage.graph_database import queries
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
 
 CODE_GRAPH_QUERIES = {
     "create_file": """
@@ -365,5 +371,62 @@ class CodeGraphRepository:
             )
             return [
                 {"path": r["path"], "symbol_type": r["symbol_type"]}
+                for r in result
+            ]
+
+    def link_issue_to_file(self, issue_id: str, file_path: str) -> dict[str, Any]:
+        """Link an issue to a code file (when closing the issue)."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.ISSUE_AFFECTS_FILE,
+                {"issue_id": issue_id, "file_path": file_path, "closed_at": _now_iso()},
+            )
+            record = result.single()
+            if record is None:
+                return {"success": False, "error": "Issue or file not found"}
+            return {"success": True, "issue_id": issue_id, "file_path": file_path}
+
+    def get_issues_affecting_file(self, file_path: str, limit: int = 20) -> list[dict[str, Any]]:
+        """Get all issues that affected a file."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.FIND_ISSUES_AFFECTING_FILE,
+                {"file_path": file_path, "limit": limit},
+            )
+            return [
+                {
+                    "issue_id": r["issue_id"],
+                    "title": r["title"],
+                    "closed_at": r["closed_at"],
+                }
+                for r in result
+            ]
+
+    def link_issue_to_symbol(self, issue_id: str, symbol_id: str) -> dict[str, Any]:
+        """Link an issue to a code symbol."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.ISSUE_AFFECTS_SYMBOL,
+                {"issue_id": issue_id, "symbol_id": symbol_id, "closed_at": _now_iso()},
+            )
+            record = result.single()
+            if record is None:
+                return {"success": False, "error": "Issue or symbol not found"}
+            return {"success": True, "issue_id": issue_id, "symbol_id": symbol_id}
+
+    def get_issues_affecting_symbol(self, symbol_name: str, limit: int = 20) -> list[dict[str, Any]]:
+        """Get all issues that affected a symbol."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.FIND_ISSUES_AFFECTING_SYMBOL,
+                {"symbol_name": symbol_name, "limit": limit},
+            )
+            return [
+                {
+                    "issue_id": r["issue_id"],
+                    "title": r["title"],
+                    "symbol_name": r["symbol_name"],
+                    "closed_at": r["closed_at"],
+                }
                 for r in result
             ]

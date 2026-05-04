@@ -555,11 +555,17 @@ def issue_show(issue_id: str) -> None:
 
 
 @issue_app.command("close")
-def issue_close(issue_id: str) -> None:
+def issue_close(
+    issue_id: str,
+    affects: list[str] = typer.Option(None, "--affects", help="File paths affected by this issue"),
+) -> None:
     """Close an issue (validates no open dependencies).
 
     Args:
         issue_id: Full UUID, short ID (8+ chars), or partial title match.
+
+    Options:
+        --affects: Optional list of file paths affected by this issue
 
     Note:
         An issue cannot be closed if it has open dependencies. Resolve
@@ -586,6 +592,21 @@ def issue_close(issue_id: str) -> None:
     try:
         issue = close_issue_action(repo, resolved_id)
         console.print(f"[success]✓ Issue closed:[/success] {issue.title}")
+
+        if affects:
+            try:
+                from socialseed_tasker.bootstrap.container import get_driver
+                driver = get_driver()
+                if driver:
+                    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+                    code_repo = CodeGraphRepository(driver)
+                    for file_path in affects:
+                        result = code_repo.link_issue_to_file(resolved_id, file_path)
+                        if result.get("success"):
+                            console.print(f"[dim]  ↳ Linked to: {file_path}[/dim]")
+            except Exception as e:
+                console.print(f"[dim]  ⚠ Could not link files: {e}[/dim]")
+
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
         raise typer.Exit(code=1) from exc
