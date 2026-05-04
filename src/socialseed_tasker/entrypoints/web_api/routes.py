@@ -3958,6 +3958,36 @@ async def get_reasoning_history(
     return {"history": history, "count": len(history)}
 
 
+@reasoning_router.get("/reasoning/timeline")
+async def get_reasoning_timeline(
+    limit: int = Query(100, ge=1, le=500, description="Maximum entries"),
+    driver: Any = Depends(get_reasoning_driver),
+) -> dict[str, Any]:
+    """Get reasoning history as a timeline for visualization."""
+    if not driver:
+        return {"error": "Neo4j not connected", "timeline": []}
+
+    from socialseed_tasker.storage.graph_database.reasoning_repository import ReasoningRepository
+
+    repo = ReasoningRepository(driver)
+    history = repo.get_reasoning_history(limit)
+
+    timeline = []
+    for entry in history:
+        timeline.append({
+            "id": entry.get("id"),
+            "issue_id": entry.get("issue_id"),
+            "agent_name": entry.get("agent_name"),
+            "thought": entry.get("thought", "")[:200],
+            "decision": entry.get("decision"),
+            "confidence": entry.get("confidence"),
+            "timestamp": entry.get("created_at"),
+            "decision_type": entry.get("decision_type"),
+        })
+
+    return {"timeline": timeline, "count": len(timeline)}
+
+
 @reasoning_router.post("/reasoning/{reasoning_id}/feedback")
 async def add_reasoning_feedback(
     reasoning_id: str,
