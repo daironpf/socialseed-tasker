@@ -2792,6 +2792,67 @@ def agent_architect(
         ))
 
 
+@agent_app.command("list")
+def agent_list() -> None:
+    """List all agents with active work."""
+    from rich.table import Table
+
+    repo = get_repository()
+
+    working = [
+        i for i in repo.list_issues(statuses=["IN_PROGRESS"])
+        if getattr(i, 'agent_working', False)
+    ]
+
+    if not working:
+        console.print("[info]No agents currently working[/info]")
+        return
+
+    table = Table(title=f"Working Agents ({len(working)})")
+    table.add_column("Issue", style="cyan")
+    table.add_column("Agent ID", style="white")
+
+    for issue in working[:10]:
+        aid = getattr(issue, 'agent_id', '-') or '-'
+        table.add_row(str(issue.id)[:8], str(aid)[:12])
+    console.print(table)
+
+
+@agent_app.command("dispatch")
+def agent_dispatch(
+    limit: int = typer.Option(5, "--limit", "-l", help="Max issues to dispatch"),
+) -> None:
+    """Dispatch work: assign OPEN issues to agents."""
+    from rich.table import Table
+
+    repo = get_repository()
+
+    open_issues = [i for i in repo.list_issues(statuses=["OPEN"])]
+    open_issues.sort(key=lambda x: (
+        x.priority.value == "CRITICAL" and 3 or
+        x.priority.value == "HIGH" and 2 or
+        x.priority.value == "MEDIUM" and 1 or 0
+    ), reverse=True)
+
+    if not open_issues:
+        console.print("[info]No open issues to dispatch[/info]")
+        return
+
+    table = Table(title="Dispatched Issues")
+    table.add_column("Issue", style="cyan")
+    table.add_column("Title", style="white")
+    table.add_column("Priority", style="yellow")
+
+    for issue in open_issues[:limit]:
+        try:
+            repo.update_issue(str(issue.id), {"agent_working": True, "agent_id": "dispatcher"})
+            table.add_row(str(issue.id)[:8], issue.title[:30], issue.priority.value)
+        except Exception:
+            pass
+
+    console.print(table)
+
+
 # Create the main app with all command groups
 app = typer.Typer()
 app.add_typer(issue_app, name="issue")
