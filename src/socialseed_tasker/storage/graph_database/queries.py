@@ -383,6 +383,19 @@ DETACH DELETE s
 RETURN count(*) as deleted
 """
 
+UPDATE_ISSUE_LOCK = """
+MATCH (i:Issue {id: $issue_id})
+SET i.locked_until = $locked_until, i.agent_working = true
+RETURN i
+"""
+
+RELEASE_EXPIRED_LOCKS = """
+MATCH (i:Issue)
+WHERE i.locked_until < datetime()
+SET i.agent_working = false, i.locked_until = null
+RETURN count(*) as released
+"""
+
 GET_INTERNAL_DEPENDENCIES = """
 MATCH (f:CodeFile)<-[:IMPORTS]-(i:CodeImport)
 MATCH (f2:CodeFile)

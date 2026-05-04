@@ -1010,6 +1010,39 @@ def finish_agent_work(
         raise HTTPException(status_code=409, detail=str(e))
 
 
+@issues_router.post(
+    "/issues/{issue_id}/agent/heartbeat",
+    response_model=APIResponse[IssueResponse],
+    summary="Agent heartbeat to renew lock lease",
+    description="Agents must call this periodically (e.g., every 5 min) to keep their lock. Updates locked_until timestamp.",
+)
+def agent_heartbeat(
+    issue_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[IssueResponse]:
+    from datetime import datetime, timezone
+    from fastapi import HTTPException
+
+    try:
+        issue = repo.get_issue(issue_id)
+        if issue is None:
+            raise IssueNotFoundError(issue_id)
+
+        if not issue.agent_working:
+            raise HTTPException(status_code=409, detail="No agent is working on this issue")
+
+        locked_until = issue.locked_until
+        if locked_until is None:
+            from datetime import timedelta
+            locked_until = datetime.now(timezone.utc) + timedelta(minutes=5)
+
+        repo.update_issue(issue_id, {"locked_until": locked_until.isoformat()})
+        updated_issue = repo.get_issue(issue_id)
+        return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+
+
 @issues_router.get(
     "/issues/{issue_id}/agent/status",
     response_model=APIResponse[AgentStatusResponse],
