@@ -1907,6 +1907,42 @@ def get_subgraph(
     )
 
 
+@analysis_router.get(
+    "/similarity/{issue_id}",
+    response_model=APIResponse[list[dict[str, Any]]],
+    summary="Find phantom dependencies",
+    description="Find issues that are semantically similar but lack explicit dependency links. Uses RAG embeddings to detect conceptual relationships.",
+)
+def find_phantom_dependencies(
+    issue_id: str,
+    threshold: float = Query(0.7, ge=0.0, le=1.0, description="Minimum similarity score"),
+    limit: int = Query(10, ge=1, le=50, description="Maximum results"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list[dict[str, Any]]]:
+    """Find potential phantom dependencies using semantic similarity."""
+    try:
+        similar = repo.find_similar_issues(issue_id, threshold=threshold, limit=limit)
+        current_issue = repo.get_issue(issue_id)
+        if current_issue is None:
+            return APIResponse(data=[], meta=Meta(request_id=None))
+
+        existing_deps = {str(d) for d in current_issue.dependencies}
+        phantom_deps = []
+        for sim_issue in similar:
+            sim_id = sim_issue.get("id")
+            if sim_id and sim_id not in existing_deps and sim_id != issue_id:
+                phantom_deps.append({
+                    "issue_id": sim_id,
+                    "title": sim_issue.get("title"),
+                    "similarity_score": sim_issue.get("similarity_score", 0.0),
+                    "suggestion": "Consider adding explicit dependency",
+                })
+
+        return APIResponse(data=phantom_deps, meta=Meta(request_id=None))
+    except Exception:
+        return APIResponse(data=[], meta=Meta(request_id=None))
+
+
 # ---------------------------------------------------------------------------
 # Cost Analytics router
 # ---------------------------------------------------------------------------
