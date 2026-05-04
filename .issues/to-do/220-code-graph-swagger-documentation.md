@@ -19,7 +19,24 @@ GET /api/v1/code-graph/scan and /api/v1/code-graph/stats exist in routes.py but 
 3. Look for code-graph endpoints in the available API paths
 4. Observe that /code-graph/* endpoints are not visible
 
-## Status: PENDING
+## Status: DONE
+
+## Resolution
+
+The code-graph endpoints are already visible in the OpenAPI schema. Verified by checking:
+
+```python
+from socialseed_tasker.entrypoints.web_api.app import create_app
+app = create_app()
+schema = app.openapi()
+# All 8 code-graph endpoints appear in schema['paths']
+```
+
+The endpoints are correctly registered in `app.py:363` and routes are properly defined in `routes.py:3511+`. No code changes needed.
+
+## Resolution Date
+
+2026-05-04
 
 ## Priority: MEDIUM
 
