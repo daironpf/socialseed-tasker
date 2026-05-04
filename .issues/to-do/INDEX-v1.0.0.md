@@ -21,22 +21,8 @@
 | #228 | RAG Embedding Storage Optimization | HIGH | DONE |
 | #229 | Dynamic Internal Imports Relationship | MEDIUM | DONE |
 | #230 | Code Graph Stale Node Pruning | HIGH | DONE |
-| #231 | Agent Heartbeat Mechanism | HIGH | TODO |
-| #232 | RAG Context Window Manager | MEDIUM | TODO |
-| #223 | Pre-emptive Impact Analysis during Issue Creation | HIGH | TODO |
-| #224 | Self-Healing Documentation System | MEDIUM | TODO |
-| #225 | Autonomous Agent Workload & Dispatcher | HIGH | TODO |
-| #226 | Reasoning Visualization in Vue Dashboard | MEDIUM | TODO |
-| #227 | Project Node Hierarchy | MEDIUM | TODO |
-| #228 | RAG Embedding Storage Optimization | HIGH | TODO |
-| #229 | Dynamic Internal Imports Relationship | MEDIUM | TODO |
-| #230 | Code Graph Stale Node Pruning (Garbage Collection) | HIGH | TODO |
-| #231 | Agent Lease & Heartbeat Mechanism | HIGH | TODO |
-| #232 | RAG Context Window Manager (Token Pruning) | MEDIUM | TODO |
-
----
-
-## Roadmap
+| #231 | Agent Heartbeat Mechanism | HIGH | DONE |
+| #232 | RAG Context Window Manager | MEDIUM | DONE |
 
 ### Phase 4: High-Level Autonomy
 - [x] Bidirectional Linkage (Issue-Code)
@@ -50,8 +36,8 @@
 - [x] RAG Embedding Storage Optimization
 - [x] Dynamic Internal Imports
 - [x] Code Graph Stale Node Pruning
-- [ ] Agent Heartbeat Mechanism
-- [ ] RAG Context Window Manager
+- [x] Agent Heartbeat Mechanism
+- [x] RAG Context Window Manager
 - [ ] Automated Agent Dispatching
 - [ ] Observability & Reasoning Visualization
 - [ ] Project Node Hierarchy Migration
