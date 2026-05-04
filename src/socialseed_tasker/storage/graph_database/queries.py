@@ -356,10 +356,48 @@ MATCH (source:Issue {id: $issue_id})-[r:DEPENDS_ON]->(target:Issue {id: $depends
 DELETE r
 """
 
-GET_DEPENDENCIES = """
-MATCH (source:Issue {id: $issue_id})-[:DEPENDS_ON]->(target:Issue)
-RETURN target
-ORDER BY target.created_at DESC
+GET_DEPENDENCIES_BY_FILE = """
+MATCH (f:CodeFile {path: $file_path})<-[:IMPORTS]-(i:CodeImport)
+MATCH (target:CodeFile)
+WHERE target.name = i.module OR target.path CONTAINS i.module
+RETURN DISTINCT target.path as path, target.name as module
+"""
+
+GET_STALE_FILES = """
+MATCH (f:CodeFile)
+WHERE NOT f.path ENDS WITH '.py'
+   AND NOT f.path ENDS WITH '.js'
+   AND NOT f.path ENDS WITH '.ts'
+RETURN f.path as stale_path
+ORDER BY f.path
+"""
+
+CLEANUP_STALE_NODES = """
+MATCH (f:CodeFile)
+WHERE NOT file_exists(f.path)
+DETACH DELETE f
+WITH 1 as dummy
+MATCH (s:CodeSymbol)
+WHERE NOT (s)-[:BELONGS_TO]->()
+DETACH DELETE s
+RETURN count(*) as deleted
+"""
+
+GET_INTERNAL_DEPENDENCIES = """
+MATCH (f:CodeFile)<-[:IMPORTS]-(i:CodeImport)
+MATCH (f2:CodeFile)
+WHERE f2.name = i.module OR f2.path CONTAINS i.module
+MERGE (f)-[r:DEPENDS_ON_INTERNAL]->(f2)
+RETURN f.path as from_path, f2.path as to_path
+"""
+
+RESOLVE_INTERNAL_IMPORTS = """
+MATCH (i:CodeImport)
+MATCH (f:CodeFile)
+WHERE f.name = i.module OR f.path CONTAINS i.module
+MERGE (f)<-[:DEPENDS_ON]-(source:CodeFile)
+WHERE (source)-[:IMPORTS]->(i)
+RETURN count(*) as resolved
 """
 
 GET_DEPENDENTS = """
