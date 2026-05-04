@@ -2494,6 +2494,84 @@ def rag_clear(yes: bool = typer.Option(False, "--yes", "-y", help="Confirm delet
     console.print("[success]RAG embeddings cleared[/success]")
 
 
+@rag_app.command("embed-native")
+def rag_embed_native(
+    source_type: str = typer.Option(..., "--type", "-t", help="Type: issue, symbol, reasoning"),
+    source_id: str = typer.Option(..., "--id", "-i", help="Source ID"),
+    content: str = typer.Option("", "--content", "-c", help="Content to embed"),
+) -> None:
+    """Store embedding directly on source node (no separate node).
+
+    This is the optimized approach - stores the embedding
+    directly on the Issue/Symbol/ReasoningNode instead of
+    creating a separate RAGEmbedding node.
+    """
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from socialseed_tasker.storage.graph_database.repositories import TaskRepository
+
+    driver = get_driver()
+    if driver is None:
+        console.print("[error]Neo4j not connected.[/error]")
+        return
+
+    if not content:
+        repo_task = TaskRepository(driver)
+        if source_type == "issue":
+            issue = repo_task.get_issue(source_id)
+            if issue:
+                content = issue.title + " " + issue.description
+        if source_type == "reasoning":
+            logs = repo_task.get_reasoning_logs(source_id)
+            if logs:
+                content = " ".join([l.get("thought", "") for l in logs])
+
+    if not content:
+        console.print("[error]No content to embed[/error]")
+        return
+
+    rag_repo = RAGRepository(driver)
+    result = rag_repo.create_native_embedding(source_type, source_id, content)
+
+    if result.get("success"):
+        console.print(f"[success]Embedding stored on {source_type}:{source_id}[/success]")
+    else:
+        console.print(f"[error]{result.get('error')}[/error]")
+
+
+@rag_app.command("search-native")
+def rag_search_native(
+    source_type: str = typer.Option("issue", "--type", "-t", help="Type: issue, symbol"),
+    limit: int = typer.Option(5, "--limit", "-l", help="Max results"),
+    query: str = typer.Argument(..., help="Search query"),
+) -> None:
+    """Search using native embeddings (no separate nodes)."""
+    from rich.table import Table
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    driver = get_driver()
+    if driver is None:
+        console.print("[error]Neo4j not connected.[/error]")
+        return
+
+    rag_repo = RAGRepository(driver)
+    results = rag_repo.search_native(source_type, query, limit)
+
+    if not results:
+        console.print("[info]No results found[/info]")
+        return
+
+    table = Table(title=f"Native Search Results ({source_type})")
+    table.add_column("ID", style="cyan")
+    table.add_column("Title", style="white")
+    table.add_column("Score", style="green")
+
+    for r in results:
+        table.add_row(str(r.get("id", ""))[:8], r.get("title", "")[:30], f"{r.get('score', 0):.3f}")
+    console.print(table)
+
+
 # ==================== Reasoning Commands ====================
 
 reasoning_app = typer.Typer(help="AI Reasoning Log commands")

@@ -263,3 +263,83 @@ class RAGRepository:
         """Clear all RAG embeddings."""
         with self._get_session() as session:
             session.run("MATCH (e:RAGEmbedding) DETACH DELETE e")
+
+    def create_native_embedding(
+        self, node_label: str, node_id: str, content: str
+    ) -> dict[str, Any]:
+        """Store embedding directly on the source node.
+
+        This is the optimized approach - store the embedding
+        directly on Issue/Symbol/Reasoning nodes instead of
+        creating separate RAGEmbedding nodes.
+        """
+        embedding = self._embedding_service.encode(content)
+        if embedding is None:
+            return {"error": "Failed to encode content"}
+
+        label_map = {
+            "issue": "Issue",
+            "symbol": "CodeSymbol",
+            "reasoning": "ReasoningNode",
+        }
+        neo_label = label_map.get(node_label, node_label.capitalize())
+
+        with self._get_session() as session:
+            query = f"""
+            MATCH (n:{neo_label} {{id: $id}})
+            SET n.embedding = $embedding
+            RETURN n.id as id
+            """
+            result = session.run(
+                query,
+                {"id": node_id, "embedding": embedding},
+            )
+            record = result.single()
+            if record:
+                return {"success": True, "node_id": node_id}
+            return {"error": "Node not found"}
+
+    def search_native(
+        self, node_label: str, query_text: str, limit: int = 5
+    ) -> list[dict[str, Any]]:
+        """Search using embeddings stored directly on nodes."""
+        embedding = self._embedding_service.encode(query_text)
+        if embedding is None:
+            return []
+
+        label_map = {
+            "issue": "Issue",
+            "symbol": "CodeSymbol",
+            "reasoning": "ReasoningNode",
+        }
+        neo_label = label_map.get(node_label, node_label.capitalize())
+
+        with self._get_session() as session:
+            cypher = f"""
+            MATCH (n:{neo_label})
+            WHERE n.embedding IS NOT NULL
+            RETURN n.id as id, n.title as title,
+                   vector.similarity.cosine(n.embedding, $embedding) as score
+            ORDER BY score DESC
+            LIMIT toInteger($limit)
+            """
+            result = session.run(
+                cypher,
+                {"embedding": embedding, "limit": limit},
+            )
+            return [
+                {"id": r["id"], "title": r.get("title"), "score": r["score"]}
+                for r in result
+            ]
+
+    def get_stats_native(self) -> dict[str, int]:
+        """Get stats for natively stored embeddings."""
+        counts = {}
+        for label in ["Issue", "CodeSymbol", "ReasoningNode"]:
+            with self._get_session() as session:
+                result = session.run(
+                    f"MATCH (n:{label}) WHERE n.embedding IS NOT NULL RETURN count(n) as count"
+                )
+                record = result.single()
+                counts[label] = record["count"] if record else 0
+        return counts
