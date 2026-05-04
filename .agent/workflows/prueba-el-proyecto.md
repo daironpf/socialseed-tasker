@@ -1,17 +1,17 @@
 # Workflow: Real-Test Evaluation
 
 ## Trigger Command
-`prueba el proyecto`
+`test the project`
 
 ## Description
-Ejecuta una evaluación black-box completa del sistema SocialSeed Tasker. Este workflow simula un caso de uso real creando issues en un entorno aislado (real-test/) y evalúa la robustez del sistema desde la perspectiva de un Project Manager.
+Executes a complete black-box evaluation of the SocialSeed Tasker system. This workflow simulates a real use case by creating issues in an isolated environment (real-test/) and evaluates system robustness from a Project Manager's perspective.
 
 ---
 
-## ⚠️ REGLA INVIOBLE: Restricción de Caja Negra
+## ⚠️ INVIOLABLE RULE: Black-Box Restriction
 
-> **BAJO NINGUNA CIRCUNSTANCIA** puedes acceder al código fuente en `src/` durante la ejecución de esta evaluación.
-> Si algo falla, debes documentarlo como FINDING y continuar, NO buscar en el código fuente.
+> **UNDER NO CIRCUMSTANCES** are you allowed to access the source code in `src/` during this evaluation.
+> If something fails, document it as a FINDING and continue. DO NOT look into the source code.
 
 ### Si No Puedes Continuar
 1. Documenta el bloque como **FINDING** en `report.md`
@@ -217,7 +217,7 @@ Must include:
 
 **YOU MUST ASK THE USER BEFORE CLEANUP** using the Question tool:
 
-Question: "¿Deseas limpiar los servicios (docker-compose down) o mantenerlos corriendo para continuar probando?"
+Question: "Do you want to cleanup services (docker-compose down) or keep them running to continue testing?"
 
 | Options | Action |
 |--------|--------|
@@ -305,7 +305,7 @@ cd real-test/tasker && docker-compose down -v --remove-orphans
 ```yaml
 test_metadata:
   date: "YYYY-MM-DD"
-  target_version: "0.8.0"
+  target_version: "0.9.0"
   use_case: "Description"
   requested_issues: 50
   created_issues: 0
@@ -340,7 +340,7 @@ dx_evaluation:
 ## Workflow Execution
 
 ```
-prueba el proyecto
+test the project
   → Phase 0: Ask use case + issue count + issue type + architecture
   → Phase 1: Setup real-test/ + venv
   → Phase 2: tasker init + docker up

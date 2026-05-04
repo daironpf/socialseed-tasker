@@ -72,16 +72,16 @@ This interface allows for potential future storage backends while keeping `core/
 - Creating circular dependencies between modules
 - Using global state instead of dependency injection
 
-## v0.8.0 New Modules
+## v0.9.0 New Modules
 
-### validation/ (New in v0.8.0)
+### validation/ (New in v0.9.0)
 
 Input sanitization and validation:
 - InputValidator: XSS and injection prevention
 - ComponentValidator, IssueValidator, DependencyValidator
 - Sanitizer for Neo4j Cypher queries
 
-### services/ (New in v0.8.0)
+### services/ (New in v0.9.0)
 
 Standalone services:
 - WebhookSignatureValidator: GitHub webhook verification

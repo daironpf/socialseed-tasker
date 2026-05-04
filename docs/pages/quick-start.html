@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Start | SocialSeed Tasker</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container nav-content">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="8" fill="url(#paint0_linear)"/>
+                    <path d="M16 8L22 14L16 20L10 14L16 8Z" fill="white"/>
+                    <circle cx="16" cy="22" r="2" fill="white"/>
+                    <defs>
+                        <linearGradient id="paint0_linear" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#6366F1"/>
+                            <stop offset="1" stop-color="#A855F7"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                SocialSeed Tasker
+            </div>
+            <nav class="nav-links">
+                <a href="../index.html">Home</a>
+                <a href="introduction.html" class="active">Docs</a>
+                <a href="api-reference.html">API</a>
+                <a href="https://github.com/daironpf/socialseed-tasker">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container docs-layout">
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <div class="sidebar-section-title">Getting Started</div>
+                <ul>
+                    <li><a href="introduction.html">Introduction</a></li>
+                    <li><a href="installation.html">Installation</a></li>
+                    <li><a href="quick-start.html" class="active">Quick Start</a></li>
+                </ul>
+                <div class="sidebar-section-title">Architecture</div>
+                <ul>
+                    <li><a href="hexagonal.html">Hexagonal Pattern</a></li>
+                    <li><a href="graph-schema.html">Graph Schema</a></li>
+                    <li><a href="constraints.html">Constraints System</a></li>
+                </ul>
+                <div class="sidebar-section-title">Reference</div>
+                <ul>
+                    <li><a href="cli-reference.html">CLI Commands</a></li>
+                    <li><a href="api-reference.html">API Reference</a></li>
+                    <li><a href="agent-integration.html">Agent Integration</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="fade-in">
+            <section class="content-section">
+                <h1>Quick Start</h1>
+                <p>Go from zero to a fully managed project in less than 5 minutes.</p>
+                
+                <h2 id="init">1. Initialize Your Project</h2>
+                <p>Scaffold a new project with a specific architecture. This creates the necessary components and base issues.</p>
+                <pre><code>tasker init . --project-name "Ecommerce App" --architecture microservices</code></pre>
+                
+                <h2 id="components">2. Create Components</h2>
+                <p>Define the high-level services of your project.</p>
+                <pre><code>tasker component create "auth-service" -p "Ecommerce App"
+tasker component create "order-service" -p "Ecommerce App"</code></pre>
+                
+                <h2 id="issues">3. Create Your First Issues</h2>
+                <pre><code>tasker issue create "Implement Login" -c auth-service -p HIGH
+tasker issue create "Database Setup" -c auth-service -p CRITICAL</code></pre>
+                
+                <h2 id="deps">4. Link Dependencies</h2>
+                <p>Make sure everyone knows that Login depends on the Database.</p>
+                <pre><code>tasker dependency add login_id --depends-on db_setup_id</code></pre>
+
+                <h2 id="visualize">5. Visualize the Graph</h2>
+                <p>Check the status of your project's dependency health.</p>
+                <pre><code>tasker status</code></pre>
+                <p>Or use the built-in Vue Kanban board at <code class="inline-code">http://localhost:8080</code>.</p>
+
+                <h2 id="agent">6. Leverage the Agent</h2>
+                <p>Let Tasker analyze your next steps.</p>
+                <pre><code>tasker agent context --issue login_id</code></pre>
+
+            </section>
+        </main>
+    </div>
+
+    <footer style="padding: 2rem 0; border-top: 1px solid var(--border); text-align: center; margin-top: 2rem;">
+        <p style="font-size: 0.9rem; color: var(--text-muted);">&copy; 2026 SocialSeed Tasker Team.</p>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+</body>
+</html>

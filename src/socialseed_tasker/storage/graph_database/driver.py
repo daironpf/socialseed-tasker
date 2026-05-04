@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 from neo4j.exceptions import Neo4jError
 
 from neo4j import GraphDatabase
-from socialseed_tasker.storage.graph_database.queries import SCHEMA_CONSTRAINTS
+from socialseed_tasker.storage.graph_database.queries import SCHEMA_CONSTRAINTS, SCHEMA_INDEXES
 
 if TYPE_CHECKING:
     from neo4j import Driver
@@ -136,4 +136,10 @@ class Neo4jDriver:
                 try:
                     session.run(constraint)
                 except Neo4jError as exc:
-                    logger.debug("Schema init notice: %s", exc)
+                    logger.debug("Schema init notice (constraint): %s", exc)
+
+            for index in SCHEMA_INDEXES:
+                try:
+                    session.run(index)
+                except Neo4jError as exc:
+                    logger.debug("Schema init notice (index): %s", exc)

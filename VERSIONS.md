@@ -279,15 +279,20 @@ Map the entire repository as a graph structure:
 - **Node Types:** `File`, `Class`, `Function`, `Import`, `Test`
 - **Relationship Types:** `[:CALLS]`, `[:DEPENDS_ON]`, `[:DEFINES]`, `[:TESTS]`, `[:CONTAINS]`
 
-- [ ] Tree-sitter parser integration for multi-language support
-- [ ] Incremental scanning (changed files only)
-- [ ] Git-aware (file history tracking)
-- [ ] Symbol index for fast lookups
+- [x] Implement Multi-language Code-as-Graph (Python, JS, TS, Java, C++)
+- [x] Standardize Neo4j Schema (DEFINES, CONTAINS, IMPORTS, CALLS)
+- [x] Optimize with Indexes and Constraints
+- [x] Implement Impact Analysis CLI (`tasker code-graph impact`)
+- [x] Document for Humans and AI Agents
 
 #### RAG Native in Graph (Vector Indexes)
 Enable semantic search across project knowledge:
 
-- [ ] Neo4j vector indexes for task embeddings
+- [x] Neo4j vector indexes for task embeddings
+- [x] Schema migration script with rollback capability
+- [x] Agent integration CLI: context, suggest, reasoning
+- [x] Agent API endpoints: /agent/context, /agent/similar
+- [x] Enhanced impact analysis: code-level granularity
 - [ ] Solution similarity matching
 - [ ] Historical solution retrieval
 - [ ] Context injection for agent prompts

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocialSeed Tasker | Modern Graph-Based Task Management</title>
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container nav-content">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="8" fill="url(#paint0_linear)"/>
+                    <path d="M16 8L22 14L16 20L10 14L16 8Z" fill="white"/>
+                    <circle cx="16" cy="22" r="2" fill="white"/>
+                    <defs>
+                        <linearGradient id="paint0_linear" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#6366F1"/>
+                            <stop offset="1" stop-color="#A855F7"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                SocialSeed Tasker
+            </div>
+            <nav class="nav-links">
+                <a href="index.html" class="active">Home</a>
+                <a href="pages/introduction.html">Docs</a>
+                <a href="pages/api-reference.html">API</a>
+                <a href="https://github.com/daironpf/socialseed-tasker">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container fade-in">
+            <h1>Master Your Development Lifecycle</h1>
+            <p>A high-performance, graph-based task management framework designed for AI agents and human architects. Build, track, and analyze with Neo4j power.</p>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <a href="pages/introduction.html" class="btn btn-primary">Get Started</a>
+                <a href="pages/cli-reference.html" class="btn" style="background: var(--surface); border: 1px solid var(--border);">CLI Commands</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="container" style="padding: 4rem 0;">
+        <div class="card-grid">
+            <div class="card fade-in" style="animation-delay: 0.1s;">
+                <div style="color: var(--primary); font-size: 2rem; margin-bottom: 1rem;">◈</div>
+                <h3>Graph-Powered</h3>
+                <p>Leverage Neo4j to manage complex issue dependencies, blocked paths, and impact analysis with blazing speed.</p>
+            </div>
+            <div class="card fade-in" style="animation-delay: 0.2s;">
+                <div style="color: var(--primary); font-size: 2rem; margin-bottom: 1rem;">◇</div>
+                <h3>Agent Ready</h3>
+                <p>Designed from the ground up to be navigated by AI agents, with structured reasoning logs and semantic search.</p>
+            </div>
+            <div class="card fade-in" style="animation-delay: 0.3s;">
+                <div style="color: var(--primary); font-size: 2rem; margin-bottom: 1rem;">◎</div>
+                <h3>Hexagonal</h3>
+                <p>Strict architectural boundaries ensuring core logic remains pure, testable, and independent of external frameworks.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="container" style="padding: 6rem 0;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;">
+            <div>
+                <h2>Enterprise-Grade Analysis</h2>
+                <p>Identify root causes of test failures using graph inference and transitive effect propagation. Perform deep impact analysis before making risky code changes.</p>
+                <ul style="list-style: none; color: var(--text-muted); margin-top: 2rem;">
+                    <li style="margin-bottom: 1rem; display: flex; gap: 0.75rem; align-items: center;">
+                        <span style="color: var(--primary); font-weight: bold;">✓</span> Transitive Impact Detection
+                    </li>
+                    <li style="margin-bottom: 1rem; display: flex; gap: 0.75rem; align-items: center;">
+                        <span style="color: var(--primary); font-weight: bold;">✓</span> Root Cause Inference
+                    </li>
+                    <li style="margin-bottom: 1rem; display: flex; gap: 0.75rem; align-items: center;">
+                        <span style="color: var(--primary); font-weight: bold;">✓</span> Architectural Constraint Enforcement
+                    </li>
+                </ul>
+            </div>
+            <div style="background: var(--surface); padding: 2rem; border-radius: 20px; border: 1px solid var(--border); box-shadow: var(--shadow);">
+                <pre style="margin-bottom: 0; border: none; background: transparent;"><code><span style="color: #82aaff;">$</span> <span style="color: #c3e88d;">tasker analyze impact</span> <span style="color: #f78c6c;">issue_42</span>
+<span style="color: #676e95;"># Analysis Result:</span>
+<span style="color: #ffcb6b;">Risk Level:</span> <span style="color: #ff5370;">CRITICAL</span>
+<span style="color: #c3e88d;">Directly Affected:</span> 3 components
+<span style="color: #c3e88d;">Transitively Affected:</span> 12 issues
+<span style="color: #c3e88d;">Blocked Paths:</span> 5 critical workflows</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <footer style="padding: 4rem 0; border-top: 1px solid var(--border); text-align: center; margin-top: 4rem;">
+        <p style="font-size: 0.9rem;">&copy; 2026 SocialSeed Tasker Team. Built for the future of agentic coding.</p>
+    </footer>
+
+    <script src="assets/js/main.js"></script>
+</body>
+</html>

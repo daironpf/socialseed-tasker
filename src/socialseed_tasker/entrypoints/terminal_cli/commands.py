@@ -1250,6 +1250,53 @@ def analyze_impact(
             console.print(f"  - {issue.title} ({issue.status.value})")
 
 
+@analyze_app.command("code-impact")
+def analyze_code_impact(
+    path: str = typer.Option(..., "--path", "-p", help="File or directory path"),
+) -> None:
+    """Analyze code-level impact using Code-as-Graph."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from rich.table import Table
+
+    driver = get_driver()
+    if driver is None:
+        console.print("[error]Neo4j not connected. Run 'tasker login' first.[/error]")
+        raise typer.Exit(1)
+
+    cg_repo = CodeGraphRepository(driver)
+
+    callers = cg_repo.get_callers_by_path(path)
+    dependencies = cg_repo.get_dependencies_by_path(path)
+    tests = cg_repo.get_tests_for_file(path)
+
+    console.print(
+        Panel(
+            f"[bold]Callers:[/bold] {len(callers)} files\n"
+            f"[bold]Dependencies:[/bold] {len(dependencies)} modules\n"
+            f"[bold]Test files:[/bold] {len(tests)} files\n"
+            f"[bold]Risk level:[/bold] {"CRITICAL" if len(callers) > 5 else "HIGH" if len(callers) > 2 else "MEDIUM" if len(callers) > 0 else "LOW"}",
+            title=f"[bold]Code Impact Analysis for {path}[/bold]",
+            border_style="cyan",
+        )
+    )
+
+    if callers:
+        console.print("\n[bold]Files that call this:[/bold]")
+        for c in callers[:10]:
+            console.print(f"  - {c.get('path', 'unknown')}")
+
+    if dependencies:
+        console.print("\n[bold]Dependencies:[/bold]")
+        for d in dependencies[:10]:
+            console.print(f"  - {d.get('module', 'unknown')}")
+
+    if tests:
+        console.print("\n[bold]Test files:[/bold]")
+        for t in tests[:10]:
+            console.print(f"  - {t.get('path', 'unknown')}")
+
+
 # ---------------------------------------------------------------------------
 # Status command
 # ---------------------------------------------------------------------------
@@ -1934,6 +1981,722 @@ def constraints_validate() -> None:
         console.print(f"\n[bold]Summary:[/bold] {len(result.hard_violations)} hard, {len(result.soft_violations)} soft")
 
 
+# ---------------------------------------------------------------------------
+# Code Graph commands
+# ---------------------------------------------------------------------------
+
+code_graph_app = typer.Typer(help="Code-as-Graph: scan and analyze source code")
+
+
+@code_graph_app.command("scan")
+def code_graph_scan(
+    path: str = typer.Argument(..., help="Path to repository to scan"),
+    incremental: bool = typer.Option(False, "--incremental", "-i", help="Only scan changed files"),
+    git_aware: bool = typer.Option(True, "--git/--no-git", help="Use git to track changes"),
+) -> None:
+    """Scan a repository and extract code structure into the graph."""
+    from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+    from socialseed_tasker.bootstrap.wiring import get_driver
+
+    console.print(f"[info]Scanning repository:[/info] {path}")
+
+    parser = CodeGraphParser()
+
+    try:
+        files, symbols, imports, relationships = parser.scan_repository(
+            repository_path=path,
+            incremental=incremental,
+            git_aware=git_aware,
+        )
+
+        console.print(f"[success]Found {len(files)} files, {len(symbols)} symbols, {len(imports)} imports[/success]")
+
+        driver = get_driver()
+        if driver:
+            from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+            repo = CodeGraphRepository(driver)
+            repo.save_scan_results(files, symbols, imports, relationships)
+            console.print("[success]Saved to Neo4j graph[/success]")
+        else:
+            console.print("[warning]Neo4j not connected - results not saved[/warning]")
+
+    except Exception as e:
+        console.print(f"[error]Error scanning repository:[/error] {str(e)}")
+
+
+@code_graph_app.command("find")
+def code_graph_find(
+    name: str = typer.Argument(..., help="Symbol name to search for"),
+    symbol_type: str | None = typer.Option(None, "--type", "-t", help="Filter by symbol type"),
+    limit: int = typer.Option(20, "--limit", "-l", help="Maximum results"),
+) -> None:
+    """Find symbols by name in the code graph."""
+    from socialseed_tasker.core.code_analysis.entities import SymbolType
+    from socialseed_tasker.bootstrap.wiring import get_driver
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    repo = CodeGraphRepository(driver)
+
+    sym_type = None
+    if symbol_type:
+        with suppress(ValueError):
+            sym_type = SymbolType(symbol_type)
+
+    results = repo.find_symbols(name=name, symbol_type=sym_type, limit=limit)
+
+    if not results:
+        console.print("[info]No symbols found[/info]")
+        return
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Name", width=30)
+    table.add_column("Type", width=15)
+    table.add_column("File", width=30)
+    table.add_column("Line", width=8)
+
+    for sym in results:
+        table.add_row(
+            sym.get("name", ""),
+            sym.get("symbol_type", ""),
+            "",
+            str(sym.get("start_line", "")),
+        )
+
+    console.print(Panel(table, title=f"[bold]Symbols ({len(results)} found)[/bold]"))
+
+
+@code_graph_app.command("files")
+def code_graph_files(
+    limit: int = typer.Option(50, "--limit", "-l", help="Maximum results"),
+    language: str | None = typer.Option(None, "--language", help="Filter by language"),
+) -> None:
+    """List files in the code graph."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    repo = CodeGraphRepository(driver)
+    files = repo.get_files(limit=limit)
+
+    if not files:
+        console.print("[info]No files in graph[/info]")
+        return
+
+    if language:
+        files = [f for f in files if f.get("language") == language]
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Path", width=50)
+    table.add_column("Name", width=30)
+    table.add_column("Language", width=15)
+    table.add_column("Lines", width=8)
+
+    for f in files:
+        table.add_row(
+            f.get("path", ""),
+            f.get("name", ""),
+            f.get("language", ""),
+            str(f.get("lines_of_code", 0)),
+        )
+
+    console.print(Panel(table, title=f"[bold]Files ({len(files)} found)[/bold]"))
+
+
+@code_graph_app.command("stats")
+def code_graph_stats() -> None:
+    """Show code graph statistics."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    repo = CodeGraphRepository(driver)
+    stats = repo.get_stats()
+
+    console.print(Panel(
+        f"[bold]Total Files:[/bold] {stats.total_files}\n"
+        f"[bold]Total Symbols:[/bold] {stats.total_symbols}\n"
+        f"[bold]Total Relationships:[/bold] {stats.total_relationships}",
+        title="[bold]Code Graph Statistics[/bold]",
+    ))
+
+
+@code_graph_app.command("clear")
+def code_graph_clear(
+    confirm: bool = typer.Option(False, "--yes", "-y", help="Confirm deletion"),
+) -> None:
+    """Clear all code graph data from Neo4j."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+
+    if not confirm:
+        console.print("[warning]Use --yes to confirm deletion[/warning]")
+        return
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    repo = CodeGraphRepository(driver)
+    repo.clear()
+    console.print("[success]Code graph cleared[/success]")
+
+
+@code_graph_app.command("impact")
+def code_graph_impact(
+    symbol_name: str = typer.Argument(..., help="Symbol name to analyze impact for"),
+) -> None:
+    """Analyze the impact of changing a symbol (find all callers)."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = CodeGraphRepository(driver)
+    callers = repo.get_callers(symbol_name)
+
+    if not callers:
+        console.print(f"[info]No direct callers found for symbol '{symbol_name}'[/info]")
+        return
+
+    table = Table(show_header=True, header_style="bold magenta")
+    table.add_column("Caller Symbol", width=30)
+    table.add_column("Type", width=15)
+    table.add_column("File ID", width=40)
+
+    for caller in callers:
+        table.add_row(
+            caller.get("name", ""),
+            caller.get("symbol_type", ""),
+            caller.get("file_id", ""),
+        )
+
+    console.print(Panel(table, title=f"[bold]Impact Analysis for '{symbol_name}'[/bold]"))
+
+
+@code_graph_app.command("calls")
+def code_graph_calls(
+    path: str = typer.Argument(..., help="File or symbol path"),
+) -> None:
+    """Find all functions that call a specific function/method."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = CodeGraphRepository(driver)
+    callers = repo.get_callers_by_path(path)
+
+    if not callers:
+        console.print(f"[info]No callers found for '{path}'[/info]")
+        return
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Caller", width=30)
+    table.add_column("Type", width=15)
+    table.add_column("File", width=30)
+
+    for caller in callers:
+        table.add_row(
+            caller.get("name", ""),
+            caller.get("symbol_type", ""),
+            caller.get("file_path", ""),
+        )
+
+    console.print(Panel(table, title=f"[bold]Callers of '{path}'[/bold]"))
+
+
+@code_graph_app.command("depends")
+def code_graph_depends(
+    path: str = typer.Argument(..., help="File or symbol path"),
+) -> None:
+    """Find dependencies (imports) for a file."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = CodeGraphRepository(driver)
+    deps = repo.get_dependencies_by_path(path)
+
+    if not deps:
+        console.print(f"[info]No dependencies found for '{path}'[/info]")
+        return
+
+    table = Table(show_header=True, header_style="bold yellow")
+    table.add_column("Module", width=40)
+    table.add_column("Line", width=8)
+    table.add_column("Type", width=10)
+
+    for dep in deps:
+        table.add_row(
+            dep.get("module", ""),
+            str(dep.get("line_number", "-")),
+            "from" if dep.get("is_from") else "import",
+        )
+
+    console.print(Panel(table, title=f"[bold]Dependencies of '{path}'[/bold]"))
+
+
+@code_graph_app.command("tests")
+def code_graph_tests(
+    path: str = typer.Argument(..., help="Source file path"),
+) -> None:
+    """Find test files related to a source file."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = CodeGraphRepository(driver)
+    tests = repo.get_tests_for_file(path)
+
+    if not tests:
+        console.print(f"[info]No test files found for '{path}'[/info]")
+        return
+
+    table = Table(show_header=True, header_style="bold green")
+    table.add_column("Test File", width=50)
+    table.add_column("Type", width=15)
+
+    for test in tests:
+        table.add_row(
+            test.get("path", ""),
+            test.get("symbol_type", ""),
+        )
+
+    console.print(Panel(table, title=f"[bold]Tests for '{path}'[/bold]"))
+
+
+@code_graph_app.command("file")
+def code_graph_file(
+    path: str = typer.Argument(..., help="File path to show details"),
+) -> None:
+    """Show detailed information about a file in the graph."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = CodeGraphRepository(driver)
+    file_data = repo.get_file_by_path(path, "")
+
+    if not file_data:
+        console.print(f"[error]File not found in graph: {path}[/error]")
+        return
+
+    console.print(Panel(
+        f"[bold]File:[/bold] {file_data.get('name', path)}\n"
+        f"[bold]Path:[/bold] {file_data.get('path', 'N/A')}\n"
+        f"[bold]Language:[/bold] {file_data.get('language', 'N/A')}\n"
+        f"[bold]Lines:[/bold] {file_data.get('lines_of_code', 0)}\n"
+        f"[bold]Hash:[/bold] {file_data.get('file_hash', 'N/A')[:16]}...",
+        title=f"[bold]File Details[/bold]",
+    ))
+
+
+# ==================== RAG Commands ====================
+
+rag_app = typer.Typer(help="RAG (Retrieval-Augmented Generation) commands")
+
+
+@rag_app.command("search")
+def rag_search(
+    query: str = typer.Argument(..., help="Search query"),
+    limit: int = typer.Option(5, "--limit", "-l", help="Maximum results"),
+    threshold: float = typer.Option(0.7, "--threshold", "-t", help="Minimum similarity score"),
+) -> None:
+    """Search for similar content using semantic similarity."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = RAGRepository(driver)
+    results = repo.search(query=query, limit=limit, threshold=threshold)
+
+    if not results:
+        console.print("[info]No results found[/info]")
+        return
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Content", width=60)
+    table.add_column("Source", width=20)
+    table.add_column("Score", width=10)
+
+    for r in results:
+        content_preview = r["content"][:57] + "..." if len(r["content"]) > 60 else r["content"]
+        table.add_row(content_preview, f"{r['source_type']}:{r['source_id'][:8]}", f"{r['score']:.2f}")
+
+    console.print(Panel(table, title=f"[bold]Search Results for '{query}'[/bold]"))
+
+
+@rag_app.command("index")
+def rag_index(
+    source_type: str = typer.Option(..., "--type", "-t", help="Source type (issue, adr, code, doc)"),
+    source_id: str = typer.Option(..., "--id", "-i", help="Source ID"),
+    content: str = typer.Option(..., "--content", "-c", help="Content to index"),
+    strategy: str = typer.Option("paragraph", "--strategy", "-s", help="Chunking strategy (paragraph, lines, sentences)"),
+) -> None:
+    """Index content for RAG semantic search."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = RAGRepository(driver)
+    repo.create_vector_index()
+
+    chunk_ids = repo.index_text(
+        text=content,
+        source_type=source_type,
+        source_id=source_id,
+        chunking_strategy=strategy,
+    )
+
+    console.print(f"[success]Indexed {len(chunk_ids)} chunks for {source_type}:{source_id}[/success]")
+
+
+@rag_app.command("stats")
+def rag_stats() -> None:
+    """Show RAG index statistics."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = RAGRepository(driver)
+    stats = repo.get_stats()
+
+    console.print(f"[bold]Total embeddings:[/bold] {stats['total']}")
+    if stats["by_type"]:
+        console.print("[bold]By type:[/bold]")
+        for source_type, count in stats["by_type"].items():
+            console.print(f"  {source_type}: {count}")
+
+
+@rag_app.command("clear")
+def rag_clear(yes: bool = typer.Option(False, "--yes", "-y", help="Confirm deletion")) -> None:
+    """Clear all RAG embeddings."""
+    if not yes:
+        console.print("[warning]Use --yes to confirm deletion[/warning]")
+        return
+
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = RAGRepository(driver)
+    repo.clear()
+    console.print("[success]RAG embeddings cleared[/success]")
+
+
+# ==================== Reasoning Commands ====================
+
+reasoning_app = typer.Typer(help="AI Reasoning Log commands")
+
+
+@reasoning_app.command("log")
+def reasoning_log(
+    issue_id: str = typer.Option(..., "--issue", "-i", help="Issue ID"),
+    thought: str = typer.Option(..., "--thought", "-t", help="Reasoning thought"),
+    agent_id: str = typer.Option("agent-1", "--agent", "-a", help="Agent ID"),
+    agent_name: str = typer.Option("DevAgent", "--name", "-n", help="Agent name"),
+    confidence: float = typer.Option(0.5, "--confidence", "-c", help="Confidence 0.0-1.0"),
+    decision: str = typer.Option(None, "--decision", "-d", help="Decision made"),
+    decision_type: str = typer.Option("unknown", "--type", "-ty", help="Decision type"),
+) -> None:
+    """Log agent reasoning for an issue."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.core.task_management.entities import DecisionType, ReasoningNode
+    from socialseed_tasker.storage.graph_database.reasoning_repository import ReasoningRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    try:
+        decision_type_enum = DecisionType(decision_type)
+    except ValueError:
+        decision_type_enum = DecisionType.UNKNOWN
+
+    reasoning = ReasoningNode(
+        thought=thought,
+        confidence=confidence,
+        decision=decision,
+        decision_type=decision_type_enum,
+    )
+
+    repo = ReasoningRepository(driver)
+    reasoning_id = repo.log_reasoning(issue_id, agent_id, agent_name, reasoning)
+
+    console.print(f"[success]Logged reasoning {reasoning_id} for issue {issue_id}[/success]")
+
+
+@reasoning_app.command("history")
+def reasoning_history(
+    issue_id: str = typer.Option(None, "--issue", "-i", help="Filter by issue ID"),
+    limit: int = typer.Option(20, "--limit", "-l", help="Maximum results"),
+) -> None:
+    """Show reasoning history."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.reasoning_repository import ReasoningRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = ReasoningRepository(driver)
+
+    if issue_id:
+        history = repo.get_reasoning_by_issue(issue_id, limit)
+    else:
+        history = repo.get_reasoning_history(limit)
+
+    if not history:
+        console.print("[info]No reasoning found[/info]")
+        return
+
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("Issue", width=20)
+    table.add_column("Thought", width=40)
+    table.add_column("Decision", width=15)
+    table.add_column("Confidence", width=10)
+
+    for h in history:
+        thought_preview = h["thought"][:37] + "..." if len(h["thought"]) > 40 else h["thought"]
+        issue = h.get("issue_id", h.get("issue_title", "N/A"))[:17]
+        table.add_row(
+            issue,
+            thought_preview,
+            h.get("decision", "-") or "-",
+            f"{h.get('confidence', 0):.2f}",
+        )
+
+    console.print(Panel(table, title=f"[bold]Reasoning History ({len(history)} entries)[/bold]"))
+
+
+@reasoning_app.command("stats")
+def reasoning_stats() -> None:
+    """Show reasoning decision statistics."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.reasoning_repository import ReasoningRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = ReasoningRepository(driver)
+    stats = repo.get_decision_stats()
+
+    if not stats:
+        console.print("[info]No reasoning data[/info]")
+        return
+
+    table = Table(show_header=True, header_style="bold magenta")
+    table.add_column("Decision Type", width=30)
+    table.add_column("Count", width=10)
+    table.add_column("Avg Confidence", width=15)
+
+    for decision_type, data in stats.items():
+        table.add_row(decision_type, str(data["count"]), f"{data['avg_confidence']:.2f}")
+
+    console.print(Panel(table, title="[bold]Decision Statistics[/bold]"))
+
+
+@reasoning_app.command("clear")
+def reasoning_clear(
+    issue_id: str = typer.Option(None, "--issue", "-i", help="Clear specific issue"),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Confirm"),
+) -> None:
+    """Clear reasoning data."""
+    if not yes:
+        console.print("[warning]Use --yes to confirm[/warning]")
+        return
+
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.reasoning_repository import ReasoningRepository
+
+    driver = get_driver()
+    if not driver:
+        console.print("[error]Neo4j not connected[/error]")
+        return
+
+    repo = ReasoningRepository(driver)
+    if issue_id:
+        repo.delete_by_issue(issue_id)
+        console.print(f"[success]Cleared reasoning for issue {issue_id}[/success]")
+    else:
+        repo.clear_all()
+        console.print("[success]Cleared all reasoning data[/success]")
+
+
+# ---------------------------------------------------------------------------
+# Agent Integration commands (Code-as-Graph + RAG + Reasoning)
+# ---------------------------------------------------------------------------
+
+agent_app = typer.Typer(help="Agent Integration: context, suggestions, and reasoning")
+
+
+@agent_app.command("context")
+def agent_context(
+    issue_id: str = typer.Option(..., "--issue", "-i", help="Issue ID or short ID"),
+) -> None:
+    """Get code context for an issue from Code-as-Graph."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    driver = get_driver()
+    if driver is None:
+        console.print("[error]Neo4j not connected. Run 'tasker login' first.[/error]")
+        raise typer.Exit(1)
+
+    issue_repo = get_repository()
+    issue = issue_repo.get_issue(issue_id)
+    if not issue:
+        console.print(f"[error]Issue '{issue_id}' not found[/error]")
+        raise typer.Exit(1)
+
+    cg_repo = CodeGraphRepository(driver)
+    files = cg_repo.get_files(limit=20)
+
+    console.print(Panel("[bold]Code Context[/bold]", border_style="blue"))
+    console.print(f"[info]Issue:[/info] {issue.title}")
+    console.print(f"[info]Component:[/info] {issue.component_id}")
+    console.print(f"\n[bold]Relevant Files ({len(files)}):[/bold]")
+    for f in files[:10]:
+        console.print(f"  • {f.get('path', 'unknown')}")
+
+
+@agent_app.command("suggest")
+def agent_suggest(
+    issue_id: str = typer.Option(..., "--issue", "-i", help="Issue ID or short ID"),
+    limit: int = typer.Option(5, "--limit", "-l", help="Max similar issues to return"),
+) -> None:
+    """Find similar past issues via RAG."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from socialseed_tasker.core.task_management.entities import ReasoningNode
+
+    driver = get_driver()
+    if driver is None:
+        console.print("[error]Neo4j not connected. Run 'tasker login' first.[/error]")
+        raise typer.Exit(1)
+
+    issue_repo = get_repository()
+    issue = issue_repo.get_issue(issue_id)
+    if not issue:
+        console.print(f"[error]Issue '{issue_id}' not found[/error]")
+        raise typer.Exit(1)
+
+    rag_repo = RAGRepository(driver)
+    results = rag_repo.search(f"issue {issue.title}", limit=limit)
+
+    console.print(Panel("[bold]Similar Past Issues[/bold]", border_style="blue"))
+    console.print(f"[info]Looking for:[/info] {issue.title}")
+    if results:
+        console.print(f"\n[bold]Found {len(results)} similar issues:[/bold]")
+        for r in results:
+            console.print(f"  • {r.get('source_id', 'unknown')}: {str(r.get('content', ''))[:80]}...")
+    else:
+        console.print("[info]No similar issues found[/info]")
+
+
+@agent_app.command("reasoning")
+def agent_reasoning(
+    issue_id: str = typer.Option(..., "--issue", "-i", help="Issue ID"),
+    thought: str = typer.Option(..., "--thought", "-t", help="Thought/decision"),
+    decision: str = typer.Option("", "--decision", "-d", help="Decision made"),
+    decision_type: str = typer.Option("unknown", "--type", "-ty", help="Decision type"),
+) -> None:
+    """Log agent reasoning for issue resolution."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.core.task_management.entities import DecisionType, ReasoningNode
+    from socialseed_tasker.storage.graph_database.reasoning_repository import ReasoningRepository
+
+    driver = get_driver()
+    if driver is None:
+        console.print("[error]Neo4j not connected. Run 'tasker login' first.[/error]")
+        raise typer.Exit(1)
+
+    issue_repo = get_repository()
+    issue = issue_repo.get_issue(issue_id)
+    if not issue:
+        console.print(f"[error]Issue '{issue_id}' not found[/error]")
+        raise typer.Exit(1)
+
+    try:
+        decision_type_enum = DecisionType(decision_type)
+    except ValueError:
+        decision_type_enum = DecisionType.UNKNOWN
+
+    reasoning = ReasoningNode(
+        thought=thought,
+        confidence=0.8,
+        decision=decision,
+        decision_type=decision_type_enum,
+    )
+
+    repo = ReasoningRepository(driver)
+    reasoning_id = repo.log_reasoning(
+        issue_id=issue_id,
+        agent_id="local-agent",
+        agent_name="tasker",
+        reasoning=reasoning,
+    )
+
+    console.print(f"[success]Logged reasoning for issue {issue_id}[/success]")
+
+
 # Create the main app with all command groups
 app = typer.Typer()
 app.add_typer(issue_app, name="issue")
@@ -1942,3 +2705,7 @@ app.add_typer(dependency_app, name="dependency")
 app.add_typer(analyze_app, name="analyze")
 app.add_typer(seed_app, name="seed")
 app.add_typer(constraints_app, name="constraints")
+app.add_typer(code_graph_app, name="code-graph")
+app.add_typer(rag_app, name="rag")
+app.add_typer(reasoning_app, name="reasoning")
+app.add_typer(agent_app, name="agent")

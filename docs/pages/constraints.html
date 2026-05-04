@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Constraints System | SocialSeed Tasker</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container nav-content">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="8" fill="url(#paint0_linear)"/>
+                    <path d="M16 8L22 14L16 20L10 14L16 8Z" fill="white"/>
+                    <circle cx="16" cy="22" r="2" fill="white"/>
+                    <defs>
+                        <linearGradient id="paint0_linear" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#6366F1"/>
+                            <stop offset="1" stop-color="#A855F7"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                SocialSeed Tasker
+            </div>
+            <nav class="nav-links">
+                <a href="../index.html">Home</a>
+                <a href="introduction.html" class="active">Docs</a>
+                <a href="api-reference.html">API</a>
+                <a href="https://github.com/daironpf/socialseed-tasker">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container docs-layout">
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <div class="sidebar-section-title">Getting Started</div>
+                <ul>
+                    <li><a href="introduction.html">Introduction</a></li>
+                    <li><a href="installation.html">Installation</a></li>
+                    <li><a href="quick-start.html">Quick Start</a></li>
+                </ul>
+                <div class="sidebar-section-title">Architecture</div>
+                <ul>
+                    <li><a href="hexagonal.html">Hexagonal Pattern</a></li>
+                    <li><a href="graph-schema.html">Graph Schema</a></li>
+                    <li><a href="constraints.html" class="active">Constraints System</a></li>
+                </ul>
+                <div class="sidebar-section-title">Reference</div>
+                <ul>
+                    <li><a href="cli-reference.html">CLI Commands</a></li>
+                    <li><a href="api-reference.html">API Reference</a></li>
+                    <li><a href="agent-integration.html">Agent Integration</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="fade-in">
+            <section class="content-section">
+                <h1>Constraints System</h1>
+                <p>Tasker's Architectural Constraints system allows you to define and enforce rules on how your project should be built. This is particularly useful for maintaining quality in multi-agent environments.</p>
+                
+                <h2 id="categories">Categories</h2>
+                <ul>
+                    <li><strong>Architecture</strong>: Enforce patterns like Hexagonal or Layered.</li>
+                    <li><strong>Technology</strong>: Restrict or require specific technologies (e.g., "Must use PostgreSQL").</li>
+                    <li><strong>Naming</strong>: Enforce consistent naming conventions for issues and components.</li>
+                    <li><strong>Patterns</strong>: Require specific design patterns (e.g., "All repositories must use Protocol").</li>
+                    <li><strong>Dependencies</strong>: Limit dependency depth or forbid specific service couplings.</li>
+                </ul>
+                
+                <h2 id="levels">Enforcement Levels</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Level</th>
+                            <th>Behavior</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">HARD</code></td>
+                            <td>Blocks the action (e.g., cannot create an issue that violates the rule).</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">SOFT</code></td>
+                            <td>Issues a warning but allows the action to proceed.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2 id="usage">CLI Usage</h2>
+                <pre><code><span style="color: #676e95;"># List all active constraints</span>
+tasker constraints list
+
+<span style="color: #676e95;"># Validate an issue against the current project policy</span>
+tasker constraints validate issue_id</code></pre>
+
+                <h2 id="defining">Defining Constraints</h2>
+                <p>Constraints are defined via the API or CLI as JSON rules. For example, a "No Circular Dependencies" rule is a system-wide HARD constraint.</p>
+
+            </section>
+        </main>
+    </div>
+
+    <footer style="padding: 2rem 0; border-top: 1px solid var(--border); text-align: center; margin-top: 2rem;">
+        <p style="font-size: 0.9rem; color: var(--text-muted);">&copy; 2026 SocialSeed Tasker Team.</p>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+</body>
+</html>

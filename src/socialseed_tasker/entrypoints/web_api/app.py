@@ -17,8 +17,11 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.requests import Request as StarletteRequest
 
 from socialseed_tasker import __version__  # noqa: E402
 from socialseed_tasker.core.task_management.actions import (
@@ -264,6 +267,7 @@ def create_app(
         agent_router,
         ai_search_router,
         analysis_router,
+        code_graph_router,
         components_dep_router,
         components_router,
         constraints_router,
@@ -275,6 +279,8 @@ def create_app(
         objective_router,
         policy_router,
         project_router,
+        rag_router,
+        reasoning_router,
         sync_router,
         webhook_router,
     )
@@ -296,6 +302,9 @@ def create_app(
     app.include_router(objective_router, prefix="/api/v1", tags=["objectives"])
     app.include_router(cost_analytics_router, prefix="/api/v1", tags=["cost_analytics"])
     app.include_router(ai_search_router, prefix="/api/v1/ai", tags=["ai_search"])
+    app.include_router(code_graph_router, prefix="/api/v1/code-graph", tags=["code-graph"])
+    app.include_router(rag_router, prefix="/api/v1", tags=["rag"])
+    app.include_router(reasoning_router, prefix="/api/v1", tags=["reasoning"])
 
     # Health endpoint with Neo4j connectivity check
     @app.get("/health", tags=["health"])
@@ -340,8 +349,9 @@ def create_app(
 
         return result
 
-    # Dependency injection - provide repository to all routes
+    # Dependency injection - provide repository and driver to all routes
     app.state.repository = repository
+    app.state.driver = neo4j_driver
 
     # Provide config to routes for policy enforcement mode
     if hasattr(repository, "_driver") and hasattr(repository._driver, "_config"):
@@ -410,6 +420,38 @@ def create_app(
         return JSONResponse(
             status_code=400,
             content=_error_response("VALIDATION_ERROR", str(exc)),
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error_handler(request: StarletteRequest, exc: RequestValidationError) -> JSONResponse:
+        errors = []
+        for error in exc.errors():
+            loc = error.get("loc", [])
+            field_path = ".".join(str(l) for l in loc[1:] if l != "body") if loc else "unknown"
+            errors.append({
+                "loc": list(loc),
+                "msg": error.get("msg", "validation error"),
+                "type": error.get("type", "value_error"),
+                "input": error.get("input"),
+            })
+        
+        return JSONResponse(
+            status_code=422,
+            content={
+                "data": None,
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Request validation failed",
+                    "details": {
+                        "errors": errors,
+                        "body_help": "Ensure JSON is valid and contains required fields (title, component_id, priority)",
+                    },
+                },
+                "meta": {
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "request_id": str(uuid.uuid4()),
+                },
+            },
         )
 
     @app.exception_handler(Exception)

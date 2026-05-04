@@ -35,11 +35,11 @@ class WebhookSignatureValidator:
         """Check if webhook secret is configured."""
         return bool(self._secret)
 
-    def validate(self, payload: bytes, signature: str) -> bool:
+    def validate(self, payload: bytes | str, signature: str) -> bool:
         """Validate webhook signature.
 
         Args:
-            payload: Raw request body
+            payload: Raw request body (bytes or string)
             signature: Signature from X-Hub-Signature-256 header
 
         Returns:
@@ -53,6 +53,9 @@ class WebhookSignatureValidator:
         if not signature:
             self._log_rejected("missing", "No signature provided")
             return False
+
+        if isinstance(payload, str):
+            payload = payload.encode()
 
         expected = f"sha256={hmac.new(self._secret.encode(), payload, hashlib.sha256).hexdigest()}"
 
@@ -86,11 +89,11 @@ class WebhookSignatureValidator:
         self._rejected_log.clear()
 
 
-def validate_signature(payload: bytes, secret: str, signature: str) -> bool:
+def validate_signature(payload: bytes | str, secret: str, signature: str) -> bool:
     """Standalone function for signature validation.
 
     Args:
-        payload: Raw request body
+        payload: Raw request body (bytes or string)
         secret: Webhook secret
         signature: Signature from header
 
@@ -102,6 +105,9 @@ def validate_signature(payload: bytes, secret: str, signature: str) -> bool:
 
     if not signature:
         return False
+
+    if isinstance(payload, str):
+        payload = payload.encode()
 
     expected = f"sha256={hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()}"
     return hmac.compare_digest(expected, signature)

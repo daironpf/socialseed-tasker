@@ -13,6 +13,17 @@ from fastapi import APIRouter, Depends, Query, Request  # noqa: B008
 
 logger = logging.getLogger(__name__)
 
+
+def get_code_graph_driver(request: Request) -> Any:
+    """Get Neo4j driver for code-graph endpoints."""
+    if hasattr(request.app.state, "driver") and request.app.state.driver:
+        driver = request.app.state.driver
+        if hasattr(driver, "driver"):
+            return driver.driver
+        return driver
+    return None
+
+
 from socialseed_tasker.core.project_analysis.analyzer import (
     ComponentImpactAnalysis,
     ImpactAnalysis,
@@ -1681,6 +1692,54 @@ def analyze_impact(
 
 
 @analysis_router.get(
+    "/analyze/code-impact",
+    response_model=APIResponse[dict[str, Any]],
+    summary="Get code-level impact analysis",
+    description="Analyze code-level impact using Code-as-Graph (callers, dependencies, tests).",
+)
+def analyze_code_impact(
+    path: str = Query(..., description="File or directory path"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[dict[str, Any]]:
+    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    neo4j_driver = get_driver()
+    if neo4j_driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+
+    cg_repo = CodeGraphRepository(neo4j_driver)
+
+    callers = cg_repo.get_callers_by_path(path)
+    dependencies = cg_repo.get_dependencies_by_path(path)
+    tests = cg_repo.get_tests_for_file(path)
+
+    caller_count = len(callers)
+    if caller_count > 5:
+        risk = "CRITICAL"
+    elif caller_count > 2:
+        risk = "HIGH"
+    elif caller_count > 0:
+        risk = "MEDIUM"
+    else:
+        risk = "LOW"
+
+    return APIResponse(
+        data={
+            "path": path,
+            "callers": callers,
+            "dependencies": dependencies,
+            "tests": tests,
+            "caller_count": caller_count,
+            "dependency_count": len(dependencies),
+            "test_count": len(tests),
+            "risk_level": risk,
+        },
+        meta=Meta(request_id=None),
+    )
+
+
+@analysis_router.get(
     "/analyze/component-impact/{component_id}",
     response_model=APIResponse[ComponentImpactAnalysisResponse],
     summary="Get component impact analysis",
@@ -2606,7 +2665,7 @@ _github_webhook_logs: list[dict] = []
     summary="Receive GitHub webhook events",
     description="Receive real-time updates from GitHub (issues, comments, labels, milestones).",
 )
-def receive_github_webhook(
+async def receive_github_webhook(
     repo: TaskRepositoryInterface = Depends(get_repo),
     request: Request = None,
 ) -> APIResponse[dict]:
@@ -2624,7 +2683,7 @@ def receive_github_webhook(
     validator = get_webhook_validator()
     signature = request.headers.get("X-Hub-Signature-256", "")
 
-    body = request.body()
+    body = await request.body()
     if not validator.validate(body, signature):
         from fastapi import HTTPException
 
@@ -2912,6 +2971,81 @@ def list_agents_by_role(role: str) -> APIResponse[list[AgentResponse]]:
                 )
             )
     return APIResponse(data=agents, meta=Meta(request_id=None))
+
+
+@agent_router.get(
+    "/agent/context/{issue_id}",
+    response_model=APIResponse[dict[str, Any]],
+    summary="Get code context for issue",
+    description="Get code files and symbols relevant to an issue from Code-as-Graph.",
+)
+def get_agent_context(
+    issue_id: str,
+    limit: int = Query(20, description="Max files to return"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[dict[str, Any]]:
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+
+    issue = repo.get_issue(issue_id)
+    if not issue:
+        raise HTTPException(status_code=404, detail=f"Issue '{issue_id}' not found")
+
+    neo4j_driver = get_neo4j_driver()
+    if neo4j_driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+
+    cg_repo = CodeGraphRepository(neo4j_driver)
+    files = cg_repo.get_files(limit=limit)
+
+    return APIResponse(
+        data={
+            "issue_id": issue_id,
+            "issue_title": issue.title,
+            "component_id": str(issue.component_id),
+            "files": files,
+            "count": len(files),
+        },
+        meta=Meta(request_id=None),
+    )
+
+
+@agent_router.get(
+    "/agent/similar/{issue_id}",
+    response_model=APIResponse[list[dict[str, Any]]],
+    summary="Find similar issues",
+    description="Find similar past issues via RAG semantic search.",
+)
+def get_similar_issues(
+    issue_id: str,
+    limit: int = Query(5, description="Max similar issues to return"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list[dict[str, Any]]]:
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+
+    issue = repo.get_issue(issue_id)
+    if not issue:
+        raise HTTPException(status_code=404, detail=f"Issue '{issue_id}' not found")
+
+    neo4j_driver = get_neo4j_driver()
+    if neo4j_driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+
+    rag_repo = RAGRepository(neo4j_driver)
+    results = rag_repo.search(f"issue {issue.title}", limit=limit)
+
+    return APIResponse(
+        data=[
+            {
+                "source_id": r.get("source_id", ""),
+                "content": r.get("content", ""),
+                "score": r.get("score", 0.0),
+            }
+            for r in results
+        ],
+        meta=Meta(request_id=None),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -3368,3 +3502,479 @@ def validate_constraints(
         ),
         meta=Meta(request_id=None),
     )
+
+
+# ---------------------------------------------------------------------------
+# Code Graph Router
+# ---------------------------------------------------------------------------
+
+code_graph_router = APIRouter(tags=["code-graph"])
+
+
+@code_graph_router.post("/scan")
+async def code_graph_scan(
+    path: str,
+    incremental: bool = False,
+    git_aware: bool = True,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+    driver: Any = Depends(get_code_graph_driver),
+) -> dict[str, Any]:
+    """Scan a repository and extract code structure into the graph."""
+    from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+
+    parser = CodeGraphParser()
+
+    files, symbols, imports, relationships = parser.scan_repository(
+        repository_path=path,
+        incremental=incremental,
+        git_aware=git_aware,
+    )
+
+    saved = False
+    if driver:
+        try:
+            from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+            code_repo = CodeGraphRepository(driver)
+            code_repo.save_scan_results(files, symbols, imports, relationships)
+            saved = True
+        except Exception:
+            pass
+
+    return {
+        "files": len(files),
+        "symbols": len(symbols),
+        "imports": len(imports),
+        "relationships": len(relationships),
+        "saved_to_graph": saved,
+    }
+
+
+@code_graph_router.get("/files")
+async def code_graph_files(
+    limit: int = Query(50, ge=1, le=500),
+    language: str | None = Query(None),
+) -> dict[str, Any]:
+    """List files in the code graph."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    repo = CodeGraphRepository(driver)
+    files = repo.get_files(limit=limit)
+
+    if language:
+        files = [f for f in files if f.get("language") == language]
+
+    return {"files": files, "total": len(files)}
+
+
+@code_graph_router.get("/symbols")
+async def code_graph_symbols(
+    name: str | None = Query(None),
+    symbol_type: str | None = Query(None),
+    limit: int = Query(20, ge=1, le=100),
+) -> dict[str, Any]:
+    """Find symbols by name in the code graph."""
+    from socialseed_tasker.core.code_analysis.entities import SymbolType
+
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    repo = CodeGraphRepository(driver)
+
+    sym_type = None
+    if symbol_type:
+        try:
+            sym_type = SymbolType(symbol_type)
+        except ValueError:
+            pass
+
+    symbols = repo.find_symbols(name=name, symbol_type=sym_type, limit=limit)
+
+    return {"symbols": symbols, "total": len(symbols)}
+
+
+@code_graph_router.get("/stats")
+async def code_graph_stats(driver: Any = Depends(get_code_graph_driver)) -> dict[str, Any]:
+    """Get code graph statistics."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    repo = CodeGraphRepository(driver)
+    stats = repo.get_stats()
+
+    return {
+        "total_files": stats.total_files,
+        "total_symbols": stats.total_symbols,
+        "total_relationships": stats.total_relationships,
+    }
+
+
+@code_graph_router.delete("")
+async def code_graph_clear(driver: Any = Depends(get_code_graph_driver)) -> dict[str, str]:
+    """Clear all code graph data."""
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    repo = CodeGraphRepository(driver)
+    repo.clear()
+
+    return {"status": "cleared"}
+
+
+@code_graph_router.get("/calls/{symbol_name}")
+async def code_graph_calls(
+    symbol_name: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> dict[str, Any]:
+    """Get all callers of a symbol."""
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    repo = CodeGraphRepository(driver)
+    callers = repo.get_callers(symbol_name)
+
+    return {"symbol": symbol_name, "callers": callers, "total": len(callers)}
+
+
+@code_graph_router.get("/depends/{file_path:path}")
+async def code_graph_depends(
+    file_path: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> dict[str, Any]:
+    """Get dependencies (imports) for a file."""
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    repo = CodeGraphRepository(driver)
+    deps = repo.get_dependencies_by_path(file_path)
+
+    return {"file": file_path, "dependencies": deps, "total": len(deps)}
+
+
+@code_graph_router.get("/tests/{file_path:path}")
+async def code_graph_tests(
+    file_path: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> dict[str, Any]:
+    """Get test files for a source file."""
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    repo = CodeGraphRepository(driver)
+    tests = repo.get_tests_for_file(file_path)
+
+    return {"file": file_path, "tests": tests, "total": len(tests)}
+
+
+# ==================== RAG (Retrieval-Augmented Generation) ====================
+
+rag_router = APIRouter(tags=["rag"])
+
+
+def get_rag_driver() -> Any:
+    """Get Neo4j driver for RAG."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+
+    return get_driver()
+
+
+@rag_router.post("/rag/index")
+async def rag_index(
+    source_type: str,
+    source_id: str,
+    content: str,
+    chunking_strategy: str = "paragraph",
+    driver: Any = Depends(get_rag_driver),
+) -> dict[str, Any]:
+    """Index content for RAG semantic search."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    repo = RAGRepository(driver)
+    repo.create_vector_index()
+
+    chunk_ids = repo.index_text(
+        text=content,
+        source_type=source_type,
+        source_id=source_id,
+        chunking_strategy=chunking_strategy,
+    )
+
+    return {"indexed": len(chunk_ids), "chunk_ids": chunk_ids}
+
+
+@rag_router.post("/rag/search")
+async def rag_search(
+    query: str,
+    limit: int = 5,
+    threshold: float = 0.7,
+    driver: Any = Depends(get_rag_driver),
+) -> dict[str, Any]:
+    """Search for similar content using vector similarity."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    repo = RAGRepository(driver)
+    results = repo.search(query=query, limit=limit, threshold=threshold)
+
+    return {"results": results, "count": len(results)}
+
+
+@rag_router.get("/rag/stats")
+async def rag_stats(driver: Any = Depends(get_rag_driver)) -> dict[str, Any]:
+    """Get RAG index statistics."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    repo = RAGRepository(driver)
+    stats = repo.get_stats()
+
+    return stats
+
+
+@rag_router.delete("/rag/{source_type}/{source_id}")
+async def rag_delete(
+    source_type: str,
+    source_id: str,
+    driver: Any = Depends(get_rag_driver),
+) -> dict[str, str]:
+    """Delete RAG embeddings for a source."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    repo = RAGRepository(driver)
+    repo.delete_by_source(source_type, source_id)
+
+    return {"status": "deleted"}
+
+
+@rag_router.delete("/rag")
+async def rag_clear(driver: Any = Depends(get_rag_driver)) -> dict[str, str]:
+    """Clear all RAG embeddings."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+
+    repo = RAGRepository(driver)
+    repo.clear()
+
+    return {"status": "cleared"}
+
+
+# ==================== AI Reasoning (Agent Decision Logging) ====================
+
+reasoning_router = APIRouter(tags=["reasoning"])
+
+
+def get_reasoning_driver() -> Any:
+    """Get Neo4j driver for reasoning."""
+    from socialseed_tasker.bootstrap.wiring import get_driver
+
+    return get_driver()
+
+
+@reasoning_router.post("/reasoning/log")
+async def log_reasoning(
+    issue_id: str,
+    agent_id: str,
+    agent_name: str,
+    thought: str,
+    confidence: float = 0.5,
+    alternatives_considered: list[str] | None = None,
+    rejected_reasons: list[str] | None = None,
+    decision: str | None = None,
+    decision_type: str = "unknown",
+    context: dict[str, Any] | None = None,
+    driver: Any = Depends(get_reasoning_driver),
+) -> dict[str, Any]:
+    """Log agent reasoning for an issue."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.core.task_management.entities import (
+        DecisionType,
+        ReasoningNode,
+    )
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    try:
+        decision_type_enum = DecisionType(decision_type)
+    except ValueError:
+        decision_type_enum = DecisionType.UNKNOWN
+
+    reasoning = ReasoningNode(
+        thought=thought,
+        confidence=confidence,
+        alternatives_considered=alternatives_considered or [],
+        rejected_reasons=rejected_reasons or [],
+        decision=decision,
+        decision_type=decision_type_enum,
+        context=context or {},
+    )
+
+    repo = ReasoningRepository(driver)
+    reasoning_id = repo.log_reasoning(issue_id, agent_id, agent_name, reasoning)
+
+    return {"id": reasoning_id, "status": "logged"}
+
+
+@reasoning_router.get("/reasoning/issue/{issue_id}")
+async def get_issue_reasoning(
+    issue_id: str,
+    limit: int = 50,
+    driver: Any = Depends(get_reasoning_driver),
+) -> dict[str, Any]:
+    """Get reasoning history for an issue."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    repo = ReasoningRepository(driver)
+    reasoning = repo.get_reasoning_by_issue(issue_id, limit)
+
+    return {"reasoning": reasoning, "count": len(reasoning)}
+
+
+@reasoning_router.get("/reasoning/history")
+async def get_reasoning_history(
+    limit: int = 100,
+    driver: Any = Depends(get_reasoning_driver),
+) -> dict[str, Any]:
+    """Get global reasoning history."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    repo = ReasoningRepository(driver)
+    history = repo.get_reasoning_history(limit)
+
+    return {"history": history, "count": len(history)}
+
+
+@reasoning_router.post("/reasoning/{reasoning_id}/feedback")
+async def add_reasoning_feedback(
+    reasoning_id: str,
+    is_approved: bool,
+    feedback_text: str | None = None,
+    driver: Any = Depends(get_reasoning_driver),
+) -> dict[str, Any]:
+    """Add human feedback to reasoning."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.core.task_management.entities import ReasoningFeedback
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    feedback = ReasoningFeedback(
+        reasoning_id=reasoning_id,
+        is_approved=is_approved,
+        feedback_text=feedback_text,
+    )
+
+    repo = ReasoningRepository(driver)
+    feedback_id = repo.add_feedback(feedback, reasoning_id)
+
+    return {"id": feedback_id, "status": "added"}
+
+
+@reasoning_router.get("/reasoning/{reasoning_id}/feedback")
+async def get_reasoning_feedback(
+    reasoning_id: str,
+    driver: Any = Depends(get_reasoning_driver),
+) -> dict[str, Any]:
+    """Get feedback for a reasoning."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    repo = ReasoningRepository(driver)
+    feedback = repo.get_feedback(reasoning_id)
+
+    return {"feedback": feedback, "count": len(feedback)}
+
+
+@reasoning_router.get("/reasoning/stats")
+async def get_reasoning_stats(driver: Any = Depends(get_reasoning_driver)) -> dict[str, Any]:
+    """Get reasoning decision statistics."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    repo = ReasoningRepository(driver)
+    stats = repo.get_decision_stats()
+
+    return stats
+
+
+@reasoning_router.delete("/reasoning/issue/{issue_id}")
+async def delete_issue_reasoning(
+    issue_id: str,
+    driver: Any = Depends(get_reasoning_driver),
+) -> dict[str, str]:
+    """Delete reasoning for an issue."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    repo = ReasoningRepository(driver)
+    repo.delete_by_issue(issue_id)
+
+    return {"status": "deleted"}
+
+
+@reasoning_router.delete("/reasoning")
+async def clear_all_reasoning(driver: Any = Depends(get_reasoning_driver)) -> dict[str, str]:
+    """Clear all reasoning data."""
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    from socialseed_tasker.storage.graph_database.reasoning_repository import (
+        ReasoningRepository,
+    )
+
+    repo = ReasoningRepository(driver)
+    repo.clear_all()
+
+    return {"status": "cleared"}

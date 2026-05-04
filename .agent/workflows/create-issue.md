@@ -16,7 +16,7 @@ Read the source document thoroughly. Identify:
 
 ### 2. Create Issue Files
 
-For each identified task, create a file in `.issues/` with the naming convention:
+For each identified task, create a file in `.issues/to-do/` with the naming convention:
 
 ```
 {NN}-{kebab-case-title}.md

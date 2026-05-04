@@ -10,7 +10,7 @@ This project's development environment, tools, and conventions that all agents m
 - **Python version**: 3.10+
 - **Package manager**: pip (via `.venv/Scripts/pip.exe`)
 - **Test runner**: pytest
-- **Version**: 0.8.0
+- **Version**: 0.9.0
 
 ### Common Commands
 
@@ -71,6 +71,8 @@ docker compose logs -f tasker-db
 - Branch: `main`
 - Remote: `origin` (GitHub)
 - `.issues/` directory is gitignored (issues are local tracking only)
+  - `to-do/`: Pending issues
+  - `done/`: Completed issues
 - Conventional commits: `type: description`
 
 ## Commit Message Types
@@ -113,10 +115,11 @@ tests/
 └── integration/            # Integration tests
 .agent/                    # AI agent skills and workflows
 .issues/                  # Issue tracking (local, gitignored)
-.issues/done/              # Completed issues
+├── to-do/                 # Pending issues
+└── done/                  # Completed issues
 ```
 
-## New v0.8.0 CLI Commands
+## New v0.9.0 CLI Commands
 
 ```bash
 # Init (scaffold external project)
@@ -136,7 +139,7 @@ tasker sync status
 tasker sync force
 ```
 
-## GitHub Integration (v0.8.0)
+## GitHub Integration (v0.9.0)
 
 ```bash
 # Environment variables needed:
@@ -156,7 +159,7 @@ tasker sync force
 
 | Component | Version |
 |-----------|---------|
-| Project | **0.8.0** |
+| Project | **0.9.0** |
 | Storage | Neo4j only |
 | Python | 3.10+ |
 | CLI | tasker |

@@ -137,7 +137,7 @@ class TestNeo4jIssueRepository:
         repo.create_issue(i2)
         repo.close_issue(str(i2.id))
 
-        open_issues = repo.list_issues(status=IssueStatus.OPEN)
+        open_issues = repo.list_issues(statuses=[IssueStatus.OPEN])
         assert len(open_issues) >= 1
 
 

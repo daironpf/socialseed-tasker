@@ -1,6 +1,6 @@
-# Features - SocialSeed Tasker (v0.8.1)
+# Features - SocialSeed Tasker (v0.9.0)
 
-This document documents all functionalities implemented in version 0.8.1.
+This document documents all functionalities implemented in version 0.9.0.
 
 ---
 
@@ -558,7 +558,7 @@ curl http://localhost:8000/health
 # Response:
 {
   "status": "healthy",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "neo4j": "connected",
   "neo4j_uri": "bolt://localhost:7687",
   "auth_enabled": false
@@ -583,7 +583,178 @@ export TASKER_SLOW_REQUEST_THRESHOLD=0.5
 
 ---
 
-## 13. Docker & Deployment
+---
+
+## 13. Code-as-Graph (Tree-Sitter)
+
+Deep code analysis and mapping of repository structures.
+
+### 13.1 Multi-Language Support
+Automatic AST parsing for multiple languages using Tree-sitter.
+
+| Language | Support Level | Features |
+|----------|---------------|----------|
+| **Python** | ADVANCED | Classes, Methods, Functions, Imports, Calls, Parameters |
+| **JavaScript** | INTERMEDIATE | Classes, Methods, Functions, Imports, Calls |
+| **TypeScript** | INTERMEDIATE | Classes, Methods, Functions, Imports, Calls |
+| **Java** | BASIC | Classes, Methods |
+| **C++** | BASIC | Classes, Structs, Functions |
+
+### 13.2 Code-as-Graph (v0.9.0)
+Advanced static analysis that models the codebase in Neo4j.
+
+**Commands:**
+*   `tasker code-graph scan <path>`: Scans a directory and builds the graph.
+*   `tasker code-graph stats`: Displays graph statistics (files, symbols, relationships).
+*   `tasker code-graph files`: Lists all indexed files.
+*   `tasker code-graph find <symbol>`: Finds a specific symbol (class/function) in the graph.
+*   `tasker code-graph impact <symbol>`: **[NEW]** Analyzes the impact of changing a symbol by finding all its callers.
+*   `tasker code-graph clear`: Wipes the code graph data.
+
+### 13.3 Relationship Mapping
+Automatically extracts and resolves:
+- `[:CONTAINS]`: Class -> Method/Function
+- `[:DEFINES]`: File -> Class/Function
+- `[:IMPORTS]`: File -> Module
+- `[:CALLS]`: Function -> Function (resolved via symbol mapping)
+
+---
+
+## 14. RAG (Retrieval-Augmented Generation)
+
+Semantic search capability using vector embeddings in Neo4j.
+
+### 14.1 Embedding Service
+OpenAI text-embedding-3-small model integration with fallback for testing.
+
+| Feature | Description |
+|---------|-------------|
+| **OpenAI Embeddings** | Uses `text-embedding-3-small` model (1536 dimensions) |
+| **Fallback Mode** | Hash-based embeddings when no API key provided |
+| **Secret Filtering** | Removes API keys/tokens before embedding |
+| **Chunking Strategies** | By paragraph, by lines, by sentences |
+
+### 14.2 RAG Commands (v0.9.0)
+
+```bash
+# Search for similar content
+tasker rag search "fix memory leak" --limit 5 --threshold 0.7
+
+# Index content for semantic search
+tasker rag index --type issue --id <issue-id> --content "Fixed by..."
+
+# Show RAG index statistics
+tasker rag stats
+
+# Clear all embeddings
+tasker rag clear --yes
+```
+
+### 14.3 RAG API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/rag/index` | POST | Index content for RAG |
+| `/api/v1/rag/search` | POST | Semantic similarity search |
+| `/api/v1/rag/stats` | GET | Index statistics |
+| `/api/v1/rag/{source_type}/{source_id}` | DELETE | Delete embeddings for source |
+| `/api/v1/rag` | DELETE | Clear all RAG embeddings |
+
+**Example:**
+```bash
+# Index an issue
+curl -X POST "http://localhost:8000/api/v1/rag/index?source_type=issue&source_id=123&content=Fixed memory leak"
+
+# Search
+curl -X POST "http://localhost:8000/api/v1/rag/search?query=async%20memory%20fix&limit=5"
+```
+
+### 14.4 Vector Index
+Neo4j native vector index for similarity search (requires Neo4j 5.11+ with APOC).
+
+```cypher
+CREATE VECTOR INDEX rag_index FOR (e:RAGEmbedding) ON e.embedding
+OPTIONS {indexConfig: {`vector.dimensions`: 1536, `vector.similarity_function`: 'cosine'}}
+```
+
+**Environment Variable:**
+```bash
+export OPENAI_API_KEY=sk-...  # Required for real embeddings
+```
+
+---
+
+## 15. AI Reasoning Logs (Agent Decision Tracking)
+
+Transparent logging of AI agent reasoning for human review and learning.
+
+### 15.1 Graph Pattern
+```cypher
+(Agent)-[:THOUGHT {timestamp: datetime()}]->(ReasoningNode)-[:DECIDED]->(Issue)
+```
+
+### 15.2 ReasoningNode Schema
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | UUID | Unique identifier |
+| `thought` | String | Agent's reasoning text |
+| `confidence` | Float | Confidence score (0.0-1.0) |
+| `alternatives_considered` | List[String] | Options evaluated |
+| `rejected_reasons` | List[String] | Why alternatives were rejected |
+| `decision` | String | Decision made |
+| `decision_type` | Enum | Type: solution_selection, architecture_choice, etc. |
+| `created_at` | DateTime | When thought occurred |
+
+### 15.3 Decision Types
+
+| Type | Description |
+|------|-------------|
+| `solution_selection` | Choosing between solution options |
+| `architecture_choice` | Architectural decisions |
+| `priority_decision` | Priority/ordering decisions |
+| `dependency_resolution` | Resolving dependencies |
+| `refactoring_choice` | Refactoring approach decisions |
+| `code_generation` | Code generation decisions |
+| `review_decision` | Code review decisions |
+
+### 15.4 Reasoning Commands (v0.9.0)
+
+```bash
+# Log agent reasoning for an issue
+tasker reasoning log --issue <id> --thought <text> --decision <choice> --confidence 0.8
+
+# View reasoning history
+tasker reasoning history [--issue <id>] [--limit 20]
+
+# Show decision statistics
+tasker reasoning stats
+
+# Clear reasoning data
+tasker reasoning clear [--issue <id>]
+```
+
+### 15.5 Reasoning API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/reasoning/log` | POST | Log agent reasoning |
+| `/api/v1/reasoning/issue/{issue_id}` | GET | Get reasoning for issue |
+| `/api/v1/reasoning/history` | GET | Global reasoning history |
+| `/api/v1/reasoning/{id}/feedback` | POST | Add human feedback |
+| `/api/v1/reasoning/{id}/feedback` | GET | Get feedback for reasoning |
+| `/api/v1/reasoning/stats` | GET | Decision statistics |
+| `/api/v1/reasoning/issue/{issue_id}` | DELETE | Delete issue reasoning |
+| `/api/v1/reasoning` | DELETE | Clear all reasoning |
+
+**Example - Log reasoning:**
+```bash
+curl -X POST "http://localhost:8000/api/v1/reasoning/log?issue_id=issue-123&agent_id=agent-1&agent_name=DevAgent&thought=Using buffer strategy&confidence=0.85&decision=add wrapper&decision_type=solution_selection"
+```
+
+---
+
+## 16. Docker & Deployment
 
 ### 13.1 Docker Compose
 
@@ -647,6 +818,31 @@ tasker dependency list
 ```bash
 tasker analyze root-cause <issue>
 tasker analyze impact <issue>
+```
+
+### Code Graph (v0.9.0)
+```bash
+tasker code-graph scan <path> [--incremental]
+tasker code-graph find <name>
+tasker code-graph files
+tasker code-graph stats
+tasker code-graph clear
+```
+
+### RAG (Semantic Search)
+```bash
+tasker rag search <query> [--limit N] [--threshold N]
+tasker rag index --type <source_type> --id <source_id> --content <text>
+tasker rag stats
+tasker rag clear [--yes]
+```
+
+### AI Reasoning (Decision Tracking)
+```bash
+tasker reasoning log --issue <id> --thought <text> [--decision <choice>] [--confidence N]
+tasker reasoning history [--issue <id>] [--limit N]
+tasker reasoning stats
+tasker reasoning clear [--issue <id>] [--yes]
 ```
 
 ### Other
@@ -723,4 +919,4 @@ tasker --help
 
 ---
 
-Version: 0.8.1
+Version: 0.9.0

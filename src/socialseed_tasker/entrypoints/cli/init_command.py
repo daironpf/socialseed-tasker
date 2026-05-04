@@ -270,9 +270,11 @@ def _run_scaffold(
             Panel(
                 "[bold]Next steps:[/bold]\n"
                 "  1. cd tasker && cp configs/.env.example configs/.env\n"
-                "  2. docker compose build tasker-api\n"
-                "  3. docker compose up -d\n"
-                "  4. Import skills from tasker/skills/ in your AI agent",
+                "  2. Edit configs/.env and add your OPENAI_API_KEY for RAG features\n"
+                "  3. docker compose build tasker-api\n"
+                "  4. docker compose up -d\n"
+                "  5. Import skills from tasker/skills/ in your AI agent\n"
+                "\n[dim]Note: RAG semantic search requires OPENAI_API_KEY in .env[/dim]",
                 title="[cyan]Tasker Setup[/cyan]",
                 border_style="cyan",
             )

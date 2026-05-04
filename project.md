@@ -2,7 +2,7 @@
 
 ## Project Summary
 
-**SocialSeed Tasker** (v0.8.1) is a graph-based task management framework for AI agents with Neo4j storage backend, hexagonal architecture, and comprehensive tooling for CLI and API interfaces.
+**SocialSeed Tasker** (v0.9.0) is a graph-based task management framework for AI agents with Neo4j storage backend, hexagonal architecture, and comprehensive tooling for CLI and API interfaces.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
@@ -26,7 +26,8 @@ src/socialseed_tasker/
 │   ├── project_analysis/          # Rules, analyzers, policies
 │   ├── validation/               # Input sanitization
 │   ├── services/                # External integrations
-│   └── system_init/              # Scaffolding
+│   ├── system_init/              # Scaffolding
+│   └── code_analysis/           # Tree-sitter code parsing (v0.9.0)
 ├── entrypoints/                   # External interfaces
 │   ├── terminal_cli/              # Typer CLI (tasker)
 │   ├── web_api/                 # FastAPI REST API
@@ -331,7 +332,32 @@ services:
 
 ---
 
-## 11. Key Features (v0.8.0)
+## 11. Schema Migration
+
+### v0.9.0 Migration Script
+
+New features in v0.9.0 require Neo4j schema changes (vector indexes, relationship indexes). The migration runs automatically on startup via `driver.py`, or can be run manually:
+
+```bash
+# Run migration
+python scripts/migrate_v090.py --password=your_neo4j_password
+
+# Rollback if needed
+python scripts/migrate_v090.py --password=your_neo4j_password --rollback
+```
+
+### Schema Changes (v0.9.0)
+
+| Index | Purpose |
+|-------|---------|
+| `issue_embeddings` | Vector index for RAG semantic search |
+| `code_calls` | Index on CALLS relationship timestamp |
+| `code_depends_issue` | Index on DEPENDS_ON relationship timestamp |
+| `agent_thought` | Index on THOUGHT relationship timestamp |
+
+---
+
+## 11. Key Features (v0.9.0)
 
 | Feature | Status |
 |--------|--------|
@@ -340,7 +366,57 @@ services:
 | CLI with Rich UI | ✅ |
 | REST API | ✅ |
 | AI Agent skills | ✅ |
-| Quality guide for agents | ✅ |
+| Code-as-Graph | ✅ |
+| RAG Semantic Search | ✅ |
+| Agent Integration | ✅ |
+
+---
+
+## 12. Agent Integration (v0.9.0)
+
+### CLI Commands
+
+```bash
+# Get code context for an issue
+tasker agent context --issue <issue_id>
+
+# Find similar issues via RAG
+tasker agent suggest --issue <issue_id> --limit 5
+
+# Log reasoning for issue resolution
+tasker agent reasoning --issue <issue_id> --thought "..." --decision "..."
+```
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/agent/context/{issue_id}` | GET | Code context from Code-as-Graph |
+| `/api/v1/agent/similar/{issue_id}` | GET | Similar issues via RAG |
+| `/api/v1/analyze/code-impact` | GET | Code-level impact (callers, deps, tests) |
+
+---
+
+## 13. Enhanced Impact Analysis (v0.9.0)
+
+### CLI Commands
+
+```bash
+# Issue-level impact analysis
+tasker analyze impact <issue_id>
+
+# Code-level impact analysis (new v0.9.0)
+tasker analyze code-impact --path <file_path>
+```
+
+### Risk Levels
+
+| Callers | Risk Level |
+|--------|----------|
+| >5 | CRITICAL |
+| >2 | HIGH |
+| >0 | MEDIUM |
+| 0 | LOW |
 | Dependency graph visualization | ✅ |
 | Root cause analysis | ✅ |
 | Impact analysis | ✅ |

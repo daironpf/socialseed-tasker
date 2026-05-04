@@ -20,12 +20,35 @@ This directory contains the operational knowledge for AI agents working on this 
 | Create a new issue | `workflows/create-issue.md` |
 | Test project | `workflows/test-project.md` |
 | Project setup | `workflows/project-setup.md` |
-| **Prueba el proyecto** | `workflows/prueba-el-proyecto.md` |
+| **Update documentation** | `workflows/update-documentation.md` |
+| **Test the project** | `workflows/prueba-el-proyecto.md` |
+
+## Agent Interaction Guide
+
+To ensure high-quality collaboration and minimize user input errors, agents MUST:
+1.  **Always end with a Service Menu**: At the end of every response where a task was completed or a decision is needed, present a table of available workflows.
+2.  **Suggest Next Steps**: Based on the current state, highlight the most logical next workflow in **bold**.
+3.  **Wait for Choice**: Unless it's an emergency, wait for the user to select an option (e.g., "1", "Create Issue") before proceeding.
+
+### Available Workflows Reference
+
+| Code | Workflow | Description |
+|---|---|---|
+| `SETUP` | `project-setup.md` | Initialize or re-scaffold project modules |
+| `ISSUE` | `create-issue.md` | Create new tasks based on analysis or user request |
+| `WORK` | `implement-issue.md` | Start working on a specific issue |
+| `DOCS` | `update-documentation.md` | Sync all documentation (Code, MD, Web) |
+| `HISTORY`| `daily-log.md` | Update the daily log (bitácora) in `.history/` |
+| `TEST` | `prueba-el-proyecto.md` | Full black-box evaluation of the project |
+| `COMMIT`| `commit-push.md` | Prepare, commit and push changes with docs sync |
+| `FIND` | `convert-findings...` | Convert test report findings into actionable issues |
+
+---
 
 ## Core Principles
 
 1. **Read project.md first**: Before any work, read `project.md` at the root to understand the project structure (see `skills/project-documentation.md`)
-2. **Issue-driven development**: Every piece of work starts from an issue in `.issues/`
+2. **Issue-driven development**: Every piece of work starts from an issue in `.issues/to-do/`
 3. **Test before commit**: No code goes in without tests
 4. **Documentation sync**: Always update docs when fixing issues (see `skills/documentation-sync.md`)
 5. **Conventional commits**: Follow the established commit message format
@@ -36,13 +59,13 @@ This directory contains the operational knowledge for AI agents working on this 
 
 | Attribute | Value |
 |-----------|-------|
-| Version | **0.8.0** |
+| Version | **0.9.0** |
 | Storage | Neo4j only |
 | Architecture | Hexagonal (Feature-Oriented) |
 | Entry Points | CLI (Typer), REST API (FastAPI) |
 | Branch | `main` |
 
-## Key Features (v0.8.0)
+## Key Features (v0.9.0)
 
 - **Input Validation**: XSS and Neo4j injection prevention
 - **API Authentication**: `TASKER_API_KEY` + `TASKER_AUTH_ENABLED`
@@ -51,6 +74,7 @@ This directory contains the operational knowledge for AI agents working on this 
 - **Impact Analysis**: Component and issue impact analysis
 - **Project Dashboard**: Summary with dependency health metrics
 - **Dependency Graph**: Full graph visualization endpoint
+- **Code-as-Graph**: Tree-sitter powered code parsing to Neo4j graph
 
 ## CLI Commands
 
@@ -77,6 +101,7 @@ tasker dependency list
 # Analysis
 tasker analyze root-cause <issue>
 tasker analyze impact <issue>
+tasker analyze code-impact --path <file_path>
 
 # Seed
 tasker seed run
@@ -84,7 +109,37 @@ tasker seed run
 # Init (scaffold)
 tasker init <path>
 tasker init <path> --force
-```
+
+# Code-as-Graph (v0.9.0)
+tasker code-graph scan <path> --incremental
+tasker code-graph find <name>
+tasker code-graph files
+tasker code-graph stats
+tasker code-graph clear
+tasker code-graph impact <symbol>
+tasker code-graph calls <path>
+tasker code-graph depends <path>
+tasker code-graph tests <path>
+
+# RAG - Semantic Search (v0.9.0)
+tasker rag search <query> --limit 5
+tasker rag index --type issue --id <id> --content <text>
+tasker rag stats
+tasker rag clear
+
+# AI Reasoning Logs (v0.9.0)
+tasker reasoning log --issue <id> --thought <text> --decision <choice>
+tasker reasoning history [--issue <id>] [--limit N]
+tasker reasoning stats
+tasker reasoning clear [--issue <id>]
+
+# Agent Integration (v0.9.0)
+
+tasker agent context --issue <id>
+tasker agent suggest --issue <id> --limit 5
+tasker agent reasoning --issue <id> --thought <text> --decision <choice>
+tasker reasoning history [--issue <id>] [--limit N]
+tasker reasoning clear [--issue <id>]
 
 ## API Endpoints
 
@@ -98,6 +153,7 @@ tasker init <path> --force
 | `/api/v1/issues/{id}/dependencies` | GET/POST | Dependency CRUD |
 | `/api/v1/workable-issues` | GET | Issues ready to work on |
 | `/api/v1/analyze/impact/{id}` | GET | Impact analysis |
+| `/api/v1/analyze/code-impact` | GET | Code-level impact (callers, deps, tests) |
 | `/api/v1/analyze/component-impact/{id}` | GET | Component impact |
 | `/api/v1/projects/{name}/summary` | GET | Project dashboard |
 | `/api/v1/graph/dependencies` | GET | Dependency graph |
@@ -105,6 +161,34 @@ tasker init <path> --force
 | `/api/v1/sync/status` | GET | Sync status |
 | `/api/v1/sync/queue` | GET | Sync queue |
 | `/api/v1/webhooks/github/test` | GET | Webhook test |
+| `/api/v1/code-graph/scan` | POST | Scan repository to graph |
+| `/api/v1/code-graph/files` | GET | List files in graph |
+| `/api/v1/code-graph/symbols` | GET | Query code symbols |
+| `/api/v1/code-graph/stats` | GET | Code graph statistics |
+| `/api/v1/code-graph` | DELETE | Clear code graph data |
+| `/api/v1/code-graph/calls/{symbol}` | GET | Get callers of symbol |
+| `/api/v1/code-graph/depends/{path}` | GET | Get dependencies of file |
+| `/api/v1/code-graph/tests/{path}` | GET | Get test files for source |
+| `/api/v1/rag/index` | POST | Index content for RAG |
+| `/api/v1/rag/search` | POST | Semantic search |
+| `/api/v1/rag/stats` | GET | RAG index statistics |
+| `/api/v1/rag/{source_type}/{source_id}` | DELETE | Delete RAG embeddings |
+| `/api/v1/rag` | DELETE | Clear all RAG embeddings |
+| `/api/v1/reasoning/log` | POST | Log agent reasoning |
+| `/api/v1/reasoning/issue/{id}` | GET | Get reasoning for issue |
+| `/api/v1/reasoning/history` | GET | Get reasoning history |
+| `/api/v1/reasoning/{id}/feedback` | POST | Add feedback |
+| `/api/v1/reasoning/{id}/feedback` | GET | Get feedback |
+| `/api/v1/reasoning/stats` | GET | Decision statistics |
+| `/api/v1/reasoning/issue/{id}` | DELETE | Delete issue reasoning |
+| `/api/v1/reasoning` | DELETE | Clear all reasoning |
+
+## Agent Integration (v0.9.0)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/agent/context/{issue_id}` | GET | Get code context for issue |
+| `/api/v1/agent/similar/{issue_id}` | GET | Find similar issues via RAG |
 
 ## Environment Variables
 
@@ -182,6 +266,8 @@ docker compose down -v
 | Agent Lifecycle | ✅ | #81 |
 | Policy Enforcement | ✅ | #82 |
 | Constraints System | ✅ | #126 |
+| Code-as-Graph | ✅ | #208 |
+| RAG (Semantic Search) | ✅ | #209 |
 
 ## Skills Reference
 

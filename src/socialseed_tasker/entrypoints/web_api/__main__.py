@@ -13,7 +13,8 @@ def main() -> None:
     """Run the API server."""
     container = Container.from_env()
     repository = container.get_repository()
-    app = create_app(repository)
+    neo4j_driver = container.get_driver()
+    app = create_app(repository, neo4j_driver)
 
     if os.environ.get("TASKER_DEMO_MODE", "").lower() in ("1", "true", "yes"):
         _seed_demo_data(repository)

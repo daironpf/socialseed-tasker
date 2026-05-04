@@ -2,7 +2,7 @@
 
 **SocialSeed Tasker** is an **AI-Native Project Management Framework** powered by **Neo4j**. Our mission is to evolve beyond flat task lists into **Graph-Based Architectural Governance** for autonomous software engineering. The Neo4j graph becomes the "consciousness" of the development process.
 
-**Last updated:** 2026-04-27 | **Current Version:** v0.8.1 | **Next:** v0.9.0
+**Last updated:** 2026-05-01 | **Current Version:** v0.9.0 | **Next:** v0.9.1
 
 ---
 
@@ -40,21 +40,21 @@
 ### Code-as-Graph (Tree-sitter Integration)
 Map the entire repository as a graph structure for deep code understanding:
 
-- [ ] **Node Types:**
+- [x] **Node Types:**
   - `File` - Source files with path, language, lines of code
   - `Class` - Classes with methods and attributes
   - `Function` - Functions with parameters and return types
   - `Import` - Import statements and their targets
   - `Test` - Test files linked to tested units
 
-- [ ] **Relationship Types:**
+- [x] **Relationship Types:**
   - `[:CALLS]` - Function/Method invocations
   - `[:DEPENDS_ON]` - Import/Dependency relationships
   - `[:DEFINES]` - File defines Class/Function
   - `[:TESTS]` - Test file tests Class/Function
   - `[:CONTAINS]` - File contains Function/Class
 
-- [ ] **Implementation Details:**
+- [x] **Implementation Details:**
   - Tree-sitter parser integration for multi-language support
   - Incremental scanning (only changed files)
   - Git-aware (track file history)
@@ -63,18 +63,18 @@ Map the entire repository as a graph structure for deep code understanding:
 ### RAG Native in Graph (Vector Indexes)
 Enable semantic search across all project knowledge:
 
-- [ ] **Vector Indexes in Neo4j:**
+- [x] **Vector Indexes in Neo4j:**
   - Store embeddings for tasks and past solutions
-  - Support for task similarity matching
-  - Historical solution retrieval
+  - Schema migration script with rollback capability
+  - Index: `issue_embeddings` for semantic search
 
-- [ ] **RAG Pipeline:**
+- [x] **RAG Pipeline:**
   - Embedding generation service
   - Chunking strategies for code/documents
   - Vector similarity search
   - Context injection for agent prompts
 
-- [ ] **Knowledge Types:**
+- [x] **Knowledge Types:**
   - Past issue solutions
   - Architectural decisions (ADRs)
   - Test patterns and examples
@@ -83,16 +83,16 @@ Enable semantic search across all project knowledge:
 ### Agentic Traceability (Thinking Logs)
 Record agent reasoning in the graph for transparency and learning:
 
-- [ ] **Pattern:** `(Agent)-[:THOUGHT]->(ReasoningNode)-[:DECIDED]->(Task)`
+- [x] **Pattern:** `(Agent)-[:THOUGHT]->(ReasoningNode)-[:DECIDED]->(Task)`
   
-- [ ] **ReasoningNode Properties:**
+- [x] **ReasoningNode Properties:**
   - `thought`: The agent's reasoning text
   - `confidence`: Confidence score (0-1)
   - `alternatives_considered`: Other options evaluated
   - `rejected_reasons`: Why alternatives were rejected
   - `timestamp`: When the thought occurred
 
-- [ ] **Trace Integration:**
+- [x] **Trace Integration:**
   - Automatic capture via API interceptors
   - Manual logging via agent manifest
   - Human review and feedback loop
@@ -193,62 +193,28 @@ Control AI costs and prevent infinite loops:
 
 ---
 
-## 🚀 Phase 4: Global Ecosystem & Autonomous Execution (2027)
+## 🚀 Phase 4: High-Level Autonomy & Ecosystem (v1.0.0)
 
-*Goal: Industry standardization and full supervised autonomy.*
+*Goal: Industry-leading autonomous execution and self-governing repositories.*
 
-### Model Context Protocol (MCP) Server
-Native server for AI tools to consume graph context directly:
+### 1. Advanced Graph Intelligence
+- [ ] **Bidirectional Traceability (#220):** Link `Issue` nodes directly to the `CodeSymbol` nodes they modify.
+- [ ] **Phantom Dependency Detection (#221):** RAG-powered discovery of conceptual dependencies using semantic similarity.
+- [ ] **Pre-emptive Impact Analysis (#223):** Real-time risk scoring during issue creation based on code-graph coupling.
 
-- [ ] **MCP Implementation:**
-  - Standard MCP protocol compliance
-  - Direct graph context access
-  - Claude Desktop integration
-  - Cursor integration
-  - Custom AI assistants
+### 2. Autonomous Governance
+- [ ] **Autonomous Architect Agent (#222):** Specialized agent role to enforce `tasker.constraints.yml` in every PR.
+- [ ] **Self-Healing Documentation (#224):** Automated detection of "documentation rot" with automatic `DOC_GAP` issue generation.
+- [ ] **Agent Workload Dispatcher (#225):** Central orchestrator for multi-agent task assignment based on capabilities.
 
-- [ ] **Context Providers:**
-  - Issue context
-  - Dependency graph
-  - Architectural rules
-  - Historical decisions
-  - Code-as-Graph data
+### 3. Observability & Integration
+- [ ] **Reasoning Visualization (#226):** Interactive "Thread of Thought" graph in the Vue dashboard.
+- [ ] **Model Context Protocol (MCP) Server:** Native server for AI tools to consume graph context directly.
+- [ ] **IDE Extensions:** Official VS Code and Cursor integrations with inline architecture highlights.
 
-### IDE Integration
-Official extensions for popular editors:
-
-- [ ] **VS Code Extension:**
-  - Issue panel
-  - Dependency viewer
-  - Architecture validation
-  - Inline error markers
-
-- [ ] **Cursor/Windsurf Integration:**
-  - Real-time suggestions
-  - Context injection
-  - Architecture enforcement
-
-- [ ] **Features:**
-  - One-click issue assignment
-  - Automatic status updates
-  - Inline dependency visualization
-  - Architectural rule highlights
-
-### Autonomous Git Operations
-Full lifecycle management from Issue to PR:
-
-- [ ] **Automated Workflow:**
-  - Issue → Branch creation
-  - Branch → Development
-  - Development → PR creation
-  - PR → Graph-verified approval
-  - Approval → Merge
-
-- [ ] **Graph-Verified Approvals:**
-  - Architectural rule validation
-  - Test pass verification
-  - Dependency impact check
-  - Security scan validation
+### 4. Autonomous Git Operations
+- [ ] **Full Lifecycle Management:** From Issue creation to automated, graph-verified Merges.
+- [ ] **Graph-Verified Approvals:** Automated sign-off based on test coverage, architectural rules, and security scans.
 
 ### Project Master Config
 Single YAML file defining entire system architecture:
@@ -309,6 +275,9 @@ Single YAML file defining entire system architecture:
 | 1-20 | Various bug fixes (short UUID, pagination, etc.) | Low-Medium | ✅ RESOLVED |
 | 21 | CLI blank lines (Typer/Rich) | Low | ⚠️ KNOWN LIMITATION |
 | 22 | Architectural rules not enforced at write time | Medium | ✅ RESOLVED (v0.8.0) |
+| 23 | Neo4j schema migration for v0.9.0 | High | ✅ RESOLVED (v0.9.0 #214) |
+| 24 | Agent integration with Code-as-Graph and RAG | High | ✅ RESOLVED (v0.9.0 #215) |
+| 25 | Enhanced impact analysis with code-level granularity | Medium | ✅ RESOLVED (v0.9.0 #216) |
 
 ---
 

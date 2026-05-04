@@ -6,7 +6,7 @@ This project uses an issue-driven development workflow. All work is tracked via 
 
 ## Issue File Structure
 
-Issues live in `.issues/` with the naming convention:
+Issues live in `.issues/to-do/` with the naming convention:
 
 ```
 {NN}-{kebab-case-title}.md

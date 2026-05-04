@@ -16,6 +16,11 @@ PERFORMANCE OPTIMIZATION:
 SCHEMA_CONSTRAINTS = [
     "CREATE CONSTRAINT issue_id IF NOT EXISTS FOR (i:Issue) REQUIRE i.id IS UNIQUE",
     "CREATE CONSTRAINT component_id IF NOT EXISTS FOR (c:Component) REQUIRE c.id IS UNIQUE",
+    "CREATE CONSTRAINT code_file_id IF NOT EXISTS FOR (f:CodeFile) REQUIRE f.id IS UNIQUE",
+    "CREATE CONSTRAINT code_symbol_id IF NOT EXISTS FOR (s:CodeSymbol) REQUIRE s.id IS UNIQUE",
+    "CREATE CONSTRAINT code_import_id IF NOT EXISTS FOR (i:CodeImport) REQUIRE i.id IS UNIQUE",
+    "CREATE CONSTRAINT reasoning_id IF NOT EXISTS FOR (r:ReasoningNode) REQUIRE r.id IS UNIQUE",
+    "CREATE CONSTRAINT agent_id IF NOT EXISTS FOR (a:Agent) REQUIRE a.id IS UNIQUE",
 ]
 
 SCHEMA_INDEXES = [
@@ -30,6 +35,21 @@ SCHEMA_INDEXES = [
     "CREATE INDEX label_name IF NOT EXISTS FOR (l:Label) ON (l.name)",
     "CREATE INDEX deployment_commit IF NOT EXISTS FOR (d:Deployment) ON (d.commit_sha)",
     "CREATE INDEX deployment_environment IF NOT EXISTS FOR (d:Deployment) ON (d.environment)",
+    "CREATE INDEX code_file_path IF NOT EXISTS FOR (f:CodeFile) ON (f.path)",
+    "CREATE INDEX code_file_name IF NOT EXISTS FOR (f:CodeFile) ON (f.name)",
+    "CREATE INDEX code_file_repo IF NOT EXISTS FOR (f:CodeFile) ON (f.repository_path)",
+    "CREATE INDEX code_symbol_name IF NOT EXISTS FOR (s:CodeSymbol) ON (s.name)",
+    "CREATE INDEX code_symbol_type IF NOT EXISTS FOR (s:CodeSymbol) ON (s.symbol_type)",
+    "CREATE INDEX code_symbol_file IF NOT EXISTS FOR (s:CodeSymbol) ON (s.file_id)",
+    "CREATE INDEX code_import_file IF NOT EXISTS FOR (i:CodeImport) ON (i.file_id)",
+    "CREATE INDEX reasoning_issue IF NOT EXISTS FOR (r:ReasoningNode) ON (r.issue_id)",
+    "CREATE INDEX reasoning_type IF NOT EXISTS FOR (r:ReasoningNode) ON (r.decision_type)",
+    "CREATE INDEX reasoning_created IF NOT EXISTS FOR (r:ReasoningNode) ON (r.created_at)",
+    "CREATE INDEX agent_id_idx IF NOT EXISTS FOR (a:Agent) ON (a.id)",
+    "CREATE VECTOR INDEX issue_embeddings IF NOT EXISTS FOR (i:Issue) ON (i.embedding) OPTIONS {indexConfig: {vector: {dimension: 1536, similarityFunction: 'cosine'}}}",
+    "CREATE INDEX code_calls IF NOT EXISTS FOR ()-[r:CALLS]->() ON (r.timestamp)",
+    "CREATE INDEX code_depends IF NOT EXISTS FOR ()-[r:DEPENDS_ON]->(i:Issue) ON (i.timestamp)",
+    "CREATE INDEX agent_thought IF NOT EXISTS FOR ()-[r:THOUGHT]->() ON (r.timestamp)",
 ]
 
 # ---------------------------------------------------------------------------
