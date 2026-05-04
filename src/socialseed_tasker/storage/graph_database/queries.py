@@ -547,16 +547,18 @@ SET i.description_embedding = $embedding
 
 ISSUE_AFFECTS_FILE = """
 MATCH (i:Issue {id: $issue_id})
-MATCH (f:CodeFile {path: $file_path})
+MATCH (f:CodeFile)
+WHERE f.path CONTAINS $file_path OR f.name = $file_path
 MERGE (i)-[r:AFFECTS]->(f)
 SET r.closed_at = $closed_at
 RETURN i, f
 """
 
 FIND_ISSUES_AFFECTING_FILE = """
-MATCH (i:Issue)-[r:AFFECTS]->(f:CodeFile {path: $file_path})
+MATCH (i:Issue)-[r:AFFECTS]->(f:CodeFile)
+WHERE f.path CONTAINS $file_path OR f.name = $file_path
 WHERE i.status = 'CLOSED'
-RETURN i.id as issue_id, i.title as title, r.closed_at as closed_at
+RETURN i.id as issue_id, i.title as title, f.path as file_path, r.closed_at as closed_at
 ORDER BY r.closed_at DESC
 LIMIT toInteger($limit)
 """
