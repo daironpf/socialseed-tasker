@@ -66,7 +66,15 @@ DELETE /issues/{issue_id}
 
 ### Close Issue
 ```http
+POST /issues/{issue_id}/close?affected_files=["file.py","other.py"]
+```
+
+### Close Issue with Affected Files (v1.0.0)
+```http
 POST /issues/{issue_id}/close
+{
+  "affected_files": ["path/to/file.py"]
+}
 ```
 
 ## Components
@@ -178,6 +186,11 @@ GET /analyze/full-graph
 ### Subgraph
 ```http
 GET /analyze/subgraph?root_id=uuid&depth=3
+```
+
+### Phantom Dependencies - Similarity (v1.0.0)
+```http
+GET /analyze/similarity/{issue_id}?threshold=0.7&limit=10
 ```
 
 ## Code Graph (v0.9.0)

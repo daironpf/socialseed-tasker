@@ -59,13 +59,13 @@ To ensure high-quality collaboration and minimize user input errors, agents MUST
 
 | Attribute | Value |
 |-----------|-------|
-| Version | **0.9.0** |
+| Version | **1.0.0** |
 | Storage | Neo4j only |
 | Architecture | Hexagonal (Feature-Oriented) |
 | Entry Points | CLI (Typer), REST API (FastAPI) |
-| Branch | `main` |
+| Branch | `v1.0.0` |
 
-## Key Features (v0.9.0)
+## Key Features (v1.0.0)
 
 - **Input Validation**: XSS and Neo4j injection prevention
 - **API Authentication**: `TASKER_API_KEY` + `TASKER_AUTH_ENABLED`
@@ -75,6 +75,8 @@ To ensure high-quality collaboration and minimize user input errors, agents MUST
 - **Project Dashboard**: Summary with dependency health metrics
 - **Dependency Graph**: Full graph visualization endpoint
 - **Code-as-Graph**: Tree-sitter powered code parsing to Neo4j graph
+- **Bidirectional Traceability**: Link issues to code files on close (AFFECTS relationship)
+- **Phantom Dependency Detection**: RAG-powered similarity analysis
 
 ## CLI Commands
 
@@ -110,7 +112,7 @@ tasker seed run
 tasker init <path>
 tasker init <path> --force
 
-# Code-as-Graph (v0.9.0)
+# Code-as-Graph (v1.0.0)
 tasker code-graph scan <path> --incremental
 tasker code-graph find <name>
 tasker code-graph files
@@ -121,19 +123,19 @@ tasker code-graph calls <path>
 tasker code-graph depends <path>
 tasker code-graph tests <path>
 
-# RAG - Semantic Search (v0.9.0)
+# RAG - Semantic Search (v1.0.0)
 tasker rag search <query> --limit 5
 tasker rag index --type issue --id <id> --content <text>
 tasker rag stats
 tasker rag clear
 
-# AI Reasoning Logs (v0.9.0)
+# AI Reasoning Logs (v1.0.0)
 tasker reasoning log --issue <id> --thought <text> --decision <choice>
 tasker reasoning history [--issue <id>] [--limit N]
 tasker reasoning stats
 tasker reasoning clear [--issue <id>]
 
-# Agent Integration (v0.9.0)
+# Agent Integration (v1.0.0)
 
 tasker agent context --issue <id>
 tasker agent suggest --issue <id> --limit 5
@@ -183,7 +185,7 @@ tasker reasoning clear [--issue <id>]
 | `/api/v1/reasoning/issue/{id}` | DELETE | Delete issue reasoning |
 | `/api/v1/reasoning` | DELETE | Clear all reasoning |
 
-## Agent Integration (v0.9.0)
+## Agent Integration (v1.0.0)
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|

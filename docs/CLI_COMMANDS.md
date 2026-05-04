@@ -29,6 +29,7 @@ tasker issue show <issue-id>
 ### Close Issue
 ```bash
 tasker issue close <issue-id>
+tasker issue close <issue-id> --affects <file-path> --affects <file-path>
 ```
 
 ### Delete Issue
@@ -130,6 +131,12 @@ tasker analyze code-impact <file-path>
 ### Root Cause Analysis
 ```bash
 tasker analyze root-cause <issue-id>
+```
+
+### Phantom Dependency Detection (v1.0.0)
+```bash
+tasker analyze similarity --issue <issue-id>
+tasker analyze similarity --issue <issue-id> --threshold 0.7 --limit 10
 ```
 
 ## Code Graph (v0.9.0)
