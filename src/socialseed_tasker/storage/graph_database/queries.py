@@ -85,6 +85,30 @@ RETURN DISTINCT c.project AS name
 ORDER BY name
 """
 
+LIST_PROJECT_NODES = """
+MATCH (p:Project)
+RETURN p
+ORDER BY p.name
+"""
+
+CREATE_PROJECT = """
+MERGE (p:Project {name: $name})
+SET p.settings = $settings, p.description = $description
+RETURN p
+"""
+
+PROJECT_COMPONENTS = """
+MATCH (p:Project {name: $project_name})<-[:BELONGS_TO]-(c:Component)
+RETURN c
+ORDER BY c.name
+"""
+
+PROJECT_ISSUES = """
+MATCH (p:Project {name: $project_name})<-[:BELONGS_TO]-(c:Component)<-[:BELONGS_TO]-(i:Issue)
+RETURN i
+ORDER BY i.created_at DESC
+"""
+
 LIST_ISSUES_PAGINATED = """
 MATCH (i:Issue)
 USING INDEX i:Issue(status)

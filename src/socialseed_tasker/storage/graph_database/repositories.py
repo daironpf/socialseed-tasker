@@ -139,6 +139,31 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             result = session.run(queries.LIST_PROJECTS)
             return [r["name"] for r in result]
 
+    def list_project_nodes(self) -> list[dict]:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.LIST_PROJECT_NODES)
+            projects = []
+            for r in result:
+                p = r["p"]
+                projects.append({
+                    "name": p.get("name"),
+                    "description": p.get("description"),
+                    "settings": p.get("settings"),
+                })
+            return projects
+
+    def create_project_node(self, name: str, description: str = "", settings: dict = None) -> dict:
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                queries.CREATE_PROJECT,
+                {"name": name, "description": description, "settings": settings or {}},
+            )
+            record = result.single()
+            if record:
+                p = record["p"]
+                return {"name": p.get("name"), "description": p.get("description")}
+            return None
+
     def get_component_by_name(self, name: str, project: str | None = None) -> Component | None:
         with self._driver.driver.session(database=self._driver.database) as session:
             if project:
