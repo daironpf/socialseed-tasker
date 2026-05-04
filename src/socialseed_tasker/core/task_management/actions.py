@@ -335,6 +335,50 @@ class TaskRepositoryInterface(Protocol):
 # ---------------------------------------------------------------------------
 
 
+def _compute_preemptive_impact(component_id: str) -> dict[str, Any] | None:
+    """Compute pre-emptive impact for a new issue.
+
+    Analyzes the component's code graph to provide risk assessment
+    at issue creation time.
+    """
+    from socialseed_tasker.bootstrap.wiring import get_driver
+
+    driver = get_driver()
+    if driver is None:
+        return None
+
+    try:
+        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+        cg = CodeGraphRepository(driver)
+        stats = cg.get_stats()
+
+        files = stats.get("files", [])
+        total_files = len(files)
+
+        callers = cg.get_callers_by_path(component_id)
+        callers_count = len(callers)
+
+        risk_level = "LOW"
+        if callers_count > 5 or total_files > 50:
+            risk_level = "CRITICAL"
+        elif callers_count > 2 or total_files > 20:
+            risk_level = "HIGH"
+        elif callers_count > 0 or total_files > 10:
+            risk_level = "MEDIUM"
+
+        hot_files = [f.get("path", "") for f in files if f.get("symbol_type") == "function"][:3]
+
+        return {
+            "total_files": total_files,
+            "callers_count": callers_count,
+            "risk_level": risk_level,
+            "hot_files": hot_files,
+        }
+    except Exception:
+        return None
+
+
 def create_issue_action(
     repository: TaskRepositoryInterface,
     title: str,
@@ -397,6 +441,18 @@ def create_issue_action(
         architectural_constraints=architectural_constraints or [],
     )
     repository.create_issue(issue)
+
+    if component_id:
+        impact = _compute_preemptive_impact(component_id)
+        if impact:
+            risk = impact.get("risk_level", "LOW")
+            files = impact.get("total_files", 0)
+            if risk in ["HIGH", "CRITICAL"]:
+                warnings.append(f"HIGH RISK: Component has {files} files, risk: {risk}")
+            hot = impact.get("hot_files", [])
+            if hot:
+                warnings.append(f"HOT FILES: May affect frequently modified: {', '.join(hot[:3])}")
+
     return issue, warnings
 
 
