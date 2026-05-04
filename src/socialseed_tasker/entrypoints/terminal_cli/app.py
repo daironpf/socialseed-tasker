@@ -54,7 +54,6 @@ console = Console(
     force_terminal=True,
     soft_wrap=False,
     highlight=False,
-    unicode=True,
 )
 
 # Global CLI state - shared container instance
