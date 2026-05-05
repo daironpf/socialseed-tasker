@@ -413,6 +413,12 @@ WHERE (source)-[:IMPORTS]->(i)
 RETURN count(*) as resolved
 """
 
+GET_DEPENDENCIES = """
+MATCH (source:Issue {id: $issue_id})-[:DEPENDS_ON]->(target:Issue)
+RETURN target
+ORDER BY target.created_at DESC
+"""
+
 GET_DEPENDENTS = """
 MATCH (target:Issue {id: $issue_id})<-[:DEPENDS_ON]-(source:Issue)
 RETURN source
