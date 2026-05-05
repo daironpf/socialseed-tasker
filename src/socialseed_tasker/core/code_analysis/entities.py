@@ -6,7 +6,7 @@ enabling AI agents to understand code relationships and dependencies.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -42,7 +42,7 @@ class CodeFile(BaseModel):
     lines_of_code: int = Field(default=0, ge=0)
     file_hash: str | None = None
     commit_sha: str | None = None
-    scanned_at: datetime = Field(default_factory=datetime.utcnow)
+    scanned_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     repository_path: str | None = None
 
 
@@ -111,7 +111,7 @@ class CodeRelationship(BaseModel):
     source_id: str
     target_id: str
     relationship_type: RelationshipType
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     commit_sha: str | None = None
 
 
