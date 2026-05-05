@@ -28,6 +28,13 @@ Until then, breaking changes may occur in MINOR releases (`0.x.0`) to allow rapi
 | 0.7.0 | 2025-10 | GitHub Integration base |
 | 0.8.0 | 2026-04-23 | **Observability & Active Governance** |
 | **0.8.1** | **2026-04-27** | **Polish & Documentation** |
+
+## v1.0.x Series (Current)
+
+| Version | Date | Focus |
+|---------|------|-------|
+| **1.0.0** | **2026-05-04** | **Full Autonomy Release** |
+| **1.0.1** | **2026-05-05** | **Quality & Testing Release** |
 | **1.0.0** | **2026-05-04** | **Full Autonomy** |
 
 ---

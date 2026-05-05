@@ -5,6 +5,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.0.1] - 2026-05-05 (Quality & Testing Release)
+
+### Added
+- **Dependency Enforcement Tests:** Unit tests validating that issues with open dependencies cannot be closed.
+- **Real-Test Evaluation:** Black-box evaluation framework with `prueba-el-proyecto.md` workflow.
+- **DX Scores:** Documentation of Developer Experience metrics from real-test evaluations.
+
+### Fixed
+- **Neo4j Authentication:** Default password was empty. Now uses `neoSocial` by default.
+- **Environment Variables:** Support for both `NEO4J_*` and `TASKER_NEO4J_*` naming conventions.
+- **Docker Frontend Build:** Replace npm-based Dockerfile with static HTML version for scaffold.
+
+### Changed
+- **datetime.utcnow():** Replaced with `datetime.now(timezone.utc)` for Python 3.14+ compatibility.
+
+---
+
 ## [1.0.0] - 2026-05-04 (Full Autonomy Release)
 
 ### Added

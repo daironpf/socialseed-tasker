@@ -482,4 +482,25 @@ git push origin v0.8.0
 
 ---
 
-*Generated: 2026-05-04*
+## Testing & Quality Assurance
+
+### Real-Test Evaluation (Black-Box)
+The project uses a dedicated black-box evaluation framework (`prueba-el-proyecto.md`) to validate system behavior from a user perspective.
+
+**DX Scores (Developer Experience):**
+| Metric | Score |
+|--------|-------|
+| cli_intuition_score | 8/10 |
+| error_message_clarity | 9/10 |
+| documentation_score | 8/10 |
+| api_clarity | 9/10 |
+| setup_friction | 8/10 |
+| dependency_graph_score | 10/10 |
+
+**Latest Evaluation:** 2026-05-05 (Dental Clinic - Microservices)
+- Issues: 10 created, 2 implemented
+- Dependencies: Working correctly (enforcement validated)
+
+---
+
+*Generated: 2026-05-05*
