@@ -2,7 +2,7 @@
 
 This document describes the complete graph schema for the SocialSeed Tasker project.
 
-## Version: 0.9.0
+## Version: 1.0.0
 
 ## Node Types
 

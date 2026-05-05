@@ -1,6 +1,6 @@
-# CLI Commands Reference - v0.9.0
+# CLI Commands Reference - v1.0.0
 
-This document covers all CLI commands available in SocialSeed Tasker v0.9.0.
+This document covers all CLI commands available in SocialSeed Tasker v1.0.0.
 
 ## Installation
 

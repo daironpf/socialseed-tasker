@@ -1,4 +1,4 @@
-# API Reference - v0.9.0
+# API Reference - v1.0.0
 
 Complete REST API reference for SocialSeed Tasker.
 

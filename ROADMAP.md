@@ -2,7 +2,7 @@
 
 **SocialSeed Tasker** is an **AI-Native Project Management Framework** powered by **Neo4j**. Our mission is to evolve beyond flat task lists into **Graph-Based Architectural Governance** for autonomous software engineering. The Neo4j graph becomes the "consciousness" of the development process.
 
-**Last updated:** 2026-05-01 | **Current Version:** v0.9.0 | **Next:** v0.9.1
+**Last updated:** 2026-05-04 | **Current Version:** v1.0.0 | **Next:** v1.1.0
 
 ---
 
