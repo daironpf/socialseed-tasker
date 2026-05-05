@@ -42,7 +42,7 @@ class Neo4jConfig:
 
     uri: str = "bolt://localhost:7687"
     user: str = "neo4j"
-    password: str = ""
+    password: str = "neoSocial"
     database: str = "neo4j"
     max_connection_lifetime: int = 3600
     connection_mode: Neo4jConnectionMode = Neo4jConnectionMode.LOCAL
@@ -85,11 +85,11 @@ class AppConfig:
 
         Environment variables override all defaults.
         """
-        neo4j_uri = os.environ.get("TASKER_NEO4J_URI", "bolt://localhost:7687")
+        neo4j_uri = os.environ.get("TASKER_NEO4J_URI", os.environ.get("NEO4J_URI", "bolt://localhost:7687"))
         neo4j = Neo4jConfig.from_uri(
             uri=neo4j_uri,
-            user=os.environ.get("TASKER_NEO4J_USER", "neo4j"),
-            password=os.environ.get("TASKER_NEO4J_PASSWORD", ""),
+            user=os.environ.get("TASKER_NEO4J_USER", os.environ.get("NEO4J_USERNAME", "neo4j")),
+            password=os.environ.get("TASKER_NEO4J_PASSWORD", os.environ.get("NEO4J_PASSWORD", "neoSocial")),
             database=os.environ.get("TASKER_NEO4J_DATABASE", "neo4j"),
             max_connection_lifetime=int(os.environ.get("TASKER_NEO4J_MAX_CONN_LIFETIME", "3600")),
         )
