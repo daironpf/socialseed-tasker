@@ -22,6 +22,74 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+class ProjectStatus(str, Enum):
+    """Lifecycle states for a Project.
+
+    Intent: Define the possible states a project can be in during its lifecycle.
+    Business Value: Enables project filtering (e.g., find all active projects).
+    """
+
+    ACTIVE = "ACTIVE"
+    ARCHIVED = "ARCHIVED"
+    DEMO = "DEMO"
+
+
+class ProjectVisibility(str, Enum):
+    """Visibility levels for a Project.
+
+    Intent: Classify projects by their accessibility.
+    Business Value: Drives rendering rules in multi-tenant systems.
+    """
+
+    PUBLIC = "PUBLIC"
+    PRIVATE = "PRIVATE"
+
+
+class GlobalStatus(str, Enum):
+    """Global deployment status for a Project.
+
+    Intent: Track the current deployment environment/state.
+    Business Value: Enables governance checks and deployment gating.
+    """
+
+    DEVELOPMENT = "DEVELOPMENT"
+    STAGING = "STAGING"
+    PRODUCTION = "PRODUCTION"
+
+
+class Project(BaseModel):
+    """A software project being managed by the task system.
+
+    Intent: Represent a root-level container that holds architectural
+    context, governance rules, and global configuration for all
+    components and issues within it.
+    Business Value: Enables AI agents to understand global architectural
+    context, follow project-specific conventions, and perform cross-component
+    analysis with high precision.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    id: UUID = Field(default_factory=uuid4)
+    name: str = Field(..., min_length=1, description="Official project name")
+    slug: str = Field(..., min_length=1, description="URL-friendly identifier")
+    description: str = ""
+    repository_url: str | None = None
+    base_package: str | None = None
+    visibility: ProjectVisibility = ProjectVisibility.PRIVATE
+    status: ProjectStatus = ProjectStatus.ACTIVE
+    tech_stack: list[str] = Field(default_factory=list)
+    main_stack: list[str] = Field(default_factory=list)
+    architecture_style: str | None = None
+    version: str = "0.0.1"
+    conventions_url: str | None = None
+    conventions_rules: str | None = None
+    last_full_scan: datetime | None = None
+    global_status: GlobalStatus = GlobalStatus.DEVELOPMENT
+    created_at: datetime = Field(default_factory=_now)
+    updated_at: datetime = Field(default_factory=_now)
+
+
 class IssueStatus(str, Enum):
     """Lifecycle states for an Issue.
 
@@ -62,7 +130,8 @@ class Component(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     name: str = Field(..., min_length=1)
     description: str | None = None
-    project: str = Field(..., min_length=1)
+    project: str = Field(..., min_length=1, description="Project name (for backward compatibility)")
+    project_id: UUID | None = Field(default=None, description="Project UUID reference")
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
 
