@@ -259,6 +259,32 @@ class RAGRepository:
                 {"source_type": source_type, "source_id": source_id},
             )
 
+    def get_context_for_issue(self, issue_id: str) -> list[dict]:
+        """Build RAG context for an Issue by following AFFECTS relationship.
+        
+        Retrieves CodeSymbols and CodeFiles affected by this issue
+        to provide targeted context for the AI agent.
+        """
+        with self._get_session() as session:
+            result = session.run("""
+                MATCH (i:Issue {id: $issue_id})
+                OPTIONAL MATCH (i)-[:AFFECTS]->(s:CodeSymbol)
+                OPTIONAL MATCH (i)-[:AFFECTS]->(f:CodeFile)
+                RETURN coalesce(s.id, f.id) as source_id,
+                       coalesce(s.name, f.name) as source_name,
+                       coalesce(labels(s)[0], labels(f)[0]) as source_type
+            """, issue_id=issue_id)
+            return [dict(r) for r in result]
+
+    def get_embeddings_by_symbol(self, symbol_id: str) -> list[dict]:
+        """Get all RAG embeddings linked to a CodeSymbol."""
+        with self._get_session() as session:
+            result = session.run("""
+                MATCH (s:CodeSymbol {id: $symbol_id})-[:HAS_VECTOR]->(e:RAGEmbedding)
+                RETURN e.id as id, e.content as content, e.source_type as source_type
+            """, symbol_id=symbol_id)
+            return [dict(r) for r in result]
+
     def clear(self) -> None:
         """Clear all RAG embeddings."""
         with self._get_session() as session:
