@@ -26,6 +26,15 @@ class PolicyRuleType(str, Enum):
     FORBIDDEN_LABEL_DEPENDENCY = "forbidden_label_dependency"
 
 
+class PolicyTargetScope(str, Enum):
+    """Scope where policy is enforced."""
+
+    CODE_SYMBOL = "CODE_SYMBOL"
+    COMPONENT = "COMPONENT"
+    COMMIT = "COMMIT"
+    PROJECT = "PROJECT"
+
+
 class PolicyRule(BaseModel):
     """A single rule within a policy."""
 
@@ -63,6 +72,10 @@ class Policy(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     description: str = ""
     rules: list[PolicyRule] = Field(default_factory=list)
+    target_scope: PolicyTargetScope = PolicyTargetScope.COMPONENT
+    logic_definition: str | None = Field(default=None, description="JSON string defining validation logic")
+    remediation_strategy: str | None = Field(default=None, description="Instructions for Agent to resolve violation")
+    autofix_template: str | None = Field(default=None, description="Code template for automatic correction")
     is_active: bool = True
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
