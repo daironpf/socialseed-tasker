@@ -136,6 +136,24 @@ class Component(BaseModel):
     updated_at: datetime = Field(default_factory=_now)
 
 
+class Label(BaseModel):
+    """A label for categorizing issues.
+
+    Intent: Provide semantic categorization for issues
+    so agents can filter and prioritize based on tags.
+    Business Value: Enables issue filtering and domain grouping.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    id: UUID = Field(default_factory=uuid4)
+    name: str = Field(..., min_length=1)
+    color: str | None = None
+    description: str = ""
+    created_at: datetime = Field(default_factory=_now)
+    updated_at: datetime = Field(default_factory=_now)
+
+
 class Issue(BaseModel):
     """A task or issue in the graph-based task management system.
 

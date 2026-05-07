@@ -119,8 +119,9 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 name=component.name,
                 description=component.description,
                 project=component.project,
-                created_at=component.created_at.isoformat(),
-                updated_at=component.updated_at.isoformat(),
+                projectId=str(component.project_id) if component.project_id else None,
+                createdAt=component.created_at.isoformat(),
+                updatedAt=component.updated_at.isoformat(),
             )
 
     def get_component(self, component_id: str) -> Component | None:
@@ -790,6 +791,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
     def sync_labels_from_github(self, github_adapter) -> int:
         """Sync labels from GitHub repository."""
         from datetime import datetime, timezone
+        from uuid import uuid4
 
         labels = github_adapter.list_labels() if github_adapter else []
         synced = 0
@@ -798,11 +800,12 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             for label in labels:
                 session.run(
                     queries.CREATE_LABEL,
+                    id=str(uuid4()),
                     name=label.get("name", ""),
                     color=label.get("color", ""),
                     description=label.get("description", ""),
-                    is_default=label.get("default", False),
-                    updated_at=datetime.now(timezone.utc).isoformat(),
+                    createdAt=datetime.now(timezone.utc).isoformat(),
+                    updatedAt=datetime.now(timezone.utc).isoformat(),
                 )
                 synced += 1
 

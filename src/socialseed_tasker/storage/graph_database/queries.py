@@ -64,8 +64,9 @@ CREATE (c:Component {
     name: $name,
     description: $description,
     project: $project,
-    created_at: $created_at,
-    updated_at: $updated_at
+    projectId: $projectId,
+    createdAt: $createdAt,
+    updatedAt: $updatedAt
 })
 """
 
@@ -461,10 +462,11 @@ RETURN path IS NOT NULL AS would_cycle
 
 CREATE_LABEL = """
 MERGE (l:Label {name: $name})
-SET l.color = $color,
+SET l.id = $id,
+    l.color = $color,
     l.description = $description,
-    l.is_default = $is_default,
-    l.updated_at = $updated_at
+    l.createdAt = $createdAt,
+    l.updatedAt = $updatedAt
 RETURN l
 """
 
