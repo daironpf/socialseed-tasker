@@ -393,6 +393,29 @@ class ReasoningNode(BaseModel):
     createdAt: datetime = Field(default_factory=_now)
 
 
+class Commit(BaseModel):
+    """A Git commit linking issues to code changes.
+
+    Intent: Provide physical traceability from logical requirements (Issues)
+    to code modifications (CodeFiles).
+    Business Value: Enables time-travel audits - trace who changed a file,
+    why they did it (Reasoning), and if it passed policies (Policy).
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    sha: str = Field(..., min_length=40, max_length=40, description="Git commit hash")
+    message: str = ""
+    authorName: str = ""
+    authorEmail: str = ""
+    timestamp: datetime = Field(default_factory=_now)
+    isAiGenerated: bool = False
+    branch: str = ""
+    additions: int = 0
+    deletions: int = 0
+    filesChanged: int = 0
+
+
 class ReasoningFeedback(BaseModel):
     """Human feedback on agent reasoning."""
 

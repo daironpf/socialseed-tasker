@@ -25,12 +25,14 @@ SCHEMA_CONSTRAINTS = [
     "CREATE CONSTRAINT agent_id IF NOT EXISTS FOR (a:Agent) REQUIRE a.id IS UNIQUE",
     "CREATE CONSTRAINT user_id IF NOT EXISTS FOR (u:User) REQUIRE u.id IS UNIQUE",
     "CREATE CONSTRAINT user_email IF NOT EXISTS FOR (u:User) REQUIRE u.email IS UNIQUE",
+    "CREATE CONSTRAINT commit_sha IF NOT EXISTS FOR (c:Commit) REQUIRE c.sha IS UNIQUE",
 ]
 
 SCHEMA_INDEXES = [
     "CREATE INDEX issue_status IF NOT EXISTS FOR (i:Issue) ON (i.status)",
     "CREATE INDEX issue_component IF NOT EXISTS FOR (i:Issue) ON (i.component_id)",
     "CREATE INDEX issue_priority IF NOT EXISTS FOR (i:Issue) ON (i.priority)",
+    "CREATE INDEX commit_timestamp IF NOT EXISTS FOR (c:Commit) ON (c.timestamp)",
     "CREATE INDEX issue_labels IF NOT EXISTS FOR (i:Issue) ON i.labels",
     "CREATE INDEX issue_created_at IF NOT EXISTS FOR (i:Issue) ON (i.created_at)",
     "CREATE INDEX issue_project IF NOT EXISTS FOR (i:Issue) ON (i.project)",
