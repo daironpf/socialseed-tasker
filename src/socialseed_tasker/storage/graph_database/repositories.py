@@ -146,22 +146,80 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             for r in result:
                 p = r["p"]
                 projects.append({
+                    "id": p.get("id"),
                     "name": p.get("name"),
+                    "slug": p.get("slug"),
                     "description": p.get("description"),
-                    "settings": p.get("settings"),
+                    "repositoryUrl": p.get("repositoryUrl"),
+                    "basePackage": p.get("basePackage"),
+                    "visibility": p.get("visibility"),
+                    "status": p.get("status"),
+                    "techStack": p.get("techStack"),
+                    "mainStack": p.get("mainStack"),
+                    "architectureStyle": p.get("architectureStyle"),
+                    "version": p.get("version"),
+                    "conventionsUrl": p.get("conventionsUrl"),
+                    "conventionsRules": p.get("conventionsRules"),
+                    "lastFullScan": p.get("lastFullScan"),
+                    "globalStatus": p.get("globalStatus"),
+                    "createdAt": p.get("createdAt"),
+                    "updatedAt": p.get("updatedAt"),
                 })
             return projects
 
-    def create_project_node(self, name: str, description: str = "", settings: dict = None) -> dict:
+    def create_project_node(
+        self,
+        id: str,
+        name: str,
+        slug: str,
+        description: str = "",
+        repository_url: str | None = None,
+        base_package: str | None = None,
+        visibility: str = "PRIVATE",
+        status: str = "ACTIVE",
+        tech_stack: list | None = None,
+        main_stack: list | None = None,
+        architecture_style: str | None = None,
+        version: str = "0.0.1",
+        conventions_url: str | None = None,
+        conventions_rules: str | None = None,
+        last_full_scan: str | None = None,
+        global_status: str = "DEVELOPMENT",
+    ) -> dict:
+        from datetime import datetime, timezone
+
+        now = datetime.now(timezone.utc).isoformat()
+        params = {
+            "id": id,
+            "name": name,
+            "slug": slug,
+            "description": description,
+            "repositoryUrl": repository_url,
+            "basePackage": base_package,
+            "visibility": visibility,
+            "status": status,
+            "techStack": tech_stack or [],
+            "mainStack": main_stack or [],
+            "architectureStyle": architecture_style,
+            "version": version,
+            "conventionsUrl": conventions_url,
+            "conventionsRules": conventions_rules,
+            "lastFullScan": last_full_scan,
+            "globalStatus": global_status,
+            "createdAt": now,
+            "updatedAt": now,
+        }
         with self._driver.driver.session(database=self._driver.database) as session:
-            result = session.run(
-                queries.CREATE_PROJECT,
-                {"name": name, "description": description, "settings": settings or {}},
-            )
+            result = session.run(queries.CREATE_PROJECT, params)
             record = result.single()
             if record:
                 p = record["p"]
-                return {"name": p.get("name"), "description": p.get("description")}
+                return {
+                    "id": p.get("id"),
+                    "name": p.get("name"),
+                    "slug": p.get("slug"),
+                    "description": p.get("description"),
+                }
             return None
 
     def get_component_by_name(self, name: str, project: str | None = None) -> Component | None:

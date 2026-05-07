@@ -16,6 +16,8 @@ PERFORMANCE OPTIMIZATION:
 SCHEMA_CONSTRAINTS = [
     "CREATE CONSTRAINT issue_id IF NOT EXISTS FOR (i:Issue) REQUIRE i.id IS UNIQUE",
     "CREATE CONSTRAINT component_id IF NOT EXISTS FOR (c:Component) REQUIRE c.id IS UNIQUE",
+    "CREATE CONSTRAINT project_id IF NOT EXISTS FOR (p:Project) REQUIRE p.id IS UNIQUE",
+    "CREATE CONSTRAINT project_slug IF NOT EXISTS FOR (p:Project) REQUIRE p.slug IS UNIQUE",
     "CREATE CONSTRAINT code_file_id IF NOT EXISTS FOR (f:CodeFile) REQUIRE f.id IS UNIQUE",
     "CREATE CONSTRAINT code_symbol_id IF NOT EXISTS FOR (s:CodeSymbol) REQUIRE s.id IS UNIQUE",
     "CREATE CONSTRAINT code_import_id IF NOT EXISTS FOR (i:CodeImport) REQUIRE i.id IS UNIQUE",
@@ -92,8 +94,24 @@ ORDER BY p.name
 """
 
 CREATE_PROJECT = """
-MERGE (p:Project {name: $name})
-SET p.settings = $settings, p.description = $description
+MERGE (p:Project {slug: $slug})
+SET p.id = $id,
+    p.name = $name,
+    p.description = $description,
+    p.repositoryUrl = $repositoryUrl,
+    p.basePackage = $basePackage,
+    p.visibility = $visibility,
+    p.status = $status,
+    p.techStack = $techStack,
+    p.mainStack = $mainStack,
+    p.architectureStyle = $architectureStyle,
+    p.version = $version,
+    p.conventionsUrl = $conventionsUrl,
+    p.conventionsRules = $conventionsRules,
+    p.lastFullScan = $lastFullScan,
+    p.globalStatus = $globalStatus,
+    p.createdAt = $createdAt,
+    p.updatedAt = $updatedAt
 RETURN p
 """
 
