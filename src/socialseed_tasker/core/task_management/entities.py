@@ -57,6 +57,23 @@ class GlobalStatus(str, Enum):
     PRODUCTION = "PRODUCTION"
 
 
+class Severity(str, Enum):
+    """Severity levels for policy violations and events."""
+
+    INFO = "info"
+    WARNING = "warning"
+    BLOCKER = "blocker"
+
+
+class PolicyTargetScope(str, Enum):
+    """Scope where policy is enforced."""
+
+    CODE_SYMBOL = "CODE_SYMBOL"
+    COMPONENT = "COMPONENT"
+    COMMIT = "COMMIT"
+    PROJECT = "PROJECT"
+
+
 class Project(BaseModel):
     """A software project being managed by the task system.
 
@@ -414,6 +431,14 @@ class Commit(BaseModel):
     additions: int = 0
     deletions: int = 0
     filesChanged: int = 0
+
+
+class FileChangeType(str, Enum):
+    """Type of file modification in a commit."""
+
+    ADDED = "ADDED"
+    MODIFIED = "MODIFIED"
+    DELETED = "DELETED"
 
 
 class ReasoningFeedback(BaseModel):
