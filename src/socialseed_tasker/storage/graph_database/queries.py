@@ -196,6 +196,77 @@ RETURN dependent
 """
 
 # ---------------------------------------------------------------------------
+# Agent specialty and domain-driven dispatching relationships
+# ---------------------------------------------------------------------------
+
+ADD_AGENT_SPECIALIST = """
+MATCH (a:Agent {id: $agent_id})
+MATCH (c:Component {id: $component_id})
+MERGE (a)-[:SPECIALIST_IN]->(c)
+"""
+
+REMOVE_AGENT_SPECIALIST = """
+MATCH (a:Agent {id: $agent_id})-[r:SPECIALIST_IN]->(c:Component {id: $component_id})
+DELETE r
+"""
+
+GET_AGENT_SPECIALISTS = """
+MATCH (a:Agent {id: $agent_id})-[:SPECIALIST_IN]->(c:Component)
+RETURN c
+"""
+
+GET_COMPONENT_SPECIALISTS = """
+MATCH (a:Agent)-[:SPECIALIST_IN]->(c:Component {id: $component_id})
+RETURN a
+"""
+
+ADD_AGENT_INTERESTED = """
+MATCH (a:Agent {id: $agent_id})
+MATCH (l:Label {id: $label_id})
+MERGE (a)-[:INTERESTED_IN]->(l)
+"""
+
+GET_AGENT_INTERESTS = """
+MATCH (a:Agent {id: $agent_id})-[:INTERESTED_IN]->(l:Label)
+RETURN l
+"""
+
+# ---------------------------------------------------------------------------
+# CodeSymbol hierarchical relationships
+# ---------------------------------------------------------------------------
+
+ADD_SYMBOL_CHILD_OF = """
+MATCH (child:CodeSymbol {id: $child_id})
+MATCH (parent:CodeSymbol {id: $parent_id})
+MERGE (child)-[:CHILD_OF]->(parent)
+"""
+
+GET_SYMBOL_CHILDREN = """
+MATCH (s:CodeSymbol {id: $symbol_id})-[:CHILD_OF]->(parent:CodeSymbol)
+RETURN parent
+"""
+
+GET_SYMBOL_PARENTS = """
+MATCH (s:CodeSymbol {id: $symbol_id})<-[:CHILD_OF]-(child:CodeSymbol)
+RETURN child
+"""
+
+# ---------------------------------------------------------------------------
+# Semantic linkage for RAG
+# ---------------------------------------------------------------------------
+
+ADD_SYMBOL_VECTOR = """
+MATCH (s:CodeSymbol {id: $symbol_id})
+MATCH (r:RAGEmbedding {id: $embedding_id})
+MERGE (s)-[:HAS_VECTOR]->(r)
+"""
+
+GET_SYMBOL_EMBEDDINGS = """
+MATCH (s:CodeSymbol {id: $symbol_id})-[:HAS_VECTOR]->(r:RAGEmbedding)
+RETURN r
+"""
+
+# ---------------------------------------------------------------------------
 # Epic queries
 # ---------------------------------------------------------------------------
 
