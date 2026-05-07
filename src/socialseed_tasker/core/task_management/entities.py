@@ -314,6 +314,36 @@ class AgentStatus(str, Enum):
     OFFLINE = "offline"
 
 
+class UserRole(str, Enum):
+    """User authority levels."""
+
+    ADMIN = "admin"
+    LEAD_ARCHITECT = "lead_architect"
+    DEVELOPER = "developer"
+    VIEWER = "viewer"
+
+
+class User(BaseModel):
+    """Human user in the system.
+
+    Intent: Track human architects, leads, and owners
+    for responsibility and manual oversight.
+    Business Value: Enables Human-in-the-Loop (HITL) principle
+    and administrative control.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    id: UUID = Field(default_factory=uuid4)
+    username: str = Field(..., min_length=1)
+    email: str | None = None
+    role: UserRole = UserRole.DEVELOPER
+    github_handle: str | None = None
+    created_at: datetime = Field(default_factory=_now)
+    last_login: datetime | None = None
+    preferences: str | None = None
+
+
 class Agent(BaseModel):
     """An AI agent in the swarm coordination system.
 
@@ -329,9 +359,9 @@ class Agent(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     role: AgentRole = AgentRole.DEVELOPER
     status: AgentStatus = AgentStatus.IDLE
-    current_issue_id: str | None = None
+    currentIssueId: str | None = None
     capabilities: list[str] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=_now)
+    createdAt: datetime = Field(default_factory=_now)
 
 
 class DecisionType(str, Enum):
@@ -356,11 +386,11 @@ class ReasoningNode(BaseModel):
     id: UUID = Field(default_factory=lambda: str(uuid4()))
     thought: str = Field(..., min_length=1, description="The agent's reasoning text")
     confidence: float = Field(default=0.5, ge=0.0, le=1.0, description="Confidence score 0.0-1.0")
-    alternatives_considered: list[str] = Field(default_factory=list, description="Options evaluated")
-    rejected_reasons: list[str] = Field(default_factory=list, description="Why alternatives were rejected")
+    alternativesConsidered: list[str] = Field(default_factory=list, description="Options evaluated")
+    rejectedReasons: list[str] = Field(default_factory=list, description="Why alternatives were rejected")
     decision: str | None = Field(default=None, description="The decision made")
-    decision_type: DecisionType = DecisionType.UNKNOWN
-    created_at: datetime = Field(default_factory=_now)
+    decisionType: DecisionType = DecisionType.UNKNOWN
+    createdAt: datetime = Field(default_factory=_now)
 
 
 class ReasoningFeedback(BaseModel):
