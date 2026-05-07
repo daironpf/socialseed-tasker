@@ -26,6 +26,9 @@ SCHEMA_CONSTRAINTS = [
     "CREATE CONSTRAINT user_id IF NOT EXISTS FOR (u:User) REQUIRE u.id IS UNIQUE",
     "CREATE CONSTRAINT user_email IF NOT EXISTS FOR (u:User) REQUIRE u.email IS UNIQUE",
     "CREATE CONSTRAINT commit_sha IF NOT EXISTS FOR (c:Commit) REQUIRE c.sha IS UNIQUE",
+    "CREATE CONSTRAINT rag_embedding_id IF NOT EXISTS FOR (r:RAGEmbedding) REQUIRE r.id IS UNIQUE",
+    "CREATE CONSTRAINT label_id IF NOT EXISTS FOR (l:Label) REQUIRE l.id IS UNIQUE",
+    "CREATE CONSTRAINT policy_id IF NOT EXISTS FOR (p:Policy) REQUIRE p.id IS UNIQUE",
 ]
 
 SCHEMA_INDEXES = [
@@ -52,7 +55,10 @@ SCHEMA_INDEXES = [
     "CREATE INDEX reasoning_type IF NOT EXISTS FOR (r:ReasoningNode) ON (r.decisionType)",
     "CREATE INDEX reasoning_createdAt IF NOT EXISTS FOR (r:ReasoningNode) ON (r.createdAt)",
     "CREATE INDEX agent_id_idx IF NOT EXISTS FOR (a:Agent) ON (a.id)",
+    "CREATE INDEX agent_role IF NOT EXISTS FOR (a:Agent) ON (a.role)",
+    "CREATE INDEX policy_name IF NOT EXISTS FOR (p:Policy) ON (p.name)",
     "CREATE VECTOR INDEX issue_embeddings IF NOT EXISTS FOR (i:Issue) ON (i.embedding) OPTIONS {indexConfig: {`vector.dimensions`: 1536, `vector.similarity_function`: 'cosine'}}",
+    "CREATE VECTOR INDEX rag_content_index IF NOT EXISTS FOR (r:RAGEmbedding) ON (r.embedding) OPTIONS {indexConfig: {`vector.dimensions`: 1536, `vector.similarity_function`: 'cosine'}}",
     "CREATE INDEX code_calls IF NOT EXISTS FOR ()-[r:CALLS]->() ON (r.timestamp)",
     "CREATE INDEX code_depends IF NOT EXISTS FOR ()-[r:DEPENDS_ON]->(i:Issue) ON (i.timestamp)",
     "CREATE INDEX agent_thought IF NOT EXISTS FOR ()-[r:THOUGHT]->() ON (r.timestamp)",
