@@ -72,6 +72,7 @@ For detailed technical guides, API references, and architectural deep-dives, vis
 ### 📖 v1.0.0 Documentation
 
 - [Developer Onboarding Guide](docs/ONBOARDING.md) - Start here for new developers!
+- [Implementation Guide](docs/IMPLEMENTATION_GUIDE.md) - How to extend the graph model
 - [CLI Commands Reference](docs/CLI_COMMANDS.md)
 - [API Reference](docs/API_REFERENCE.md)
 - [Graph Model Schema](docs/GRAPH_MODEL.md)
