@@ -336,6 +336,7 @@ def create_app(
         label_router,
         objective_router,
         policy_router,
+        policy_rel_router,
         project_router,
         rag_router,
         reasoning_router,
@@ -354,6 +355,7 @@ def create_app(
     app.include_router(analysis_router, prefix="/api/v1", tags=["analysis"])
     app.include_router(project_router, prefix="/api/v1", tags=["projects"])
     app.include_router(policy_router, prefix="/api/v1", tags=["policies"])
+    app.include_router(policy_rel_router, prefix="/api/v1", tags=["policy-relationships"])
     app.include_router(agent_router, prefix="/api/v1", tags=["agents"])
     app.include_router(sync_router, prefix="/api/v1", tags=["sync"])
     app.include_router(webhook_router, prefix="/api/v1", tags=["webhooks"])

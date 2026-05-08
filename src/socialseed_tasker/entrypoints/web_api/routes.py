@@ -2444,6 +2444,189 @@ def dry_run_policy(
 
 
 # ---------------------------------------------------------------------------
+# Policy Relationships Router
+# ---------------------------------------------------------------------------
+
+policy_rel_router = APIRouter()
+
+
+def _policy_to_response(policy: "Policy") -> "PolicyResponse":  # type: ignore[valid-type]
+    """Convert domain Policy to API response."""
+    return PolicyResponse(
+        id=str(policy.id),
+        name=policy.name,
+        description=policy.description,
+        rules=[r.model_dump() for r in policy.rules],
+        target_scope=policy.target_scope.value,
+        logic_definition=policy.logic_definition,
+        remediation_strategy=policy.remediation_strategy,
+        autofix_template=policy.autofix_template,
+        is_active=policy.is_active,
+        created_at=policy.created_at,
+        updated_at=policy.updated_at,
+    )
+
+
+@policy_rel_router.post(
+    "/policies/{policy_id}/link/project/{project_id}",
+    response_model=APIResponse[dict],
+    summary="Link policy to project",
+    description="Create (Project)-[:ENFORCES]->(Policy) relationship.",
+)
+def link_policy_to_project(
+    policy_id: str,
+    project_id: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[dict]:
+    """Link policy to a project."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.policy_repository import PolicyRepository
+
+    repo = PolicyRepository(driver)
+    repo.link_policy_to_project(policy_id, project_id)
+
+    return APIResponse(data={"status": "linked"}, meta=Meta(request_id=None))
+
+
+@policy_rel_router.post(
+    "/policies/{policy_id}/link/agent/{agent_id}",
+    response_model=APIResponse[dict],
+    summary="Link policy to agent",
+    description="Create (Agent)-[:MUST_COMPLY_WITH]->(Policy) relationship.",
+)
+def link_policy_to_agent(
+    policy_id: str,
+    agent_id: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[dict]:
+    """Link policy to an agent."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.policy_repository import PolicyRepository
+
+    repo = PolicyRepository(driver)
+    repo.link_policy_to_agent(policy_id, agent_id)
+
+    return APIResponse(data={"status": "linked"}, meta=Meta(request_id=None))
+
+
+@policy_rel_router.post(
+    "/policies/{policy_id}/link/component/{component_id}",
+    response_model=APIResponse[dict],
+    summary="Link policy to component",
+    description="Create (Policy)-[:APPLIES_TO]->(Component) relationship.",
+)
+def link_policy_to_component(
+    policy_id: str,
+    component_id: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[dict]:
+    """Link policy to a component."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.policy_repository import PolicyRepository
+
+    repo = PolicyRepository(driver)
+    repo.link_policy_to_component(policy_id, component_id)
+
+    return APIResponse(data={"status": "linked"}, meta=Meta(request_id=None))
+
+
+@policy_rel_router.get(
+    "/policies/project/{project_id}",
+    response_model=APIResponse[list[PolicyResponse]],
+    summary="Get policies for project",
+    description="Get all policies enforced by a project.",
+)
+def get_policies_for_project(
+    project_id: str,
+    limit: int = Query(50, ge=1, le=100),
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[list[PolicyResponse]]:
+    """Get policies for a project."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.policy_repository import PolicyRepository
+
+    repo = PolicyRepository(driver)
+    policies = repo.get_policies_for_project(project_id, limit=limit)
+
+    return APIResponse(
+        data=[_policy_to_response(p) for p in policies],
+        meta=Meta(request_id=None),
+    )
+
+
+@policy_rel_router.get(
+    "/policies/agent/{agent_id}",
+    response_model=APIResponse[list[PolicyResponse]],
+    summary="Get policies for agent",
+    description="Get all policies an agent must comply with.",
+)
+def get_policies_for_agent(
+    agent_id: str,
+    limit: int = Query(50, ge=1, le=100),
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[list[PolicyResponse]]:
+    """Get policies for an agent."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.policy_repository import PolicyRepository
+
+    repo = PolicyRepository(driver)
+    policies = repo.get_policies_for_agent(agent_id, limit=limit)
+
+    return APIResponse(
+        data=[_policy_to_response(p) for p in policies],
+        meta=Meta(request_id=None),
+    )
+
+
+@policy_rel_router.get(
+    "/policies/component/{component_id}",
+    response_model=APIResponse[list[PolicyResponse]],
+    summary="Get policies for component",
+    description="Get all policies that apply to a component.",
+)
+def get_policies_for_component(
+    component_id: str,
+    limit: int = Query(50, ge=1, le=100),
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[list[PolicyResponse]]:
+    """Get policies for a component."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.policy_repository import PolicyRepository
+
+    repo = PolicyRepository(driver)
+    policies = repo.get_policies_for_component(component_id, limit=limit)
+
+    return APIResponse(
+        data=[_policy_to_response(p) for p in policies],
+        meta=Meta(request_id=None),
+    )
+
+
+# ---------------------------------------------------------------------------
 # User router
 # ---------------------------------------------------------------------------
 

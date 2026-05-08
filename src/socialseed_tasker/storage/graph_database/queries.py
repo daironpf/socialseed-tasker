@@ -983,3 +983,118 @@ RETURN c
 ORDER BY c.timestamp DESC
 LIMIT $limit
 """
+
+# ---------------------------------------------------------------------------
+# Policy queries
+# ---------------------------------------------------------------------------
+
+CREATE_POLICY = """
+CREATE (p:Policy {
+    id: $id,
+    name: $name,
+    description: $description,
+    rules: $rules,
+    target_scope: $target_scope,
+    logic_definition: $logic_definition,
+    remediation_strategy: $remediation_strategy,
+    autofix_template: $autofix_template,
+    is_active: $is_active,
+    created_at: $created_at,
+    updated_at: $updated_at
+})
+RETURN p
+"""
+
+GET_POLICY = """
+MATCH (p:Policy {id: $id})
+RETURN p
+"""
+
+GET_POLICY_BY_NAME = """
+MATCH (p:Policy {name: $name})
+RETURN p
+"""
+
+UPDATE_POLICY = """
+MATCH (p:Policy {id: $id})
+SET p += $updates, p.updated_at = $updated_at
+RETURN p
+"""
+
+DELETE_POLICY = """
+MATCH (p:Policy {id: $id})
+DETACH DELETE p
+"""
+
+LIST_POLICIES = """
+MATCH (p:Policy)
+WHERE ($severity IS NULL OR p.severity = $severity)
+  AND ($target_scope IS NULL OR p.target_scope = $target_scope)
+  AND ($is_active IS NULL OR p.is_active = $is_active)
+RETURN p
+ORDER BY p.name
+LIMIT $limit
+"""
+
+LINK_POLICY_TO_PROJECT = """
+MATCH (p:Policy {id: $policy_id})
+MATCH (proj:Project {id: $project_id})
+MERGE (proj)-[:ENFORCES]->(p)
+RETURN proj, p
+"""
+
+LINK_POLICY_TO_AGENT = """
+MATCH (p:Policy {id: $policy_id})
+MATCH (a:Agent {id: $agent_id})
+MERGE (a)-[:MUST_COMPLY_WITH]->(p)
+RETURN a, p
+"""
+
+LINK_POLICY_TO_COMPONENT = """
+MATCH (p:Policy {id: $policy_id})
+MATCH (c:Component {id: $component_id})
+MERGE (p)-[:APPLIES_TO]->(c)
+RETURN p, c
+"""
+
+GET_POLICIES_FOR_PROJECT = """
+MATCH (proj:Project {id: $project_id})-[:ENFORCES]->(p:Policy)
+RETURN p
+ORDER BY p.name
+LIMIT $limit
+"""
+
+GET_POLICIES_FOR_AGENT = """
+MATCH (a:Agent {id: $agent_id})-[:MUST_COMPLY_WITH]->(p:Policy)
+RETURN p
+ORDER BY p.name
+LIMIT $limit
+"""
+
+GET_POLICIES_FOR_COMPONENT = """
+MATCH (p:Policy)-[:APPLIES_TO]->(c:Component {id: $component_id})
+RETURN p
+ORDER BY p.name
+LIMIT $limit
+"""
+
+POLICY_VIOLATES_COMMIT = """
+MATCH (p:Policy {id: $policy_id})
+MATCH (c:Commit {sha: $commit_sha})
+MERGE (c)-[:VIOLATES]->(p)
+RETURN c, p
+"""
+
+REASONING_VALIDATED_AGAINST_POLICY = """
+MATCH (r:ReasoningNode {id: $reasoning_id})
+MATCH (p:Policy {id: $policy_id})
+MERGE (r)-[:VALIDATED_AGAINST]->(p)
+RETURN r, p
+"""
+
+GET_POLICY_VIOLATIONS = """
+MATCH (c:Commit)-[:VIOLATES]->(p:Policy {id: $policy_id})
+RETURN c, p
+ORDER BY c.timestamp DESC
+LIMIT $limit
+"""

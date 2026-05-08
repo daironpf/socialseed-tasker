@@ -795,3 +795,55 @@ class CommitStatsResponse(BaseModel):
     human_authors: list[str]
     ai_commits: int
     human_commits: int
+
+
+class PolicyRuleRequest(BaseModel):
+    """Request for a policy rule."""
+
+    rule_type: str
+    from_pattern: str = ""
+    to_pattern: str = ""
+    max_depth: int = 5
+    description: str = ""
+
+
+class PolicyCreateRequest(BaseModel):
+    """Request for creating a policy."""
+
+    name: str = Field(..., min_length=1, max_length=100)
+    description: str = ""
+    rules: list[PolicyRuleRequest] = Field(default_factory=list)
+    target_scope: str = "COMPONENT"
+    logic_definition: str | None = None
+    remediation_strategy: str | None = None
+    autofix_template: str | None = None
+    is_active: bool = True
+
+
+class PolicyUpdateRequest(BaseModel):
+    """Request for updating a policy."""
+
+    name: str | None = None
+    description: str | None = None
+    rules: list[PolicyRuleRequest] | None = None
+    target_scope: str | None = None
+    logic_definition: str | None = None
+    remediation_strategy: str | None = None
+    autofix_template: str | None = None
+    is_active: bool | None = None
+
+
+class PolicyResponse(BaseModel):
+    """Response for policy data."""
+
+    id: str
+    name: str
+    description: str
+    rules: list[dict]
+    target_scope: str
+    logic_definition: str | None = None
+    remediation_strategy: str | None = None
+    autofix_template: str | None = None
+    is_active: bool
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
