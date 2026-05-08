@@ -720,3 +720,36 @@ class ConstraintLoadResponse(BaseModel):
 
     created: int
     deleted: int
+
+
+class UserCreateRequest(BaseModel):
+    """Request for creating a user."""
+
+    username: str = Field(..., min_length=1)
+    email: str | None = None
+    role: str = "developer"
+    github_handle: str | None = None
+    preferences: str | None = None
+
+
+class UserUpdateRequest(BaseModel):
+    """Request for updating a user."""
+
+    username: str | None = None
+    email: str | None = None
+    role: str | None = None
+    github_handle: str | None = None
+    preferences: str | None = None
+
+
+class UserResponse(BaseModel):
+    """Response for user data."""
+
+    id: str
+    username: str
+    email: str | None = None
+    role: str
+    github_handle: str | None = None
+    created_at: datetime | None = None
+    last_login: datetime | None = None
+    preferences: str | None = None

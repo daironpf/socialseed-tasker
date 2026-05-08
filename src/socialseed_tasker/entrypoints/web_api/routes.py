@@ -51,6 +51,8 @@ from socialseed_tasker.core.task_management.entities import (
     IssueStatus,
     Objective,
     ObjectiveStatus,
+    User,
+    UserRole,
 )
 from socialseed_tasker.entrypoints.web_api.schemas import (
     AgentRegisterRequest,
@@ -98,6 +100,9 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     TestFailureRequest,
     TestFailureWebhookRequest,
     TestFailureWebhookResponse,
+    UserCreateRequest,
+    UserResponse,
+    UserUpdateRequest,
 )
 
 if TYPE_CHECKING:
@@ -2433,6 +2438,238 @@ def dry_run_policy(
         ),
         meta=Meta(request_id=None),
     )
+
+
+# ---------------------------------------------------------------------------
+# User router
+# ---------------------------------------------------------------------------
+
+user_router = APIRouter()
+
+
+def _user_to_response(user: "User") -> "UserResponse":  # type: ignore[valid-type]
+    """Convert domain User to API response."""
+    return UserResponse(
+        id=str(user.id),
+        username=user.username,
+        email=user.email,
+        role=user.role.value,
+        github_handle=user.github_handle,
+        created_at=user.created_at,
+        last_login=user.last_login,
+        preferences=user.preferences,
+    )
+
+
+@user_router.post(
+    "/users",
+    response_model=APIResponse[UserResponse],
+    summary="Create a new user",
+    description="Create a new user in the system.",
+)
+def create_user(
+    body: UserCreateRequest,
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[UserResponse]:
+    """Create a new user."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.core.task_management.entities import User, UserRole
+
+    user = User(
+        username=body.username,
+        email=body.email,
+        role=UserRole(body.role),
+        github_handle=body.github_handle,
+        preferences=body.preferences,
+    )
+
+    from socialseed_tasker.storage.graph_database.user_repository import UserRepository
+
+    repo = UserRepository(driver)
+    repo.create_user(user)
+
+    return APIResponse(data=_user_to_response(user), meta=Meta(request_id=None))
+
+
+@user_router.get(
+    "/users/{user_id}",
+    response_model=APIResponse[UserResponse],
+    summary="Get user by ID",
+    description="Get a user by their ID.",
+)
+def get_user(
+    user_id: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[UserResponse]:
+    """Get a user by ID."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.user_repository import UserRepository
+
+    repo = UserRepository(driver)
+    user = repo.get_user(user_id)
+
+    if not user:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return APIResponse(data=_user_to_response(user), meta=Meta(request_id=None))
+
+
+@user_router.get(
+    "/users/email/{email}",
+    response_model=APIResponse[UserResponse],
+    summary="Get user by email",
+    description="Get a user by their email address.",
+)
+def get_user_by_email(
+    email: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[UserResponse]:
+    """Get a user by email."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.user_repository import UserRepository
+
+    repo = UserRepository(driver)
+    user = repo.get_user_by_email(email)
+
+    if not user:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return APIResponse(data=_user_to_response(user), meta=Meta(request_id=None))
+
+
+@user_router.get(
+    "/users",
+    response_model=APIResponse[list[UserResponse]],
+    summary="List users",
+    description="List users, optionally filtered by role.",
+)
+def list_users(
+    role: str | None = Query(None, description="Filter by role"),
+    limit: int = Query(50, ge=1, le=100),
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[list[UserResponse]]:
+    """List users."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.user_repository import UserRepository
+
+    repo = UserRepository(driver)
+    users = repo.list_users(role=role, limit=limit)
+
+    return APIResponse(
+        data=[_user_to_response(u) for u in users],
+        meta=Meta(request_id=None),
+    )
+
+
+@user_router.put(
+    "/users/{user_id}",
+    response_model=APIResponse[UserResponse],
+    summary="Update user",
+    description="Update user properties.",
+)
+def update_user(
+    user_id: str,
+    body: UserUpdateRequest,
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[UserResponse]:
+    """Update a user."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.user_repository import UserRepository
+
+    repo = UserRepository(driver)
+
+    updates = {}
+    if body.username is not None:
+        updates["username"] = body.username
+    if body.email is not None:
+        updates["email"] = body.email
+    if body.role is not None:
+        updates["role"] = body.role
+    if body.github_handle is not None:
+        updates["github_handle"] = body.github_handle
+    if body.preferences is not None:
+        updates["preferences"] = body.preferences
+
+    try:
+        user = repo.update_user(user_id, updates)
+    except ValueError:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return APIResponse(data=_user_to_response(user), meta=Meta(request_id=None))
+
+
+@user_router.delete(
+    "/users/{user_id}",
+    response_model=APIResponse[dict],
+    summary="Delete user",
+    description="Delete a user from the system.",
+)
+def delete_user(
+    user_id: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[dict]:
+    """Delete a user."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.user_repository import UserRepository
+
+    repo = UserRepository(driver)
+    repo.delete_user(user_id)
+
+    return APIResponse(data={"status": "deleted"}, meta=Meta(request_id=None))
+
+
+@user_router.post(
+    "/users/{user_id}/last-login",
+    response_model=APIResponse[dict],
+    summary="Update last login",
+    description="Update the last login timestamp for a user.",
+)
+def update_user_last_login(
+    user_id: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[dict]:
+    """Update last login timestamp."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.user_repository import UserRepository
+
+    repo = UserRepository(driver)
+    repo.update_last_login(user_id)
+
+    return APIResponse(data={"status": "updated"}, meta=Meta(request_id=None))
 
 
 # ---------------------------------------------------------------------------

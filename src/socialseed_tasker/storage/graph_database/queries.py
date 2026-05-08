@@ -56,6 +56,8 @@ SCHEMA_INDEXES = [
     "CREATE INDEX reasoning_createdAt IF NOT EXISTS FOR (r:ReasoningNode) ON (r.createdAt)",
     "CREATE INDEX agent_id_idx IF NOT EXISTS FOR (a:Agent) ON (a.id)",
     "CREATE INDEX agent_role IF NOT EXISTS FOR (a:Agent) ON (a.role)",
+    "CREATE INDEX user_username IF NOT EXISTS FOR (u:User) ON (u.username)",
+    "CREATE INDEX user_role IF NOT EXISTS FOR (u:User) ON (u.role)",
     "CREATE INDEX policy_name IF NOT EXISTS FOR (p:Policy) ON (p.name)",
     "CREATE VECTOR INDEX issue_embeddings IF NOT EXISTS FOR (i:Issue) ON (i.embedding) OPTIONS {indexConfig: {`vector.dimensions`: 1536, `vector.similarity_function`: 'cosine'}}",
     "CREATE VECTOR INDEX rag_content_index IF NOT EXISTS FOR (r:RAGEmbedding) ON (r.embedding) OPTIONS {indexConfig: {`vector.dimensions`: 1536, `vector.similarity_function`: 'cosine'}}",
@@ -759,4 +761,109 @@ WHERE i.status = 'CLOSED'
 RETURN i.id as issue_id, i.title as title, s.name as symbol_name, r.closed_at as closed_at
 ORDER BY r.closed_at DESC
 LIMIT toInteger($limit)
+"""
+
+# ---------------------------------------------------------------------------
+# User queries
+# ---------------------------------------------------------------------------
+
+CREATE_USER = """
+CREATE (u:User {
+    id: $id,
+    username: $username,
+    email: $email,
+    role: $role,
+    github_handle: $github_handle,
+    created_at: $created_at,
+    last_login: $last_login,
+    preferences: $preferences
+})
+RETURN u
+"""
+
+GET_USER = """
+MATCH (u:User {id: $id})
+RETURN u
+"""
+
+GET_USER_BY_EMAIL = """
+MATCH (u:User {email: $email})
+RETURN u
+"""
+
+GET_USER_BY_USERNAME = """
+MATCH (u:User {username: $username})
+RETURN u
+"""
+
+UPDATE_USER = """
+MATCH (u:User {id: $id})
+SET u += $updates, u.updated_at = $updated_at
+RETURN u
+"""
+
+DELETE_USER = """
+MATCH (u:User {id: $id})
+DETACH DELETE u
+"""
+
+LIST_USERS = """
+MATCH (u:User)
+WHERE ($role IS NULL OR u.role = $role)
+RETURN u
+ORDER BY u.username
+LIMIT $limit
+"""
+
+UPDATE_LAST_LOGIN = """
+MATCH (u:User {id: $id})
+SET u.last_login = $last_login
+RETURN u
+"""
+
+USER_MANAGES_PROJECT = """
+MATCH (u:User {id: $user_id})
+MATCH (p:Project {id: $project_id})
+MERGE (u)-[:MANAGES]->(p)
+RETURN u, p
+"""
+
+USER_VALIDATES_REASONING = """
+MATCH (u:User {id: $user_id})
+MATCH (r:ReasoningNode {id: $reasoning_id})
+MERGE (u)-[v:VALIDATES {approved: $approved, comment: $comment, validated_at: timestamp()}]->(r)
+RETURN u, r, v
+"""
+
+USER_ASSIGNED_TO_ISSUE = """
+MATCH (u:User {id: $user_id})
+MATCH (i:Issue {id: $issue_id})
+MERGE (u)-[:ASSIGNED_TO]->(i)
+RETURN u, i
+"""
+
+USER_AUTHORED_COMMIT = """
+MATCH (u:User {id: $user_id})
+MATCH (c:Commit {sha: $commit_sha})
+MERGE (u)-[:AUTHORED]->(c)
+RETURN u, c
+"""
+
+GET_USER_PROJECTS = """
+MATCH (u:User {id: $user_id})-[:MANAGES]->(p:Project)
+RETURN p
+"""
+
+GET_USER_ISSUES = """
+MATCH (u:User {id: $user_id})-[:ASSIGNED_TO]->(i:Issue)
+RETURN i
+ORDER BY i.created_at DESC
+LIMIT $limit
+"""
+
+GET_USER_COMMITS = """
+MATCH (u:User {id: $user_id})-[:AUTHORED]->(c:Commit)
+RETURN c
+ORDER BY c.timestamp DESC
+LIMIT $limit
 """
