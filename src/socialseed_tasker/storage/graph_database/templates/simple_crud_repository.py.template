@@ -1,0 +1,291 @@
+"""{{ entity_name }} Repository - Neo4j storage for {{ entity_description }}.
+
+This template provides basic CRUD operations. Copy to new file and customize.
+
+Usage:
+    1. Copy this file to ../{{ entity_name_snake }}_repository.py
+    2. Update imports to use your entity from core/
+    3. Customize the entity fields and queries
+    4. Add the queries to queries.py
+    5. Register in wiring.py if needed
+
+Example:
+    cp simple_crud_repository.py.template ../my_entity_repository.py
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+# =============================================================================
+# Cypher Queries - Add to storage/graph_database/queries.py
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# UNCOMMENT AND CUSTOMIZE THESE QUERIES IN queries.py:
+# -----------------------------------------------------------------------------
+
+# CREATE_{{ ENTITY_NAME_UPPER }} = """
+# CREATE (n:{{ EntityName }} {
+#     id: $id,
+#     name: $name,
+#     description: $description,
+#     createdAt: $created_at,
+#     updatedAt: $updated_at
+# })
+# RETURN n
+# """
+
+# GET_{{ ENTITY_NAME_UPPER }} = """
+# MATCH (n:{{ EntityName }} {id: $id})
+# RETURN n
+# """
+
+# LIST_{{ ENTITY_NAME_UPPER }}S = """
+# MATCH (n:{{ EntityName }})
+# RETURN n
+# ORDER BY n.name
+# LIMIT $limit
+# """
+
+# UPDATE_{{ ENTITY_NAME_UPPER }} = """
+# MATCH (n:{{ EntityName }} {id: $id})
+# SET n += $updates, n.updatedAt = $updated_at
+# RETURN n
+# """
+
+# DELETE_{{ ENTITY_NAME_UPPER }} = """
+# MATCH (n:{{ EntityName }} {id: $id})
+# DETACH DELETE n
+# """
+
+
+class {{ EntityName }}Repository:
+    """Repository for {{ entity_description }} in Neo4j.
+    
+    Copy this class to a new file (e.g., user_repository.py) and customize.
+    
+    Example usage:
+        from socialseed_tasker.bootstrap.wiring import get_driver
+        from socialseed_tasker.storage.graph_database.my_entity_repository import {{ EntityName }}Repository
+        
+        driver = get_driver()
+        repo = {{ EntityName }}Repository(driver)
+        
+        # Create
+        repo.create(my_entity)
+        
+        # Get
+        entity = repo.get("entity-id")
+        
+        # List
+        entities = repo.list(limit=10)
+        
+        # Update
+        updated = repo.update("entity-id", {"name": "New Name"})
+        
+        # Delete
+        repo.delete("entity-id")
+    """
+
+    def __init__(self, driver: Any) -> None:
+        """Initialize repository with Neo4j driver.
+        
+        Args:
+            driver: Neo4j driver (wrapper or direct driver)
+        """
+        self._driver = driver
+
+    def _get_session(self):
+        """Get Neo4j session, handling both wrapper and direct drivers."""
+        if hasattr(self._driver, "driver"):
+            return self._driver.driver.session(database=self._driver.database)
+        return self._driver.session(database="neo4j")
+
+    def create(self, entity: Any) -> None:
+        """Create a new {{ entity_name }} in Neo4j.
+        
+        Args:
+            entity: Domain entity to create
+        """
+        with self._get_session() as session:
+            session.run(
+                # queries.CREATE_{{ ENTITY_NAME_UPPER }},
+                {
+                    "id": str(entity.id),
+                    "name": entity.name,
+                    "description": getattr(entity, "description", ""),
+                    "created_at": entity.created_at.isoformat() if hasattr(entity, "created_at") else _now_iso(),
+                    "updated_at": entity.updated_at.isoformat() if hasattr(entity, "updated_at") else _now_iso(),
+                }
+            )
+
+    def get(self, entity_id: str) -> Any | None:
+        """Get a {{ entity_name }} by ID.
+        
+        Args:
+            entity_id: UUID or string ID of the entity
+            
+        Returns:
+            Entity if found, None otherwise
+        """
+        with self._get_session() as session:
+            result = session.run(
+                # queries.GET_{{ ENTITY_NAME_UPPER }},
+                {"id": entity_id}
+            )
+            record = result.single()
+            if record is None:
+                return None
+            # return _node_to_entity(record["n"])
+            return dict(record["n"])
+
+    def list(self, limit: int = 50, offset: int = 0) -> list[Any]:
+        """List all {{ entity_name }}s with pagination.
+        
+        Args:
+            limit: Maximum number of results
+            offset: Number of results to skip
+            
+        Returns:
+            List of entities
+        """
+        with self._get_session() as session:
+            result = session.run(
+                # queries.LIST_{{ ENTITY_NAME_UPPER }}S,
+                {"limit": limit, "offset": offset}
+            )
+            # return [_node_to_entity(r["n"]) for r in result]
+            return [dict(r["n"]) for r in result]
+
+    def update(self, entity_id: str, updates: dict[str, Any]) -> Any:
+        """Update a {{ entity_name }}.
+        
+        Args:
+            entity_id: ID of the entity to update
+            updates: Dictionary of properties to update
+            
+        Returns:
+            Updated entity
+            
+        Raises:
+            ValueError: If entity not found
+        """
+        with self._get_session() as session:
+            result = session.run(
+                # queries.UPDATE_{{ ENTITY_NAME_UPPER }},
+                {
+                    "id": entity_id,
+                    "updates": updates,
+                    "updated_at": _now_iso(),
+                }
+            )
+            record = result.single()
+            if record is None:
+                raise ValueError(f"{{ entity_name }} {entity_id} not found")
+            # return _node_to_entity(record["n"])
+            return dict(record["n"])
+
+    def delete(self, entity_id: str) -> None:
+        """Delete a {{ entity_name }}.
+        
+        Args:
+            entity_id: ID of the entity to delete
+        """
+        with self._get_session() as session:
+            session.run(
+                # queries.DELETE_{{ ENTITY_NAME_UPPER }},
+                {"id": entity_id}
+            )
+
+    # -------------------------------------------------------------------------
+    # Additional methods - Customize for your entity
+    # -------------------------------------------------------------------------
+
+    def find_by_name(self, name: str) -> Any | None:
+        """Find {{ entity_name }} by exact name.
+        
+        Args:
+            name: Exact name to search for
+            
+        Returns:
+            Entity if found, None otherwise
+        """
+        with self._get_session() as session:
+            result = session.run(
+                "MATCH (n:{{ EntityName }} {name: $name}) RETURN n",
+                {"name": name}
+            )
+            record = result.single()
+            if record is None:
+                return None
+            return dict(record["n"])
+
+    def count(self) -> int:
+        """Count total {{ entity_name }}s in database.
+        
+        Returns:
+            Total count
+        """
+        with self._get_session() as session:
+            result = session.run("MATCH (n:{{ EntityName }}) RETURN count(n) as count")
+            return result.single()["count"]
+
+
+# =============================================================================
+# Helper function to convert Neo4j node to domain entity
+# =============================================================================
+
+def _node_to_entity(node: dict[str, Any]) -> Any:
+    """Convert Neo4j node to domain entity.
+    
+    Customize this for your entity's properties.
+    
+    Args:
+        node: Dictionary from Neo4j node
+        
+    Returns:
+        Domain entity instance
+    """
+    # Example implementation:
+    # from socialseed_tasker.core.{{ module }}.entities import {{ EntityName }}
+    # from datetime import datetime
+    # 
+    # return {{ EntityName }}(
+    #     id=UUID(node["id"]),
+    #     name=node.get("name", ""),
+    #     description=node.get("description", ""),
+    #     created_at=datetime.fromisoformat(node["createdAt"]) if "createdAt" in node else datetime.now(),
+    #     updated_at=datetime.fromisoformat(node["updatedAt"]) if "updatedAt" in node else datetime.now(),
+    # )
+    
+    # For now, return the raw dict
+    return node
+
+
+# =============================================================================
+# Integration example - How to wire this repository
+# =============================================================================
+
+# In src/socialseed_tasker/bootstrap/wiring.py, add:
+#
+# def get_{{ entity_name_snake }}_repository() -> {{ EntityName }}Repository:
+#     """Get {{ entity_name }} repository instance."""
+#     driver = get_driver()
+#     if driver is None:
+#         raise RuntimeError("Neo4j driver not available")
+#     return {{ EntityName }}Repository(driver)
+#
+# Then in routes.py:
+# from socialseed_tasker.bootstrap.wiring import get_{{ entity_name_snake }}_repository
+#
+# @router.get("/{{ entity_name_snake }}s")
+# def list_{{ entity_name_snake }}s(limit: int = 50):
+#     repo = get_{{ entity_name_snake }}_repository()
+#     return repo.list(limit=limit)
