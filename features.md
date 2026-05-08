@@ -875,6 +875,81 @@ tasker --help
 
 ---
 
+## 34. Agent Registration & Specialization (v1.0.0)
+
+### 34.1 Agent Registration
+
+Register AI agents for tracking and domain-driven dispatching.
+
+```bash
+# CLI - Register agent
+tasker agent register --id "agent-001" --name "DevAgent" --role "developer" --capabilities "coding,testing"
+
+# API - Register agent
+curl -X POST "http://localhost:8000/api/v1/agents/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_id": "agent-001",
+    "name": "DevAgent",
+    "role": "developer",
+    "capabilities": ["coding", "testing"]
+  }'
+```
+
+**Agent Roles:**
+| Role | Description |
+|------|-------------|
+| `developer` | Default coding agent |
+| `reviewer` | Code review specialist |
+| `planner` | Architecture and planning |
+| `observer` | Monitoring and reporting |
+
+### 34.2 Agent Specialization
+
+Assign agents to specific components for domain-driven work dispatching.
+
+```bash
+# CLI - Add specialization
+tasker agent specialize --agent "agent-001" --component "backend-api"
+
+# API - Add specialization
+curl -X POST "http://localhost:8000/api/v1/agents/agent-001/specialists/component-id"
+
+# Get agent's specializations
+curl "http://localhost:8000/api/v1/agents/agent-001/specialists"
+
+# Get component's specialists
+curl "http://localhost:8000/api/v1/components/component-id/specialists"
+```
+
+### 34.3 Project-Agent Assignment
+
+Assign agents to projects for team organization.
+
+```bash
+# API - Assign agent to project
+curl -X POST "http://localhost:8000/api/v1/projects/project-id/agents/agent-id"
+
+# Get project agents
+curl "http://localhost:8000/api/v1/projects/project-id/agents"
+
+# Remove agent from project
+curl -X DELETE "http://localhost:8000/api/v1/projects/project-id/agents/agent-id"
+```
+
+### 34.4 Agent Repository Pattern
+
+Complete repositories for Agent management in Neo4j:
+
+| Repository | Purpose |
+|------------|---------|
+| `AgentRepository` | CRUD operations for Agent nodes |
+| `UserRepository` | User management with project/component relationships |
+| `CommitRepository` | Git commit tracking linked to agents/issues |
+| `PolicyRepository` | Governance policies enforcement |
+
+---
+
 ## 15. Environment Variables
 
 | Variable | Default | Description |
@@ -1008,6 +1083,377 @@ tasker agent architect --issue <issue-id> --check  # Check only, don't veto
 - Checks dependency depth limits
 - Enforces technology restrictions
 - Can block operations with VETO
+
+---
+
+## 21. Epic & Objective Tracking (v1.0.0)
+
+Group issues into epics and define measurable objectives.
+
+### 21.1 Epic Entity
+```bash
+# Create epic
+curl -X POST http://localhost:8000/api/v1/epics \
+  -H "Content-Type: application/json" \
+  -d '{"title": "User Authentication", "description": "Complete auth system"}'
+
+# List epics
+curl http://localhost:8000/api/v1/epics
+
+# Get epic details
+curl http://localhost:8000/api/v1/epics/<id>
+```
+
+### 21.2 Objective Entity
+```bash
+# Create objective
+curl -X POST http://localhost:8000/api/v1/objectives \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Reduce login time", "target": "under 500ms", "epic_id": "<id>"}'
+
+# List objectives
+curl http://localhost:8000/api/v1/objectives
+```
+
+---
+
+## 22. Label Management (v1.0.0)
+
+Color-coded labels for issue categorization.
+
+```bash
+# Create label
+curl -X POST http://localhost:8000/api/v1/labels \
+  -H "Content-Type: application/json" \
+  -d '{"name": "bug", "color": "#ff0000", "description": "Bug reports"}'
+
+# List labels
+curl http://localhost:8000/api/v1/labels
+```
+
+---
+
+## 23. Component Dependencies (v1.0.0)
+
+Track architectural dependencies between components.
+
+```bash
+# Add component dependency
+tasker component add-dep <component-id> --depends-on <other-component-id>
+
+# List component dependencies
+tasker component deps <component-id>
+```
+
+---
+
+## 24. Agent Heartbeat (v1.0.0)
+
+Monitor agent activity and detect stalled agents.
+
+```bash
+# Register agent with heartbeat
+curl -X POST http://localhost:8000/api/v1/agents \
+  -H "Content-Type: application/json" \
+  -d '{"name": "DevAgent", "role": "developer"}'
+
+# Agent heartbeat endpoint
+curl -X POST http://localhost:8000/api/v1/agents/<id>/heartbeat
+
+# Check agent status
+curl http://localhost:8000/api/v1/agents/<id>/status
+```
+
+---
+
+## 25. Storage CLI (v1.0.0)
+
+Database management and health checks.
+
+```bash
+# Show storage info
+tasker storage info
+
+# Check database health
+tasker storage health
+
+# Show storage statistics
+tasker storage stats
+```
+
+---
+
+## 26. Self-Healing Architecture (v1.0.0)
+
+Automated integrity verification and file hash validation.
+
+### 26.1 File Integrity Guard
+- Stores file hashes in CodeFile nodes
+- Verifies integrity on read operations
+- Auto-detects modified files
+- Triggers re-scan for changed files
+
+### 26.2 Integrity Check
+```python
+# In code_analysis/integrity.py
+from socialseed_tasker.core.code_analysis.integrity import verify_file_integrity
+
+# Verify a file's integrity
+is_valid = verify_file_integrity(stored_hash, file_path)
+```
+
+---
+
+## 27. Constraints CLI (v1.0.0)
+
+Manage project constraints from command line.
+
+```bash
+# Set constraint
+tasker constraints set --name no-mongodb --level hard --category technology
+
+# List constraints
+tasker constraints list
+
+# Validate issue against constraints
+tasker constraints validate <issue-id>
+
+# Find documentation gaps
+tasker constraints doc-gaps
+```
+
+---
+
+## 28. Project Detection (v1.0.0)
+
+Auto-detect project from current directory.
+
+```bash
+# Detect project
+tasker project detect
+
+# Setup project
+tasker project setup --name myproject --repo https://github.com/owner/repo
+```
+
+---
+
+## 29. Webhook Management (v1.0.0)
+
+Configure and test external webhooks.
+
+```bash
+# List webhooks
+curl http://localhost:8000/api/v1/webhooks
+
+# Create webhook
+curl -X POST http://localhost:8000/api/v1/webhooks \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/webhook", "events": ["issue.created"]}'
+
+# Test webhook
+curl -X POST http://localhost:8000/api/v1/webhooks/<id>/test
+
+# Validate webhook payload
+curl http://localhost:8000/api/v1/webhooks/validate
+```
+
+---
+
+## 30. Sync Engine (v1.0.0)
+
+Offline-first synchronization queue.
+
+```bash
+# Get sync status
+curl http://localhost:8000/api/v1/sync/status
+
+# Get sync queue
+curl http://localhost:8000/api/v1/sync/queue
+
+# Force sync
+curl -X POST http://localhost:8000/api/v1/sync/force
+```
+
+---
+
+## 31. Cost Analytics (v1.0.0)
+
+Estimate development effort and cost.
+
+```bash
+# Get cost estimation for issue
+curl http://localhost:8000/api/v1/cost/estimate/<issue-id>
+
+# Get component cost breakdown
+curl http://localhost:8000/api/v1/cost/component/<component-id>
+
+# Get project cost summary
+curl http://localhost:8000/api/v1/cost/project/<project-name>
+
+# Get cost trend
+curl http://localhost:8000/api/v1/cost/trend
+```
+
+---
+
+## 32. Admin Operations (v1.0.0)
+
+System administration and data management.
+
+```bash
+# Reset database
+curl -X POST http://localhost:8000/api/v1/admin/reset \
+  -H "Content-Type: application/json" \
+  -d '{"scope": "issues"}'
+
+# Clear all data
+curl -X POST http://localhost:8000/api/v1/admin/clear
+```
+
+---
+
+## 33. API Endpoints Summary (v1.0.0)
+
+Complete list of REST API endpoints:
+
+### Issues
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/issues` | Create issue |
+| GET | `/api/v1/issues` | List issues |
+| GET | `/api/v1/issues/{id}` | Get issue |
+| PUT | `/api/v1/issues/{id}` | Update issue |
+| DELETE | `/api/v1/issues/{id}` | Delete issue |
+| POST | `/api/v1/issues/{id}/close` | Close issue |
+| POST | `/api/v1/issues/{id}/start` | Start work |
+| POST | `/api/v1/issues/{id}/finish` | Finish work |
+| POST | `/api/v1/issues/{id}/dependencies` | Add dependency |
+| POST | `/api/v1/issues/{id}/affects` | Link to code |
+
+### Components
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/components` | List components |
+| POST | `/api/v1/components` | Create component |
+| GET | `/api/v1/components/{id}` | Get component |
+| PUT | `/api/v1/components/{id}` | Update component |
+| DELETE | `/api/v1/components/{id}` | Delete component |
+
+### Projects
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/projects` | List projects |
+| POST | `/api/v1/projects` | Create project |
+| GET | `/api/v1/projects/{id}` | Get project |
+| GET | `/api/v1/projects/{id}/summary` | Project dashboard |
+
+### Labels
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/labels` | List labels |
+| POST | `/api/v1/labels` | Create label |
+
+### Dependencies
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/dependencies` | List dependencies |
+| POST | `/api/v1/dependencies` | Create dependency |
+| DELETE | `/api/v1/dependencies/{id}` | Delete dependency |
+
+### Analysis
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/analyze/root-cause` | Root cause analysis |
+| POST | `/analyze/issue-impact` | Issue impact |
+| POST | `/analyze/component-impact` | Component impact |
+| GET | `/analyze/code-impact` | Code impact |
+| GET | `/analyze/similarity/{issue_id}` | Similarity analysis |
+
+### Code Graph
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/code-graph/scan` | Scan code |
+| GET | `/code-graph/files` | List files |
+| GET | `/code-graph/symbols` | List symbols |
+| GET | `/code-graph/stats` | Statistics |
+| GET | `/code-graph/calls/{symbol}` | Call graph |
+| GET | `/code-graph/depends/{file}` | Dependencies |
+| GET | `/code-graph/tests/{file}` | Test files |
+| GET | `/code-graph/issues/{file}` | Issues affecting file |
+
+### RAG
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/rag/index` | Index content |
+| POST | `/rag/search` | Semantic search |
+| GET | `/rag/stats` | RAG statistics |
+
+### Agents
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/agents` | Register agent |
+| GET | `/agents` | List agents |
+| POST | `/agents/{id}/start` | Start work |
+| POST | `/agents/{id}/finish` | Finish work |
+| POST | `/agents/{id}/heartbeat` | Heartbeat |
+
+### Reasoning
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/reasoning/log` | Log reasoning |
+| GET | `/reasoning/issue/{issue_id}` | Get reasoning |
+| GET | `/reasoning/history` | History |
+
+### Policy
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/policy/rules` | Create rule |
+| POST | `/policy/validate` | Validate |
+| GET | `/policy/rules` | List rules |
+
+### Epics & Objectives
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/epics` | Create epic |
+| GET | `/epics` | List epics |
+| POST | `/objectives` | Create objective |
+| GET | `/objectives` | List objectives |
+
+### Webhooks
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/webhooks` | Create webhook |
+| GET | `/webhooks` | List webhooks |
+| POST | `/webhooks/{id}/test` | Test webhook |
+
+### Sync
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/sync/status` | Sync status |
+| GET | `/sync/queue` | Sync queue |
+| POST | `/sync/force` | Force sync |
+
+### Admin
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/admin/reset` | Reset data |
+| POST | `/admin/clear` | Clear all |
+
+### Cost
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/cost/estimate/{issue_id}` | Cost estimate |
+| GET | `/cost/component/{id}` | Component cost |
+| GET | `/cost/project/{name}` | Project cost |
+| GET | `/cost/trend` | Cost trend |
+
+### System
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check |
+| GET | `/docs` | API docs |
+| GET | `/openapi.json` | OpenAPI schema |
 
 ---
 

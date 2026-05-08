@@ -109,9 +109,20 @@ class Neo4jTaskRepository:
     - Cycle detection
 ```
 
+### Graph Repositories (v1.0.0)
+| Repository | Purpose |
+|------------|---------|
+| `repositories.py` | Core TaskRepository (Issue, Component, Dependency) |
+| `user_repository.py` | User management with relationships |
+| `commit_repository.py` | Git commit tracking |
+| `policy_repository.py` | Governance policies |
+| `code_graph_repository.py` | Code-as-Graph (Tree-Sitter) |
+| `rag_repository.py` | Vector embeddings for semantic search |
+| `reasoning_repository.py` | AI reasoning logs |
+
 ### Graph Schema
-- **Nodes**: Issue, Component
-- **Rel**: DEPENDS_ON, BLOCKS, AFFECTS, BELONGS_TO
+- **Nodes**: Issue, Component, Project, Agent, User, Commit, Policy, CodeFile, CodeSymbol, CodeImport, ReasoningNode, RAGEmbedding, Label
+- **Rel**: DEPENDS_ON, BLOCKS, AFFECTS, BELONGS_TO, SPECIALIST_IN, ASSIGNED_TO, AUTHORED, MUST_COMPLY_WITH, THOUGHT, DECIDED, RESOLVED_BY
 
 ---
 
@@ -357,7 +368,7 @@ python scripts/migrate_v090.py --password=your_neo4j_password --rollback
 
 ---
 
-## 11. Key Features (v0.9.0)
+## 11. Key Features (v1.0.0)
 
 | Feature | Status |
 |--------|--------|
@@ -369,10 +380,16 @@ python scripts/migrate_v090.py --password=your_neo4j_password --rollback
 | Code-as-Graph | ✅ |
 | RAG Semantic Search | ✅ |
 | Agent Integration | ✅ |
+| Agent Registration & Tracking | ✅ (NEW v1.0.0) |
+| Agent Specialization (SPECIALIST_IN) | ✅ (NEW v1.0.0) |
+| Project-Agent Assignment | ✅ (NEW v1.0.0) |
+| User Repository (Neo4j) | ✅ (NEW v1.0.0) |
+| Commit Repository (Neo4j) | ✅ (NEW v1.0.0) |
+| Policy Repository (Neo4j) | ✅ (NEW v1.0.0) |
 
 ---
 
-## 12. Agent Integration (v0.9.0)
+## 12. Agent Integration (v1.0.0)
 
 ### CLI Commands
 
@@ -385,6 +402,15 @@ tasker agent suggest --issue <issue_id> --limit 5
 
 # Log reasoning for issue resolution
 tasker agent reasoning --issue <issue_id> --thought "..." --decision "..."
+
+# Register agent (NEW v1.0.0)
+tasker agent register --id "agent-001" --name "DevAgent" --role "developer" --capabilities "coding,testing"
+
+# Add agent specialization (NEW v1.0.0)
+tasker agent specialize --agent "agent-001" --component "backend-api"
+
+# List working agents
+tasker agent list
 ```
 
 ### API Endpoints
@@ -394,6 +420,10 @@ tasker agent reasoning --issue <issue_id> --thought "..." --decision "..."
 | `/api/v1/agent/context/{issue_id}` | GET | Code context from Code-as-Graph |
 | `/api/v1/agent/similar/{issue_id}` | GET | Similar issues via RAG |
 | `/api/v1/analyze/code-impact` | GET | Code-level impact (callers, deps, tests) |
+| `/api/v1/agents/register` | POST | Register new agent (NEW) |
+| `/api/v1/agents/{id}/specialists/{comp_id}` | POST | Add specialization (NEW) |
+| `/api/v1/agents/{id}/specialists` | GET | Get agent specializations (NEW) |
+| `/api/v1/projects/{id}/agents/{agent_id}` | POST | Assign agent to project (NEW) |
 
 ---
 
