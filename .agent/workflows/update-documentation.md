@@ -82,6 +82,65 @@ This workflow ensures that documentation remains the "Single Source of Truth" ac
 
 ---
 
+## Phase 4b: Tasker Init Templates Documentation
+
+When updating documentation, ALWAYS check and update the templates installed during `tasker init`. These templates become the user's first experience with the project.
+
+### 1. Core Templates to Check
+- **Location**: `src/socialseed_tasker/assets/templates/`
+
+| Template File | Purpose | When to Update |
+|---------------|---------|----------------|
+| `AGENT_GUIDE.md` | Agent protocol and commands | New agent features, CLI commands |
+| `README.md` | Agent skills overview | New skills or workflows |
+| `project.md` | Project architecture template | Architecture changes |
+| `project.json` | Machine-readable project metadata | New metadata fields |
+| `VERSIONS.md` | Release tracking template | Version changes |
+| `ROADMAP.md` | Project roadmap template | New features planned |
+| `policies.md` | Default governance policies | New policy rules |
+| `workflows/*.md` | Step-by-step procedural guides | Process changes |
+| `skills/*.json` | Agent skill manifests | New skills |
+| `skills/task_skill.py` | Python skill functions | New capabilities |
+
+### 2. Update Checklist for Templates
+
+**AGENT_GUIDE.md** (Most Important):
+- [ ] New CLI commands added → Add to command summary table
+- [ ] New API endpoints → Add to API reference section
+- [ ] Agent registration process changed → Update registration section
+- [ ] New agent roles or capabilities → Update capabilities list
+
+**README.md** (Agent Skills):
+- [ ] New workflows → Add to Quick Reference table
+- [ ] New skills → Add to Skills Reference section
+
+**Template Workflows**:
+- [ ] `implement-issue.md` → Update if issue process changes
+- [ ] `test-code.md` → Update if testing procedures change
+- [ ] `commit-push.md` → Update if commit format changes
+
+### 3. Template Documentation Integration
+
+The templates should reference the main documentation for completeness:
+```markdown
+## See Also
+- [Full Documentation](../docs/ONBOARDING.md) - Complete onboarding guide
+- [API Reference](../docs/API_REFERENCE.md) - Full API endpoints
+- [Implementation Guide](../docs/IMPLEMENTATION_GUIDE.md) - Extending the graph
+```
+
+### 4. Verify Templates Work
+
+After updating templates, verify they work correctly:
+```bash
+# Test tasker init in a clean directory
+cd /tmp && rm -rf test-project && mkdir test-project && cd test-project
+tasker init .
+ls -la .agent/  # Verify templates were installed
+```
+
+---
+
 ## Phase 5: Web Documentation (GitHub Pages)
 
 ### 1. Synchronize Web Content
@@ -106,13 +165,14 @@ This workflow ensures that documentation remains the "Single Source of Truth" ac
 - **Rule**: Documentation updates should be part of the same commit as the code changes.
 - **Commit Message**:
     ```bash
-    git add src/ .agent/ *.md
-    git commit -m "docs: sync documentation with v0.9.0 changes
-    
-    - Updated project.md with new Agent Integration architecture
-    - Updated README with reasoning log commands
-    - Updated docstrings in core/task_management
-    - Updated agent workflows for 0.9.0 compliance"
+git add src/ .agent/ *.md
+git commit -m "docs: sync documentation with v1.0.0 changes
+
+- Updated project.md with new Agent Integration architecture
+- Updated README with agent registration commands
+- Updated AGENT_GUIDE.md with new CLI commands
+- Updated agent workflows for v1.0.0 compliance
+- Updated tasker init templates"
     ```
 
 ## Checklist
@@ -123,6 +183,12 @@ This workflow ensures that documentation remains the "Single Source of Truth" ac
 - [ ] `ROADMAP.md` and `VERSIONS.md` updated with resolved issues
 - [ ] `.agent/` skills and workflows are consistent with current version
 - [ ] Distribution assets in `src/.../assets/` are updated
+- [ ] **Tasker init templates updated** (see Phase 4b):
+  - [ ] `AGENT_GUIDE.md` - New commands and API endpoints
+  - [ ] `README.md` - New workflows and skills
+  - [ ] `workflows/*.md` - Process changes
+  - [ ] `policies.md` - New governance policies
+  - [ ] Templates reference main docs correctly
 - [ ] **Web documentation in `docs/` is synchronized and follows `web-docs-management.md`**
 - [ ] No Spanish text remains in documentation
-- [ ] All version references match the current release (v0.9.0)
+- [ ] All version references match the current release (v1.0.0)
