@@ -144,6 +144,11 @@ tasker agent reasoning --issue <id> --thought <text> --decision <choice>
 tasker reasoning history [--issue <id>] [--limit N]
 tasker reasoning clear [--issue <id>]
 
+# Agent Registration (v1.0.0 - NEW)
+tasker agent register --id <agent_id> --name <name> --role <role> --capabilities <caps>
+tasker agent specialize --agent <agent_id> --component <component_id>
+tasker agent list
+
 ## API Endpoints
 
 | Endpoint | Method | Description |
@@ -192,6 +197,19 @@ tasker reasoning clear [--issue <id>]
 |----------|--------|-------------|
 | `/api/v1/agent/context/{issue_id}` | GET | Get code context for issue |
 | `/api/v1/agent/similar/{issue_id}` | GET | Find similar issues via RAG |
+
+## Agent Registration & Specialization (v1.0.0 - NEW)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/agents/register` | POST | Register new agent |
+| `/api/v1/agents/{agent_id}/specialists/{component_id}` | POST | Add agent specialization |
+| `/api/v1/agents/{agent_id}/specialists` | GET | Get agent specializations |
+| `/api/v1/agents/{agent_id}/specialists/{component_id}` | DELETE | Remove specialization |
+| `/api/v1/components/{component_id}/specialists` | GET | Get component specialists |
+| `/api/v1/projects/{project_id}/agents/{agent_id}` | POST | Assign agent to project |
+| `/api/v1/projects/{project_id}/agents` | GET | Get project agents |
+| `/api/v1/projects/{project_id}/agents/{agent_id}` | DELETE | Remove agent from project |
 
 ## Environment Variables
 

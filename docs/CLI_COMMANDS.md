@@ -147,7 +147,7 @@ tasker agent architect --issue <issue-id> --check
 
 ### Agent Integration
 
-## Code Graph (v0.9.0)
+## Code Graph (v1.0.0)
 
 ### Scan Code Repository
 ```bash
@@ -206,7 +206,7 @@ tasker code-graph tests <symbol-id>
 tasker code-graph file <file-path>
 ```
 
-## RAG Commands (v0.9.0)
+## RAG Commands (v1.0.0)
 
 ### Semantic Search
 ```bash
@@ -228,7 +228,7 @@ tasker rag stats
 tasker rag clear --yes
 ```
 
-## Agent Commands (v0.9.0)
+## Agent Commands (v1.0.0)
 
 ### Get Agent Context
 ```bash
@@ -245,7 +245,38 @@ tasker agent suggest --issue <issue-id>
 tasker agent reasoning --issue <issue-id>
 ```
 
-## Reasoning Commands (v0.9.0)
+## Agent Registration Commands (v1.0.0)
+
+### Register Agent
+Register a new agent with Tasker for tracking and specialization.
+```bash
+tasker agent register --id <agent-id> --name <name> --role <role> --capabilities <cap1,cap2>
+```
+
+| Flag | Description |
+|------|-------------|
+| `--id, -i` | Unique agent identifier (e.g., "agent-001") |
+| `--name, -n` | Human-readable agent name |
+| `--role, -r` | Agent role: developer, reviewer, planner, observer |
+| `--capabilities, -c` | Comma-separated capabilities (e.g., "coding,testing") |
+
+### Add Agent Specialization
+Assign an agent to specialize in a specific component for domain-driven dispatching.
+```bash
+tasker agent specialize --agent <agent-id> --component <component-id>
+```
+
+| Flag | Description |
+|------|-------------|
+| `--agent, -a` | Agent ID |
+| `--component, -c` | Component ID to specialize in |
+
+### List Working Agents
+```bash
+tasker agent list
+```
+
+## Reasoning Commands (v1.0.0)
 
 ### Log Reasoning
 ```bash

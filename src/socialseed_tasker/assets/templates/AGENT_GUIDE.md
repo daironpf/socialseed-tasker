@@ -83,11 +83,18 @@ When finished:
 ## Summary of Commands
 | Action | Command |
 |---|---|
-| Register agent | `POST /api/v1/agents/register` |
+| Register agent | `tasker agent register --id <id> --name <name> --role <role>` |
 | List issues | `tasker issue list` |
 | Impact analysis | `tasker code-graph impact <Symbol>` |
 | Search knowledge | `tasker rag search "<query>"` |
 | Log reasoning | `tasker reasoning log --issue <ID> ...` |
 | Update graph | `tasker code-graph scan .` |
 | Close issue | `tasker issue close <ID>` |
-| Agent specialist | `POST/GET /api/v1/agents/{id}/specialists/{component_id}` |
+| Agent specialist | `tasker agent specialize --agent <id> --component <comp>` |
+
+## See Also
+
+- [Full Documentation](../../docs/ONBOARDING.md) - Complete onboarding guide
+- [API Reference](../../docs/API_REFERENCE.md) - Full API endpoints
+- [Implementation Guide](../../docs/IMPLEMENTATION_GUIDE.md) - Extending the graph
+- [Troubleshooting Guide](../../docs/TROUBLESHOOTING.md) - Common issues and solutions

@@ -11,6 +11,10 @@ Whenever a feature is added, a bug is fixed, or any user-visible change is made.
 | `ROADMAP.md` | Mark issues as resolved in the "Known Issues" table. |
 | `VERSIONS.md` | Add entry to the current version checklist/history. |
 | `tasker/project.md` | Significant architectural changes or new core modules. |
+| **Templates (src/socialseed_tasker/assets/templates/)** | New features that users will see when running `tasker init`: |
+| - `AGENT_GUIDE.md` | New agent CLI commands or API endpoints |
+| - `workflows/*.md` | Process changes |
+| - `policies.md` | New governance rules |
 
 ## Steps
 

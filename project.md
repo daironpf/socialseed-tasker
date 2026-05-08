@@ -27,7 +27,7 @@ src/socialseed_tasker/
 │   ├── validation/               # Input sanitization
 │   ├── services/                # External integrations
 │   ├── system_init/              # Scaffolding
-│   └── code_analysis/           # Tree-sitter code parsing (v0.9.0)
+│   └── code_analysis/           # Tree-sitter code parsing (v1.0.0)
 ├── entrypoints/                   # External interfaces
 │   ├── terminal_cli/              # Typer CLI (tasker)
 │   ├── web_api/                 # FastAPI REST API
@@ -345,19 +345,19 @@ services:
 
 ## 11. Schema Migration
 
-### v0.9.0 Migration Script
+### v1.0.0 Migration Script
 
-New features in v0.9.0 require Neo4j schema changes (vector indexes, relationship indexes). The migration runs automatically on startup via `driver.py`, or can be run manually:
+New features in v1.0.0 require Neo4j schema changes (vector indexes, relationship indexes). The migration runs automatically on startup via `driver.py`, or can be run manually:
 
 ```bash
 # Run migration
-python scripts/migrate_v090.py --password=your_neo4j_password
+python scripts/migrate_v100.py --password=your_neo4j_password
 
 # Rollback if needed
-python scripts/migrate_v090.py --password=your_neo4j_password --rollback
+python scripts/migrate_v100.py --password=your_neo4j_password --rollback
 ```
 
-### Schema Changes (v0.9.0)
+### Schema Changes (v1.0.0)
 
 | Index | Purpose |
 |-------|---------|
