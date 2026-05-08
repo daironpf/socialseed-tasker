@@ -73,6 +73,7 @@ For detailed technical guides, API references, and architectural deep-dives, vis
 
 - [Developer Onboarding Guide](docs/ONBOARDING.md) - Start here for new developers!
 - [Implementation Guide](docs/IMPLEMENTATION_GUIDE.md) - How to extend the graph model
+- [Troubleshooting Guide](docs/TROUBLESHOOTING.md) - Common issues and solutions
 - [CLI Commands Reference](docs/CLI_COMMANDS.md)
 - [API Reference](docs/API_REFERENCE.md)
 - [Graph Model Schema](docs/GRAPH_MODEL.md)
