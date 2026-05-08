@@ -1291,12 +1291,13 @@ def analyze_code_impact(
     dependencies = cg_repo.get_dependencies_by_path(path)
     tests = cg_repo.get_tests_for_file(path)
 
+    risk_level = "CRITICAL" if len(callers) > 5 else "HIGH" if len(callers) > 2 else "MEDIUM" if len(callers) > 0 else "LOW"
     console.print(
         Panel(
             f"[bold]Callers:[/bold] {len(callers)} files\n"
             f"[bold]Dependencies:[/bold] {len(dependencies)} modules\n"
             f"[bold]Test files:[/bold] {len(tests)} files\n"
-            f"[bold]Risk level:[/bold] {"CRITICAL" if len(callers) > 5 else "HIGH" if len(callers) > 2 else "MEDIUM" if len(callers) > 0 else "LOW"}",
+            f"[bold]Risk level:[/bold] {risk_level}",
             title=f"[bold]Code Impact Analysis for {path}[/bold]",
             border_style="cyan",
         )
@@ -2868,6 +2869,68 @@ def agent_architect(
             "[bold green]ARCHITECT APPROVED[/bold green]",
             title=f"Architect Review: {issue.title[:30]}",
         ))
+
+
+@agent_app.command("register")
+def agent_register(
+    agent_id: str = typer.Option(..., "--id", "-i", help="Unique agent identifier"),
+    name: str = typer.Option(..., "--name", "-n", help="Agent name"),
+    role: str = typer.Option("developer", "--role", "-r", help="Agent role: developer, reviewer, planner, observer"),
+    capabilities: str = typer.Option("", "--capabilities", "-c", help="Comma-separated capabilities"),
+) -> None:
+    """Register an agent with Tasker to enable tracking and specialization."""
+    import httpx
+
+    api_url = os.getenv("TASKER_API_URL", "http://localhost:8000")
+    caps = [c.strip() for c in capabilities.split(",") if c.strip()]
+
+    try:
+        response = httpx.post(
+            f"{api_url}/api/v1/agents/register",
+            json={
+                "agent_id": agent_id,
+                "name": name,
+                "role": role,
+                "capabilities": caps,
+            },
+            timeout=10.0,
+        )
+        if response.status_code == 201:
+            data = response.json()
+            console.print(f"[success]Agent registered:[/success] {data['data']['agent_id']} ({data['data']['name']})")
+            console.print(f"[info]Role:[/info] {data['data']['role']}")
+            console.print(f"[info]Capabilities:[/info] {data['data']['capabilities']}")
+        else:
+            console.print(f"[error]Failed to register agent:[/error] {response.text}")
+            raise typer.Exit(1)
+    except httpx.ConnectError:
+        console.print("[error]Cannot connect to API. Is the server running?[/error]")
+        raise typer.Exit(1)
+
+
+@agent_app.command("specialize")
+def agent_specialize(
+    agent_id: str = typer.Option(..., "--agent", "-a", help="Agent ID"),
+    component_id: str = typer.Option(..., "--component", "-c", help="Component ID to specialize in"),
+) -> None:
+    """Add agent specialization to a component."""
+    import httpx
+
+    api_url = os.getenv("TASKER_API_URL", "http://localhost:8000")
+
+    try:
+        response = httpx.post(
+            f"{api_url}/api/v1/agents/{agent_id}/specialists/{component_id}",
+            timeout=10.0,
+        )
+        if response.status_code in (200, 201):
+            console.print(f"[success]Agent {agent_id} specialized in component {component_id}[/success]")
+        else:
+            console.print(f"[error]Failed:[/error] {response.text}")
+            raise typer.Exit(1)
+    except httpx.ConnectError:
+        console.print("[error]Cannot connect to API.[/error]")
+        raise typer.Exit(1)
 
 
 @agent_app.command("list")

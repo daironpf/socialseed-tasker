@@ -140,6 +140,23 @@ RETURN i
 ORDER BY i.created_at DESC
 """
 
+PROJECT_ASSIGN_AGENT = """
+MATCH (p:Project {id: $project_id})
+MATCH (a:Agent {id: $agent_id})
+MERGE (p)-[:ASSIGNED_TO]->(a)
+"""
+
+PROJECT_REMOVE_AGENT = """
+MATCH (p:Project {id: $project_id})-[r:ASSIGNED_TO]->(a:Agent {id: $agent_id})
+DELETE r
+"""
+
+PROJECT_GET_AGENTS = """
+MATCH (p:Project {id: $project_id})-[:ASSIGNED_TO]->(a:Agent)
+RETURN a
+ORDER BY a.name
+"""
+
 LIST_ISSUES_PAGINATED = """
 MATCH (i:Issue)
 USING INDEX i:Issue(status)
@@ -195,6 +212,20 @@ RETURN dep
 GET_COMPONENT_DEPENDENTS = """
 MATCH (c:Component {id: $component_id})<-[:DEPENDS_ON]-(dependent:Component)
 RETURN dependent
+"""
+
+# ---------------------------------------------------------------------------
+# Agent node creation
+# ---------------------------------------------------------------------------
+
+CREATE_AGENT_NODE = """
+MERGE (a:Agent {id: $id})
+SET a.name = $name,
+    a.role = $role,
+    a.status = $status,
+    a.capabilities = $capabilities,
+    a.created_at = $created_at
+RETURN a
 """
 
 # ---------------------------------------------------------------------------

@@ -3272,6 +3272,83 @@ def get_project_summary(
     )
 
 
+@project_router.post(
+    "/projects/{project_id}/agents/{agent_id}",
+    response_model=APIResponse[dict],
+    summary="Assign agent to project",
+    description="Create (Project)-[:ASSIGNED_TO]->(Agent) relationship.",
+)
+def assign_agent_to_project(
+    project_id: str,
+    agent_id: str,
+) -> APIResponse[dict]:
+    from fastapi import HTTPException
+    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.storage.graph_database import queries
+    driver = get_neo4j_driver()
+    if driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+    actual_driver = driver.driver if hasattr(driver, "driver") else driver
+    db = driver.database if hasattr(driver, "database") else "neo4j"
+    with actual_driver.session(database=db) as session:
+        session.run(
+            queries.PROJECT_ASSIGN_AGENT,
+            project_id=project_id,
+            agent_id=agent_id,
+        )
+    return APIResponse(data={"status": "assigned"}, meta=Meta(request_id=None))
+
+
+@project_router.delete(
+    "/projects/{project_id}/agents/{agent_id}",
+    response_model=APIResponse[dict],
+    summary="Remove agent from project",
+    description="Remove (Project)-[:ASSIGNED_TO]->(Agent) relationship.",
+)
+def remove_agent_from_project(
+    project_id: str,
+    agent_id: str,
+) -> APIResponse[dict]:
+    from fastapi import HTTPException
+    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.storage.graph_database import queries
+    driver = get_neo4j_driver()
+    if driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+    actual_driver = driver.driver if hasattr(driver, "driver") else driver
+    db = driver.database if hasattr(driver, "database") else "neo4j"
+    with actual_driver.session(database=db) as session:
+        session.run(
+            queries.PROJECT_REMOVE_AGENT,
+            project_id=project_id,
+            agent_id=agent_id,
+        )
+    return APIResponse(data={"status": "removed"}, meta=Meta(request_id=None))
+
+
+@project_router.get(
+    "/projects/{project_id}/agents",
+    response_model=APIResponse[list[dict]],
+    summary="Get project agents",
+    description="Get all agents assigned to a project.",
+)
+def get_project_agents(
+    project_id: str,
+) -> APIResponse[list[dict]]:
+    from fastapi import HTTPException
+    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.storage.graph_database import queries
+    driver = get_neo4j_driver()
+    if driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+    actual_driver = driver.driver if hasattr(driver, "driver") else driver
+    db = driver.database if hasattr(driver, "database") else "neo4j"
+    with actual_driver.session(database=db) as session:
+        result = session.run(queries.PROJECT_GET_AGENTS, project_id=project_id)
+        agents = [dict(r["a"]) for r in result]
+    return APIResponse(data=agents, meta=Meta(request_id=None))
+
+
 # ---------------------------------------------------------------------------
 # Webhook router
 # ---------------------------------------------------------------------------
@@ -3640,6 +3717,9 @@ def register_agent(
     body: AgentRegisterRequest,
 ) -> APIResponse[AgentResponse]:
     from datetime import datetime, timezone
+    from fastapi import HTTPException
+    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.storage.graph_database import queries
 
     agent_data = {
         "agent_id": body.agent_id,
@@ -3652,6 +3732,21 @@ def register_agent(
         "last_heartbeat": datetime.now(timezone.utc).isoformat(),
     }
     _agents[body.agent_id] = agent_data
+
+    driver = get_neo4j_driver()
+    if driver is not None:
+        actual_driver = driver.driver if hasattr(driver, "driver") else driver
+        db = driver.database if hasattr(driver, "database") else "neo4j"
+        with actual_driver.session(database=db) as session:
+            session.run(
+                queries.CREATE_AGENT_NODE,
+                id=body.agent_id,
+                name=body.name,
+                role=body.role,
+                status="idle",
+                capabilities=", ".join(body.capabilities) if body.capabilities else "",
+                created_at=agent_data["created_at"],
+            )
 
     return APIResponse(
         data=AgentResponse(
@@ -3876,6 +3971,106 @@ def get_similar_issues(
         ],
         meta=Meta(request_id=None),
     )
+
+
+@agent_router.post(
+    "/agents/{agent_id}/specialists/{component_id}",
+    response_model=APIResponse[dict],
+    summary="Add agent specialist in component",
+    description="Create (Agent)-[:SPECIALIST_IN]->(Component) relationship.",
+)
+def add_agent_specialist(
+    agent_id: str,
+    component_id: str,
+) -> APIResponse[dict]:
+    from fastapi import HTTPException
+    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.storage.graph_database import queries
+    driver = get_neo4j_driver()
+    if driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+    actual_driver = driver.driver if hasattr(driver, "driver") else driver
+    db = driver.database if hasattr(driver, "database") else "neo4j"
+    with actual_driver.session(database=db) as session:
+        session.run(
+            queries.ADD_AGENT_SPECIALIST,
+            agent_id=agent_id,
+            component_id=component_id,
+        )
+    return APIResponse(data={"status": "specialist_added"}, meta=Meta(request_id=None))
+
+
+@agent_router.delete(
+    "/agents/{agent_id}/specialists/{component_id}",
+    response_model=APIResponse[dict],
+    summary="Remove agent specialist",
+    description="Remove (Agent)-[:SPECIALIST_IN]->(Component) relationship.",
+)
+def remove_agent_specialist(
+    agent_id: str,
+    component_id: str,
+) -> APIResponse[dict]:
+    from fastapi import HTTPException
+    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.storage.graph_database import queries
+    driver = get_neo4j_driver()
+    if driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+    actual_driver = driver.driver if hasattr(driver, "driver") else driver
+    db = driver.database if hasattr(driver, "database") else "neo4j"
+    with actual_driver.session(database=db) as session:
+        session.run(
+            queries.REMOVE_AGENT_SPECIALIST,
+            agent_id=agent_id,
+            component_id=component_id,
+        )
+    return APIResponse(data={"status": "specialist_removed"}, meta=Meta(request_id=None))
+
+
+@agent_router.get(
+    "/agents/{agent_id}/specialists",
+    response_model=APIResponse[list[dict]],
+    summary="Get agent specialists",
+    description="Get all components an agent specializes in.",
+)
+def get_agent_specialists(
+    agent_id: str,
+) -> APIResponse[list[dict]]:
+    from fastapi import HTTPException
+    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.storage.graph_database import queries
+    driver = get_neo4j_driver()
+    if driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+    actual_driver = driver.driver if hasattr(driver, "driver") else driver
+    db = driver.database if hasattr(driver, "database") else "neo4j"
+    with actual_driver.session(database=db) as session:
+        result = session.run(queries.GET_AGENT_SPECIALISTS, agent_id=agent_id)
+        components = [dict(r["c"]) for r in result]
+    return APIResponse(data=components, meta=Meta(request_id=None))
+
+
+@agent_router.get(
+    "/components/{component_id}/specialists",
+    response_model=APIResponse[list[dict]],
+    summary="Get component specialists",
+    description="Get all agents that specialize in a component.",
+)
+def get_component_specialists(
+    component_id: str,
+) -> APIResponse[list[dict]]:
+    from fastapi import HTTPException
+    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.storage.graph_database import queries
+    driver = get_neo4j_driver()
+    if driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+    actual_driver = driver.driver if hasattr(driver, "driver") else driver
+    db = driver.database if hasattr(driver, "database") else "neo4j"
+    with actual_driver.session(database=db) as session:
+        result = session.run(queries.GET_COMPONENT_SPECIALISTS, component_id=component_id)
+        agents = [dict(r["a"]) for r in result]
+    return APIResponse(data=agents, meta=Meta(request_id=None))
 
 
 # ---------------------------------------------------------------------------
