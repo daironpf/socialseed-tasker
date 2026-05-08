@@ -867,3 +867,119 @@ RETURN c
 ORDER BY c.timestamp DESC
 LIMIT $limit
 """
+
+# ---------------------------------------------------------------------------
+# Commit queries
+# ---------------------------------------------------------------------------
+
+CREATE_COMMIT = """
+CREATE (c:Commit {
+    sha: $sha,
+    message: $message,
+    authorName: $author_name,
+    authorEmail: $author_email,
+    timestamp: $timestamp,
+    isAiGenerated: $is_ai_generated,
+    branch: $branch,
+    additions: $additions,
+    deletions: $deletions,
+    filesChanged: $files_changed
+})
+RETURN c
+"""
+
+GET_COMMIT = """
+MATCH (c:Commit {sha: $sha})
+RETURN c
+"""
+
+LIST_COMMITS = """
+MATCH (c:Commit)
+WHERE ($branch IS NULL OR c.branch = $branch)
+  AND ($author IS NULL OR c.authorName = $author)
+  AND ($is_ai_generated IS NULL OR c.isAiGenerated = $is_ai_generated)
+  AND ($since IS NULL OR c.timestamp >= $since)
+  AND ($until IS NULL OR c.timestamp <= $until)
+RETURN c
+ORDER BY c.timestamp DESC
+SKIP $skip
+LIMIT $limit
+"""
+
+DELETE_COMMIT = """
+MATCH (c:Commit {sha: $sha})
+DETACH DELETE c
+"""
+
+LINK_COMMIT_TO_AGENT = """
+MATCH (c:Commit {sha: $sha})
+MATCH (a:Agent {id: $agent_id})
+MERGE (a)-[:AUTHORED]->(c)
+RETURN a, c
+"""
+
+LINK_COMMIT_TO_USER = """
+MATCH (c:Commit {sha: $sha})
+MATCH (u:User {id: $user_id})
+MERGE (u)-[:AUTHORED]->(c)
+RETURN u, c
+"""
+
+LINK_COMMIT_TO_ISSUE = """
+MATCH (c:Commit {sha: $sha})
+MATCH (i:Issue {id: $issue_id})
+MERGE (i)-[:RESOLVED_BY]->(c)
+RETURN i, c
+"""
+
+LINK_COMMIT_TO_FILE = """
+MATCH (c:Commit {sha: $sha})
+MATCH (f:CodeFile {path: $file_path})
+MERGE (c)-[r:MODIFIED {type: $change_type}]->(f)
+RETURN c, f, r
+"""
+
+LINK_COMMIT_TO_REASONING = """
+MATCH (c:Commit {sha: $sha})
+MATCH (r:ReasoningNode {id: $reasoning_id})
+MERGE (r)-[:RESULTED_IN]->(c)
+RETURN r, c
+"""
+
+GET_COMMITS_FOR_ISSUE = """
+MATCH (i:Issue {id: $issue_id})-[:RESOLVED_BY]->(c:Commit)
+RETURN c
+ORDER BY c.timestamp DESC
+LIMIT $limit
+"""
+
+GET_COMMITS_FOR_FILE = """
+MATCH (c:Commit)-[r:MODIFIED]->(f:CodeFile)
+WHERE f.path = $file_path OR f.name = $file_path
+RETURN c, r.type as change_type
+ORDER BY c.timestamp DESC
+LIMIT $limit
+"""
+
+GET_AUTHOR_STATS = """
+MATCH (c:Commit)
+WHERE ($since IS NULL OR c.timestamp >= $since)
+OPTIONAL MATCH (a:Agent)-[:AUTHORED]->(c)
+OPTIONAL MATCH (u:User)-[:AUTHORED]->(c)
+RETURN 
+    count(c) as total_commits,
+    sum(c.additions) as total_additions,
+    sum(c.deletions) as total_deletions,
+    sum(c.filesChanged) as total_files,
+    collect(DISTINCT CASE WHEN a IS NOT NULL THEN a.name END) as ai_authors,
+    collect(DISTINCT CASE WHEN u IS NOT NULL THEN u.name END) as human_authors,
+    count(DISTINCT CASE WHEN c.isAiGenerated = true THEN c END) as ai_commits,
+    count(DISTINCT CASE WHEN c.isAiGenerated = false THEN c END) as human_commits
+"""
+
+GET_COMMITS_FOR_REASONING = """
+MATCH (r:ReasoningNode {id: $reasoning_id})-[:RESULTED_IN]->(c:Commit)
+RETURN c
+ORDER BY c.timestamp DESC
+LIMIT $limit
+"""

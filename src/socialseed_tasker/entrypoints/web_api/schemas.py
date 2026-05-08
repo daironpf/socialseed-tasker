@@ -753,3 +753,45 @@ class UserResponse(BaseModel):
     created_at: datetime | None = None
     last_login: datetime | None = None
     preferences: str | None = None
+
+
+class CommitCreateRequest(BaseModel):
+    """Request for creating a commit."""
+
+    sha: str = Field(..., min_length=40, max_length=40)
+    message: str = ""
+    author_name: str = ""
+    author_email: str = ""
+    is_ai_generated: bool = False
+    branch: str = ""
+    additions: int = 0
+    deletions: int = 0
+    files_changed: int = 0
+
+
+class CommitResponse(BaseModel):
+    """Response for commit data."""
+
+    sha: str
+    message: str
+    author_name: str
+    author_email: str
+    timestamp: datetime | None = None
+    is_ai_generated: bool
+    branch: str
+    additions: int
+    deletions: int
+    files_changed: int
+
+
+class CommitStatsResponse(BaseModel):
+    """Response for commit statistics."""
+
+    total_commits: int
+    total_additions: int
+    total_deletions: int
+    total_files: int
+    ai_authors: list[str]
+    human_authors: list[str]
+    ai_commits: int
+    human_commits: int

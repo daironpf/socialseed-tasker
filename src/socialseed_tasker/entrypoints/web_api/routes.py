@@ -103,6 +103,9 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     UserCreateRequest,
     UserResponse,
     UserUpdateRequest,
+    CommitCreateRequest,
+    CommitResponse,
+    CommitStatsResponse,
 )
 
 if TYPE_CHECKING:
@@ -2670,6 +2673,322 @@ def update_user_last_login(
     repo.update_last_login(user_id)
 
     return APIResponse(data={"status": "updated"}, meta=Meta(request_id=None))
+
+
+# ---------------------------------------------------------------------------
+# Commit router
+# ---------------------------------------------------------------------------
+
+commit_router = APIRouter()
+
+
+def _commit_to_response(commit: "Commit") -> "CommitResponse":  # type: ignore[valid-type]
+    """Convert domain Commit to API response."""
+    return CommitResponse(
+        sha=commit.sha,
+        message=commit.message,
+        author_name=commit.authorName,
+        author_email=commit.authorEmail,
+        timestamp=commit.timestamp,
+        is_ai_generated=commit.isAiGenerated,
+        branch=commit.branch,
+        additions=commit.additions,
+        deletions=commit.deletions,
+        files_changed=commit.filesChanged,
+    )
+
+
+@commit_router.post(
+    "/commits",
+    response_model=APIResponse[CommitResponse],
+    summary="Create a new commit",
+    description="Record a new commit in the system.",
+)
+def create_commit(
+    body: CommitCreateRequest,
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[CommitResponse]:
+    """Create a new commit."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.core.task_management.entities import Commit
+
+    commit = Commit(
+        sha=body.sha,
+        message=body.message,
+        authorName=body.author_name,
+        authorEmail=body.author_email,
+        isAiGenerated=body.is_ai_generated,
+        branch=body.branch,
+        additions=body.additions,
+        deletions=body.deletions,
+        filesChanged=body.files_changed,
+    )
+
+    from socialseed_tasker.storage.graph_database.commit_repository import CommitRepository
+
+    repo = CommitRepository(driver)
+    repo.create_commit(commit)
+
+    return APIResponse(data=_commit_to_response(commit), meta=Meta(request_id=None))
+
+
+@commit_router.get(
+    "/commits/stats",
+    response_model=APIResponse[CommitStatsResponse],
+    summary="Get commit statistics",
+    description="Get commit statistics by author (human vs AI).",
+)
+def get_commit_stats(
+    since: datetime | None = Query(None, description="Filter by start date"),
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[CommitStatsResponse]:
+    """Get commit statistics."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.commit_repository import CommitRepository
+
+    repo = CommitRepository(driver)
+    stats = repo.get_author_stats(since=since)
+
+    return APIResponse(data=CommitStatsResponse(**stats), meta=Meta(request_id=None))
+
+
+@commit_router.get(
+    "/commits/{sha}",
+    response_model=APIResponse[CommitResponse],
+    summary="Get commit by SHA",
+    description="Get a commit by its SHA hash.",
+)
+def get_commit(
+    sha: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[CommitResponse]:
+    """Get a commit by SHA."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.commit_repository import CommitRepository
+
+    repo = CommitRepository(driver)
+    commit = repo.get_commit(sha)
+
+    if not commit:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Commit not found")
+
+    return APIResponse(data=_commit_to_response(commit), meta=Meta(request_id=None))
+
+
+@commit_router.get(
+    "/commits",
+    response_model=APIResponse[list[CommitResponse]],
+    summary="List commits",
+    description="List commits with optional filters.",
+)
+def list_commits(
+    branch: str | None = Query(None, description="Filter by branch"),
+    author: str | None = Query(None, description="Filter by author name"),
+    is_ai_generated: bool | None = Query(None, description="Filter by AI generated"),
+    since: datetime | None = Query(None, description="Filter by start date"),
+    until: datetime | None = Query(None, description="Filter by end date"),
+    limit: int = Query(50, ge=1, le=100),
+    skip: int = Query(0, ge=0),
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[list[CommitResponse]]:
+    """List commits."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.commit_repository import CommitRepository
+
+    repo = CommitRepository(driver)
+    commits = repo.list_commits(
+        branch=branch,
+        author=author,
+        is_ai_generated=is_ai_generated,
+        since=since,
+        until=until,
+        limit=limit,
+        skip=skip,
+    )
+
+    return APIResponse(
+        data=[_commit_to_response(c) for c in commits],
+        meta=Meta(request_id=None),
+    )
+
+
+@commit_router.post(
+    "/commits/{sha}/link/agent/{agent_id}",
+    response_model=APIResponse[dict],
+    summary="Link commit to agent",
+    description="Create (Agent)-[:AUTHORED]->(Commit) relationship.",
+)
+def link_commit_to_agent(
+    sha: str,
+    agent_id: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[dict]:
+    """Link commit to an agent."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.commit_repository import CommitRepository
+
+    repo = CommitRepository(driver)
+    repo.link_commit_to_agent(sha, agent_id)
+
+    return APIResponse(data={"status": "linked"}, meta=Meta(request_id=None))
+
+
+@commit_router.post(
+    "/commits/{sha}/link/user/{user_id}",
+    response_model=APIResponse[dict],
+    summary="Link commit to user",
+    description="Create (User)-[:AUTHORED]->(Commit) relationship.",
+)
+def link_commit_to_user(
+    sha: str,
+    user_id: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[dict]:
+    """Link commit to a user."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.commit_repository import CommitRepository
+
+    repo = CommitRepository(driver)
+    repo.link_commit_to_user(sha, user_id)
+
+    return APIResponse(data={"status": "linked"}, meta=Meta(request_id=None))
+
+
+@commit_router.post(
+    "/commits/{sha}/link/issue/{issue_id}",
+    response_model=APIResponse[dict],
+    summary="Link commit to issue",
+    description="Create (Issue)-[:RESOLVED_BY]->(Commit) relationship.",
+)
+def link_commit_to_issue(
+    sha: str,
+    issue_id: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[dict]:
+    """Link commit to an issue (mark as resolved)."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.commit_repository import CommitRepository
+
+    repo = CommitRepository(driver)
+    repo.link_commit_to_issue(sha, issue_id)
+
+    return APIResponse(data={"status": "linked"}, meta=Meta(request_id=None))
+
+
+@commit_router.get(
+    "/commits/issue/{issue_id}",
+    response_model=APIResponse[list[CommitResponse]],
+    summary="Get commits for issue",
+    description="Get all commits that resolved an issue.",
+)
+def get_commits_for_issue(
+    issue_id: str,
+    limit: int = Query(50, ge=1, le=100),
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[list[CommitResponse]]:
+    """Get commits for an issue."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.commit_repository import CommitRepository
+
+    repo = CommitRepository(driver)
+    commits = repo.get_commits_for_issue(issue_id, limit=limit)
+
+    return APIResponse(
+        data=[_commit_to_response(c) for c in commits],
+        meta=Meta(request_id=None),
+    )
+
+
+@commit_router.get(
+    "/commits/file/{file_path:path}",
+    response_model=APIResponse[list[dict]],
+    summary="Get commits for file",
+    description="Get commit history for a file.",
+)
+def get_commits_for_file(
+    file_path: str,
+    limit: int = Query(20, ge=1, le=100),
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[list[dict]]:
+    """Get commits for a file."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.commit_repository import CommitRepository
+
+    repo = CommitRepository(driver)
+    results = repo.get_commits_for_file(file_path, limit=limit)
+
+    return APIResponse(
+        data=[
+            {
+                "commit": _commit_to_response(r["commit"]),
+                "change_type": r["change_type"],
+            }
+            for r in results
+        ],
+        meta=Meta(request_id=None),
+    )
+
+
+@commit_router.delete(
+    "/commits/{sha}",
+    response_model=APIResponse[dict],
+    summary="Delete commit",
+    description="Delete a commit from the system.",
+)
+def delete_commit(
+    sha: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> APIResponse[dict]:
+    """Delete a commit."""
+    if not driver:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+
+    from socialseed_tasker.storage.graph_database.commit_repository import CommitRepository
+
+    repo = CommitRepository(driver)
+    repo.delete_commit(sha)
+
+    return APIResponse(data={"status": "deleted"}, meta=Meta(request_id=None))
 
 
 # ---------------------------------------------------------------------------
