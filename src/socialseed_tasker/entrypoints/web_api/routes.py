@@ -4800,6 +4800,94 @@ async def get_issues_for_file(
     return {"file_path": file_path, "issues": issues, "total": len(issues)}
 
 
+# ---------------------------------------------------------------------------
+# Impact Analysis endpoints
+# ---------------------------------------------------------------------------
+
+
+@code_graph_router.get("/symbols/{symbol_id}/callers")
+async def get_symbol_callers(
+    symbol_id: str,
+    transitive: bool = Query(False, description="Include transitive callers"),
+    driver: Any = Depends(get_code_graph_driver),
+) -> dict[str, Any]:
+    """Get all symbols that call this symbol (dependents)."""
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    if not driver:
+        return {"error": "Neo4j not connected", "callers": []}
+
+    repo = CodeGraphRepository(driver)
+    if transitive:
+        callers = repo.get_transitive_callers(symbol_id)
+    else:
+        callers = repo.get_direct_callers(symbol_id)
+    
+    return {"symbol_id": symbol_id, "transitive": transitive, "callers": callers, "total": len(callers)}
+
+
+@code_graph_router.get("/symbols/{symbol_id}/callees")
+async def get_symbol_callees(
+    symbol_id: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> dict[str, Any]:
+    """Get all symbols that this symbol calls (dependencies)."""
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    if not driver:
+        return {"error": "Neo4j not connected", "callees": []}
+
+    repo = CodeGraphRepository(driver)
+    callees = repo.get_direct_callees(symbol_id)
+    
+    return {"symbol_id": symbol_id, "callees": callees, "total": len(callees)}
+
+
+@code_graph_router.get("/symbols/{symbol_id}")
+async def get_symbol_by_id(
+    symbol_id: str,
+    driver: Any = Depends(get_code_graph_driver),
+) -> dict[str, Any]:
+    """Get a CodeSymbol by its ID."""
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    repo = CodeGraphRepository(driver)
+    symbol = repo.get_symbol_by_id(symbol_id)
+    
+    if not symbol:
+        return {"error": "Symbol not found", "symbol_id": symbol_id}
+    
+    return {"symbol": symbol}
+
+
+@code_graph_router.post("/analyze/impact")
+async def analyze_impact(
+    symbol_id: str = Body(..., description="The CodeSymbol ID to analyze"),
+    include_transitive: bool = Body(True, description="Include transitive callers"),
+    driver: Any = Depends(get_code_graph_driver),
+) -> dict[str, Any]:
+    """Perform impact analysis for a CodeSymbol.
+    
+    Returns:
+    - direct callers (what depends on this)
+    - direct callees (what this depends on)
+    - transitive callers (full dependency tree)
+    - risk level based on impact scope
+    """
+    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+
+    if not driver:
+        return {"error": "Neo4j not connected"}
+
+    repo = CodeGraphRepository(driver)
+    result = repo.analyze_impact(symbol_id, include_transitive)
+    
+    return result
+
+
 # ==================== RAG (Retrieval-Augmented Generation) ====================
 
 rag_router = APIRouter(tags=["rag"])

@@ -148,6 +148,26 @@ CODE_GRAPH_QUERIES = {
         CREATE INDEX code_symbol_file IF NOT EXISTS FOR (s:CodeSymbol) ON (s.fileId)
         CREATE INDEX code_import_file IF NOT EXISTS FOR (i:CodeImport) ON (i.fileId)
     """,
+    # Impact Analysis queries (direct :CALLS relationship)
+    "get_direct_callers": """
+        MATCH (caller:CodeSymbol)-[:CALLS]->(s:CodeSymbol {id: $symbolId})
+        RETURN caller.id as id, caller.name as name, caller.symbolType as symbolType
+    """,
+    "get_transitive_callers": """
+        MATCH (caller:CodeSymbol)-[:CALLS*1..3]->(s:CodeSymbol {id: $symbolId})
+        RETURN DISTINCT caller.id as id, caller.name as name, caller.symbolType as symbolType,
+               length((caller)-[:CALLS*1..3]->(s)) as depth
+        ORDER BY depth
+    """,
+    "get_direct_callees": """
+        MATCH (s:CodeSymbol {id: $symbolId})-[:CALLS]->(callee:CodeSymbol)
+        RETURN callee.id as id, callee.name as name, callee.symbolType as symbolType
+    """,
+    "get_symbol_by_id": """
+        MATCH (s:CodeSymbol {id: $symbolId})
+        RETURN s.id as id, s.name as name, s.symbolType as symbolType,
+               s.startLine as startLine, s.endLine as endLine, s.fileId as fileId
+    """,
 }
 
 
@@ -302,6 +322,102 @@ class CodeGraphRepository:
                 name=symbol_name,
             )
             return [dict(record["t"]) for record in result]
+
+    # -- Impact Analysis (CALLS relationship) --------------------------------
+
+    def get_direct_callers(self, symbol_id: str) -> list[dict[str, Any]]:
+        """Get symbols that directly call this symbol (who depends on it)."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                CODE_GRAPH_QUERIES["get_direct_callers"],
+                symbolId=symbol_id,
+            )
+            return [
+                {"id": r["id"], "name": r["name"], "symbol_type": r["symbolType"]}
+                for r in result
+            ]
+
+    def get_transitive_callers(self, symbol_id: str, depth: int = 3) -> list[dict[str, Any]]:
+        """Get all symbols that call this symbol (transitive closure)."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                """
+                MATCH (caller:CodeSymbol)-[:CALLS*1..$depth]->(s:CodeSymbol {id: $symbolId})
+                RETURN DISTINCT caller.id as id, caller.name as name, caller.symbolType as symbolType,
+                       length((caller)-[:CALLS*1..]->(s)) as depth
+                ORDER BY depth
+                """,
+                symbolId=symbol_id,
+                depth=depth,
+            )
+            return [
+                {"id": r["id"], "name": r["name"], "symbol_type": r["symbolType"], "depth": r["depth"]}
+                for r in result
+            ]
+
+    def get_direct_callees(self, symbol_id: str) -> list[dict[str, Any]]:
+        """Get symbols that this symbol directly calls (what it depends on)."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                CODE_GRAPH_QUERIES["get_direct_callees"],
+                symbolId=symbol_id,
+            )
+            return [
+                {"id": r["id"], "name": r["name"], "symbol_type": r["symbolType"]}
+                for r in result
+            ]
+
+    def get_symbol_by_id(self, symbol_id: str) -> dict[str, Any] | None:
+        """Get a CodeSymbol by its ID."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                CODE_GRAPH_QUERIES["get_symbol_by_id"],
+                symbolId=symbol_id,
+            )
+            record = result.single()
+            if record:
+                return {
+                    "id": record["id"],
+                    "name": record["name"],
+                    "symbol_type": record["symbolType"],
+                    "start_line": record.get("startLine"),
+                    "end_line": record.get("endLine"),
+                    "file_id": record.get("fileId"),
+                }
+            return None
+
+    def analyze_impact(self, symbol_id: str, include_transitive: bool = True) -> dict[str, Any]:
+        """Full impact analysis for a CodeSymbol."""
+        direct_callers = self.get_direct_callers(symbol_id)
+        callees = self.get_direct_callees(symbol_id)
+        
+        result = {
+            "symbol": self.get_symbol_by_id(symbol_id),
+            "direct_callers_count": len(direct_callers),
+            "direct_callers": direct_callers,
+            "direct_callees_count": len(callees),
+            "direct_callees": callees,
+        }
+        
+        if include_transitive:
+            transitive = self.get_transitive_callers(symbol_id)
+            result["transitive_callers_count"] = len(transitive)
+            result["transitive_callers"] = transitive
+            result["risk_level"] = self._calculate_risk_level(len(direct_callers), len(transitive))
+        
+        return result
+
+    def _calculate_risk_level(self, direct: int, transitive: int) -> str:
+        """Calculate risk level based on impact scope."""
+        total = direct + transitive
+        if total == 0:
+            return "NONE"
+        elif total <= 5:
+            return "LOW"
+        elif total <= 20:
+            return "MEDIUM"
+        else:
+            return "HIGH"
 
     def get_stats(self) -> CodeGraphStats:
         """Get code graph statistics."""
