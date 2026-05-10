@@ -78,6 +78,8 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
         manifest_todo=data.get("manifestTodo", []),
         manifest_files=data.get("manifestFiles", []),
         manifest_notes=data.get("manifestNotes", []),
+        resolved_by_commit_sha=data.get("resolvedByCommitSha") or data.get("resolved_by_commit_sha"),
+        resolution=data.get("resolution"),
     )
 
 
@@ -391,13 +393,15 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
 
             return issue
 
-    def close_issue(self, issue_id: str) -> Issue:
+    def close_issue(self, issue_id: str, commit_sha: str | None = None, resolution: str = "implemented") -> Issue:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.CLOSE_ISSUE,
                 id=issue_id,
                 closedAt=_now_iso(),
                 updatedAt=_now_iso(),
+                commitSha=commit_sha,
+                resolution=resolution,
             )
             record = result.single()
             if record is None:

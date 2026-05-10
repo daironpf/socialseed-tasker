@@ -621,7 +621,9 @@ def delete_issue(
 )
 def close_issue(
     issue_id: str,
-    affected_files: list[str] = [],
+    commit_sha: str | None = Body(None, description="Git commit SHA that resolved this issue"),
+    resolution: str = Body("implemented", description="Resolution type: implemented, duplicate, wontfix, etc."),
+    affected_files: list[str] = Body([], description="Files affected by this issue"),
     force: bool = Query(False, description="Force close even with policy violations"),
     repo: TaskRepositoryInterface = Depends(get_repo),
     request: Request = Depends(get_code_graph_driver),
@@ -650,7 +652,7 @@ def close_issue(
                 }
             )
     
-    issue = close_issue_action(repo, issue_id)
+    issue = close_issue_action(repo, issue_id, commit_sha, resolution)
 
     if affected_files and request:
         try:
@@ -672,6 +674,32 @@ def close_issue(
             pass
 
     return APIResponse(data=_issue_to_response(issue), meta=Meta(request_id=None))
+
+
+@issues_router.get(
+    "/issues/{issue_id}/resolution",
+    response_model=APIResponse[dict],
+    summary="Get issue resolution",
+    description="Get the commit SHA and resolution details that closed this issue.",
+)
+def get_issue_resolution(
+    issue_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[dict]:
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+    
+    resolution_data = {
+        "issue_id": issue_id,
+        "title": issue.title,
+        "status": issue.status.value if hasattr(issue.status, 'value') else str(issue.status),
+        "resolved_by_commit_sha": issue.resolved_by_commit_sha,
+        "resolution": issue.resolution,
+        "closed_at": issue.closed_at.isoformat() if issue.closed_at else None,
+    }
+    
+    return APIResponse(data=resolution_data, meta=Meta(request_id=None))
 
 
 @issues_router.post(

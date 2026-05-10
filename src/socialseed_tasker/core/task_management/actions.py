@@ -109,8 +109,8 @@ class TaskRepositoryInterface(Protocol):
     def update_issue(self, issue_id: str, updates: dict) -> Issue:
         """Apply partial updates and return the updated issue."""
 
-    def close_issue(self, issue_id: str) -> Issue:
-        """Transition an issue to CLOSED status."""
+    def close_issue(self, issue_id: str, commit_sha: str | None = None, resolution: str = "implemented") -> Issue:
+        """Transition an issue to CLOSED status with optional commit SHA."""
 
     def delete_issue(self, issue_id: str) -> None:
         """Permanently remove an issue and its relationships."""
@@ -473,6 +473,8 @@ def create_issue_action(
 def close_issue_action(
     repository: TaskRepositoryInterface,
     issue_id: str,
+    commit_sha: str | None = None,
+    resolution: str = "implemented",
 ) -> Issue:
     """Close an issue after validating it has no open dependencies.
 
@@ -493,7 +495,7 @@ def close_issue_action(
         if open_deps:
             raise OpenDependenciesError(issue_id, open_deps)
 
-        return repository.close_issue(issue_id)
+        return repository.close_issue(issue_id, commit_sha, resolution)
 
 
 def move_issue_action(

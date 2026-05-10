@@ -436,7 +436,8 @@ RETURN i
 
 CLOSE_ISSUE = """
 MATCH (i:Issue {id: $id})
-SET i.status = 'CLOSED', i.closedAt = $closedAt, i.updatedAt = $updatedAt
+SET i.status = 'CLOSED', i.closedAt = $closedAt, i.updatedAt = $updatedAt,
+    i.resolvedByCommitSha = $commitSha, i.resolution = $resolution
 RETURN i
 """
 

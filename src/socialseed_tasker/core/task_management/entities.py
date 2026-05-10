@@ -147,6 +147,8 @@ class Issue(BaseModel):
     last_mirrored_at: Optional[datetime] = None
     estimated_hours: Optional[float] = None
     hourly_rate_tier: Optional[str] = None
+    resolved_by_commit_sha: Optional[str] = Field(default=None, description="Git commit SHA that resolved this issue")
+    resolution: Optional[str] = Field(default=None, description="Resolution type: implemented, duplicate, wontfix, etc.")
     actual_hours: Optional[float] = None
     epic_id: Optional[UUID] = None
     description_embedding: Optional[list[float]] = None
