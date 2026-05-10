@@ -15,14 +15,14 @@ PERFORMANCE OPTIMIZATION:
 
 SCHEMA_CONSTRAINTS = [
     "CREATE CONSTRAINT issue_id IF NOT EXISTS FOR (i:Issue) REQUIRE i.id IS UNIQUE",
-    "CREATE CONSTRAINT component_id IF NOT EXISTS FOR (c:Component) REQUIRE c.id IS UNIQUE",
-    "CREATE CONSTRAINT project_id IF NOT EXISTS FOR (p:Project) REQUIRE p.id IS UNIQUE",
+    "CREATE CONSTRAINT componentId IF NOT EXISTS FOR (c:Component) REQUIRE c.id IS UNIQUE",
+    "CREATE CONSTRAINT projectId IF NOT EXISTS FOR (p:Project) REQUIRE p.id IS UNIQUE",
     "CREATE CONSTRAINT project_slug IF NOT EXISTS FOR (p:Project) REQUIRE p.slug IS UNIQUE",
     "CREATE CONSTRAINT code_file_id IF NOT EXISTS FOR (f:CodeFile) REQUIRE f.id IS UNIQUE",
     "CREATE CONSTRAINT code_symbol_id IF NOT EXISTS FOR (s:CodeSymbol) REQUIRE s.id IS UNIQUE",
     "CREATE CONSTRAINT code_import_id IF NOT EXISTS FOR (i:CodeImport) REQUIRE i.id IS UNIQUE",
     "CREATE CONSTRAINT reasoning_id IF NOT EXISTS FOR (r:ReasoningNode) REQUIRE r.id IS UNIQUE",
-    "CREATE CONSTRAINT agent_id IF NOT EXISTS FOR (a:Agent) REQUIRE a.id IS UNIQUE",
+    "CREATE CONSTRAINT agentId IF NOT EXISTS FOR (a:Agent) REQUIRE a.id IS UNIQUE",
     "CREATE CONSTRAINT user_id IF NOT EXISTS FOR (u:User) REQUIRE u.id IS UNIQUE",
     "CREATE CONSTRAINT user_email IF NOT EXISTS FOR (u:User) REQUIRE u.email IS UNIQUE",
     "CREATE CONSTRAINT commit_sha IF NOT EXISTS FOR (c:Commit) REQUIRE c.sha IS UNIQUE",
@@ -137,22 +137,22 @@ ORDER BY c.name
 PROJECT_ISSUES = """
 MATCH (p:Project {name: $project_name})<-[:BELONGS_TO]-(c:Component)<-[:BELONGS_TO]-(i:Issue)
 RETURN i
-ORDER BY i.created_at DESC
+ORDER BY i.createdAt DESC
 """
 
 PROJECT_ASSIGN_AGENT = """
-MATCH (p:Project {id: $project_id})
-MATCH (a:Agent {id: $agent_id})
+MATCH (p:Project {id: $projectId})
+MATCH (a:Agent {id: $agentId})
 MERGE (p)-[:ASSIGNED_TO]->(a)
 """
 
 PROJECT_REMOVE_AGENT = """
-MATCH (p:Project {id: $project_id})-[r:ASSIGNED_TO]->(a:Agent {id: $agent_id})
+MATCH (p:Project {id: $projectId})-[r:ASSIGNED_TO]->(a:Agent {id: $agentId})
 DELETE r
 """
 
 PROJECT_GET_AGENTS = """
-MATCH (p:Project {id: $project_id})-[:ASSIGNED_TO]->(a:Agent)
+MATCH (p:Project {id: $projectId})-[:ASSIGNED_TO]->(a:Agent)
 RETURN a
 ORDER BY a.name
 """
@@ -160,18 +160,18 @@ ORDER BY a.name
 LIST_ISSUES_PAGINATED = """
 MATCH (i:Issue)
 USING INDEX i:Issue(status)
-WHERE ($component_id IS NULL OR i.component_id = $component_id)
+WHERE ($componentId IS NULL OR i.componentId = $componentId)
   AND ($statuses IS NULL OR i.status IN $statuses)
   AND ($project IS NULL OR i.project = $project)
 RETURN i
-ORDER BY i.created_at DESC
+ORDER BY i.createdAt DESC
 SKIP $skip
 LIMIT $limit
 """
 
 COUNT_ISSUES = """
 MATCH (i:Issue)
-WHERE ($component_id IS NULL OR i.component_id = $component_id)
+WHERE ($componentId IS NULL OR i.componentId = $componentId)
   AND ($statuses IS NULL OR i.status IN $statuses)
   AND ($project IS NULL OR i.project = $project)
 RETURN count(i) as total
@@ -180,7 +180,7 @@ RETURN count(i) as total
 UPDATE_COMPONENT = """
 MATCH (c:Component {id: $id})
 SET c += $updates
-SET c.updated_at = $updated_at
+SET c.updatedAt = $updatedAt
 RETURN c
 """
 
@@ -194,23 +194,23 @@ DETACH DELETE c
 # ---------------------------------------------------------------------------
 
 ADD_COMPONENT_DEPENDENCY = """
-MATCH (source:Component {id: $component_id})
+MATCH (source:Component {id: $componentId})
 MATCH (target:Component {id: $depends_on_id})
 MERGE (source)-[:DEPENDS_ON]->(target)
 """
 
 REMOVE_COMPONENT_DEPENDENCY = """
-MATCH (source:Component {id: $component_id})-[r:DEPENDS_ON]->(target:Component {id: $depends_on_id})
+MATCH (source:Component {id: $componentId})-[r:DEPENDS_ON]->(target:Component {id: $depends_on_id})
 DELETE r
 """
 
 GET_COMPONENT_DEPENDENCIES = """
-MATCH (c:Component {id: $component_id})-[:DEPENDS_ON]->(dep:Component)
+MATCH (c:Component {id: $componentId})-[:DEPENDS_ON]->(dep:Component)
 RETURN dep
 """
 
 GET_COMPONENT_DEPENDENTS = """
-MATCH (c:Component {id: $component_id})<-[:DEPENDS_ON]-(dependent:Component)
+MATCH (c:Component {id: $componentId})<-[:DEPENDS_ON]-(dependent:Component)
 RETURN dependent
 """
 
@@ -224,7 +224,7 @@ SET a.name = $name,
     a.role = $role,
     a.status = $status,
     a.capabilities = $capabilities,
-    a.created_at = $created_at
+    a.createdAt = $createdAt
 RETURN a
 """
 
@@ -233,34 +233,34 @@ RETURN a
 # ---------------------------------------------------------------------------
 
 ADD_AGENT_SPECIALIST = """
-MATCH (a:Agent {id: $agent_id})
-MATCH (c:Component {id: $component_id})
+MATCH (a:Agent {id: $agentId})
+MATCH (c:Component {id: $componentId})
 MERGE (a)-[:SPECIALIST_IN]->(c)
 """
 
 REMOVE_AGENT_SPECIALIST = """
-MATCH (a:Agent {id: $agent_id})-[r:SPECIALIST_IN]->(c:Component {id: $component_id})
+MATCH (a:Agent {id: $agentId})-[r:SPECIALIST_IN]->(c:Component {id: $componentId})
 DELETE r
 """
 
 GET_AGENT_SPECIALISTS = """
-MATCH (a:Agent {id: $agent_id})-[:SPECIALIST_IN]->(c:Component)
+MATCH (a:Agent {id: $agentId})-[:SPECIALIST_IN]->(c:Component)
 RETURN c
 """
 
 GET_COMPONENT_SPECIALISTS = """
-MATCH (a:Agent)-[:SPECIALIST_IN]->(c:Component {id: $component_id})
+MATCH (a:Agent)-[:SPECIALIST_IN]->(c:Component {id: $componentId})
 RETURN a
 """
 
 ADD_AGENT_INTERESTED = """
-MATCH (a:Agent {id: $agent_id})
+MATCH (a:Agent {id: $agentId})
 MATCH (l:Label {id: $label_id})
 MERGE (a)-[:INTERESTED_IN]->(l)
 """
 
 GET_AGENT_INTERESTS = """
-MATCH (a:Agent {id: $agent_id})-[:INTERESTED_IN]->(l:Label)
+MATCH (a:Agent {id: $agentId})-[:INTERESTED_IN]->(l:Label)
 RETURN l
 """
 
@@ -310,8 +310,8 @@ CREATE (e:Epic {
     description: $description,
     objective_id: $objective_id,
     status: $status,
-    created_at: $created_at,
-    updated_at: $updated_at
+    createdAt: $createdAt,
+    updatedAt: $updatedAt
 })
 """
 
@@ -323,13 +323,13 @@ RETURN e
 LIST_EPICS = """
 MATCH (e:Epic)
 RETURN e
-ORDER BY e.created_at DESC
+ORDER BY e.createdAt DESC
 """
 
 UPDATE_EPIC = """
 MATCH (e:Epic {id: $id})
 SET e += $updates
-SET e.updated_at = $updated_at
+SET e.updatedAt = $updatedAt
 RETURN e
 """
 
@@ -340,7 +340,7 @@ DETACH DELETE e
 
 LINK_ISSUE_TO_EPIC = """
 MATCH (i:Issue {id: $issue_id})
-MATCH (e:Epic {id: $epic_id})
+MATCH (e:Epic {id: $epicId})
 MERGE (i)-[:PART_OF]->(e)
 """
 
@@ -355,8 +355,8 @@ CREATE (o:Objective {
     description: $description,
     status: $status,
     quarter: $quarter,
-    created_at: $created_at,
-    updated_at: $updated_at
+    createdAt: $createdAt,
+    updatedAt: $updatedAt
 })
 """
 
@@ -368,13 +368,13 @@ RETURN o
 LIST_OBJECTIVES = """
 MATCH (o:Objective)
 RETURN o
-ORDER BY o.created_at DESC
+ORDER BY o.createdAt DESC
 """
 
 UPDATE_OBJECTIVE = """
 MATCH (o:Objective {id: $id})
 SET o += $updates
-SET o.updated_at = $updated_at
+SET o.updatedAt = $updatedAt
 RETURN o
 """
 
@@ -384,7 +384,7 @@ DETACH DELETE o
 """
 
 LINK_EPIC_TO_OBJECTIVE = """
-MATCH (e:Epic {id: $epic_id})
+MATCH (e:Epic {id: $epicId})
 MATCH (o:Objective {id: $objective_id})
 MERGE (e)-[:CONTRIBUTES_TO]->(o)
 """
@@ -394,30 +394,30 @@ MERGE (e)-[:CONTRIBUTES_TO]->(o)
 # ---------------------------------------------------------------------------
 
 CREATE_ISSUE = """
-MATCH (c:Component {id: $component_id})
+MATCH (c:Component {id: $componentId})
 CREATE (i:Issue {
     id: $id,
     title: $title,
     description: $description,
     status: $status,
     priority: $priority,
-    component_id: $component_id,
+    componentId: $componentId,
     labels: $labels,
     dependencies: $dependencies,
     blocks: $blocks,
     affects: $affects,
-    created_at: $created_at,
-    updated_at: $updated_at,
-    closed_at: $closed_at,
-    architectural_constraints: $architectural_constraints,
-    agent_working: $agent_working,
-    agent_started_at: $agent_started_at,
-    agent_finished_at: $agent_finished_at,
-    agent_id: $agent_id,
-    reasoning_logs: $reasoning_logs,
-    manifest_todo: $manifest_todo,
-    manifest_files: $manifest_files,
-    manifest_notes: $manifest_notes
+    createdAt: $createdAt,
+    updatedAt: $updatedAt,
+    closedAt: $closedAt,
+    architecturalConstraints: $architecturalConstraints,
+    agentWorking: $agentWorking,
+    agentStartedAt: $agentStartedAt,
+    agentFinishedAt: $agentFinishedAt,
+    agentId: $agentId,
+    reasoningLogs: $reasoningLogs,
+    manifestTodo: $manifestTodo,
+    manifestFiles: $manifestFiles,
+    manifestNotes: $manifestNotes
 })
 CREATE (i)-[:BELONGS_TO]->(c)
 """
@@ -430,13 +430,13 @@ RETURN i
 UPDATE_ISSUE = """
 MATCH (i:Issue {id: $id})
 SET i += $updates
-SET i.updated_at = $updated_at
+SET i.updatedAt = $updatedAt
 RETURN i
 """
 
 CLOSE_ISSUE = """
 MATCH (i:Issue {id: $id})
-SET i.status = 'CLOSED', i.closed_at = $closed_at, i.updated_at = $updated_at
+SET i.status = 'CLOSED', i.closedAt = $closedAt, i.updatedAt = $updatedAt
 RETURN i
 """
 
@@ -448,14 +448,14 @@ DETACH DELETE i
 LIST_ISSUES = """
 MATCH (i:Issue)
 OPTIONAL MATCH (i)-[:BELONGS_TO]->(c:Component)
-WHERE ($component_id IS NULL OR i.component_id = $component_id)
+WHERE ($componentId IS NULL OR i.componentId = $componentId)
   AND (size($statuses) = 0 OR i.status IN $statuses)
   AND ($project IS NULL OR (c IS NOT NULL AND c.project = $project))
 OPTIONAL MATCH (i)-[:DEPENDS_ON]->(dep:Issue)
 OPTIONAL MATCH (i)<-[:DEPENDS_ON]-(blocked:Issue)
 WITH i, collect(DISTINCT dep.id) AS dep_ids, collect(DISTINCT blocked.id) AS blocked_ids
 RETURN i, dep_ids, blocked_ids
-ORDER BY i.created_at DESC
+ORDER BY i.createdAt DESC
 """
 
 # BFS for Impact Analysis (optimized)
@@ -518,14 +518,14 @@ RETURN count(*) as deleted
 
 UPDATE_ISSUE_LOCK = """
 MATCH (i:Issue {id: $issue_id})
-SET i.locked_until = $locked_until, i.agent_working = true
+SET i.lockedUntil = $lockedUntil, i.agentWorking = true
 RETURN i
 """
 
 RELEASE_EXPIRED_LOCKS = """
 MATCH (i:Issue)
-WHERE i.locked_until < datetime()
-SET i.agent_working = false, i.locked_until = null
+WHERE i.lockedUntil < datetime()
+SET i.agentWorking = false, i.lockedUntil = null
 RETURN count(*) as released
 """
 
@@ -549,13 +549,13 @@ RETURN count(*) as resolved
 GET_DEPENDENCIES = """
 MATCH (source:Issue {id: $issue_id})-[:DEPENDS_ON]->(target:Issue)
 RETURN target
-ORDER BY target.created_at DESC
+ORDER BY target.createdAt DESC
 """
 
 GET_DEPENDENTS = """
 MATCH (target:Issue {id: $issue_id})<-[:DEPENDS_ON]-(source:Issue)
 RETURN source
-ORDER BY source.created_at DESC
+ORDER BY source.createdAt DESC
 """
 
 GET_DEPENDENCY_CHAIN = """
@@ -619,10 +619,10 @@ DETACH DELETE l
 
 GET_COST_PER_COMPONENT = """
 MATCH (i:Issue)-[:BELONGS_TO]->(c:Component)
-WHERE i.status = 'CLOSED' AND i.actual_hours IS NOT NULL AND i.hourly_rate_tier IS NOT NULL
-WITH c, i.actual_hours AS hours, i.hourly_rate_tier AS tier
+WHERE i.status = 'CLOSED' AND i.actualHours IS NOT NULL AND i.hourlyRateTier IS NOT NULL
+WITH c, i.actualHours AS hours, i.hourlyRateTier AS tier
 WITH c, COLLECT({hours: hours, tier: tier}) AS issue_data
-RETURN c.id AS component_id, c.name AS component_name,
+RETURN c.id AS componentId, c.name AS component_name,
        SUM(CASE WHEN 'JUNIOR' THEN hours * 75.0
                WHEN 'SENIOR' THEN hours * 125.0
                WHEN 'STAFF' THEN hours * 175.0
@@ -640,10 +640,10 @@ ORDER BY actual_cost DESC
 
 GET_COST_PER_EPIC = """
 MATCH (i:Issue)-[:PART_OF]->(e:Epic)
-WHERE i.status = 'CLOSED' AND i.actual_hours IS NOT NULL AND i.hourly_rate_tier IS NOT NULL
-WITH e, i.actual_hours AS hours, i.hourly_rate_tier AS tier
+WHERE i.status = 'CLOSED' AND i.actualHours IS NOT NULL AND i.hourlyRateTier IS NOT NULL
+WITH e, i.actualHours AS hours, i.hourlyRateTier AS tier
 WITH e, COLLECT({hours: hours, tier: tier}) AS issue_data
-RETURN e.id AS epic_id, e.name AS epic_name,
+RETURN e.id AS epicId, e.name AS epic_name,
        SUM(CASE WHEN 'JUNIOR' THEN hours * 75.0
                WHEN 'SENIOR' THEN hours * 125.0
                WHEN 'STAFF' THEN hours * 175.0
@@ -656,10 +656,10 @@ ORDER BY actual_cost DESC
 
 GET_COST_PER_PROJECT = """
 MATCH (i:Issue)-[:BELONGS_TO]->(c:Component)-[:BELONGS_TO]->(p:Project)
-WHERE i.status = 'CLOSED' AND i.actual_hours IS NOT NULL AND i.hourly_rate_tier IS NOT NULL
-WITH p, i.actual_hours AS hours, i.hourly_rate_tier AS tier
+WHERE i.status = 'CLOSED' AND i.actualHours IS NOT NULL AND i.hourlyRateTier IS NOT NULL
+WITH p, i.actualHours AS hours, i.hourlyRateTier AS tier
 WITH p, COLLECT({hours: hours, tier: tier}) AS issue_data
-RETURN p.id AS project_id, p.name AS project_name,
+RETURN p.id AS projectId, p.name AS project_name,
        SUM(CASE WHEN 'JUNIOR' THEN hours * 75.0
                WHEN 'SENIOR' THEN hours * 125.0
                WHEN 'STAFF' THEN hours * 175.0
@@ -672,8 +672,8 @@ ORDER BY actual_cost DESC
 
 GET_COST_SUMMARY = """
 MATCH (i:Issue)
-WHERE i.status = 'CLOSED' AND i.actual_hours IS NOT NULL AND i.hourly_rate_tier IS NOT NULL
-WITH i.actual_hours AS hours, i.hourly_rate_tier AS tier
+WHERE i.status = 'CLOSED' AND i.actualHours IS NOT NULL AND i.hourlyRateTier IS NOT NULL
+WITH i.actualHours AS hours, i.hourlyRateTier AS tier
 RETURN SUM(CASE WHEN 'JUNIOR' THEN hours * 75.0
               WHEN 'SENIOR' THEN hours * 125.0
               WHEN 'STAFF' THEN hours * 175.0
@@ -734,8 +734,8 @@ RETURN i
 
 SEARCH_BY_EMBEDDING = """
 MATCH (i:Issue)
-WHERE i.description_embedding IS NOT NULL
-WITH i, apoc.algo.similarity(i.description_embedding, $embedding, 'cosine') AS score
+WHERE i.descriptionEmbedding IS NOT NULL
+WITH i, apoc.algo.similarity(i.descriptionEmbedding, $embedding, 'cosine') AS score
 WHERE score > $threshold
 RETURN i.id AS issue_id, i.title AS title, score
 ORDER BY score DESC
@@ -744,11 +744,11 @@ LIMIT $limit
 
 FIND_SIMILAR_ISSUES = """
 MATCH (i:Issue {id: $issue_id})
-WHERE i.description_embedding IS NOT NULL
+WHERE i.descriptionEmbedding IS NOT NULL
 WITH i
 MATCH (other:Issue)
-WHERE other.id <> i.id AND other.description_embedding IS NOT NULL
-WITH other, apoc.algo.similarity(i.description_embedding, other.description_embedding, 'cosine') AS score
+WHERE other.id <> i.id AND other.descriptionEmbedding IS NOT NULL
+WITH other, apoc.algo.similarity(i.descriptionEmbedding, other.descriptionEmbedding, 'cosine') AS score
 WHERE score > $threshold
 RETURN other.id AS issue_id, other.title AS title, score
 ORDER BY score DESC
@@ -757,7 +757,7 @@ LIMIT $limit
 
 UPDATE_ISSUE_EMBEDDING = """
 MATCH (i:Issue {id: $id})
-SET i.description_embedding = $embedding
+SET i.descriptionEmbedding = $embedding
 """
 
 ISSUE_AFFECTS_FILE = """
@@ -765,7 +765,7 @@ MATCH (i:Issue {id: $issue_id})
 MATCH (f:CodeFile)
 WHERE f.path CONTAINS $file_path OR f.name = $file_path
 MERGE (i)-[r:AFFECTS]->(f)
-SET r.closed_at = $closed_at
+SET r.closedAt = $closedAt
 RETURN i, f
 """
 
@@ -773,8 +773,8 @@ FIND_ISSUES_AFFECTING_FILE = """
 MATCH (i:Issue)-[r:AFFECTS]->(f:CodeFile)
 WHERE f.path CONTAINS $file_path OR f.name = $file_path
 WHERE i.status = 'CLOSED'
-RETURN i.id as issue_id, i.title as title, f.path as file_path, r.closed_at as closed_at
-ORDER BY r.closed_at DESC
+RETURN i.id as issue_id, i.title as title, f.path as file_path, r.closedAt as closedAt
+ORDER BY r.closedAt DESC
 LIMIT toInteger($limit)
 """
 
@@ -782,15 +782,15 @@ ISSUE_AFFECTS_SYMBOL = """
 MATCH (i:Issue {id: $issue_id})
 MATCH (s:CodeSymbol {id: $symbol_id})
 MERGE (i)-[r:AFFECTS]->(s)
-SET r.closed_at = $closed_at
+SET r.closedAt = $closedAt
 RETURN i, s
 """
 
 FIND_ISSUES_AFFECTING_SYMBOL = """
 MATCH (i:Issue)-[r:AFFECTS]->(s:CodeSymbol {name: $symbol_name})
 WHERE i.status = 'CLOSED'
-RETURN i.id as issue_id, i.title as title, s.name as symbol_name, r.closed_at as closed_at
-ORDER BY r.closed_at DESC
+RETURN i.id as issue_id, i.title as title, s.name as symbol_name, r.closedAt as closedAt
+ORDER BY r.closedAt DESC
 LIMIT toInteger($limit)
 """
 
@@ -804,9 +804,9 @@ CREATE (u:User {
     username: $username,
     email: $email,
     role: $role,
-    github_handle: $github_handle,
-    created_at: $created_at,
-    last_login: $last_login,
+    githubHandle: $githubHandle,
+    createdAt: $createdAt,
+    lastLogin: $lastLogin,
     preferences: $preferences
 })
 RETURN u
@@ -829,7 +829,7 @@ RETURN u
 
 UPDATE_USER = """
 MATCH (u:User {id: $id})
-SET u += $updates, u.updated_at = $updated_at
+SET u += $updates, u.updatedAt = $updatedAt
 RETURN u
 """
 
@@ -848,13 +848,13 @@ LIMIT $limit
 
 UPDATE_LAST_LOGIN = """
 MATCH (u:User {id: $id})
-SET u.last_login = $last_login
+SET u.lastLogin = $lastLogin
 RETURN u
 """
 
 USER_MANAGES_PROJECT = """
 MATCH (u:User {id: $user_id})
-MATCH (p:Project {id: $project_id})
+MATCH (p:Project {id: $projectId})
 MERGE (u)-[:MANAGES]->(p)
 RETURN u, p
 """
@@ -888,7 +888,7 @@ RETURN p
 GET_USER_ISSUES = """
 MATCH (u:User {id: $user_id})-[:ASSIGNED_TO]->(i:Issue)
 RETURN i
-ORDER BY i.created_at DESC
+ORDER BY i.createdAt DESC
 LIMIT $limit
 """
 
@@ -944,7 +944,7 @@ DETACH DELETE c
 
 LINK_COMMIT_TO_AGENT = """
 MATCH (c:Commit {sha: $sha})
-MATCH (a:Agent {id: $agent_id})
+MATCH (a:Agent {id: $agentId})
 MERGE (a)-[:AUTHORED]->(c)
 RETURN a, c
 """
@@ -1030,8 +1030,8 @@ CREATE (p:Policy {
     remediation_strategy: $remediation_strategy,
     autofix_template: $autofix_template,
     is_active: $is_active,
-    created_at: $created_at,
-    updated_at: $updated_at
+    createdAt: $createdAt,
+    updatedAt: $updatedAt
 })
 RETURN p
 """
@@ -1048,7 +1048,7 @@ RETURN p
 
 UPDATE_POLICY = """
 MATCH (p:Policy {id: $id})
-SET p += $updates, p.updated_at = $updated_at
+SET p += $updates, p.updatedAt = $updatedAt
 RETURN p
 """
 
@@ -1069,41 +1069,41 @@ LIMIT $limit
 
 LINK_POLICY_TO_PROJECT = """
 MATCH (p:Policy {id: $policy_id})
-MATCH (proj:Project {id: $project_id})
+MATCH (proj:Project {id: $projectId})
 MERGE (proj)-[:ENFORCES]->(p)
 RETURN proj, p
 """
 
 LINK_POLICY_TO_AGENT = """
 MATCH (p:Policy {id: $policy_id})
-MATCH (a:Agent {id: $agent_id})
+MATCH (a:Agent {id: $agentId})
 MERGE (a)-[:MUST_COMPLY_WITH]->(p)
 RETURN a, p
 """
 
 LINK_POLICY_TO_COMPONENT = """
 MATCH (p:Policy {id: $policy_id})
-MATCH (c:Component {id: $component_id})
+MATCH (c:Component {id: $componentId})
 MERGE (p)-[:APPLIES_TO]->(c)
 RETURN p, c
 """
 
 GET_POLICIES_FOR_PROJECT = """
-MATCH (proj:Project {id: $project_id})-[:ENFORCES]->(p:Policy)
+MATCH (proj:Project {id: $projectId})-[:ENFORCES]->(p:Policy)
 RETURN p
 ORDER BY p.name
 LIMIT $limit
 """
 
 GET_POLICIES_FOR_AGENT = """
-MATCH (a:Agent {id: $agent_id})-[:MUST_COMPLY_WITH]->(p:Policy)
+MATCH (a:Agent {id: $agentId})-[:MUST_COMPLY_WITH]->(p:Policy)
 RETURN p
 ORDER BY p.name
 LIMIT $limit
 """
 
 GET_POLICIES_FOR_COMPONENT = """
-MATCH (p:Policy)-[:APPLIES_TO]->(c:Component {id: $component_id})
+MATCH (p:Policy)-[:APPLIES_TO]->(c:Component {id: $componentId})
 RETURN p
 ORDER BY p.name
 LIMIT $limit

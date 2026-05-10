@@ -46,13 +46,18 @@ All work must be tied to an issue in Tasker.
 - **Find Work**: Use `tasker issue list` or check the Kanban board at `http://localhost:8080`.
 - **Start Work**: Mark the issue as "IN PROGRESS" or log a reasoning entry stating you are starting.
 
-## 4. Log Your Reasoning
-Tasker isn't just for tracking tasks; it's for tracking **why** decisions were made.
+## 4. Log Your Reasoning (Organizational Memory)
+Tasker isn't just for tracking tasks; it's for tracking **why** decisions were made. This creates a causal graph that allows future agents and humans to understand the logic behind the code.
+
 - **Log Decisions**: When you make an architectural choice or resolve a complex bug, use:
   ```bash
-  tasker reasoning log --issue <ID> --thought "I am choosing X because Y" --decision "Use X"
+  tasker reasoning log --issue <ID> \
+    --thought "Implementing hexagonal architecture for X." \
+    --decision "Hexagonal" \
+    --alternatives "Layered, Monolithic" \
+    --rejected "Layered is too coupled, Monolithic is not scalable"
   ```
-- **Why?**: This builds the "Organizational Memory" that future agents and humans will use to understand the codebase.
+- **Why?**: This builds the **Organizational Memory**. If a bug appears later, Tasker can trace it back to this specific reasoning node to see what options were rejected and why.
 
 ## 5. Query the Knowledge Base (RAG)
 Before solving a problem, check if it has been solved before or if there are Architectural Decisions (ADRs) that guide the solution:

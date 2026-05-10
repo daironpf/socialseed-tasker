@@ -119,10 +119,10 @@ class CodeGraphParser:
                 path=str(file_path.relative_to(repo_path)),
                 name=file_path.name,
                 language=language,
-                lines_of_code=len(file_content.splitlines()),
-                file_hash=file_hash,
-                commit_sha=commit_sha,
-                repository_path=str(repo_path),
+                linesOfCode=len(file_content.splitlines()),
+                fileHash=file_hash,
+                commitSha=commit_sha,
+                repositoryPath=str(repo_path),
             )
             files.append(code_file)
 
@@ -145,22 +145,22 @@ class CodeGraphParser:
 
         resolved_relationships = []
         for rel in relationships:
-            if rel.relationship_type == RelationshipType.CALLS:
-                if rel.target_id in symbol_map:
-                    resolved_relationships.append(rel.model_copy(update={"target_id": symbol_map[rel.target_id]}))
+            if rel.relationshipType == RelationshipType.CALLS:
+                if rel.targetId in symbol_map:
+                    resolved_relationships.append(rel.model_copy(update={"targetId": symbol_map[rel.targetId]}))
                 else:
                     # Check if it's an external call (module.function)
-                    if "." in rel.target_id:
-                        module_name = rel.target_id.split(".")[0]
+                    if "." in rel.targetId:
+                        module_name = rel.targetId.split(".")[0]
                         if module_name in import_map:
-                            prefix = f"imported:{rel.target_id}"
+                            prefix = f"imported:{rel.targetId}"
                         else:
-                            prefix = f"external:{rel.target_id}"
-                        resolved_relationships.append(rel.model_copy(update={"target_id": prefix}))
+                            prefix = f"external:{rel.targetId}"
+                        resolved_relationships.append(rel.model_copy(update={"targetId": prefix}))
                     else:
                         # Local call but not found - mark as unresolved
-                        unresolved_id = f"unresolved:{rel.target_id}"
-                        resolved_relationships.append(rel.model_copy(update={"target_id": unresolved_id}))
+                        unresolved_id = f"unresolved:{rel.targetId}"
+                        resolved_relationships.append(rel.model_copy(update={"targetId": unresolved_id}))
             else:
                 resolved_relationships.append(rel)
 
@@ -301,20 +301,20 @@ class CodeGraphParser:
                     class_name = content[name_node.start_byte:name_node.end_byte]
                     symbol = CodeSymbol(
                         name=class_name,
-                        symbol_type=SymbolType.CLASS,
-                        file_id=file_id,
-                        start_line=node.start_point[0] + 1,
-                        end_line=node.end_point[0] + 1,
-                        start_column=node.start_point[1],
-                        end_column=node.end_point[1],
-                        is_test=is_test,
-                        parent_symbol_id=parent_id
+                        symbolType=SymbolType.CLASS,
+                        fileId=file_id,
+                        startLine=node.start_point[0] + 1,
+                        endLine=node.end_point[0] + 1,
+                        startColumn=node.start_point[1],
+                        endColumn=node.end_point[1],
+                        isTest=is_test,
+                        parentSymbolId=parent_id
                     )
                     symbols.append(symbol)
                     relationships.append(CodeRelationship(
-                        source_id=file_id,
-                        target_id=symbol.id,
-                        relationship_type=RelationshipType.DEFINES
+                        sourceId=file_id,
+                        targetId=symbol.id,
+                        relationshipType=RelationshipType.DEFINES
                     ))
                     # Traverse children with this class as parent
                     for child in node.children:
@@ -342,22 +342,22 @@ class CodeGraphParser:
 
                     symbol = CodeSymbol(
                         name=func_name,
-                        symbol_type=SymbolType.METHOD if parent_id else SymbolType.FUNCTION,
-                        file_id=file_id,
-                        start_line=node.start_point[0] + 1,
-                        end_line=node.end_point[0] + 1,
-                        start_column=node.start_point[1],
-                        end_column=node.end_point[1],
+                        symbolType=SymbolType.METHOD if parent_id else SymbolType.FUNCTION,
+                        fileId=file_id,
+                        startLine=node.start_point[0] + 1,
+                        endLine=node.end_point[0] + 1,
+                        startColumn=node.start_point[1],
+                        endColumn=node.end_point[1],
                         parameters=params,
-                        return_type=return_type,
-                        is_test=is_test or func_name.startswith("test_"),
-                        parent_symbol_id=parent_id
+                        returnType=return_type,
+                        isTest=is_test or func_name.startswith("test_"),
+                        parentSymbolId=parent_id
                     )
                     symbols.append(symbol)
                     relationships.append(CodeRelationship(
-                        source_id=parent_id if parent_id else file_id,
-                        target_id=symbol.id,
-                        relationship_type=RelationshipType.DEFINES if not parent_id else RelationshipType.CONTAINS
+                        sourceId=parent_id if parent_id else file_id,
+                        targetId=symbol.id,
+                        relationshipType=RelationshipType.DEFINES if not parent_id else RelationshipType.CONTAINS
                     ))
 
             elif node.type in ("import_statement", "import_from_statement"):
@@ -379,17 +379,17 @@ class CodeGraphParser:
                 
                 if module_name:
                     imp = CodeImport(
-                        file_id=file_id,
+                        fileId=file_id,
                         module=module_name,
                         names=imported_names,
-                        line_number=node.start_point[0] + 1,
-                        is_from=(node.type == "import_from_statement")
+                        lineNumber=node.start_point[0] + 1,
+                        isFrom=(node.type == "import_from_statement")
                     )
                     imports.append(imp)
                     relationships.append(CodeRelationship(
-                        source_id=file_id,
-                        target_id=imp.id,
-                        relationship_type=RelationshipType.IMPORTS
+                        sourceId=file_id,
+                        targetId=imp.id,
+                        relationshipType=RelationshipType.IMPORTS
                     ))
 
             elif node.type == "call":
@@ -401,9 +401,9 @@ class CodeGraphParser:
                     # So we'll just record it as a relationship if we're inside a function
                     if parent_id:
                         relationships.append(CodeRelationship(
-                            source_id=parent_id,
-                            target_id=called_name, # Placeholder, should be resolved later
-                            relationship_type=RelationshipType.CALLS
+                            sourceId=parent_id,
+                            targetId=called_name, # Placeholder, should be resolved later
+                            relationshipType=RelationshipType.CALLS
                         ))
 
             for child in node.children:
@@ -443,18 +443,18 @@ class CodeGraphParser:
                     class_name = content[name_node.start_byte:name_node.end_byte]
                     symbol = CodeSymbol(
                         name=class_name,
-                        symbol_type=SymbolType.CLASS,
-                        file_id=file_id,
-                        start_line=node.start_point[0] + 1,
-                        end_line=node.end_point[0] + 1,
-                        start_column=node.start_point[1],
-                        end_column=node.end_point[1],
-                        is_test=is_test,
-                        parent_symbol_id=parent_id
+                        symbolType=SymbolType.CLASS,
+                        fileId=file_id,
+                        startLine=node.start_point[0] + 1,
+                        endLine=node.end_point[0] + 1,
+                        startColumn=node.start_point[1],
+                        endColumn=node.end_point[1],
+                        isTest=is_test,
+                        parentSymbolId=parent_id
                     )
                     symbols.append(symbol)
                     relationships.append(CodeRelationship(
-                        source_id=file_id, target_id=symbol.id, relationship_type=RelationshipType.DEFINES
+                        sourceId=file_id, targetId=symbol.id, relationshipType=RelationshipType.DEFINES
                     ))
                     for child in node.children: traverse(child, symbol.id)
                     return
@@ -465,20 +465,20 @@ class CodeGraphParser:
                     func_name = content[name_node.start_byte:name_node.end_byte]
                     symbol = CodeSymbol(
                         name=func_name,
-                        symbol_type=SymbolType.METHOD if parent_id else SymbolType.FUNCTION,
-                        file_id=file_id,
-                        start_line=node.start_point[0] + 1,
-                        end_line=node.end_point[0] + 1,
-                        start_column=node.start_point[1],
-                        end_column=node.end_point[1],
-                        is_test=is_test or func_name.startswith("test"),
-                        parent_symbol_id=parent_id
+                        symbolType=SymbolType.METHOD if parent_id else SymbolType.FUNCTION,
+                        fileId=file_id,
+                        startLine=node.start_point[0] + 1,
+                        endLine=node.end_point[0] + 1,
+                        startColumn=node.start_point[1],
+                        endColumn=node.end_point[1],
+                        isTest=is_test or func_name.startswith("test"),
+                        parentSymbolId=parent_id
                     )
                     symbols.append(symbol)
                     relationships.append(CodeRelationship(
-                        source_id=parent_id or file_id,
-                        target_id=symbol.id,
-                        relationship_type=RelationshipType.DEFINES if not parent_id else RelationshipType.CONTAINS
+                        sourceId=parent_id or file_id,
+                        targetId=symbol.id,
+                        relationshipType=RelationshipType.DEFINES if not parent_id else RelationshipType.CONTAINS
                     ))
 
             elif node.type == "import_statement":
@@ -490,11 +490,11 @@ class CodeGraphParser:
                 
                 if module_name:
                     imp = CodeImport(
-                        file_id=file_id, module=module_name, line_number=node.start_point[0] + 1
+                        fileId=file_id, module=module_name, lineNumber=node.start_point[0] + 1
                     )
                     imports.append(imp)
                     relationships.append(CodeRelationship(
-                        source_id=file_id, target_id=imp.id, relationship_type=RelationshipType.IMPORTS
+                        sourceId=file_id, targetId=imp.id, relationshipType=RelationshipType.IMPORTS
                     ))
 
             elif node.type == "call_expression":
@@ -502,7 +502,7 @@ class CodeGraphParser:
                 if func_node and parent_id:
                     called_name = content[func_node.start_byte:func_node.end_byte]
                     relationships.append(CodeRelationship(
-                        source_id=parent_id, target_id=called_name, relationship_type=RelationshipType.CALLS
+                        sourceId=parent_id, targetId=called_name, relationshipType=RelationshipType.CALLS
                     ))
 
             for child in node.children:
@@ -534,14 +534,14 @@ class CodeGraphParser:
                 if name_node:
                     class_name = content[name_node.start_byte:name_node.end_byte]
                     symbol = CodeSymbol(
-                        name=class_name, symbol_type=SymbolType.CLASS, file_id=file_id,
-                        start_line=node.start_point[0] + 1, end_line=node.end_point[0] + 1,
-                        start_column=node.start_point[1], end_column=node.end_point[1],
-                        is_test=is_test, parent_symbol_id=parent_id
+                        name=class_name, symbolType=SymbolType.CLASS, fileId=file_id,
+                        startLine=node.start_point[0] + 1, endLine=node.end_point[0] + 1,
+                        startColumn=node.start_point[1], endColumn=node.end_point[1],
+                        isTest=is_test, parentSymbolId=parent_id
                     )
                     symbols.append(symbol)
                     relationships.append(CodeRelationship(
-                        source_id=file_id, target_id=symbol.id, relationship_type=RelationshipType.DEFINES
+                        sourceId=file_id, targetId=symbol.id, relationshipType=RelationshipType.DEFINES
                     ))
                     for child in node.children: traverse(child, symbol.id)
                     return
@@ -550,16 +550,16 @@ class CodeGraphParser:
                 if name_node:
                     func_name = content[name_node.start_byte:name_node.end_byte]
                     symbol = CodeSymbol(
-                        name=func_name, symbol_type=SymbolType.METHOD, file_id=file_id,
-                        start_line=node.start_point[0] + 1, end_line=node.end_point[0] + 1,
-                        start_column=node.start_point[1], end_column=node.end_point[1],
-                        is_test=is_test, parent_symbol_id=parent_id
+                        name=func_name, symbolType=SymbolType.METHOD, fileId=file_id,
+                        startLine=node.start_point[0] + 1, endLine=node.end_point[0] + 1,
+                        startColumn=node.start_point[1], endColumn=node.end_point[1],
+                        isTest=is_test, parentSymbolId=parent_id
                     )
                     symbols.append(symbol)
                     relationships.append(CodeRelationship(
-                        source_id=parent_id or file_id,
-                        target_id=symbol.id,
-                        relationship_type=RelationshipType.DEFINES if not parent_id else RelationshipType.CONTAINS
+                        sourceId=parent_id or file_id,
+                        targetId=symbol.id,
+                        relationshipType=RelationshipType.DEFINES if not parent_id else RelationshipType.CONTAINS
                     ))
             for child in node.children: traverse(child, parent_id)
 
@@ -589,14 +589,14 @@ class CodeGraphParser:
                 if name_node:
                     class_name = content[name_node.start_byte:name_node.end_byte]
                     symbol = CodeSymbol(
-                        name=class_name, symbol_type=SymbolType.CLASS, file_id=file_id,
-                        start_line=node.start_point[0] + 1, end_line=node.end_point[0] + 1,
-                        start_column=node.start_point[1], end_column=node.end_point[1],
-                        is_test=is_test, parent_symbol_id=parent_id
+                        name=class_name, symbolType=SymbolType.CLASS, fileId=file_id,
+                        startLine=node.start_point[0] + 1, endLine=node.end_point[0] + 1,
+                        startColumn=node.start_point[1], endColumn=node.end_point[1],
+                        isTest=is_test, parentSymbolId=parent_id
                     )
                     symbols.append(symbol)
                     relationships.append(CodeRelationship(
-                        source_id=file_id, target_id=symbol.id, relationship_type=RelationshipType.DEFINES
+                        sourceId=file_id, targetId=symbol.id, relationshipType=RelationshipType.DEFINES
                     ))
                     for child in node.children: traverse(child, symbol.id)
                     return
@@ -606,16 +606,16 @@ class CodeGraphParser:
                     # C++ declarators can be complex, this is a simplification
                     func_name = content[declarator.start_byte:declarator.end_byte]
                     symbol = CodeSymbol(
-                        name=func_name, symbol_type=SymbolType.FUNCTION, file_id=file_id,
-                        start_line=node.start_point[0] + 1, end_line=node.end_point[0] + 1,
-                        start_column=node.start_point[1], end_column=node.end_point[1],
-                        is_test=is_test, parent_symbol_id=parent_id
+                        name=func_name, symbolType=SymbolType.FUNCTION, fileId=file_id,
+                        startLine=node.start_point[0] + 1, endLine=node.end_point[0] + 1,
+                        startColumn=node.start_point[1], endColumn=node.end_point[1],
+                        isTest=is_test, parentSymbolId=parent_id
                     )
                     symbols.append(symbol)
                     relationships.append(CodeRelationship(
-                        source_id=parent_id or file_id,
-                        target_id=symbol.id,
-                        relationship_type=RelationshipType.DEFINES if not parent_id else RelationshipType.CONTAINS
+                        sourceId=parent_id or file_id,
+                        targetId=symbol.id,
+                        relationshipType=RelationshipType.DEFINES if not parent_id else RelationshipType.CONTAINS
                     ))
             for child in node.children: traverse(child, parent_id)
 
@@ -655,11 +655,11 @@ class CodeGraphParser:
 
                 imports.append(
                     CodeImport(
-                        file_id=file_id,
+                        fileId=file_id,
                         module=module,
                         names=names,
-                        line_number=i,
-                        is_from="from" in stripped,
+                        lineNumber=i,
+                        isFrom="from" in stripped,
                     )
                 )
                 continue
@@ -672,13 +672,13 @@ class CodeGraphParser:
                 symbols.append(
                     CodeSymbol(
                         name=class_name,
-                        symbol_type=SymbolType.CLASS,
-                        file_id=file_id,
-                        start_line=i,
-                        end_line=i,
-                        start_column=0,
-                        end_column=len(line),
-                        is_test=is_test,
+                        symbolType=SymbolType.CLASS,
+                        fileId=file_id,
+                        startLine=i,
+                        endLine=i,
+                        startColumn=0,
+                        endColumn=len(line),
+                        isTest=is_test,
                     )
                 )
                 continue
@@ -692,21 +692,21 @@ class CodeGraphParser:
                 symbols.append(
                     CodeSymbol(
                         name=func_name,
-                        symbol_type=SymbolType.METHOD if current_class else SymbolType.FUNCTION,
-                        file_id=file_id,
-                        start_line=i,
-                        end_line=i,
-                        start_column=0,
-                        end_column=len(line),
-                        parent_symbol_id=None,
-                        is_test=is_test,
+                        symbolType=SymbolType.METHOD if current_class else SymbolType.FUNCTION,
+                        fileId=file_id,
+                        startLine=i,
+                        endLine=i,
+                        startColumn=0,
+                        endColumn=len(line),
+                        parentSymbolId=None,
+                        isTest=is_test,
                     )
                 )
                 relationships.append(
                     CodeRelationship(
-                        source_id=file_id,
-                        target_id=file_id,
-                        relationship_type=RelationshipType.DEFINES,
+                        sourceId=file_id,
+                        targetId=file_id,
+                        relationshipType=RelationshipType.DEFINES,
                     )
                 )
 
@@ -743,10 +743,10 @@ class CodeGraphParser:
                 if module:
                     imports.append(
                         CodeImport(
-                            file_id=file_id,
+                            fileId=file_id,
                             module=module,
-                            line_number=i,
-                            is_from=True,
+                            lineNumber=i,
+                            isFrom=True,
                         )
                     )
                 continue
@@ -757,13 +757,13 @@ class CodeGraphParser:
                 symbols.append(
                     CodeSymbol(
                         name=current_class,
-                        symbol_type=SymbolType.CLASS,
-                        file_id=file_id,
-                        start_line=i,
-                        end_line=i,
-                        start_column=0,
-                        end_column=len(line),
-                        is_test=is_test,
+                        symbolType=SymbolType.CLASS,
+                        fileId=file_id,
+                        startLine=i,
+                        endLine=i,
+                        startColumn=0,
+                        endColumn=len(line),
+                        isTest=is_test,
                     )
                 )
                 continue
@@ -775,13 +775,13 @@ class CodeGraphParser:
                     symbols.append(
                         CodeSymbol(
                             name=method_name,
-                            symbol_type=SymbolType.METHOD,
-                            file_id=file_id,
-                            start_line=i,
-                            end_line=i,
-                            start_column=len(line) - len(line.lstrip()),
-                            end_column=len(line),
-                            is_test=is_test,
+                            symbolType=SymbolType.METHOD,
+                            fileId=file_id,
+                            startLine=i,
+                            endLine=i,
+                            startColumn=len(line) - len(line.lstrip()),
+                            endColumn=len(line),
+                            isTest=is_test,
                         )
                     )
 

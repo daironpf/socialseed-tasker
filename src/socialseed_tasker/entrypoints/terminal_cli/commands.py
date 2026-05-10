@@ -481,7 +481,7 @@ def issue_list(
 
     if not issues:
         console.print("[info]No issues found.[/info]")
-        console.print('[dim]💡 Tip: Create an issue with: tasker issue create "Title" -c <component_id>[/dim]')
+        console.print('[dim]Tip: Create an issue with: tasker issue create "Title" -c <component_id>[/dim]')
         return
 
     # Build component name lookup
@@ -489,7 +489,7 @@ def issue_list(
     component_names = {str(c.id): c.name for c in components}
 
     console.print(_issues_table(issues, component_names))
-    console.print("[dim]💡 Use -s OPEN to see only open issues, or -c <id> to filter by component[/dim]")
+    console.print("[dim]Use -s OPEN to see only open issues, or -c <id> to filter by component[/dim]")
 
 
 @issue_app.command("show")
@@ -2107,7 +2107,7 @@ def code_graph_find(
         with suppress(ValueError):
             sym_type = SymbolType(symbol_type)
 
-    results = repo.find_symbols(name=name, symbol_type=sym_type, limit=limit)
+    results = repo.find_symbols(name=name, symbolType=sym_type, limit=limit)
 
     if not results:
         console.print("[info]No symbols found[/info]")
@@ -2122,9 +2122,9 @@ def code_graph_find(
     for sym in results:
         table.add_row(
             sym.get("name", ""),
-            sym.get("symbol_type", ""),
-            "",
-            str(sym.get("start_line", "")),
+            sym.get("symbolType", ""),
+            sym.get("filePath", ""),
+            str(sym.get("startLine", "")),
         )
 
     console.print(Panel(table, title=f"[bold]Symbols ({len(results)} found)[/bold]"))
@@ -2166,7 +2166,7 @@ def code_graph_files(
             f.get("path", ""),
             f.get("name", ""),
             f.get("language", ""),
-            str(f.get("lines_of_code", 0)),
+            str(f.get("linesOfCode", 0)),
         )
 
     console.print(Panel(table, title=f"[bold]Files ({len(files)} found)[/bold]"))
@@ -2188,9 +2188,9 @@ def code_graph_stats() -> None:
     stats = repo.get_stats()
 
     console.print(Panel(
-        f"[bold]Total Files:[/bold] {stats.total_files}\n"
-        f"[bold]Total Symbols:[/bold] {stats.total_symbols}\n"
-        f"[bold]Total Relationships:[/bold] {stats.total_relationships}",
+        f"[bold]Total Files:[/bold] {stats.totalFiles}\n"
+        f"[bold]Total Symbols:[/bold] {stats.totalSymbols}\n"
+        f"[bold]Total Relationships:[/bold] {stats.totalRelationships}",
         title="[bold]Code Graph Statistics[/bold]",
     ))
 
@@ -2246,8 +2246,8 @@ def code_graph_impact(
     for caller in callers:
         table.add_row(
             caller.get("name", ""),
-            caller.get("symbol_type", ""),
-            caller.get("file_id", ""),
+            caller.get("symbolType", ""),
+            caller.get("fileId", ""),
         )
 
     console.print(Panel(table, title=f"[bold]Impact Analysis for '{symbol_name}'[/bold]"))
@@ -2281,8 +2281,8 @@ def code_graph_calls(
     for caller in callers:
         table.add_row(
             caller.get("name", ""),
-            caller.get("symbol_type", ""),
-            caller.get("file_path", ""),
+            caller.get("symbolType", ""),
+            caller.get("filePath", ""),
         )
 
     console.print(Panel(table, title=f"[bold]Callers of '{path}'[/bold]"))
@@ -2350,7 +2350,7 @@ def code_graph_tests(
     for test in tests:
         table.add_row(
             test.get("path", ""),
-            test.get("symbol_type", ""),
+            test.get("symbolType", ""),
         )
 
     console.print(Panel(table, title=f"[bold]Tests for '{path}'[/bold]"))
@@ -2420,7 +2420,7 @@ def rag_search(
 
     for r in results:
         content_preview = r["content"][:57] + "..." if len(r["content"]) > 60 else r["content"]
-        table.add_row(content_preview, f"{r['source_type']}:{r['source_id'][:8]}", f"{r['score']:.2f}")
+        table.add_row(content_preview, f"{r['sourceType']}:{r['sourceId'][:8]}", f"{r['score']:.2f}")
 
     console.print(Panel(table, title=f"[bold]Search Results for '{query}'[/bold]"))
 
@@ -2587,6 +2587,8 @@ def reasoning_log(
     confidence: float = typer.Option(0.5, "--confidence", "-c", help="Confidence 0.0-1.0"),
     decision: str = typer.Option(None, "--decision", "-d", help="Decision made"),
     decision_type: str = typer.Option("unknown", "--type", "-ty", help="Decision type"),
+    alternatives: str = typer.Option(None, "--alternatives", "-alt", help="Comma-separated alternatives considered"),
+    rejected: str = typer.Option(None, "--rejected", "-rej", help="Comma-separated reasons for rejecting alternatives"),
 ) -> None:
     """Log agent reasoning for an issue."""
     from socialseed_tasker.bootstrap.wiring import get_driver
@@ -2603,11 +2605,16 @@ def reasoning_log(
     except ValueError:
         decision_type_enum = DecisionType.UNKNOWN
 
+    alt_list = [a.strip() for a in alternatives.split(",")] if alternatives else []
+    rej_list = [r.strip() for r in rejected.split(",")] if rejected else []
+
     reasoning = ReasoningNode(
         thought=thought,
         confidence=confidence,
         decision=decision,
-        decision_type=decision_type_enum,
+        decisionType=decision_type_enum,
+        alternativesConsidered=alt_list,
+        rejectedReasons=rej_list,
     )
 
     repo = ReasoningRepository(driver)
@@ -2793,6 +2800,8 @@ def agent_reasoning(
     thought: str = typer.Option(..., "--thought", "-t", help="Thought/decision"),
     decision: str = typer.Option("", "--decision", "-d", help="Decision made"),
     decision_type: str = typer.Option("unknown", "--type", "-ty", help="Decision type"),
+    alternatives: str = typer.Option(None, "--alternatives", "-alt", help="Comma-separated alternatives considered"),
+    rejected: str = typer.Option(None, "--rejected", "-rej", help="Comma-separated reasons for rejecting alternatives"),
 ) -> None:
     """Log agent reasoning for issue resolution."""
     from socialseed_tasker.bootstrap.wiring import get_driver

@@ -109,19 +109,19 @@ class CodeRelationship(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     id: str = Field(default_factory=lambda: str(uuid4()))
-    source_id: str
-    target_id: str
-    relationship_type: RelationshipType
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    commit_sha: str | None = None
+    sourceId: str
+    targetId: str
+    relationshipType: RelationshipType
+    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    commitSha: str | None = None
 
 
 class CodeGraphStats(BaseModel):
     """Statistics about the code graph."""
 
-    total_files: int = 0
-    total_symbols: int = 0
-    total_relationships: int = 0
-    by_language: dict[str, int] = Field(default_factory=dict)
-    by_symbol_type: dict[SymbolType, int] = Field(default_factory=dict)
-    last_scan: datetime | None = None
+    totalFiles: int = 0
+    totalSymbols: int = 0
+    totalRelationships: int = 0
+    byLanguage: dict[str, int] = Field(default_factory=dict)
+    bySymbolType: dict[SymbolType, int] = Field(default_factory=dict)
+    lastScan: datetime | None = None

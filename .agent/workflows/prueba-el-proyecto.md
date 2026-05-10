@@ -199,36 +199,87 @@ done
 
 ---
 
-## Phase 4: Implementation & Doc Sync Evaluation
+## Phase 4: Implementation & Doc-Sync Behavior Analysis
+
+### ⚠️ REQUIRED SKILLS for Phase 4
+
+**BEFORE starting Phase 4**, the agent MUST load these skills in order:
+
+1. **`.agent/skills/programming-agent-governance.md`** (PRIMARY)
+   - Issue resolution workflow
+   - Policy compliance
+   - Breaking changes prevention
+   
+2. **`.agent/skills/code-as-graph-analysis.md`** (GRAPH AWARENESS)
+   - Graph relationship queries
+   - Impact analysis (CodeSymbol CALLS)
+   - Causal traceability
+   
+3. **`.agent/skills/documentation-sync.md`**
+   - Doc sync rules
+   
+4. **`.agent/skills/hexagonal-architecture.md`**
+   - Architecture constraints
+
+### Graph Relationships for Issue Resolution
+
+The agent MUST leverage these graph relationships as defined in `GraphDataModelDetails.md`:
+
+| Relationship | Description | Used When |
+|--------------|-------------|-----------|
+| `(Project)-[:HAS_ISSUE]->(Issue)` | Issue belongs to project | Create/assign issue |
+| `(Issue)-[:PART_OF]->(Component)` | Issue linked to component | Check scope |
+| `(Issue)-[:DEPENDS_ON]->(Issue)` | Issue dependencies | Verify closed before work |
+| `(Issue)-[:RESOLVED_BY]->(Commit)` | Issue solved by commit | Close issue with commit |
+| `(Agent)-[:PRODUCED]->(ReasoningNode)` | Agent reasoning trace | Add reasoning log |
+| `(Agent)-[:MUST_COMPLY_WITH]->(Policy)` | Policy enforcement | Check before changes |
+| `(Issue)-[:AFFECTS]->(CodeSymbol)` | Code impacted | Impact analysis |
+| `(CodeSymbol)-[:CALLS]->(CodeSymbol)` | Method dependencies | Find affected code |
 
 ### Objective
-Evaluate how the system handles the transition from "TO-DO" to "DONE", focusing on documentation synchronization and the internal implementation registry.
+Observe and validate the agent's ability to solve technical issues and keep project documentation synchronized, following the specific rules defined in:
+- `.agent/skills/documentation-sync.md`
+- `.agent/skills/hexagonal-architecture.md`
+- `.agent/skills/programming-agent-governance.md` (REQUIRED)
+- `.agent/skills/code-as-graph-analysis.md` (REQUIRED)
 
-### Process (For N issues chosen in Phase 0)
+### Process for Agent Implementation
+For a subset of issues (defined in Phase 0), the agent MUST:
 
-1.  **Pick N Created Issues**: Select a subset of the issues created in Phase 3.
-2.  **Execute Implementation Loop**:
-    -   **Simulate Code Change**: Create/modify a dummy file in the `real-test/` project related to the issue.
-    -   **Update Documentation**: Apply `skills/documentation-sync.md` within the `real-test/` environment:
-        -   Update `README.md` (if feature/command).
-        -   Update `ROADMAP.md` (Known Issues -> Resolved).
-        -   Update `VERSIONS.md` (Checklist).
-    -   **Mark as COMPLETED**: Use the CLI or API to close the issue.
-        ```bash
-        tasker issue close <id> --reason "Implemented during real-test evaluation"
-        ```
-3.  **Verify Implementation Registry**:
-    -   **Status Check**: Verify via API that the issue is truly `COMPLETED`.
-    -   **Reasoning Log**: Check if the reasoning for closing the issue was correctly stored.
-        ```bash
-        tasker reasoning history --issue <id>
-        ```
-    -   **Sync Verification**: If the system uses a local-to-graph sync mechanism, verify that the change is reflected in the Neo4j database.
+1.  **Analyze Context** (Graph-Aware):
+    -   Read the issue details from the API or `.issues/` folder.
+    -   Query graph for component context: `GET /api/v1/components/{id}`
+    -   Query graph for policies: `GET /api/v1/policies?component={id}`
+    -   Consult the `real-test/.agent/skills/` to understand the specific conventions.
+2.  **Execute Technical Implementation**:
+    -   Perform impact analysis before modifying code
+    -   Create or modify source files in `real-test/src/`.
+    -   The code must reflect the requested feature/fix and adhere to the project's architectural constraints.
+3.  **Perform Documentation Sync (CRITICAL)**:
+    -   **ROADMAP.md**: Update the "Last updated" date and mark the issue as RESOLVED in the Known Issues table.
+    -   **VERSIONS.md**: Add a checkmark `[x]` to the corresponding entry in the version checklist.
+    -   **README.md**: If the implementation adds a new CLI command or environment variable, update the "Quick Start" or "Configuration" sections.
+    -   **API_REFERENCE.md**: Update if a new endpoint was added.
+4.  **Verification**:
+    -   Ensure the implementation is correctly registered in the system (e.g., closing the issue via API with a detailed reasoning log).
+    -   Verify that documentation changes are consistent and do not break the formatting of the files.
 
-4.  **Audit Results**:
-    -   If documentation files were not updated correctly → `FINDING: DOC_SYNC_FAILURE`
-    -   If the registry (DB/Logs) does not reflect the implementation → `FINDING: REGISTRY_DESYNC`
-    -   If the process causes data corruption or duplicates → `FINDING: INTEGRITY_ERROR`
+### Audit Criteria for Agent Behavior
+- **Adherence**: Did the agent follow `documentation-sync.md`?
+- **Integration**: Is the code consistent with the documentation updates?
+- **Reasoning**: Do the reasoning logs in the API reflect the actual technical decisions made?
+- **Self-Correction**: If the agent detects a doc gap while implementing, does it fix it?
+- **Governance**: Did the agent follow `programming-agent-governance.md`? (REQUIRED)
+  - Used Tasker API endpoints for documentation?
+  - Checked policies before implementation?
+  - Added reasoning log on close?
+  - Updated ROADMAP.md and VERSIONS.md?
+- **Graph Awareness**: Did the agent follow `code-as-graph-analysis.md`? (REQUIRED)
+  - Queried component context from graph?
+  - Performed impact analysis before code changes?
+  - Linked CodeSymbols to issue in reasoning log?
+  - Verified no policy violations?
+
 
 ---
 

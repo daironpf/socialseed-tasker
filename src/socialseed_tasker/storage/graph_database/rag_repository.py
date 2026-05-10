@@ -22,9 +22,9 @@ RAG_QUERIES = {
         MERGE (e:RAGEmbedding {id: $id})
         SET e.content = $content,
             e.embedding = $embedding,
-            e.source_type = $source_type,
-            e.source_id = $source_id,
-            e.created_at = timestamp()
+            e.sourceType = $source_type,
+            e.sourceId = $source_id,
+            e.createdAt = timestamp()
         RETURN e
     """,
     "create_vector_index": """
@@ -41,16 +41,16 @@ RAG_QUERIES = {
         CALL db.index.vector.searchNodes('rag_index', $limit, $embedding)
         YIELD node, score
         RETURN node.id as id, node.content as content,
-               node.source_type as source_type, node.source_id as source_id,
+               node.sourceType as source_type, node.sourceId as source_id,
                score
         ORDER BY score DESC
     """,
     "search_by_source": """
-        MATCH (e:RAGEmbedding {source_type: $source_type, source_id: $source_id})
+        MATCH (e:RAGEmbedding {sourceType: $source_type, sourceId: $source_id})
         RETURN e.id as id, e.content as content
     """,
     "delete_by_source": """
-        MATCH (e:RAGEmbedding {source_type: $source_type, source_id: $source_id})
+        MATCH (e:RAGEmbedding {sourceType: $source_type, sourceId: $source_id})
         DETACH DELETE e
     """,
     "count_embeddings": """
@@ -59,7 +59,7 @@ RAG_QUERIES = {
     """,
     "get_stats": """
         MATCH (e:RAGEmbedding)
-        RETURN e.source_type as source_type, count(e) as count
+        RETURN e.sourceType as source_type, count(e) as count
     """,
 }
 
@@ -94,16 +94,16 @@ class RAGRepository:
     def index_text(
         self,
         text: str,
-        source_type: str,
-        source_id: str,
+        sourceType: str,
+        sourceId: str,
         chunking_strategy: str = "paragraph",
     ) -> list[str]:
         """Index text content with embeddings.
 
         Args:
             text: Text to index
-            source_type: Type of source (issue, adr, code, doc)
-            source_id: ID of the source
+            sourceType: Type of source (issue, adr, code, doc)
+            sourceId: ID of the source
             chunking_strategy: Strategy for chunking (paragraph, lines, sentences)
 
         Returns:
@@ -139,8 +139,8 @@ class RAGRepository:
                             "id": chunk_id,
                             "content": chunk.content,
                             "embedding": chunk.embedding,
-                            "source_type": source_type,
-                            "source_id": source_id,
+                            "sourceType": source_type,
+                            "sourceId": source_id,
                         },
                     )
             else:
@@ -153,8 +153,8 @@ class RAGRepository:
                             "id": chunk_id,
                             "content": chunk,
                             "embedding": [],
-                            "source_type": source_type,
-                            "source_id": source_id,
+                            "sourceType": source_type,
+                            "sourceId": source_id,
                         },
                     )
 
@@ -192,8 +192,8 @@ class RAGRepository:
                     {
                         "id": record["id"],
                         "content": record["content"],
-                        "source_type": record["source_type"],
-                        "source_id": record["source_id"],
+                        "sourceType": record["sourceType"],
+                        "sourceId": record["sourceId"],
                         "score": record["score"],
                     }
                     for record in result
@@ -209,7 +209,7 @@ class RAGRepository:
             result = session.run(
                 "MATCH (e:RAGEmbedding) WHERE size(e.embedding) > 0 "
                 "RETURN e.id as id, e.content as content, "
-                "e.source_type as source_type, e.source_id as source_id, e.embedding as embedding",
+                "e.sourceType as source_type, e.sourceId as source_id, e.embedding as embedding",
             )
 
             import math
@@ -229,8 +229,8 @@ class RAGRepository:
                         results.append({
                             "id": record["id"],
                             "content": record["content"],
-                            "source_type": record["source_type"],
-                            "source_id": record["source_id"],
+                            "sourceType": record["sourceType"],
+                            "sourceId": record["sourceId"],
                             "score": score,
                         })
 
@@ -247,16 +247,16 @@ class RAGRepository:
             stats_result = session.run(RAG_QUERIES["get_stats"])
             by_type = {}
             for record in stats_result:
-                by_type[record["source_type"]] = record["count"]
+                by_type[record["sourceType"]] = record["count"]
 
             return {"total": total, "by_type": by_type}
 
-    def delete_by_source(self, source_type: str, source_id: str) -> None:
+    def delete_by_source(self, sourceType: str, sourceId: str) -> None:
         """Delete all embeddings for a source."""
         with self._get_session() as session:
             session.run(
                 RAG_QUERIES["delete_by_source"],
-                {"source_type": source_type, "source_id": source_id},
+                {"sourceType": source_type, "sourceId": source_id},
             )
 
     def get_context_for_issue(self, issue_id: str) -> list[dict]:
@@ -281,7 +281,7 @@ class RAGRepository:
         with self._get_session() as session:
             result = session.run("""
                 MATCH (s:CodeSymbol {id: $symbol_id})-[:HAS_VECTOR]->(e:RAGEmbedding)
-                RETURN e.id as id, e.content as content, e.source_type as source_type
+                RETURN e.id as id, e.content as content, e.sourceType as source_type
             """, symbol_id=symbol_id)
             return [dict(r) for r in result]
 

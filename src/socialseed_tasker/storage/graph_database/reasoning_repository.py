@@ -23,11 +23,11 @@ REASONING_QUERIES = {
         MERGE (r:ReasoningNode {id: $id})
         SET r.thought = $thought,
             r.confidence = $confidence,
-            r.alternatives_considered = $alternatives_considered,
-            r.rejected_reasons = $rejected_reasons,
+            r.alternativesConsidered = $alternativesConsidered,
+            r.rejectedReasons = $rejectedReasons,
             r.decision = $decision,
-            r.decision_type = $decision_type,
-            r.created_at = timestamp()
+            r.decisionType = $decisionType,
+            r.createdAt = timestamp()
         WITH r, i
         MERGE (a:Agent {id: $agent_id})
         SET a.name = $agent_name
@@ -38,9 +38,9 @@ REASONING_QUERIES = {
     "get_reasoning_by_issue": """
         MATCH (a:Agent)-[:THOUGHT]->(r:ReasoningNode)-[:DECIDED]->(i:Issue {id: $issue_id})
         RETURN r.id as id, r.thought as thought, r.confidence as confidence,
-               r.alternatives_considered as alternatives, r.rejected_reasons as rejected,
-               r.decision as decision, r.decision_type as decision_type,
-               r.created_at as created_at,
+               r.alternativesConsidered as alternatives, r.rejectedReasons as rejected,
+               r.decision as decision, r.decisionType as decision_type,
+               r.createdAt as created_at,
                a.id as agent_id, a.name as agent_name
         ORDER BY r.created_at DESC
         LIMIT $limit
@@ -48,10 +48,10 @@ REASONING_QUERIES = {
     "get_reasoning_history": """
         MATCH (a:Agent)-[:THOUGHT]->(r:ReasoningNode)-[:DECIDED]->(i:Issue)
         RETURN r.id as id, r.thought as thought, r.confidence as confidence,
-               r.decision as decision, r.decision_type as decision_type,
-               r.created_at as created_at, i.id as issue_id, i.title as issue_title,
+               r.decision as decision, r.decisionType as decision_type,
+               r.createdAt as created_at, i.id as issue_id, i.title as issue_title,
                a.id as agent_id, a.name as agent_name
-        ORDER BY r.created_at DESC
+        ORDER BY r.createdAt DESC
         LIMIT $limit
     """,
     "add_feedback": """
@@ -71,7 +71,7 @@ REASONING_QUERIES = {
     """,
     "get_decision_stats": """
         MATCH (r:ReasoningNode)
-        RETURN r.decision_type as decision_type, count(r) as count,
+        RETURN r.decisionType as decision_type, count(r) as count,
                avg(r.confidence) as avg_confidence
     """,
     "delete_reasoning_by_issue": """
@@ -126,16 +126,16 @@ class ReasoningRepository:
             result = session.run(
                 REASONING_QUERIES["create_reasoning"],
                 {
-                    "id": reasoning.id,
+                    "id": str(reasoning.id),
                     "issue_id": issue_id,
                     "agent_id": agent_id,
                     "agent_name": agent_name,
                     "thought": reasoning.thought,
                     "confidence": reasoning.confidence,
-                    "alternatives_considered": reasoning.alternatives_considered,
-                    "rejected_reasons": reasoning.rejected_reasons,
+                    "alternativesConsidered": reasoning.alternatives_considered,
+                    "rejectedReasons": reasoning.rejected_reasons,
                     "decision": reasoning.decision,
-                    "decision_type": reasoning.decision_type.value,
+                    "decisionType": reasoning.decision_type.value,
                 },
             )
             record = result.single()
