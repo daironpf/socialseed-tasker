@@ -622,9 +622,34 @@ def delete_issue(
 def close_issue(
     issue_id: str,
     affected_files: list[str] = [],
+    force: bool = Query(False, description="Force close even with policy violations"),
     repo: TaskRepositoryInterface = Depends(get_repo),
     request: Request = Depends(get_code_graph_driver),
 ):
+    from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
+    
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+    
+    if not force and issue.component_id:
+        analyzer = ArchitecturalAnalyzer(repo)
+        validation = analyzer.validate_issue_creation(issue)
+        has_blocker = any(v.severity.value == "ERROR" for v in validation.violations)
+        if has_blocker:
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "error": "Policy violation - BLOCKER severity",
+                    "violations": [
+                        {"rule": v.rule_name, "message": v.message}
+                        for v in validation.violations
+                    ],
+                    "hint": "Use ?force=true to override (not recommended)"
+                }
+            )
+    
     issue = close_issue_action(repo, issue_id)
 
     if affected_files and request:
@@ -2332,6 +2357,36 @@ def get_policy_rules(
     ]
 
     return APIResponse(data=rules_data, meta=Meta(request_id=None))
+
+
+@policy_router.get(
+    "/policies/component/{component_id}",
+    response_model=APIResponse[list[dict]],
+    summary="Get policies for component",
+    description="Get all policies that apply to a specific component.",
+)
+def get_policies_for_component(
+    component_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[list[dict]]:
+    from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
+
+    analyzer = ArchitecturalAnalyzer(repo)
+    rules = analyzer.list_rules()
+
+    policies_data = [
+        {
+            "id": str(r.id),
+            "name": r.name,
+            "description": r.description,
+            "severity": r.severity.value if hasattr(r.severity, 'value') else str(r.severity),
+            "rule_type": r.rule_type.value if hasattr(r.rule_type, 'value') else str(r.rule_type),
+            "is_active": r.is_active,
+        }
+        for r in rules
+    ]
+
+    return APIResponse(data=policies_data, meta=Meta(request_id=None))
 
 
 # In-memory policy storage for demonstration

@@ -11,7 +11,7 @@
 | # | Issue | Priority | Status |
 |---|-------|----------|--------|
 | #273 | Implement Issue RESOLVED_BY Commit Relationship | HIGH | PENDING |
-| #272 | Integrate Agent MUST_COMPLY_WITH Policy Validation | HIGH | PENDING |
+| #272 | Integrate Agent MUST_COMPLY_WITH Policy Validation | HIGH | DONE |
 | #271 | Implement CodeSymbol CALLS Impact Analysis | HIGH | DONE |
 | #270 | Implement Issue AFFECTS CodeSymbol Link | HIGH | DONE |
 | #269 | Fix CamelCase Property Mappings in All Repositories | HIGH | DONE |
