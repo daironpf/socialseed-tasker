@@ -491,6 +491,57 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             )
             return [_node_to_issue(r["i"]) for r in result]
 
+    # -- CodeSymbol relationship (AFFECTS) --------------------------------------
+
+    def add_affects_symbol(self, issue_id: str, symbol_id: str) -> None:
+        """Link a CodeSymbol to an Issue (AFFECTS relationship)."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(
+                queries.ISSUE_AFFECTS_SYMBOL,
+                issue_id=issue_id,
+                symbol_id=symbol_id,
+                closedAt=datetime.now(timezone.utc).isoformat(),
+            )
+
+    def get_affected_symbols(self, issue_id: str) -> list[dict[str, Any]]:
+        """Get all CodeSymbols affected by an Issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                """
+                MATCH (i:Issue {id: $issue_id})-[r:AFFECTS]->(s:CodeSymbol)
+                RETURN s.id as id, s.name as name, s.symbolType as symbolType
+                """,
+                issue_id=issue_id,
+            )
+            return [
+                {"id": r["id"], "name": r["name"], "symbol_type": r["symbolType"]}
+                for r in result
+            ]
+
+    def get_issues_affecting_symbol(self, symbol_id: str) -> list[Issue]:
+        """Get all Issues that affect a specific CodeSymbol."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(
+                """
+                MATCH (i:Issue)-[r:AFFECTS]->(s:CodeSymbol {id: $symbol_id})
+                RETURN i
+                """,
+                symbol_id=symbol_id,
+            )
+            return [_node_to_issue(r["i"]) for r in result]
+
+    def remove_affects_symbol(self, issue_id: str, symbol_id: str) -> None:
+        """Remove AFFECTS relationship between Issue and CodeSymbol."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            session.run(
+                """
+                MATCH (i:Issue {id: $issue_id})-[r:AFFECTS]->(s:CodeSymbol {id: $symbol_id})
+                DELETE r
+                """,
+                issue_id=issue_id,
+                symbol_id=symbol_id,
+            )
+
     def find_issues_by_title(
         self,
         title: str,

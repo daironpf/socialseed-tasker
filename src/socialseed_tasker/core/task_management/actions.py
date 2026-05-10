@@ -147,6 +147,20 @@ class TaskRepositoryInterface(Protocol):
     ) -> list[Issue]:
         """Return all issues that can be worked on (not closed and all dependencies closed)."""
 
+    # -- CodeSymbol relationship (AFFECTS) -----------------------------------
+
+    def add_affects_symbol(self, issue_id: str, symbol_id: str) -> None:
+        """Create an [:AFFECTS] relationship to a CodeSymbol."""
+
+    def get_affected_symbols(self, issue_id: str) -> list[dict[str, Any]]:
+        """Return all CodeSymbols affected by this issue."""
+
+    def get_issues_affecting_symbol(self, symbol_id: str) -> list[Issue]:
+        """Return all issues that affect a specific CodeSymbol."""
+
+    def remove_affects_symbol(self, issue_id: str, symbol_id: str) -> None:
+        """Remove an [:AFFECTS] relationship to a CodeSymbol."""
+
     # -- Component CRUD ------------------------------------------------------
 
     def create_component(self, component: Component) -> None:

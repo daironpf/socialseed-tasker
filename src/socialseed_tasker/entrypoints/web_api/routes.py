@@ -9,7 +9,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request  # noqa: B008
+from fastapi import APIRouter, Body, Depends, Query, Request  # noqa: B008
 
 logger = logging.getLogger(__name__)
 
@@ -1308,6 +1308,78 @@ def list_workable_issues(
 ):
     workable = get_workable_issues_action(repo, priority=priority, component_id=component)
     return APIResponse(data=[_issue_to_response(i) for i in workable], meta=Meta(request_id=None))
+
+
+# ---------------------------------------------------------------------------
+# CodeSymbol AFFECTS relationships
+# ---------------------------------------------------------------------------
+
+
+@dependencies_router.post(
+    "/issues/{issue_id}/affects",
+    response_model=APIResponse[dict],
+    summary="Link CodeSymbol to Issue",
+    description="Create an AFFECTS relationship between an Issue and a CodeSymbol.",
+)
+def add_affects_symbol(
+    issue_id: str,
+    symbol_id: str = Body(..., description="The CodeSymbol ID to link"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+    repo.add_affects_symbol(issue_id, symbol_id)
+    return APIResponse(data={"status": "linked", "issue_id": issue_id, "symbol_id": symbol_id}, meta=Meta(request_id=None))
+
+
+@dependencies_router.get(
+    "/issues/{issue_id}/affects",
+    response_model=APIResponse[list[dict]],
+    summary="Get affected CodeSymbols",
+    description="Get all CodeSymbols affected by an Issue.",
+)
+def get_affected_symbols(
+    issue_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+    symbols = repo.get_affected_symbols(issue_id)
+    return APIResponse(data=symbols, meta=Meta(request_id=None))
+
+
+@dependencies_router.delete(
+    "/issues/{issue_id}/affects",
+    response_model=APIResponse[dict],
+    summary="Remove CodeSymbol from Issue",
+    description="Remove an AFFECTS relationship between an Issue and a CodeSymbol.",
+)
+def remove_affects_symbol(
+    issue_id: str,
+    symbol_id: str = Body(..., description="The CodeSymbol ID to unlink"),
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+    repo.remove_affects_symbol(issue_id, symbol_id)
+    return APIResponse(data={"status": "unlinked", "issue_id": issue_id, "symbol_id": symbol_id}, meta=Meta(request_id=None))
+
+
+@dependencies_router.get(
+    "/code/symbols/{symbol_id}/issues",
+    response_model=APIResponse[list[IssueResponse]],
+    summary="Get issues affecting CodeSymbol",
+    description="Get all Issues that affect a specific CodeSymbol.",
+)
+def get_issues_affecting_symbol(
+    symbol_id: str,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+):
+    issues = repo.get_issues_affecting_symbol(symbol_id)
+    return APIResponse(data=[_issue_to_response(i) for i in issues], meta=Meta(request_id=None))
 
 
 # ---------------------------------------------------------------------------

@@ -13,7 +13,7 @@
 | #273 | Implement Issue RESOLVED_BY Commit Relationship | HIGH | PENDING |
 | #272 | Integrate Agent MUST_COMPLY_WITH Policy Validation | HIGH | PENDING |
 | #271 | Implement CodeSymbol CALLS Impact Analysis | HIGH | PENDING |
-| #270 | Implement Issue AFFECTS CodeSymbol Link | HIGH | PENDING |
+| #270 | Implement Issue AFFECTS CodeSymbol Link | HIGH | DONE |
 | #269 | Fix CamelCase Property Mappings in All Repositories | HIGH | DONE |
 | #268 | Fix GET /api/v1/issues list endpoint KeyError | HIGH | DONE |
 | #267 | [Final Issue in Done Folder] | - | - |
