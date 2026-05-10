@@ -40,11 +40,11 @@ class _ReasoningLogEntryDTO(BaseModel):
 def _node_to_issue(node: dict[str, Any]) -> Issue:
     """Convert a Neo4j node to a domain Issue."""
     data = dict(node)
-    reasoning_logs = []
-    if "reasoning_logs" in data and data["reasoning_logs"]:
-        for log_data in data["reasoning_logs"]:
+    reasoningLogs = []
+    if "reasoningLogs" in data and data["reasoningLogs"]:
+        for log_data in data["reasoningLogs"]:
             if isinstance(log_data, dict):
-                reasoning_logs.append(
+                reasoningLogs.append(
                     ReasoningLogEntry(
                         id=log_data.get("id"),
                         timestamp=datetime.fromisoformat(
@@ -61,23 +61,23 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
         description=data.get("description", ""),
         status=IssueStatus(data.get("status", "OPEN")),
         priority=data.get("priority", "MEDIUM"),
-        component_id=data["component_id"],
+        component_id=data.get("componentId") or data.get("component_id"),
         labels=data.get("labels", []),
         dependencies=data.get("dependencies", []),
         blocks=data.get("blocks", []),
         affects=data.get("affects", []),
-        created_at=data.get("created_at") or datetime.now(timezone.utc),
-        updated_at=data.get("updated_at") or datetime.now(timezone.utc),
-        closed_at=data.get("closed_at"),
-        architectural_constraints=data.get("architectural_constraints", []),
-        agent_working=data.get("agent_working", False),
-        agent_started_at=data.get("agent_started_at"),
-        agent_finished_at=data.get("agent_finished_at"),
-        agent_id=data.get("agent_id"),
-        reasoning_logs=reasoning_logs,
-        manifest_todo=data.get("manifest_todo", []),
-        manifest_files=data.get("manifest_files", []),
-        manifest_notes=data.get("manifest_notes", []),
+        created_at=data.get("createdAt") or data.get("created_at") or datetime.now(timezone.utc),
+        updated_at=data.get("updatedAt") or data.get("updated_at") or datetime.now(timezone.utc),
+        closed_at=data.get("closedAt") or data.get("closed_at"),
+        architectural_constraints=data.get("architecturalConstraints", []),
+        agent_working=data.get("agentWorking", False),
+        agent_started_at=data.get("agentStartedAt") or data.get("agent_started_at"),
+        agent_finished_at=data.get("agentFinishedAt") or data.get("agent_finished_at"),
+        agent_id=data.get("agentId") or data.get("agent_id"),
+        reasoning_logs=reasoningLogs,
+        manifest_todo=data.get("manifestTodo", []),
+        manifest_files=data.get("manifestFiles", []),
+        manifest_notes=data.get("manifestNotes", []),
     )
 
 
@@ -89,9 +89,14 @@ def _node_to_component(node: dict[str, Any]) -> Component:
         name=data["name"],
         description=data.get("description"),
         project=data["project"],
-        created_at=data.get("created_at") or datetime.now(timezone.utc),
-        updated_at=data.get("updated_at") or datetime.now(timezone.utc),
+        created_at=data.get("createdAt") or data.get("created_at") or datetime.now(timezone.utc),
+        updated_at=data.get("updatedAt") or data.get("updated_at") or datetime.now(timezone.utc),
     )
+
+
+def _to_camel(string: str) -> str:
+    """Convert snake_case to camelCase."""
+    return "".join(word.capitalize() if i > 0 else word for i, word in enumerate(string.split("_")))
 
 
 def _now_iso() -> str:
@@ -174,18 +179,18 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
         name: str,
         slug: str,
         description: str = "",
-        repository_url: str | None = None,
-        base_package: str | None = None,
+        repositoryUrl: str | None = None,
+        basePackage: str | None = None,
         visibility: str = "PRIVATE",
         status: str = "ACTIVE",
-        tech_stack: list | None = None,
-        main_stack: list | None = None,
-        architecture_style: str | None = None,
+        techStack: list | None = None,
+        mainStack: list | None = None,
+        architectureStyle: str | None = None,
         version: str = "0.0.1",
-        conventions_url: str | None = None,
-        conventions_rules: str | None = None,
-        last_full_scan: str | None = None,
-        global_status: str = "DEVELOPMENT",
+        conventionsUrl: str | None = None,
+        conventionsRules: str | None = None,
+        lastFullScan: str | None = None,
+        globalStatus: str = "DEVELOPMENT",
     ) -> dict:
         from datetime import datetime, timezone
 
@@ -195,18 +200,18 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             "name": name,
             "slug": slug,
             "description": description,
-            "repositoryUrl": repository_url,
-            "basePackage": base_package,
+            "repositoryUrl": repositoryUrl,
+            "basePackage": basePackage,
             "visibility": visibility,
             "status": status,
-            "techStack": tech_stack or [],
-            "mainStack": main_stack or [],
-            "architectureStyle": architecture_style,
+            "techStack": techStack or [],
+            "mainStack": mainStack or [],
+            "architectureStyle": architectureStyle,
             "version": version,
-            "conventionsUrl": conventions_url,
-            "conventionsRules": conventions_rules,
-            "lastFullScan": last_full_scan,
-            "globalStatus": global_status,
+            "conventionsUrl": conventionsUrl,
+            "conventionsRules": conventionsRules,
+            "lastFullScan": lastFullScan,
+            "globalStatus": globalStatus,
             "createdAt": now,
             "updatedAt": now,
         }
@@ -241,11 +246,13 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
 
     def update_component(self, component_id: str, updates: dict[str, Any]) -> Component:
         with self._driver.driver.session(database=self._driver.database) as session:
+            # Translate snake_case keys to camelCase
+            camel_updates = {_to_camel(k): v for k, v in updates.items()}
             result = session.run(
                 queries.UPDATE_COMPONENT,
                 id=component_id,
-                updates=updates,
-                updated_at=_now_iso(),
+                updates=camel_updates,
+                updatedAt=_now_iso(),
             )
             record = result.single()
             if record is None:
@@ -254,13 +261,13 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
 
     def delete_component(self, component_id: str) -> None:
         with self._driver.driver.session(database=self._driver.database) as session:
-            session.run(queries.DELETE_COMPONENT, id=component_id)
+            session.run(queries.DELETE_COMPONENT, id=componentId)
 
     def add_component_dependency(self, component_id: str, depends_on_id: str) -> None:
         with self._driver.driver.session(database=self._driver.database) as session:
             session.run(
                 queries.ADD_COMPONENT_DEPENDENCY,
-                component_id=component_id,
+                componentId=componentId,
                 depends_on_id=depends_on_id,
             )
 
@@ -268,7 +275,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
         with self._driver.driver.session(database=self._driver.database) as session:
             session.run(
                 queries.REMOVE_COMPONENT_DEPENDENCY,
-                component_id=component_id,
+                componentId=componentId,
                 depends_on_id=depends_on_id,
             )
 
@@ -276,7 +283,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.GET_COMPONENT_DEPENDENCIES,
-                component_id=component_id,
+                componentId=componentId,
             )
             return [_node_to_component(r["dep"]) for r in result]
 
@@ -284,7 +291,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.GET_COMPONENT_DEPENDENTS,
-                component_id=component_id,
+                componentId=componentId,
             )
             return [_node_to_component(r["dependent"]) for r in result]
 
@@ -310,23 +317,23 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 description=issue.description,
                 status=issue.status.value,
                 priority=issue.priority.value,
-                component_id=str(issue.component_id),
+                componentId=str(issue.component_id),
                 labels=issue.labels,
                 dependencies=[str(d) for d in issue.dependencies],
                 blocks=[str(b) for b in issue.blocks],
                 affects=[str(a) for a in issue.affects],
-                created_at=issue.created_at.isoformat(),
-                updated_at=issue.updated_at.isoformat(),
-                closed_at=issue.closed_at.isoformat() if issue.closed_at else None,
-                architectural_constraints=issue.architectural_constraints,
-                agent_working=issue.agent_working,
-                agent_started_at=issue.agent_started_at.isoformat() if issue.agent_started_at else None,
-                agent_finished_at=issue.agent_finished_at.isoformat() if issue.agent_finished_at else None,
-                agent_id=issue.agent_id,
-                reasoning_logs=reasoning_logs_data,
-                manifest_todo=issue.manifest_todo,
-                manifest_files=issue.manifest_files,
-                manifest_notes=issue.manifest_notes,
+                createdAt=issue.created_at.isoformat(),
+                updatedAt=issue.updated_at.isoformat(),
+                closedAt=issue.closed_at.isoformat() if issue.closed_at else None,
+                architecturalConstraints=issue.architectural_constraints,
+                agentWorking=issue.agent_working,
+                agentStartedAt=issue.agent_started_at.isoformat() if issue.agent_started_at else None,
+                agentFinishedAt=issue.agent_finished_at.isoformat() if issue.agent_finished_at else None,
+                agentId=issue.agent_id,
+                reasoningLogs=reasoning_logs_data,
+                manifestTodo=issue.manifest_todo,
+                manifestFiles=issue.manifest_files,
+                manifestNotes=issue.manifest_notes,
             )
 
             # Index for RAG (Native in Graph)
@@ -354,11 +361,13 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
 
     def update_issue(self, issue_id: str, updates: dict[str, Any]) -> Issue:
         with self._driver.driver.session(database=self._driver.database) as session:
+            # Translate snake_case keys to camelCase
+            camel_updates = {_to_camel(k): v for k, v in updates.items()}
             result = session.run(
                 queries.UPDATE_ISSUE,
                 id=issue_id,
-                updates=updates,
-                updated_at=_now_iso(),
+                updates=camel_updates,
+                updatedAt=_now_iso(),
             )
             record = result.single()
             if record is None:
@@ -387,8 +396,8 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             result = session.run(
                 queries.CLOSE_ISSUE,
                 id=issue_id,
-                closed_at=_now_iso(),
-                updated_at=_now_iso(),
+                closedAt=_now_iso(),
+                updatedAt=_now_iso(),
             )
             record = result.single()
             if record is None:
@@ -425,7 +434,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.LIST_ISSUES,
-                component_id=component_id,
+                componentId=component_id,
                 statuses=statuses or [],
                 project=project,
             )
@@ -492,11 +501,11 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             if component_id:
                 result = session.run(
                     """
-                    MATCH (i:Issue {title: $title, component_id: $component_id})
+                    MATCH (i:Issue {title: $title, componentId: $componentId})
                     RETURN i
                     """,
                     title=title,
-                    component_id=component_id,
+                    componentId=component_id,
                 )
             else:
                 result = session.run(
@@ -533,9 +542,9 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 cypher += " AND i.priority = $priority"
                 params["priority"] = priority
 
-            if component_id:
-                cypher += " AND i.component_id = $component_id"
-                params["component_id"] = component_id
+            if componentId:
+                cypher += " AND i.componentId = $componentId"
+                params["componentId"] = componentId
 
             cypher += " RETURN i"
             result = session.run(cypher, params)
@@ -561,7 +570,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 raise ValueError(f"Issue {issue_id} not found")
 
             node_data = dict(record["i"])
-            existing_logs = node_data.get("reasoning_logs", [])
+            existing_logs = node_data.get("reasoningLogs", [])
             new_log = {
                 "id": str(uuid4()),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -574,8 +583,8 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             update_result = session.run(
                 queries.UPDATE_ISSUE,
                 id=issue_id,
-                updates={"reasoning_logs": existing_logs},
-                updated_at=_now_iso(),
+                updates={"reasoningLogs": existing_logs},
+                updatedAt=_now_iso(),
             )
             updated_record = update_result.single()
             if updated_record is None:
@@ -592,7 +601,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             record = result.single()
             if record is None:
                 raise ValueError(f"Issue {issue_id} not found")
-            return record["i"].get("reasoning_logs", [])
+            return record["i"].get("reasoningLogs", [])
 
     # -- Manifest ---------------------------------------------------------------
 
@@ -610,8 +619,8 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             update_result = session.run(
                 queries.UPDATE_ISSUE,
                 id=issue_id,
-                updates={"manifest_todo": todo},
-                updated_at=_now_iso(),
+                updates={"manifestTodo": todo},
+                updatedAt=_now_iso(),
             )
             updated_record = update_result.single()
             if updated_record is None:
@@ -632,8 +641,8 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             update_result = session.run(
                 queries.UPDATE_ISSUE,
                 id=issue_id,
-                updates={"manifest_files": files},
-                updated_at=_now_iso(),
+                updates={"manifestFiles": files},
+                updatedAt=_now_iso(),
             )
             updated_record = update_result.single()
             if updated_record is None:
@@ -654,8 +663,8 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             update_result = session.run(
                 queries.UPDATE_ISSUE,
                 id=issue_id,
-                updates={"manifest_notes": notes},
-                updated_at=_now_iso(),
+                updates={"manifestNotes": notes},
+                updatedAt=_now_iso(),
             )
             updated_record = update_result.single()
             if updated_record is None:
@@ -673,9 +682,9 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             if record is None:
                 raise ValueError(f"Issue {issue_id} not found")
             return {
-                "todo": record["i"].get("manifest_todo", []),
-                "files": record["i"].get("manifest_files", []),
-                "notes": record["i"].get("manifest_notes", []),
+                "todo": record["i"].get("manifestTodo", []),
+                "files": record["i"].get("manifestFiles", []),
+                "notes": record["i"].get("manifestNotes", []),
             }
 
     # -- Agent lifecycle --------------------------------------------------------
@@ -692,18 +701,18 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 raise ValueError(f"Issue {issue_id} not found")
 
             node_data = dict(record["i"])
-            if node_data.get("agent_working", False):
+            if node_data.get("agentWorking", False):
                 raise ValueError(f"Agent is already working on issue {issue_id}")
 
             update_result = session.run(
                 queries.UPDATE_ISSUE,
                 id=issue_id,
                 updates={
-                    "agent_working": True,
-                    "agent_started_at": _now_iso(),
-                    "agent_id": agent_id,
+                    "agentWorking": True,
+                    "agentStartedAt": _now_iso(),
+                    "agentId": agentId,
                 },
-                updated_at=_now_iso(),
+                updatedAt=_now_iso(),
             )
             updated_record = update_result.single()
             if updated_record is None:
@@ -722,17 +731,17 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 raise ValueError(f"Issue {issue_id} not found")
 
             node_data = dict(record["i"])
-            if not node_data.get("agent_working", False):
+            if not node_data.get("agentWorking", False):
                 raise ValueError(f"Agent is not working on issue {issue_id}")
 
             update_result = session.run(
                 queries.UPDATE_ISSUE,
                 id=issue_id,
                 updates={
-                    "agent_working": False,
-                    "agent_finished_at": _now_iso(),
+                    "agentWorking": False,
+                    "agentFinishedAt": _now_iso(),
                 },
-                updated_at=_now_iso(),
+                updatedAt=_now_iso(),
             )
             updated_record = update_result.single()
             if updated_record is None:
@@ -750,10 +759,10 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             if record is None:
                 raise ValueError(f"Issue {issue_id} not found")
             return {
-                "agent_working": record["i"].get("agent_working", False),
-                "agent_started_at": record["i"].get("agent_started_at"),
-                "agent_finished_at": record["i"].get("agent_finished_at"),
-                "agent_id": record["i"].get("agent_id"),
+                "agentWorking": record["i"].get("agentWorking", False),
+                "agentStartedAt": record["i"].get("agentStartedAt"),
+                "agentFinishedAt": record["i"].get("agentFinishedAt"),
+                "agentId": record["i"].get("agentId"),
             }
 
     # -- Transactions ----------------------------------------------------------
@@ -860,8 +869,8 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                     required: $required,
                     description: $description,
                     status: $status,
-                    created_at: $created_at,
-                    updated_at: $updated_at
+                    createdAt: $createdAt,
+                    updatedAt: $updatedAt
                 })
                 """,
                 id=str(constraint.id),
@@ -877,8 +886,8 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 required=constraint.required,
                 description=constraint.description,
                 status=constraint.status.value,
-                created_at=constraint.created_at.isoformat(),
-                updated_at=constraint.updated_at.isoformat(),
+                createdAt=constraint.created_at.isoformat(),
+                updatedAt=constraint.updated_at.isoformat(),
             )
 
     def list_constraints(self, category: str | None = None) -> list[Constraint]:
@@ -960,8 +969,8 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 set_clauses.append(f"c.{key} = ${key}")
                 params[key] = value
 
-            set_clauses.append("c.updated_at = $updated_at")
-            params["updated_at"] = datetime.now(timezone.utc).isoformat()
+            set_clauses.append("c.updated_at = $updatedAt")
+            params["updatedAt"] = datetime.now(timezone.utc).isoformat()
 
             query = f"MATCH (c:Constraint {{id: $id}}) SET {', '.join(set_clauses)} RETURN c"
             result = session.run(query, **params)
@@ -985,15 +994,15 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 description=epic.description,
                 objective_id=str(epic.objective_id) if epic.objective_id else None,
                 status=epic.status.value,
-                created_at=epic.created_at.isoformat(),
-                updated_at=epic.updated_at.isoformat(),
+                createdAt=epic.createdAt.isoformat(),
+                updatedAt=epic.updatedAt.isoformat(),
             )
 
-    def get_epic(self, epic_id: str):
+    def get_epic(self, epicId: str):
         from uuid import UUID
 
         with self._driver.driver.session(database=self._driver.database) as session:
-            result = session.run(queries.GET_EPIC, id=epic_id)
+            result = session.run(queries.GET_EPIC, id=epicId)
             record = result.single()
             if record is None:
                 return None
@@ -1029,20 +1038,20 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 )
             return epics
 
-    def delete_epic(self, epic_id: str) -> None:
+    def delete_epic(self, epicId: str) -> None:
         with self._driver.driver.session(database=self._driver.database) as session:
-            session.run(queries.DELETE_EPIC, id=epic_id)
+            session.run(queries.DELETE_EPIC, id=epicId)
 
-    def link_issue_to_epic(self, issue_id: str, epic_id: str) -> None:
+    def link_issue_to_epic(self, issue_id: str, epicId: str) -> None:
         with self._driver.driver.session(database=self._driver.database) as session:
-            session.run(queries.LINK_ISSUE_TO_EPIC, issue_id=issue_id, epic_id=epic_id)
+            session.run(queries.LINK_ISSUE_TO_EPIC, issue_id=issue_id, epicId=epicId)
 
-    def update_epic(self, epic_id: str, updates: dict) -> None:
+    def update_epic(self, epicId: str, updates: dict) -> None:
         from datetime import datetime, timezone
 
         with self._driver.driver.session(database=self._driver.database) as session:
             set_clauses = []
-            params = {"id": epic_id, "updated_at": datetime.now(timezone.utc).isoformat()}
+            params = {"id": epicId, "updatedAt": datetime.now(timezone.utc).isoformat()}
 
             for key, value in updates.items():
                 set_clauses.append(f"e.{key} = ${key}")
@@ -1064,8 +1073,8 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 description=objective.description,
                 status=objective.status.value,
                 quarter=objective.quarter,
-                created_at=objective.created_at.isoformat(),
-                updated_at=objective.updated_at.isoformat(),
+                createdAt=objective.createdAt.isoformat(),
+                updatedAt=objective.updatedAt.isoformat(),
             )
 
     def get_objective(self, objective_id: str):
@@ -1112,16 +1121,16 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
         with self._driver.driver.session(database=self._driver.database) as session:
             session.run(queries.DELETE_OBJECTIVE, id=objective_id)
 
-    def link_epic_to_objective(self, epic_id: str, objective_id: str) -> None:
+    def link_epic_to_objective(self, epicId: str, objective_id: str) -> None:
         with self._driver.driver.session(database=self._driver.database) as session:
-            session.run(queries.LINK_EPIC_TO_OBJECTIVE, epic_id=epic_id, objective_id=objective_id)
+            session.run(queries.LINK_EPIC_TO_OBJECTIVE, epicId=epicId, objective_id=objective_id)
 
     def update_objective(self, objective_id: str, updates: dict) -> None:
         from datetime import datetime, timezone
 
         with self._driver.driver.session(database=self._driver.database) as session:
             set_clauses = []
-            params = {"id": objective_id, "updated_at": datetime.now(timezone.utc).isoformat()}
+            params = {"id": objective_id, "updatedAt": datetime.now(timezone.utc).isoformat()}
 
             for key, value in updates.items():
                 set_clauses.append(f"o.{key} = ${key}")
@@ -1140,7 +1149,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             result = session.run(queries.GET_COST_PER_COMPONENT)
             return [
                 {
-                    "component_id": record["component_id"],
+                    "componentId": record["componentId"],
                     "component_name": record["component_name"],
                     "actual_cost": record.get("actual_cost", 0.0) or 0.0,
                     "avg_hourly_rate": record.get("avg_hourly_rate", 0.0) or 0.0,
@@ -1156,7 +1165,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             result = session.run(queries.GET_COST_PER_EPIC)
             return [
                 {
-                    "epic_id": record["epic_id"],
+                    "epicId": record["epicId"],
                     "epic_name": record["epic_name"],
                     "actual_cost": record.get("actual_cost", 0.0) or 0.0,
                     "total_hours": record.get("total_hours", 0) or 0,
@@ -1171,7 +1180,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             result = session.run(queries.GET_COST_PER_PROJECT)
             return [
                 {
-                    "project_id": record["project_id"],
+                    "projectId": record["projectId"],
                     "project_name": record["project_name"],
                     "actual_cost": record.get("actual_cost", 0.0) or 0.0,
                     "total_hours": record.get("total_hours", 0) or 0,

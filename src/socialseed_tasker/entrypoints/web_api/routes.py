@@ -44,7 +44,12 @@ from socialseed_tasker.core.task_management.actions import (
     reset_data_action,
 )
 from socialseed_tasker.core.task_management.entities import (
+    Agent,
+    AgentRole,
+    AgentStatus,
     Component,
+    Deployment,
+    DeploymentEnvironment,
     Epic,
     EpicStatus,
     Issue,
@@ -3370,7 +3375,7 @@ def receive_deployment(
     from datetime import datetime, timezone
     from uuid import uuid4
 
-    from socialseed_tasker.core.task_management.entities import Deployment, EnvironmentType
+    from socialseed_tasker.core.task_management.entities import Deployment, DeploymentEnvironment
 
     commit_sha = body.get("commit_sha", "")
     environment = body.get("environment", "DEV")
@@ -3384,9 +3389,9 @@ def receive_deployment(
         raise HTTPException(status_code=400, detail="commit_sha is required")
 
     try:
-        env_type = EnvironmentType(environment)
+        env_type = DeploymentEnvironment(environment)
     except ValueError:
-        env_type = EnvironmentType.DEV
+        env_type = DeploymentEnvironment.DEVELOPMENT
 
     deployment = Deployment(
         id=uuid4(),
