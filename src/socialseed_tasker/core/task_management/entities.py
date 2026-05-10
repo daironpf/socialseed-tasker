@@ -1,189 +1,126 @@
-"""Core domain entities - Issue and Component.
-
-These entities form the domain model that powers the entire task management system.
-They encode the graph relationships (dependencies, blocks, affects) that enable
-causal traceability and architectural integrity checks.
-"""
-
-from __future__ import annotations
-
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any
 from uuid import UUID, uuid4
+from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, AliasChoices
 
-from socialseed_tasker.core.task_management.value_objects import ReasoningLogEntry
-
-
-def _now() -> datetime:
-    """Return the current UTC timestamp."""
+def _now():
     return datetime.now(timezone.utc)
 
-
-class ProjectStatus(str, Enum):
-    """Lifecycle states for a Project.
-
-    Intent: Define the possible states a project can be in during its lifecycle.
-    Business Value: Enables project filtering (e.g., find all active projects).
-    """
-
-    ACTIVE = "ACTIVE"
-    ARCHIVED = "ARCHIVED"
-    DEMO = "DEMO"
-
+def to_camel(string: str) -> str:
+    return "".join(word.capitalize() if i > 0 else word for i, word in enumerate(string.split("_")))
 
 class ProjectVisibility(str, Enum):
-    """Visibility levels for a Project.
-
-    Intent: Classify projects by their accessibility.
-    Business Value: Drives rendering rules in multi-tenant systems.
-    """
-
     PUBLIC = "PUBLIC"
     PRIVATE = "PRIVATE"
 
+class ProjectStatus(str, Enum):
+    ACTIVE = "ACTIVE"
+    ARCHIVED = "ARCHIVED"
 
 class GlobalStatus(str, Enum):
-    """Global deployment status for a Project.
-
-    Intent: Track the current deployment environment/state.
-    Business Value: Enables governance checks and deployment gating.
-    """
-
     DEVELOPMENT = "DEVELOPMENT"
     STAGING = "STAGING"
     PRODUCTION = "PRODUCTION"
 
-
-class Severity(str, Enum):
-    """Severity levels for policy violations and events."""
-
-    INFO = "info"
-    WARNING = "warning"
-    BLOCKER = "blocker"
-
-
-class PolicyTargetScope(str, Enum):
-    """Scope where policy is enforced."""
-
-    CODE_SYMBOL = "CODE_SYMBOL"
-    COMPONENT = "COMPONENT"
-    COMMIT = "COMMIT"
-    PROJECT = "PROJECT"
-
-
-class Project(BaseModel):
-    """A software project being managed by the task system.
-
-    Intent: Represent a root-level container that holds architectural
-    context, governance rules, and global configuration for all
-    components and issues within it.
-    Business Value: Enables AI agents to understand global architectural
-    context, follow project-specific conventions, and perform cross-component
-    analysis with high precision.
-    """
-
-    model_config = ConfigDict(frozen=True)
-
-    id: UUID = Field(default_factory=uuid4)
-    name: str = Field(..., min_length=1, description="Official project name")
-    slug: str = Field(..., min_length=1, description="URL-friendly identifier")
-    description: str = ""
-    repository_url: str | None = None
-    base_package: str | None = None
-    visibility: ProjectVisibility = ProjectVisibility.PRIVATE
-    status: ProjectStatus = ProjectStatus.ACTIVE
-    tech_stack: list[str] = Field(default_factory=list)
-    main_stack: list[str] = Field(default_factory=list)
-    architecture_style: str | None = None
-    version: str = "0.0.1"
-    conventions_url: str | None = None
-    conventions_rules: str | None = None
-    last_full_scan: datetime | None = None
-    global_status: GlobalStatus = GlobalStatus.DEVELOPMENT
-    created_at: datetime = Field(default_factory=_now)
-    updated_at: datetime = Field(default_factory=_now)
-
-
 class IssueStatus(str, Enum):
-    """Lifecycle states for an Issue.
-
-    Intent: Define the possible states an issue can be in during its lifecycle.
-    Business Value: Enables workflow tracking and filtering (e.g., find all blocked issues).
-    """
-
     OPEN = "OPEN"
     IN_PROGRESS = "IN_PROGRESS"
     CLOSED = "CLOSED"
     BLOCKED = "BLOCKED"
 
-
 class IssuePriority(str, Enum):
-    """Priority levels for an Issue.
-
-    Intent: Classify issues by urgency so teams can focus on what matters most.
-    Business Value: Drives triage, sprint planning, and automated escalation rules.
-    """
-
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
     CRITICAL = "CRITICAL"
 
+class UserRole(str, Enum):
+    ADMIN = "ADMIN"
+    DEVELOPER = "DEVELOPER"
+    VIEWER = "VIEWER"
 
-class Component(BaseModel):
-    """A logical component or module within a project.
+class User(BaseModel):
+    model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
+    id: UUID = Field(default_factory=uuid4)
+    username: str = Field(..., min_length=1)
+    email: Optional[str] = None
+    role: UserRole = UserRole.DEVELOPER
+    github_handle: Optional[str] = None
+    created_at: datetime = Field(default_factory=_now)
+    last_login: Optional[datetime] = None
+    preferences: Optional[str] = None
 
-    Intent: Group related issues under a named component so the system can
-    enforce architectural rules and produce scoped reports.
-    Business Value: Provides a boundary for dependency analysis and
-    architectural-integrity checks across different parts of a project.
-    """
+class DecisionType(str, Enum):
+    SOLUTION_SELECTION = "solution_selection"
+    ARCHITECTURE_CHOICE = "architecture_choice"
+    PRIORITY_DECISION = "priority_decision"
+    DEPENDENCY_RESOLUTION = "dependency_resolution"
+    REFACTORING_CHOICE = "refactoring_choice"
+    CODE_GENERATION = "code_generation"
+    REVIEW_DECISION = "review_decision"
+    UNKNOWN = "unknown"
 
-    model_config = ConfigDict(frozen=True)
+class ReasoningContext(str, Enum):
+    ARCHITECTURE_CHOICE = "architecture_choice"
+    SOLUTION_DESIGN = "solution_design"
+    REFACTORING = "refactoring"
+    BUG_FIX = "bug_fix"
+    TEST_PLAN = "test_plan"
 
+class ReasoningLogEntry(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+    id: UUID = Field(default_factory=uuid4)
+    timestamp: datetime = Field(default_factory=_now)
+    context: ReasoningContext = ReasoningContext.ARCHITECTURE_CHOICE
+    reasoning: str = ""
+    related_nodes: list[UUID] = Field(default_factory=list)
+
+class Project(BaseModel):
+    model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
     id: UUID = Field(default_factory=uuid4)
     name: str = Field(..., min_length=1)
-    description: str | None = None
-    project: str = Field(..., min_length=1, description="Project name (for backward compatibility)")
-    project_id: UUID | None = Field(default=None, description="Project UUID reference")
+    slug: str = Field(..., min_length=1)
+    description: str = ""
+    repository_url: Optional[str] = None
+    base_package: Optional[str] = None
+    visibility: ProjectVisibility = ProjectVisibility.PRIVATE
+    status: ProjectStatus = ProjectStatus.ACTIVE
+    tech_stack: list[str] = Field(default_factory=list)
+    main_stack: list[str] = Field(default_factory=list)
+    architecture_style: Optional[str] = None
+    version: str = "0.0.1"
+    conventions_url: Optional[str] = None
+    conventions_rules: Optional[str] = None
+    last_full_scan: Optional[datetime] = None
+    global_status: GlobalStatus = GlobalStatus.DEVELOPMENT
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
 
-
-class Label(BaseModel):
-    """A label for categorizing issues.
-
-    Intent: Provide semantic categorization for issues
-    so agents can filter and prioritize based on tags.
-    Business Value: Enables issue filtering and domain grouping.
-    """
-
-    model_config = ConfigDict(frozen=True)
-
+class Component(BaseModel):
+    model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
     id: UUID = Field(default_factory=uuid4)
     name: str = Field(..., min_length=1)
-    color: str | None = None
+    description: Optional[str] = None
+    project: str = Field(..., min_length=1)
+    project_id: Optional[UUID] = None
+    created_at: datetime = Field(default_factory=_now)
+    updated_at: datetime = Field(default_factory=_now)
+
+class Label(BaseModel):
+    model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
+    id: UUID = Field(default_factory=uuid4)
+    name: str = Field(..., min_length=1)
+    color: Optional[str] = None
     description: str = ""
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
 
-
 class Issue(BaseModel):
-    """A task or issue in the graph-based task management system.
-
-    Intent: Represent a unit of work that can be tracked, linked, and analysed
-    through a dependency graph.
-    Business Value: Encodes relationships (DEPENDS_ON, BLOCKS, AFFECTS) that
-    power root-cause analysis, impact assessment, and architectural governance.
-    """
-
-    model_config = ConfigDict(frozen=True)
-
+    model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
     id: UUID = Field(default_factory=uuid4)
-    title: str = Field(..., min_length=1, max_length=200)
+    title: str = Field(..., min_length=1)
     description: str = ""
     status: IssueStatus = IssueStatus.OPEN
     priority: IssuePriority = IssuePriority.MEDIUM
@@ -194,113 +131,120 @@ class Issue(BaseModel):
     affects: list[UUID] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
-    closed_at: datetime | None = None
+    closed_at: Optional[datetime] = None
     architectural_constraints: list[str] = Field(default_factory=list)
     agent_working: bool = False
-    agent_started_at: datetime | None = None
-    agent_finished_at: datetime | None = None
-    agent_id: str | None = None
-    locked_until: datetime | None = None
+    agent_started_at: Optional[datetime] = None
+    agent_finished_at: Optional[datetime] = None
+    agent_id: Optional[str] = None
+    locked_until: Optional[datetime] = None
     reasoning_logs: list[ReasoningLogEntry] = Field(default_factory=list)
     manifest_todo: list[dict[str, str]] = Field(default_factory=list)
     manifest_files: list[str] = Field(default_factory=list)
     manifest_notes: list[str] = Field(default_factory=list)
-    github_issue_url: str | None = None
-    github_issue_number: int | None = None
-    last_mirrored_at: datetime | None = None
-    estimated_hours: float | None = None
-    hourly_rate_tier: str | None = None
-    actual_hours: float | None = None
-    epic_id: UUID | None = None
-    description_embedding: list[float] | None = None
+    github_issue_url: Optional[str] = None
+    github_issue_number: Optional[int] = None
+    last_mirrored_at: Optional[datetime] = None
+    estimated_hours: Optional[float] = None
+    hourly_rate_tier: Optional[str] = None
+    actual_hours: Optional[float] = None
+    epic_id: Optional[UUID] = None
+    description_embedding: Optional[list[float]] = None
 
     def to_indexable_text(self) -> str:
-        """Combine fields into a single text block for semantic indexing.
-
-        Business Value: Enables AI agents to find this issue via semantic search
-        by providing a rich text representation of the problem and its solution.
-        """
         parts = [f"Issue: {self.title}", f"Description: {self.description}"]
-        if self.manifest_notes:
-            parts.append(f"Technical Notes: {' '.join(self.manifest_notes)}")
-        if self.manifest_todo:
-            todos = [t.get("task", "") for t in self.manifest_todo if isinstance(t, dict)]
-            parts.append(f"Work performed: {' '.join(todos)}")
-        if self.labels:
-            parts.append(f"Labels: {', '.join(self.labels)}")
         return "\n\n".join(parts)
 
+class ReasoningNode(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+    id: UUID = Field(default_factory=uuid4)
+    thought: str = Field(..., min_length=1)
+    confidence: float = 0.5
+    alternatives_considered: list[str] = Field(default_factory=list)
+    rejected_reasons: list[str] = Field(default_factory=list)
+    decision: Optional[str] = None
+    decision_type: DecisionType = DecisionType.UNKNOWN
+    created_at: datetime = Field(default_factory=_now)
 
-class HourlyRateTier(str, Enum):
-    JUNIOR = "JUNIOR"
-    SENIOR = "SENIOR"
-    STAFF = "STAFF"
-    PRINCIPAL = "PRINCIPAL"
+class Commit(BaseModel):
+    model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
+    sha: str = Field(..., min_length=40, max_length=40)
+    message: str = ""
+    author_name: str = ""
+    author_email: str = ""
+    timestamp: datetime = Field(default_factory=_now)
+    is_ai_generated: bool = False
+    branch: str = ""
+    additions: int = 0
+    deletions: int = 0
+    files_changed: int = 0
+
+class ReasoningFeedback(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+    id: UUID = Field(default_factory=uuid4)
+    reasoning_id: UUID = Field(...)
+    is_approved: bool = Field(...)
+    feedback_text: Optional[str] = None
+    created_at: datetime = Field(default_factory=_now)
+    last_heartbeat: datetime = Field(default_factory=_now)
+
+
+class AgentStatus(str, Enum):
+    IDLE = "IDLE"
+    BUSY = "BUSY"
+    OFFLINE = "OFFLINE"
+
+
+class AgentRole(str, Enum):
+    DEVELOPER = "DEVELOPER"
+    TESTER = "TESTER"
+    ARCHITECT = "ARCHITECT"
+    PLANNER = "PLANNER"
+    REVIEWER = "REVIEWER"
+    OBSERVER = "OBSERVER"
+
+
+class Agent(BaseModel):
+    model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
+    id: str = Field(..., description="Unique agent identifier")
+    name: str = Field(..., min_length=1, max_length=100)
+    role: AgentRole = AgentRole.DEVELOPER
+    status: AgentStatus = AgentStatus.IDLE
+    capabilities: list[str] = Field(default_factory=list)
+    current_issue_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=_now)
+    last_heartbeat: datetime = Field(default_factory=_now)
 
 
 class EpicStatus(str, Enum):
     OPEN = "OPEN"
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
+    CLOSED = "CLOSED"
+
+
+class Epic(BaseModel):
+    model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
+    id: UUID = Field(default_factory=uuid4)
+    name: str = Field(..., min_length=1)
+    description: str = ""
+    objective_id: Optional[UUID] = None
+    status: EpicStatus = EpicStatus.OPEN
+    created_at: datetime = Field(default_factory=_now)
+    updated_at: datetime = Field(default_factory=_now)
 
 
 class ObjectiveStatus(str, Enum):
     OPEN = "OPEN"
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
-
-
-class EnvironmentType(str, Enum):
-    """Environment types for deployment tracking."""
-
-    PROD = "PROD"
-    STAGING = "STAGING"
-    DEV = "DEV"
-    QA = "QA"
-
-
-class Environment(BaseModel):
-    """Deployment environment."""
-
-    id: UUID
-    name: EnvironmentType
-    url: str | None = None
-    is_active: bool = True
-
-
-class Deployment(BaseModel):
-    """A deployment event."""
-
-    id: UUID
-    commit_sha: str
-    environment_name: EnvironmentType
-    deployed_at: datetime
-    issue_ids: list[UUID]
-    channel: str | None = None
-    deployed_by: str | None = None
-
-
-class Epic(BaseModel):
-    """Group of issues that share a common initiative."""
-
-    model_config = ConfigDict(frozen=True)
-
-    id: UUID = Field(default_factory=uuid4)
-    name: str = Field(..., min_length=1, max_length=200)
-    description: str = ""
-    objective_id: UUID | None = None
-    status: EpicStatus = EpicStatus.OPEN
-    created_at: datetime = Field(default_factory=_now)
-    updated_at: datetime = Field(default_factory=_now)
+    CLOSED = "CLOSED"
 
 
 class Objective(BaseModel):
-    """Strategic objective (OKR) that Epics contribute to."""
-
-    model_config = ConfigDict(frozen=True)
-
+    model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
     id: UUID = Field(default_factory=uuid4)
-    name: str = Field(..., min_length=1, max_length=200)
+    name: str = Field(..., min_length=1)
     description: str = ""
     status: ObjectiveStatus = ObjectiveStatus.OPEN
     quarter: str = ""
@@ -308,145 +252,18 @@ class Objective(BaseModel):
     updated_at: datetime = Field(default_factory=_now)
 
 
-class AgentRole(str, Enum):
-    """Roles for multi-agent coordination.
-
-    Intent: Define specialized responsibilities for different AI agents.
-    Business Value: Enables coordinated workflows where agents specialize
-    in planning, development, and review.
-    """
-
-    PLANNER = "planner"
-    DEVELOPER = "developer"
-    REVIEWER = "reviewer"
-    OBSERVER = "observer"
+class DeploymentEnvironment(str, Enum):
+    DEVELOPMENT = "DEVELOPMENT"
+    STAGING = "STAGING"
+    PRODUCTION = "PRODUCTION"
 
 
-class AgentStatus(str, Enum):
-    """Status of an agent in the swarm."""
-
-    IDLE = "idle"
-    WORKING = "working"
-    BLOCKED = "blocked"
-    OFFLINE = "offline"
-
-
-class UserRole(str, Enum):
-    """User authority levels."""
-
-    ADMIN = "admin"
-    LEAD_ARCHITECT = "lead_architect"
-    DEVELOPER = "developer"
-    VIEWER = "viewer"
-
-
-class User(BaseModel):
-    """Human user in the system.
-
-    Intent: Track human architects, leads, and owners
-    for responsibility and manual oversight.
-    Business Value: Enables Human-in-the-Loop (HITL) principle
-    and administrative control.
-    """
-
-    model_config = ConfigDict(frozen=True)
-
+class Deployment(BaseModel):
+    model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
     id: UUID = Field(default_factory=uuid4)
-    username: str = Field(..., min_length=1)
-    email: str | None = None
-    role: UserRole = UserRole.DEVELOPER
-    github_handle: str | None = None
-    created_at: datetime = Field(default_factory=_now)
-    last_login: datetime | None = None
-    preferences: str | None = None
-
-
-class Agent(BaseModel):
-    """An AI agent in the swarm coordination system.
-
-    Intent: Represent an AI agent with specific role and capabilities
-    for coordinated multi-agent work.
-    Business Value: Enables role-based work distribution and
-    inter-agent coordination.
-    """
-
-    model_config = ConfigDict(frozen=True)
-
-    id: str = Field(..., description="Unique agent identifier")
-    name: str = Field(..., min_length=1, max_length=100)
-    role: AgentRole = AgentRole.DEVELOPER
-    status: AgentStatus = AgentStatus.IDLE
-    currentIssueId: str | None = None
-    capabilities: list[str] = Field(default_factory=list)
-    createdAt: datetime = Field(default_factory=_now)
-
-
-class DecisionType(str, Enum):
-    """Types of reasoning decisions."""
-
-    SOLUTION_SELECTION = "solution_selection"
-    ARCHITECTURE_CHOICE = "architecture_choice"
-    PRIORITY_DECISION = "priority_decision"
-    DEPENDENCY_RESOLUTION = "dependency_resolution"
-    REFACTORING_CHOICE = "refactoring_choice"
-    CODE_GENERATION = "code_generation"
-    REVIEW_DECISION = "review_decision"
-    UNKNOWN = "unknown"
-
-
-class ReasoningNode(BaseModel):
-    """Records agent reasoning for transparency and learning.
-
-    Pattern: (Agent)-[:THOUGHT]->(ReasoningNode)-[:DECIDED]->(Issue)
-    """
-
-    id: UUID = Field(default_factory=lambda: str(uuid4()))
-    thought: str = Field(..., min_length=1, description="The agent's reasoning text")
-    confidence: float = Field(default=0.5, ge=0.0, le=1.0, description="Confidence score 0.0-1.0")
-    alternativesConsidered: list[str] = Field(default_factory=list, description="Options evaluated")
-    rejectedReasons: list[str] = Field(default_factory=list, description="Why alternatives were rejected")
-    decision: str | None = Field(default=None, description="The decision made")
-    decisionType: DecisionType = DecisionType.UNKNOWN
-    createdAt: datetime = Field(default_factory=_now)
-
-
-class Commit(BaseModel):
-    """A Git commit linking issues to code changes.
-
-    Intent: Provide physical traceability from logical requirements (Issues)
-    to code modifications (CodeFiles).
-    Business Value: Enables time-travel audits - trace who changed a file,
-    why they did it (Reasoning), and if it passed policies (Policy).
-    """
-
-    model_config = ConfigDict(frozen=True)
-
-    sha: str = Field(..., min_length=40, max_length=40, description="Git commit hash")
-    message: str = ""
-    authorName: str = ""
-    authorEmail: str = ""
-    timestamp: datetime = Field(default_factory=_now)
-    isAiGenerated: bool = False
-    branch: str = ""
-    additions: int = 0
-    deletions: int = 0
-    filesChanged: int = 0
-
-
-class FileChangeType(str, Enum):
-    """Type of file modification in a commit."""
-
-    ADDED = "ADDED"
-    MODIFIED = "MODIFIED"
-    DELETED = "DELETED"
-
-
-class ReasoningFeedback(BaseModel):
-    """Human feedback on agent reasoning."""
-
-    id: UUID = Field(default_factory=lambda: str(uuid4()))
-    reasoning_id: UUID = Field(..., description="The reasoning node being feedbacked")
-    is_approved: bool = Field(..., description="True for approval, False for disapproval")
-    feedback_text: str | None = None
-    created_at: datetime = Field(default_factory=_now)
-    last_heartbeat: datetime = Field(default_factory=_now)
+    commit_sha: str = Field(..., min_length=40, max_length=40)
+    environment_name: DeploymentEnvironment = DeploymentEnvironment.DEVELOPMENT
+    deployed_at: datetime = Field(default_factory=_now)
+    issue_ids: list[UUID] = Field(default_factory=list)
+    channel: str = "default"
+    deployed_by: str = ""

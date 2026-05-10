@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
-from socialseed_tasker.core.project_analysis.policy import Policy, PolicyTargetScope
+from socialseed_tasker.core.project_analysis.policy import Policy, PolicySeverity, PolicyTargetScope
 from socialseed_tasker.storage.graph_database import queries
 
 
@@ -51,14 +51,15 @@ def _node_to_policy(node: dict[str, Any]) -> Policy:
         id=UUID(node["id"]),
         name=node["name"],
         description=node.get("description", ""),
+        severity=PolicySeverity(node.get("severity", "WARNING")),
         rules=rules,
-        target_scope=PolicyTargetScope(node.get("target_scope", "COMPONENT")),
-        logic_definition=node.get("logic_definition"),
-        remediation_strategy=node.get("remediation_strategy"),
-        autofix_template=node.get("autofix_template"),
-        is_active=node.get("is_active", True),
-        created_at=datetime.fromisoformat(node["created_at"]) if node.get("created_at") else datetime.now(timezone.utc),
-        updated_at=datetime.fromisoformat(node["updated_at"]) if node.get("updated_at") else datetime.now(timezone.utc),
+        target_scope=PolicyTargetScope(node.get("targetScope") or node.get("target_scope", "COMPONENT")),
+        logic_definition=node.get("logicDefinition") or node.get("logic_definition"),
+        remediation_strategy=node.get("remediationStrategy") or node.get("remediation_strategy"),
+        autofix_template=node.get("autofixTemplate") or node.get("autofix_template"),
+        is_active=node.get("isActive", True),
+        created_at=datetime.fromisoformat(node.get("createdAt") or node.get("created_at", datetime.now(timezone.utc).isoformat())),
+        updated_at=datetime.fromisoformat(node.get("updatedAt") or node.get("updated_at", datetime.now(timezone.utc).isoformat())),
     )
 
 

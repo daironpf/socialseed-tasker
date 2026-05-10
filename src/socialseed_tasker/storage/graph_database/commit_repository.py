@@ -22,14 +22,14 @@ def _node_to_commit(node: dict[str, Any]) -> Commit:
     return Commit(
         sha=node["sha"],
         message=node.get("message", ""),
-        authorName=node.get("authorName", ""),
-        authorEmail=node.get("authorEmail", ""),
-        timestamp=datetime.fromisoformat(node["timestamp"]) if node.get("timestamp") else datetime.now(timezone.utc),
-        isAiGenerated=node.get("isAiGenerated", False),
+        author_name=node.get("authorName") or node.get("author_name", ""),
+        author_email=node.get("authorEmail") or node.get("author_email", ""),
+        timestamp=datetime.fromisoformat(node.get("timestamp")) if node.get("timestamp") else datetime.now(timezone.utc),
+        is_ai_generated=node.get("isAiGenerated") or node.get("is_ai_generated", False),
         branch=node.get("branch", ""),
         additions=node.get("additions", 0),
         deletions=node.get("deletions", 0),
-        filesChanged=node.get("filesChanged", 0),
+        files_changed=node.get("filesChanged") or node.get("files_changed", 0),
     )
 
 

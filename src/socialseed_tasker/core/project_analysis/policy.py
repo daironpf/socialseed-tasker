@@ -35,6 +35,14 @@ class PolicyTargetScope(str, Enum):
     PROJECT = "PROJECT"
 
 
+class PolicySeverity(str, Enum):
+    """Severity level of a policy violation."""
+
+    INFO = "INFO"
+    WARNING = "WARNING"
+    BLOCKER = "BLOCKER"
+
+
 class PolicyRule(BaseModel):
     """A single rule within a policy."""
 
@@ -71,6 +79,7 @@ class Policy(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     name: str = Field(..., min_length=1, max_length=100)
     description: str = ""
+    severity: PolicySeverity = PolicySeverity.WARNING
     rules: list[PolicyRule] = Field(default_factory=list)
     target_scope: PolicyTargetScope = PolicyTargetScope.COMPONENT
     logic_definition: str | None = Field(default=None, description="JSON string defining validation logic")

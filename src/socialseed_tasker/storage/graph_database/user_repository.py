@@ -24,9 +24,9 @@ def _node_to_user(node: dict[str, Any]) -> User:
         username=node["username"],
         email=node.get("email"),
         role=UserRole(node.get("role", "developer")),
-        github_handle=node.get("github_handle"),
-        created_at=datetime.fromisoformat(node["created_at"]) if node.get("created_at") else datetime.now(timezone.utc),
-        last_login=datetime.fromisoformat(node["last_login"]) if node.get("last_login") else None,
+        github_handle=node.get("githubHandle") or node.get("github_handle"),
+        created_at=datetime.fromisoformat(node.get("createdAt") or node.get("created_at", datetime.now(timezone.utc).isoformat())),
+        last_login=datetime.fromisoformat(node.get("lastLogin") or node.get("last_login")) if node.get("lastLogin") or node.get("last_login") else None,
         preferences=node.get("preferences"),
     )
 
