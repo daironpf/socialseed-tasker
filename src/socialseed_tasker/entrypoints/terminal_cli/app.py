@@ -126,6 +126,37 @@ from socialseed_tasker.entrypoints.terminal_cli.cmd.storage import storage_app
 app.add_typer(storage_app, name="storage")
 
 
+def serve_command(
+    host: str = typer.Option("0.0.0.0", "--host", "-h", help="Host to bind to"),
+    port: int = typer.Option(8000, "--port", "-p", help="Port to bind to"),
+    reload: bool = typer.Option(False, "--reload", "-r", help="Enable auto-reload"),
+) -> None:
+    """Start the Tasker API server."""
+    import uvicorn
+    from socialseed_tasker.bootstrap.container import Container
+    from socialseed_tasker.entrypoints.web_api.app import create_app
+
+    console.print("[info]Starting Tasker API server...[/info]")
+
+    container = Container.from_env()
+    repository = container.get_repository()
+    neo4j_driver = container.get_driver()
+    app_api = create_app(repository, neo4j_driver)
+
+    config = uvicorn.Config(
+        app_api,
+        host=host,
+        port=port,
+        reload=reload,
+        log_level="info",
+    )
+    server = uvicorn.Server(config)
+    server.run()
+
+
+app.command(name="serve", help="Start the Tasker API server")(serve_command)
+
+
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,

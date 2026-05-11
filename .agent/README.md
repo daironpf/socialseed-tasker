@@ -113,6 +113,11 @@ tasker seed run
 tasker init <path>
 tasker init <path> --force
 
+# Serve (start API server)
+tasker serve
+tasker serve --host 0.0.0.0 --port 8000
+tasker serve --reload
+
 # Code-as-Graph (v1.0.0)
 tasker code-graph scan <path> --incremental
 tasker code-graph find <name>
