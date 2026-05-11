@@ -589,7 +589,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             WHERE i.status <> 'CLOSED'
             OPTIONAL MATCH (i)-[:DEPENDS_ON]->(d:Issue)
             WITH i, COLLECT(DISTINCT d.status) AS dep_statuses
-            WHERE ALL(status IN dep_statuses WHERE status = 'CLOSED') OR size(dep_statuses) = 0
+            WHERE size(dep_statuses) = 0 OR ALL(status IN dep_statuses WHERE status = 'CLOSED')
             """
             params: dict[str, Any] = {}
 
@@ -597,9 +597,9 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 cypher += " AND i.priority = $priority"
                 params["priority"] = priority
 
-            if componentId:
-                cypher += " AND i.componentId = $componentId"
-                params["componentId"] = componentId
+            if component_id:
+                cypher += " AND i.component_id = $component_id"
+                params["component_id"] = component_id
 
             cypher += " RETURN i"
             result = session.run(cypher, params)

@@ -12,25 +12,46 @@ Converts FINDings in report.md to issues in .issues/to-do/. This workflow is exe
 
 1. Only execute AFTER report.md is complete
 2. DO NOT create issues for problems already resolved
-3. Maintain index correlation with .issues/done/
+3. **ALWAYS** use `.issues/done/` folder to determine the correct index (NOT the INDEX file in to-do)
+4. The issue number must be the next sequential number after the highest numbered file in `.issues/done/`
 
 ---
 
-## Phase 1: Read report.md
+## Phase 1: Determine Correct Issue Index
+
+### Process
+1. **CRITICAL**: List all files in `.issues/done/` to find the highest issue number
+2. Use command: `ls .issues/done/ | sort -V | tail -5` to see the highest numbers
+3. The next issue number = highest_number + 1
+
+**Example:**
+```
+$ ls .issues/done/ | sort -V | tail -5
+270-implement-issue-affects-codesymbol-link.md
+271-implement-codesymbol-calls-impact-analysis.md
+272-integrate-agent-must-comply-policy.md
+273-implement-issue-resolved-by-commit.md
+
+# Next issue should be: #274
+```
+
+---
+
+## Phase 2: Read report.md
 
 ### Process
 1. Read the file: `real-test/report.md`
-2. Find all sections with `### FIND-###:` pattern
+2. Find all sections with `### FIND-###:` or `### BUG-###:` or `### DOC_GAP-###:` pattern
 3. Extract:
-   - ID (FIND-001, FIND-002, etc.)
+   - ID (FIND-001, BUG-001, etc.)
    - Type (BUG, DOC_GAP, etc.)
-   - Severity
+   - Severity (HIGH, MEDIUM, LOW)
    - Title
    - Description
 
 ---
 
-## Phase 2: Create Issues
+## Phase 3: Create Issues
 
 ### For Each FINDING
 
@@ -68,13 +89,14 @@ Create a new issue file in `.issues/to-do/` with:
 - Related issue numbers from previous runs
 ```
 
-### Index Correlation
-- Find highest issue number in `.issues/done/`
-- New issues continue from that number (e.g., if highest is 171, next is 172)
+### Naming Convention
+- Filename format: `{issue_number}-{short-title}.md`
+- Use kebab-case for the title
+- Example: `274-workable-issues-endpoint-500-error.md`
 
 ---
 
-## Phase 3: Update report.md
+## Phase 4: Update report.md
 
 ### Process
 1. Add to report.md:
@@ -83,20 +105,20 @@ Create a new issue file in `.issues/to-do/` with:
 
 | Issue | Title |
 |-------|-------|
-| #172 | [title FIND-001] |
-| #173 | [title FIND-002] |
+| #274 | [title FIND-001] |
+| #275 | [title FIND-002] |
 ```
 
 ---
 
-## Phase 4: Notify
+## Phase 5: Notify
 
 ### Output
 Report to user:
 ```
 Issues created:
-- .issues/to-do/172-[slug].md
-- .issues/to-do/173-[slug].md
+- .issues/to-do/274-[slug].md
+- .issues/to-do/275-[slug].md
 ```
 
 ---
@@ -105,7 +127,7 @@ Issues created:
 
 ### Input (report.md)
 ```markdown
-### FIND-001: API returns wrong version
+### BUG-001: API returns wrong version
 
 | Severity | HIGH |
 |----------|------|
@@ -114,9 +136,19 @@ Issues created:
 API returns 0.7.0 instead of 0.9.0
 ```
 
-### Output (.issues/to-do/172-version-mismatch.md)
+### Finding highest issue number
+```
+$ ls .issues/done/ | sort -V | tail -3
+271-implement-codesymbol-calls-impact-analysis.md
+272-integrate-agent-must-comply-policy.md
+273-implement-issue-resolved-by-commit.md
+
+# Next: #274
+```
+
+### Output (.issues/to-do/274-api-version-mismatch.md)
 ```markdown
-# Issue #172: API returns wrong version
+# Issue #274: API returns wrong version
 
 ## Description
 API returns 0.7.0 instead of 0.9.0
@@ -134,9 +166,10 @@ Version should match source code
 
 ## Checklist
 
+- [ ] Determine correct index from `.issues/done/` folder
 - [ ] Read real-test/report.md
-- [ ] Extract all FIND-### sections
+- [ ] Extract all FIND/BUG/DOC_GAP sections
 - [ ] Create issue for each FINDING (not RESOLVED)
-- [ ] Maintain index correlation
+- [ ] Use correct sequential numbering from .issues/done/
 - [ ] Update report.md with created issues
 - [ ] Notify user of created issues
