@@ -109,6 +109,34 @@ docker compose down -v
 docker compose up -d
 ```
 
+#### Docker Port Mapping Fails on Windows
+
+If you see the error: `ports are not available: exposing port TCP 0.0.0.0:8000`
+
+**Cause:** On Windows, ports 8000 and 8080 may be used by other applications or require elevated privileges.
+
+**Solution:** Use alternative ports in `docker-compose.yml`:
+```yaml
+tasker-api:
+  ports:
+    - "8888:8000"   # API accessible at http://localhost:8888
+
+tasker-board:
+  ports:
+    - "8889:80"     # Frontend accessible at http://localhost:8889
+```
+
+**Also update the API port environment variable:**
+```yaml
+- TASKER_API_PORT=8888
+```
+
+**Restart after changing:**
+```bash
+docker compose down -v
+docker compose up -d
+```
+
 ---
 
 ### 🤝 Contributing

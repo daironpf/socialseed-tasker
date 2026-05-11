@@ -75,7 +75,7 @@ class AppConfig:
 
     neo4j: Neo4jConfig = field(default_factory=Neo4jConfig)
     api_host: str = "0.0.0.0"
-    api_port: int = 8000
+    api_port: int = 8888
     debug: bool = False
     policy_enforcement_mode: str = "warn"
 
@@ -100,7 +100,7 @@ class AppConfig:
         return cls(
             neo4j=neo4j,
             api_host=os.environ.get("TASKER_API_HOST", "0.0.0.0"),
-            api_port=int(os.environ.get("TASKER_API_PORT", "8000")),
+            api_port=int(os.environ.get("TASKER_API_PORT", "8888")),
             debug=os.environ.get("TASKER_DEBUG", "").lower() in ("1", "true", "yes"),
             policy_enforcement_mode=enforcement_mode,
         )

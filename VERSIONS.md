@@ -179,6 +179,7 @@ SocialSeed Tasker is a **Graph-Only** platform, using Neo4j as its exclusive sou
 - [x] **#177** API Auth Header Flexibility - Both X-API-Key and Authorization: Bearer
 - [x] **#178** Frontend Package Assets - Compiled Vue Kanban included
 - [x] **#183** Reduce Setup Friction - Sensible defaults in docker-compose.yml
+- [x] **#278** Docker Port Mapping on Windows - Default ports 8888/8889 to avoid conflicts
 
 ---
 
