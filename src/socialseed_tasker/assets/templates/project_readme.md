@@ -59,6 +59,12 @@ tasker code-graph find <symbol>
 # RAG & Reasoning
 tasker rag search "<query>"
 tasker reasoning log --issue <id> --thought <thought>
+
+# Server Management
+tasker serve
+tasker serve --port 9000
+tasker restart
+tasker restart --force
 ```
 
 ## API Endpoints

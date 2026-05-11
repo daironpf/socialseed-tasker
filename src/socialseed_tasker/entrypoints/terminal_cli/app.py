@@ -157,6 +157,42 @@ def serve_command(
 app.command(name="serve", help="Start the Tasker API server")(serve_command)
 
 
+def restart_command(
+    build: bool = typer.Option(True, "--build", "-b", help="Build images before starting"),
+    force: bool = typer.Option(False, "--force", "-f", help="Force rebuild (--no-cache)"),
+) -> None:
+    """Restart Tasker services (build and start Docker containers)."""
+    import subprocess
+
+    console.print("[info]Restarting Tasker services...[/info]")
+
+    agent_dir = ".agent"
+
+    if build:
+        console.print("[info]Building Docker images...[/info]")
+        build_cmd = ["docker", "compose", "build"]
+        if force:
+            build_cmd.append("--no-cache")
+        result = subprocess.run(build_cmd, cwd=agent_dir)
+        if result.returncode != 0:
+            console.print("[error]Docker build failed![/error]")
+            raise typer.Exit(code=1)
+
+    console.print("[info]Starting Docker containers...[/info]")
+    result = subprocess.run(
+        ["docker", "compose", "up", "-d"],
+        cwd=agent_dir,
+    )
+    if result.returncode != 0:
+        console.print("[error]Docker start failed![/error]")
+        raise typer.Exit(code=1)
+
+    console.print("[success]Tasker services restarted successfully![/success]")
+
+
+app.command(name="restart", help="Restart Tasker Docker services")(restart_command)
+
+
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,

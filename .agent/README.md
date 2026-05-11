@@ -118,6 +118,11 @@ tasker serve
 tasker serve --host 0.0.0.0 --port 8000
 tasker serve --reload
 
+# Restart (rebuild and start Docker services)
+tasker restart
+tasker restart --build
+tasker restart --force
+
 # Code-as-Graph (v1.0.0)
 tasker code-graph scan <path> --incremental
 tasker code-graph find <name>

@@ -357,3 +357,41 @@ tasker project setup --path /path/to/project
 ```bash
 tasker seed run
 ```
+
+## Server Management (v1.0.1+)
+
+### Start API Server
+```bash
+# Start server on default port (8000)
+tasker serve
+
+# Start on custom port
+tasker serve --port 9000
+
+# Start with auto-reload (development)
+tasker serve --reload
+```
+
+### Restart Docker Services
+```bash
+# Build and restart all Docker containers
+tasker restart
+
+# Start without rebuilding
+tasker restart --build false
+
+# Force rebuild (--no-cache)
+tasker restart --force
+```
+
+### Docker Compose (Alternative)
+```bash
+# Start Neo4j only
+cd .agent && docker compose up -d tasker-db
+
+# Start all services
+cd .agent && docker compose up -d
+
+# Rebuild before starting
+cd .agent && docker compose build --no-cache && docker compose up -d
+```
