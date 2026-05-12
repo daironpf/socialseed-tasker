@@ -10,6 +10,9 @@
 
 | # | Issue | Priority | Status |
 |---|-------|----------|--------|
+| #281 | Issue creation returns different ID formats | LOW | PENDING |
+| #280 | CLI help output shows truncated command descriptions | LOW | PENDING |
+| #279 | Cannot access API from Windows host | MEDIUM | DONE |
 | #273 | Implement Issue RESOLVED_BY Commit Relationship | HIGH | DONE |
 | #272 | Integrate Agent MUST_COMPLY_WITH Policy Validation | HIGH | DONE |
 | #271 | Implement CodeSymbol CALLS Impact Analysis | HIGH | DONE |
