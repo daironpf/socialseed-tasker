@@ -172,6 +172,8 @@ Create components:
 
 ## Audio Notification
 
-When workflow completes, play: `tarea general terminada.mp3`
+When workflow completes, execute:
 
-See `.agent/skills/audio-notifications.md` for playback command.
+```bash
+.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/tarea general terminada.mp3"
+```

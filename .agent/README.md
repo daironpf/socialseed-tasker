@@ -310,6 +310,7 @@ See `.agent/skills/` for detailed architecture and workflow documentation.
 | `terminal.md` | Docker, venv, shell management |
 | `api-client.md` | REST API interaction for black-box testing |
 | `reporter.md` | Report generation in YAML format |
+| `audio-notifications.md` | Audio notifications for task completion |
 
 ### Test Profiles (Real-Test)
 | Profile | Behavior |

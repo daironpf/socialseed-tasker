@@ -28,21 +28,22 @@ Each workflow completion triggers a specific audio file:
 
 To play an audio notification without opening an external player, use the provided script:
 
-**Windows (Recommended - using MCI API):**
-```python
-import sys
-sys.path.insert(0, '.agent/assets')
-from play_audio import play_audio
-
-# Example: Play "tarea general terminada.mp3"
-audio_path = os.path.join('.agent', 'assets', 'audios', 'tarea general terminada.mp3')
-play_audio(audio_path, wait=True)
-```
-
-**Command line usage:**
+**Command line usage (RECOMMENDED):**
 ```bash
-.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/Issue solucionada.mp3"
+.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/[AUDIO_FILE].mp3"
 ```
+
+**Audio files by workflow:**
+| Workflow | Command |
+|----------|---------|
+| WORK (implement-issue) | `.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/Issue solucionada.mp3"` |
+| COMMIT | `.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/Commit subido.mp3"` |
+| DOCS | `.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/Documentacion actualizada.mp3"` |
+| TEST | `.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/Prueba Completada.mp3"` |
+| TEST-PYPI | `.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/Prueba desde PyPi.mp3"` |
+| HISTORY | `.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/Historial Actualizado.mp3"` |
+| FIND | `.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/de find a issues.mp3"` |
+| SETUP/ISSUE/General | `.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/tarea general terminada.mp3"` |
 
 **Alternative (opens default player):**
 ```python

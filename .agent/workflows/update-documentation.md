@@ -197,6 +197,8 @@ git commit -m "docs: sync documentation with v1.0.0 changes
 
 ## Audio Notification
 
-When workflow completes, play: `Documentacion actualizada.mp3`
+When workflow completes, execute:
 
-See `.agent/skills/audio-notifications.md` for playback command.
+```bash
+.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/Documentacion actualizada.mp3"
+```

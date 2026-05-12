@@ -122,6 +122,8 @@ All tests pass. Issue moved to .issues/done/.
 
 ## Audio Notification
 
-When workflow completes, play: `Issue solucionada.mp3`
+When workflow completes, execute:
 
-See `.agent/skills/audio-notifications.md` for playback command.
+```bash
+.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/Issue solucionada.mp3"
+```

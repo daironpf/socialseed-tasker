@@ -104,6 +104,8 @@ git push origin v0.9.0
 
 ## Audio Notification
 
-When workflow completes, play: `Commit subido.mp3`
+When workflow completes, execute:
 
-See `.agent/skills/audio-notifications.md` for playback command.
+```bash
+.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/Commit subido.mp3"
+```

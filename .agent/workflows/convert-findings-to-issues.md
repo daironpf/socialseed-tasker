@@ -178,6 +178,8 @@ Version should match source code
 
 ## Audio Notification
 
-When workflow completes, play: `de find a issues.mp3`
+When workflow completes, execute:
 
-See `.agent/skills/audio-notifications.md` for playback command.
+```bash
+.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/de find a issues.mp3"
+```
