@@ -99,3 +99,11 @@ git push origin v0.9.0
 - Committing without running tests first
 - Including `.issues/` files in commits (they are gitignored)
 - Using short generic commit messages without detailed summary
+
+---
+
+## Audio Notification
+
+When workflow completes, play: `Commit subido.mp3`
+
+See `.agent/skills/audio-notifications.md` for playback command.

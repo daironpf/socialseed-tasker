@@ -173,3 +173,11 @@ Version should match source code
 - [ ] Use correct sequential numbering from .issues/done/
 - [ ] Update report.md with created issues
 - [ ] Notify user of created issues
+
+---
+
+## Audio Notification
+
+When workflow completes, play: `de find a issues.mp3`
+
+See `.agent/skills/audio-notifications.md` for playback command.

@@ -43,3 +43,11 @@ This workflow automates the creation and maintenance of the daily history file i
 | #135 | ✅ DONE | HIGH | Passed |
 | #136 | 🚧 WIP | MEDIUM | - |
 ```
+
+---
+
+## Audio Notification
+
+When workflow completes, play: `Historial Actualizado.mp3`
+
+See `.agent/skills/audio-notifications.md` for playback command.

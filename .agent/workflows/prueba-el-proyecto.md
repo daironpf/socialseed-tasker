@@ -479,3 +479,11 @@ cd real-test/tasker && docker-compose down
 # Deactivate venv (from real-test/)
 deactivate
 ```
+
+---
+
+## Audio Notification
+
+When workflow completes, play: `Prueba Completada.mp3`
+
+See `.agent/skills/audio-notifications.md` for playback command.

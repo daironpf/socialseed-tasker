@@ -192,3 +192,11 @@ git commit -m "docs: sync documentation with v1.0.0 changes
 - [ ] **Web documentation in `docs/` is synchronized and follows `web-docs-management.md`**
 - [ ] No Spanish text remains in documentation
 - [ ] All version references match the current release (v1.0.0)
+
+---
+
+## Audio Notification
+
+When workflow completes, play: `Documentacion actualizada.mp3`
+
+See `.agent/skills/audio-notifications.md` for playback command.

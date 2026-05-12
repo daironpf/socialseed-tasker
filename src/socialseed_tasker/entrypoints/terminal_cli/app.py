@@ -49,7 +49,7 @@ cli_theme = Theme(
 
 console = Console(
     theme=cli_theme,
-    width=80,
+    width=120,
     no_color=False,
     force_terminal=True,
     soft_wrap=False,

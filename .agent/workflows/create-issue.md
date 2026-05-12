@@ -63,3 +63,11 @@ Why this matters and what problem it solves.
 - Include the expected file paths for new code
 - Document architectural decisions and constraints
 - All issue content must be in English
+
+---
+
+## Audio Notification
+
+When workflow completes, play: `tarea general terminada.mp3`
+
+See `.agent/skills/audio-notifications.md` for playback command.

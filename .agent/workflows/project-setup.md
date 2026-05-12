@@ -167,3 +167,11 @@ Create components:
 - Creating components without analyzing project structure
 - Not setting proper project name
 - Skipping module detection and using default components
+
+---
+
+## Audio Notification
+
+When workflow completes, play: `tarea general terminada.mp3`
+
+See `.agent/skills/audio-notifications.md` for playback command.

@@ -117,3 +117,11 @@ All tests pass. Issue moved to .issues/done/.
 - [ ] Documentation updated (if applicable)
 - [ ] Committed with conventional commit message
 - [ ] Pushed to remote
+
+---
+
+## Audio Notification
+
+When workflow completes, play: `Issue solucionada.mp3`
+
+See `.agent/skills/audio-notifications.md` for playback command.
