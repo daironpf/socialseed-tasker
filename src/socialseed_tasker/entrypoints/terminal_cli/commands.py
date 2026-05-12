@@ -56,7 +56,7 @@ from socialseed_tasker.core.task_management.entities import (
 )
 
 console = Console(
-    width=80,
+    width=120,
     no_color=None,
     force_terminal=None,
     soft_wrap=False,
