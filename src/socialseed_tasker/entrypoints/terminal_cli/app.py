@@ -14,6 +14,15 @@ import typer
 from rich.console import Console
 from rich.theme import Theme
 
+if sys.platform == "win32":
+    try:
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        kernel32.SetConsoleOutputCP(65001)
+        kernel32.SetConsoleCP(65001)
+    except Exception:
+        pass
+
 import socialseed_tasker
 from socialseed_tasker.bootstrap.container import Container
 from socialseed_tasker.entrypoints.terminal_cli import commands
