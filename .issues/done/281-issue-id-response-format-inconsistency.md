@@ -14,7 +14,7 @@ All issue creation responses should return consistent UUID format.
 1. Create multiple issues via API
 2. Compare the ID format in responses
 
-## Status: PENDING
+## Status: COMPLETED
 
 ## Priority: LOW
 

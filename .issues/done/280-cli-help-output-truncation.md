@@ -13,7 +13,7 @@ Command descriptions appear truncated in the terminal output, making it difficul
 1. Run `tasker --help`
 2. Observe that descriptions are cut off mid-word
 
-## Status: PENDING
+## Status: COMPLETED
 
 ## Priority: LOW
 
