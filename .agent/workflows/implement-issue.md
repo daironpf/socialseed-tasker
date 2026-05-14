@@ -1,129 +1,67 @@
 # Workflow: Implement an Issue
 
 ## When to Use
-
-When instructed to implement a specific issue from `.issues/`.
+When instructed to implement a specific issue from Tasker.
 
 ## Steps
 
 ### 1. Read the Issue
-
+```bash
+tasker issue show <ID>
 ```
-Read .issues/to-do/{NN}-{issue-name}.md
-```
-
-Understand all requirements before writing any code.
+Understand all requirements and acceptance criteria before writing any code.
 
 ### 2. Plan the Implementation
-
 Identify:
-- Which files need to be created or modified
-- What tests are needed
-- What dependencies are required
+- Which files need to be created or modified.
+- What tests are needed.
+- Impact on existing systems (use `tasker code-graph impact <Symbol>`).
 
-### 3. Implement the Code
-
-- Follow hexagonal architecture conventions (see `skills/hexagonal-architecture.md`)
-- No business logic in entrypoints or storage layers
-- Pure Python in `core/` - no external framework imports
-- All code in English
-
-### 4. Write Tests
-
-- Create tests in `tests/unit/` for core logic
-- Create tests in `tests/integration/` for storage/entrypoint integration
-- See `workflows/test-code.md` for testing procedures
-
-### 5. Run Tests
-
+### 3. Log Reasoning (v1.0 Traceability)
+Before writing code, log your plan and the alternatives you considered:
 ```bash
-.venv/Scripts/python.exe -m pytest tests/ -v
+tasker reasoning log --issue <ID> \
+  --thought "Plan: Implement X using Y. Alternatives: Z." \
+  --alternatives "Z, W" \
+  --rejected "Z is too slow, W is complex" \
+  --decision "Implementing X"
 ```
 
-All tests must pass before proceeding.
+### 4. Implement the Code
+- Follow the architectural patterns defined in `tasker/project.md`.
+- All code and comments must be in English.
 
-### 6. Mark Issue as Completed
-
-Edit the issue file:
-```markdown
-## Status: PENDING
-```
-Change to:
-```markdown
-## Status: COMPLETED
-```
-
-### 7. Move Issue to Done
-
+### 5. Update Code Graph
+After modifying the code, you MUST update the knowledge graph:
 ```bash
-mv ".issues/to-do/{NN}-{issue-name}.md" ".issues/done/"
+tasker code-graph scan . --incremental
 ```
 
-### 8. Update Documentation (if needed)
+### 6. Write and Run Tests
+- Create unit/integration tests as needed.
+- Ensure all tests pass.
 
-See `skills/documentation-sync.md` for full procedure. Quick check:
-
-- Does this fix a known issue? → Update `ROADMAP.md` known issues table
-- Does this add a feature? → Update `VERSIONS.md` checklist
-- Does this add a new command? → Update `README.md`
-- Does this change APIs? → Update `API_REFERENCE.md`
-
-**Always run** `skills/documentation-sync.md` guidance to determine what docs need updating.
-
-### 9. Commit and Push
-
-Create a detailed commit following the conventional commits format with a comprehensive summary:
-
+### 7. Mark Issue as Completed
+Close the issue and link it to the modified files:
 ```bash
-git add src/ tests/ README.md ROADMAP.md VERSIONS.md
-git commit -m "type: short summary
-
-- Detailed description of changes made
-- Specific files modified and why
-- Test results and verification
-- Issue reference and completion status
-- Documentation updates if applicable"
-git push origin v0.9.0
+tasker issue close <ID> --files "path/to/file1.py,path/to/file2.py"
 ```
 
-**Commit Message Structure:**
+### 8. Update Documentation
+- Follow `tasker/AGENT_GUIDE.md` for doc-sync procedures.
+- Update `ROADMAP.md` and `VERSIONS.md`.
+
+### 7. Commit Changes
+Use conventional commits:
+```bash
+git add .
+git commit -m "feat: implement <issue description>"
 ```
-type: short summary
-
-- Change 1: specific description
-- Change 2: specific description
-- Change 3: specific description
-
-All tests pass. Issue moved to .issues/done/.
-```
-
-**Types:**
-| Type | When to Use |
-|------|-------------|
-| `fix` | Bug fixes |
-| `feat` | New features |
-| `refactor` | Code restructuring |
-| `test` | Adding/updating tests |
-| `docs` | Documentation changes |
-| `chore` | Maintenance tasks |
 
 ## Checklist
-
-- [ ] Issue fully read and understood
-- [ ] Code follows hexagonal architecture
-- [ ] Tests written and passing
-- [ ] Issue marked as COMPLETED
-- [ ] Issue moved to `.issues/done/`
-- [ ] Documentation updated (if applicable)
-- [ ] Committed with conventional commit message
-- [ ] Pushed to remote
-
----
-
-## Audio Notification
-
-When workflow completes, execute:
-
-```bash
-.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/Issue solucionada.mp3"
-```
+- [ ] Issue requirements fully understood.
+- [ ] Impact analysis performed.
+- [ ] Code follows project standards.
+- [ ] Tests written and passing.
+- [ ] Documentation updated.
+- [ ] Issue closed in Tasker.

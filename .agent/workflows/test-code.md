@@ -1,68 +1,27 @@
 # Workflow: Test Code
 
 ## When to Use
-
-After implementing any code change, before committing.
-
-## Prerequisites
-
-The virtual environment must exist and have required packages:
-
-```bash
-.venv/Scripts/pip.exe install pydantic pytest
-```
+Before marking an issue as completed or submitting a pull request.
 
 ## Steps
 
-### 1. Run All Tests
-
+### 1. Unit Testing
+Run unit tests to verify individual components:
 ```bash
-.venv/Scripts/python.exe -m pytest tests/ -v
+{test_commands}
 ```
 
-### 2. Run Specific Test File
+### 2. Integration Testing
+If the project has integration tests, run them to ensure components work together.
 
+### 3. Manual Verification
+If applicable, test the feature manually via CLI or API.
+
+### 4. Regression Check
+Ensure your changes haven't broken existing functionality.
+
+### 5. Document Results
+If any significant test results were found, log them in the issue reasoning:
 ```bash
-.venv/Scripts/python.exe -m pytest tests/unit/test_entities.py -v
+tasker reasoning log --issue <ID> --thought "Tests passed with 95% coverage" --decision "Ready for release"
 ```
-
-### 3. Run with Coverage (when pytest-cov is installed)
-
-```bash
-.venv/Scripts/python.exe -m pytest tests/ --cov=socialseed_tasker --cov-report=term-missing
-```
-
-### 4. Run Only Failed Tests from Previous Run
-
-```bash
-.venv/Scripts/python.exe -m pytest tests/ --lf
-```
-
-## Test File Conventions
-
-- Unit tests: `tests/unit/test_{module}.py`
-- Integration tests: `tests/integration/test_{module}.py`
-- E2E tests: `tests/e2e/test_{feature}.py`
-- Test classes: `Test{ClassName}`
-- Test functions: `test_{behavior_description}`
-
-## Test Structure
-
-```python
-class TestComponent:
-    def test_create_minimal_component(self):
-        component = Component(name="Backend", project="my-project")
-        assert component.name == "Backend"
-
-    def test_component_is_frozen(self):
-        component = Component(name="Backend", project="my-project")
-        with pytest.raises(ValidationError):
-            component.name = "Frontend"
-```
-
-## Important Notes
-
-- `conftest.py` adds `src/` to `sys.path` so imports work
-- All tests must pass before any commit
-- Write tests that verify both happy path and edge cases
-- Test immutability, validation, and serialization for entities
