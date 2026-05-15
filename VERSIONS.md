@@ -8,6 +8,7 @@
 - [x] **Dependency Enforcement:** Unit tests validating dependency closure rules.
 - [x] **Real-Test Evaluation:** Black-box evaluation framework.
 - [x] **DX Scores:** Developer Experience metrics documented.
+- [x] **#285 Docker Windows Port Binding:** Updated docker-compose files to use 127.0.0.1:PORT:PORT format for Windows compatibility.
 
 ### Release History
 | Version | Date | Description |

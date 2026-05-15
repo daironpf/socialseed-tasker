@@ -29,5 +29,11 @@ Determine which documentation files are affected by your changes.
 ### 3. Verify
 Read through the updated files to ensure clarity and correctness.
 
-### 4. Commit with Code
-Always include documentation updates in the same commit as the code changes to keep history synchronized.
+### 4. Prepare for Commit
+**DO NOT commit as the agent.** Documentation updates should be included in the same commit as the code changes, but the commit must be executed by the user.
+
+Present a summary to the user with:
+- List of documentation files updated
+- Proposed commit message
+
+Wait for user to approve and execute the commit.

@@ -27,3 +27,4 @@
 | # | Description | Severity | Location | Status |
 |---|-------------|----------|----------|--------|
 | 1 | Initial setup pending | Low | Root | COMPLETED |
+| 285 | Docker Desktop Windows Port Binding | Medium | Infrastructure | RESOLVED |

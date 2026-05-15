@@ -51,12 +51,16 @@ tasker issue close <ID> --files "path/to/file1.py,path/to/file2.py"
 - Follow `tasker/AGENT_GUIDE.md` for doc-sync procedures.
 - Update `ROADMAP.md` and `VERSIONS.md`.
 
-### 7. Commit Changes
-Use conventional commits:
-```bash
-git add .
-git commit -m "feat: implement <issue description>"
-```
+### 7. Prepare for Commit (User Approval Required)
+**DO NOT commit as the agent.** Present a summary for user to review and approve.
+
+Generate a summary with:
+- List of modified files
+- Proposed commit message following conventional commits
+
+Wait for user to execute `git commit` and `git push`.
+
+See `workflows/commit-push.md` for details.
 
 ## Checklist
 - [ ] Issue requirements fully understood.
