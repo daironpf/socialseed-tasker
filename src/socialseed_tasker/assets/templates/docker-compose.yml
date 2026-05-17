@@ -10,7 +10,6 @@ services:
   # Neo4j Database (Graph Database - Exclusive Storage)
   # =============================================================================
   tasker-db:
-    container_name: tasker-db
     image: neo4j:5.26.15-community
     ports:
       - "127.0.0.1:7474:7474"
@@ -41,15 +40,11 @@ services:
   # Note: Use 'docker compose build tasker-api' after modifying src/
   # =============================================================================
   tasker-api:
-    container_name: tasker-api
-    build:
-      context: ../..
-      dockerfile: Dockerfile
     image: tasker-api:local
     ports:
       - "127.0.0.1:8888:8000"
     environment:
-      - TASKER_NEO4J_URI=${TASKER_NEO4J_URI:-bolt://tasker-db:7687}
+      - TASKER_NEO4J_URI=bolt://tasker-db:7687
       - TASKER_NEO4J_USERNAME=${TASKER_NEO4J_USERNAME:-neo4j}
       - TASKER_NEO4J_PASSWORD=${TASKER_NEO4J_PASSWORD:-neoSocial}
       - TASKER_API_HOST=0.0.0.0
@@ -69,7 +64,6 @@ services:
   # Or use: docker build -t tasker-board -f frontend/Dockerfile frontend/
   # =============================================================================
   tasker-board:
-    container_name: tasker-board
     build:
       context: ./frontend
       dockerfile: Dockerfile

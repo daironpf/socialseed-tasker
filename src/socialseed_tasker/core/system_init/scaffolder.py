@@ -69,7 +69,8 @@ class ScaffolderService:
         if output_dir:
             tasker_dir = output_dir
         else:
-            tasker_dir = target_dir / ".agent"
+            tasker_dir = target_dir / ".agent" / "tasker"
+        agent_root_dir = target_dir / ".agent"
         result = ScaffoldResult(target_dir=tasker_dir)
 
         if not self._template_dir.exists():
@@ -99,6 +100,8 @@ class ScaffolderService:
         self._copy_documentation_files(target_dir, force, result)
 
         self._copy_frontend_build(target_dir, force, result)
+
+        self._create_agent_md(agent_root_dir, force, result)
 
         return result
 
@@ -161,8 +164,8 @@ class ScaffolderService:
         force: bool,
         result: ScaffoldResult,
     ) -> None:
-        """Copy project.md and project.json templates to .agent/ directory."""
-        tasker_dir = target_dir / ".agent"
+        """Copy project.md and project.json templates to .agent/tasker/ directory."""
+        tasker_dir = target_dir / ".agent" / "tasker"
         tasker_dir.mkdir(parents=True, exist_ok=True)
 
         for filename in ["project.md", "project.json"]:
@@ -316,7 +319,7 @@ class ScaffolderService:
         if not frontend_source.exists():
             return
 
-        tasker_frontend = target_dir / ".agent" / "frontend"
+        tasker_frontend = target_dir / ".agent" / "tasker" / "frontend"
         tasker_frontend.mkdir(parents=True, exist_ok=True)
 
         for src_path in frontend_source.rglob("*"):
@@ -356,3 +359,80 @@ class ScaffolderService:
                     result.add_operation(op)
                     if self._progress_callback:
                         self._progress_callback(op)
+
+    def _create_agent_md(
+        self,
+        agent_root_dir: Path,
+        force: bool,
+        result: ScaffoldResult,
+    ) -> None:
+        """Create Agent.md in .agent/ root with working directory rules."""
+        agent_md_path = agent_root_dir / "Agent.md"
+
+        if agent_md_path.exists() and not force:
+            result.add_operation(
+                FileOperation(
+                    source=Path("IN_MEMORY"),
+                    destination=agent_md_path,
+                    status=ScaffoldStatus.SKIPPED,
+                )
+            )
+            return
+
+        agent_md_content = """# Tasker Agent Configuration
+
+## Working Directory
+ALL tasker work must be performed from: `.agent/tasker/`
+
+## Directory Structure
+```
+./
+├── .agent/
+│   ├── tasker/       # <- WORK FROM HERE
+│   │   ├── skills/
+│   │   ├── workflows/
+│   │   ├── configs/
+│   │   ├── docker-compose.yml
+│   │   └── frontend/
+│   └── Agent.md      # This file
+```
+
+## Rules for IA Agents
+1. Always `cd` to `.agent/tasker/` before running any tasker command
+2. All file paths in tasker configuration are relative to `.agent/tasker/`
+3. Code graph scans, RAG indexes, and logs are stored relative to this folder
+4. Docker commands should be run from `.agent/tasker/`
+
+## Commands Reference
+```bash
+cd .agent/tasker/
+docker compose up -d
+tasker issue list
+```
+
+## Note
+This file was auto-generated during `tasker init`. Do not modify manually.
+"""
+
+        try:
+            agent_root_dir.mkdir(parents=True, exist_ok=True)
+            agent_md_path.write_text(agent_md_content, encoding="utf-8")
+            status = ScaffoldStatus.OVERWRITTEN if agent_md_path.exists() else ScaffoldStatus.CREATED
+            op = FileOperation(
+                source=Path("IN_MEMORY"),
+                destination=agent_md_path,
+                status=status,
+            )
+            result.add_operation(op)
+            if self._progress_callback:
+                self._progress_callback(op)
+        except OSError as exc:
+            op = FileOperation(
+                source=Path("IN_MEMORY"),
+                destination=agent_md_path,
+                status=ScaffoldStatus.ERROR,
+                error_message=str(exc),
+            )
+            result.add_operation(op)
+            if self._progress_callback:
+                self._progress_callback(op)

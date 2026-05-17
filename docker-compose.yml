@@ -17,7 +17,7 @@ services:
     volumes:
       - neo4j-data:/var/lib/neo4j/data
     healthcheck:
-      test: ["CMD-SHELL", "echo 'RETURN 1' | cypher-shell -u neo4j -p neoSocial || exit 1"]
+      test: [ "CMD-SHELL", "echo 'RETURN 1' | cypher-shell -u neo4j -p neoSocial || exit 1" ]
       interval: 10s
       timeout: 10s
       retries: 30
@@ -30,6 +30,7 @@ services:
 
   tasker-api:
     container_name: tasker-api
+    image: tasker-api:local
     build:
       context: .
       dockerfile: Dockerfile
