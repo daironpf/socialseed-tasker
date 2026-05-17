@@ -55,8 +55,11 @@ class FakeRepository:
         self._issues[key] = Issue(**data)
         return self._issues[key]
 
-    def close_issue(self, issue_id: str) -> Issue:
-        return self.update_issue(issue_id, {"status": IssueStatus.CLOSED})
+    def close_issue(self, issue_id: str, commit_sha: str | None = None, resolution: str = "implemented") -> Issue:
+        updates = {"status": IssueStatus.CLOSED, "resolution": resolution}
+        if commit_sha:
+            updates["commit_sha"] = commit_sha
+        return self.update_issue(issue_id, updates)
 
     def delete_issue(self, issue_id: str) -> None:
         key = self._key(issue_id)

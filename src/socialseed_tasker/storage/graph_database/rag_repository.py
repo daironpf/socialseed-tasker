@@ -299,7 +299,7 @@ class RAGRepository:
         directly on Issue/Symbol/Reasoning nodes instead of
         creating separate RAGEmbedding nodes.
         """
-        embedding = self._embedding_service.encode(content)
+        embedding = self._embedding_service.generate(content)
         if embedding is None:
             return {"error": "Failed to encode content"}
 
@@ -307,8 +307,9 @@ class RAGRepository:
             "issue": "Issue",
             "symbol": "CodeSymbol",
             "reasoning": "ReasoningNode",
+            "policy": "Policy",
         }
-        neo_label = label_map.get(node_label, node_label.capitalize())
+        neo_label = label_map.get(node_label.lower(), node_label.capitalize())
 
         with self._get_session() as session:
             query = f"""
@@ -329,7 +330,7 @@ class RAGRepository:
         self, node_label: str, query_text: str, limit: int = 5
     ) -> list[dict[str, Any]]:
         """Search using embeddings stored directly on nodes."""
-        embedding = self._embedding_service.encode(query_text)
+        embedding = self._embedding_service.generate(query_text)
         if embedding is None:
             return []
 
@@ -337,14 +338,15 @@ class RAGRepository:
             "issue": "Issue",
             "symbol": "CodeSymbol",
             "reasoning": "ReasoningNode",
+            "policy": "Policy",
         }
-        neo_label = label_map.get(node_label, node_label.capitalize())
+        neo_label = label_map.get(node_label.lower(), node_label.capitalize())
 
         with self._get_session() as session:
             cypher = f"""
             MATCH (n:{neo_label})
             WHERE n.embedding IS NOT NULL
-            RETURN n.id as id, n.title as title,
+            RETURN n.id as id, n.name as title, n.title as issue_title,
                    vector.similarity.cosine(n.embedding, $embedding) as score
             ORDER BY score DESC
             LIMIT toInteger($limit)
@@ -354,14 +356,14 @@ class RAGRepository:
                 {"embedding": embedding, "limit": limit},
             )
             return [
-                {"id": r["id"], "title": r.get("title"), "score": r["score"]}
+                {"id": r["id"], "title": r.get("issue_title") or r.get("title"), "score": r["score"]}
                 for r in result
             ]
 
     def get_stats_native(self) -> dict[str, int]:
         """Get stats for natively stored embeddings."""
         counts = {}
-        for label in ["Issue", "CodeSymbol", "ReasoningNode"]:
+        for label in ["Issue", "CodeSymbol", "ReasoningNode", "Policy"]:
             with self._get_session() as session:
                 result = session.run(
                     f"MATCH (n:{label}) WHERE n.embedding IS NOT NULL RETURN count(n) as count"

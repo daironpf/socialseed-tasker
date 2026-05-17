@@ -405,13 +405,15 @@ class TestInitCommand:
         )
         assert result.exit_code == 0
         assert (target_dir / ".agent").exists()
-        assert (target_dir / ".agent" / "docker-compose.yml").exists()
+        assert (target_dir / ".agent" / "tasker").exists()
+        assert (target_dir / ".agent" / "tasker" / "docker-compose.yml").exists()
+        assert (target_dir / ".agent" / "Agent.md").exists()
 
     def test_init_force_overwrites_existing(self, runner, tmp_path):
         target_dir = tmp_path / "project"
         target_dir.mkdir()
-        tasker_dir = target_dir / ".agent"
-        tasker_dir.mkdir()
+        tasker_dir = target_dir / ".agent" / "tasker"
+        tasker_dir.mkdir(parents=True)
         (tasker_dir / "docker-compose.yml").write_text("old content")
 
         result = runner.invoke(

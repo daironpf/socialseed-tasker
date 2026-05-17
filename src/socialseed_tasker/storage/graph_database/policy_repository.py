@@ -30,8 +30,8 @@ def _policy_to_dict(policy: Policy) -> dict[str, Any]:
         "remediation_strategy": policy.remediation_strategy,
         "autofix_template": policy.autofix_template,
         "is_active": policy.is_active,
-        "created_at": policy.created_at.isoformat(),
-        "updated_at": policy.updated_at.isoformat(),
+        "createdAt": policy.created_at.isoformat(),
+        "updatedAt": policy.updated_at.isoformat(),
     }
 
 
@@ -140,7 +140,7 @@ class PolicyRepository:
             session.run(
                 queries.LINK_POLICY_TO_PROJECT,
                 policy_id=policy_id,
-                project_id=project_id,
+                projectId=project_id,
             )
 
     def link_policy_to_agent(self, policy_id: str, agent_id: str) -> None:

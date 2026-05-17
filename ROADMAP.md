@@ -28,3 +28,4 @@
 |---|-------------|----------|----------|--------|
 | 1 | Initial setup pending | Low | Root | COMPLETED |
 | 285 | Docker Desktop Windows Port Binding | Medium | Infrastructure | RESOLVED |
+| 286 | Post-install Agent Folder Setup | High | CLI/Scaffolding | RESOLVED |

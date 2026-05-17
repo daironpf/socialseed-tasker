@@ -100,10 +100,11 @@ app.add_typer(commands.analyze_app, name="analyze", help="Analyze issues and roo
 # Register project detection command
 app.add_typer(commands.project_app, name="project", help="Project detection and setup")
 
-# Register init as a standalone command to avoid nested typer issues
-from socialseed_tasker.entrypoints.cli.init_command import scaffold_command
+# Register init and install as standalone commands to avoid nested typer issues
+from socialseed_tasker.entrypoints.cli.init_command import scaffold_command, interactive_init_command
 
-app.command(name="init", help="Initialize Tasker in an external project")(scaffold_command)
+app.command(name="install", help="Install Tasker infrastructure into a project (non-interactive)")(scaffold_command)
+app.command(name="init", help="Initialize Tasker in a project interactively")(interactive_init_command)
 
 # Register status as a standalone command (not a typer)
 app.command(name="status", help="Show CLI status and configuration")(commands.status_command)
