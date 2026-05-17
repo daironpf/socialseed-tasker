@@ -105,6 +105,7 @@ class Component(BaseModel):
     description: Optional[str] = None
     project: str = Field(..., min_length=1)
     project_id: Optional[UUID] = None
+    labels: list[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
 

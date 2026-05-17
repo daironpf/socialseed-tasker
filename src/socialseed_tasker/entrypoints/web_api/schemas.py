@@ -497,6 +497,47 @@ class ComponentCreateRequest(BaseModel):
         description="Project name this component belongs to (default: 'default')",
         examples=["socialseed-tasker", "ecommerce-store"],
     )
+    labels: list[str] = Field(
+        default_factory=list,
+        description="Labels to categorize the component",
+        examples=[["backend", "api"], ["frontend", "ui"]],
+    )
+
+class UserResponse(BaseModel):
+    id: str
+    username: str
+    email: str | None = None
+    role: str
+    github_handle: str | None = None
+    created_at: str
+    last_login: str | None = None
+    preferences: str | None = None
+
+class UserCreateRequest(BaseModel):
+    """Request body for creating a new user node."""
+    username: str = Field(..., min_length=1, description="Display name or alias for the user")
+    email: str | None = Field(None, description="Primary email address")
+    role: str = Field("ADMIN", description="The user's authority level")
+    github_handle: str | None = Field(None, description="Linked GitHub username")
+    preferences: str | None = Field(None, description="Configuration for UI themes, etc.")
+
+class ProjectCreateRequest(BaseModel):
+    """Request body for creating a new project node."""
+    id: str | None = Field(None, description="Universal unique identifier (generated if not provided)")
+    name: str = Field(..., min_length=1, description="Official name of the project")
+    slug: str = Field(..., min_length=1, description="URL-friendly identifier and directory name")
+    description: str = Field("", description="Detailed description of the project's scope")
+    repositoryUrl: str = Field("", description="Link to the remote Git repository")
+    basePackage: str = Field("", description="The root package or primary namespace")
+    visibility: str = Field("PUBLIC", description="Project visibility level (PUBLIC, PRIVATE)")
+    status: str = Field("DEVELOPMENT", description="Current project lifecycle state")
+    techStack: list[str] = Field(default_factory=list, description="Complete list of all integrated technologies")
+    mainStack: list[str] = Field(default_factory=list, description="Core technologies")
+    architectureStyle: str = Field("api-first", description="Architectural pattern followed")
+    version: str = Field("0.1.0", description="Current semantic version")
+    conventionsUrl: str = Field("", description="Reference to external coding standards")
+    conventionsRules: str = Field("", description="Specific rules and guidelines for AI agents")
+    globalStatus: str = Field("DEVELOPMENT", description="Operational status: DEVELOPMENT, STAGING, PRODUCTION")
 
 
 class TestFailureRequest(BaseModel):
@@ -813,6 +854,8 @@ class PolicyCreateRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     description: str = ""
     rules: list[PolicyRuleRequest] = Field(default_factory=list)
+    severity: str = "WARNING"
+    project_id: str | None = None
     target_scope: str = "COMPONENT"
     logic_definition: str | None = None
     remediation_strategy: str | None = None

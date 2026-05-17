@@ -100,6 +100,7 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     PolicyValidationResponse,
     PolicyViolationResponse,
     ProjectSummaryResponse,
+    ProjectCreateRequest,
     ReasoningLogEntryRequest,
     ReasoningLogEntryResponse,
     TestFailureRequest,
@@ -1483,7 +1484,7 @@ def create_component(
     sanitized_name = sanitize_component_name(validated_name)
     sanitized_description = sanitize_component_name(body.description or "")
 
-    comp = Component(name=sanitized_name, description=sanitized_description, project=body.project)
+    comp = Component(name=sanitized_name, description=sanitized_description, project=body.project, labels=body.labels)
     repo.create_component(comp)
     return APIResponse(data=_component_to_response(comp), meta=Meta(request_id=None))
 
@@ -2430,8 +2431,16 @@ _policy_engine: dict[str, Any] = {"policies": []}
 )
 def create_policy(
     body: PolicyCreateRequest,
+    request: Request,
 ) -> APIResponse[PolicyResponse]:
-    from socialseed_tasker.core.project_analysis.policy import Policy, PolicyRule, PolicyRuleType
+    from socialseed_tasker.core.project_analysis.policy import Policy, PolicyRule, PolicyRuleType, PolicyTargetScope, PolicySeverity
+    from socialseed_tasker.storage.graph_database.policy_repository import PolicyRepository
+    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from uuid import UUID
+
+    driver = request.app.state.driver
+    policy_repo = PolicyRepository(driver)
+    rag_repo = RAGRepository(driver)
 
     rules = []
     for rule_req in body.rules:
@@ -2448,11 +2457,24 @@ def create_policy(
     policy = Policy(
         name=body.name,
         description=body.description,
+        severity=PolicySeverity(body.severity) if hasattr(body, "severity") and body.severity else PolicySeverity.WARNING,
         rules=rules,
+        target_scope=PolicyTargetScope(body.target_scope) if body.target_scope else PolicyTargetScope.COMPONENT,
+        logic_definition=body.logic_definition,
+        remediation_strategy=body.remediation_strategy,
+        autofix_template=body.autofix_template,
         is_active=body.is_active,
     )
 
-    _policy_engine["policies"].append(policy)
+    policy_repo.create_policy(policy)
+    
+    # Link to project if provided
+    if hasattr(body, "project_id") and body.project_id:
+        policy_repo.link_policy_to_project(str(policy.id), body.project_id)
+    
+    # Index for RAG
+    content = f"Policy: {policy.name}\nDescription: {policy.description}\nScope: {policy.target_scope.value}\nRules: {policy.rules}"
+    rag_repo.create_native_embedding("policy", str(policy.id), content)
 
     return APIResponse(
         data=PolicyResponse(
@@ -2463,6 +2485,10 @@ def create_policy(
                 {"rule_type": r.rule_type.value, "from_pattern": r.from_pattern, "to_pattern": r.to_pattern}
                 for r in policy.rules
             ],
+            target_scope=policy.target_scope.value,
+            logic_definition=policy.logic_definition,
+            remediation_strategy=policy.remediation_strategy,
+            autofix_template=policy.autofix_template,
             is_active=policy.is_active,
             created_at=policy.created_at,
             updated_at=policy.updated_at,
@@ -2477,8 +2503,21 @@ def create_policy(
     summary="List policies",
     description="List all policies.",
 )
-def list_policies() -> APIResponse[list[PolicyResponse]]:
-    policies = _policy_engine.get("policies", [])
+def list_policies(
+    request: Request,
+    name: str = None,
+) -> APIResponse[list[PolicyResponse]]:
+    from socialseed_tasker.storage.graph_database.policy_repository import PolicyRepository
+    
+    driver = request.app.state.driver
+    policy_repo = PolicyRepository(driver)
+    
+    if name:
+        policy = policy_repo.get_policy_by_name(name)
+        policies = [policy] if policy else []
+    else:
+        policies = policy_repo.list_policies()
+        
     return APIResponse(
         data=[
             PolicyResponse(
@@ -2489,6 +2528,10 @@ def list_policies() -> APIResponse[list[PolicyResponse]]:
                     {"rule_type": r.rule_type.value, "from_pattern": r.from_pattern, "to_pattern": r.to_pattern}
                     for r in p.rules
                 ],
+                target_scope=p.target_scope.value,
+                logic_definition=p.logic_definition,
+                remediation_strategy=p.remediation_strategy,
+                autofix_template=p.autofix_template,
                 is_active=p.is_active,
                 created_at=p.created_at,
                 updated_at=p.updated_at,
@@ -3352,6 +3395,108 @@ def list_all_projects(
 ) -> APIResponse[list[str]]:
     projects = repo.list_projects()
     return APIResponse(data=projects, meta=Meta(request_id=None))
+
+
+@project_router.post(
+    "/projects",
+    response_model=APIResponse[dict],
+    status_code=201,
+    summary="Create a new project",
+    description="Create a new project node in the graph.",
+)
+def create_project(
+    body: ProjectCreateRequest,
+) -> APIResponse[dict]:
+    from fastapi import HTTPException
+    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.storage.graph_database import queries
+    import uuid
+    from datetime import datetime, timezone
+
+    driver = get_neo4j_driver()
+    if driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+    
+    actual_driver = driver.driver if hasattr(driver, "driver") else driver
+    db = driver.database if hasattr(driver, "database") else "neo4j"
+    
+    project_id = body.id or str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    with actual_driver.session(database=db) as session:
+        session.run(
+            queries.CREATE_PROJECT,
+            id=project_id,
+            name=body.name,
+            slug=body.slug,
+            description=body.description,
+            repositoryUrl=body.repositoryUrl,
+            basePackage=body.basePackage,
+            visibility=body.visibility,
+            status=body.status,
+            techStack=body.techStack,
+            mainStack=body.mainStack,
+            architectureStyle=body.architectureStyle,
+            version=body.version,
+            conventionsUrl=body.conventionsUrl,
+            conventionsRules=body.conventionsRules,
+            lastFullScan=now,
+            globalStatus=body.globalStatus,
+            createdAt=now,
+            updatedAt=now,
+        )
+    
+    return APIResponse(data={"status": "created", "id": project_id}, meta=Meta(request_id=None))
+
+
+@project_router.post(
+    "/users",
+    response_model=APIResponse[dict],
+    status_code=201,
+    summary="Create a new user",
+    description="Create a new user node in the graph and link to project.",
+)
+def create_user(
+    body: UserCreateRequest,
+    project_id: str = Query(..., description="Project ID to link the user to"),
+) -> APIResponse[dict]:
+    from fastapi import HTTPException
+    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+    import uuid
+    from datetime import datetime, timezone
+
+    driver = get_neo4j_driver()
+    if driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+    
+    actual_driver = driver.driver if hasattr(driver, "driver") else driver
+    db = driver.database if hasattr(driver, "database") else "neo4j"
+    
+    user_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    with actual_driver.session(database=db) as session:
+        session.run(
+            """
+            MERGE (u:User {username: $username})
+            ON CREATE SET u.id = $id, u.email = $email, u.role = $role, 
+                          u.githubHandle = $github_handle, u.preferences = $preferences,
+                          u.createdAt = $now, u.updatedAt = $now
+            WITH u
+            MATCH (p:Project {id: $project_id})
+            MERGE (u)-[:MANAGES]->(p)
+            """,
+            id=user_id,
+            username=body.username,
+            email=body.email,
+            role=body.role,
+            github_handle=body.github_handle,
+            preferences=body.preferences,
+            project_id=project_id,
+            now=now,
+        )
+    
+    return APIResponse(data={"status": "created", "id": user_id}, meta=Meta(request_id=None))
 
 
 @project_router.get(

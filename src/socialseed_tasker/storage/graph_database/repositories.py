@@ -121,7 +121,29 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
     def create_component(self, component: Component) -> None:
         with self._driver.driver.session(database=self._driver.database) as session:
             session.run(
-                queries.CREATE_COMPONENT,
+                """
+                CREATE (c:Component {
+                    id: $id,
+                    name: $name,
+                    description: $description,
+                    project: $project,
+                    projectId: $projectId,
+                    createdAt: $createdAt,
+                    updatedAt: $updatedAt
+                })
+                WITH c
+                OPTIONAL MATCH (proj:Project)
+                WHERE proj.slug = $project OR proj.name = $project OR proj.id = $project
+                FOREACH (p IN CASE WHEN proj IS NOT NULL THEN [proj] ELSE [] END |
+                    MERGE (p)-[:HAS_COMPONENT]->(c)
+                )
+                WITH c
+                FOREACH (label_name IN $labels |
+                    MERGE (l:Label {name: label_name})
+                    ON CREATE SET l.id = randomUUID(), l.createdAt = $now
+                    MERGE (c)-[:CATEGORIZED_BY]->(l)
+                )
+                """,
                 id=str(component.id),
                 name=component.name,
                 description=component.description,
@@ -129,6 +151,8 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 projectId=str(component.project_id) if component.project_id else None,
                 createdAt=component.created_at.isoformat(),
                 updatedAt=component.updated_at.isoformat(),
+                labels=component.labels if hasattr(component, "labels") else [],
+                now=datetime.now(timezone.utc).isoformat(),
             )
 
     def get_component(self, component_id: str) -> Component | None:
