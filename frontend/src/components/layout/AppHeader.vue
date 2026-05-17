@@ -56,5 +56,6 @@ const navItems = [
   { path: '/list', label: 'List' },
   { path: '/graph', label: 'Graph' },
   { path: '/components', label: 'Components' },
+  { path: '/policies', label: 'Policies' },
 ]
 </script>
