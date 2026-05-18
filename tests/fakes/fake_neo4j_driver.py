@@ -155,16 +155,15 @@ class FakeNeo4jDriver:
 
         # LIST_ISSUES
         if "optional match" in q and "with i" in q:
-            comp_id = params.get("component_id")
-            status_filter = params.get("status")
-            project_filter = params.get("project")
+            comp_id = params.get("componentId") or params.get("component_id")
+            statuses = params.get("statuses")
             results = []
             for node in self._nodes.values():
                 if "Issue" not in node.get("_labels", []):
                     continue
                 if comp_id is not None and node.get("component_id") != comp_id:
                     continue
-                if status_filter is not None and node.get("status") != status_filter:
+                if statuses and node.get("status") not in statuses:
                     continue
                 node_id = node["id"]
                 dep_ids = [r["to"] for r in self._relationships if r.get("type") == "DEPENDS_ON" and r.get("from") == node_id]

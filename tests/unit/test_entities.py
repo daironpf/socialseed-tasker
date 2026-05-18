@@ -11,8 +11,9 @@ from socialseed_tasker.core.task_management.entities import (
     Issue,
     IssuePriority,
     IssueStatus,
+    ReasoningContext,
+    ReasoningLogEntry,
 )
-from socialseed_tasker.core.task_management.value_objects import ReasoningContext, ReasoningLogEntry
 
 
 class TestIssueStatus:
