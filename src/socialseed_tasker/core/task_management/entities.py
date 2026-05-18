@@ -52,6 +52,9 @@ class User(BaseModel):
     last_login: Optional[datetime] = None
     preferences: Optional[str] = None
 
+from .value_objects import ReasoningContext, ReasoningLogEntry
+
+
 class DecisionType(str, Enum):
     SOLUTION_SELECTION = "solution_selection"
     ARCHITECTURE_CHOICE = "architecture_choice"
@@ -69,8 +72,20 @@ class ReasoningContext(str, Enum):
     BUG_FIX = "bug_fix"
     TEST_PLAN = "test_plan"
 
+class ReasoningContext(str, Enum):
+    COMPONENT_SELECTION = "component_selection"
+    DEPENDENCY_ANALYSIS = "dependency_analysis"
+    ARCHITECTURE_CHOICE = "architecture_choice"
+    SOLUTION_DESIGN = "solution_design"
+    REFACTORING = "refactoring"
+    BUG_FIX = "bug_fix"
+    IMPACT_ASSESSMENT = "impact_assessment"
+    PRIORITY_DECISION = "priority_decision"
+    TEST_PLAN = "test_plan"
+
+
 class ReasoningLogEntry(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+    model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
     id: UUID = Field(default_factory=uuid4)
     timestamp: datetime = Field(default_factory=_now)
     context: ReasoningContext = ReasoningContext.ARCHITECTURE_CHOICE
@@ -121,7 +136,7 @@ class Label(BaseModel):
 class Issue(BaseModel):
     model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
     id: UUID = Field(default_factory=uuid4)
-    title: str = Field(..., min_length=1)
+    title: str = Field(..., min_length=1, max_length=200)
     description: str = ""
     status: IssueStatus = IssueStatus.OPEN
     priority: IssuePriority = IssuePriority.MEDIUM
@@ -162,7 +177,7 @@ class ReasoningNode(BaseModel):
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
     id: UUID = Field(default_factory=uuid4)
     thought: str = Field(..., min_length=1)
-    confidence: float = 0.5
+    confidence: float = Field(default=0.5, ge=0.0, le=1.0)
     alternatives_considered: list[str] = Field(default_factory=list)
     rejected_reasons: list[str] = Field(default_factory=list)
     decision: Optional[str] = None

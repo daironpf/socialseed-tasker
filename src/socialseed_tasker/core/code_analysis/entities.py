@@ -39,11 +39,11 @@ class CodeFile(BaseModel):
     path: str = Field(..., min_length=1)
     name: str = Field(..., min_length=1)
     language: str = Field(..., min_length=1)
-    linesOfCode: int = Field(default=0, ge=0)
-    fileHash: str | None = None
-    commitSha: str | None = None
-    scannedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    repositoryPath: str | None = None
+    lines_of_code: int = Field(default=0, ge=0)
+    file_hash: str | None = None
+    commit_sha: str | None = None
+    scanned_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    repository_path: str | None = None
 
 
 class CodeSymbol(BaseModel):
@@ -57,17 +57,17 @@ class CodeSymbol(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid4()))
     name: str = Field(..., min_length=1)
-    symbolType: SymbolType
-    fileId: str
-    startLine: int = Field(ge=1)
-    endLine: int = Field(ge=1)
-    startColumn: int = Field(ge=0)
-    endColumn: int = Field(ge=0)
+    symbol_type: SymbolType
+    file_id: str
+    start_line: int = Field(ge=1)
+    end_line: int = Field(ge=1)
+    start_column: int = Field(ge=0)
+    end_column: int = Field(ge=0)
     parameters: list[str] = Field(default_factory=list)
-    returnType: str | None = None
+    return_type: str | None = None
     decorators: list[str] = Field(default_factory=list)
-    isTest: bool = False
-    parentSymbolId: str | None = None
+    is_test: bool = False
+    parent_symbol_id: str | None = None
 
 
 class CodeImport(BaseModel):
@@ -79,13 +79,13 @@ class CodeImport(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     id: str = Field(default_factory=lambda: str(uuid4()))
-    fileId: str
+    file_id: str
     module: str
     names: list[str] = Field(default_factory=list)
     alias: str | None = None
-    lineNumber: int = Field(ge=1)
-    isFrom: bool = False
-    isExternal: bool = False
+    line_number: int = Field(ge=1)
+    is_from: bool = False
+    is_external: bool = False
 
 
 class RelationshipType(str, Enum):
@@ -109,19 +109,19 @@ class CodeRelationship(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     id: str = Field(default_factory=lambda: str(uuid4()))
-    sourceId: str
-    targetId: str
-    relationshipType: RelationshipType
-    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    commitSha: str | None = None
+    source_id: str
+    target_id: str
+    relationship_type: RelationshipType
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    commit_sha: str | None = None
 
 
 class CodeGraphStats(BaseModel):
     """Statistics about the code graph."""
 
-    totalFiles: int = 0
-    totalSymbols: int = 0
-    totalRelationships: int = 0
-    byLanguage: dict[str, int] = Field(default_factory=dict)
-    bySymbolType: dict[SymbolType, int] = Field(default_factory=dict)
-    lastScan: datetime | None = None
+    total_files: int = 0
+    total_symbols: int = 0
+    total_relationships: int = 0
+    by_language: dict[str, int] = Field(default_factory=dict)
+    by_symbol_type: dict[SymbolType, int] = Field(default_factory=dict)
+    last_scan: datetime | None = None

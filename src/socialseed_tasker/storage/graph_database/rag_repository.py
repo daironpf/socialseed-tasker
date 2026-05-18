@@ -94,16 +94,16 @@ class RAGRepository:
     def index_text(
         self,
         text: str,
-        sourceType: str,
-        sourceId: str,
+        source_type: str,
+        source_id: str,
         chunking_strategy: str = "paragraph",
     ) -> list[str]:
         """Index text content with embeddings.
 
         Args:
             text: Text to index
-            sourceType: Type of source (issue, adr, code, doc)
-            sourceId: ID of the source
+            source_type: Type of source (issue, adr, code, doc)
+            source_id: ID of the source
             chunking_strategy: Strategy for chunking (paragraph, lines, sentences)
 
         Returns:
@@ -139,8 +139,8 @@ class RAGRepository:
                             "id": chunk_id,
                             "content": chunk.content,
                             "embedding": chunk.embedding,
-                            "sourceType": source_type,
-                            "sourceId": source_id,
+                            "source_type": source_type,
+                            "source_id": source_id,
                         },
                     )
             else:
@@ -153,8 +153,8 @@ class RAGRepository:
                             "id": chunk_id,
                             "content": chunk,
                             "embedding": [],
-                            "sourceType": source_type,
-                            "sourceId": source_id,
+                            "source_type": source_type,
+                            "source_id": source_id,
                         },
                     )
 
@@ -251,12 +251,12 @@ class RAGRepository:
 
             return {"total": total, "by_type": by_type}
 
-    def delete_by_source(self, sourceType: str, sourceId: str) -> None:
+    def delete_by_source(self, source_type: str, source_id: str) -> None:
         """Delete all embeddings for a source."""
         with self._get_session() as session:
             session.run(
                 RAG_QUERIES["delete_by_source"],
-                {"sourceType": source_type, "sourceId": source_id},
+                {"source_type": source_type, "source_id": source_id},
             )
 
     def get_context_for_issue(self, issue_id: str) -> list[dict]:

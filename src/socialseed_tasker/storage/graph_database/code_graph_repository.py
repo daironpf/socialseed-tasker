@@ -32,56 +32,56 @@ CODE_GRAPH_QUERIES = {
         SET f.name = $name,
             f.path = $path,
             f.language = $language,
-            f.linesOfCode = $linesOfCode,
-            f.fileHash = $fileHash,
-            f.commitSha = $commitSha,
-            f.scannedAt = $scannedAt,
-            f.repositoryPath = $repositoryPath
+            f.lines_of_code = $lines_of_code,
+            f.file_hash = $file_hash,
+            f.commit_sha = $commit_sha,
+            f.scanned_at = $scanned_at,
+            f.repository_path = $repository_path
         RETURN f
     """,
     "create_symbol": """
         MERGE (s:CodeSymbol {id: $id})
         SET s.name = $name,
-            s.symbolType = $symbolType,
-            s.fileId = $fileId,
-            s.startLine = $startLine,
-            s.endLine = $endLine,
-            s.startColumn = $startColumn,
-            s.endColumn = $endColumn,
+            s.symbol_type = $symbol_type,
+            s.file_id = $file_id,
+            s.start_line = $start_line,
+            s.end_line = $end_line,
+            s.start_column = $start_column,
+            s.end_column = $end_column,
             s.parameters = $parameters,
-            s.returnType = $returnType,
+            s.return_type = $return_type,
             s.decorators = $decorators,
-            s.isTest = $isTest,
-            s.parentSymbolId = $parentSymbolId
+            s.is_test = $is_test,
+            s.parent_symbol_id = $parent_symbol_id
         RETURN s
     """,
     "create_import": """
         MERGE (i:CodeImport {id: $id})
-        SET i.fileId = $fileId,
+        SET i.file_id = $file_id,
             i.module = $module,
             i.names = $names,
             i.alias = $alias,
-            i.lineNumber = $lineNumber,
-            i.isFrom = $isFrom
+            i.line_number = $line_number,
+            i.is_from = $is_from
         RETURN i
     """,
     "create_relationship": """
-        MATCH (s {id: $sourceId})
-        MATCH (t {id: $targetId})
+        MATCH (s {id: $source_id})
+        MATCH (t {id: $target_id})
         MERGE (s)-[r:CODE_RELATIONSHIP {id: $id}]->(t)
-        SET r.relationshipType = $relationshipType,
-            r.createdAt = $createdAt,
-            r.commitSha = $commitSha
+        SET r.relationship_type = $relationship_type,
+            r.created_at = $created_at,
+            r.commit_sha = $commit_sha
         RETURN r
     """,
     "link_file_to_symbol": """
-        MATCH (f:CodeFile {id: $fileId})
-        MATCH (s:CodeSymbol {id: $symbolId})
+        MATCH (f:CodeFile {id: $file_id})
+        MATCH (s:CodeSymbol {id: $symbol_id})
         MERGE (f)-[:CONTAINS]->(s)
     """,
     "link_file_to_import": """
-        MATCH (f:CodeFile {id: $fileId})
-        MATCH (i:CodeImport {id: $importId})
+        MATCH (f:CodeFile {id: $file_id})
+        MATCH (i:CodeImport {id: $import_id})
         MERGE (f)-[:IMPORTS]->(i)
     """,
     "get_files": """
@@ -91,7 +91,7 @@ CODE_GRAPH_QUERIES = {
         LIMIT $limit
     """,
     "get_file_by_path": """
-        MATCH (f:CodeFile {path: $path, repositoryPath: $repoPath})
+        MATCH (f:CodeFile {path: $path, repository_path: $repo_path})
         RETURN f
     """,
     "get_symbols_by_name": """
@@ -101,38 +101,38 @@ CODE_GRAPH_QUERIES = {
         LIMIT $limit
     """,
     "get_symbols_by_type": """
-        MATCH (s:CodeSymbol {symbolType: $symbolType})
+        MATCH (s:CodeSymbol {symbol_type: $symbol_type})
         RETURN s
         LIMIT $limit
     """,
     "get_symbols_by_file": """
-        MATCH (f:CodeFile {id: $fileId})-[:CONTAINS]->(s:CodeSymbol)
+        MATCH (f:CodeFile {id: $file_id})-[:CONTAINS]->(s:CodeSymbol)
         RETURN s
     """,
     "get_imports_by_file": """
-        MATCH (f:CodeFile {id: $fileId})-[:IMPORTS]->(i:CodeImport)
+        MATCH (f:CodeFile {id: $file_id})-[:IMPORTS]->(i:CodeImport)
         RETURN i
     """,
     "get_relationships": """
         MATCH (s)-[r:CODE_RELATIONSHIP]->(t)
-        RETURN s.id AS sourceId, t.id AS targetId, r.relationshipType, r.createdAt
+        RETURN s.id AS source_id, t.id AS target_id, r.relationship_type, r.created_at
         LIMIT $limit
     """,
     "get_callers": """
-        MATCH (s:CodeSymbol {name: $name})-[r:CODE_RELATIONSHIP {relationshipType: 'calls'}]->(t:CodeSymbol)
+        MATCH (s:CodeSymbol {name: $name})-[r:CODE_RELATIONSHIP {relationship_type: 'calls'}]->(t:CodeSymbol)
         RETURN t
     """,
     "get_dependencies": """
-        MATCH (f:CodeFile {path: $path, repositoryPath: $repoPath})-[:IMPORTS]->(i:CodeImport)
+        MATCH (f:CodeFile {path: $path, repository_path: $repo_path})-[:IMPORTS]->(i:CodeImport)
         RETURN i.module AS module
     """,
     "get_stats": """
         MATCH (f:CodeFile)
         OPTIONAL MATCH (f)-[:CONTAINS]->(s:CodeSymbol)
         OPTIONAL MATCH ()-[r:CODE_RELATIONSHIP]->()
-        RETURN count(DISTINCT f) AS totalFiles,
-               count(DISTINCT s) AS totalSymbols,
-               count(DISTINCT r) AS totalRelationships,
+        RETURN count(DISTINCT f) AS total_files,
+               count(DISTINCT s) AS total_symbols,
+               count(DISTINCT r) AS total_relationships,
                collect(DISTINCT f.language) AS languages
     """,
     "clear_graph": """
@@ -141,32 +141,31 @@ CODE_GRAPH_QUERIES = {
         DETACH DELETE n
     """,
     "create_indexes": """
-        CREATE INDEX code_filePath IF NOT EXISTS FOR (f:CodeFile) ON (f.path)
-        CREATE INDEX code_file_repo IF NOT EXISTS FOR (f:CodeFile) ON (f.repositoryPath)
+        CREATE INDEX code_file_path IF NOT EXISTS FOR (f:CodeFile) ON (f.path)
+        CREATE INDEX code_file_repo IF NOT EXISTS FOR (f:CodeFile) ON (f.repository_path)
         CREATE INDEX code_symbol_name IF NOT EXISTS FOR (s:CodeSymbol) ON (s.name)
-        CREATE INDEX code_symbolType IF NOT EXISTS FOR (s:CodeSymbol) ON (s.symbolType)
-        CREATE INDEX code_symbol_file IF NOT EXISTS FOR (s:CodeSymbol) ON (s.fileId)
-        CREATE INDEX code_import_file IF NOT EXISTS FOR (i:CodeImport) ON (i.fileId)
+        CREATE INDEX code_symbol_type IF NOT EXISTS FOR (s:CodeSymbol) ON (s.symbol_type)
+        CREATE INDEX code_symbol_file IF NOT EXISTS FOR (s:CodeSymbol) ON (s.file_id)
+        CREATE INDEX code_import_file IF NOT EXISTS FOR (i:CodeImport) ON (i.file_id)
     """,
-    # Impact Analysis queries (direct :CALLS relationship)
     "get_direct_callers": """
-        MATCH (caller:CodeSymbol)-[:CALLS]->(s:CodeSymbol {id: $symbolId})
-        RETURN caller.id as id, caller.name as name, caller.symbolType as symbolType
+        MATCH (caller:CodeSymbol)-[:CALLS]->(s:CodeSymbol {id: $symbol_id})
+        RETURN caller.id as id, caller.name as name, caller.symbol_type as symbol_type
     """,
     "get_transitive_callers": """
-        MATCH (caller:CodeSymbol)-[:CALLS*1..3]->(s:CodeSymbol {id: $symbolId})
-        RETURN DISTINCT caller.id as id, caller.name as name, caller.symbolType as symbolType,
+        MATCH (caller:CodeSymbol)-[:CALLS*1..3]->(s:CodeSymbol {id: $symbol_id})
+        RETURN DISTINCT caller.id as id, caller.name as name, caller.symbol_type as symbol_type,
                length((caller)-[:CALLS*1..3]->(s)) as depth
         ORDER BY depth
     """,
     "get_direct_callees": """
-        MATCH (s:CodeSymbol {id: $symbolId})-[:CALLS]->(callee:CodeSymbol)
-        RETURN callee.id as id, callee.name as name, callee.symbolType as symbolType
+        MATCH (s:CodeSymbol {id: $symbol_id})-[:CALLS]->(callee:CodeSymbol)
+        RETURN callee.id as id, callee.name as name, callee.symbol_type as symbol_type
     """,
     "get_symbol_by_id": """
-        MATCH (s:CodeSymbol {id: $symbolId})
-        RETURN s.id as id, s.name as name, s.symbolType as symbolType,
-               s.startLine as startLine, s.endLine as endLine, s.fileId as fileId
+        MATCH (s:CodeSymbol {id: $symbol_id})
+        RETURN s.id as id, s.name as name, s.symbol_type as symbol_type,
+               s.start_line as start_line, s.end_line as end_line, s.file_id as file_id
     """,
 }
 
@@ -177,7 +176,7 @@ class CodeGraphRepository:
     def __init__(self, driver: Any):
         self._driver = driver
 
-    def save_scan_results(
+def save_scan_results(
         self,
         files: list[CodeFile],
         symbols: list[CodeSymbol],
@@ -197,9 +196,46 @@ class CodeGraphRepository:
                 session.run(
                     CODE_GRAPH_QUERIES["create_file"],
                     {"id": str(file.id), "name": file.name, "path": file.path, "language": file.language,
-                     "linesOfCode": file.linesOfCode, "fileHash": file.fileHash,
-                     "commitSha": file.commitSha, "scannedAt": file.scannedAt.isoformat(),
-                     "repositoryPath": file.repositoryPath}
+                     "lines_of_code": file.lines_of_code, "file_hash": file.file_hash,
+                     "commit_sha": file.commit_sha, "scanned_at": file.scanned_at.isoformat(),
+                     "repository_path": file.repository_path}
+                )
+
+            for symbol in symbols:
+                session.run(
+                    CODE_GRAPH_QUERIES["create_symbol"],
+                    {"id": str(symbol.id), "name": symbol.name, "symbol_type": symbol.symbol_type.value,
+                     "file_id": str(symbol.file_id), "start_line": symbol.start_line, "end_line": symbol.end_line,
+                     "start_column": symbol.start_column, "end_column": symbol.end_column,
+                     "parameters": symbol.parameters, "return_type": symbol.return_type,
+                     "decorators": symbol.decorators, "is_test": symbol.is_test,
+                     "parent_symbol_id": str(symbol.parent_symbol_id) if symbol.parent_symbol_id else None}
+                )
+
+                session.run(
+                    CODE_GRAPH_QUERIES["link_file_to_symbol"],
+                    {"file_id": str(symbol.file_id), "symbol_id": str(symbol.id)}
+                )
+
+            for imp in imports:
+                session.run(
+                    CODE_GRAPH_QUERIES["create_import"],
+                    {"id": str(imp.id), "file_id": str(imp.file_id), "module": imp.module,
+                     "names": imp.names, "alias": imp.alias, "line_number": imp.line_number,
+                     "is_from": imp.is_from}
+                )
+
+                session.run(
+                    CODE_GRAPH_QUERIES["link_file_to_import"],
+                    {"file_id": str(imp.file_id), "import_id": str(imp.id)}
+                )
+
+            for rel in relationships:
+                session.run(
+                    CODE_GRAPH_QUERIES["create_relationship"],
+                    {"id": str(rel.id), "source_id": str(rel.source_id), "target_id": str(rel.target_id),
+                     "relationship_type": rel.relationship_type.value,
+                     "created_at": rel.created_at.isoformat(), "commit_sha": rel.commit_sha}
                 )
 
             for symbol in symbols:
@@ -245,18 +281,18 @@ class CodeGraphRepository:
             result = session.run(CODE_GRAPH_QUERIES["get_files"], limit=limit)
             return [dict(record["f"]) for record in result]
 
-    def get_file_by_path(self, path: str, repoPath: str) -> dict[str, Any] | None:
+    def get_file_by_path(self, path: str, repo_path: str) -> dict[str, Any] | None:
         """Get a file by its path."""
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 CODE_GRAPH_QUERIES["get_file_by_path"],
                 path=path,
-                repoPath=repoPath,
+                repo_path=repo_path,
             )
             record = result.single()
             return dict(record["f"]) if record else None
 
-    def find_symbols(self, name: str | None = None, symbolType: SymbolType | None = None, limit: int = 50) -> list[dict[str, Any]]:
+def find_symbols(self, name: str | None = None, symbol_type: SymbolType | None = None, limit: int = 50) -> list[dict[str, Any]]:
         """Find symbols by name or type."""
         with self._driver.driver.session(database=self._driver.database) as session:
             if name:
@@ -265,10 +301,10 @@ class CodeGraphRepository:
                     name=name,
                     limit=limit,
                 )
-            elif symbolType:
+            elif symbol_type:
                 result = session.run(
                     CODE_GRAPH_QUERIES["get_symbols_by_type"],
-                    symbolType=symbolType.value,
+                    symbol_type=symbol_type.value,
                     limit=limit,
                 )
             else:
@@ -277,40 +313,40 @@ class CodeGraphRepository:
             results = []
             for record in result:
                 data = dict(record["s"])
-                data["filePath"] = record.get("filePath")
+                data["file_path"] = record.get("file_path")
                 results.append(data)
             return results
 
-    def get_symbols_by_file(self, fileId: UUID) -> list[dict[str, Any]]:
+    def get_symbols_by_file(self, file_id: UUID) -> list[dict[str, Any]]:
         """Get all symbols for a file."""
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 CODE_GRAPH_QUERIES["get_symbols_by_file"],
-                fileId=str(fileId),
+                file_id=str(file_id),
             )
             results = []
             for record in result:
                 data = dict(record["s"])
-                data["filePath"] = record.get("filePath")
+                data["file_path"] = record.get("file_path")
                 results.append(data)
             return results
 
-    def get_imports_by_file(self, fileId: UUID) -> list[dict[str, Any]]:
+    def get_imports_by_file(self, file_id: UUID) -> list[dict[str, Any]]:
         """Get all imports for a file."""
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 CODE_GRAPH_QUERIES["get_imports_by_file"],
-                fileId=str(fileId),
+                file_id=str(file_id),
             )
             return [dict(record["i"]) for record in result]
 
-    def get_dependencies(self, path: str, repoPath: str) -> list[str]:
+    def get_dependencies(self, path: str, repo_path: str) -> list[str]:
         """Get dependencies for a file."""
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 CODE_GRAPH_QUERIES["get_dependencies"],
                 path=path,
-                repoPath=repoPath,
+                repo_path=repo_path,
             )
             return [record["module"] for record in result]
 
@@ -330,10 +366,10 @@ class CodeGraphRepository:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 CODE_GRAPH_QUERIES["get_direct_callers"],
-                symbolId=symbol_id,
+                symbol_id=symbol_id,
             )
             return [
-                {"id": r["id"], "name": r["name"], "symbol_type": r["symbolType"]}
+                {"id": r["id"], "name": r["name"], "symbol_type": r["symbol_type"]}
                 for r in result
             ]
 
@@ -342,16 +378,16 @@ class CodeGraphRepository:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 """
-                MATCH (caller:CodeSymbol)-[:CALLS*1..$depth]->(s:CodeSymbol {id: $symbolId})
-                RETURN DISTINCT caller.id as id, caller.name as name, caller.symbolType as symbolType,
+                MATCH (caller:CodeSymbol)-[:CALLS*1..$depth]->(s:CodeSymbol {id: $symbol_id})
+                RETURN DISTINCT caller.id as id, caller.name as name, caller.symbol_type as symbol_type,
                        length((caller)-[:CALLS*1..]->(s)) as depth
                 ORDER BY depth
                 """,
-                symbolId=symbol_id,
+                symbol_id=symbol_id,
                 depth=depth,
             )
             return [
-                {"id": r["id"], "name": r["name"], "symbol_type": r["symbolType"], "depth": r["depth"]}
+                {"id": r["id"], "name": r["name"], "symbol_type": r["symbol_type"], "depth": r["depth"]}
                 for r in result
             ]
 
@@ -360,10 +396,10 @@ class CodeGraphRepository:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 CODE_GRAPH_QUERIES["get_direct_callees"],
-                symbolId=symbol_id,
+                symbol_id=symbol_id,
             )
             return [
-                {"id": r["id"], "name": r["name"], "symbol_type": r["symbolType"]}
+                {"id": r["id"], "name": r["name"], "symbol_type": r["symbol_type"]}
                 for r in result
             ]
 
@@ -372,17 +408,17 @@ class CodeGraphRepository:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 CODE_GRAPH_QUERIES["get_symbol_by_id"],
-                symbolId=symbol_id,
+                symbol_id=symbol_id,
             )
             record = result.single()
             if record:
                 return {
                     "id": record["id"],
                     "name": record["name"],
-                    "symbol_type": record["symbolType"],
-                    "start_line": record.get("startLine"),
-                    "end_line": record.get("endLine"),
-                    "file_id": record.get("fileId"),
+                    "symbol_type": record["symbol_type"],
+                    "start_line": record.get("start_line"),
+                    "end_line": record.get("end_line"),
+                    "file_id": record.get("file_id"),
                 }
             return None
 
@@ -426,9 +462,9 @@ class CodeGraphRepository:
             record = result.single()
             if record:
                 return CodeGraphStats(
-                    totalFiles=record["totalFiles"],
-                    totalSymbols=record["totalSymbols"],
-                    totalRelationships=record["totalRelationships"],
+                    total_files=record["total_files"],
+                    total_symbols=record["total_symbols"],
+                    total_relationships=record["total_relationships"],
                 )
             return CodeGraphStats()
 
@@ -450,15 +486,15 @@ class CodeGraphRepository:
                 MATCH (f:CodeFile {path: $path})<-[:DEFINES]-(s:CodeSymbol)
                 MATCH (c:CodeSymbol)-[:CALLS]->(s)
                 MATCH (cf:CodeFile)<-[:DEFINES]-(c)
-                RETURN c.name as name, c.symbolType as symbolType, cf.path as filePath
+                RETURN c.name as name, c.symbol_type as symbol_type, cf.path as file_path
                 """,
                 {"path": path},
             )
             return [
                 {
                     "name": r["name"],
-                    "symbolType": r["symbolType"],
-                    "filePath": r["filePath"],
+                    "symbol_type": r["symbol_type"],
+                    "file_path": r["file_path"],
                 }
                 for r in result
             ]
@@ -470,15 +506,15 @@ class CodeGraphRepository:
                 """
                 MATCH (f:CodeFile {path: $path})
                 MATCH (f)<-[:IMPORTS]-(i:CodeImport)
-                RETURN i.module as module, i.lineNumber as lineNumber, i.isFrom as isFrom
+                RETURN i.module as module, i.line_number as line_number, i.is_from as is_from
                 """,
                 {"path": path},
             )
             return [
                 {
                     "module": r["module"],
-                    "lineNumber": r["lineNumber"],
-                    "isFrom": r["isFrom"],
+                    "line_number": r["line_number"],
+                    "is_from": r["is_from"],
                 }
                 for r in result
             ]
@@ -489,56 +525,56 @@ class CodeGraphRepository:
             result = session.run(
                 """
                 MATCH (f:CodeFile {path: $path})
-                MATCH (tf:CodeFile)<-[:DEFINES]-(ts:CodeSymbol {isTest: true})
+                MATCH (tf:CodeFile)<-[:DEFINES]-(ts:CodeSymbol {is_test: true})
                 WHERE tf.path CONTAINS 'test' OR tf.path CONTAINS 'spec'
-                RETURN tf.path as path, ts.symbolType as symbolType
+                RETURN tf.path as path, ts.symbol_type as symbol_type
                 """,
                 {"path": path},
             )
             return [
-                {"path": r["path"], "symbolType": r["symbolType"]}
+                {"path": r["path"], "symbol_type": r["symbol_type"]}
                 for r in result
             ]
 
-    def link_issue_to_file(self, issueId: str, filePath: str) -> dict[str, Any]:
+    def link_issue_to_file(self, issue_id: str, file_path: str) -> dict[str, Any]:
         """Link an issue to a code file (when closing the issue)."""
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.ISSUE_AFFECTS_FILE,
-                {"issueId": issueId, "filePath": filePath, "closedAt": _now_iso()},
+                {"issue_id": issue_id, "file_path": file_path, "closed_at": _now_iso()},
             )
             record = result.single()
             if record is None:
                 return {"success": False, "error": "Issue or file not found"}
-            return {"success": True, "issueId": issueId, "filePath": filePath}
+            return {"success": True, "issue_id": issue_id, "file_path": file_path}
 
-    def get_issues_affecting_file(self, filePath: str, limit: int = 20) -> list[dict[str, Any]]:
+    def get_issues_affecting_file(self, file_path: str, limit: int = 20) -> list[dict[str, Any]]:
         """Get all issues that affected a file."""
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.FIND_ISSUES_AFFECTING_FILE,
-                {"filePath": filePath, "limit": limit},
+                {"file_path": file_path, "limit": limit},
             )
             return [
                 {
-                    "issueId": r["issueId"],
+                    "issue_id": r["issue_id"],
                     "title": r["title"],
-                    "closedAt": r["closedAt"],
+                    "closed_at": r["closed_at"],
                 }
                 for r in result
             ]
 
-    def link_issue_to_symbol(self, issueId: str, symbolId: str) -> dict[str, Any]:
+    def link_issue_to_symbol(self, issue_id: str, symbol_id: str) -> dict[str, Any]:
         """Link an issue to a code symbol."""
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.ISSUE_AFFECTS_SYMBOL,
-                {"issueId": issueId, "symbolId": symbolId, "closedAt": _now_iso()},
+                {"issue_id": issue_id, "symbol_id": symbol_id, "closed_at": _now_iso()},
             )
             record = result.single()
             if record is None:
                 return {"success": False, "error": "Issue or symbol not found"}
-            return {"success": True, "issueId": issueId, "symbolId": symbolId}
+            return {"success": True, "issue_id": issue_id, "symbol_id": symbol_id}
 
     def get_issues_affecting_symbol(self, symbol_name: str, limit: int = 20) -> list[dict[str, Any]]:
         """Get all issues that affected a symbol."""
@@ -549,10 +585,10 @@ class CodeGraphRepository:
             )
             return [
                 {
-                    "issueId": r["issueId"],
+                    "issue_id": r["issue_id"],
                     "title": r["title"],
                     "symbol_name": r["symbol_name"],
-                    "closedAt": r["closedAt"],
+                    "closed_at": r["closed_at"],
                 }
                 for r in result
             ]

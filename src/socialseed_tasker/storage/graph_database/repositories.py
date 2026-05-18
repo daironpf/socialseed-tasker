@@ -270,26 +270,26 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             record = result.single()
             return _node_to_component(record["c"]) if record else None
 
-    def update_component(self, component_id: str, updates: dict[str, Any]) -> Component:
+    def update_component(self, componentId: str, updates: dict[str, Any]) -> Component:
         with self._driver.driver.session(database=self._driver.database) as session:
             # Translate snake_case keys to camelCase
             camel_updates = {_to_camel(k): v for k, v in updates.items()}
             result = session.run(
                 queries.UPDATE_COMPONENT,
-                id=component_id,
+                id=componentId,
                 updates=camel_updates,
                 updatedAt=_now_iso(),
             )
             record = result.single()
             if record is None:
-                raise ValueError(f"Component {component_id} not found")
+                raise ValueError(f"Component {componentId} not found")
             return _node_to_component(record["c"])
 
-    def delete_component(self, component_id: str) -> None:
+    def delete_component(self, componentId: str) -> None:
         with self._driver.driver.session(database=self._driver.database) as session:
             session.run(queries.DELETE_COMPONENT, id=componentId)
 
-    def add_component_dependency(self, component_id: str, depends_on_id: str) -> None:
+    def add_component_dependency(self, componentId: str, depends_on_id: str) -> None:
         with self._driver.driver.session(database=self._driver.database) as session:
             session.run(
                 queries.ADD_COMPONENT_DEPENDENCY,
@@ -297,7 +297,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 depends_on_id=depends_on_id,
             )
 
-    def remove_component_dependency(self, component_id: str, depends_on_id: str) -> None:
+    def remove_component_dependency(self, componentId: str, depends_on_id: str) -> None:
         with self._driver.driver.session(database=self._driver.database) as session:
             session.run(
                 queries.REMOVE_COMPONENT_DEPENDENCY,
@@ -305,7 +305,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 depends_on_id=depends_on_id,
             )
 
-    def get_component_dependencies(self, component_id: str) -> list[Component]:
+    def get_component_dependencies(self, componentId: str) -> list[Component]:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.GET_COMPONENT_DEPENDENCIES,
@@ -313,7 +313,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
             )
             return [_node_to_component(r["dep"]) for r in result]
 
-    def get_component_dependents(self, component_id: str) -> list[Component]:
+    def get_component_dependents(self, componentId: str) -> list[Component]:
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
                 queries.GET_COMPONENT_DEPENDENTS,
@@ -622,7 +622,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 params["priority"] = priority
 
             if component_id:
-                cypher += " AND i.component_id = $component_id"
+                cypher += " AND i.componentId = $component_id"
                 params["component_id"] = component_id
 
             cypher += " RETURN i"
@@ -789,7 +789,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 updates={
                     "agentWorking": True,
                     "agentStartedAt": _now_iso(),
-                    "agentId": agentId,
+                    "agentId": agent_id,
                 },
                 updatedAt=_now_iso(),
             )
@@ -1048,7 +1048,7 @@ class Neo4jTaskRepository(TaskRepositoryInterface):
                 set_clauses.append(f"c.{key} = ${key}")
                 params[key] = value
 
-            set_clauses.append("c.updated_at = $updatedAt")
+            set_clauses.append("c.updatedAt = $updatedAt")
             params["updatedAt"] = datetime.now(timezone.utc).isoformat()
 
             query = f"MATCH (c:Constraint {{id: $id}}) SET {', '.join(set_clauses)} RETURN c"
