@@ -176,7 +176,7 @@ class CodeGraphRepository:
     def __init__(self, driver: Any):
         self._driver = driver
 
-def save_scan_results(
+    def save_scan_results(
         self,
         files: list[CodeFile],
         symbols: list[CodeSymbol],
@@ -238,43 +238,6 @@ def save_scan_results(
                      "created_at": rel.created_at.isoformat(), "commit_sha": rel.commit_sha}
                 )
 
-            for symbol in symbols:
-                session.run(
-                    CODE_GRAPH_QUERIES["create_symbol"],
-                    {"id": str(symbol.id), "name": symbol.name, "symbolType": symbol.symbolType.value,
-                     "fileId": str(symbol.fileId), "startLine": symbol.startLine, "endLine": symbol.endLine,
-                     "startColumn": symbol.startColumn, "endColumn": symbol.endColumn,
-                     "parameters": symbol.parameters, "returnType": symbol.returnType,
-                     "decorators": symbol.decorators, "isTest": symbol.isTest,
-                     "parentSymbolId": str(symbol.parentSymbolId) if symbol.parentSymbolId else None}
-                )
-
-                session.run(
-                    CODE_GRAPH_QUERIES["link_file_to_symbol"],
-                    {"fileId": str(symbol.fileId), "symbolId": str(symbol.id)}
-                )
-
-            for imp in imports:
-                session.run(
-                    CODE_GRAPH_QUERIES["create_import"],
-                    {"id": str(imp.id), "fileId": str(imp.fileId), "module": imp.module,
-                     "names": imp.names, "alias": imp.alias, "lineNumber": imp.lineNumber,
-                     "isFrom": imp.isFrom}
-                )
-
-                session.run(
-                    CODE_GRAPH_QUERIES["link_file_to_import"],
-                    {"fileId": str(imp.fileId), "importId": str(imp.id)}
-                )
-
-            for rel in relationships:
-                session.run(
-                    CODE_GRAPH_QUERIES["create_relationship"],
-                    {"id": str(rel.id), "sourceId": str(rel.sourceId), "targetId": str(rel.targetId),
-                     "relationshipType": rel.relationshipType.value,
-                     "createdAt": rel.createdAt.isoformat(), "commitSha": rel.commitSha}
-                )
-
     def get_files(self, limit: int = 50) -> list[dict[str, Any]]:
         """Get code files from the graph."""
         with self._driver.driver.session(database=self._driver.database) as session:
@@ -292,7 +255,7 @@ def save_scan_results(
             record = result.single()
             return dict(record["f"]) if record else None
 
-def find_symbols(self, name: str | None = None, symbol_type: SymbolType | None = None, limit: int = 50) -> list[dict[str, Any]]:
+    def find_symbols(self, name: str | None = None, symbol_type: SymbolType | None = None, limit: int = 50) -> list[dict[str, Any]]:
         """Find symbols by name or type."""
         with self._driver.driver.session(database=self._driver.database) as session:
             if name:
