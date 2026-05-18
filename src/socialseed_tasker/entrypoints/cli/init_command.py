@@ -136,58 +136,161 @@ def interactive_init_command(
     Prompts for project details before scaffolding.
     """
     console.print("[bold cyan]Welcome to SocialSeed Tasker Initialization[/bold cyan]")
-    console.print("Please provide some details about your project to customize the AI agent configuration.\n")
+    console.print("Configure your project using the menu below.\n")
     
-    project_name = Prompt.ask("Project Name", default="my-project")
-    architecture = Prompt.ask("Architecture (e.g. monolithic, microservices, api-first)", default="api-first")
-    language = Prompt.ask("Primary Language", choices=["python", "typescript", "javascript", "go", "java", "rust", "other"], default="python")
+    # Initialize defaults
+    project_name = "my-project"
+    architecture = "api-first"
+    language = "python"
+    framework = "fastapi"
+    database = "postgresql"
+    github_repo = "https://github.com/user/repo"
+    slug = "my-project"
+    description = "Tasker project for my-project"
+    base_package = "my_project"
+    visibility = "PUBLIC"
+    status = "DEVELOPMENT"
+    tech_stack_str = "python, fastapi, postgresql"
+    main_stack_str = "python, Neo4j"
+    version = "0.1.0"
+    conventions_url = ""
+    conventions_rules = "- Use standard conventions"
+    global_status = "DEVELOPMENT"
     
-    framework_map = {
-        "python": ["fastapi", "django", "flask", "none"],
-        "typescript": ["react", "vue", "next.js", "express", "nestjs", "none"],
-        "javascript": ["react", "vue", "express", "none"],
-        "go": ["gin", "echo", "fiber", "none"],
-        "java": ["spring-boot", "quarkus", "micronaut", "jakarta-ee", "none"],
-        "rust": ["actix", "rocket", "axum", "none"],
+    username = "admin"
+    email = "admin@example.com"
+    user_role = "ADMIN"
+    github_handle = "admin"
+    
+    forbidden_tech = "- None"
+    required_patterns = "- Issues must have acceptance criteria"
+    naming_conventions = "kebab-case for files, CamelCase for classes"
+    dependency_rules = "- Max 10 direct dependencies per issue"
+    dos_and_donts = "- DO: Use .agent/skills/issue_quality_guide.json\n- DON'T: Create vague issues"
+    
+    # New fields
+    agent_name = "Architect-Agent"
+    agent_role = "planner"
+    agent_capabilities = "coding,testing,architecture"
+    openai_api_key = ""
+    components_list_str = "core"
+    
+    state = {
+        "1": False, # Project Identity
+        "2": False, # Tech Stack
+        "3": False, # Project Settings
+        "4": False, # User Config
+        "5": False, # Policies
+        "6": False, # Agent Config
+        "7": False, # API Keys
+        "8": False, # Components
     }
     
-    if language in framework_map:
-        framework = Prompt.ask(f"Select Framework for {language}", choices=framework_map[language], default=framework_map[language][0])
-    else:
-        framework = Prompt.ask("Framework (e.g. react, vue, django)", default="none")
+    while True:
+        table = Table(title="[bold cyan]Tasker Setup Menu[/bold cyan]", box=None)
+        table.add_column("Option", justify="right", style="cyan")
+        table.add_column("Category", style="white")
+        table.add_column("Status", style="yellow")
         
-    database = Prompt.ask("Database (e.g. postgresql, mongodb, neo4j)", default="postgresql")
-    github_repo = Prompt.ask("GitHub Repository URL", default="https://github.com/user/repo")
-    
-    slug = Prompt.ask("Project Slug", default=project_name.lower().replace(" ", "-"))
-    description = Prompt.ask("Project Description", default=f"Tasker project for {project_name}")
-    base_package = Prompt.ask("Base Package", default=project_name.lower().replace(" ", "_"))
-    visibility = Prompt.ask("Visibility", choices=["PUBLIC", "PRIVATE"], default="PUBLIC")
-    status = Prompt.ask("Project Status", default="DEVELOPMENT")
-    tech_stack_str = Prompt.ask("Tech Stack (comma separated)", default=f"{language}, {framework}, {database}")
-    main_stack_str = Prompt.ask("Main Stack (comma separated)", default=f"{language}, Neo4j")
-    version = Prompt.ask("Version", default="0.1.0")
-    conventions_url = Prompt.ask("Conventions URL", default="")
-    conventions_rules = Prompt.ask("Conventions Rules", default="- Use standard conventions")
-    global_status = Prompt.ask("Global Status", choices=["DEVELOPMENT", "STAGING", "PRODUCTION"], default="DEVELOPMENT")
-    
-    console.print("\n[bold cyan]User Configuration (Human-in-the-Loop)[/bold cyan]")
-    username = Prompt.ask("Username", default="admin")
-    email = Prompt.ask("Email", default="admin@example.com")
-    user_role = Prompt.ask("Role", choices=["ADMIN", "LEAD_ARCHITECT", "DEVELOPER"], default="ADMIN")
-    github_handle = Prompt.ask("GitHub Handle", default="admin")
+        table.add_row("1", "Project Identity", "[green]Filled[/green]" if state["1"] else "[red]Pending (Defaults will be used)[/red]")
+        table.add_row("2", "Tech Stack", "[green]Filled[/green]" if state["2"] else "[red]Pending[/red]")
+        table.add_row("3", "Project Settings", "[green]Filled[/green]" if state["3"] else "[red]Pending[/red]")
+        table.add_row("4", "User Config (Human)", "[green]Filled[/green]" if state["4"] else "[red]Pending[/red]")
+        table.add_row("5", "Policies & Constraints", "[green]Filled[/green]" if state["5"] else "[red]Pending[/red]")
+        table.add_row("6", "Agent Config", "[green]Filled[/green]" if state["6"] else "[red]Pending[/red]")
+        table.add_row("7", "API Keys (OpenAI)", "[green]Filled[/green]" if state["7"] else "[red]Pending[/red]")
+        table.add_row("8", "Initial Components", "[green]Filled[/green]" if state["8"] else "[red]Pending[/red]")
+        table.add_row("", "", "")
+        table.add_row("START", "[bold green]Run Setup[/bold green]", "")
+        table.add_row("EXIT", "[bold red]Cancel[/bold red]", "")
+        
+        console.print(table)
+        
+        choice = Prompt.ask("Select an option", default="START").upper()
+        
+        if choice == "EXIT":
+            console.print("[yellow]Initialization cancelled.[/yellow]")
+            raise typer.Exit(code=0)
+            
+        elif choice == "START":
+            # If nothing filled, ask for project name
+            if not any(state.values()) or not state["1"]:
+                project_name = Prompt.ask("Project Name required to proceed", default=project_name)
+                slug = project_name.lower().replace(" ", "-")
+                description = f"Tasker project for {project_name}"
+                base_package = project_name.lower().replace(" ", "_")
+                state["1"] = True
+            break
+            
+        elif choice == "1":
+            project_name = Prompt.ask("Project Name", default=project_name)
+            github_repo = Prompt.ask("GitHub Repository URL", default=github_repo)
+            slug = Prompt.ask("Project Slug", default=project_name.lower().replace(" ", "-"))
+            description = Prompt.ask("Project Description", default=f"Tasker project for {project_name}")
+            # Update base_package default if not filled yet
+            if not state["3"]:
+                base_package = project_name.lower().replace(" ", "_")
+            state["1"] = True
+            
+        elif choice == "2":
+            architecture = Prompt.ask("Architecture", default=architecture)
+            language = Prompt.ask("Primary Language", default=language)
+            framework = Prompt.ask("Framework", default=framework)
+            database = Prompt.ask("Database", default=database)
+            tech_stack_str = Prompt.ask("Tech Stack (comma separated)", default=f"{language}, {framework}, {database}")
+            main_stack_str = Prompt.ask("Main Stack (comma separated)", default=f"{language}, Neo4j")
+            state["2"] = True
+            
+        elif choice == "3":
+            base_package = Prompt.ask("Base Package", default=base_package)
+            visibility = Prompt.ask("Visibility", choices=["PUBLIC", "PRIVATE"], default=visibility)
+            status = Prompt.ask("Project Status", default=status)
+            version = Prompt.ask("Version", default=version)
+            conventions_url = Prompt.ask("Conventions URL", default=conventions_url)
+            conventions_rules = Prompt.ask("Conventions Rules", default=conventions_rules)
+            global_status = Prompt.ask("Global Status", choices=["DEVELOPMENT", "STAGING", "PRODUCTION"], default=global_status)
+            state["3"] = True
+            
+        elif choice == "4":
+            username = Prompt.ask("Username", default=username)
+            email = Prompt.ask("Email", default=email)
+            user_role = Prompt.ask("Role", choices=["ADMIN", "LEAD_ARCHITECT", "DEVELOPER"], default=user_role)
+            github_handle = Prompt.ask("GitHub Handle", default=github_handle)
+            state["4"] = True
+            
+        elif choice == "5":
+            forbidden_tech = Prompt.ask("Forbidden Technologies", default=forbidden_tech)
+            required_patterns = Prompt.ask("Required Patterns", default=required_patterns)
+            naming_conventions = Prompt.ask("Naming Conventions", default=naming_conventions)
+            dependency_rules = Prompt.ask("Dependency Rules", default=dependency_rules)
+            dos_and_donts = Prompt.ask("Do's and Don'ts", default=dos_and_donts)
+            state["5"] = True
+            
+        elif choice == "6":
+            agent_name = Prompt.ask("Agent Name", default=agent_name)
+            agent_role = Prompt.ask("Agent Role", default=agent_role)
+            agent_capabilities = Prompt.ask("Agent Capabilities (comma separated)", default=agent_capabilities)
+            state["6"] = True
+            
+        elif choice == "7":
+            openai_api_key = Prompt.ask("OpenAI API Key (hidden)", password=True)
+            state["7"] = True
+            
+        elif choice == "8":
+            components_list_str = Prompt.ask("Initial Components (comma separated)", default=components_list_str)
+            state["8"] = True
+            
+        else:
+            console.print("[red]Invalid option.[/red]")
+            
+        console.print("\n" + "="*40 + "\n")
+
+    # Now run the scaffold with the collected data
+    console.print("\n[info]Starting initialization with provided context...[/info]\n")
     
     tech_stack = [s.strip() for s in tech_stack_str.split(",") if s.strip()]
     main_stack = [s.strip() for s in main_stack_str.split(",") if s.strip()]
-    
-    console.print("\n[bold cyan]Project Policies & Constraints[/bold cyan]")
-    forbidden_tech = Prompt.ask("Forbidden Technologies (e.g. jQuery, var)", default="- None")
-    required_patterns = Prompt.ask("Required Patterns (e.g. Issues must have acceptance criteria)", default="- Issues must have acceptance criteria")
-    naming_conventions = Prompt.ask("Naming Conventions (e.g. kebab-case for files)", default="kebab-case for files, CamelCase for classes")
-    dependency_rules = Prompt.ask("Dependency Rules (e.g. Max 10 direct dependencies)", default="- Max 10 direct dependencies per issue")
-    dos_and_donts = Prompt.ask("Do's and Don'ts", default="- DO: Use .agent/skills/issue_quality_guide.json\n- DON'T: Create vague issues")
-    
-    console.print("\n[info]Starting initialization with provided context...[/info]\n")
+    components_list = [s.strip() for s in components_list_str.split(",") if s.strip()]
     
     _run_scaffold(
         target=target,
@@ -206,6 +309,18 @@ def interactive_init_command(
         dos_and_donts=dos_and_donts,
         interactive=True,
     )
+
+    # Handle API keys in .env
+    if openai_api_key:
+        try:
+            env_path = Path(target) / (".agent/configs/.env" if not inplace else "configs/.env")
+            if env_path.exists():
+                content = env_path.read_text(encoding="utf-8")
+                content = content.replace("OPENAI_API_KEY=", f"OPENAI_API_KEY={openai_api_key}")
+                env_path.write_text(content, encoding="utf-8")
+                console.print("[success]Updated .env with OpenAI API Key.[/success]")
+        except Exception as e:
+            console.print(f"[warning]Failed to update .env: {e}[/warning]")
 
     console.print("\n[info]Starting Tasker infrastructure via Docker Compose...[/info]")
     try:
@@ -289,25 +404,86 @@ def interactive_init_command(
                                 console.print(f"[warning]Failed to create user node: {res_user.text}[/warning]")
                         except Exception as e:
                             console.print(f"[warning]Failed to create user node: {e}[/warning]")
+                            
+                        # Create Agent node
+                        try:
+                            agent_id_to_use = agent_name.lower().replace(" ", "-")
+                            agent_data = {
+                                "agent_id": agent_id_to_use,
+                                "name": agent_name,
+                                "role": agent_role,
+                                "capabilities": [c.strip() for c in agent_capabilities.split(",") if c.strip()],
+                                "status": "IDLE"
+                            }
+                            res_agent = httpx.post(f"{api_url}/api/v1/agents/register", json=agent_data, timeout=5.0)
+                            if res_agent.status_code in (200, 201):
+                                console.print("[success]Agent node created successfully![/success]")
+                                try:
+                                    agent_id = res_agent.json().get("data", {}).get("agent_id") or agent_id_to_use
+                                    if agent_id:
+                                        # Assign agent to project
+                                        res_assign = httpx.post(f"{api_url}/api/v1/projects/{project_node_id}/agents/{agent_id}", timeout=5.0)
+                                        if res_assign.status_code in (200, 201):
+                                            console.print("[success]Agent assigned to project successfully![/success]")
+                                except Exception:
+                                    pass
+                            else:
+                                console.print(f"[warning]Failed to create agent node: {res_agent.text}[/warning]")
+                        except Exception as e:
+                            console.print(f"[warning]Failed to create agent node: {e}[/warning]")
                 else:
                     console.print(f"[warning]Failed to create project node: {res.text}[/warning]")
             except Exception as e:
                 console.print(f"[warning]Failed to create project node: {e}[/warning]")
                 
-            try:
-                httpx.post(
-                    f"{api_url}/api/v1/components",
-                    json={
-                        "name": "core",
-                        "project": project_name,
-                        "description": f"Core component for {project_name}",
-                        "labels": ["core", "default", "architecture"]
-                    },
-                    timeout=5.0
-                )
-            except Exception as e:
-                console.print(f"[warning]Failed to create default component: {e}[/warning]")
-                
+            # Create components
+            created_components = []
+            for comp_name in components_list:
+                try:
+                    res_comp = httpx.post(
+                        f"{api_url}/api/v1/components",
+                        json={
+                            "name": comp_name,
+                            "project": project_name,
+                            "description": f"{comp_name.capitalize()} component for {project_name}",
+                            "labels": [comp_name, "architecture"]
+                        },
+                        timeout=5.0
+                    )
+                    if res_comp.status_code in (200, 201):
+                        console.print(f"[success]Component '{comp_name}' created successfully![/success]")
+                        comp_data = res_comp.json()
+                        if isinstance(comp_data, dict) and "data" in comp_data:
+                            created_components.append(comp_data["data"].get("id"))
+                        else:
+                            created_components.append(comp_data.get("id"))
+                    else:
+                        console.print(f"[warning]Failed to create component '{comp_name}': {res_comp.text}[/warning]")
+                except Exception as e:
+                    console.print(f"[warning]Failed to create component '{comp_name}': {e}[/warning]")
+                    
+            # Create first issue if a component exists
+            if created_components:
+                console.print("[info]Creating first issue for the project...[/info]")
+                try:
+                    res_issue = httpx.post(
+                        f"{api_url}/api/v1/issues",
+                        json={
+                            "title": f"Explore {project_name} codebase",
+                            "description": "Initial task to explore the codebase and identify key components.",
+                            "priority": "MEDIUM",
+                            "component_id": created_components[0],
+                            "labels": ["initial", "setup"]
+                        },
+                        timeout=5.0
+                    )
+                    if res_issue.status_code in (200, 201):
+                        console.print("[success]First issue created successfully![/success]")
+                    else:
+                        console.print(f"[warning]Failed to create first issue: {res_issue.text}[/warning]")
+                except Exception as e:
+                    console.print(f"[warning]Failed to create first issue: {e}[/warning]")
+                    
             policies = [
                 {
                     "name": "Forbidden Technologies",

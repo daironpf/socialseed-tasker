@@ -976,11 +976,11 @@ def component_list(
 
     if not components:
         console.print("[info]No components found.[/info]")
-        console.print("[dim]💡 Tip: Create a component with: tasker component create <name> -p <project>[/dim]")
+        console.print("[dim]-> Tip: Create a component with: tasker component create <name> -p <project>[/dim]")
         return
 
     console.print(_components_table(components))
-    console.print('[dim]💡 Next: Create issues with: tasker issue create "My Issue" -c <component>[/dim]')
+    console.print('[dim]-> Next: Create issues with: tasker issue create "My Issue" -c <component>[/dim]')
 
 
 @component_app.command("show")
