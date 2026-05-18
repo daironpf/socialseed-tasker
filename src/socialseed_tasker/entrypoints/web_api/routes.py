@@ -459,7 +459,7 @@ def get_issue(
 
 @issues_router.get(
     "/issues/{issue_id}/component",
-    response_model=APIResponse[ComponentResponse],
+    response_model=APIResponse[dict],
     summary="Get issue's component via relationship",
     description="Get the Component that this Issue belongs to, following the BELONGS_TO relationship.",
     responses={404: {"description": "Issue or Component not found"}},
@@ -468,14 +468,7 @@ def get_issue_component(
     issue_id: str,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[dict]:
-    from socialseed_tasker.entrypoints.web_api.utils import resolve_issue_id
-
-    try:
-        resolved_id = resolve_issue_id(issue_id, repo)
-    except ValueError:
-        raise IssueNotFoundError(issue_id)
-
-    issue = repo.get_issue(str(resolved_id))
+    issue = repo.get_issue(str(issue_id))
     if issue is None:
         raise IssueNotFoundError(issue_id)
 
@@ -4050,7 +4043,7 @@ def register_agent(
                 role=body.role,
                 status="idle",
                 capabilities=", ".join(body.capabilities) if body.capabilities else "",
-                created_at=agent_data["created_at"],
+                createdAt=agent_data["created_at"],
             )
 
     return APIResponse(
