@@ -37,7 +37,7 @@ class MockRepository(TaskRepositoryInterface):
         self._issues[issue_id] = updated
         return updated
 
-    def close_issue(self, issue_id: str) -> Issue:
+    def close_issue(self, issue_id: str, commit_sha: str | None = None, resolution: str = "implemented") -> Issue:
         issue = self._issues[issue_id]
         updated = issue.model_copy(update={"status": IssueStatus.CLOSED})
         self._issues[issue_id] = updated
@@ -401,7 +401,7 @@ class TestInitCommand:
         target_dir.mkdir()
         result = runner.invoke(
             app,
-            ["init", str(target_dir)],
+            ["install", str(target_dir)],
         )
         assert result.exit_code == 0
         assert (target_dir / ".agent").exists()
@@ -418,7 +418,7 @@ class TestInitCommand:
 
         result = runner.invoke(
             app,
-            ["init", str(target_dir), "--force"],
+            ["install", str(target_dir), "--force"],
         )
         assert result.exit_code == 0
         assert "Overwritten" in result.stdout
@@ -427,7 +427,7 @@ class TestInitCommand:
         target_dir = tmp_path / "nonexistent"
         result = runner.invoke(
             app,
-            ["init", str(target_dir)],
+            ["install", str(target_dir)],
         )
         assert result.exit_code == 1
         assert "does not exist" in result.stdout
@@ -440,7 +440,7 @@ class TestInitCommand:
 
         result = runner.invoke(
             app,
-            ["init", str(target_dir), "-f"],
+            ["install", str(target_dir), "-f"],
         )
         assert result.exit_code == 0
 

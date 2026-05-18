@@ -446,10 +446,14 @@ class TestRepositoryStorage:
         mock_inner_driver = MagicMock()
 
         class MockRecord:
+            def __init__(self):
+                self._data = {"s": {"name": "MyClass", "symbol_type": "class", "id": "123"}}
             def __getitem__(self, key):
                 if key == "s":
                     return {"name": "MyClass", "symbol_type": "class", "id": "123"}
                 raise KeyError(key)
+            def get(self, key, default=None):
+                return self._data.get(key, default)
 
         @contextmanager
         def mock_session(database=None):

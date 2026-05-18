@@ -145,22 +145,22 @@ class CodeGraphParser:
 
         resolved_relationships = []
         for rel in relationships:
-            if rel.relationshipType == RelationshipType.CALLS:
-                if rel.targetId in symbol_map:
-                    resolved_relationships.append(rel.model_copy(update={"targetId": symbol_map[rel.targetId]}))
+            if rel.relationship_type == RelationshipType.CALLS:
+                if rel.target_id in symbol_map:
+                    resolved_relationships.append(rel.model_copy(update={"target_id": symbol_map[rel.target_id]}))
                 else:
                     # Check if it's an external call (module.function)
-                    if "." in rel.targetId:
-                        module_name = rel.targetId.split(".")[0]
+                    if "." in rel.target_id:
+                        module_name = rel.target_id.split(".")[0]
                         if module_name in import_map:
-                            prefix = f"imported:{rel.targetId}"
+                            prefix = f"imported:{rel.target_id}"
                         else:
-                            prefix = f"external:{rel.targetId}"
-                        resolved_relationships.append(rel.model_copy(update={"targetId": prefix}))
+                            prefix = f"external:{rel.target_id}"
+                        resolved_relationships.append(rel.model_copy(update={"target_id": prefix}))
                     else:
                         # Local call but not found - mark as unresolved
-                        unresolved_id = f"unresolved:{rel.targetId}"
-                        resolved_relationships.append(rel.model_copy(update={"targetId": unresolved_id}))
+                        unresolved_id = f"unresolved:{rel.target_id}"
+                        resolved_relationships.append(rel.model_copy(update={"target_id": unresolved_id}))
             else:
                 resolved_relationships.append(rel)
 
