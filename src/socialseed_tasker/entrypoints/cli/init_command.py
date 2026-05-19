@@ -404,8 +404,9 @@ def interactive_init_command(
                                 console.print(f"[warning]Failed to create user node: {res_user.text}[/warning]")
                         except Exception as e:
                             console.print(f"[warning]Failed to create user node: {e}[/warning]")
-                            
-                        # Create Agent node
+
+                    # Create Agent node only if user filled agent config
+                    if state.get("6") and agent_name and agent_name != "Architect-Agent":
                         try:
                             agent_id_to_use = agent_name.lower().replace(" ", "-")
                             agent_data = {
@@ -421,7 +422,6 @@ def interactive_init_command(
                                 try:
                                     agent_id = res_agent.json().get("data", {}).get("agent_id") or agent_id_to_use
                                     if agent_id:
-                                        # Assign agent to project
                                         res_assign = httpx.post(f"{api_url}/api/v1/projects/{project_node_id}/agents/{agent_id}", timeout=5.0)
                                         if res_assign.status_code in (200, 201):
                                             console.print("[success]Agent assigned to project successfully![/success]")
@@ -431,11 +431,12 @@ def interactive_init_command(
                                 console.print(f"[warning]Failed to create agent node: {res_agent.text}[/warning]")
                         except Exception as e:
                             console.print(f"[warning]Failed to create agent node: {e}[/warning]")
-                else:
-                    console.print(f"[warning]Failed to create project node: {res.text}[/warning]")
+                    else:
+                        console.print("[dim]Skipping agent creation (option 6 not filled by user).[/dim]")
+
             except Exception as e:
                 console.print(f"[warning]Failed to create project node: {e}[/warning]")
-                
+
             # Create components
             created_components = []
             for comp_name in components_list:
