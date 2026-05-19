@@ -22,6 +22,7 @@ For most users, this is cosmetic and does not affect functionality.
 from __future__ import annotations
 
 import json
+import os
 from contextlib import suppress
 from pathlib import Path
 from typing import Any
@@ -2884,8 +2885,9 @@ def agent_architect(
 def agent_register(
     agent_id: str = typer.Option(..., "--id", "-i", help="Unique agent identifier"),
     name: str = typer.Option(..., "--name", "-n", help="Agent name"),
-    role: str = typer.Option("developer", "--role", "-r", help="Agent role: developer, reviewer, planner, observer"),
+    role: str = typer.Option("developer", "--role", "-r", help="Agent role: developer, reviewer, planner, observer, tester, architect"),
     capabilities: str = typer.Option("", "--capabilities", "-c", help="Comma-separated capabilities"),
+    project_id: str | None = typer.Option(None, "--project-id", "-p", help="Optional project ID to assign the agent to"),
 ) -> None:
     """Register an agent with Tasker to enable tracking and specialization."""
     import httpx
@@ -2893,15 +2895,19 @@ def agent_register(
     api_url = os.getenv("TASKER_API_URL", "http://localhost:8000")
     caps = [c.strip() for c in capabilities.split(",") if c.strip()]
 
+    payload = {
+        "agent_id": agent_id,
+        "name": name,
+        "role": role,
+        "capabilities": caps,
+    }
+    if project_id:
+        payload["project_id"] = project_id
+
     try:
         response = httpx.post(
             f"{api_url}/api/v1/agents/register",
-            json={
-                "agent_id": agent_id,
-                "name": name,
-                "role": role,
-                "capabilities": caps,
-            },
+            json=payload,
             timeout=10.0,
         )
         if response.status_code == 201:
@@ -2909,6 +2915,8 @@ def agent_register(
             console.print(f"[success]Agent registered:[/success] {data['data']['agent_id']} ({data['data']['name']})")
             console.print(f"[info]Role:[/info] {data['data']['role']}")
             console.print(f"[info]Capabilities:[/info] {data['data']['capabilities']}")
+            if data['data'].get('project_id'):
+                console.print(f"[info]Project:[/info] {data['data']['project_id']}")
         else:
             console.print(f"[error]Failed to register agent:[/error] {response.text}")
             raise typer.Exit(1)
@@ -2944,27 +2952,39 @@ def agent_specialize(
 
 @agent_app.command("list")
 def agent_list() -> None:
-    """List all agents with active work."""
+    """List all agents registered in Tasker."""
     from rich.table import Table
 
-    repo = get_repository()
+    api_url = os.getenv("TASKER_API_URL", "http://localhost:8000")
+    try:
+        response = httpx.get(f"{api_url}/api/v1/agents", timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        agents = data.get("data", [])
+    except httpx.ConnectError:
+        console.print("[error]Cannot connect to API.[/error]")
+        raise typer.Exit(1)
+    except Exception as e:
+        console.print(f"[error]Failed to list agents: {e}[/error]")
+        raise typer.Exit(1)
 
-    working = [
-        i for i in repo.list_issues(statuses=["IN_PROGRESS"])
-        if getattr(i, 'agent_working', False)
-    ]
-
-    if not working:
-        console.print("[info]No agents currently working[/info]")
+    if not agents:
+        console.print("[info]No agents registered[/info]")
         return
 
-    table = Table(title=f"Working Agents ({len(working)})")
-    table.add_column("Issue", style="cyan")
-    table.add_column("Agent ID", style="white")
+    table = Table(title=f"Agents ({len(agents)})")
+    table.add_column("Agent ID", style="cyan")
+    table.add_column("Name", style="white")
+    table.add_column("Role", style="yellow")
+    table.add_column("Status", style="green")
 
-    for issue in working[:10]:
-        aid = getattr(issue, 'agent_id', '-') or '-'
-        table.add_row(str(issue.id)[:8], str(aid)[:12])
+    for agent in agents:
+        table.add_row(
+            str(agent.get("agent_id", "-"))[:20],
+            str(agent.get("name", "-"))[:25],
+            str(agent.get("role", "-"))[:15],
+            str(agent.get("status", "-"))[:10],
+        )
     console.print(table)
 
 
