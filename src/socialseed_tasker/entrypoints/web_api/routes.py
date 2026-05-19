@@ -4012,11 +4012,11 @@ agent_router = APIRouter()
     description="Register a new agent in the swarm coordination system.",
 )
 def register_agent(
+    request: Request,
     body: AgentRegisterRequest,
 ) -> APIResponse[AgentResponse]:
     from datetime import datetime, timezone
     from fastapi import HTTPException
-    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
     from socialseed_tasker.storage.graph_database import queries
 
     agent_data = {
@@ -4031,7 +4031,16 @@ def register_agent(
     }
     _agents[body.agent_id] = agent_data
 
-    driver = get_neo4j_driver()
+    driver = getattr(request.app.state, "driver", None)
+    if driver is None:
+        try:
+            from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+            driver = get_neo4j_driver()
+        except Exception:
+            driver = None
+    
+    assigned_project_id = body.project_id
+    
     if driver is not None:
         actual_driver = driver.driver if hasattr(driver, "driver") else driver
         db = driver.database if hasattr(driver, "database") else "neo4j"
@@ -4043,8 +4052,27 @@ def register_agent(
                 role=body.role,
                 status="idle",
                 capabilities=", ".join(body.capabilities) if body.capabilities else "",
-                created_at=agent_data["created_at"],
+                createdAt=agent_data["created_at"],
             )
+            if assigned_project_id:
+                session.run(
+                    queries.PROJECT_ASSIGN_AGENT,
+                    projectId=assigned_project_id,
+                    agentId=body.agent_id,
+                )
+            else:
+                result = session.run(queries.LIST_PROJECT_NODES)
+                projects = list(result)
+                if len(projects) == 1:
+                    sole_project = projects[0]["p"]
+                    sole_project_id = sole_project.get("id") or sole_project.get("slug")
+                    if sole_project_id:
+                        session.run(
+                            queries.PROJECT_ASSIGN_AGENT,
+                            projectId=sole_project_id,
+                            agentId=body.agent_id,
+                        )
+                        assigned_project_id = sole_project_id
 
     return APIResponse(
         data=AgentResponse(
@@ -4056,6 +4084,7 @@ def register_agent(
             capabilities=body.capabilities,
             created_at=agent_data["created_at"],
             last_heartbeat=agent_data["last_heartbeat"],
+            project_id=assigned_project_id,
         ),
         meta=Meta(request_id=None),
     )
