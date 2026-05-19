@@ -343,14 +343,15 @@ class AgentRegisterRequest(BaseModel):
 
     agent_id: str = Field(..., description="Unique agent identifier", examples=["agent-001"])
     name: str = Field(..., min_length=1, max_length=100, description="Agent name")
-    role: str = Field("developer", description="Agent role: planner, developer, reviewer, observer")
+    role: str = Field("developer", description="Agent role: planner, developer, reviewer, observer, tester, architect")
     capabilities: list[str] = Field(default_factory=list, description="Agent capabilities")
+    project_id: str | None = Field(None, description="Optional project ID to assign the agent to")
 
 
 class AgentUpdateRequest(BaseModel):
     """Request body for updating agent status."""
 
-    status: str | None = Field(None, description="Agent status: idle, working, blocked, offline")
+    status: str | None = Field(None, description="Agent status: idle, busy, offline")
     current_issue_id: str | None = Field(None, description="Issue ID currently being worked on")
 
 
@@ -365,6 +366,7 @@ class AgentResponse(BaseModel):
     capabilities: list[str]
     created_at: datetime
     last_heartbeat: datetime
+    project_id: str | None = None
 
 
 # ---------------------------------------------------------------------------
