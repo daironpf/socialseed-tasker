@@ -504,18 +504,26 @@ tasker agent reasoning --issue abc123
 ```
 
 ### tasker agent register
-Register a new agent with Tasker.
+Register a new agent with Tasker. Creates an Agent node in Neo4j and optionally assigns it to a project.
 ```bash
 tasker agent register --id agent-001 --name "Developer Agent" \
   --role developer --capabilities "coding,testing,code-review"
+```
+
+Assign agent to a project on registration:
+```bash
+tasker agent register --id agent-001 --name "Developer Agent" \
+  --role developer --capabilities "coding,testing" \
+  --project-id project-uuid
 ```
 
 | Option | Description |
 |---|---|
 | `--id, -i` | Unique agent identifier (required) |
 | `--name, -n` | Human-readable agent name (required) |
-| `--role, -r` | Agent role: developer, reviewer, planner, observer (required) |
-| `--capabilities, -c` | Comma-separated capabilities (required) |
+| `--role, -r` | Agent role: developer, reviewer, planner, observer, tester, architect (default: developer) |
+| `--capabilities, -c` | Comma-separated capabilities (e.g., "coding,testing,code-review") |
+| `--project-id, -p` | Optional project ID to assign the agent to (creates ASSIGNED_TO relationship) |
 
 ### tasker agent specialize
 Assign an agent to specialize in a component.
