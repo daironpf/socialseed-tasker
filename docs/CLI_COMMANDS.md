@@ -253,12 +253,18 @@ Register a new agent with Tasker for tracking and specialization.
 tasker agent register --id <agent-id> --name <name> --role <role> --capabilities <cap1,cap2>
 ```
 
+Assign agent to project on registration:
+```bash
+tasker agent register --id <agent-id> --name <name> --role <role> --capabilities <cap1,cap2> --project-id <project-id>
+```
+
 | Flag | Description |
 |------|-------------|
 | `--id, -i` | Unique agent identifier (e.g., "agent-001") |
 | `--name, -n` | Human-readable agent name |
-| `--role, -r` | Agent role: developer, reviewer, planner, observer |
+| `--role, -r` | Agent role: developer, reviewer, planner, observer, tester, architect |
 | `--capabilities, -c` | Comma-separated capabilities (e.g., "coding,testing") |
+| `--project-id, -p` | Optional project ID to assign the agent to (auto-links if only one project exists) |
 
 ### Add Agent Specialization
 Assign an agent to specialize in a specific component for domain-driven dispatching.
@@ -271,7 +277,7 @@ tasker agent specialize --agent <agent-id> --component <component-id>
 | `--agent, -a` | Agent ID |
 | `--component, -c` | Component ID to specialize in |
 
-### List Working Agents
+### List Agents
 ```bash
 tasker agent list
 ```

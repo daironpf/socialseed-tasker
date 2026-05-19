@@ -1,6 +1,6 @@
 # Project Roadmap
 
-**Last updated**: 2026-05-14
+**Last updated**: 2026-05-19
 
 ## Phase 1: Foundations
 - [x] Environment Setup
@@ -20,6 +20,7 @@
 - [x] Phantom Dependency Detection (RAG-powered)
 - [x] ARCHITECT Agent (constraint validation)
 - [x] Agent Registration & Specialization
+- [x] Agent-Project Auto-linking
 
 ---
 
@@ -29,3 +30,5 @@
 | 1 | Initial setup pending | Low | Root | COMPLETED |
 | 285 | Docker Desktop Windows Port Binding | Medium | Infrastructure | RESOLVED |
 | 286 | Post-install Agent Folder Setup | High | CLI/Scaffolding | RESOLVED |
+| 287 | Agent Registration API INTERNAL_ERROR | CRITICAL | API | RESOLVED |
+| 288 | Policy Node Severity Property Warning | MEDIUM | Storage | RESOLVED |
