@@ -3398,15 +3398,22 @@ def list_all_projects(
     description="Create a new project node in the graph.",
 )
 def create_project(
+    request: Request,
     body: ProjectCreateRequest,
 ) -> APIResponse[dict]:
     from fastapi import HTTPException
-    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
     from socialseed_tasker.storage.graph_database import queries
     import uuid
     from datetime import datetime, timezone
 
-    driver = get_neo4j_driver()
+    driver = getattr(request.app.state, "driver", None)
+    if driver is None:
+        try:
+            from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+            driver = get_neo4j_driver()
+        except Exception:
+            driver = None
+    
     if driver is None:
         raise HTTPException(status_code=503, detail="Neo4j not available")
     
