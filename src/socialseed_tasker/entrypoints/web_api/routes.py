@@ -4043,7 +4043,7 @@ def register_agent(
                 role=body.role,
                 status="idle",
                 capabilities=", ".join(body.capabilities) if body.capabilities else "",
-                createdAt=agent_data["created_at"],
+                created_at=agent_data["created_at"],
             )
 
     return APIResponse(

@@ -224,7 +224,7 @@ SET a.name = $name,
     a.role = $role,
     a.status = $status,
     a.capabilities = $capabilities,
-    a.createdAt = $createdAt
+    a.createdAt = $created_at
 RETURN a
 """
 
