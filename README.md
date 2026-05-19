@@ -40,7 +40,7 @@ With **AI Reasoning Logs**, you see exactly *why* an agent made a decision. No m
 
 ---
 
-### 🤖 Quick Start for AI Agents
+### 🚀 Quick Start for AI Agents
 
 Getting your agents up and running with Tasker takes seconds.
 
@@ -48,10 +48,13 @@ Getting your agents up and running with Tasker takes seconds.
 # 1. Install the Brain
 pip install socialseed-tasker
 
-# 2. Spin up the Infrastructure
-docker compose up -d
+# 2. Scaffold Tasker into your project (creates .agent/ directory)
+tasker install
 
-# 3. Give the Agent Context (The Magic Part)
+# 3. Initialize your project interactively (configure project details)
+tasker init
+
+# 4. Give the Agent Context (The Magic Part)
 tasker agent context --issue "ISSUE_ID"
 ```
 

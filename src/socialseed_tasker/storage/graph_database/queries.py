@@ -1026,6 +1026,7 @@ CREATE (p:Policy {
     name: $name,
     description: $description,
     rules: $rules,
+    severity: $severity,
     target_scope: $target_scope,
     logic_definition: $logic_definition,
     remediation_strategy: $remediation_strategy,

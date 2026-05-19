@@ -25,6 +25,7 @@ def _policy_to_dict(policy: Policy) -> dict[str, Any]:
         "name": policy.name,
         "description": policy.description,
         "rules": json.dumps([r.model_dump() for r in policy.rules]),
+        "severity": policy.severity.value if hasattr(policy.severity, 'value') else str(policy.severity),
         "target_scope": policy.target_scope.value,
         "logic_definition": policy.logic_definition,
         "remediation_strategy": policy.remediation_strategy,

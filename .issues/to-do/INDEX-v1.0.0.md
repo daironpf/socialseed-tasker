@@ -120,7 +120,7 @@ Change the code to use `createdAt` consistently everywhere.
 | # | Issue | Priority | Status |
 |---|-------|----------|--------|
 | #287 | Agent Registration API Returns INTERNAL_ERROR | CRITICAL | DONE |
-| #288 | Policy Node Severity Property Warning | MEDIUM | TODO |
+| #288 | Policy Node Severity Property Warning | MEDIUM | DONE |
 | #281 | Issue creation returns different ID formats | LOW | PENDING |
 | #280 | CLI help output shows truncated command descriptions | LOW | PENDING |
 | #279 | Cannot access API from Windows host | MEDIUM | DONE |
