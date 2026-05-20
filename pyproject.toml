@@ -86,6 +86,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 socialseed_tasker = [
     "../.agent/**",
+    "../docs/**",
     "assets/**/*",
     "assets/templates/**/*",
     "assets/templates/skills/**/*",

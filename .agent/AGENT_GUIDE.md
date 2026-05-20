@@ -8,7 +8,29 @@ Before starting any task, read `.agent/project.md` to understand the architectur
 ## 2. Agent Registration (Required)
 Before performing any task, agents MUST register themselves with Tasker. This enables tracking, specialization, and project assignment.
 
-### Register Agent
+### Single Project Rule
+**Tasker supports only ONE project per instance.** The system is designed as a single-project task manager. When you register an agent, it will be automatically assigned to the existing project.
+
+### Step 1: Get Current Project
+Before registering, obtain the active project ID:
+```bash
+# Get current project (the only project in the system)
+curl http://localhost:8000/api/v1/projects/current
+
+Response:
+```json
+{
+  "data": {
+    "id": "project-uuid",
+    "name": "My Project",
+    "slug": "my-project",
+    ...
+  }
+}
+```
+
+### Step 2: Register Agent
+The agent will be automatically assigned to the current project. If only one project exists, it's assigned automatically. If multiple projects exist, the agent is assigned to the most recently created one.
 ```bash
 curl -X POST "http://localhost:8000/api/v1/agents/register" \
   -H "Content-Type: application/json" \
@@ -16,7 +38,8 @@ curl -X POST "http://localhost:8000/api/v1/agents/register" \
     "agent_id": "agent-001",
     "name": "Developer Agent",
     "role": "developer",
-    "capabilities": ["coding", "testing", "code-review"]
+    "capabilities": ["coding", "testing", "code-review"],
+    "project_id": "project-uuid"
   }'
 ```
 
@@ -27,6 +50,9 @@ curl -X POST "http://localhost:8000/api/v1/agents/register" \
 | `name` | string | Human-readable name |
 | `role` | string | Role: `developer`, `reviewer`, `planner`, `observer` |
 | `capabilities` | array | List of capabilities (e.g., ["coding", "testing"]) |
+| `project_id` | string | Optional - ID from `/projects/current` endpoint. If omitted, agent is auto-assigned to existing project. |
+
+**Important**: Without `project_id`, the agent will NOT be linked to any project. Always include the project ID to ensure proper assignment.
 
 ### Agent Specialization
 Agents can specialize in specific components for domain-driven dispatching:
@@ -84,6 +110,45 @@ When finished:
 2. Log final results/thoughts.
 3. Close the issue: `tasker issue close <ID>`.
    *(Note: Closing the issue automatically generates semantic RAG embeddings of your solution for future agents!)*
+
+## 9. Troubleshooting
+
+### UTF-8 Encoding Issues (Windows)
+When using curl on Windows with special characters (Spanish accents: á, é, í, ó, ú, ñ), requests may fail with parsing errors.
+
+**Problem:** `curl -d` in Windows doesn't send UTF-8 correctly.
+
+**Solution 1: Use --data-binary with file**
+```bash
+# Create JSON file with UTF-8 encoding
+$json = '{"title": "Crear estructura de base de datos para catálogo", "priority": "HIGH"}'
+$json | Out-File -FilePath request.json -Encoding utf8
+
+# Send with --data-binary
+curl -X POST "http://localhost:8000/api/v1/issues" \
+  -H "Content-Type: application/json; charset=utf-8" \
+  --data-binary @request.json
+```
+
+**Solution 2: Use PowerShell**
+```powershell
+$body = @"
+{
+  "title": "Crear estructura de base de datos para catálogo",
+  "description": "Modelos para productos, categorías",
+  "priority": "HIGH"
+}
+"@
+
+Invoke-RestMethod -Uri "http://localhost:8000/api/v1/issues" `
+  -Method Post -Body $body -ContentType "application/json; charset=utf-8"
+```
+
+**Solution 3: Configure locale first**
+```cmd
+chcp 65001
+set PYTHONIOENCODING=utf-8
+```
 
 ## Summary of Commands
 | Action | Command |

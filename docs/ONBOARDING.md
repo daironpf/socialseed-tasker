@@ -1,6 +1,10 @@
-# Developer Onboarding Guide - Tasker v1.0.0
+# Developer Onboarding Guide - Tasker v1.0.2
 
 Welcome to Tasker! This guide will help you get up and running in minutes and understand how to contribute to the project.
+
+## Single Project Architecture
+
+**Tasker supports only ONE project per instance.** The system is designed as a single-project task manager. All entities (issues, components, agents, code symbols) belong to this single project. This simplifies the architecture and ensures clear traceability within one codebase.
 
 ## Quick Start (5 minutes)
 

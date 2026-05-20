@@ -194,6 +194,61 @@ docker compose logs tasker-api
 
 ---
 
+### Encoding Issues (Windows)
+
+#### "400 Bad Request" or "Parse error" with Spanish characters
+
+**Symptoms:** API returns error when sending titles or descriptions with accents (á, é, í, ó, ú, ñ, ü)
+
+**Cause:** curl `-d` in Windows doesn't send UTF-8 correctly by default.
+
+**Solutions:**
+
+**Solution 1: Use --data-binary with file (PowerShell)**
+```powershell
+# Create JSON file with UTF-8 encoding
+$json = @"
+{
+  "title": "Crear estructura de base de datos para catálogo",
+  "description": "Modelos para productos, categorías",
+  "priority": "HIGH"
+}
+"@
+$json | Out-File -FilePath request.json -Encoding utf8
+
+# Send with --data-binary
+curl -X POST "http://localhost:8000/api/v1/issues" `
+  -H "Content-Type: application/json; charset=utf-8" `
+  --data-binary @request.json
+```
+
+**Solution 2: Use PowerShell Invoke-RestMethod**
+```powershell
+$body = @"
+{
+  "title": "Crear estructura de base de datos para catálogo",
+  "description": "Modelos para productos, categorías",
+  "priority": "HIGH"
+}
+"@
+
+Invoke-RestMethod -Uri "http://localhost:8000/api/v1/issues" `
+  -Method Post `
+  -Body $body `
+  -ContentType "application/json; charset=utf-8"
+```
+
+**Solution 3: Configure locale first**
+```cmd
+chcp 65001
+set PYTHONIOENCODING=utf-8
+curl -X POST "http://localhost:8000/api/v1/issues" `
+  -H "Content-Type: application/json" `
+  -d "{\"title\":\"Crear estructura de base de datos\",\"priority\":\"HIGH\"}"
+```
+
+---
+
 ### Testing Issues
 
 #### "pytest not found"
@@ -251,6 +306,9 @@ A: Python 3.10+, Neo4j 5.x
 
 **Q: Can I use Tasker without Neo4j?**
 A: No, Neo4j is the only storage backend in v1.0.0
+
+**Q: Can I have multiple projects in one Tasker instance?**
+A: No. Tasker supports only ONE project per instance. All issues, components, agents, and code symbols belong to this single project. If you need to manage multiple projects, run separate Tasker instances.
 
 **Q: How do I reset all data?**
 A: Use the admin reset endpoint:

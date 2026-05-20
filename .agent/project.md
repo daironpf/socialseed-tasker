@@ -1,12 +1,19 @@
-# {project_name}
+# SocialSeed Tasker
 
 ## AI Agent Project Context
 
 This file provides essential context for AI agents working on this project. Agents should read this file when starting work to understand the project architecture and constraints.
 
-**Version**: 1.0.1
+**Version**: 1.0.2
 **Created**: 2026-05-05
 **Architecture**: Hexagonal (Feature-Oriented)
+**Project Model**: Single Project (one project per Tasker instance)
+
+---
+
+## Single Project Rule
+
+**Tasker supports only ONE project per instance.** This is a core architectural decision. All issues, components, agents, and code symbols belong to this single project. When registering an agent, it is automatically assigned to the existing project via the `(Project)-[:ASSIGNED_TO]->(Agent)` relationship.
 
 ---
 

@@ -3,7 +3,7 @@
 
 **SocialSeed Tasker** is the definitive framework for teams and organizations scaling their development with AI Agents. While agents provide speed, Tasker provides the **Architectural Guardrails** that prevent your codebase from descending into chaos.
 
-[![Version](https://img.shields.io/badge/Version-0.9.0-6366F1.svg?style=for-the-badge)](https://daironpf.github.io/socialseed-tasker/)
+[![Version](https://img.shields.io/badge/Version-1.0.0-6366F1.svg?style=for-the-badge)](https://daironpf.github.io/socialseed-tasker/)
 [![Architecture](https://img.shields.io/badge/Architecture-Hexagonal-A855F7.svg?style=for-the-badge)](https://daironpf.github.io/socialseed-tasker/pages/hexagonal.html)
 [![Storage](https://img.shields.io/badge/Storage-Neo4j%20Graph-orange.svg?style=for-the-badge)](https://daironpf.github.io/socialseed-tasker/pages/graph-schema.html)
 

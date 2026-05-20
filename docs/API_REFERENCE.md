@@ -428,14 +428,63 @@ POST /policies/{policy_id}/dry-run
 
 ## Projects
 
+**Important**: Tasker supports only **ONE project per instance**. The system is designed as a single-project task manager. All issues, components, agents, and code symbols belong to this single project.
+
 ### List Projects
 ```http
 GET /projects
 ```
+Returns a list of project names (strings only). Will always return 0 or 1 project.
 
-### Get Project Summary
+### List All Projects with Details
 ```http
-GET /projects/{project}/summary
+GET /projects/all
+```
+Returns all projects with complete details. Will always return 0 or 1 project.
+
+### Get Current Project
+```http
+GET /projects/current
+```
+Returns the single project in the system. This is the primary endpoint to get project info.
+
+**Response:**
+```json
+{
+  "data": {
+    "id": "default-project",
+    "name": "My Project",
+    "slug": "my-project",
+    ...
+  }
+}
+```
+
+### Get Project by ID or Slug
+```http
+GET /projects/{project_id}
+```
+Returns the project by its ID or slug.
+
+### Create or Get Project
+```http
+POST /projects
+```
+If a project already exists, returns the existing one. If not, creates it. Tasker does not allow multiple projects.
+
+**Response (exists):**
+```json
+{
+  "data": {
+    "status": "exists",
+    "message": "A project already exists. Tasker supports only one project.",
+    "project": {
+      "id": "default-project",
+      "name": "My Project",
+      "slug": "my-project"
+    }
+  }
+}
 ```
 
 ## Deployments

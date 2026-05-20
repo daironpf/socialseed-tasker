@@ -20,9 +20,13 @@ This directory contains the operational knowledge for AI agents working on this 
 | `TEST` | `workflows/prueba-el-proyecto.md` | Full black-box evaluation of the project |
 | `COMMIT`| `workflows/commit-push.md` | Prepare changes for user approval |
 | `FIND` | `workflows/convert-findings-to-issues.md` | Convert test report findings into actionable issues |
+| `PROJECT` | `workflows/project-centric-agent.md` | **CRITICAL** - Always consult Tasker for project-related info |
 
 ## Agent Protocol
 For detailed rules on how to interact with Tasker and the project, read **[AGENT_GUIDE.md](./AGENT_GUIDE.md)**.
+
+### Single Project Rule
+**Tasker supports only ONE project per instance.** All issues, components, agents, and code symbols belong to this single project. When registering an agent, it is automatically assigned to the existing project.
 
 ### Service Menu Rule
 - **Always end with a Service Menu**: At the end of every response where a task was completed or a decision is needed, present a table of available workflows.
