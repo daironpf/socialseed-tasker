@@ -1,40 +1,48 @@
 {
-  "name": "dental-app",
-  "version": "1.0.0",
-  "created": "2026-04-26",
+  "name": "socialseed-tasker",
+  "version": "1.0.2",
+  "created": "2026-05-05",
   "architecture": {
-    "type": "api-first",
+    "type": "hexagonal",
     "language": "python",
-    "framework": "fastapi",
-    "database": "postgresql",
+    "framework": "fastapi/typer",
+    "database": "neo4j",
     "frontend": "vue",
-    "other_services": ["redis", "celery"]
+    "other_services": ["tree-sitter", "openai"]
   },
   "components": [
-    "API Gateway", "Backend Service", "Database"
+    "core/task_management",
+    "core/project_analysis",
+    "core/validation",
+    "core/code_analysis",
+    "entrypoints/terminal_cli",
+    "entrypoints/web_api",
+    "storage/graph_database"
   ],
   "github": {
-    "repository": "https://github.com/user/repo",
+    "repository": "https://github.com/daironpf/socialseed-tasker",
     "default_branch": "main"
   },
   "external_apis": [],
   "constraints": {
-    "forbidden_technologies": [],
-    "required_patterns": ["Issues must have acceptance criteria"],
-    "naming_conventions": "kebab-case for files, CamelCase for classes",
-    "max_dependencies_per_issue": 10
+    "forbidden_technologies": ["file storage (neo4j-only)", "external databases in core/", "direct neo4j imports in core/"],
+    "required_patterns": ["Hexagonal Architecture", "Repository Pattern via Protocol interfaces", "All code in English"],
+    "naming_conventions": "snake_case for functions/variables, PascalCase for classes, kebab-case for components",
+    "max_dependency_depth": 5
   },
   "development": {
-    "setup_commands": "pip install -r requirements.txt",
-    "test_commands": "pytest tests/",
-    "build_commands": "docker build ."
+    "setup_commands": "cp .agent/configs/.env.example .agent/configs/.env && pip install -e .",
+    "test_commands": "pytest tests/unit/ -v",
+    "build_commands": "pip install -e . && pip wheel . --wheel-dir dist/"
   },
   "quality": {
     "code_review_approvals": 1,
     "use_quality_guide": true
   },
   "agent_notes": [
-    "Read tasker/project.json before starting work",
-    "Use skills/task_quality_guide.json for issue creation"
+    "Read .agent/project.md before starting work",
+    "Read .agent/AGENT_GUIDE.md for agent protocol",
+    "Use workflows/project-centric-agent.md for mandatory Tasker consultation",
+    "Use skills/skill_manifest.json for API functions"
   ]
 }

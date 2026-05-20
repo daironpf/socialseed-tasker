@@ -1,40 +1,48 @@
 {
-  "name": "{project_name}",
-  "version": "{version}",
-  "created": "{created_date}",
+  "name": "socialseed-tasker",
+  "version": "1.0.2",
+  "created": "2026-05-05",
   "architecture": {
-    "type": "{architecture_type}",
-    "language": "{language}",
-    "framework": "{framework}",
-    "database": "{database}",
-    "frontend": "{frontend}",
-    "other_services": ["{other_services}"]
+    "type": "hexagonal",
+    "language": "python",
+    "framework": "fastapi/typer",
+    "database": "neo4j",
+    "frontend": "vue",
+    "other_services": ["tree-sitter", "openai"]
   },
   "components": [
-    {key_components}
+    "core/task_management",
+    "core/project_analysis",
+    "core/validation",
+    "core/code_analysis",
+    "entrypoints/terminal_cli",
+    "entrypoints/web_api",
+    "storage/graph_database"
   ],
   "github": {
-    "repository": "{github_repo}",
-    "default_branch": "{default_branch}"
+    "repository": "",
+    "default_branch": "main"
   },
   "external_apis": [],
   "constraints": {
-    "forbidden_technologies": [],
-    "required_patterns": ["Issues must have acceptance criteria"],
-    "naming_conventions": "kebab-case for files, CamelCase for classes",
-    "max_dependencies_per_issue": 10
+    "forbidden_technologies": ["file storage (neo4j-only)", "external databases in core/", "direct neo4j imports in core/"],
+    "required_patterns": ["Hexagonal Architecture", "Repository Pattern via Protocol interfaces", "All code in English"],
+    "naming_conventions": "snake_case for functions/variables, PascalCase for classes, kebab-case for components",
+    "max_dependency_depth": 5
   },
   "development": {
-    "setup_commands": "{setup_commands}",
-    "test_commands": "{test_commands}",
-    "build_commands": "{build_commands}"
+    "setup_commands": "cp .agent/configs/.env.example .agent/configs/.env && pip install -e .",
+    "test_commands": "pytest tests/unit/ -v",
+    "build_commands": "pip install -e . && pip wheel . --wheel-dir dist/"
   },
   "quality": {
-    "code_review_approvals": {code_review_count},
+    "code_review_approvals": 1,
     "use_quality_guide": true
   },
   "agent_notes": [
-    "Read tasker/project.json before starting work",
-    "Use skills/task_quality_guide.json for issue creation"
+    "Read .agent/project.md before starting work",
+    "Read .agent/AGENT_GUIDE.md for agent protocol",
+    "Use workflows/project-centric-agent.md for mandatory Tasker consultation",
+    "Use skills/skill_manifest.json for API functions"
   ]
 }
