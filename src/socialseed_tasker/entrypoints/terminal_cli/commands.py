@@ -2901,8 +2901,19 @@ def agent_register(
         "role": role,
         "capabilities": caps,
     }
+
     if project_id:
         payload["project_id"] = project_id
+    else:
+        try:
+            current_project_resp = httpx.get(f"{api_url}/api/v1/projects/current", timeout=5.0)
+            if current_project_resp.status_code == 200:
+                project_data = current_project_resp.json()
+                if project_data.get("data"):
+                    payload["project_id"] = project_data["data"]["id"]
+                    console.print(f"[info]Auto-assigning to project:[/info] {project_data['data']['name']} ({project_data['data']['id']})")
+        except Exception:
+            pass
 
     try:
         response = httpx.post(
@@ -2917,6 +2928,8 @@ def agent_register(
             console.print(f"[info]Capabilities:[/info] {data['data']['capabilities']}")
             if data['data'].get('project_id'):
                 console.print(f"[info]Project:[/info] {data['data']['project_id']}")
+            else:
+                console.print("[warning]No project assigned. Register a project first.[/warning]")
         else:
             console.print(f"[error]Failed to register agent:[/error] {response.text}")
             raise typer.Exit(1)
