@@ -11,6 +11,7 @@
 - [x] **Project-Centric Agent Workflow:** New workflow requiring agents to always consult Tasker first for project-related info.
 - [x] **Single Project Architecture:** Tasker now supports only ONE project per instance. All entities belong to this single project.
 - [x] **Project Data Fix:** Updated `.agent/project.json` with correct project data (was showing `dental-app`, now `socialseed-tasker`).
+- [x] **Interactive Init Workflow:** New workflow for AI agents to guide users through `tasker init` with recommendations and interactive data collection.
 
 ### Release History
 | Version | Date | Description |

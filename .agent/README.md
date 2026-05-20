@@ -13,6 +13,7 @@ This directory contains the operational knowledge for AI agents working on this 
 | Task | Workflow | Description |
 |---|---|---|
 | `SETUP` | `workflows/project-setup.md` | Initialize or re-scaffold project modules |
+| `INIT` | `workflows/interactive-init.md` | **Interactive** - Guide user through `tasker init` with recommendations |
 | `ISSUE` | `workflows/create-issue.md` | Create new tasks based on analysis or user request |
 | `WORK` | `workflows/implement-issue.md` | Start working on a specific issue |
 | `DOCS` | `workflows/update-documentation.md` | Sync all documentation (Code, MD, Web) |

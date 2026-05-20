@@ -168,6 +168,16 @@
       "name": "test_webhook",
       "description": "Test webhook configuration",
       "category": "sync"
+    },
+    {
+      "name": "interactive_init",
+      "description": "Guide user through interactive project initialization with tasker init. Collects all project metadata with recommendations.",
+      "category": "project"
+    },
+    {
+      "name": "detect_project_config",
+      "description": "Analyze existing codebase to detect language, framework, architecture, and dependencies for init recommendations.",
+      "category": "project"
     }
   ],
   "workflow_rules": {
