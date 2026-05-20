@@ -3,12 +3,32 @@
   "version": "0.8.0",
   "description": "AI Agent Skill for interacting with SocialSeed Tasker REST API v0.8.0",
   "api_version": "0.8.0",
+  "workflow_rules": {
+    "file": "project-centric-agent.md",
+    "required_for": ["all"],
+    "description": "Always consult Tasker for project-related information before taking any action"
+  },
   "quality_guide": {
     "file": "issue_quality_guide.json",
     "required_for": ["create_issue", "update_issue"],
     "description": "Best practices for creating quality issues in client projects"
   },
   "functions": [
+    {
+      "name": "get_current_project",
+      "description": "Get the current/active project. Use this first when user mentions project-related keywords.",
+      "category": "project"
+    },
+    {
+      "name": "list_all_projects",
+      "description": "List all projects with complete details",
+      "category": "project"
+    },
+    {
+      "name": "get_project_by_id",
+      "description": "Get a specific project by ID or slug",
+      "category": "project"
+    },
     {
       "name": "create_component",
       "description": "Create a new component to group issues",
@@ -150,6 +170,27 @@
       "category": "sync"
     }
   ],
+  "workflow_rules": {
+    "file": "project-centric-agent.md",
+    "required_for": ["all"],
+    "description": "Always consult Tasker for project-related information before taking any action"
+  },
+  "project_centric_rules": {
+    "trigger_keywords_es": {
+      "project": ["proyecto", "tarea", "issue", "incidencia", "feature", "bug", "componente", "módulo", "arquitectura", "estado", "progreso", "avance"],
+      "documentation": ["documentación", "docs", "documentar", "readme", "changelog", "historia", "guías", "manual", "spec", "especificaciones", "requisitos"],
+      "code": ["código", "refactorizar", "analizar", "dependencia", "test", "pruebas", "testing", "coverage", "símbolo", "import", "clase", "método", "función"],
+      "team": ["agente", "desarrolladores", "testers", "equipo", "asignación", "especializarse", "capacidad"]
+    },
+    "trigger_keywords_en": {
+      "project": ["project", "task", "issue", "feature", "bug", "component", "module", "architecture", "status", "progress"],
+      "documentation": ["documentation", "docs", "document", "readme", "changelog", "history", "guides", "manual", "spec", "specifications", "requirements"],
+      "code": ["code", "refactor", "analyze", "dependency", "test", "testing", "coverage", "symbol", "import", "class", "method", "function"],
+      "team": ["agent", "developer", "tester", "team", "assignment", "specialize", "capability"]
+    },
+    "required_action": "Always query Tasker API/CLI first before responding to project-related requests",
+    "fallback_action": "If functionality not available, notify user clearly and log the missing feature"
+  },
   "enums": {
     "priority": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
     "status": ["OPEN", "IN_PROGRESS", "BLOCKED", "CLOSED"],
