@@ -542,6 +542,26 @@ class ProjectCreateRequest(BaseModel):
     globalStatus: str = Field("DEVELOPMENT", description="Operational status: DEVELOPMENT, STAGING, PRODUCTION")
 
 
+class ProjectResponse(BaseModel):
+    """Project details in API responses."""
+    id: str
+    name: str
+    slug: str
+    description: str
+    repositoryUrl: str
+    basePackage: str
+    visibility: str
+    status: str
+    techStack: list[str]
+    mainStack: list[str]
+    architectureStyle: str
+    version: str
+    conventionsUrl: str
+    globalStatus: str
+    createdAt: str | None = None
+    updatedAt: str | None = None
+
+
 class TestFailureRequest(BaseModel):
     """Request body for submitting a test failure for root-cause analysis."""
 

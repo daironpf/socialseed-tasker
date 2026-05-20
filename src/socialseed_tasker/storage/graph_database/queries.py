@@ -106,6 +106,48 @@ RETURN p
 ORDER BY p.name
 """
 
+COUNT_PROJECTS = """
+MATCH (p:Project)
+RETURN count(p) as count
+"""
+
+GET_OR_CREATE_SINGLE_PROJECT = """
+MERGE (p:Project {id: 'default-project'})
+ON CREATE SET p.slug = $slug,
+    p.name = $name,
+    p.description = $description,
+    p.repositoryUrl = $repositoryUrl,
+    p.basePackage = $basePackage,
+    p.visibility = $visibility,
+    p.status = $status,
+    p.techStack = $techStack,
+    p.mainStack = $mainStack,
+    p.architectureStyle = $architectureStyle,
+    p.version = $version,
+    p.conventionsUrl = $conventionsUrl,
+    p.conventionsRules = $conventionsRules,
+    p.lastFullScan = $lastFullScan,
+    p.globalStatus = $globalStatus,
+    p.createdAt = $createdAt,
+    p.updatedAt = $updatedAt
+ON MATCH SET p.name = $name,
+    p.description = $description,
+    p.repositoryUrl = $repositoryUrl,
+    p.basePackage = $basePackage,
+    p.visibility = $visibility,
+    p.status = $status,
+    p.techStack = $techStack,
+    p.mainStack = $mainStack,
+    p.architectureStyle = $architectureStyle,
+    p.version = $version,
+    p.conventionsUrl = $conventionsUrl,
+    p.conventionsRules = $conventionsRules,
+    p.lastFullScan = $lastFullScan,
+    p.globalStatus = $globalStatus,
+    p.updatedAt = $updatedAt
+RETURN p
+"""
+
 CREATE_PROJECT = """
 MERGE (p:Project {slug: $slug})
 SET p.id = $id,
@@ -141,13 +183,15 @@ ORDER BY i.createdAt DESC
 """
 
 PROJECT_ASSIGN_AGENT = """
-MATCH (p:Project {id: $projectId})
+MATCH (p:Project)
+WHERE p.id = $projectId OR p.slug = $projectId
 MATCH (a:Agent {id: $agentId})
 MERGE (p)-[:ASSIGNED_TO]->(a)
 """
 
 PROJECT_REMOVE_AGENT = """
-MATCH (p:Project {id: $projectId})-[r:ASSIGNED_TO]->(a:Agent {id: $agentId})
+MATCH (p:Project)-[r:ASSIGNED_TO]->(a:Agent {id: $agentId})
+WHERE p.id = $projectId OR p.slug = $projectId
 DELETE r
 """
 
@@ -155,6 +199,23 @@ PROJECT_GET_AGENTS = """
 MATCH (p:Project {id: $projectId})-[:ASSIGNED_TO]->(a:Agent)
 RETURN a
 ORDER BY a.name
+"""
+
+GET_PROJECT_BY_ID = """
+MATCH (p:Project {id: $projectId})
+RETURN p
+"""
+
+GET_PROJECT_BY_SLUG = """
+MATCH (p:Project {slug: $slug})
+RETURN p
+"""
+
+GET_DEFAULT_PROJECT = """
+MATCH (p:Project)
+RETURN p
+ORDER BY p.createdAt DESC
+LIMIT 1
 """
 
 LIST_ISSUES_PAGINATED = """

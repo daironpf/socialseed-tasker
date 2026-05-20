@@ -101,6 +101,7 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     PolicyViolationResponse,
     ProjectSummaryResponse,
     ProjectCreateRequest,
+    ProjectResponse,
     ReasoningLogEntryRequest,
     ReasoningLogEntryResponse,
     TestFailureRequest,
@@ -3390,12 +3391,177 @@ def list_all_projects(
     return APIResponse(data=projects, meta=Meta(request_id=None))
 
 
+@project_router.get(
+    "/projects/all",
+    response_model=APIResponse[list[ProjectResponse]],
+    summary="List all projects with details",
+    description="Returns all projects with their complete details.",
+)
+def list_all_projects_detailed(
+    request: Request,
+) -> APIResponse[list[ProjectResponse]]:
+    from socialseed_tasker.storage.graph_database import queries
+
+    driver = getattr(request.app.state, "driver", None)
+    if driver is None:
+        try:
+            from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+            driver = get_neo4j_driver()
+        except Exception:
+            driver = None
+
+    if driver is None:
+        return APIResponse(data=[], meta=Meta(request_id=None))
+
+    actual_driver = driver.driver if hasattr(driver, "driver") else driver
+    db = driver.database if hasattr(driver, "database") else "neo4j"
+
+    with actual_driver.session(database=db) as session:
+        result = session.run(queries.LIST_PROJECT_NODES)
+        projects = []
+        for record in result:
+            p = record["p"]
+            project_data = {
+                "id": p.get("id"),
+                "name": p.get("name"),
+                "slug": p.get("slug"),
+                "description": p.get("description", ""),
+                "repositoryUrl": p.get("repositoryUrl", ""),
+                "basePackage": p.get("basePackage", ""),
+                "visibility": p.get("visibility", "PUBLIC"),
+                "status": p.get("status", "DEVELOPMENT"),
+                "techStack": p.get("techStack", []),
+                "mainStack": p.get("mainStack", []),
+                "architectureStyle": p.get("architectureStyle", "api-first"),
+                "version": p.get("version", "0.1.0"),
+                "conventionsUrl": p.get("conventionsUrl", ""),
+                "globalStatus": p.get("globalStatus", "DEVELOPMENT"),
+                "createdAt": p.get("createdAt"),
+                "updatedAt": p.get("updatedAt"),
+            }
+            projects.append(ProjectResponse(**project_data))
+        return APIResponse(data=projects, meta=Meta(request_id=None))
+
+
+@project_router.get(
+    "/projects/current",
+    response_model=APIResponse[ProjectResponse | None],
+    summary="Get current/active project",
+    description="Returns the most recently created project as the current one.",
+)
+def get_current_project(
+    request: Request,
+) -> APIResponse[ProjectResponse | None]:
+    from socialseed_tasker.storage.graph_database import queries
+
+    driver = getattr(request.app.state, "driver", None)
+    if driver is None:
+        try:
+            from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+            driver = get_neo4j_driver()
+        except Exception:
+            driver = None
+
+    if driver is None:
+        return APIResponse(data=None, meta=Meta(request_id=None))
+
+    actual_driver = driver.driver if hasattr(driver, "driver") else driver
+    db = driver.database if hasattr(driver, "database") else "neo4j"
+
+    with actual_driver.session(database=db) as session:
+        result = session.run(queries.GET_DEFAULT_PROJECT)
+        record = result.single()
+
+        if not record:
+            return APIResponse(data=None, meta=Meta(request_id=None))
+
+        p = record["p"]
+        project_data = {
+            "id": p.get("id"),
+            "name": p.get("name"),
+            "slug": p.get("slug"),
+            "description": p.get("description", ""),
+            "repositoryUrl": p.get("repositoryUrl", ""),
+            "basePackage": p.get("basePackage", ""),
+            "visibility": p.get("visibility", "PUBLIC"),
+            "status": p.get("status", "DEVELOPMENT"),
+            "techStack": p.get("techStack", []),
+            "mainStack": p.get("mainStack", []),
+            "architectureStyle": p.get("architectureStyle", "api-first"),
+            "version": p.get("version", "0.1.0"),
+            "conventionsUrl": p.get("conventionsUrl", ""),
+            "globalStatus": p.get("globalStatus", "DEVELOPMENT"),
+            "createdAt": p.get("createdAt"),
+            "updatedAt": p.get("updatedAt"),
+        }
+        return APIResponse(data=ProjectResponse(**project_data), meta=Meta(request_id=None))
+
+
+@project_router.get(
+    "/projects/{project_id}",
+    response_model=APIResponse[ProjectResponse | None],
+    summary="Get project by ID or slug",
+    description="Returns a specific project by its ID or slug.",
+)
+def get_project_by_id(
+    request: Request,
+    project_id: str,
+) -> APIResponse[ProjectResponse | None]:
+    from socialseed_tasker.storage.graph_database import queries
+
+    driver = getattr(request.app.state, "driver", None)
+    if driver is None:
+        try:
+            from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+            driver = get_neo4j_driver()
+        except Exception:
+            driver = None
+
+    if driver is None:
+        return APIResponse(data=None, meta=Meta(request_id=None))
+
+    actual_driver = driver.driver if hasattr(driver, "driver") else driver
+    db = driver.database if hasattr(driver, "database") else "neo4j"
+
+    with actual_driver.session(database=db) as session:
+        result = session.run(queries.GET_PROJECT_BY_ID, projectId=project_id)
+        record = result.single()
+
+        if not record:
+            result = session.run(queries.GET_PROJECT_BY_SLUG, slug=project_id)
+            record = result.single()
+
+        if not record:
+            return APIResponse(data=None, meta=Meta(request_id=None))
+
+        p = record["p"]
+        project_data = {
+            "id": p.get("id"),
+            "name": p.get("name"),
+            "slug": p.get("slug"),
+            "description": p.get("description", ""),
+            "repositoryUrl": p.get("repositoryUrl", ""),
+            "basePackage": p.get("basePackage", ""),
+            "visibility": p.get("visibility", "PUBLIC"),
+            "status": p.get("status", "DEVELOPMENT"),
+            "techStack": p.get("techStack", []),
+            "mainStack": p.get("mainStack", []),
+            "architectureStyle": p.get("architectureStyle", "api-first"),
+            "version": p.get("version", "0.1.0"),
+            "conventionsUrl": p.get("conventionsUrl", ""),
+            "globalStatus": p.get("globalStatus", "DEVELOPMENT"),
+            "createdAt": p.get("createdAt"),
+            "updatedAt": p.get("updatedAt"),
+        }
+        return APIResponse(data=ProjectResponse(**project_data), meta=Meta(request_id=None))
+
+
 @project_router.post(
     "/projects",
     response_model=APIResponse[dict],
     status_code=201,
-    summary="Create a new project",
-    description="Create a new project node in the graph.",
+    summary="Create or get the single project",
+    description="Tasker supports only ONE project. If one exists, it returns the existing one. If not, it creates it.",
 )
 def create_project(
     request: Request,
@@ -3403,7 +3569,6 @@ def create_project(
 ) -> APIResponse[dict]:
     from fastapi import HTTPException
     from socialseed_tasker.storage.graph_database import queries
-    import uuid
     from datetime import datetime, timezone
 
     driver = getattr(request.app.state, "driver", None)
@@ -3420,15 +3585,37 @@ def create_project(
     actual_driver = driver.driver if hasattr(driver, "driver") else driver
     db = driver.database if hasattr(driver, "database") else "neo4j"
     
-    project_id = body.id or str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
     with actual_driver.session(database=db) as session:
+        count_result = session.run(queries.COUNT_PROJECTS)
+        count_record = count_result.single()
+        existing_count = count_record["count"] if count_record else 0
+        
+        if existing_count > 0:
+            result = session.run(queries.GET_DEFAULT_PROJECT)
+            record = result.single()
+            if record:
+                p = record["p"]
+                return APIResponse(
+                    data={
+                        "status": "exists",
+                        "message": "A project already exists. Tasker supports only one project.",
+                        "project": {
+                            "id": p.get("id"),
+                            "name": p.get("name"),
+                            "slug": p.get("slug"),
+                        }
+                    },
+                    meta=Meta(request_id=None),
+                )
+        
+        project_id = body.id or "default-project"
         session.run(
-            queries.CREATE_PROJECT,
+            queries.GET_OR_CREATE_SINGLE_PROJECT,
             id=project_id,
-            name=body.name,
             slug=body.slug,
+            name=body.name,
             description=body.description,
             repositoryUrl=body.repositoryUrl,
             basePackage=body.basePackage,
@@ -4061,25 +4248,25 @@ def register_agent(
                 capabilities=", ".join(body.capabilities) if body.capabilities else "",
                 createdAt=agent_data["created_at"],
             )
-            if assigned_project_id:
-                session.run(
-                    queries.PROJECT_ASSIGN_AGENT,
-                    projectId=assigned_project_id,
-                    agentId=body.agent_id,
-                )
-            else:
+            
+            project_id_to_assign = assigned_project_id
+            
+            if not project_id_to_assign:
                 result = session.run(queries.LIST_PROJECT_NODES)
                 projects = list(result)
                 if len(projects) == 1:
                     sole_project = projects[0]["p"]
-                    sole_project_id = sole_project.get("id") or sole_project.get("slug")
-                    if sole_project_id:
-                        session.run(
-                            queries.PROJECT_ASSIGN_AGENT,
-                            projectId=sole_project_id,
-                            agentId=body.agent_id,
-                        )
-                        assigned_project_id = sole_project_id
+                    project_id_to_assign = sole_project.get("id") or sole_project.get("slug")
+                elif len(projects) > 1:
+                    project_id_to_assign = projects[0]["p"].get("id") or projects[0]["p"].get("slug")
+            
+            if project_id_to_assign:
+                session.run(
+                    queries.PROJECT_ASSIGN_AGENT,
+                    projectId=project_id_to_assign,
+                    agentId=body.agent_id,
+                )
+                assigned_project_id = project_id_to_assign
 
     return APIResponse(
         data=AgentResponse(
