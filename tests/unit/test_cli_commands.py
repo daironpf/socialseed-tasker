@@ -248,12 +248,30 @@ def mock_repo():
 
 
 def _patch_commands(mock_repo: MockRepository):
-    """Patch commands.get_repository to return mock_repo."""
+    """Patch get_repository in all relevant locations to return mock_repo."""
     from socialseed_tasker.entrypoints.terminal_cli import commands as cmds
+    from socialseed_tasker.entrypoints.terminal_cli.commands import shared
     from socialseed_tasker.entrypoints.terminal_cli import app as cli_app
 
+    modules_to_patch = [
+        cmds,
+        shared,
+        cmds.issue_commands,
+        cmds.component_commands,
+        cmds.dependency_commands,
+        cmds.analysis_commands,
+        cmds.status_commands,
+        cmds.project_commands,
+        cmds.rag_commands,
+        cmds.code_graph_commands,
+        cmds.agent_commands,
+        cmds.constraints_commands,
+        cmds.seed_commands,
+        cmds.reasoning_commands,
+    ]
     original = cmds.get_repository
-    cmds.get_repository = lambda: mock_repo
+    for mod in modules_to_patch:
+        mod.get_repository = lambda: mock_repo
     cli_app._cli_container = None
     return original
 

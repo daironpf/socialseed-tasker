@@ -105,14 +105,36 @@ def mock_repo():
 
 
 def patch_commands(repo):
+    from socialseed_tasker.entrypoints.terminal_cli.commands import shared
+    from socialseed_tasker.entrypoints.terminal_cli import commands as cmds
     original = {}
     original['get_repository'] = commands.get_repository
-    commands.get_repository = lambda: repo
+    original['shared_get_repository'] = shared.get_repository
+    submodules = [
+        cmds,
+        shared,
+        cmds.issue_commands,
+        cmds.component_commands,
+        cmds.dependency_commands,
+        cmds.analysis_commands,
+        cmds.status_commands,
+        cmds.project_commands,
+        cmds.rag_commands,
+        cmds.code_graph_commands,
+        cmds.agent_commands,
+        cmds.constraints_commands,
+        cmds.seed_commands,
+        cmds.reasoning_commands,
+    ]
+    for mod in submodules:
+        mod.get_repository = lambda: repo
     return original
 
 
 def unpatch_commands(original):
+    from socialseed_tasker.entrypoints.terminal_cli.commands import shared
     commands.get_repository = original['get_repository']
+    shared.get_repository = original['shared_get_repository']
 
 
 class TestIssueCommands:
