@@ -1,7 +1,9 @@
-### Issue 291 — Implement Neo4jGraphAdapter that implements GraphPort
+### ✅ Issue 291 — Implement Neo4jGraphAdapter that implements GraphPort (SOLVED)
 
 **Short description**  
 Implement a concrete Neo4j adapter that fully implements the `GraphPort` Protocol defined in `tasker/application/ports.py`. The adapter must encapsulate all Neo4j driver usage, centralize Cypher queries, provide robust retry and timeout behavior, map driver results to `NodeRecord` and `QueryResult`, and expose a small, well‑documented public API. The agent must add unit and integration tests, a Docker Compose service for Neo4j used by tests, and a clear README describing configuration and operational semantics.
+
+**Status:** ✅ SOLVED — implementado en `v1.0.0`. Tests unitarios (6/6) y de integración (3/3) pasan. Ruff sin errores.
 
 ---
 

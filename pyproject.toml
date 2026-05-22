@@ -144,3 +144,6 @@ ignore_missing_imports = true
 testpaths = ["tests"]
 asyncio_mode = "auto"
 addopts = "--cov=socialseed_tasker --cov-report=term-missing"
+markers = [
+    "integration: marks tests as integration tests (requires Neo4j container)",
+]
