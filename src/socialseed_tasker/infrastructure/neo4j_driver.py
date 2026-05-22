@@ -16,8 +16,7 @@ from socialseed_tasker.infrastructure.neo4j_queries import SCHEMA_CONSTRAINTS, S
 
 if TYPE_CHECKING:
     from neo4j import Driver
-
-logger = logging.getLogger(__name__)
+    from socialseed_tasker.application.ports import GraphPort as GraphPortProtocol
 
 
 class Neo4jDriver:
@@ -28,6 +27,9 @@ class Neo4jDriver:
     clean shutdown without leaking resources. Supports both local Docker
     instances and remote Neo4j Aura DB via bolt+s:// protocol.
     """
+
+    #: GraphPort protocol implementation (via GraphShim in shims/)
+    _graph_port_type: GraphPortProtocol
 
     def __init__(
         self,

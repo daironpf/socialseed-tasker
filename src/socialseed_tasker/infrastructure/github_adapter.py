@@ -10,8 +10,12 @@ import os
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 import httpx
+
+if TYPE_CHECKING:
+    from socialseed_tasker.application.ports import GitPort as GitPortProtocol
 
 
 def _now() -> datetime:
@@ -82,6 +86,8 @@ class GitHubAdapter:
 
     Implements hexagonal adapter pattern to translate between
     Tasker and GitHub domain models.
+
+    :type: GitPortProtocol  # implemented via GitShim
     """
 
     def __init__(

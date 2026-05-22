@@ -11,7 +11,10 @@ import os
 import random
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from socialseed_tasker.application.ports import EmbeddingPort as EmbeddingPortProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +90,10 @@ class ChunkingStrategy:
 
 
 class EmbeddingService:
-    """Service for generating text embeddings."""
+    """Service for generating text embeddings.
+
+    :type: EmbeddingPortProtocol  # implemented via EmbeddingShim
+    """
 
     DEFAULT_MODEL = "text-embedding-3-small"
     DEFAULT_DIMENSIONS = 1536

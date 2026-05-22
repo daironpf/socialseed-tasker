@@ -12,7 +12,7 @@ import os
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Protocol
+from typing import Protocol, TYPE_CHECKING
 
 from socialseed_tasker.domain.code_analysis_entities import (
     CodeFile,
@@ -23,37 +23,8 @@ from socialseed_tasker.domain.code_analysis_entities import (
     SymbolType,
 )
 
-
-class TreeSitterLanguage(Protocol):
-    """Protocol for tree-sitter language parsers."""
-
-    def parse(self, source: bytes):
-        ...
-
-
-LANGUAGE_EXTENSIONS = {
-    ".py": "python",
-    ".js": "javascript",
-    ".jsx": "javascript",
-    ".ts": "typescript",
-    ".tsx": "typescript",
-    ".go": "go",
-    ".rs": "rust",
-    ".java": "java",
-    ".c": "c",
-    ".cpp": "cpp",
-    ".h": "c",
-    ".hpp": "cpp",
-}
-
-TEST_PATTERNS = [
-    re.compile(r"test_.*\.py$"),
-    re.compile(r".*_test\.py$"),
-    re.compile(r".*\.spec\.(js|ts|jsx|tsx)$"),
-    re.compile(r".*\.test\.(js|ts|jsx|tsx)$"),
-    re.compile(r"^test_.*\.go$"),
-    re.compile(r".*_test\.rs$"),
-]
+if TYPE_CHECKING:
+    from socialseed_tasker.application.ports import ParserPort as ParserPortProtocol
 
 
 class CodeGraphParser:
@@ -61,6 +32,8 @@ class CodeGraphParser:
 
     Uses tree-sitter for language-aware parsing when available,
     otherwise falls back to regex-based extraction.
+
+    :type: ParserPortProtocol  # implemented via ParserShim
     """
 
     def __init__(self):
