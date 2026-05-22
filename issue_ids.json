@@ -1,0 +1,252 @@
+[
+    {
+        "title":  "[Patient] Register patient with personal and contact information",
+        "id":  "17b5bdf2-ab8a-4898-ac6b-1857e964e3e9",
+        "index":  1
+    },
+    {
+        "title":  "[Patient] Search patients by name, phone or ID with fuzzy matching",
+        "id":  "3ef6f3e1-d890-4f37-b77a-add519de168d",
+        "index":  2
+    },
+    {
+        "title":  "[Patient] View comprehensive patient clinical history summary",
+        "id":  "523b0524-5729-46cf-9724-d7ec61d4b378",
+        "index":  3
+    },
+    {
+        "title":  "[Patient] Update patient demographic information with audit trail",
+        "id":  "b64d5fd9-e2c8-4394-98c5-dd115b69c1c2",
+        "index":  4
+    },
+    {
+        "title":  "[Patient] Merge duplicate patient records with conflict resolution",
+        "id":  "790fed53-6e97-4e9e-a7c9-98f82c9c26b2",
+        "index":  5
+    },
+    {
+        "title":  "[Patient] Manage patient emergency contacts and medical alerts",
+        "id":  "9d34b0d8-195c-4cd2-b151-1dfc0458109e",
+        "index":  6
+    },
+    {
+        "title":  "[Patient] Upload and store patient consent forms and documents",
+        "id":  "863e999e-3424-4dbf-97da-d01baae69685",
+        "index":  7
+    },
+    {
+        "title":  "[Patient] Export patient data in GDPR-compliant format",
+        "id":  "fdd07bb6-652d-4e7e-b63b-1121df948f19",
+        "index":  8
+    },
+    {
+        "title":  "[Appointment] Create appointment with time slot validation",
+        "id":  "f7b9ca50-38f4-474a-9e28-ffe57921e895",
+        "index":  9
+    },
+    {
+        "title":  "[Appointment] View daily and weekly appointment calendar",
+        "id":  "cce3a9d1-5833-4b51-a9c4-0be47951b49d",
+        "index":  10
+    },
+    {
+        "title":  "[Appointment] Reschedule appointment with conflict detection",
+        "id":  "89b4373c-a21f-4e6d-92d4-98b57743dd48",
+        "index":  11
+    },
+    {
+        "title":  "[Appointment] Cancel appointment with notification and reason capture",
+        "id":  "3ec8b0d6-dc02-437b-bd31-b3db5b734298",
+        "index":  12
+    },
+    {
+        "title":  "[Appointment] Check-in patient for scheduled appointment",
+        "id":  "9a723ea2-3ba3-40fd-ba3f-0ef427034e42",
+        "index":  13
+    },
+    {
+        "title":  "[Appointment] Configure working hours and break times per dentist",
+        "id":  "85d5b6fb-f83e-4a03-976d-376e0f5b5930",
+        "index":  14
+    },
+    {
+        "title":  "[Appointment] Block time slots for emergency walk-in patients",
+        "id":  "5f472669-03ae-472e-967d-49805f9bcb87",
+        "index":  15
+    },
+    {
+        "title":  "[Appointment] Automatic appointment reminders (24h and 1h before)",
+        "id":  "4ca9ac9b-e7c1-4d7a-aa5f-5f64b8137173",
+        "index":  16
+    },
+    {
+        "title":  "[Appointment] Manage recurring appointment series for follow-up treatments",
+        "id":  "dc5d03fc-723a-42cd-99ed-181cee087a82",
+        "index":  17
+    },
+    {
+        "title":  "[Appointment] Waitlist management for cancelled appointment slots",
+        "id":  "ab00762d-a31c-41dd-b353-2fe176ad1974",
+        "index":  18
+    },
+    {
+        "title":  "[Clinical] Create interactive dental chart with FDI tooth numbering",
+        "id":  "b1719410-183b-469a-9e4a-ccd7767bafa6",
+        "index":  19
+    },
+    {
+        "title":  "[Clinical] Record dental treatment procedure with structured notes",
+        "id":  "68ffc4b4-ad5b-44b5-9fe1-96184fae3850",
+        "index":  20
+    },
+    {
+        "title":  "[Clinical] Manage prescription medications with dosage and duration",
+        "id":  "fa83b7d7-514a-48e7-81ee-519d538126e3",
+        "index":  21
+    },
+    {
+        "title":  "[Clinical] Upload and view digital X-ray images",
+        "id":  "a8a78808-610e-46a0-93d8-1e6cffbf787c",
+        "index":  22
+    },
+    {
+        "title":  "[Clinical] Track treatment plan with phases costs and approval",
+        "id":  "c7365ea0-8ac3-4ec5-abad-e13310af1ed2",
+        "index":  23
+    },
+    {
+        "title":  "[Clinical] Record patient allergies and medical conditions",
+        "id":  "c30fd337-19e4-4497-b2e3-cc3ec451dd25",
+        "index":  24
+    },
+    {
+        "title":  "[Clinical] Generate clinical summary for patient referral",
+        "id":  "4fcf76d9-faa9-4302-9906-fad18945418d",
+        "index":  25
+    },
+    {
+        "title":  "[Clinical] Audit log for all clinical record changes",
+        "id":  "dfb1fb3e-cfb0-4d51-ac42-ca6c26876e28",
+        "index":  26
+    },
+    {
+        "title":  "[Billing] Create invoice for completed dental procedure",
+        "id":  "e35448ec-d5ad-4695-8b74-da1dbf50c221",
+        "index":  27
+    },
+    {
+        "title":  "[Billing] Process payment cash card insurance with receipt",
+        "id":  "f3dc5ec8-237a-4881-b758-65f33fa9e31e",
+        "index":  28
+    },
+    {
+        "title":  "[Billing] Generate and submit insurance claim ADA form",
+        "id":  "c882edd4-33d5-4729-b494-326d7b23bc0d",
+        "index":  29
+    },
+    {
+        "title":  "[Billing] Track outstanding balances and send payment reminders",
+        "id":  "e02230c3-6c10-4879-84cd-8c9dc0f1a29e",
+        "index":  30
+    },
+    {
+        "title":  "[Billing] Apply discounts and promotional codes to invoices",
+        "id":  "dd364bb2-ce6b-4360-8a3b-048e943b4a3c",
+        "index":  31
+    },
+    {
+        "title":  "[Billing] Daily financial reconciliation report",
+        "id":  "f7466a2a-3b47-4ae3-92ed-48b96255fce9",
+        "index":  32
+    },
+    {
+        "title":  "[Billing] Refund processing with multi-level approval workflow",
+        "id":  "a87abf75-d26b-4a5f-b251-b034fcfa8db2",
+        "index":  33
+    },
+    {
+        "title":  "[Reports] Monthly patient visit statistics and trends",
+        "id":  "fc667b53-8f6f-4551-9ee1-6b31a0d0ce1e",
+        "index":  34
+    },
+    {
+        "title":  "[Reports] Revenue report by service type and dentist",
+        "id":  "2b86dbd4-5db8-4a93-a9d0-9e01c321a750",
+        "index":  35
+    },
+    {
+        "title":  "[Reports] Treatment success rate and complication analysis",
+        "id":  "416df2d7-0e36-4140-9fe0-65dfbdafb624",
+        "index":  36
+    },
+    {
+        "title":  "[Reports] Dentist productivity and performance metrics",
+        "id":  "7aa21733-416f-4f84-b3c5-f56aad006461",
+        "index":  37
+    },
+    {
+        "title":  "[Reports] Appointment no-show rate and revenue impact analysis",
+        "id":  "00195854-77d8-4a25-8893-e20a43e57e3c",
+        "index":  38
+    },
+    {
+        "title":  "[Reports] Inventory usage tracking and automated reorder alerts",
+        "id":  "4a60082c-8445-4fb5-aa9d-ab83320a3441",
+        "index":  39
+    },
+    {
+        "title":  "[Reports] Custom report builder with date range and filter options",
+        "id":  "3b3905c5-8527-46fc-ac82-2c736ef7e8e9",
+        "index":  40
+    },
+    {
+        "title":  "[Staff] Register dentist and staff with role-based permissions",
+        "id":  "ff3c80d4-8dad-4efa-ad48-db4e1fbc0919",
+        "index":  41
+    },
+    {
+        "title":  "[Staff] Set staff work schedule vacation and time-off requests",
+        "id":  "f4d81dc2-4329-4283-89f2-a6a601df0dd6",
+        "index":  42
+    },
+    {
+        "title":  "[Staff] Track staff commission per procedure or service",
+        "id":  "ca657065-3f98-4209-bab2-6fea46f0e63b",
+        "index":  43
+    },
+    {
+        "title":  "[Staff] Secure staff login with role-based access control RBAC",
+        "id":  "d15a3e18-9962-4f96-bd98-df71c8b259fe",
+        "index":  44
+    },
+    {
+        "title":  "[Staff] Activity audit log for all staff actions",
+        "id":  "b6c08195-0060-469a-b64c-8546a81eda46",
+        "index":  45
+    },
+    {
+        "title":  "[Staff] Manage staff certifications licenses and expiry tracking",
+        "id":  "2665e271-c315-42a7-abf0-853e76f257f5",
+        "index":  46
+    },
+    {
+        "title":  "[Notifications] SMS reminder and alert system for appointments",
+        "id":  "2391c2e2-8f5e-4297-8444-d22eb92b7cf6",
+        "index":  47
+    },
+    {
+        "title":  "[Notifications] Email invoice and payment receipt delivery",
+        "id":  "9b6abb6a-0663-40c3-ac63-35ebedf7c594",
+        "index":  48
+    },
+    {
+        "title":  "[Notifications] Internal notification system for staff tasks and alerts",
+        "id":  "dbed0046-b4d1-44d4-89a8-1cfc936932a3",
+        "index":  49
+    },
+    {
+        "title":  "[Notifications] Configurable notification template management",
+        "id":  "9ffb54ad-080c-4f22-ac47-53c1d8eb2a5f",
+        "index":  50
+    }
+]
