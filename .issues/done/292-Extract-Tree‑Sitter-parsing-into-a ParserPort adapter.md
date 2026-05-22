@@ -1,7 +1,9 @@
-### Issue 292 — Extract Tree‑Sitter parsing into a `ParserPort` adapter (`TreeSitterParser` with Python fallback)
+### ✅ Issue 292 — Extract Tree‑Sitter parsing into a `ParserPort` adapter (`TreeSitterParser` with Python fallback) (SOLVED)
 
 **Short description**  
 Create a deterministic parser adapter that implements the `ParserPort` Protocol (`tasker/application/ports.ParserPort`). The adapter must use **Tree‑Sitter** when the `tree_sitter` Python package and compiled language grammars are available, and **fall back to Python's builtin `ast`** for `.py` files when Tree‑Sitter is not available. The adapter must expose the exact methods `parse_file(path: str) -> dict[str, Any]`, `extract_symbols(ast: dict[str, Any]) -> list[dict[str, Any]]`, and `extract_imports(ast: dict[str, Any]) -> list[str]`. All behavior, error semantics and return shapes must match the `ParserPort` contract so autonomous agents can rely on it without guessing.
+
+**Status:** ✅ SOLVED — implementado en `v1.0.0`. Tests unitarios (5/5) pasan, test integración (1 skipped, Tree-Sitter no configurado). Ruff sin errores. Conformance tests (8/8) pasan.
 
 ---
 
