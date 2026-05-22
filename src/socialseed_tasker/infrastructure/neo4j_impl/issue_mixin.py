@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+import json
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from socialseed_tasker.core.task_management.entities import Issue
-from socialseed_tasker.core.services.embedding_service import get_embedding_service
-from socialseed_tasker.storage.graph_database import queries
-from socialseed_tasker.storage.graph_database.impl.shared import _node_to_issue, _now_iso, _to_camel
+from socialseed_tasker.domain.entities import Issue
+from socialseed_tasker.infrastructure.embedding_service import get_embedding_service
+from socialseed_tasker.infrastructure import neo4j_queries as queries
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_issue, _now_iso, _to_camel
 
 
 class IssueRepositoryMixin:
@@ -47,7 +48,7 @@ class IssueRepositoryMixin:
                 agentStartedAt=issue.agent_started_at.isoformat() if issue.agent_started_at else None,
                 agentFinishedAt=issue.agent_finished_at.isoformat() if issue.agent_finished_at else None,
                 agentId=issue.agent_id,
-                reasoningLogs=reasoning_logs_data,
+                reasoningLogs=json.dumps(reasoning_logs_data),
                 manifestTodo=issue.manifest_todo,
                 manifestFiles=issue.manifest_files,
                 manifestNotes=issue.manifest_notes,
@@ -339,7 +340,8 @@ class IssueRepositoryMixin:
                 raise ValueError(f"Issue {issue_id} not found")
 
             node_data = dict(record["i"])
-            existing_logs = node_data.get("reasoningLogs", [])
+            existing_logs_raw = node_data.get("reasoningLogs", [])
+            existing_logs = json.loads(existing_logs_raw) if isinstance(existing_logs_raw, str) else (existing_logs_raw or [])
             new_log = {
                 "id": str(uuid4()),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -352,7 +354,7 @@ class IssueRepositoryMixin:
             update_result = session.run(
                 queries.UPDATE_ISSUE,
                 id=issue_id,
-                updates={"reasoningLogs": existing_logs},
+                updates={"reasoningLogs": json.dumps(existing_logs)},
                 updatedAt=_now_iso(),
             )
             updated_record = update_result.single()
@@ -370,7 +372,10 @@ class IssueRepositoryMixin:
             record = result.single()
             if record is None:
                 raise ValueError(f"Issue {issue_id} not found")
-            return record["i"].get("reasoningLogs", [])
+            raw = record["i"].get("reasoningLogs", [])
+            if isinstance(raw, str):
+                raw = json.loads(raw)
+            return raw
 
     # -- Manifest ---------------------------------------------------------------
 

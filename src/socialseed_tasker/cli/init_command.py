@@ -19,8 +19,8 @@ from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
 
-from socialseed_tasker.core.system_init.entities import FileOperation, ScaffoldStatus
-from socialseed_tasker.core.system_init.scaffolder import ScaffolderService
+from socialseed_tasker.domain.system_init_entities import FileOperation, ScaffoldStatus
+from socialseed_tasker.application.scaffolder import ScaffolderService
 
 console = Console(
     width=80,
@@ -36,12 +36,12 @@ init_app = typer.Typer(
 
 def _get_template_dir() -> Path:
     """Return the path to the bundled template assets."""
-    return Path(__file__).parent.parent.parent / "assets" / "templates"
+    return Path(__file__).parent.parent / "assets" / "templates"
 
 
 def _get_frontend_dir() -> Path:
     """Return the path to the bundled frontend build assets."""
-    return Path(__file__).parent.parent.parent / "assets" / "frontend"
+    return Path(__file__).parent.parent / "assets" / "frontend"
 
 
 def scaffold_command(
@@ -655,12 +655,27 @@ def _run_scaffold(
         output_path = target_path
     else:
         output_path = target_path / ".agent"
-        if output_path.exists() and not force:
-            console.print(f"[warning].agent directory already exists at: {output_path}[/warning]")
-            console.print("Use [bold]--force[/bold] to overwrite existing templates.")
-            if not interactive:
-                raise typer.Exit(code=0)
-            return
+        existing_project_file = target_path / ".agent" / "tasker" / "project.json"
+        if output_path.exists():
+            if existing_project_file.exists() and force:
+                console.print(
+                    f"[warning]Existing Tasker project detected at: {target_path}[/warning]"
+                )
+                console.print(
+                    "[warning]Using --force will overwrite current project configuration "
+                    "(.agent/tasker/ files, ROADMAP.md, VERSIONS.md).[/warning]"
+                )
+                if interactive:
+                    confirm = typer.confirm("Continue overwriting?", default=False)
+                    if not confirm:
+                        console.print("[info]Scaffold cancelled.[/info]")
+                        raise typer.Exit(code=0)
+            elif not force:
+                console.print(f"[warning].agent directory already exists at: {output_path}[/warning]")
+                console.print("Use [bold]--force[/bold] to overwrite existing templates.")
+                if not interactive:
+                    raise typer.Exit(code=0)
+                return
 
     console.print(f"[info]Scaffolding Tasker into:[/info] [bold]{target_path}[/bold]")
 

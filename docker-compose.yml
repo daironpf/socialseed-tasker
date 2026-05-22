@@ -14,6 +14,8 @@ services:
       - NEO4J_dbms_memory_heap_max__size=100M
       - NEO4J_dbms_memory_pagecache_size=50M
       - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_server_default__listen__address=0.0.0.0
+      - NEO4J_server_default__advertised__address=tasker-db
     volumes:
       - neo4j-data:/var/lib/neo4j/data
     healthcheck:

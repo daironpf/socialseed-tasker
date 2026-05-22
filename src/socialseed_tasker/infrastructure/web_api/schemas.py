@@ -297,15 +297,6 @@ class PolicyRuleRequest(BaseModel):
     description: str = ""
 
 
-class PolicyCreateRequest(BaseModel):
-    """Request body for creating a policy."""
-
-    name: str = Field(..., min_length=1, max_length=100, description="Policy name")
-    description: str = Field("", description="Policy description")
-    rules: list[PolicyRuleRequest] = Field(default_factory=list, description="List of rules")
-    is_active: bool = Field(default=True, description="Whether policy is active")
-
-
 class PolicyResponse(BaseModel):
     """Policy in API responses."""
 
@@ -504,24 +495,6 @@ class ComponentCreateRequest(BaseModel):
         description="Labels to categorize the component",
         examples=[["backend", "api"], ["frontend", "ui"]],
     )
-
-class UserResponse(BaseModel):
-    id: str
-    username: str
-    email: str | None = None
-    role: str
-    github_handle: str | None = None
-    created_at: str
-    last_login: str | None = None
-    preferences: str | None = None
-
-class UserCreateRequest(BaseModel):
-    """Request body for creating a new user node."""
-    username: str = Field(..., min_length=1, description="Display name or alias for the user")
-    email: str | None = Field(None, description="Primary email address")
-    role: str = Field("ADMIN", description="The user's authority level")
-    github_handle: str | None = Field(None, description="Linked GitHub username")
-    preferences: str | None = Field(None, description="Configuration for UI themes, etc.")
 
 class ProjectCreateRequest(BaseModel):
     """Request body for creating a new project node."""

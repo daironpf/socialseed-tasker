@@ -61,8 +61,13 @@ class ReasoningContext(str, Enum):
     COMPONENT_SELECTION = "component_selection"
     DEPENDENCY_ANALYSIS = "dependency_analysis"
     ARCHITECTURE_CHOICE = "architecture_choice"
+    SOLUTION_DESIGN = "solution_design"
+    REFACTORING = "refactoring"
+    BUG_FIX = "bug_fix"
     IMPACT_ASSESSMENT = "impact_assessment"
     PRIORITY_DECISION = "priority_decision"
+    TEST_PLAN = "test_plan"
+    IMPLEMENTATION = "implementation"
 
 
 class ReasoningLogEntry(BaseModel):

@@ -24,7 +24,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.requests import Request as StarletteRequest
 
 from socialseed_tasker import __version__  # noqa: E402
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
     IssueAlreadyClosedError,
@@ -34,8 +34,8 @@ from socialseed_tasker.core.task_management.actions import (
 )
 
 if TYPE_CHECKING:
-    from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
-    from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
+    from socialseed_tasker.application.actions import TaskRepositoryInterface
+    from socialseed_tasker.infrastructure.neo4j_driver import Neo4jDriver
 
 logger = logging.getLogger(__name__)
 
@@ -276,8 +276,8 @@ def create_app(
                     try:
                         uuid.UUID(issue_id)
                         
-                        from socialseed_tasker.storage.graph_database.reasoning_repository import ReasoningRepository
-                        from socialseed_tasker.core.task_management.entities import ReasoningNode, DecisionType
+                        from socialseed_tasker.infrastructure.neo4j_reasoning_repository import ReasoningRepository
+                        from socialseed_tasker.domain.entities import ReasoningNode, DecisionType
                         import json
                         
                         driver = getattr(app.state, "driver", None)
@@ -318,9 +318,13 @@ def create_app(
                 
         return response
 
+    @app.get("/health")
+    async def health_check():
+        return {"status": "healthy", "service": "socialseed-tasker-api", "version": __version__}
+
     # Register routers
     # Register routers
-    from socialseed_tasker.entrypoints.web_api.routes import (
+    from socialseed_tasker.infrastructure.web_api.routes import (
         admin_router,
         agent_router,
         ai_search_router,
@@ -421,7 +425,7 @@ def create_app(
     if hasattr(repository, "_driver") and hasattr(repository._driver, "_config"):
         app.state.config = repository._driver._config
     else:
-        from socialseed_tasker.bootstrap.container import AppConfig
+        from socialseed_tasker.application.container import AppConfig
 
         app.state.config = AppConfig()
 

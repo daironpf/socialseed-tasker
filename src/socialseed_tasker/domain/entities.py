@@ -52,7 +52,7 @@ class User(BaseModel):
     last_login: Optional[datetime] = None
     preferences: Optional[str] = None
 
-from .value_objects import ReasoningContext, ReasoningLogEntry
+from .value_objects import ReasoningContext
 
 
 class DecisionType(str, Enum):
@@ -64,25 +64,6 @@ class DecisionType(str, Enum):
     CODE_GENERATION = "code_generation"
     REVIEW_DECISION = "review_decision"
     UNKNOWN = "unknown"
-
-class ReasoningContext(str, Enum):
-    ARCHITECTURE_CHOICE = "architecture_choice"
-    SOLUTION_DESIGN = "solution_design"
-    REFACTORING = "refactoring"
-    BUG_FIX = "bug_fix"
-    TEST_PLAN = "test_plan"
-
-class ReasoningContext(str, Enum):
-    COMPONENT_SELECTION = "component_selection"
-    DEPENDENCY_ANALYSIS = "dependency_analysis"
-    ARCHITECTURE_CHOICE = "architecture_choice"
-    SOLUTION_DESIGN = "solution_design"
-    REFACTORING = "refactoring"
-    BUG_FIX = "bug_fix"
-    IMPACT_ASSESSMENT = "impact_assessment"
-    PRIORITY_DECISION = "priority_decision"
-    TEST_PLAN = "test_plan"
-
 
 class ReasoningLogEntry(BaseModel):
     model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
