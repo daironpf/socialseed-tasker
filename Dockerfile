@@ -47,4 +47,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
 # Default command: start the FastAPI server with Neo4j repository
-CMD ["python", "-m", "socialseed_tasker.entrypoints.web_api"]
+CMD ["python", "-m", "socialseed_tasker.infrastructure.web_api"]

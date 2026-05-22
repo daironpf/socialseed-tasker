@@ -95,8 +95,8 @@ socialseed_tasker = [
 ]
 
 [project.scripts]
-socialseed-tasker = "socialseed_tasker.entrypoints.terminal_cli.app:main_entry"
-tasker = "socialseed_tasker.entrypoints.terminal_cli.app:main_entry"
+socialseed-tasker = "socialseed_tasker.cli.app:main_entry"
+tasker = "socialseed_tasker.cli.app:main_entry"
 
 [tool.ruff]
 target-version = "py310"
@@ -113,16 +113,15 @@ known-first-party = ["socialseed_tasker"]
  "tests/*" = ["F401", "F811", "B008"]
  "**/app.py" = ["E402", "F401"]
  "**/cli/*" = ["E402", "B008"]
+ "**/cli/commands/*.py" = ["B008", "E501"]
  "**/actions.py" = ["B008", "SIM102"]
  "**/routes.py" = ["B008", "F811", "F401", "E402", "UP035"]
- "**/terminal_cli/commands.py" = ["B008", "E501"]
- "**/terminal_cli/*.py" = ["E402", "F401", "B008"]
  "**/web_api/*.py" = ["F401", "F811", "E402", "B904"]
  "**/secret_manager.py" = ["SIM108", "SIM110"]
  "**/scaffolder.py" = ["SIM108"]
  "**/services/*.py" = ["SIM108", "SIM110", "B904"]
- "**/adapters/*.py" = ["B904"]
- "**/core/**/*.py" = ["B904"]
+ "**/infrastructure/**/*.py" = ["B904"]
+ "**/domain/**/*.py" = ["B904"]
 
 [tool.mypy]
 python_version = "3.10"
