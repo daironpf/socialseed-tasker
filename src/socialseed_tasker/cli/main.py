@@ -33,7 +33,13 @@ def _error_and_exit(command: str, payload: dict, details: str = "") -> None:
 def cmd_agent_context(args: argparse.Namespace, container: object) -> None:
     try:
         usecase = container.application.generate_agent_context
-        ctx = usecase(issue_id=args.issue_id, max_depth=int(args.max_depth))
+        ctx = usecase(
+            issue_id=args.issue_id,
+            max_depth=int(args.max_depth),
+            graph_repo=container.graph_repo,
+            issue_repo=container.issue_repo,
+            parser=container.parser,
+        )
         _print_json(
             {"status": "ok", "command": "agent-context", "issue_id": args.issue_id, "context": ctx}
         )
@@ -44,7 +50,11 @@ def cmd_agent_context(args: argparse.Namespace, container: object) -> None:
 def cmd_calculate_impact(args: argparse.Namespace, container: object) -> None:
     try:
         usecase = container.application.calculate_impact
-        impact = usecase(issue_id=args.issue_id, max_depth=int(args.max_depth))
+        impact = usecase(
+            issue_id=args.issue_id,
+            max_depth=int(args.max_depth),
+            graph_repo=container.graph_repo,
+        )
         _print_json(
             {
                 "status": "ok",
@@ -59,7 +69,6 @@ def cmd_calculate_impact(args: argparse.Namespace, container: object) -> None:
 
 def cmd_create_issue(args: argparse.Namespace, container: object) -> None:
     try:
-        usecase = container.application.create_issue
         dto = IssueDTO(
             id=args.id,
             title=args.title,
@@ -67,7 +76,7 @@ def cmd_create_issue(args: argparse.Namespace, container: object) -> None:
             status=(args.status or "open"),
             metadata={},
         )
-        usecase(issue=dto)
+        container.issue_repo.save(dto)
         _print_json(
             {
                 "status": "ok",
@@ -81,14 +90,13 @@ def cmd_create_issue(args: argparse.Namespace, container: object) -> None:
 
 def cmd_add_dependency(args: argparse.Namespace, container: object) -> None:
     try:
-        usecase = container.application.add_dependency
         edge = DependencyEdge(
             from_issue_id=args.from_id,
             to_issue_id=args.to,
             relation=(args.relation or "DEPENDS_ON"),
             metadata={},
         )
-        usecase(edge=edge)
+        container.graph_repo.add_dependency(edge)
         _print_json(
             {
                 "status": "ok",
