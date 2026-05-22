@@ -1,7 +1,9 @@
-### Issue 290 — Define application ports and protocols for external adapters
+### ✅ Issue 290 — Define application ports and protocols for external adapters (SOLVED)
 
 **Short description**  
 Create a single, explicit module that defines all **ports** (Protocol interfaces) used by the application layer to interact with external systems. The module must be the canonical contract that every infrastructure adapter implements. The goal is to remove ambiguity for autonomous agents: adapters must implement these exact methods and signatures so the agent can wire dependencies without guessing.
+
+**Status:** ✅ SOLVED — completado y mergeado en `v1.0.0` (commit `32c4342`). 6 Protocols, 5 excepciones, shims, tests de conformidad y documentación implementados. Prueba de caja negra: 50/50 issues OK, 20/20 cerradas.
 
 ---
 
