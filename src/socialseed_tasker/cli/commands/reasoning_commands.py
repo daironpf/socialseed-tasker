@@ -4,7 +4,7 @@ import typer
 from rich.panel import Panel
 from rich.table import Table
 
-from socialseed_tasker.entrypoints.terminal_cli.commands.shared import console, get_repository
+from socialseed_tasker.cli.commands.shared import console, get_repository
 
 reasoning_app = typer.Typer(help="AI Reasoning Log commands")
 
@@ -22,9 +22,9 @@ def reasoning_log(
     rejected: str = typer.Option(None, "--rejected", "-rej", help="Comma-separated reasons for rejecting alternatives"),
 ) -> None:
     """Log agent reasoning for an issue."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.core.task_management.entities import DecisionType, ReasoningNode
-    from socialseed_tasker.storage.graph_database.reasoning_repository import ReasoningRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.domain.entities import DecisionType, ReasoningNode
+    from socialseed_tasker.infrastructure.neo4j_reasoning_repository import ReasoningRepository
 
     driver = get_driver()
     if not driver:
@@ -60,8 +60,8 @@ def reasoning_history(
     limit: int = typer.Option(20, "--limit", "-l", help="Maximum results"),
 ) -> None:
     """Show reasoning history."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.reasoning_repository import ReasoningRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_reasoning_repository import ReasoningRepository
 
     driver = get_driver()
     if not driver:
@@ -101,8 +101,8 @@ def reasoning_history(
 @reasoning_app.command("stats")
 def reasoning_stats() -> None:
     """Show reasoning decision statistics."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.reasoning_repository import ReasoningRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_reasoning_repository import ReasoningRepository
 
     driver = get_driver()
     if not driver:
@@ -137,8 +137,8 @@ def reasoning_clear(
         console.print("[warning]Use --yes to confirm[/warning]")
         return
 
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.reasoning_repository import ReasoningRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_reasoning_repository import ReasoningRepository
 
     driver = get_driver()
     if not driver:

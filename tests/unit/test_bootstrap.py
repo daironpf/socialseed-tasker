@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from socialseed_tasker.bootstrap.container import AppConfig, Container, Neo4jConfig, Neo4jConnectionMode
+from socialseed_tasker.application.container import AppConfig, Container, Neo4jConfig, Neo4jConnectionMode
 
 
 class TestNeo4jConfig:

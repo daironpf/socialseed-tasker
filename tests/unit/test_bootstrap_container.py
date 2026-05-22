@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from socialseed_tasker.bootstrap.container import (
+from socialseed_tasker.application.container import (
     Neo4jConfig,
     AppConfig,
     Neo4jConnectionMode,

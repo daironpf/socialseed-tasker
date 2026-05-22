@@ -2,9 +2,9 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
-from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus, IssuePriority
-from socialseed_tasker.entrypoints.web_api.app import create_app
+from socialseed_tasker.application.actions import TaskRepositoryInterface
+from socialseed_tasker.domain.entities import Component, Issue, IssueStatus, IssuePriority
+from socialseed_tasker.infrastructure.web_api.app import create_app
 
 
 class MockRepoFull(TaskRepositoryInterface):
@@ -139,7 +139,7 @@ class MockRepoFull(TaskRepositoryInterface):
         pass
 
     def update_constraint(self, constraint_id: str, updates: dict):
-        from socialseed_tasker.core.task_management.constraints import (
+        from socialseed_tasker.application.constraints import (
             Constraint,
             ConstraintCategory,
             ConstraintLevel,

@@ -1,6 +1,6 @@
 """Tests for container and configuration."""
 
-from socialseed_tasker.bootstrap.container import (
+from socialseed_tasker.application.container import (
     AppConfig,
     Container,
     Neo4jConfig,

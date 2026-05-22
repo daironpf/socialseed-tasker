@@ -3,7 +3,7 @@
 import pytest
 from uuid import uuid4
 
-from socialseed_tasker.core.project_analysis.policy import (
+from socialseed_tasker.application.policy import (
     Policy,
     PolicyEngine,
     PolicyRule,

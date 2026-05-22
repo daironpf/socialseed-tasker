@@ -24,8 +24,8 @@ if sys.platform == "win32":
         pass
 
 import socialseed_tasker
-from socialseed_tasker.bootstrap.container import Container
-from socialseed_tasker.entrypoints.terminal_cli import commands
+from socialseed_tasker.application.container import Container
+from socialseed_tasker.cli import commands
 
 
 def version_callback(value: bool) -> None:
@@ -101,7 +101,7 @@ app.add_typer(commands.analyze_app, name="analyze", help="Analyze issues and roo
 app.add_typer(commands.project_app, name="project", help="Project detection and setup")
 
 # Register init and install as standalone commands to avoid nested typer issues
-from socialseed_tasker.entrypoints.cli.init_command import scaffold_command, interactive_init_command
+from socialseed_tasker.cli.init_command import scaffold_command, interactive_init_command
 
 app.command(name="install", help="Install Tasker infrastructure into a project (non-interactive)")(scaffold_command)
 app.command(name="init", help="Initialize Tasker in a project interactively")(interactive_init_command)
@@ -132,7 +132,7 @@ app.add_typer(commands.agent_app, name="agent", help="Agent Integration: context
 app.add_typer(commands.constraints_app, name="constraints", help="Manage project constraints and rules")
 
 # Register storage commands
-from socialseed_tasker.entrypoints.terminal_cli.cmd.storage import storage_app
+from socialseed_tasker.cli.cmd_storage import storage_app
 app.add_typer(storage_app, name="storage")
 
 
@@ -143,8 +143,8 @@ def serve_command(
 ) -> None:
     """Start the Tasker API server."""
     import uvicorn
-    from socialseed_tasker.bootstrap.container import Container
-    from socialseed_tasker.entrypoints.web_api.app import create_app
+    from socialseed_tasker.application.container import Container
+    from socialseed_tasker.infrastructure.web_api.app import create_app
 
     console.print("[info]Starting Tasker API server...[/info]")
 

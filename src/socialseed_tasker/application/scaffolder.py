@@ -12,7 +12,7 @@ import shutil
 from collections.abc import Callable
 from pathlib import Path
 
-from socialseed_tasker.core.system_init.entities import (
+from socialseed_tasker.domain.system_init_entities import (
     FileOperation,
     ScaffoldResult,
     ScaffoldStatus,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
+from socialseed_tasker.application.actions import TaskRepositoryInterface
 
 
 def resolve_component_id(partial_id: str, repo: TaskRepositoryInterface) -> UUID:

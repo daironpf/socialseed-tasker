@@ -11,13 +11,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Body, HTTPException
 
-from socialseed_tasker.core.project_analysis.analyzer import (
+from socialseed_tasker.application.analyzer import (
     ComponentImpactAnalysis,
     ImpactAnalysis,
     RootCauseAnalyzer,
     TestFailure,
 )
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
     IssueAlreadyClosedError,
@@ -34,7 +34,7 @@ from socialseed_tasker.core.task_management.actions import (
     remove_dependency_action,
     reset_data_action,
 )
-from socialseed_tasker.core.task_management.entities import (
+from socialseed_tasker.domain.entities import (
     Agent,
     AgentRole,
     AgentStatus,
@@ -50,7 +50,7 @@ from socialseed_tasker.core.task_management.entities import (
     User,
     UserRole,
 )
-from socialseed_tasker.entrypoints.web_api.schemas import (
+from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentRegisterRequest,
     AgentResponse,
     AgentStartRequest,
@@ -105,7 +105,7 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     CommitResponse,
     CommitStatsResponse,
 )
-from socialseed_tasker.entrypoints.web_api.routers.helpers import (
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     retrieve_neo4j_code_graph_driver as get_code_graph_driver,
     get_repository_provider as get_repo,
     resolve_component_identifier_to_uuid as resolve_component_id,
@@ -133,8 +133,8 @@ def load_constraints(
     config: dict,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[ConstraintLoadResponse]:
-    from socialseed_tasker.core.task_management.actions import load_constraints_from_config_action
-    from socialseed_tasker.core.task_management.constraints import ConstraintConfig
+    from socialseed_tasker.application.actions import load_constraints_from_config_action
+    from socialseed_tasker.application.constraints import ConstraintConfig
 
     constraint_config = ConstraintConfig(**config)
     result = load_constraints_from_config_action(repo, constraint_config)
@@ -155,7 +155,7 @@ def list_constraints(
     category: str | None = Query(None, description="Filter by category"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[list[ConstraintResponse]]:
-    from socialseed_tasker.core.task_management.actions import list_constraints_action
+    from socialseed_tasker.application.actions import list_constraints_action
 
     constraints = list_constraints_action(repo, category=category)
 
@@ -191,7 +191,7 @@ def list_constraints(
 def validate_constraints(
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[ConstraintValidationResponse]:
-    from socialseed_tasker.core.task_management.actions import validate_constraints_action
+    from socialseed_tasker.application.actions import validate_constraints_action
 
     result = validate_constraints_action(repo)
 

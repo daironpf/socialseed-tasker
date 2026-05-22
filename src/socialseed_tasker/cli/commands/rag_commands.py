@@ -4,7 +4,7 @@ import typer
 from rich.panel import Panel
 from rich.table import Table
 
-from socialseed_tasker.entrypoints.terminal_cli.commands.shared import console, get_repository
+from socialseed_tasker.cli.commands.shared import console, get_repository
 
 rag_app = typer.Typer(help="RAG (Retrieval-Augmented Generation) commands")
 
@@ -16,8 +16,8 @@ def rag_search(
     threshold: float = typer.Option(0.7, "--threshold", "-t", help="Minimum similarity score"),
 ) -> None:
     """Search for similar content using semantic similarity."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
 
     driver = get_driver()
     if not driver:
@@ -51,8 +51,8 @@ def rag_index(
     strategy: str = typer.Option("paragraph", "--strategy", "-s", help="Chunking strategy (paragraph, lines, sentences)"),
 ) -> None:
     """Index content for RAG semantic search."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
 
     driver = get_driver()
     if not driver:
@@ -75,8 +75,8 @@ def rag_index(
 @rag_app.command("stats")
 def rag_stats() -> None:
     """Show RAG index statistics."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
 
     driver = get_driver()
     if not driver:
@@ -100,8 +100,8 @@ def rag_clear(yes: bool = typer.Option(False, "--yes", "-y", help="Confirm delet
         console.print("[warning]Use --yes to confirm deletion[/warning]")
         return
 
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
 
     driver = get_driver()
     if not driver:
@@ -125,9 +125,9 @@ def rag_embed_native(
     directly on the Issue/Symbol/ReasoningNode instead of
     creating a separate RAGEmbedding node.
     """
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
-    from socialseed_tasker.storage.graph_database.repositories import TaskRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
+    from socialseed_tasker.infrastructure.neo4j_repository import TaskRepository
 
     driver = get_driver()
     if driver is None:
@@ -166,8 +166,8 @@ def rag_search_native(
 ) -> None:
     """Search using native embeddings (no separate nodes)."""
     from rich.table import Table
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
 
     driver = get_driver()
     if driver is None:

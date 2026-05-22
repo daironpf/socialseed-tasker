@@ -2,8 +2,8 @@
 
 import pytest
 from pathlib import Path
-from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
-from socialseed_tasker.core.code_analysis.entities import SymbolType
+from socialseed_tasker.infrastructure.code_parser import CodeGraphParser
+from socialseed_tasker.domain.code_analysis_entities import SymbolType
 
 
 class TestJavaParsing:
@@ -329,7 +329,7 @@ class TestTestPatternDetection:
 
     def test_test_patterns(self):
         """Test test file pattern detection."""
-        from socialseed_tasker.core.code_analysis.parser import CodeGraphParser, TEST_PATTERNS
+        from socialseed_tasker.infrastructure.code_parser import CodeGraphParser, TEST_PATTERNS
 
         test_files = [
             "test_main.py",
@@ -374,7 +374,7 @@ class TestCodeFileEntity:
 
     def test_code_file_creation(self):
         """Test CodeFile entity creation."""
-        from socialseed_tasker.core.code_analysis.entities import CodeFile
+        from socialseed_tasker.domain.code_analysis_entities import CodeFile
 
         code_file = CodeFile(
             path="test.py",
@@ -395,7 +395,7 @@ class TestCodeSymbolEntity:
 
     def test_code_symbol_creation(self):
         """Test CodeSymbol entity creation."""
-        from socialseed_tasker.core.code_analysis.entities import CodeSymbol
+        from socialseed_tasker.domain.code_analysis_entities import CodeSymbol
 
         symbol = CodeSymbol(
             name="TestClass",
@@ -416,7 +416,7 @@ class TestCodeImportEntity:
 
     def test_code_import_creation(self):
         """Test CodeImport entity creation."""
-        from socialseed_tasker.core.code_analysis.entities import CodeImport
+        from socialseed_tasker.domain.code_analysis_entities import CodeImport
 
         imp = CodeImport(
             module="os",

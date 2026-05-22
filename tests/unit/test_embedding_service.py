@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from socialseed_tasker.core.services.embedding_service import (
+from socialseed_tasker.infrastructure.embedding_service import (
     SecretFilter,
     ChunkingStrategy,
     EmbeddingService,

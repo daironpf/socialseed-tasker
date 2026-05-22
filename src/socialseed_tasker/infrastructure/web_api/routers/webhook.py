@@ -11,13 +11,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Body, HTTPException
 
-from socialseed_tasker.core.project_analysis.analyzer import (
+from socialseed_tasker.application.analyzer import (
     ComponentImpactAnalysis,
     ImpactAnalysis,
     RootCauseAnalyzer,
     TestFailure,
 )
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
     IssueAlreadyClosedError,
@@ -34,7 +34,7 @@ from socialseed_tasker.core.task_management.actions import (
     remove_dependency_action,
     reset_data_action,
 )
-from socialseed_tasker.core.task_management.entities import (
+from socialseed_tasker.domain.entities import (
     Agent,
     AgentRole,
     AgentStatus,
@@ -50,7 +50,7 @@ from socialseed_tasker.core.task_management.entities import (
     User,
     UserRole,
 )
-from socialseed_tasker.entrypoints.web_api.schemas import (
+from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentRegisterRequest,
     AgentResponse,
     AgentStartRequest,
@@ -105,7 +105,7 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     CommitResponse,
     CommitStatsResponse,
 )
-from socialseed_tasker.entrypoints.web_api.routers.helpers import (
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     retrieve_neo4j_code_graph_driver as get_code_graph_driver,
     get_repository_provider as get_repo,
     resolve_component_identifier_to_uuid as resolve_component_id,
@@ -137,7 +137,7 @@ def receive_deployment(
     from datetime import datetime, timezone
     from uuid import uuid4
 
-    from socialseed_tasker.core.task_management.entities import Deployment, DeploymentEnvironment
+    from socialseed_tasker.domain.entities import Deployment, DeploymentEnvironment
 
     commit_sha = body.get("commit_sha", "")
     environment = body.get("environment", "DEV")
@@ -346,7 +346,7 @@ async def receive_github_webhook(
     import json
     from datetime import datetime, timezone
 
-    from socialseed_tasker.core.services.webhook_validator import get_webhook_validator
+    from socialseed_tasker.infrastructure.webhook_validator import get_webhook_validator
 
     if request is None:
         return APIResponse(
@@ -440,7 +440,7 @@ def get_webhook_logs() -> APIResponse[list[GitHubWebhookLogResponse]]:
     description="Test webhook configuration and connectivity.",
 )
 def test_webhook() -> APIResponse[GitHubWebhookTestResponse]:
-    from socialseed_tasker.core.services.secret_manager import get_webhook_secret
+    from socialseed_tasker.application.secret_manager import get_webhook_secret
 
     webhook_secret = get_webhook_secret()
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from socialseed_tasker.storage.graph_database import queries
+from socialseed_tasker.infrastructure import neo4j_queries
 
 
 class EpicRepositoryMixin:
@@ -30,7 +30,7 @@ class EpicRepositoryMixin:
             if record is None:
                 return None
             node = record["e"]
-            from socialseed_tasker.core.task_management.entities import Epic, EpicStatus
+            from socialseed_tasker.domain.entities import Epic, EpicStatus
 
             return Epic(
                 id=UUID(node["id"]),
@@ -45,7 +45,7 @@ class EpicRepositoryMixin:
             result = session.run(queries.LIST_EPICS)
             from uuid import UUID
 
-            from socialseed_tasker.core.task_management.entities import Epic, EpicStatus
+            from socialseed_tasker.domain.entities import Epic, EpicStatus
 
             epics = []
             for record in result:
@@ -105,7 +105,7 @@ class EpicRepositoryMixin:
             if record is None:
                 return None
             node = record["o"]
-            from socialseed_tasker.core.task_management.entities import Objective, ObjectiveStatus
+            from socialseed_tasker.domain.entities import Objective, ObjectiveStatus
 
             return Objective(
                 id=UUID(node["id"]),
@@ -120,7 +120,7 @@ class EpicRepositoryMixin:
             result = session.run(queries.LIST_OBJECTIVES)
             from uuid import UUID
 
-            from socialseed_tasker.core.task_management.entities import Objective, ObjectiveStatus
+            from socialseed_tasker.domain.entities import Objective, ObjectiveStatus
 
             objectives = []
             for record in result:

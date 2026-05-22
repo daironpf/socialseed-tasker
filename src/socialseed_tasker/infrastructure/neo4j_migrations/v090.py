@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 from neo4j.exceptions import Neo4jError
 
 if TYPE_CHECKING:
-    from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
+    from socialseed_tasker.infrastructure.neo4j_driver import Neo4jDriver
 
 logger = logging.getLogger(__name__)
 

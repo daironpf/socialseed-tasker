@@ -10,8 +10,8 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
-from socialseed_tasker.core.project_analysis.policy import Policy, PolicySeverity, PolicyTargetScope
-from socialseed_tasker.storage.graph_database import queries
+from socialseed_tasker.application.policy import Policy, PolicySeverity, PolicyTargetScope
+from socialseed_tasker.infrastructure import neo4j_queries
 
 
 def _now_iso() -> str:
@@ -38,7 +38,7 @@ def _policy_to_dict(policy: Policy) -> dict[str, Any]:
 
 def _node_to_policy(node: dict[str, Any]) -> Policy:
     """Convert a Neo4j node to a domain Policy."""
-    from socialseed_tasker.core.project_analysis.policy import PolicyRule
+    from socialseed_tasker.application.policy import PolicyRule
 
     rules = []
     if node.get("rules"):

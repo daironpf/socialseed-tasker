@@ -8,18 +8,18 @@ class TestGitHubAdapter:
 
     def test_github_adapter_class_exists(self):
         """Test GitHubAdapter class exists."""
-        from socialseed_tasker.storage.adapters.github import GitHubAdapter
+        from socialseed_tasker.infrastructure.github_adapter import GitHubAdapter
 
         assert GitHubAdapter is not None
 
     def test_github_issue_model_exists(self):
         """Test GitHubIssue model exists."""
-        from socialseed_tasker.storage.adapters.github import GitHubIssue
+        from socialseed_tasker.infrastructure.github_adapter import GitHubIssue
 
         assert GitHubIssue is not None
 
     def test_github_milestone_model_exists(self):
         """Test GitHubMilestone model exists."""
-        from socialseed_tasker.storage.adapters.github import GitHubMilestone
+        from socialseed_tasker.infrastructure.github_adapter import GitHubMilestone
 
         assert GitHubMilestone is not None

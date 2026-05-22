@@ -6,7 +6,7 @@ import typer
 from rich.panel import Panel
 from rich.table import Table
 
-from socialseed_tasker.entrypoints.terminal_cli.commands.shared import console, get_repository
+from socialseed_tasker.cli.commands.shared import console, get_repository
 
 agent_app = typer.Typer(help="Agent Integration: context, suggestions, and reasoning")
 
@@ -16,8 +16,8 @@ def agent_context(
     issue_id: str = typer.Option(..., "--issue", "-i", help="Issue ID or short ID"),
 ) -> None:
     """Get code context for an issue from Code-as-Graph."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     driver = get_driver()
     if driver is None:
@@ -47,9 +47,9 @@ def agent_suggest(
     limit: int = typer.Option(5, "--limit", "-l", help="Max similar issues to return"),
 ) -> None:
     """Find similar past issues via RAG."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
-    from socialseed_tasker.core.task_management.entities import ReasoningNode
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
+    from socialseed_tasker.domain.entities import ReasoningNode
 
     driver = get_driver()
     if driver is None:
@@ -85,9 +85,9 @@ def agent_reasoning(
     rejected: str = typer.Option(None, "--rejected", "-rej", help="Comma-separated reasons for rejecting alternatives"),
 ) -> None:
     """Log agent reasoning for issue resolution."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.core.task_management.entities import DecisionType, ReasoningNode
-    from socialseed_tasker.storage.graph_database.reasoning_repository import ReasoningRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.domain.entities import DecisionType, ReasoningNode
+    from socialseed_tasker.infrastructure.neo4j_reasoning_repository import ReasoningRepository
 
     driver = get_driver()
     if driver is None:
@@ -142,7 +142,7 @@ def agent_architect(
         console.print(f"[error]Issue '{issue_id}' not found[/error]")
         raise typer.Exit(1)
 
-    from socialseed_tasker.core.task_management.actions import validate_constraints_action
+    from socialseed_tasker.application.actions import validate_constraints_action
     result = validate_constraints_action(issue_repo)
 
     if result.violations:

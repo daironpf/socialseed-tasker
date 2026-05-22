@@ -3,9 +3,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from socialseed_tasker.core.task_management.entities import Component
-from socialseed_tasker.storage.graph_database import queries
-from socialseed_tasker.storage.graph_database.impl.shared import _node_to_component, _now_iso, _to_camel
+from socialseed_tasker.domain.entities import Component
+from socialseed_tasker.infrastructure import neo4j_queries as queries
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_component, _now_iso, _to_camel
 
 
 class ComponentRepositoryMixin:

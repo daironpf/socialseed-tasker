@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from socialseed_tasker.storage.graph_database import queries
+from socialseed_tasker.infrastructure import neo4j_queries
 
 
 class DeploymentRepositoryMixin:

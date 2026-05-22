@@ -7,13 +7,13 @@ that can be run directly with uvicorn:
 
 Or from Python:
 
-    from socialseed_tasker.entrypoints.web_api.api import app
+    from socialseed_tasker.infrastructure.web_api.api import app
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
 """
 
-from socialseed_tasker.bootstrap.container import Container
-from socialseed_tasker.entrypoints.web_api.app import create_app
+from socialseed_tasker.application.container import Container
+from socialseed_tasker.infrastructure.web_api.app import create_app
 
 container = Container.from_env()
 repository = container.get_repository()

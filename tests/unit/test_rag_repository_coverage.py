@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import MagicMock, patch
-from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository, RAG_QUERIES
+from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository, RAG_QUERIES
 
 
 class MockEmbedding:
@@ -75,7 +75,7 @@ class TestRAGRepositoryInit:
 class TestVectorIndexCreation:
     """Tests for vector index creation - Issue #240"""
 
-    @patch("socialseed_tasker.storage.graph_database.rag_repository.get_embedding_service")
+    @patch("socialseed_tasker.infrastructure.neo4j_rag_repository.get_embedding_service")
     def test_create_vector_index(self, mock_get_service):
         """Test creating vector index."""
         driver = MockDriver()
@@ -94,7 +94,7 @@ class TestVectorIndexCreation:
 class TestIndexText:
     """Tests for text indexing - Issue #240"""
 
-    @patch("socialseed_tasker.storage.graph_database.rag_repository.get_embedding_service")
+    @patch("socialseed_tasker.infrastructure.neo4j_rag_repository.get_embedding_service")
     def test_index_text_paragraph_strategy(self, mock_get_service):
         """Test indexing with paragraph strategy."""
         driver = MockDriver()
@@ -109,7 +109,7 @@ class TestIndexText:
 
         assert isinstance(chunk_ids, list)
 
-    @patch("socialseed_tasker.storage.graph_database.rag_repository.get_embedding_service")
+    @patch("socialseed_tasker.infrastructure.neo4j_rag_repository.get_embedding_service")
     def test_index_text_lines_strategy(self, mock_get_service):
         """Test indexing with lines strategy."""
         driver = MockDriver()
@@ -124,7 +124,7 @@ class TestIndexText:
 
         assert isinstance(chunk_ids, list)
 
-    @patch("socialseed_tasker.storage.graph_database.rag_repository.get_embedding_service")
+    @patch("socialseed_tasker.infrastructure.neo4j_rag_repository.get_embedding_service")
     def test_index_text_sentences_strategy(self, mock_get_service):
         """Test indexing with sentences strategy."""
         driver = MockDriver()
@@ -139,7 +139,7 @@ class TestIndexText:
 
         assert isinstance(chunk_ids, list)
 
-    @patch("socialseed_tasker.storage.graph_database.rag_repository.get_embedding_service")
+    @patch("socialseed_tasker.infrastructure.neo4j_rag_repository.get_embedding_service")
     def test_index_text_empty(self, mock_get_service):
         """Test indexing empty text."""
         driver = MockDriver()
@@ -155,7 +155,7 @@ class TestIndexText:
 class TestSearch:
     """Tests for similarity search - Issue #240"""
 
-    @patch("socialseed_tasker.storage.graph_database.rag_repository.get_embedding_service")
+    @patch("socialseed_tasker.infrastructure.neo4j_rag_repository.get_embedding_service")
     def test_similarity_search_threshold_filtering(self, mock_get_service):
         """Test search respects threshold."""
         mock_service = MagicMock()
@@ -171,7 +171,7 @@ class TestSearch:
 
         assert isinstance(results, list)
 
-    @patch("socialseed_tasker.storage.graph_database.rag_repository.get_embedding_service")
+    @patch("socialseed_tasker.infrastructure.neo4j_rag_repository.get_embedding_service")
     def test_search_no_embedding_service(self, mock_get_service):
         """Test search returns empty when service unavailable."""
         mock_service = MagicMock()
@@ -186,7 +186,7 @@ class TestSearch:
 
         assert results == []
 
-    @patch("socialseed_tasker.storage.graph_database.rag_repository.get_embedding_service")
+    @patch("socialseed_tasker.infrastructure.neo4j_rag_repository.get_embedding_service")
     def test_search_returns_empty_when_no_embedding(self, mock_get_service):
         """Test search returns empty when embedding is None."""
         mock_service = MagicMock()
@@ -316,7 +316,7 @@ class TestChunkingStrategies:
 
     def test_chunk_by_paragraph_strategy(self):
         """Test chunking by paragraph."""
-        from socialseed_tasker.core.services.embedding_service import ChunkingStrategy
+        from socialseed_tasker.infrastructure.embedding_service import ChunkingStrategy
 
         text = "Para 1.\n\nPara 2.\n\nPara 3."
         
@@ -328,7 +328,7 @@ class TestChunkingStrategies:
 
     def test_chunk_by_lines_strategy(self):
         """Test chunking by lines."""
-        from socialseed_tasker.core.services.embedding_service import ChunkingStrategy
+        from socialseed_tasker.infrastructure.embedding_service import ChunkingStrategy
 
         text = "Line 1\nLine 2\nLine 3"
         
@@ -340,7 +340,7 @@ class TestChunkingStrategies:
 
     def test_chunk_by_sentences_strategy(self):
         """Test chunking by sentences."""
-        from socialseed_tasker.core.services.embedding_service import ChunkingStrategy
+        from socialseed_tasker.infrastructure.embedding_service import ChunkingStrategy
 
         text = "Sentence one. Sentence two. Sentence three."
         
@@ -354,7 +354,7 @@ class TestChunkingStrategies:
 class TestVectorIndexQueryPerformance:
     """Tests for vector index query - Issue #240"""
 
-    @patch("socialseed_tasker.storage.graph_database.rag_repository.get_embedding_service")
+    @patch("socialseed_tasker.infrastructure.neo4j_rag_repository.get_embedding_service")
     def test_vector_index_query_exists(self, mock_get_service):
         """Test vector index query is properly formed."""
         query = RAG_QUERIES["create_vector_index"]
@@ -365,7 +365,7 @@ class TestVectorIndexQueryPerformance:
 class TestRAGRepositoryEdgeCases:
     """Tests for edge cases - Issue #240"""
 
-    @patch("socialseed_tasker.storage.graph_database.rag_repository.get_embedding_service")
+    @patch("socialseed_tasker.infrastructure.neo4j_rag_repository.get_embedding_service")
     def test_index_text_nonexistent_strategy(self, mock_get_service):
         """Test indexing with nonexistent strategy falls back to paragraph."""
         driver = MockDriver()
@@ -380,7 +380,7 @@ class TestRAGRepositoryEdgeCases:
 
         assert isinstance(chunk_ids, list)
 
-    @patch("socialseed_tasker.storage.graph_database.rag_repository.get_embedding_service")
+    @patch("socialseed_tasker.infrastructure.neo4j_rag_repository.get_embedding_service")
     def test_search_nonexistent_query(self, mock_get_service):
         """Test search with query returning no results."""
         mock_service = MagicMock()
@@ -400,7 +400,7 @@ class TestRAGRepositoryEdgeCases:
 class TestSearchWithLimit:
     """Tests for limit parameter - Issue #240"""
 
-    @patch("socialseed_tasker.storage.graph_database.rag_repository.get_embedding_service")
+    @patch("socialseed_tasker.infrastructure.neo4j_rag_repository.get_embedding_service")
     def test_search_with_limit(self, mock_get_service):
         """Test search respects limit parameter."""
         mock_service = MagicMock()

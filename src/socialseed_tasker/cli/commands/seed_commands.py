@@ -5,12 +5,12 @@ from contextlib import suppress
 import typer
 from rich.panel import Panel
 
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     add_dependency_action,
     create_issue_action,
 )
-from socialseed_tasker.core.task_management.entities import Component
-from socialseed_tasker.entrypoints.terminal_cli.commands.shared import console, get_repository
+from socialseed_tasker.domain.entities import Component
+from socialseed_tasker.cli.commands.shared import console, get_repository
 
 seed_app = typer.Typer(help="Seed demo data for first-time users")
 

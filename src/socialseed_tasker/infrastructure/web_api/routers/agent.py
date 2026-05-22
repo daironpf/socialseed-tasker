@@ -11,13 +11,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Body, HTTPException
 
-from socialseed_tasker.core.project_analysis.analyzer import (
+from socialseed_tasker.application.analyzer import (
     ComponentImpactAnalysis,
     ImpactAnalysis,
     RootCauseAnalyzer,
     TestFailure,
 )
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
     IssueAlreadyClosedError,
@@ -34,7 +34,7 @@ from socialseed_tasker.core.task_management.actions import (
     remove_dependency_action,
     reset_data_action,
 )
-from socialseed_tasker.core.task_management.entities import (
+from socialseed_tasker.domain.entities import (
     Agent,
     AgentRole,
     AgentStatus,
@@ -50,7 +50,7 @@ from socialseed_tasker.core.task_management.entities import (
     User,
     UserRole,
 )
-from socialseed_tasker.entrypoints.web_api.schemas import (
+from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentRegisterRequest,
     AgentResponse,
     AgentStartRequest,
@@ -105,7 +105,7 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     CommitResponse,
     CommitStatsResponse,
 )
-from socialseed_tasker.entrypoints.web_api.routers.helpers import (
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     retrieve_neo4j_code_graph_driver as get_code_graph_driver,
     get_repository_provider as get_repo,
     resolve_component_identifier_to_uuid as resolve_component_id,
@@ -136,7 +136,7 @@ def register_agent(
 ) -> APIResponse[AgentResponse]:
     from datetime import datetime, timezone
     from fastapi import HTTPException
-    from socialseed_tasker.storage.graph_database import queries
+    from socialseed_tasker.infrastructure import neo4j_queries
 
     agent_data = {
         "agent_id": body.agent_id,
@@ -153,7 +153,7 @@ def register_agent(
     driver = getattr(request.app.state, "driver", None)
     if driver is None:
         try:
-            from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+            from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
             driver = get_neo4j_driver()
         except Exception:
             driver = None
@@ -355,8 +355,8 @@ def get_agent_context(
     limit: int = Query(20, description="Max files to return"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[dict[str, Any]]:
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
-    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
 
     issue = repo.get_issue(issue_id)
     if not issue:
@@ -392,8 +392,8 @@ def get_similar_issues(
     limit: int = Query(5, description="Max similar issues to return"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[list[dict[str, Any]]]:
-    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
-    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
+    from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
 
     issue = repo.get_issue(issue_id)
     if not issue:
@@ -430,8 +430,8 @@ def add_agent_specialist(
     component_id: str,
 ) -> APIResponse[dict]:
     from fastapi import HTTPException
-    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
-    from socialseed_tasker.storage.graph_database import queries
+    from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.infrastructure import neo4j_queries
     driver = get_neo4j_driver()
     if driver is None:
         raise HTTPException(status_code=503, detail="Neo4j not available")
@@ -457,8 +457,8 @@ def remove_agent_specialist(
     component_id: str,
 ) -> APIResponse[dict]:
     from fastapi import HTTPException
-    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
-    from socialseed_tasker.storage.graph_database import queries
+    from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.infrastructure import neo4j_queries
     driver = get_neo4j_driver()
     if driver is None:
         raise HTTPException(status_code=503, detail="Neo4j not available")
@@ -483,8 +483,8 @@ def get_agent_specialists(
     agent_id: str,
 ) -> APIResponse[list[dict]]:
     from fastapi import HTTPException
-    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
-    from socialseed_tasker.storage.graph_database import queries
+    from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.infrastructure import neo4j_queries
     driver = get_neo4j_driver()
     if driver is None:
         raise HTTPException(status_code=503, detail="Neo4j not available")
@@ -506,8 +506,8 @@ def get_component_specialists(
     component_id: str,
 ) -> APIResponse[list[dict]]:
     from fastapi import HTTPException
-    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
-    from socialseed_tasker.storage.graph_database import queries
+    from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.infrastructure import neo4j_queries
     driver = get_neo4j_driver()
     if driver is None:
         raise HTTPException(status_code=503, detail="Neo4j not available")

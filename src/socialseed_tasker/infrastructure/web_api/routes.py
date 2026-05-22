@@ -7,7 +7,7 @@ Maintains full backward compatibility for app.py imports.
 from __future__ import annotations
 
 # Import and expose all domain-specific routers
-from socialseed_tasker.entrypoints.web_api.routers import (
+from socialseed_tasker.infrastructure.web_api.routers import (
     admin_router,
     agent_router,
     ai_search_router,
@@ -34,7 +34,7 @@ from socialseed_tasker.entrypoints.web_api.routers import (
 )
 
 # Maintain backward compatibility for any potential internal imports of helper dependencies
-from socialseed_tasker.entrypoints.web_api.routers.helpers import (
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     retrieve_neo4j_code_graph_driver as get_code_graph_driver,
     get_repository_provider as get_repo,
     resolve_component_identifier_to_uuid as resolve_component_id,

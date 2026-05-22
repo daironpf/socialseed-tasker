@@ -90,7 +90,7 @@ class GitHubAdapter:
         repo: str | None = None,
         api_url: str | None = None,
     ) -> None:
-        from socialseed_tasker.core.services.secret_manager import get_secret_manager
+        from socialseed_tasker.application.secret_manager import get_secret_manager
 
         sm = get_secret_manager()
         self._token = token or sm.get_github_token(repo or "") or os.environ.get("GITHUB_TOKEN", "")

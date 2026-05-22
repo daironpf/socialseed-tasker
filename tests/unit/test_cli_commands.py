@@ -10,10 +10,10 @@ from uuid import UUID, uuid4
 import pytest
 from typer.testing import CliRunner
 
-from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
-from socialseed_tasker.core.task_management.constraints import Constraint, ConstraintLevel, ConstraintCategory
-from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus, IssuePriority
-from socialseed_tasker.entrypoints.terminal_cli.app import app
+from socialseed_tasker.application.actions import TaskRepositoryInterface
+from socialseed_tasker.application.constraints import Constraint, ConstraintLevel, ConstraintCategory
+from socialseed_tasker.domain.entities import Component, Issue, IssueStatus, IssuePriority
+from socialseed_tasker.cli.app import app
 
 
 class MockRepository(TaskRepositoryInterface):
@@ -249,9 +249,9 @@ def mock_repo():
 
 def _patch_commands(mock_repo: MockRepository):
     """Patch get_repository in all relevant locations to return mock_repo."""
-    from socialseed_tasker.entrypoints.terminal_cli import commands as cmds
-    from socialseed_tasker.entrypoints.terminal_cli.commands import shared
-    from socialseed_tasker.entrypoints.terminal_cli import app as cli_app
+    from socialseed_tasker.cli import commands as cmds
+    from socialseed_tasker.cli.commands import shared
+    from socialseed_tasker.cli import app as cli_app
 
     modules_to_patch = [
         cmds,
@@ -278,7 +278,7 @@ def _patch_commands(mock_repo: MockRepository):
 
 def _unpatch_commands(original):
     """Restore original get_repository."""
-    from socialseed_tasker.entrypoints.terminal_cli import commands as cmds
+    from socialseed_tasker.cli import commands as cmds
 
     cmds.get_repository = original
 

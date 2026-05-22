@@ -11,13 +11,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Body, HTTPException
 
-from socialseed_tasker.core.project_analysis.analyzer import (
+from socialseed_tasker.application.analyzer import (
     ComponentImpactAnalysis,
     ImpactAnalysis,
     RootCauseAnalyzer,
     TestFailure,
 )
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
     IssueAlreadyClosedError,
@@ -34,7 +34,7 @@ from socialseed_tasker.core.task_management.actions import (
     remove_dependency_action,
     reset_data_action,
 )
-from socialseed_tasker.core.task_management.entities import (
+from socialseed_tasker.domain.entities import (
     Agent,
     AgentRole,
     AgentStatus,
@@ -50,7 +50,7 @@ from socialseed_tasker.core.task_management.entities import (
     User,
     UserRole,
 )
-from socialseed_tasker.entrypoints.web_api.schemas import (
+from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentRegisterRequest,
     AgentResponse,
     AgentStartRequest,
@@ -105,7 +105,7 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     CommitResponse,
     CommitStatsResponse,
 )
-from socialseed_tasker.entrypoints.web_api.routers.helpers import (
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     retrieve_neo4j_code_graph_driver as get_code_graph_driver,
     get_repository_provider as get_repo,
     resolve_component_identifier_to_uuid as resolve_component_id,
@@ -182,7 +182,7 @@ def create_issue(
     """
     from fastapi import HTTPException
 
-    from socialseed_tasker.core.validation import (
+    from socialseed_tasker.domain import (
         IssueDescriptionValidationError,
         IssueTitleValidationError,
         sanitize_issue_description,
@@ -506,7 +506,7 @@ def close_issue(
     repo: TaskRepositoryInterface = Depends(get_repo),
     request: Request = Depends(get_code_graph_driver),
 ):
-    from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
+    from socialseed_tasker.application.analyzer import ArchitecturalAnalyzer
     
     issue = repo.get_issue(issue_id)
     if issue is None:
@@ -544,7 +544,7 @@ def close_issue(
                 driver = None
 
             if driver:
-                from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+                from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
                 code_repo = CodeGraphRepository(driver)
                 for file_path in affected_files:
                     code_repo.link_issue_to_file(issue_id, file_path)
@@ -645,7 +645,7 @@ def mirror_root_cause(
     issue_id: str,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[dict]:
-    from socialseed_tasker.core.services.github_mirror import GitHubMirroringService
+    from socialseed_tasker.infrastructure.github_mirror import GitHubMirroringService
 
     issue = repo.get_issue(issue_id)
     if issue is None:
@@ -656,7 +656,7 @@ def mirror_root_cause(
 
         raise HTTPException(status_code=400, detail="Issue not linked to GitHub")
 
-    from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
+    from socialseed_tasker.application.analyzer import ArchitecturalAnalyzer
 
     analyzer = ArchitecturalAnalyzer(repo)
 
@@ -694,7 +694,7 @@ def mirror_impact(
     issue_id: str,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[dict]:
-    from socialseed_tasker.core.services.github_mirror import GitHubMirroringService
+    from socialseed_tasker.infrastructure.github_mirror import GitHubMirroringService
 
     issue = repo.get_issue(issue_id)
     if issue is None:
@@ -705,7 +705,7 @@ def mirror_impact(
 
         raise HTTPException(status_code=400, detail="Issue not linked to GitHub")
 
-    from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
+    from socialseed_tasker.application.analyzer import ArchitecturalAnalyzer
 
     analyzer = ArchitecturalAnalyzer(repo)
     analysis = analyzer.analyze_impact(issue.id)

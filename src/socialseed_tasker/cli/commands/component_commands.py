@@ -26,14 +26,14 @@ import json
 import typer
 from rich.panel import Panel
 
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     ComponentHasIssuesError,
     ComponentNotFoundError,
     delete_component_action,
     update_component_action,
 )
-from socialseed_tasker.core.task_management.entities import Component
-from socialseed_tasker.entrypoints.terminal_cli.commands.shared import (
+from socialseed_tasker.domain.entities import Component
+from socialseed_tasker.cli.commands.shared import (
     console,
     get_repository,
     resolve_component_id,
@@ -51,7 +51,7 @@ def component_create(
     description: str | None = typer.Option(None, "--description", "-d", help="Component description"),
 ) -> None:
     """Create a new component."""
-    from socialseed_tasker.core.validation import (
+    from socialseed_tasker.domain import (
         ComponentNameValidationError,
         sanitize_component_name,
         validate_component_name,
@@ -145,7 +145,7 @@ def component_update(
     project: str | None = typer.Option(None, "--project", "-p", help="New project name"),
 ) -> None:
     """Update a component's fields."""
-    from socialseed_tasker.core.task_management.actions import update_component_action
+    from socialseed_tasker.application.actions import update_component_action
 
     if name is None and description is None and project is None:
         console.print(
@@ -173,7 +173,7 @@ def component_delete(
     yes: bool = typer.Option(False, "--yes", "-y", help="Confirm deletion without prompting"),
 ) -> None:
     """Delete a component."""
-    from socialseed_tasker.core.task_management.actions import ComponentHasIssuesError, delete_component_action
+    from socialseed_tasker.application.actions import ComponentHasIssuesError, delete_component_action
 
     repo = get_repository()
 
@@ -238,7 +238,7 @@ def component_add_dependency(
     repo = get_repository()
 
     try:
-        from socialseed_tasker.entrypoints.terminal_cli.commands.shared import resolve_component_id
+        from socialseed_tasker.cli.commands.shared import resolve_component_id
 
         source_id = resolve_component_id(component_id, repo)
         target_id = resolve_component_id(depends_on, repo)
@@ -262,7 +262,7 @@ def component_list_dependencies(
     component_id: str = typer.Argument(..., help="Component to list dependencies for"),
 ) -> None:
     """List dependencies for a component."""
-    from socialseed_tasker.entrypoints.terminal_cli.commands.shared import resolve_component_id
+    from socialseed_tasker.cli.commands.shared import resolve_component_id
 
     repo = get_repository()
 

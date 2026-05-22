@@ -5,12 +5,12 @@ from pathlib import Path
 
 import pytest
 
-from socialseed_tasker.core.system_init.entities import (
+from socialseed_tasker.domain.system_init_entities import (
     FileOperation,
     ScaffoldResult,
     ScaffoldStatus,
 )
-from socialseed_tasker.core.system_init.scaffolder import ScaffolderService
+from socialseed_tasker.application.scaffolder import ScaffolderService
 
 
 @pytest.fixture()

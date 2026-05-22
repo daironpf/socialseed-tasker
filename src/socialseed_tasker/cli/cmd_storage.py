@@ -8,7 +8,7 @@ from __future__ import annotations
 import typer
 from rich.console import Console
 
-from socialseed_tasker.storage.graph_database.migrations.v090 import run_migration, rollback_migration
+from socialseed_tasker.infrastructure.neo4j_migrations.v090 import run_migration, rollback_migration
 
 console = Console()
 storage_app = typer.Typer(help="Manage Neo4j storage and schema")
@@ -18,8 +18,8 @@ def storage_migrate(
     version: str = typer.Option("0.9.0", "--version", "-v", help="Migration version"),
 ) -> None:
     """Run Neo4j schema migrations."""
-    from socialseed_tasker.entrypoints.terminal_cli.commands import get_repository
-    from socialseed_tasker.storage.graph_database.repositories import Neo4jTaskRepository
+    from socialseed_tasker.cli.commands import get_repository
+    from socialseed_tasker.infrastructure.neo4j_repository import Neo4jTaskRepository
     
     repo = get_repository()
     if not isinstance(repo, Neo4jTaskRepository):
@@ -44,8 +44,8 @@ def storage_rollback(
     version: str = typer.Option("0.9.0", "--version", "-v", help="Migration version"),
 ) -> None:
     """Roll back Neo4j schema migrations."""
-    from socialseed_tasker.entrypoints.terminal_cli.commands import get_repository
-    from socialseed_tasker.storage.graph_database.repositories import Neo4jTaskRepository
+    from socialseed_tasker.cli.commands import get_repository
+    from socialseed_tasker.infrastructure.neo4j_repository import Neo4jTaskRepository
     
     repo = get_repository()
     if not isinstance(repo, Neo4jTaskRepository):

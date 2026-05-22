@@ -1,6 +1,6 @@
 """FastAPI-based REST implementation."""
 
-from socialseed_tasker.entrypoints.web_api.routes import (
+from socialseed_tasker.infrastructure.web_api.routes import (
     admin_router,
     agent_router,
     analysis_router,

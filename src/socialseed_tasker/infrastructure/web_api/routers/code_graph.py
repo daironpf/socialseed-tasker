@@ -11,13 +11,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Body, HTTPException
 
-from socialseed_tasker.core.project_analysis.analyzer import (
+from socialseed_tasker.application.analyzer import (
     ComponentImpactAnalysis,
     ImpactAnalysis,
     RootCauseAnalyzer,
     TestFailure,
 )
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
     IssueAlreadyClosedError,
@@ -34,7 +34,7 @@ from socialseed_tasker.core.task_management.actions import (
     remove_dependency_action,
     reset_data_action,
 )
-from socialseed_tasker.core.task_management.entities import (
+from socialseed_tasker.domain.entities import (
     Agent,
     AgentRole,
     AgentStatus,
@@ -50,7 +50,7 @@ from socialseed_tasker.core.task_management.entities import (
     User,
     UserRole,
 )
-from socialseed_tasker.entrypoints.web_api.schemas import (
+from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentRegisterRequest,
     AgentResponse,
     AgentStartRequest,
@@ -105,7 +105,7 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     CommitResponse,
     CommitStatsResponse,
 )
-from socialseed_tasker.entrypoints.web_api.routers.helpers import (
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     retrieve_neo4j_code_graph_driver as get_code_graph_driver,
     get_repository_provider as get_repo,
     resolve_component_identifier_to_uuid as resolve_component_id,
@@ -132,7 +132,7 @@ async def code_graph_scan(
     driver: Any = Depends(get_code_graph_driver),
 ) -> dict[str, Any]:
     """Scan a repository and extract code structure into the graph."""
-    from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+    from socialseed_tasker.infrastructure.code_parser import CodeGraphParser
 
     parser = CodeGraphParser()
 
@@ -145,7 +145,7 @@ async def code_graph_scan(
     saved = False
     if driver:
         try:
-            from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+            from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
             code_repo = CodeGraphRepository(driver)
             code_repo.save_scan_results(files, symbols, imports, relationships)
             saved = True
@@ -170,7 +170,7 @@ async def code_graph_files(
     if not driver:
         return {"error": "Neo4j not connected"}
 
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     repo = CodeGraphRepository(driver)
     files = repo.get_files(limit=limit)
@@ -188,12 +188,12 @@ async def code_graph_symbols(
     limit: int = Query(20, ge=1, le=100),
 ) -> dict[str, Any]:
     """Find symbols by name in the code graph."""
-    from socialseed_tasker.core.code_analysis.entities import SymbolType
+    from socialseed_tasker.domain.code_analysis_entities import SymbolType
 
     if not driver:
         return {"error": "Neo4j not connected"}
 
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     repo = CodeGraphRepository(driver)
 
@@ -215,7 +215,7 @@ async def code_graph_stats(driver: Any = Depends(get_code_graph_driver)) -> dict
     if not driver:
         return {"error": "Neo4j not connected"}
 
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     repo = CodeGraphRepository(driver)
     stats = repo.get_stats()
@@ -230,7 +230,7 @@ async def code_graph_stats(driver: Any = Depends(get_code_graph_driver)) -> dict
 @code_graph_router.delete("")
 async def code_graph_clear(driver: Any = Depends(get_code_graph_driver)) -> dict[str, str]:
     """Clear all code graph data."""
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     if not driver:
         return {"error": "Neo4j not connected"}
@@ -247,7 +247,7 @@ async def code_graph_calls(
     driver: Any = Depends(get_code_graph_driver),
 ) -> dict[str, Any]:
     """Get all callers of a symbol."""
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     if not driver:
         return {"error": "Neo4j not connected"}
@@ -264,7 +264,7 @@ async def code_graph_depends(
     driver: Any = Depends(get_code_graph_driver),
 ) -> dict[str, Any]:
     """Get dependencies (imports) for a file."""
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     if not driver:
         return {"error": "Neo4j not connected"}
@@ -281,7 +281,7 @@ async def code_graph_tests(
     driver: Any = Depends(get_code_graph_driver),
 ) -> dict[str, Any]:
     """Get test files for a source file."""
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     if not driver:
         return {"error": "Neo4j not connected"}
@@ -299,7 +299,7 @@ async def get_issues_for_file(
     driver: Any = Depends(get_code_graph_driver),
 ) -> dict[str, Any]:
     """Get all issues that affected a file."""
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     if not driver:
         return {"error": "Neo4j not connected", "issues": []}
@@ -322,7 +322,7 @@ async def get_symbol_callers(
     driver: Any = Depends(get_code_graph_driver),
 ) -> dict[str, Any]:
     """Get all symbols that call this symbol (dependents)."""
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     if not driver:
         return {"error": "Neo4j not connected", "callers": []}
@@ -342,7 +342,7 @@ async def get_symbol_callees(
     driver: Any = Depends(get_code_graph_driver),
 ) -> dict[str, Any]:
     """Get all symbols that this symbol calls (dependencies)."""
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     if not driver:
         return {"error": "Neo4j not connected", "callees": []}
@@ -359,7 +359,7 @@ async def get_symbol_by_id(
     driver: Any = Depends(get_code_graph_driver),
 ) -> dict[str, Any]:
     """Get a CodeSymbol by its ID."""
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     if not driver:
         return {"error": "Neo4j not connected"}
@@ -387,7 +387,7 @@ async def analyze_impact(
     - transitive callers (full dependency tree)
     - risk level based on impact scope
     """
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     if not driver:
         return {"error": "Neo4j not connected"}

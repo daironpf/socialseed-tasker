@@ -11,14 +11,14 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any, Protocol
 
-from socialseed_tasker.core.task_management.constraints import (
+from socialseed_tasker.application.constraints import (
     Constraint,
     ConstraintCategory,
     ConstraintConfig,
     ConstraintValidationResult,
     ConstraintViolation,
 )
-from socialseed_tasker.core.task_management.entities import (
+from socialseed_tasker.domain.entities import (
     Component,
     Issue,
     IssueStatus,
@@ -355,14 +355,14 @@ def _compute_preemptive_impact(component_id: str) -> dict[str, Any] | None:
     Analyzes the component's code graph to provide risk assessment
     at issue creation time.
     """
-    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.application.wiring import get_driver
 
     driver = get_driver()
     if driver is None:
         return None
 
     try:
-        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+        from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
         cg = CodeGraphRepository(driver)
         stats = cg.get_stats()
@@ -415,7 +415,7 @@ def create_issue_action(
     """
     from uuid import uuid4
 
-    from socialseed_tasker.core.task_management.entities import Component, Issue, IssuePriority
+    from socialseed_tasker.domain.entities import Component, Issue, IssuePriority
 
     warnings: list[str] = []
 
@@ -735,7 +735,7 @@ def validate_action_against_policies(
     if policy_engine is None:
         return
 
-    from socialseed_tasker.core.project_analysis.policy import PolicyEngine
+    from socialseed_tasker.application.policy import PolicyEngine
 
     if not isinstance(policy_engine, PolicyEngine):
         return
@@ -870,7 +870,7 @@ def load_constraints_from_config_action(
     Returns:
         Dict with counts of created/updated constraints
     """
-    from socialseed_tasker.core.task_management.constraints import ConstraintStatus
+    from socialseed_tasker.application.constraints import ConstraintStatus
 
     existing = repository.list_constraints()
     for c in existing:

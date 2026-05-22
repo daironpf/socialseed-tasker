@@ -11,11 +11,11 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from socialseed_tasker.core.services.markdown_transformer import MarkdownTransformer
-    from socialseed_tasker.core.services.secret_manager import SecretManager
-    from socialseed_tasker.core.services.webhook_validator import WebhookSignatureValidator
-    from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
-    from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
+    from socialseed_tasker.application.markdown_transformer import MarkdownTransformer
+    from socialseed_tasker.application.secret_manager import SecretManager
+    from socialseed_tasker.infrastructure.webhook_validator import WebhookSignatureValidator
+    from socialseed_tasker.application.actions import TaskRepositoryInterface
+    from socialseed_tasker.infrastructure.neo4j_driver import Neo4jDriver
 
 
 # ---------------------------------------------------------------------------
@@ -141,7 +141,7 @@ class Container:
         """
         if self._repository is None:
             driver = self.get_driver()
-            from socialseed_tasker.storage.graph_database.repositories import (
+            from socialseed_tasker.infrastructure.neo4j_repository import (
                 Neo4jTaskRepository,
             )
 
@@ -152,7 +152,7 @@ class Container:
     def get_driver(self) -> Any:
         """Get or create the Neo4j driver."""
         if self._neo4j_driver is None:
-            from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
+            from socialseed_tasker.infrastructure.neo4j_driver import Neo4jDriver
 
             neo4j_cfg = self._config.neo4j
             self._neo4j_driver = Neo4jDriver(
@@ -178,7 +178,7 @@ class Container:
         
         Business Value: Enables storing and querying code-as-graph structures.
         """
-        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+        from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
         return CodeGraphRepository(self.get_driver())
 
     def cleanup(self) -> None:
@@ -200,8 +200,8 @@ class Container:
 
     def get_webhook_validator(self) -> WebhookSignatureValidator:
         """Get the webhook signature validator."""
-        from socialseed_tasker.core.services.secret_manager import get_webhook_secret
-        from socialseed_tasker.core.services.webhook_validator import (
+        from socialseed_tasker.application.secret_manager import get_webhook_secret
+        from socialseed_tasker.infrastructure.webhook_validator import (
             WebhookSignatureValidator,
         )
 
@@ -209,7 +209,7 @@ class Container:
 
     def get_markdown_transformer(self) -> MarkdownTransformer:
         """Get the markdown transformer for analysis results."""
-        from socialseed_tasker.core.services.markdown_transformer import (
+        from socialseed_tasker.application.markdown_transformer import (
             MarkdownTransformer,
         )
 
@@ -217,7 +217,7 @@ class Container:
 
     def get_secret_manager(self) -> SecretManager:
         """Get the secret manager for GitHub credentials."""
-        from socialseed_tasker.core.services.secret_manager import (
+        from socialseed_tasker.application.secret_manager import (
             SecretManager,
         )
 

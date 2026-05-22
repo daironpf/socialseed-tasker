@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
-from socialseed_tasker.core.code_analysis.entities import (
+from socialseed_tasker.domain.code_analysis_entities import (
     CodeFile,
     CodeGraphStats,
     CodeImport,
@@ -19,7 +19,7 @@ from socialseed_tasker.core.code_analysis.entities import (
     RelationshipType,
     SymbolType,
 )
-from socialseed_tasker.storage.graph_database import queries
+from socialseed_tasker.infrastructure import neo4j_queries
 
 
 def _now_iso() -> str:

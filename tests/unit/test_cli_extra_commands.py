@@ -6,11 +6,11 @@ from uuid import uuid4
 
 from typer.testing import CliRunner
 
-from socialseed_tasker.core.task_management.entities import (
+from socialseed_tasker.domain.entities import (
     Component, Issue, IssueStatus, IssuePriority
 )
-from socialseed_tasker.entrypoints.terminal_cli.app import app
-from socialseed_tasker.entrypoints.terminal_cli import commands
+from socialseed_tasker.cli.app import app
+from socialseed_tasker.cli import commands
 
 
 class MockRepository:
@@ -105,8 +105,8 @@ def mock_repo():
 
 
 def patch_commands(repo):
-    from socialseed_tasker.entrypoints.terminal_cli.commands import shared
-    from socialseed_tasker.entrypoints.terminal_cli import commands as cmds
+    from socialseed_tasker.cli.commands import shared
+    from socialseed_tasker.cli import commands as cmds
     original = {}
     original['get_repository'] = commands.get_repository
     original['shared_get_repository'] = shared.get_repository
@@ -132,7 +132,7 @@ def patch_commands(repo):
 
 
 def unpatch_commands(original):
-    from socialseed_tasker.entrypoints.terminal_cli.commands import shared
+    from socialseed_tasker.cli.commands import shared
     commands.get_repository = original['get_repository']
     shared.get_repository = original['shared_get_repository']
 

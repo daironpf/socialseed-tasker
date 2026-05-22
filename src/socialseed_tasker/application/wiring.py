@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from socialseed_tasker.bootstrap.container import Container
+from socialseed_tasker.application.container import Container
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -29,7 +29,7 @@ def wire_api(config: Container | None = None) -> FastAPI:
     """
     container = config or Container.from_env()
 
-    from socialseed_tasker.entrypoints.web_api.app import create_app
+    from socialseed_tasker.infrastructure.web_api.app import create_app
 
     app = create_app(repository=container.get_repository())
     return app
@@ -48,7 +48,7 @@ def wire_cli(config: Container | None = None) -> None:
     container = config or Container.from_env()
     container.initialize()
 
-    from socialseed_tasker.entrypoints.terminal_cli.app import app
+    from socialseed_tasker.cli.app import app
 
     try:
         app()
@@ -56,7 +56,7 @@ def wire_cli(config: Container | None = None) -> None:
         container.cleanup()
 def get_driver() -> Any:
     """Get the Neo4j driver from the global CLI container."""
-    from socialseed_tasker.entrypoints.terminal_cli.app import get_cli_container
+    from socialseed_tasker.cli.app import get_cli_container
 
     try:
         container = get_cli_container()

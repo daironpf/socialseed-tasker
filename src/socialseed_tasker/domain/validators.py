@@ -2,7 +2,7 @@
 
 import re
 
-from socialseed_tasker.core.validation.exceptions import (
+from socialseed_tasker.domain.exceptions import (
     ComponentNameValidationError,
     IssueDescriptionValidationError,
     IssueTitleValidationError,

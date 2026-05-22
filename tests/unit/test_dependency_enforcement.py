@@ -2,7 +2,7 @@
 
 import pytest
 from uuid import uuid4
-from socialseed_tasker.core.task_management.entities import Issue, Component, IssueStatus, IssuePriority
+from socialseed_tasker.domain.entities import Issue, Component, IssueStatus, IssuePriority
 
 
 class MockRepoDependencyTest:
@@ -72,7 +72,7 @@ def test_close_issue_with_open_dependency_fails():
     repo.create_issue(issue_a)
     repo.create_issue(issue_b)
     
-    from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
+    from socialseed_tasker.application.actions import TaskRepositoryInterface
     assert hasattr(TaskRepositoryInterface, 'add_dependency') or True
 
 

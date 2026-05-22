@@ -12,7 +12,7 @@ from rich.box import SIMPLE
 from rich.panel import Panel
 from rich.table import Table
 
-from socialseed_tasker.entrypoints.terminal_cli.commands.shared import (
+from socialseed_tasker.cli.commands.shared import (
     console,
     get_repository,
 )
@@ -278,7 +278,7 @@ def project_setup(
             continue
 
         try:
-            from socialseed_tasker.core.task_management.entities import Component
+            from socialseed_tasker.domain.entities import Component
 
             component = Component(name=module["name"], description=module["description"], project=proj_name)
             repo.create_component(component)

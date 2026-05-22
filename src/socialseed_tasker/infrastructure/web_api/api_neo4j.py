@@ -14,9 +14,9 @@ Environment variables:
 
 import os
 
-from socialseed_tasker.entrypoints.web_api.app import create_app
-from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
-from socialseed_tasker.storage.graph_database.repositories import Neo4jTaskRepository
+from socialseed_tasker.infrastructure.web_api.app import create_app
+from socialseed_tasker.infrastructure.neo4j_driver import Neo4jDriver
+from socialseed_tasker.infrastructure.neo4j_repository import Neo4jTaskRepository
 
 uri = os.getenv("NEO4J_URI", "bolt://localhost:7689")
 user = os.getenv("NEO4J_USER", "neo4j")

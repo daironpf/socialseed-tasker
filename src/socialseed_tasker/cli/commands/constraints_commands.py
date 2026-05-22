@@ -7,13 +7,13 @@ import yaml
 from rich.panel import Panel
 from rich.table import Table
 
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     list_constraints_action,
     load_constraints_from_config_action,
     validate_constraints_action,
 )
-from socialseed_tasker.core.task_management.constraints import ConstraintConfig
-from socialseed_tasker.entrypoints.terminal_cli.commands.shared import console, get_repository
+from socialseed_tasker.application.constraints import ConstraintConfig
+from socialseed_tasker.cli.commands.shared import console, get_repository
 
 constraints_app = typer.Typer(help="Manage project constraints and rules")
 

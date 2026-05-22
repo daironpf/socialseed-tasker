@@ -26,7 +26,7 @@ import json
 import typer
 from rich.tree import Tree
 
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     CircularDependencyError,
     IssueNotFoundError,
     add_dependency_action,
@@ -34,7 +34,7 @@ from socialseed_tasker.core.task_management.actions import (
     get_dependency_chain_action,
     remove_dependency_action,
 )
-from socialseed_tasker.entrypoints.terminal_cli.commands.shared import (
+from socialseed_tasker.cli.commands.shared import (
     console,
     get_repository,
     resolve_issue_id,
@@ -68,7 +68,7 @@ def dependency_add(
         console.print(f"[error]{e}[/error]")
         raise typer.Exit(code=2) from e
 
-    from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
+    from socialseed_tasker.application.analyzer import ArchitecturalAnalyzer
 
     issue_str = str(resolved_issue_id)
     dep_str = str(resolved_dep_id)

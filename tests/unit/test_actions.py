@@ -5,7 +5,7 @@ from uuid import UUID
 
 import pytest
 
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
     IssueAlreadyClosedError,
@@ -19,7 +19,7 @@ from socialseed_tasker.core.task_management.actions import (
     move_issue_action,
     remove_dependency_action,
 )
-from socialseed_tasker.core.task_management.entities import (
+from socialseed_tasker.domain.entities import (
     Component,
     Issue,
     IssueStatus,

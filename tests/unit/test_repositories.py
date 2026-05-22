@@ -6,9 +6,9 @@ from uuid import uuid4
 
 import pytest
 
-from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus, IssuePriority
-from socialseed_tasker.storage.graph_database.driver import Neo4jDriver
-from socialseed_tasker.storage.graph_database.repositories import Neo4jTaskRepository
+from socialseed_tasker.domain.entities import Component, Issue, IssueStatus, IssuePriority
+from socialseed_tasker.infrastructure.neo4j_driver import Neo4jDriver
+from socialseed_tasker.infrastructure.neo4j_repository import Neo4jTaskRepository
 from tests.fakes.fake_neo4j_driver import FakeNeo4jDriver
 
 

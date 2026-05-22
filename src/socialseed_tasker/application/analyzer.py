@@ -14,7 +14,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from socialseed_tasker.core.project_analysis.rules import (
+from socialseed_tasker.domain.architectural_rules import (
     ArchitecturalRule,
     RuleType,
     ValidationResult,
@@ -22,9 +22,9 @@ from socialseed_tasker.core.project_analysis.rules import (
 )
 
 if TYPE_CHECKING:
-    from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
+    from socialseed_tasker.application.actions import TaskRepositoryInterface
 
-from socialseed_tasker.core.task_management.entities import Issue
+from socialseed_tasker.domain.entities import Issue
 
 # --- Data Models for Root Cause Analysis ---
 

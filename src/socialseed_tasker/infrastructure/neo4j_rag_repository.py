@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from socialseed_tasker.core.services.embedding_service import (
+from socialseed_tasker.infrastructure.embedding_service import (
     ChunkingStrategy,
     EmbeddingService,
     get_embedding_service,

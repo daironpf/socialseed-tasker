@@ -9,24 +9,24 @@ class TestWebApiMain:
 
     def test_main_function_exists(self):
         """Test main function exists."""
-        from socialseed_tasker.entrypoints.web_api import __main__
+        from socialseed_tasker.infrastructure.web_api import __main__
 
         assert hasattr(__main__, "main")
         assert callable(__main__.main)
 
     def test_seed_demo_data_function_exists(self):
         """Test _seed_demo_data function exists."""
-        from socialseed_tasker.entrypoints.web_api import __main__
+        from socialseed_tasker.infrastructure.web_api import __main__
 
         assert hasattr(__main__, "_seed_demo_data")
         assert callable(__main__._seed_demo_data)
 
-    @patch("socialseed_tasker.entrypoints.web_api.__main__.Container")
-    @patch("socialseed_tasker.entrypoints.web_api.__main__.create_app")
-    @patch("socialseed_tasker.entrypoints.web_api.__main__.uvicorn")
+    @patch("socialseed_tasker.infrastructure.web_api.__main__.Container")
+    @patch("socialseed_tasker.infrastructure.web_api.__main__.create_app")
+    @patch("socialseed_tasker.infrastructure.web_api.__main__.uvicorn")
     def test_main_creates_app(self, mock_uvicorn, mock_create_app, mock_container):
         """Test main creates FastAPI app."""
-        from socialseed_tasker.entrypoints.web_api.__main__ import main
+        from socialseed_tasker.infrastructure.web_api.__main__ import main
 
         mock_container_instance = MagicMock()
         mock_container.from_env.return_value = mock_container_instance
@@ -48,7 +48,7 @@ class TestWebApiMain:
 
     def test_seed_demo_data_returns_when_components_exist(self):
         """Test _seed_demo_data returns early when demo data exists."""
-        from socialseed_tasker.entrypoints.web_api.__main__ import _seed_demo_data
+        from socialseed_tasker.infrastructure.web_api.__main__ import _seed_demo_data
 
         mock_repo = MagicMock()
         mock_repo.list_components.return_value = ["existing"]
@@ -66,18 +66,18 @@ class TestBootstrapWiring:
 
     def test_wire_api_function_exists(self):
         """Test wire_api function exists."""
-        from socialseed_tasker.bootstrap.wiring import wire_api
+        from socialseed_tasker.application.wiring import wire_api
 
         assert callable(wire_api)
 
     def test_wire_cli_function_exists(self):
         """Test wire_cli function exists."""
-        from socialseed_tasker.bootstrap.wiring import wire_cli
+        from socialseed_tasker.application.wiring import wire_cli
 
         assert callable(wire_cli)
 
     def test_get_driver_function_exists(self):
         """Test get_driver function exists."""
-        from socialseed_tasker.bootstrap.wiring import get_driver
+        from socialseed_tasker.application.wiring import get_driver
 
         assert callable(get_driver)

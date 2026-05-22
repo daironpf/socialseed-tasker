@@ -4,15 +4,15 @@ from uuid import uuid4
 
 import pytest
 
-from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
-from socialseed_tasker.core.project_analysis.rules import (
+from socialseed_tasker.application.analyzer import ArchitecturalAnalyzer
+from socialseed_tasker.domain.architectural_rules import (
     ArchitecturalRule,
     RuleType,
     Severity,
     ValidationResult,
     Violation,
 )
-from socialseed_tasker.core.task_management.entities import Component, Issue
+from socialseed_tasker.domain.entities import Component, Issue
 
 
 class FakeRepo:

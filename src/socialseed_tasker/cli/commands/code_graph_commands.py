@@ -6,7 +6,7 @@ import typer
 from rich.panel import Panel
 from rich.table import Table
 
-from socialseed_tasker.entrypoints.terminal_cli.commands.shared import console, get_repository
+from socialseed_tasker.cli.commands.shared import console, get_repository
 
 code_graph_app = typer.Typer(help="Code-as-Graph: scan and analyze source code")
 
@@ -18,8 +18,8 @@ def code_graph_scan(
     git_aware: bool = typer.Option(True, "--git/--no-git", help="Use git to track changes"),
 ) -> None:
     """Scan a repository and extract code structure into the graph."""
-    from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
-    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.infrastructure.code_parser import CodeGraphParser
+    from socialseed_tasker.application.wiring import get_driver
 
     console.print(f"[info]Scanning repository:[/info] {path}")
 
@@ -36,7 +36,7 @@ def code_graph_scan(
 
         driver = get_driver()
         if driver:
-            from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+            from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
             repo = CodeGraphRepository(driver)
             repo.save_scan_results(files, symbols, imports, relationships)
@@ -55,15 +55,15 @@ def code_graph_find(
     limit: int = typer.Option(20, "--limit", "-l", help="Maximum results"),
 ) -> None:
     """Find symbols by name in the code graph."""
-    from socialseed_tasker.core.code_analysis.entities import SymbolType
-    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.domain.code_analysis_entities import SymbolType
+    from socialseed_tasker.application.wiring import get_driver
 
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
         return
 
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     repo = CodeGraphRepository(driver)
 
@@ -101,14 +101,14 @@ def code_graph_files(
     language: str | None = typer.Option(None, "--language", help="Filter by language"),
 ) -> None:
     """List files in the code graph."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.application.wiring import get_driver
 
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
         return
 
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     repo = CodeGraphRepository(driver)
     files = repo.get_files(limit=limit)
@@ -140,14 +140,14 @@ def code_graph_files(
 @code_graph_app.command("stats")
 def code_graph_stats() -> None:
     """Show code graph statistics."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.application.wiring import get_driver
 
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
         return
 
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     repo = CodeGraphRepository(driver)
     stats = repo.get_stats()
@@ -165,7 +165,7 @@ def code_graph_clear(
     confirm: bool = typer.Option(False, "--yes", "-y", help="Confirm deletion"),
 ) -> None:
     """Clear all code graph data from Neo4j."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.application.wiring import get_driver
 
     if not confirm:
         console.print("[warning]Use --yes to confirm deletion[/warning]")
@@ -176,7 +176,7 @@ def code_graph_clear(
         console.print("[error]Neo4j not connected[/error]")
         return
 
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     repo = CodeGraphRepository(driver)
     repo.clear()
@@ -188,8 +188,8 @@ def code_graph_impact(
     symbol_name: str = typer.Argument(..., help="Symbol name to analyze impact for"),
 ) -> None:
     """Analyze the impact of changing a symbol (find all callers)."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     driver = get_driver()
     if not driver:
@@ -223,8 +223,8 @@ def code_graph_calls(
     path: str = typer.Argument(..., help="File or symbol path"),
 ) -> None:
     """Find all functions that call a specific function/method."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     driver = get_driver()
     if not driver:
@@ -258,8 +258,8 @@ def code_graph_depends(
     path: str = typer.Argument(..., help="File or symbol path"),
 ) -> None:
     """Find dependencies (imports) for a file."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     driver = get_driver()
     if not driver:
@@ -293,8 +293,8 @@ def code_graph_tests(
     path: str = typer.Argument(..., help="Source file path"),
 ) -> None:
     """Find test files related to a source file."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     driver = get_driver()
     if not driver:
@@ -326,8 +326,8 @@ def code_graph_file(
     path: str = typer.Argument(..., help="File path to show details"),
 ) -> None:
     """Show detailed information about a file in the graph."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     driver = get_driver()
     if not driver:

@@ -5,8 +5,8 @@ from contextlib import suppress
 
 import uvicorn
 
-from socialseed_tasker.bootstrap.container import Container
-from socialseed_tasker.entrypoints.web_api.app import create_app
+from socialseed_tasker.application.container import Container
+from socialseed_tasker.infrastructure.web_api.app import create_app
 
 
 def main() -> None:
@@ -36,11 +36,11 @@ def _seed_demo_data(repository) -> None:
     if existing:
         return
 
-    from socialseed_tasker.core.task_management.actions import (
+    from socialseed_tasker.application.actions import (
         add_dependency_action,
         create_issue_action,
     )
-    from socialseed_tasker.core.task_management.entities import Component
+    from socialseed_tasker.domain.entities import Component
 
     components_data = [
         {"name": "api-gateway", "description": "Central API gateway routing requests to microservices"},

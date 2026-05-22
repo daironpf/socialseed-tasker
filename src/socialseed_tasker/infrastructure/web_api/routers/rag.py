@@ -11,13 +11,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Body, HTTPException
 
-from socialseed_tasker.core.project_analysis.analyzer import (
+from socialseed_tasker.application.analyzer import (
     ComponentImpactAnalysis,
     ImpactAnalysis,
     RootCauseAnalyzer,
     TestFailure,
 )
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
     IssueAlreadyClosedError,
@@ -34,7 +34,7 @@ from socialseed_tasker.core.task_management.actions import (
     remove_dependency_action,
     reset_data_action,
 )
-from socialseed_tasker.core.task_management.entities import (
+from socialseed_tasker.domain.entities import (
     Agent,
     AgentRole,
     AgentStatus,
@@ -50,7 +50,7 @@ from socialseed_tasker.core.task_management.entities import (
     User,
     UserRole,
 )
-from socialseed_tasker.entrypoints.web_api.schemas import (
+from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentRegisterRequest,
     AgentResponse,
     AgentStartRequest,
@@ -105,7 +105,7 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     CommitResponse,
     CommitStatsResponse,
 )
-from socialseed_tasker.entrypoints.web_api.routers.helpers import (
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     retrieve_neo4j_code_graph_driver as get_code_graph_driver,
     get_repository_provider as get_repo,
     resolve_component_identifier_to_uuid as resolve_component_id,
@@ -123,7 +123,7 @@ rag_router = APIRouter(tags=["rag"])
 
 def get_rag_driver() -> Any:
     """Get Neo4j driver for RAG."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
+    from socialseed_tasker.application.wiring import get_driver
 
     return get_driver()
 
@@ -140,7 +140,7 @@ async def rag_index(
     if not driver:
         return {"error": "Neo4j not connected"}
 
-    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
 
     repo = RAGRepository(driver)
     repo.create_vector_index()
@@ -171,7 +171,7 @@ async def rag_search(
     if not driver:
         return {"error": "Neo4j not connected"}
 
-    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
 
     repo = RAGRepository(driver)
     results = repo.search(query=query, limit=limit, threshold=threshold)
@@ -191,7 +191,7 @@ async def rag_stats(driver: Any = Depends(get_rag_driver)) -> dict[str, Any]:
     if not driver:
         return {"error": "Neo4j not connected"}
 
-    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
 
     repo = RAGRepository(driver)
     stats = repo.get_stats()
@@ -209,7 +209,7 @@ async def rag_delete(
     if not driver:
         return {"error": "Neo4j not connected"}
 
-    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
 
     repo = RAGRepository(driver)
     repo.delete_by_source(source_type, source_id)
@@ -223,7 +223,7 @@ async def rag_clear(driver: Any = Depends(get_rag_driver)) -> dict[str, str]:
     if not driver:
         return {"error": "Neo4j not connected"}
 
-    from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+    from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
 
     repo = RAGRepository(driver)
     repo.clear()

@@ -3,9 +3,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from socialseed_tasker.core.task_management.entities import Issue
-from socialseed_tasker.storage.graph_database import queries
-from socialseed_tasker.storage.graph_database.impl.shared import _node_to_issue
+from socialseed_tasker.domain.entities import Issue
+from socialseed_tasker.infrastructure import neo4j_queries
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_issue
 
 
 class LabelRepositoryMixin:

@@ -8,7 +8,7 @@ import typer
 from rich.panel import Panel
 from rich.table import Table
 
-from socialseed_tasker.entrypoints.terminal_cli.commands.shared import (
+from socialseed_tasker.cli.commands.shared import (
     console,
     get_repository,
     resolve_issue_id,
@@ -29,7 +29,7 @@ def analyze_root_cause(
     labels: str | None = typer.Option(None, "--labels", "-l", help="Comma-separated test labels"),
 ) -> None:
     """Analyze test failure to find potential root causes in closed issues."""
-    from socialseed_tasker.core.project_analysis.analyzer import RootCauseAnalyzer, TestFailure
+    from socialseed_tasker.application.analyzer import RootCauseAnalyzer, TestFailure
 
     repo = get_repository()
     analyzer = RootCauseAnalyzer(repo)
@@ -75,7 +75,7 @@ def analyze_impact(
     issue_id: str = typer.Argument(..., help="Issue ID (full UUID, 4+ prefix, or exact title)"),
 ) -> None:
     """Analyze what other issues would be affected by this issue."""
-    from socialseed_tasker.core.project_analysis.analyzer import RootCauseAnalyzer
+    from socialseed_tasker.application.analyzer import RootCauseAnalyzer
 
     repo = get_repository()
 
@@ -111,8 +111,8 @@ def analyze_code_impact(
     path: str = typer.Option(..., "--path", "-p", help="File or directory path"),
 ) -> None:
     """Analyze code-level impact using Code-as-Graph."""
-    from socialseed_tasker.bootstrap.wiring import get_driver
-    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+    from socialseed_tasker.application.wiring import get_driver
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     driver = get_driver()
     if driver is None:

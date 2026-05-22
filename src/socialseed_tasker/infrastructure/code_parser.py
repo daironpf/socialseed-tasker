@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Protocol
 
-from socialseed_tasker.core.code_analysis.entities import (
+from socialseed_tasker.domain.code_analysis_entities import (
     CodeFile,
     CodeImport,
     CodeRelationship,

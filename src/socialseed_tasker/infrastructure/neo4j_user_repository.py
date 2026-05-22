@@ -9,8 +9,8 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
-from socialseed_tasker.core.task_management.entities import User, UserRole
-from socialseed_tasker.storage.graph_database import queries
+from socialseed_tasker.domain.entities import User, UserRole
+from socialseed_tasker.infrastructure import neo4j_queries
 
 
 def _now_iso() -> str:

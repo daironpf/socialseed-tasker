@@ -26,7 +26,7 @@ from uuid import UUID
 
 import typer
 
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     ComponentNotFoundError,
     IssueNotFoundError,
     OpenDependenciesError,
@@ -34,8 +34,8 @@ from socialseed_tasker.core.task_management.actions import (
     create_issue_action,
     move_issue_action,
 )
-from socialseed_tasker.core.task_management.entities import IssueStatus
-from socialseed_tasker.entrypoints.terminal_cli.commands.shared import (
+from socialseed_tasker.domain.entities import IssueStatus
+from socialseed_tasker.cli.commands.shared import (
     console,
     get_repository,
     resolve_component_id,
@@ -64,9 +64,9 @@ def issue_create(
 
     from uuid import uuid4
 
-    from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
-    from socialseed_tasker.core.task_management.entities import Issue, IssuePriority, IssueStatus
-    from socialseed_tasker.core.validation import (
+    from socialseed_tasker.application.analyzer import ArchitecturalAnalyzer
+    from socialseed_tasker.domain.entities import Issue, IssuePriority, IssueStatus
+    from socialseed_tasker.domain import (
         IssueDescriptionValidationError,
         IssueTitleValidationError,
         sanitize_issue_description,
@@ -285,10 +285,10 @@ def issue_close(
 
         if affects:
             try:
-                from socialseed_tasker.bootstrap.wiring import get_driver
+                from socialseed_tasker.application.wiring import get_driver
                 driver = get_driver()
                 if driver:
-                    from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+                    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
                     code_repo = CodeGraphRepository(driver)
                     for file_path in affects:
                         result = code_repo.link_issue_to_file(resolved_id, file_path)

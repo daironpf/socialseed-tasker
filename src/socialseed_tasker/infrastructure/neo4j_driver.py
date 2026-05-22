@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 from neo4j.exceptions import Neo4jError
 
 from neo4j import GraphDatabase
-from socialseed_tasker.storage.graph_database.queries import SCHEMA_CONSTRAINTS, SCHEMA_INDEXES
+from socialseed_tasker.infrastructure.neo4j_queries import SCHEMA_CONSTRAINTS, SCHEMA_INDEXES
 
 if TYPE_CHECKING:
     from neo4j import Driver

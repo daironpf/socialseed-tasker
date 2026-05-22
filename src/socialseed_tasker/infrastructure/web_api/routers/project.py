@@ -11,13 +11,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Body, HTTPException
 
-from socialseed_tasker.core.project_analysis.analyzer import (
+from socialseed_tasker.application.analyzer import (
     ComponentImpactAnalysis,
     ImpactAnalysis,
     RootCauseAnalyzer,
     TestFailure,
 )
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
     IssueAlreadyClosedError,
@@ -34,7 +34,7 @@ from socialseed_tasker.core.task_management.actions import (
     remove_dependency_action,
     reset_data_action,
 )
-from socialseed_tasker.core.task_management.entities import (
+from socialseed_tasker.domain.entities import (
     Agent,
     AgentRole,
     AgentStatus,
@@ -50,7 +50,7 @@ from socialseed_tasker.core.task_management.entities import (
     User,
     UserRole,
 )
-from socialseed_tasker.entrypoints.web_api.schemas import (
+from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentRegisterRequest,
     AgentResponse,
     AgentStartRequest,
@@ -105,7 +105,7 @@ from socialseed_tasker.entrypoints.web_api.schemas import (
     CommitResponse,
     CommitStatsResponse,
 )
-from socialseed_tasker.entrypoints.web_api.routers.helpers import (
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     retrieve_neo4j_code_graph_driver as get_code_graph_driver,
     get_repository_provider as get_repo,
     resolve_component_identifier_to_uuid as resolve_component_id,
@@ -145,12 +145,12 @@ def list_all_projects(
 def list_all_projects_detailed(
     request: Request,
 ) -> APIResponse[list[ProjectResponse]]:
-    from socialseed_tasker.storage.graph_database import queries
+    from socialseed_tasker.infrastructure import neo4j_queries
 
     driver = getattr(request.app.state, "driver", None)
     if driver is None:
         try:
-            from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+            from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
             driver = get_neo4j_driver()
         except Exception:
             driver = None
@@ -197,12 +197,12 @@ def list_all_projects_detailed(
 def get_current_project(
     request: Request,
 ) -> APIResponse[ProjectResponse | None]:
-    from socialseed_tasker.storage.graph_database import queries
+    from socialseed_tasker.infrastructure import neo4j_queries
 
     driver = getattr(request.app.state, "driver", None)
     if driver is None:
         try:
-            from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+            from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
             driver = get_neo4j_driver()
         except Exception:
             driver = None
@@ -252,12 +252,12 @@ def get_project_by_id(
     request: Request,
     project_id: str,
 ) -> APIResponse[ProjectResponse | None]:
-    from socialseed_tasker.storage.graph_database import queries
+    from socialseed_tasker.infrastructure import neo4j_queries
 
     driver = getattr(request.app.state, "driver", None)
     if driver is None:
         try:
-            from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+            from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
             driver = get_neo4j_driver()
         except Exception:
             driver = None
@@ -313,13 +313,13 @@ def create_project(
     body: ProjectCreateRequest,
 ) -> APIResponse[dict]:
     from fastapi import HTTPException
-    from socialseed_tasker.storage.graph_database import queries
+    from socialseed_tasker.infrastructure import neo4j_queries
     from datetime import datetime, timezone
 
     driver = getattr(request.app.state, "driver", None)
     if driver is None:
         try:
-            from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+            from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
             driver = get_neo4j_driver()
         except Exception:
             driver = None
@@ -393,7 +393,7 @@ def create_user(
     project_id: str = Query(..., description="Project ID to link the user to"),
 ) -> APIResponse[dict]:
     from fastapi import HTTPException
-    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
     import uuid
     from datetime import datetime, timezone
 
@@ -520,8 +520,8 @@ def assign_agent_to_project(
     agent_id: str,
 ) -> APIResponse[dict]:
     from fastapi import HTTPException
-    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
-    from socialseed_tasker.storage.graph_database import queries
+    from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.infrastructure import neo4j_queries
     driver = get_neo4j_driver()
     if driver is None:
         raise HTTPException(status_code=503, detail="Neo4j not available")
@@ -547,8 +547,8 @@ def remove_agent_from_project(
     agent_id: str,
 ) -> APIResponse[dict]:
     from fastapi import HTTPException
-    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
-    from socialseed_tasker.storage.graph_database import queries
+    from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.infrastructure import neo4j_queries
     driver = get_neo4j_driver()
     if driver is None:
         raise HTTPException(status_code=503, detail="Neo4j not available")
@@ -573,8 +573,8 @@ def get_project_agents(
     project_id: str,
 ) -> APIResponse[list[dict]]:
     from fastapi import HTTPException
-    from socialseed_tasker.bootstrap.wiring import get_driver as get_neo4j_driver
-    from socialseed_tasker.storage.graph_database import queries
+    from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
+    from socialseed_tasker.infrastructure import neo4j_queries
     driver = get_neo4j_driver()
     if driver is None:
         raise HTTPException(status_code=503, detail="Neo4j not available")

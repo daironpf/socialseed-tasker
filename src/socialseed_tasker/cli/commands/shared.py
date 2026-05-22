@@ -14,12 +14,12 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.tree import Tree
 
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     ComponentNotFoundError,
     IssueNotFoundError,
     TaskRepositoryInterface,
 )
-from socialseed_tasker.core.task_management.entities import (
+from socialseed_tasker.domain.entities import (
     Component,
     Issue,
     IssuePriority,
@@ -74,7 +74,7 @@ def _get_password_with_fallback() -> str:
 
 
 def get_repository() -> TaskRepositoryInterface:
-    from socialseed_tasker.entrypoints.terminal_cli.app import get_cli_container
+    from socialseed_tasker.cli.app import get_cli_container
 
     password = _get_password_with_fallback()
     if password:

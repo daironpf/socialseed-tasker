@@ -12,12 +12,12 @@ from uuid import UUID
 
 from fastapi import Depends, Request
 
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     ComponentNotFoundError,
     TaskRepositoryInterface,
 )
-from socialseed_tasker.core.task_management.entities import Component, Issue
-from socialseed_tasker.entrypoints.web_api.schemas import (
+from socialseed_tasker.domain.entities import Component, Issue
+from socialseed_tasker.infrastructure.web_api.schemas import (
     ComponentResponse,
     IssueResponse,
     Meta,

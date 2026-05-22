@@ -11,7 +11,7 @@ from rich.box import SIMPLE
 from rich.table import Table
 from rich.tree import Tree
 
-from socialseed_tasker.core.task_management.entities import Component, Issue
+from socialseed_tasker.domain.entities import Component, Issue
 
 
 def _issues_table(issues: list[Issue], component_names: dict[str, str] | None = None) -> Table:

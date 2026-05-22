@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from socialseed_tasker.core.task_management.constraints import (
+from socialseed_tasker.application.constraints import (
     Constraint,
     ConstraintCategory,
     ConstraintLevel,

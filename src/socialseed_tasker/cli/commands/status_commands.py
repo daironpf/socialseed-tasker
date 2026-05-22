@@ -8,7 +8,7 @@ from typing import Any
 import typer
 from rich.panel import Panel
 
-from socialseed_tasker.entrypoints.terminal_cli.commands.shared import (
+from socialseed_tasker.cli.commands.shared import (
     _CLI_CONFIG_FILE,
     _save_credentials,
     console,
@@ -30,7 +30,7 @@ status_app = typer.Typer(help="Show CLI status and configuration")
 @status_app.command("status")
 def status_command() -> None:
     """Show graph health dashboard with issue statistics."""
-    from socialseed_tasker.bootstrap.container import AppConfig
+    from socialseed_tasker.application.container import AppConfig
 
     config = AppConfig.from_env()
     repo = get_repository()
@@ -47,7 +47,7 @@ def status_command() -> None:
         by_status[status] = by_status.get(status, 0) + 1
         by_priority[priority] = by_priority.get(priority, 0) + 1
 
-    from socialseed_tasker.core.task_management.actions import get_blocked_issues_action, get_workable_issues_action
+    from socialseed_tasker.application.actions import get_blocked_issues_action, get_workable_issues_action
 
     workable = get_workable_issues_action(repo, component_id=None)
     blocked = get_blocked_issues_action(repo)
@@ -103,7 +103,7 @@ def login_command(
     """
     import os
 
-    from socialseed_tasker.entrypoints.terminal_cli.app import get_cli_container
+    from socialseed_tasker.cli.app import get_cli_container
 
     uri = os.environ.get("TASKER_NEO4J_URI", "bolt://localhost:7687")
     user = os.environ.get("TASKER_NEO4J_USER", "neo4j")

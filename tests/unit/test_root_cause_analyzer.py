@@ -5,14 +5,14 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
-from socialseed_tasker.core.project_analysis.analyzer import (
+from socialseed_tasker.application.analyzer import (
     CausalLink,
     ImpactAnalysis,
     RiskLevel,
     RootCauseAnalyzer,
     TestFailure,
 )
-from socialseed_tasker.core.task_management.entities import (
+from socialseed_tasker.domain.entities import (
     Issue,
     IssuePriority,
     IssueStatus,
