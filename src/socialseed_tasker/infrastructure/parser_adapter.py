@@ -12,6 +12,8 @@ from typing import Any
 
 from socialseed_tasker.application.exceptions import ParserError
 from socialseed_tasker.application.ports import ParserPort
+from socialseed_tasker.observability.logging import get_logger
+from socialseed_tasker.observability.metrics import observe_operation
 
 try:
     from tree_sitter import Language, Parser  # type: ignore[import-untyped]
@@ -37,6 +39,7 @@ class TreeSitterParser(ParserPort):
 
     def __init__(self, config: ParserConfig | None = None) -> None:
         self.config = config or ParserConfig.load_from_env()
+        self.logger = get_logger("tasker.parser")
         self._ts_parser = None
         self._ts_language = None
         if _TREE_SITTER_AVAILABLE and self.config.treesitter_python_so:
@@ -50,34 +53,36 @@ class TreeSitterParser(ParserPort):
                 self._ts_language = None
 
     def parse_file(self, path: str) -> dict[str, Any]:
-        if not os.path.exists(path):
-            raise ParserError(f"File not found: {path}")
-        ext = os.path.splitext(path)[1].lower()
-        if ext not in self.config.supported_extensions:
-            raise ParserError(f"Unsupported file extension: {ext}")
-        try:
-            with open(path, "rb") as fh:
-                raw = fh.read()
-        except Exception as exc:
-            raise ParserError(f"Unable to read file {path}: {exc}") from exc
-
-        if self._ts_parser and ext == ".py":
+        with observe_operation("parser", "parse_file"):
+            self.logger.info("parser.parse_file.start", extra={"path": path})
+            if not os.path.exists(path):
+                raise ParserError(f"File not found: {path}")
+            ext = os.path.splitext(path)[1].lower()
+            if ext not in self.config.supported_extensions:
+                raise ParserError(f"Unsupported file extension: {ext}")
             try:
-                tree = self._ts_parser.parse(raw)
-                root = tree.root_node
-                return self._node_to_dict(root, raw)
-            except Exception:
-                pass
-
-        if ext == ".py":
-            try:
-                text = raw.decode("utf-8")
-                py_tree = py_ast.parse(text)
-                return self._ast_to_dict(py_tree, text)
+                with open(path, "rb") as fh:
+                    raw = fh.read()
             except Exception as exc:
-                raise ParserError(f"Python AST parse failed for {path}: {exc}") from exc
+                raise ParserError(f"Unable to read file {path}: {exc}") from exc
 
-        raise ParserError(f"No parser available for extension: {ext}")
+            if self._ts_parser and ext == ".py":
+                try:
+                    tree = self._ts_parser.parse(raw)
+                    root = tree.root_node
+                    return self._node_to_dict(root, raw)
+                except Exception:
+                    pass
+
+            if ext == ".py":
+                try:
+                    text = raw.decode("utf-8")
+                    py_tree = py_ast.parse(text)
+                    return self._ast_to_dict(py_tree, text)
+                except Exception as exc:
+                    raise ParserError(f"Python AST parse failed for {path}: {exc}") from exc
+
+            raise ParserError(f"No parser available for extension: {ext}")
 
     def extract_symbols(self, ast_dict: dict[str, Any]) -> list[dict[str, Any]]:
         symbols: list[dict[str, Any]] = []

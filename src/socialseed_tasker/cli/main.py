@@ -9,6 +9,9 @@ import sys
 from socialseed_tasker.application.dtos import DependencyEdge, IssueDTO
 from socialseed_tasker.application.exceptions import GraphPortError, ParserError
 from socialseed_tasker.cli.wiring import build_default_container
+from socialseed_tasker.observability.logging import get_logger
+
+logger = get_logger("tasker.cli")
 
 
 def _print_json(obj: object, stream: object = None) -> None:
@@ -19,6 +22,7 @@ def _print_json(obj: object, stream: object = None) -> None:
 
 
 def _error_and_exit(command: str, payload: dict, details: str = "") -> None:
+    logger.error("cli.error", extra={"command": command, "error": str(details or "unknown error"), **payload})
     out = {
         "status": "error",
         "command": command,
@@ -161,6 +165,8 @@ def main(argv: list[str] | None = None) -> None:
 
     args = parser.parse_args(argv)
     container = build_default_container()
+
+    logger.info("cli.invoke", extra={"command": args.command, "args": vars(args)})
 
     if args.command == "agent-context":
         cmd_agent_context(args, container)

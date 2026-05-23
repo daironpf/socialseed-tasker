@@ -17,6 +17,8 @@ from neo4j.exceptions import Neo4jError, ServiceUnavailable
 from neo4j import GraphDatabase, basic_auth
 from socialseed_tasker.application.exceptions import GraphPortError
 from socialseed_tasker.application.ports import GraphPort, NodeRecord, QueryResult
+from socialseed_tasker.observability.logging import get_logger
+from socialseed_tasker.observability.metrics import observe_operation
 
 DEFAULT_NEO4J_URI = os.getenv("TASKER_NEO4J_URI", "bolt://localhost:7687")
 DEFAULT_NEO4J_USER = os.getenv("TASKER_NEO4J_USER", "neo4j")
@@ -50,6 +52,8 @@ class Neo4jGraphAdapter(GraphPort):
         self._retry_backoff = retry_backoff
         self._driver = GraphDatabase.driver(self._uri, auth=basic_auth(self._user, self._password))
 
+    logger = get_logger("tasker.neo4j")
+
     def _with_retry(self, fn, *args, **kwargs):
         last_exc = None
         for attempt in range(1, self._max_retries + 1):
@@ -64,56 +68,66 @@ class Neo4jGraphAdapter(GraphPort):
 
     def create_node(self, label: str, properties: dict[str, Any]) -> str:
         """Create a node with label and properties. Return elementId as string."""
+        with observe_operation("neo4j", "create_node"):
+            self.logger.info("neo4j.create_node.start", extra={"label": label})
 
-        def _op():
-            with self._driver.session() as session:
-                result = session.run(
-                    f"CREATE (n:{label}) SET n += $props RETURN elementId(n) AS id",
-                    props=properties,
-                )
-                rec = result.single()
-                if rec is None:
-                    raise GraphPortError("Failed to create node")
-                return str(rec["id"])
+            def _op():
+                with self._driver.session() as session:
+                    result = session.run(
+                        f"CREATE (n:{label}) SET n += $props RETURN elementId(n) AS id",
+                        props=properties,
+                    )
+                    rec = result.single()
+                    if rec is None:
+                        raise GraphPortError("Failed to create node")
+                    return str(rec["id"])
 
-        return self._with_retry(_op)
+            result = self._with_retry(_op)
+            self.logger.info("neo4j.create_node.end", extra={"node_id": result})
+            return result
 
     def get_node(self, node_id: str) -> NodeRecord | None:
         """Return NodeRecord or None if not found."""
+        with observe_operation("neo4j", "get_node"):
+            self.logger.info("neo4j.get_node.start", extra={"node_id": node_id})
 
-        def _op():
-            with self._driver.session() as session:
-                result = session.run(
-                    "MATCH (n) WHERE elementId(n) = $id RETURN labels(n) AS labels, properties(n) AS props",
-                    id=node_id,
-                )
-                rec = result.single()
-                if rec is None:
-                    return None
-                return NodeRecord(id=node_id, labels=list(rec["labels"]), properties=dict(rec["props"]))
+            def _op():
+                with self._driver.session() as session:
+                    result = session.run(
+                        "MATCH (n) WHERE elementId(n) = $id RETURN labels(n) AS labels, properties(n) AS props",
+                        id=node_id,
+                    )
+                    rec = result.single()
+                    if rec is None:
+                        return None
+                    return NodeRecord(id=node_id, labels=list(rec["labels"]), properties=dict(rec["props"]))
 
-        return self._with_retry(_op)
+            return self._with_retry(_op)
 
     def run_cypher(self, query: str, params: dict[str, Any] | None = None) -> QueryResult:
         """Execute a read or write Cypher query and return structured results."""
+        with observe_operation("neo4j", "run_cypher"):
+            self.logger.info("neo4j.run_cypher.start")
 
-        def _op():
-            with self._driver.session() as session:
-                result = session.run(query, params or {})
-                records = [{k: v for k, v in r.items()} for r in result]
-                return QueryResult(records=records)
+            def _op():
+                with self._driver.session() as session:
+                    result = session.run(query, params or {})
+                    records = [{k: v for k, v in r.items()} for r in result]
+                    return QueryResult(records=records)
 
-        return self._with_retry(_op)
+            return self._with_retry(_op)
 
     def delete_node(self, node_id: str) -> None:
         """Delete node by id. No-op if node does not exist."""
+        with observe_operation("neo4j", "delete_node"):
+            self.logger.info("neo4j.delete_node.start", extra={"node_id": node_id})
 
-        def _op():
-            with self._driver.session() as session:
-                session.run("MATCH (n) WHERE elementId(n) = $id DETACH DELETE n", id=node_id)
-                return None
+            def _op():
+                with self._driver.session() as session:
+                    session.run("MATCH (n) WHERE elementId(n) = $id DETACH DELETE n", id=node_id)
+                    return None
 
-        return self._with_retry(_op)
+            return self._with_retry(_op)
 
     def close(self) -> None:
         """Release Neo4j driver resources."""

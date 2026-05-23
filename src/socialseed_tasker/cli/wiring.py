@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-import logging
+import os
 from dataclasses import dataclass
 
 from socialseed_tasker.infrastructure.neo4j_adapter import Neo4jGraphAdapter
 from socialseed_tasker.infrastructure.neo4j_graph_repository import Neo4jGraphRepository
 from socialseed_tasker.infrastructure.neo4j_issue_repository import Neo4jIssueRepository
 from socialseed_tasker.infrastructure.parser_adapter import TreeSitterParser
+from socialseed_tasker.observability.exporter import start_exporter
+from socialseed_tasker.observability.logging import get_logger
 
 import socialseed_tasker.application as application_module
 
@@ -29,12 +31,13 @@ class Container:
 
 def build_default_container() -> Container:
     """Construct and return a default Container wired to Neo4j + TreeSitter."""
-    logger = logging.getLogger("tasker")
-    logger.setLevel(logging.INFO)
+    logger = get_logger("tasker")
     graph = Neo4jGraphAdapter()
     parser = TreeSitterParser()
     issue_repo = Neo4jIssueRepository(graph)
     graph_repo = Neo4jGraphRepository(graph)
+    if os.getenv("TASKER_METRICS_ENABLED") == "1":
+        start_exporter()
     return Container(
         graph=graph,
         parser=parser,
