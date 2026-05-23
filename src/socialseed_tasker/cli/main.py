@@ -11,6 +11,7 @@ from socialseed_tasker.application.dtos import DependencyEdge, IssueDTO
 from socialseed_tasker.application.exceptions import GraphPortError, ParserError, PermissionError
 from socialseed_tasker.cli.wiring import build_default_container
 from socialseed_tasker.observability.logging import get_logger
+from socialseed_tasker.tenancy.migrations import ensure_tenant_schema
 from celery.result import AsyncResult
 from socialseed_tasker.workers.app import create_celery
 
@@ -180,6 +181,41 @@ def cmd_enqueue_task(args: argparse.Namespace, container: object, user_id: str |
     except Exception as exc:
         _error_and_exit("enqueue-task", {}, details=str(exc))
 
+def cmd_tenant_create(args: argparse.Namespace, container: object, user_id: str | None) -> None:
+    try:
+        if not container.rbac.has_permission(user_id, "admin"):
+            raise PermissionError("forbidden")
+        config = json.loads(args.config) if args.config else {}
+        tenant = container.tenant_store.create_tenant(args.id, config)
+        ensure_tenant_schema(args.id)
+        _print_json({"status": "ok", "command": "tenant-create", "tenant": tenant})
+    except PermissionError as pexc:
+        _error_and_exit("tenant-create", {"id": args.id}, details=str(pexc))
+    except Exception as exc:
+        _error_and_exit("tenant-create", {"id": args.id}, details=str(exc))
+
+def cmd_tenant_list(args: argparse.Namespace, container: object, user_id: str | None) -> None:
+    try:
+        if not container.rbac.has_permission(user_id, "admin"):
+            raise PermissionError("forbidden")
+        tenants = container.tenant_store.list_tenants()
+        _print_json({"status": "ok", "command": "tenant-list", "tenants": tenants})
+    except PermissionError as pexc:
+        _error_and_exit("tenant-list", {}, details=str(pexc))
+    except Exception as exc:
+        _error_and_exit("tenant-list", {}, details=str(exc))
+
+def cmd_tenant_delete(args: argparse.Namespace, container: object, user_id: str | None) -> None:
+    try:
+        if not container.rbac.has_permission(user_id, "admin"):
+            raise PermissionError("forbidden")
+        container.tenant_store.delete_tenant(args.id)
+        _print_json({"status": "ok", "command": "tenant-delete", "id": args.id})
+    except PermissionError as pexc:
+        _error_and_exit("tenant-delete", {"id": args.id}, details=str(pexc))
+    except Exception as exc:
+        _error_and_exit("tenant-delete", {"id": args.id}, details=str(exc))
+
 def cmd_task_status(args: argparse.Namespace, container: object, user_id: str | None) -> None:
     try:
         celery = create_celery()
@@ -226,6 +262,15 @@ def main(argv: list[str] | None = None) -> None:
     p = sub.add_parser("task-status")
     p.add_argument("--task-id", required=True)
 
+    p = sub.add_parser("tenant-create")
+    p.add_argument("--id", required=True)
+    p.add_argument("--config", default=None)
+
+    p = sub.add_parser("tenant-list")
+
+    p = sub.add_parser("tenant-delete")
+    p.add_argument("--id", required=True)
+
     # Add --token to all subcommands
     for name, subp in list(sub.choices.items()):
         subp.add_argument("--token")
@@ -262,6 +307,12 @@ def main(argv: list[str] | None = None) -> None:
         cmd_enqueue_task(args, container, user_id)
     elif args.command == "task-status":
         cmd_task_status(args, container, user_id)
+    elif args.command == "tenant-create":
+        cmd_tenant_create(args, container, user_id)
+    elif args.command == "tenant-list":
+        cmd_tenant_list(args, container, user_id)
+    elif args.command == "tenant-delete":
+        cmd_tenant_delete(args, container, user_id)
     else:
         _error_and_exit("unknown", {}, details=f"Unknown command {args.command}")
 

@@ -347,6 +347,7 @@ def create_app(
         rag_router,
         reasoning_router,
         sync_router,
+        tenants_router,
         user_router,
         commit_router,
         webhook_router,
@@ -376,6 +377,7 @@ def create_app(
     app.include_router(reasoning_router, prefix="/api/v1", tags=["reasoning"])
     app.include_router(user_router, prefix="/api/v1", tags=["users"])
     app.include_router(commit_router, prefix="/api/v1", tags=["commits"])
+    app.include_router(tenants_router, prefix="/api/v1", tags=["tenants"])
     app.include_router(events_webhook_router, tags=["webhooks"])
 
     # Health endpoint with Neo4j connectivity check
@@ -541,6 +543,12 @@ def create_app(
     # Register rate-limit middleware
     from socialseed_tasker.infrastructure.web_api.rate_limit import RateLimitMiddleware
     app.add_middleware(RateLimitMiddleware)
+
+    # Tenant middleware
+    from socialseed_tasker.tenancy.middleware import TenantMiddleware
+    from socialseed_tasker.cli.wiring import build_default_container
+    _tenancy_container = build_default_container()
+    app.add_middleware(TenantMiddleware, container=_tenancy_container)
 
     # Admin rate-limit endpoints
     @app.get("/api/v1/admin/rate/{key}")

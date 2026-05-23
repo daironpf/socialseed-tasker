@@ -21,6 +21,8 @@ from socialseed_tasker.events.bus import EventBus
 from socialseed_tasker.events.delivery import DeliveryWorker
 from socialseed_tasker.auth.oauth import SessionStore
 from socialseed_tasker.infrastructure.memory_rate_limiter import MemoryRateLimiter
+from socialseed_tasker.tenancy.store import TenantStore
+from socialseed_tasker.infrastructure.tenant_storage import NamespacedStorage
 try:
     from socialseed_tasker.infrastructure.redis_rate_limiter import RedisRateLimiter
     _REDIS_RATE_AVAILABLE = True
@@ -49,6 +51,9 @@ class Container:
     delivery_worker: object
     session_store: object
     rate_limiter: object
+    tenant_store: object
+    tenant_scoped_storage: object
+    tenancy_token_map: object
 
 
 def build_default_container() -> Container:
@@ -94,6 +99,10 @@ def build_default_container() -> Container:
         delivery_worker.start()
     if os.getenv("TASKER_METRICS_ENABLED") == "1":
         start_exporter()
+
+    tenant_store = TenantStore(storage)
+    tenant_scoped_storage = lambda tenant_id: NamespacedStorage(storage, tenant_id=tenant_id)
+    tenancy_token_map = {}
     return Container(
         graph=graph,
         parser=parser,
@@ -110,4 +119,7 @@ def build_default_container() -> Container:
         delivery_worker=delivery_worker,
         session_store=session_store,
         rate_limiter=rate_limiter,
+        tenant_store=tenant_store,
+        tenant_scoped_storage=tenant_scoped_storage,
+        tenancy_token_map=tenancy_token_map,
     )

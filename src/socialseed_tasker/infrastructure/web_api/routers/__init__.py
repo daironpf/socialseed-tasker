@@ -23,3 +23,4 @@ from socialseed_tasker.infrastructure.web_api.routers.objective import objective
 from socialseed_tasker.infrastructure.web_api.routers.code_graph import code_graph_router
 from socialseed_tasker.infrastructure.web_api.routers.rag import rag_router
 from socialseed_tasker.infrastructure.web_api.routers.reasoning import reasoning_router
+from socialseed_tasker.infrastructure.web_api.routers.tenants import tenants_router

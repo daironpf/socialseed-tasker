@@ -28,6 +28,7 @@ from socialseed_tasker.infrastructure.web_api.routers import (
     rag_router,
     reasoning_router,
     sync_router,
+    tenants_router,
     user_router,
     commit_router,
     webhook_router,
