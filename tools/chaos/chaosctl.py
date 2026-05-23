@@ -25,10 +25,11 @@ def load_scenario(name: str):
     path = SCENARIO_DIR / f"{name}.yml"
     if not path.exists():
         raise FileNotFoundError(f"Scenario not found: {name}")
-    return yaml.safe_load(path)
+    with open(path, encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
 
 def record_artifact(name: str, report: dict):
-    ts = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     out = ARTIFACT_DIR / f"{name}-{ts}.json"
     with open(out, "w", encoding="utf-8") as fh:
         json.dump(report, fh, indent=2)
