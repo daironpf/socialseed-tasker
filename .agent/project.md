@@ -42,6 +42,7 @@ Hexagonal (Feature-Oriented)
 - `application/` - Use cases, ports (Protocols), repository interfaces
 - `infrastructure/` - Neo4j adapters, parsers, repository implementations
 - `cli/` - Thin CLI entrypoint with argparse and DI wiring
+- `observability/` - Structured logging, Prometheus metrics, exporter
 
 ---
 

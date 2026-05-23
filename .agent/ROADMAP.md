@@ -32,6 +32,10 @@
 - [x] Domain test suite (#296)
 - [x] GitHub Actions CI workflow (#297)
 
+## Phase 6: Developer Tooling & Observability
+- [x] Pre-commit hooks and linters configuration (#298)
+- [x] Structured logging, metrics, and Prometheus exporter (#299)
+
 ---
 
 ## Known Issues

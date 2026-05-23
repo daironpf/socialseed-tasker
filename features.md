@@ -875,9 +875,9 @@ tasker --help
 
 ---
 
-## 34. Agent Registration & Specialization (v1.0.0)
+## 37. Agent Registration & Specialization (v1.0.0)
 
-### 34.1 Agent Registration
+### 37.1 Agent Registration
 
 Register AI agents for tracking and domain-driven dispatching.
 
@@ -904,7 +904,7 @@ curl -X POST "http://localhost:8000/api/v1/agents/register" \
 | `planner` | Architecture and planning |
 | `observer` | Monitoring and reporting |
 
-### 34.2 Agent Specialization
+### 37.2 Agent Specialization
 
 Assign agents to specific components for domain-driven work dispatching.
 
@@ -922,7 +922,7 @@ curl "http://localhost:8000/api/v1/agents/agent-001/specialists"
 curl "http://localhost:8000/api/v1/components/component-id/specialists"
 ```
 
-### 34.3 Project-Agent Assignment
+### 37.3 Project-Agent Assignment
 
 Assign agents to projects for team organization.
 
@@ -937,7 +937,7 @@ curl "http://localhost:8000/api/v1/projects/project-id/agents"
 curl -X DELETE "http://localhost:8000/api/v1/projects/project-id/agents/agent-id"
 ```
 
-### 34.4 Agent Repository Pattern
+### 37.4 Agent Repository Pattern
 
 Complete repositories for Agent management in Neo4j:
 
@@ -967,6 +967,9 @@ Complete repositories for Agent management in Neo4j:
 | `GITHUB_TOKEN` | - | GitHub PAT |
 | `GITHUB_REPO` | - | `owner/repo` |
 | `GITHUB_WEBHOOK_SECRET` | - | Webhook secret |
+| `TASKER_METRICS_ENABLED` | `0` | Enable Prometheus exporter |
+| `TASKER_METRICS_PORT` | `8000` | Prometheus metrics port |
+| `TASKER_LOG_LEVEL` | `INFO` | Log level for structured JSON logging |
 
 ---
 
@@ -976,28 +979,46 @@ Complete repositories for Agent management in Neo4j:
 ┌─────────────────────────────────────────────────────────────────┐
 │                        ENTRY POINTS                              │
 ├─────────────────────────────────────────────────────────────────┤
-│  CLI (Typer)          │  REST API (FastAPI)                     │
-│  tasker --help       │  http://localhost:8000/api/v1            │
+│  cli/ (argparse)     │  API / Web (FastAPI)                     │
+│  cli/main.py         │  entrypoints/web_api/                    │
 └──────────┬──────────┴──────────┬──────────────────────────────┘
             │                      │
             ▼                      ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                      CORE LAYER                                 │
+│                    APPLICATION LAYER                             │
 ├─────────────────────────────────────────────────────────────────┤
-│  • Entities (Component, Issue, Dependency)                     │
-│  • Actions (Create, Update, Delete, Analyze)                   │
-│  • Validation (Input sanitization, XSS prevention)             │
-│  • Constraints (Policy enforcement, Dependency guard)              │
-│  • Services (GitHub, Webhook, Sync)                             │
+│  • Use cases (create_issue, add_dependency, calculate_impact)  │
+│  • Protocol ports (GraphPort, ParserPort, IssueRepository)     │
+│  • DTOs & exceptions                                            │
 └───────────────────────────┬─────────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    STORAGE LAYER                                │
+│                      DOMAIN LAYER                                │
 ├─────────────────────────────────────────────────────────────────┤
-│  Graph Database (Neo4j)                                         │
-│  - Issues, Components, Dependencies as nodes                   │
-│  - [:BELONGS_TO], [:DEPENDS_ON] relationships                   │
+│  • Entities (Component, Issue, Dependency)                     │
+│  • Actions (Create, Update, Delete, Analyze)                   │
+│  • Validation (Input sanitization, XSS prevention)             │
+│  • Constraints (Policy enforcement, Dependency guard)           │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   INFRASTRUCTURE LAYER                           │
+├─────────────────────────────────────────────────────────────────┤
+│  • Neo4jGraphAdapter (GraphPort impl)                          │
+│  • TreeSitterParser (ParserPort impl)                          │
+│  • Neo4j repositories (Issue, Graph, Policy, etc.)             │
+│  • Observability (logging, metrics, Prometheus exporter)       │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    STORAGE (Neo4j)                               │
+├─────────────────────────────────────────────────────────────────┤
+│  Graph Database (Neo4j 5.x)                                     │
+│  - Issues, Components, Dependencies as nodes & relationships   │
+│  - [:BELONGS_TO], [:DEPENDS_ON], [:AFFECTS]                     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -1014,11 +1035,105 @@ Complete repositories for Agent management in Neo4j:
 
 ---
 
-## 18. Bidirectional Traceability (v1.0.0)
+## 18. GitHub Actions CI (v1.0.0)
+
+Automated CI pipeline that runs on every push and PR to `main`/`master`/`develop`.
+
+### 18.1 Pipeline Jobs
+
+| Job | Description | Python Matrix |
+|-----|-------------|---------------|
+| **lint** | ruff check, black --check, isort --check-only | 3.10, 3.11, 3.12 |
+| **typecheck** | mypy src/ with strict settings | 3.10, 3.11, 3.12 |
+| **unit-tests** | pytest with `-k "not integration"` | 3.10, 3.11, 3.12 |
+| **integration-tests** | pytest with Neo4j service (conditional) | 3.11 |
+
+### 18.2 Manual Dispatch
+
+```bash
+# Trigger via GitHub UI with integration=true to run integration tests
+# Or set TASKER_INTEGRATION=1 in workflow env
+```
+
+### 18.3 CI Badge
+
+```markdown
+![CI](https://github.com/<OWNER>/<REPO>/actions/workflows/ci.yml/badge.svg)
+```
+
+---
+
+## 19. Developer Tooling (v1.0.0)
+
+Pre-commit hooks and linter configuration for deterministic code quality enforcement.
+
+### 19.1 Pre-commit Hooks
+
+| Hook | Tool | Auto-fix |
+|------|------|----------|
+| black | Code formatter | Yes |
+| isort | Import sorter | Yes |
+| ruff | Linter (--fix) | Yes |
+| mypy | Type checker | No |
+
+### 19.2 Configuration Files
+
+- `.pre-commit-config.yaml` — Hook definitions with pinned versions
+- `pyproject.toml` — `[tool.black]`, `[tool.isort]`, `[tool.ruff]`, `[tool.mypy]` sections
+- `mypy.ini` — Strict settings for source, relaxed for tests
+
+### 19.3 Local Setup
+
+```bash
+pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+```
+
+---
+
+## 20. Observability (v1.0.0)
+
+Structured JSON logging and Prometheus-compatible metrics for all Tasker components.
+
+### 20.1 Structured Logging
+
+JSON-formatted logs with deterministic fields:
+
+```json
+{"timestamp": "2026-05-22T12:00:00Z", "level": "INFO", "logger": "tasker.cli", "message": "cli.invoke", "command": "create-issue", "args": {"id": "test-1", "title": "Test"}}
+```
+
+### 20.2 Metrics
+
+| Metric | Type | Labels |
+|--------|------|--------|
+| `tasker_requests_total` | Counter | component, operation, result |
+| `tasker_request_duration_seconds` | Histogram | component, operation |
+| `tasker_inprogress_requests` | Gauge | component, operation |
+
+### 20.3 Prometheus Exporter
+
+```bash
+export TASKER_METRICS_ENABLED=1
+export TASKER_METRICS_PORT=8000
+# Metrics available at http://localhost:8000/metrics
+```
+
+### 20.4 Instrumented Components
+
+- Neo4j adapter (create_node, get_node, run_cypher, delete_node)
+- Parser adapter (parse_file)
+- CLI wiring (exporter start, logger injection)
+- CLI main (command invocation logs, error logs)
+
+---
+
+## 21. Bidirectional Traceability (v1.0.0)
 
 Link issues to code files when closing for full traceability.
 
-### 18.1 AFFECTS Relationship
+### 21.1 AFFECTS Relationship
 
 ```bash
 # CLI - Link files when closing issue
@@ -1028,7 +1143,7 @@ tasker issue close <issue-id> --affects src/module.py --affects src/utils.py
 curl -X POST "http://localhost:8000/api/v1/issues/<id>/close?affected_files=[src/module.py]"
 ```
 
-### 18.2 Code Graph Integration
+### 21.2 Code Graph Integration
 
 ```bash
 # Scan repository first
@@ -1040,11 +1155,11 @@ curl "http://localhost:8000/api/v1/code-graph/issues/<file-path>"
 
 ---
 
-## 19. Phantom Dependency Detection (v1.0.0)
+## 22. Phantom Dependency Detection (v1.0.0)
 
 RAG-powered semantic similarity to find conceptually related but unlinked issues.
 
-### 19.1 Similarity Analysis
+### 22.1 Similarity Analysis
 
 ```bash
 # CLI
@@ -1055,7 +1170,7 @@ tasker analyze similarity --issue <issue-id> --threshold 0.7 --limit 10
 curl "http://localhost:8000/api/v1/analyze/similarity/<issue-id>?threshold=0.7"
 ```
 
-### 19.2 Detection Flow
+### 22.2 Detection Flow
 - Uses vector embeddings to find semantically similar issues
 - Filters out existing explicit dependencies
 - Suggests potential phantom dependencies
@@ -1063,11 +1178,11 @@ curl "http://localhost:8000/api/v1/analyze/similarity/<issue-id>?threshold=0.7"
 
 ---
 
-## 20. ARCHITECT Agent (v1.0.0)
+## 23. ARCHITECT Agent (v1.0.0)
 
 Specialized agent role for architectural constraint enforcement.
 
-### 20.1 Agent Role
+### 23.1 Agent Role
 
 ```bash
 # CLI
@@ -1078,7 +1193,7 @@ tasker agent architect --issue <issue-id> --check  # Check only, don't veto
 # Returns ARCHITECT APPROVED or VETO
 ```
 
-### 20.2 Constraint Validation
+### 23.2 Constraint Validation
 - Validates proposed changes against architectural constraints
 - Checks dependency depth limits
 - Enforces technology restrictions
@@ -1086,11 +1201,11 @@ tasker agent architect --issue <issue-id> --check  # Check only, don't veto
 
 ---
 
-## 21. Epic & Objective Tracking (v1.0.0)
+## 24. Epic & Objective Tracking (v1.0.0)
 
 Group issues into epics and define measurable objectives.
 
-### 21.1 Epic Entity
+### 24.1 Epic Entity
 ```bash
 # Create epic
 curl -X POST http://localhost:8000/api/v1/epics \
@@ -1104,7 +1219,7 @@ curl http://localhost:8000/api/v1/epics
 curl http://localhost:8000/api/v1/epics/<id>
 ```
 
-### 21.2 Objective Entity
+### 24.2 Objective Entity
 ```bash
 # Create objective
 curl -X POST http://localhost:8000/api/v1/objectives \
@@ -1117,7 +1232,7 @@ curl http://localhost:8000/api/v1/objectives
 
 ---
 
-## 22. Label Management (v1.0.0)
+## 25. Label Management (v1.0.0)
 
 Color-coded labels for issue categorization.
 
@@ -1133,7 +1248,7 @@ curl http://localhost:8000/api/v1/labels
 
 ---
 
-## 23. Component Dependencies (v1.0.0)
+## 26. Component Dependencies (v1.0.0)
 
 Track architectural dependencies between components.
 
@@ -1147,7 +1262,7 @@ tasker component deps <component-id>
 
 ---
 
-## 24. Agent Heartbeat (v1.0.0)
+## 27. Agent Heartbeat (v1.0.0)
 
 Monitor agent activity and detect stalled agents.
 
@@ -1166,7 +1281,7 @@ curl http://localhost:8000/api/v1/agents/<id>/status
 
 ---
 
-## 25. Storage CLI (v1.0.0)
+## 28. Storage CLI (v1.0.0)
 
 Database management and health checks.
 
@@ -1183,7 +1298,7 @@ tasker storage stats
 
 ---
 
-## 26. Self-Healing Architecture (v1.0.0)
+## 29. Self-Healing Architecture (v1.0.0)
 
 Automated integrity verification and file hash validation.
 
@@ -1204,7 +1319,7 @@ is_valid = verify_file_integrity(stored_hash, file_path)
 
 ---
 
-## 27. Constraints CLI (v1.0.0)
+## 30. Constraints CLI (v1.0.0)
 
 Manage project constraints from command line.
 
@@ -1224,7 +1339,7 @@ tasker constraints doc-gaps
 
 ---
 
-## 28. Project Detection (v1.0.0)
+## 31. Project Detection (v1.0.0)
 
 Auto-detect project from current directory.
 
@@ -1238,7 +1353,7 @@ tasker project setup --name myproject --repo https://github.com/owner/repo
 
 ---
 
-## 29. Webhook Management (v1.0.0)
+## 32. Webhook Management (v1.0.0)
 
 Configure and test external webhooks.
 
@@ -1260,7 +1375,7 @@ curl http://localhost:8000/api/v1/webhooks/validate
 
 ---
 
-## 30. Sync Engine (v1.0.0)
+## 33. Sync Engine (v1.0.0)
 
 Offline-first synchronization queue.
 
@@ -1277,7 +1392,7 @@ curl -X POST http://localhost:8000/api/v1/sync/force
 
 ---
 
-## 31. Cost Analytics (v1.0.0)
+## 34. Cost Analytics (v1.0.0)
 
 Estimate development effort and cost.
 
@@ -1297,7 +1412,7 @@ curl http://localhost:8000/api/v1/cost/trend
 
 ---
 
-## 32. Admin Operations (v1.0.0)
+## 35. Admin Operations (v1.0.0)
 
 System administration and data management.
 
@@ -1313,7 +1428,7 @@ curl -X POST http://localhost:8000/api/v1/admin/clear
 
 ---
 
-## 33. API Endpoints Summary (v1.0.0)
+## 36. API Endpoints Summary (v1.0.0)
 
 Complete list of REST API endpoints:
 
