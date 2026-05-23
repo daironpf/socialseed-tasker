@@ -1,0 +1,15 @@
+version: "3.8"
+services:
+  graphql:
+    build:
+      context: .
+      dockerfile: Dockerfile.graphql
+    environment:
+      TASKER_API_ALLOW_ORIGINS: "http://localhost:8080"
+      TASKER_EXPORT_GRAPHQL: "1"
+      TASKER_GRAPHQL_PORT: "8081"
+      TASKER_INTEGRATION: "1"
+    ports:
+      - "8081:8081"
+    depends_on:
+      - api
