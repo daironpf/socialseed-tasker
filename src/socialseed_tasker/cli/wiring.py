@@ -100,6 +100,12 @@ def build_default_container() -> Container:
     if os.getenv("TASKER_METRICS_ENABLED") == "1":
         start_exporter()
 
+    try:
+        from socialseed_tasker.observability.tracing import init_tracing
+        init_tracing(service_name=os.getenv("TASKER_OTEL_SERVICE", "tasker"))
+    except Exception:
+        pass
+
     tenant_store = TenantStore(storage)
     tenant_scoped_storage = lambda tenant_id: NamespacedStorage(storage, tenant_id=tenant_id)
     tenancy_token_map = {}

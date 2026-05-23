@@ -24,6 +24,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.requests import Request as StarletteRequest
 
 from socialseed_tasker import __version__  # noqa: E402
+from socialseed_tasker.observability.tracing import init_tracing, get_tracer
 from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
@@ -143,6 +144,13 @@ def create_app(
         ],
         lifespan=lifespan,
     )
+
+    # initialize tracing for API
+    try:
+        init_tracing(app=app, service_name=os.getenv("TASKER_OTEL_SERVICE", "tasker-api"))
+    except Exception:
+        pass
+    tracer = get_tracer("tasker.api")
 
     # CORS for browser access — configurable via TASKER_API_ALLOW_ORIGINS (comma separated)
     allow_origins_env = os.getenv("TASKER_API_ALLOW_ORIGINS", "http://localhost:8080")

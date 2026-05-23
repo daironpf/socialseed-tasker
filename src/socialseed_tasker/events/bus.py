@@ -2,6 +2,9 @@ from __future__ import annotations
 from typing import Callable, Dict, List
 import threading
 from socialseed_tasker.events.serializers import EventDTO
+from socialseed_tasker.observability.tracing import get_tracer
+
+_tracer = get_tracer("tasker.eventbus")
 
 Subscriber = Callable[[EventDTO], None]
 
@@ -20,10 +23,11 @@ class EventBus:
                 self._subs[event_type] = [s for s in self._subs[event_type] if s != fn]
 
     def publish(self, event: EventDTO) -> None:
-        with self._lock:
-            handlers = list(self._subs.get(event.type, [])) + list(self._subs.get("*", []))
-        for h in handlers:
-            try:
-                h(event)
-            except Exception:
-                pass
+        with _tracer.start_as_current_span("event.publish"):
+            with self._lock:
+                handlers = list(self._subs.get(event.type, [])) + list(self._subs.get("*", []))
+            for h in handlers:
+                try:
+                    h(event)
+                except Exception:
+                    pass
