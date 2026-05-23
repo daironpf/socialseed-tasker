@@ -14,6 +14,8 @@ from socialseed_tasker.observability.exporter import start_exporter
 from socialseed_tasker.observability.logging import get_logger
 from socialseed_tasker.auth.auth import load_auth_provider
 from socialseed_tasker.auth.rbac import RBAC
+from socialseed_tasker.infrastructure.memory_storage import MemoryStorage
+from socialseed_tasker.infrastructure.redis_storage import RedisStorage
 
 import socialseed_tasker.application as application_module
 
@@ -53,6 +55,14 @@ def build_default_container() -> Container:
                     rbac.grant(uid, p)
         except Exception:
             pass
+    redis_url = os.getenv("TASKER_REDIS_URL")
+    if redis_url:
+        try:
+            storage = RedisStorage(url=redis_url)
+        except Exception:
+            storage = MemoryStorage()
+    else:
+        storage = MemoryStorage()
     if os.getenv("TASKER_METRICS_ENABLED") == "1":
         start_exporter()
     return Container(
@@ -61,7 +71,7 @@ def build_default_container() -> Container:
         issue_repo=issue_repo,
         graph_repo=graph_repo,
         embedding=None,
-        storage=None,
+        storage=storage,
         logger=logger,
         application=application_module,
         auth=auth,
