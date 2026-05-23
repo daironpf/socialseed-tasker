@@ -391,6 +391,9 @@ def create_app(
     from socialseed_tasker.data_catalog.api import router as registry_router
     app.include_router(registry_router)
 
+    from socialseed_tasker.data_quality.api import router as data_quality_router
+    app.include_router(data_quality_router)
+
     # Health endpoint with Neo4j connectivity check
     @app.get("/health", tags=["health"])
     def health_check() -> dict[str, Any]:

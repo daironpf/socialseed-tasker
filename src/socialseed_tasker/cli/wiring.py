@@ -61,6 +61,8 @@ class Container:
     ml_runner: object
     ml_batch_worker: object
     schema_registry: object
+    rule_registry: object
+    data_quality_pipeline: object
 
 
 def build_default_container() -> Container:
@@ -130,6 +132,11 @@ def build_default_container() -> Container:
 
     from socialseed_tasker.data_catalog.registry import SchemaRegistry
     schema_registry = SchemaRegistry(storage)
+
+    from socialseed_tasker.data_quality.rules import RuleRegistry
+    from socialseed_tasker.data_quality.pipeline import DataQualityPipeline
+    rule_registry = RuleRegistry(storage)
+    data_quality_pipeline = DataQualityPipeline(storage=storage, rule_registry=rule_registry, event_bus=events_bus)
     return Container(
         graph=graph,
         parser=parser,
@@ -155,4 +162,6 @@ def build_default_container() -> Container:
         ml_runner=ml_runner,
         ml_batch_worker=ml_batch_worker,
         schema_registry=schema_registry,
+        rule_registry=rule_registry,
+        data_quality_pipeline=data_quality_pipeline,
     )

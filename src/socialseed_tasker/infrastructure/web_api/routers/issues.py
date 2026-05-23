@@ -202,6 +202,16 @@ def create_issue(
 
     sanitized_title = sanitize_issue_title(validated_title)
 
+    from socialseed_tasker.cli.wiring import build_default_container as _build_container
+    from uuid import uuid4
+    _dq_container = _build_container()
+    _dq_pipeline = _dq_container.data_quality_pipeline
+    _dq_record_id = str(uuid4())
+    _dq_pre = _dq_pipeline.run_pre_ingest(body.model_dump(), record_id=_dq_record_id)
+    if any(not r.ok for r in _dq_pre):
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=400, content={"status": "error", "error": "data_quality_failed", "details": [r.model_dump() for r in _dq_pre]})
+
     issue, warnings = create_issue_action(
         repo,
         title=sanitized_title,
@@ -211,6 +221,7 @@ def create_issue(
         labels=body.labels,
         architectural_constraints=body.architectural_constraints,
     )
+    _dq_pipeline.run_post_ingest(body.model_dump(), record_id=str(issue.id))
     return APIResponse(
         data=_issue_to_response(issue), meta=Meta(request_id=None, warnings=warnings if warnings else None)
     )
