@@ -22,6 +22,16 @@
 - [x] Agent Registration & Specialization
 - [x] Epic & Objective Tracking
 
+## Phase 5: Hexagonal Refactoring & CI
+- [x] Protocol Ports with conformance tests (#290)
+- [x] Neo4jGraphAdapter with retries (#291)
+- [x] TreeSitterParser adapter (#292)
+- [x] Repository interfaces + Neo4j implementations (#293)
+- [x] Thin CLI refactor (#294)
+- [x] Application use cases (#295)
+- [x] Domain test suite (#296)
+- [x] GitHub Actions CI workflow (#297)
+
 ---
 
 ## Known Issues

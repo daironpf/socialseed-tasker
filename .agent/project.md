@@ -4,7 +4,7 @@
 
 This file provides essential context for AI agents working on this project. Agents should read this file when starting work to understand the project architecture and constraints.
 
-**Version**: 1.0.2
+**Version**: 1.0.0
 **Created**: 2026-05-05
 **Architecture**: Hexagonal (Feature-Oriented)
 **Project Model**: Single Project (one project per Tasker instance)
@@ -39,6 +39,9 @@ Hexagonal (Feature-Oriented)
 - `entrypoints/terminal_cli/` - Typer CLI (tasker)
 - `entrypoints/web_api/` - FastAPI REST API
 - `storage/graph_database/` - Neo4j repositories
+- `application/` - Use cases, ports (Protocols), repository interfaces
+- `infrastructure/` - Neo4j adapters, parsers, repository implementations
+- `cli/` - Thin CLI entrypoint with argparse and DI wiring
 
 ---
 
@@ -87,17 +90,33 @@ cp .agent/configs/.env.example .agent/configs/.env
 # Edit .env with your Neo4j password
 
 # Install package
-pip install socialseed-tasker
+pip install -e .
 
 # Run tests
-pytest tests/unit/ -v
+pytest tests/unit/ tests/domain/ tests/application/ -v
 ```
 
 ### Testing
 ```bash
-pytest tests/unit/ -v
-pytest tests/unit/ -k "test_cli" --cov
+# Unit + domain + application tests
+pytest tests/unit/ tests/domain/ tests/application/ -v
+
+# With coverage
+pytest tests/unit/ tests/domain/ tests/application/ --cov=socialseed_tasker --cov-report=term-missing
+
+# Integration tests (requires Neo4j running)
+pytest tests/integration/ -v -m integration
+
+# Specific test file
+pytest tests/domain/test_impact_analysis.py -v
 ```
+
+### CI Pipeline
+The project includes a GitHub Actions CI workflow (`.github/workflows/ci.yml`) that runs on every push and PR:
+- **lint**: ruff, black --check, isort --check-only (Python 3.10, 3.11, 3.12)
+- **typecheck**: mypy src/ (Python 3.10, 3.11, 3.12)
+- **unit-tests**: pytest with `-k "not integration"` (Python 3.10, 3.11, 3.12)
+- **integration-tests**: pytest `-m integration` with Neo4j service (optional, trigger with `integration=true` input)
 
 ### Build
 ```bash
