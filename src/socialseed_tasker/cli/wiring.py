@@ -6,6 +6,7 @@ import json
 import os
 from dataclasses import dataclass
 
+from socialseed_tasker.config.runtime import RuntimeConfig
 from socialseed_tasker.infrastructure.neo4j_adapter import Neo4jGraphAdapter
 from socialseed_tasker.infrastructure.neo4j_graph_repository import Neo4jGraphRepository
 from socialseed_tasker.infrastructure.neo4j_issue_repository import Neo4jIssueRepository
@@ -52,6 +53,7 @@ class Container:
     session_store: object
     rate_limiter: object
     tenant_store: object
+    runtime_config: object
     tenant_scoped_storage: object
     tenancy_token_map: object
 
@@ -106,6 +108,7 @@ def build_default_container() -> Container:
     except Exception:
         pass
 
+    runtime_config = RuntimeConfig(storage=storage, poll_interval=int(os.getenv("TASKER_CONFIG_POLL_SECONDS", "5")))
     tenant_store = TenantStore(storage)
     tenant_scoped_storage = lambda tenant_id: NamespacedStorage(storage, tenant_id=tenant_id)
     tenancy_token_map = {}
@@ -125,6 +128,7 @@ def build_default_container() -> Container:
         delivery_worker=delivery_worker,
         session_store=session_store,
         rate_limiter=rate_limiter,
+        runtime_config=runtime_config,
         tenant_store=tenant_store,
         tenant_scoped_storage=tenant_scoped_storage,
         tenancy_token_map=tenancy_token_map,

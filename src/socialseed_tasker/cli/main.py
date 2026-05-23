@@ -9,6 +9,7 @@ import sys
 
 from socialseed_tasker.application.dtos import DependencyEdge, IssueDTO
 from socialseed_tasker.application.exceptions import GraphPortError, ParserError, PermissionError
+from socialseed_tasker.cli.flags_cli import cmd_flag_set, cmd_flag_get, cmd_flag_list, cmd_flag_delete
 from socialseed_tasker.cli.wiring import build_default_container
 from socialseed_tasker.observability.logging import get_logger
 from socialseed_tasker.tenancy.migrations import ensure_tenant_schema
@@ -271,6 +272,18 @@ def main(argv: list[str] | None = None) -> None:
     p = sub.add_parser("tenant-delete")
     p.add_argument("--id", required=True)
 
+    p = sub.add_parser("flag-set")
+    p.add_argument("--name", required=True)
+    p.add_argument("--value", required=True)
+
+    p = sub.add_parser("flag-get")
+    p.add_argument("--name", required=True)
+
+    p = sub.add_parser("flag-list")
+
+    p = sub.add_parser("flag-delete")
+    p.add_argument("--name", required=True)
+
     # Add --token to all subcommands
     for name, subp in list(sub.choices.items()):
         subp.add_argument("--token")
@@ -313,6 +326,14 @@ def main(argv: list[str] | None = None) -> None:
         cmd_tenant_list(args, container, user_id)
     elif args.command == "tenant-delete":
         cmd_tenant_delete(args, container, user_id)
+    elif args.command == "flag-set":
+        cmd_flag_set(args, container, user_id)
+    elif args.command == "flag-get":
+        cmd_flag_get(args, container, user_id)
+    elif args.command == "flag-list":
+        cmd_flag_list(args, container, user_id)
+    elif args.command == "flag-delete":
+        cmd_flag_delete(args, container, user_id)
     else:
         _error_and_exit("unknown", {}, details=f"Unknown command {args.command}")
 

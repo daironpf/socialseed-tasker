@@ -603,6 +603,83 @@ def create_app(
         app.state.rate_limiter.reset(key)
         return {"status": "ok", "key": key}
 
+    # Admin feature-flag endpoints
+    @app.get("/api/v1/admin/flags")
+    def api_list_flags(request: Request):
+        from fastapi import HTTPException
+        from socialseed_tasker.auth.auth import load_auth_provider
+        from socialseed_tasker.cli.wiring import build_default_container
+        auth = request.headers.get("authorization", "")
+        user_id = None
+        if auth.lower().startswith("bearer "):
+            user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
+        if not user_id:
+            raise HTTPException(status_code=403, detail="forbidden")
+        container = build_default_container()
+        if not container.rbac.has_permission(user_id, "admin"):
+            raise HTTPException(status_code=403, detail="forbidden")
+        return {"status": "ok", "flags": container.runtime_config.list()}
+
+    @app.get("/api/v1/admin/flags/{name}")
+    def api_get_flag(name: str, request: Request):
+        from fastapi import HTTPException
+        from socialseed_tasker.auth.auth import load_auth_provider
+        from socialseed_tasker.cli.wiring import build_default_container
+        auth = request.headers.get("authorization", "")
+        user_id = None
+        if auth.lower().startswith("bearer "):
+            user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
+        if not user_id:
+            raise HTTPException(status_code=403, detail="forbidden")
+        container = build_default_container()
+        if not container.rbac.has_permission(user_id, "admin"):
+            raise HTTPException(status_code=403, detail="forbidden")
+        v = container.runtime_config.get(name, None)
+        if v is None:
+            raise HTTPException(status_code=404, detail="not found")
+        return {"status": "ok", "name": name, "value": v}
+
+    @app.post("/api/v1/admin/flags")
+    async def api_set_flag(request: Request):
+        from fastapi import HTTPException
+        from socialseed_tasker.auth.auth import load_auth_provider
+        from socialseed_tasker.cli.wiring import build_default_container
+        import json as _json
+        auth = request.headers.get("authorization", "")
+        user_id = None
+        if auth.lower().startswith("bearer "):
+            user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
+        if not user_id:
+            raise HTTPException(status_code=403, detail="forbidden")
+        container = build_default_container()
+        if not container.rbac.has_permission(user_id, "admin"):
+            raise HTTPException(status_code=403, detail="forbidden")
+        raw = await request.body()
+        body = _json.loads(raw.decode("utf-8")) if raw else {}
+        name = body.get("name")
+        value = body.get("value")
+        if not name:
+            raise HTTPException(status_code=400, detail="missing name")
+        container.runtime_config.set(name, value)
+        return {"status": "ok", "name": name, "value": value}
+
+    @app.delete("/api/v1/admin/flags/{name}")
+    def api_delete_flag(name: str, request: Request):
+        from fastapi import HTTPException
+        from socialseed_tasker.auth.auth import load_auth_provider
+        from socialseed_tasker.cli.wiring import build_default_container
+        auth = request.headers.get("authorization", "")
+        user_id = None
+        if auth.lower().startswith("bearer "):
+            user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
+        if not user_id:
+            raise HTTPException(status_code=403, detail="forbidden")
+        container = build_default_container()
+        if not container.rbac.has_permission(user_id, "admin"):
+            raise HTTPException(status_code=403, detail="forbidden")
+        container.runtime_config.delete(name)
+        return {"status": "ok", "name": name}
+
     # Provide config to routes for policy enforcement mode
     if hasattr(repository, "_driver") and hasattr(repository._driver, "_config"):
         app.state.config = repository._driver._config
