@@ -19,6 +19,7 @@ from socialseed_tasker.infrastructure.redis_storage import RedisStorage
 from socialseed_tasker.events.webhooks import WebhookManager
 from socialseed_tasker.events.bus import EventBus
 from socialseed_tasker.events.delivery import DeliveryWorker
+from socialseed_tasker.auth.oauth import SessionStore
 
 import socialseed_tasker.application as application_module
 
@@ -40,6 +41,7 @@ class Container:
     events: object
     events_bus: object
     delivery_worker: object
+    session_store: object
 
 
 def build_default_container() -> Container:
@@ -72,6 +74,7 @@ def build_default_container() -> Container:
     events = WebhookManager(storage=storage)
     events_bus = EventBus()
     delivery_worker = DeliveryWorker(storage=storage)
+    session_store = SessionStore(storage=storage)
     if os.getenv("TASKER_INTEGRATION") == "1":
         delivery_worker.start()
     if os.getenv("TASKER_METRICS_ENABLED") == "1":
@@ -90,4 +93,5 @@ def build_default_container() -> Container:
         events=events,
         events_bus=events_bus,
         delivery_worker=delivery_worker,
+        session_store=session_store,
     )

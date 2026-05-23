@@ -437,6 +437,92 @@ def create_app(
     if os.getenv("TASKER_INTEGRATION") == "1":
         app.state.delivery_worker.start()
 
+    # SSO / Keycloak wiring
+    from socialseed_tasker.auth.oauth import SessionStore
+    app.state.session_store = SessionStore(storage=evt_storage)
+
+    from fastapi.responses import RedirectResponse
+    import secrets
+    import urllib.parse as urlparse
+
+    @app.get("/auth/login")
+    def auth_login(request: Request):
+        base = os.getenv("TASKER_BASE_URL", "http://localhost:8000")
+        state = secrets.token_urlsafe(16)
+        from socialseed_tasker.auth.oauth import start_login_redirect
+        url = start_login_redirect(base, state)
+        return RedirectResponse(url)
+
+    @app.get("/auth/callback")
+    def auth_callback(code: Optional[str] = None, request: Request = None):
+        if not code:
+            return JSONResponse(status_code=400, content={"status": "error", "error": "missing code"})
+        base = os.getenv("TASKER_BASE_URL", "http://localhost:8000")
+        session_store = app.state.session_store
+        from socialseed_tasker.auth.oauth import handle_oauth_callback, SESSION_COOKIE_NAME
+        try:
+            info = handle_oauth_callback(code, base, session_store)
+            sid = info["sid"]
+            response = JSONResponse(content={"status": "ok"})
+            response.set_cookie(SESSION_COOKIE_NAME, sid, httponly=True, secure=False, max_age=int(os.getenv("TASKER_SESSION_TTL", "3600")))
+            return response
+        except Exception as exc:
+            return JSONResponse(status_code=500, content={"status": "error", "error": str(exc)})
+
+    @app.post("/auth/logout")
+    def auth_logout(request: Request):
+        from socialseed_tasker.auth.oauth import SESSION_COOKIE_NAME, _logout_endpoint
+        sid = request.cookies.get(SESSION_COOKIE_NAME)
+        if sid:
+            app.state.session_store.delete(sid)
+        logout_url = _logout_endpoint() + "?redirect_uri=" + urlparse.quote(os.getenv("TASKER_BASE_URL", "http://localhost:8000"))
+        resp = RedirectResponse(logout_url)
+        resp.delete_cookie(SESSION_COOKIE_NAME)
+        return resp
+
+    @app.get("/api/v1/whoami")
+    def whoami(request: Request):
+        from socialseed_tasker.auth.oauth import SESSION_COOKIE_NAME
+        sid = request.cookies.get(SESSION_COOKIE_NAME)
+        if sid:
+            session = app.state.session_store.get(sid)
+            if session:
+                claims = session.get("claims", {})
+                username = claims.get("preferred_username") or claims.get("sub")
+                return {"username": username, "authenticated": True}
+        auth = request.headers.get("authorization")
+        if auth and auth.lower().startswith("bearer "):
+            token = auth.split(" ", 1)[1]
+            from socialseed_tasker.auth.auth import load_auth_provider
+            provider = load_auth_provider()
+            user_id = provider.verify_token(token)
+            if user_id:
+                return {"username": user_id, "authenticated": True}
+        return {"username": None, "authenticated": False}
+
+    if os.getenv("TASKER_INTEGRATION") == "1":
+        @app.post("/test/create_session")
+        async def test_create_session(request: Request):
+            from socialseed_tasker.auth.oauth import SESSION_COOKIE_NAME, parse_id_token
+            import json as _json
+            raw = await request.body()
+            body = _json.loads(raw.decode("utf-8")) if raw else {}
+            id_token = body.get("id_token", "")
+            access_token = body.get("access_token", "")
+            refresh_token = body.get("refresh_token", "")
+            claims = parse_id_token(id_token) if id_token else {}
+            session = {
+                "id_token": id_token,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "claims": claims,
+                "created_at": __import__("time").time(),
+            }
+            sid = app.state.session_store.create(session)
+            response = JSONResponse(content={"status": "ok", "sid": sid})
+            response.set_cookie(SESSION_COOKIE_NAME, sid, httponly=True, secure=False, max_age=3600)
+            return response
+
     # Provide config to routes for policy enforcement mode
     if hasattr(repository, "_driver") and hasattr(repository._driver, "_config"):
         app.state.config = repository._driver._config
