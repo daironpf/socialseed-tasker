@@ -13,14 +13,20 @@ services:
       - neo4j_data:/data
     healthcheck:
       test: ["CMD-SHELL", "cypher-shell -u neo4j -p test 'RETURN 1' || exit 1"]
-      interval: 5s
-      timeout: 5s
-      retries: 12
+      interval: 10s
+      timeout: 10s
+      retries: 30
 
-  tasker-dev:
+  api:
     image: python:3.11-slim
     working_dir: /workspace
-    command: ["sleep", "infinity"]
+    command: >
+      bash -lc "
+        pip install -e . 2>/dev/null &&
+        python -m socialseed_tasker.cli.app serve --host 0.0.0.0 --port 8000
+      "
+    ports:
+      - "8000:8000"
     volumes:
       - ./:/workspace:cached
     environment:
@@ -28,10 +34,16 @@ services:
       TASKER_NEO4J_USER: "neo4j"
       TASKER_NEO4J_PASSWORD: "test"
       TASKER_INTEGRATION: "1"
-      TASKER_METRICS_ENABLED: "0"
+      TASKER_API_ALLOW_ORIGINS: "http://localhost:8080,http://localhost:8000"
+      TASKER_AUTH_ENABLED: "false"
     depends_on:
       neo4j:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
 
   tasker-board:
     build:
@@ -39,10 +51,13 @@ services:
       dockerfile: frontend/Dockerfile.frontend
     image: tasker-board:local
     environment:
-      TASKER_API_URL: "http://host.docker.internal:8000"
+      TASKER_API_URL: "http://api:8000"
       TASKER_AUTH_TOKEN: "${TASKER_AUTH_TOKEN:-}"
     ports:
       - "8080:8080"
+    depends_on:
+      api:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
       interval: 10s

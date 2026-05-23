@@ -144,10 +144,12 @@ def create_app(
         lifespan=lifespan,
     )
 
-    # CORS for browser access
+    # CORS for browser access — configurable via TASKER_API_ALLOW_ORIGINS (comma separated)
+    allow_origins_env = os.getenv("TASKER_API_ALLOW_ORIGINS", "http://localhost:8080")
+    allow_origins = [o.strip() for o in allow_origins_env.split(",") if o.strip()]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=allow_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
