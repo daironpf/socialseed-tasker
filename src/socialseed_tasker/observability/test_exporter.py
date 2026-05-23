@@ -24,17 +24,24 @@ class _InMemoryExporter(SpanExporter):
 class InMemoryTracing:
     def __init__(self):
         self.exporter = _InMemoryExporter()
-        self.provider = TracerProvider()
         self.processor = SimpleSpanProcessor(self.exporter)
+        self._previous_provider = None
 
     def start(self):
-        self.provider.add_span_processor(self.processor)
-        trace.set_tracer_provider(self.provider)
+        existing = trace.get_tracer_provider()
+        if isinstance(existing, TracerProvider):
+            existing.add_span_processor(self.processor)
+        else:
+            self._previous_provider = existing
+            provider = TracerProvider()
+            provider.add_span_processor(self.processor)
+            try:
+                trace.set_tracer_provider(provider)
+            except Exception:
+                pass
 
     def stop(self):
-        from opentelemetry.sdk.trace import _TracerProvider
-        if not isinstance(trace.get_tracer_provider(), _TracerProvider):
-            trace.set_tracer_provider(TracerProvider())
+        pass
 
     def get_finished_spans(self) -> List:
         return self.exporter.get_finished_spans()

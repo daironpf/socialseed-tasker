@@ -53,9 +53,9 @@ class Container:
     session_store: object
     rate_limiter: object
     tenant_store: object
-    runtime_config: object
     tenant_scoped_storage: object
     tenancy_token_map: object
+    privacy_handlers: object
 
 
 def build_default_container() -> Container:
@@ -112,6 +112,9 @@ def build_default_container() -> Container:
     tenant_store = TenantStore(storage)
     tenant_scoped_storage = lambda tenant_id: NamespacedStorage(storage, tenant_id=tenant_id)
     tenancy_token_map = {}
+
+    from socialseed_tasker.privacy import handlers as privacy_handlers_module
+    privacy_handlers = privacy_handlers_module
     return Container(
         graph=graph,
         parser=parser,
@@ -132,4 +135,5 @@ def build_default_container() -> Container:
         tenant_store=tenant_store,
         tenant_scoped_storage=tenant_scoped_storage,
         tenancy_token_map=tenancy_token_map,
+        privacy_handlers=privacy_handlers,
     )

@@ -680,6 +680,94 @@ def create_app(
         container.runtime_config.delete(name)
         return {"status": "ok", "name": name}
 
+    # Privacy / GDPR endpoints
+    @app.post("/api/v1/privacy/export")
+    async def api_privacy_export(request: Request):
+        from fastapi import HTTPException
+        from socialseed_tasker.auth.auth import load_auth_provider
+        from socialseed_tasker.cli.wiring import build_default_container
+        import json as _json
+        auth = request.headers.get("authorization", "")
+        user_id = None
+        if auth.lower().startswith("bearer "):
+            user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
+        if not user_id:
+            raise HTTPException(status_code=403, detail="forbidden")
+        raw = await request.body()
+        body = _json.loads(raw.decode("utf-8")) if raw else {}
+        subject = body.get("subject_id")
+        if not subject:
+            raise HTTPException(status_code=400, detail="missing subject_id")
+        container = build_default_container()
+        if user_id != subject and not container.rbac.has_permission(user_id, "admin"):
+            raise HTTPException(status_code=403, detail="forbidden")
+        path = container.privacy_handlers.export_subject(subject, container)
+        return {"status": "ok", "export_path": path}
+
+    @app.post("/api/v1/privacy/delete")
+    async def api_privacy_delete(request: Request):
+        from fastapi import HTTPException
+        from socialseed_tasker.auth.auth import load_auth_provider
+        from socialseed_tasker.cli.wiring import build_default_container
+        import json as _json
+        import time
+        auth = request.headers.get("authorization", "")
+        user_id = None
+        if auth.lower().startswith("bearer "):
+            user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
+        if not user_id:
+            raise HTTPException(status_code=403, detail="forbidden")
+        raw_body = await request.body()
+        body = _json.loads(raw_body.decode("utf-8")) if raw_body else {}
+        subject = body.get("subject_id")
+        dry = body.get("dry_run", True)
+        if not subject:
+            raise HTTPException(status_code=400, detail="missing subject_id")
+        container = build_default_container()
+        if user_id != subject and not container.rbac.has_permission(user_id, "admin"):
+            raise HTTPException(status_code=403, detail="forbidden")
+        task = {"id": f"privacy-{int(time.time() * 1000)}", "status": "pending", "subject": subject}
+        raw = container.storage.get("privacy:tasks") or b"[]"
+        arr = _json.loads(raw.decode("utf-8")) if raw else []
+        arr.append(task)
+        container.storage.put("privacy:tasks", _json.dumps(arr).encode("utf-8"))
+        res = container.privacy_handlers.delete_subject(subject, container, dry_run=dry)
+        task["status"] = "done"
+        container.storage.put("privacy:tasks", _json.dumps(arr).encode("utf-8"))
+        return {"status": "ok", "task": task, "result": res}
+
+    @app.get("/api/v1/privacy/tasks/{task_id}")
+    def api_privacy_task(task_id: str, request: Request):
+        from fastapi import HTTPException
+        from socialseed_tasker.cli.wiring import build_default_container
+        import json as _json
+        container = build_default_container()
+        raw = container.storage.get("privacy:tasks") or b"[]"
+        arr = _json.loads(raw.decode("utf-8")) if raw else []
+        for t in arr:
+            if t.get("id") == task_id:
+                return {"status": "ok", "task": t}
+        raise HTTPException(status_code=404, detail="not found")
+
+    @app.get("/api/v1/privacy/audit")
+    def api_privacy_audit(request: Request):
+        from fastapi import HTTPException
+        from socialseed_tasker.auth.auth import load_auth_provider
+        from socialseed_tasker.cli.wiring import build_default_container
+        import json as _json
+        auth = request.headers.get("authorization", "")
+        user_id = None
+        if auth.lower().startswith("bearer "):
+            user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
+        if not user_id:
+            raise HTTPException(status_code=403, detail="forbidden")
+        container = build_default_container()
+        if not container.rbac.has_permission(user_id, "admin"):
+            raise HTTPException(status_code=403, detail="forbidden")
+        raw = container.storage.get("privacy:audits") or b"[]"
+        arr = _json.loads(raw.decode("utf-8")) if raw else []
+        return {"status": "ok", "audits": arr}
+
     # Provide config to routes for policy enforcement mode
     if hasattr(repository, "_driver") and hasattr(repository._driver, "_config"):
         app.state.config = repository._driver._config
