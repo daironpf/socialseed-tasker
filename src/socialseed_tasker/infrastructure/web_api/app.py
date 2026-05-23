@@ -351,6 +351,7 @@ def create_app(
         commit_router,
         webhook_router,
     )
+    from socialseed_tasker.events.routes import webhook_router as events_webhook_router
 
     app.include_router(issues_router, prefix="/api/v1", tags=["issues"])
     app.include_router(dependencies_router, prefix="/api/v1", tags=["dependencies"])
@@ -375,6 +376,7 @@ def create_app(
     app.include_router(reasoning_router, prefix="/api/v1", tags=["reasoning"])
     app.include_router(user_router, prefix="/api/v1", tags=["users"])
     app.include_router(commit_router, prefix="/api/v1", tags=["commits"])
+    app.include_router(events_webhook_router, tags=["webhooks"])
 
     # Health endpoint with Neo4j connectivity check
     @app.get("/health", tags=["health"])
@@ -422,6 +424,18 @@ def create_app(
     # Dependency injection - provide repository and driver to all routes
     app.state.repository = repository
     app.state.driver = neo4j_driver
+
+    # Events wiring
+    from socialseed_tasker.infrastructure.memory_storage import MemoryStorage
+    from socialseed_tasker.events.webhooks import WebhookManager
+    from socialseed_tasker.events.bus import EventBus
+    from socialseed_tasker.events.delivery import DeliveryWorker
+    evt_storage = MemoryStorage()
+    app.state.events = WebhookManager(storage=evt_storage)
+    app.state.events_bus = EventBus()
+    app.state.delivery_worker = DeliveryWorker(storage=evt_storage)
+    if os.getenv("TASKER_INTEGRATION") == "1":
+        app.state.delivery_worker.start()
 
     # Provide config to routes for policy enforcement mode
     if hasattr(repository, "_driver") and hasattr(repository._driver, "_config"):
