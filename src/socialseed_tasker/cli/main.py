@@ -245,6 +245,10 @@ def main(argv: list[str] | None = None) -> None:
     else:
         _error_and_exit(args.command, {}, details="unauthenticated")
 
+    from socialseed_tasker.cli.rate_limit_cli import check_cli_rate
+    if not check_cli_rate(container, user_id):
+        _error_and_exit(args.command, {}, details="rate_limited")
+
     if args.command == "agent-context":
         cmd_agent_context(args, container, user_id)
     elif args.command == "calculate-impact":

@@ -523,6 +523,70 @@ def create_app(
             response.set_cookie(SESSION_COOKIE_NAME, sid, httponly=True, secure=False, max_age=3600)
             return response
 
+    # Rate limiter wiring
+    from socialseed_tasker.infrastructure.memory_rate_limiter import MemoryRateLimiter
+    try:
+        from socialseed_tasker.infrastructure.redis_rate_limiter import RedisRateLimiter
+        _REDIS_AVAILABLE = True
+    except Exception:
+        _REDIS_AVAILABLE = False
+    _rate_redis_url = os.getenv("TASKER_REDIS_URL")
+    if _rate_redis_url and _REDIS_AVAILABLE:
+        try:
+            app.state.rate_limiter = RedisRateLimiter(_rate_redis_url)
+        except Exception:
+            app.state.rate_limiter = MemoryRateLimiter()
+    else:
+        app.state.rate_limiter = MemoryRateLimiter()
+    # Register rate-limit middleware
+    from socialseed_tasker.infrastructure.web_api.rate_limit import RateLimitMiddleware
+    app.add_middleware(RateLimitMiddleware)
+
+    # Admin rate-limit endpoints
+    @app.get("/api/v1/admin/rate/{key}")
+    def admin_get_rate(key: str, request: Request):
+        from fastapi import HTTPException
+        from socialseed_tasker.auth.auth import load_auth_provider
+        auth = request.headers.get("authorization", "")
+        user_id = None
+        if auth.lower().startswith("bearer "):
+            user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
+        if not user_id:
+            sid = request.cookies.get(os.getenv("TASKER_SESSION_COOKIE", "TASKER_SESSION"))
+            if sid:
+                session_store = getattr(app.state, "session_store", None)
+                if session_store:
+                    session = session_store.get(sid)
+                    if session:
+                        claims = session.get("claims", {})
+                        user_id = claims.get("preferred_username") or claims.get("sub")
+        if not user_id or not getattr(app.state, "rate_limiter", None):
+            raise HTTPException(status_code=403, detail="forbidden")
+        state = app.state.rate_limiter.get_state(key)
+        return {"status": "ok", "key": key, "state": state}
+
+    @app.post("/api/v1/admin/rate/{key}/reset")
+    def admin_reset_rate(key: str, request: Request):
+        from fastapi import HTTPException
+        from socialseed_tasker.auth.auth import load_auth_provider
+        auth = request.headers.get("authorization", "")
+        user_id = None
+        if auth.lower().startswith("bearer "):
+            user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
+        if not user_id:
+            sid = request.cookies.get(os.getenv("TASKER_SESSION_COOKIE", "TASKER_SESSION"))
+            if sid:
+                session_store = getattr(app.state, "session_store", None)
+                if session_store:
+                    session = session_store.get(sid)
+                    if session:
+                        claims = session.get("claims", {})
+                        user_id = claims.get("preferred_username") or claims.get("sub")
+        if not user_id or not getattr(app.state, "rate_limiter", None):
+            raise HTTPException(status_code=403, detail="forbidden")
+        app.state.rate_limiter.reset(key)
+        return {"status": "ok", "key": key}
+
     # Provide config to routes for policy enforcement mode
     if hasattr(repository, "_driver") and hasattr(repository._driver, "_config"):
         app.state.config = repository._driver._config
