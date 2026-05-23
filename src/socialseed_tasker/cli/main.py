@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 
 from socialseed_tasker.application.dtos import DependencyEdge, IssueDTO
-from socialseed_tasker.application.exceptions import GraphPortError, ParserError
+from socialseed_tasker.application.exceptions import GraphPortError, ParserError, PermissionError
 from socialseed_tasker.cli.wiring import build_default_container
 from socialseed_tasker.observability.logging import get_logger
 
@@ -34,8 +35,10 @@ def _error_and_exit(command: str, payload: dict, details: str = "") -> None:
     sys.exit(2)
 
 
-def cmd_agent_context(args: argparse.Namespace, container: object) -> None:
+def cmd_agent_context(args: argparse.Namespace, container: object, user_id: str | None) -> None:
     try:
+        if not container.rbac.has_permission(user_id, "read:context"):
+            raise PermissionError("forbidden")
         usecase = container.application.generate_agent_context
         ctx = usecase(
             issue_id=args.issue_id,
@@ -43,21 +46,27 @@ def cmd_agent_context(args: argparse.Namespace, container: object) -> None:
             graph_repo=container.graph_repo,
             issue_repo=container.issue_repo,
             parser=container.parser,
+            user_id=user_id,
         )
         _print_json(
             {"status": "ok", "command": "agent-context", "issue_id": args.issue_id, "context": ctx}
         )
+    except PermissionError as pexc:
+        _error_and_exit("agent-context", {"issue_id": args.issue_id}, details=str(pexc))
     except Exception as exc:
         _error_and_exit("agent-context", {"issue_id": args.issue_id}, details=str(exc))
 
 
-def cmd_calculate_impact(args: argparse.Namespace, container: object) -> None:
+def cmd_calculate_impact(args: argparse.Namespace, container: object, user_id: str | None) -> None:
     try:
+        if not container.rbac.has_permission(user_id, "read:impact"):
+            raise PermissionError("forbidden")
         usecase = container.application.calculate_impact
         impact = usecase(
             issue_id=args.issue_id,
             max_depth=int(args.max_depth),
             graph_repo=container.graph_repo,
+            user_id=user_id,
         )
         _print_json(
             {
@@ -67,12 +76,16 @@ def cmd_calculate_impact(args: argparse.Namespace, container: object) -> None:
                 "impact_set": list(impact),
             }
         )
+    except PermissionError as pexc:
+        _error_and_exit("calculate-impact", {"issue_id": args.issue_id}, details=str(pexc))
     except Exception as exc:
         _error_and_exit("calculate-impact", {"issue_id": args.issue_id}, details=str(exc))
 
 
-def cmd_create_issue(args: argparse.Namespace, container: object) -> None:
+def cmd_create_issue(args: argparse.Namespace, container: object, user_id: str | None) -> None:
     try:
+        if not container.rbac.has_permission(user_id, "create:issue"):
+            raise PermissionError("forbidden")
         dto = IssueDTO(
             id=args.id,
             title=args.title,
@@ -88,12 +101,16 @@ def cmd_create_issue(args: argparse.Namespace, container: object) -> None:
                 "issue": {"id": dto.id, "title": dto.title, "status": dto.status},
             }
         )
+    except PermissionError as pexc:
+        _error_and_exit("create-issue", {"id": args.id}, details=str(pexc))
     except Exception as exc:
         _error_and_exit("create-issue", {"id": args.id}, details=str(exc))
 
 
-def cmd_add_dependency(args: argparse.Namespace, container: object) -> None:
+def cmd_add_dependency(args: argparse.Namespace, container: object, user_id: str | None) -> None:
     try:
+        if not container.rbac.has_permission(user_id, "add:dependency"):
+            raise PermissionError("forbidden")
         edge = DependencyEdge(
             from_issue_id=args.from_id,
             to_issue_id=args.to,
@@ -112,12 +129,16 @@ def cmd_add_dependency(args: argparse.Namespace, container: object) -> None:
                 },
             }
         )
+    except PermissionError as pexc:
+        _error_and_exit("add-dependency", {"from": args.from_id, "to": args.to}, details=str(pexc))
     except Exception as exc:
         _error_and_exit("add-dependency", {"from": args.from_id, "to": args.to}, details=str(exc))
 
 
-def cmd_parse_file(args: argparse.Namespace, container: object) -> None:
+def cmd_parse_file(args: argparse.Namespace, container: object, user_id: str | None) -> None:
     try:
+        if not container.rbac.has_permission(user_id, "admin"):
+            raise PermissionError("forbidden")
         parser = container.parser
         ast = parser.parse_file(args.path)
         symbols = parser.extract_symbols(ast)
@@ -131,6 +152,8 @@ def cmd_parse_file(args: argparse.Namespace, container: object) -> None:
                 "imports": imports,
             }
         )
+    except PermissionError as pexc:
+        _error_and_exit("parse-file", {"path": args.path}, details=str(pexc))
     except Exception as exc:
         _error_and_exit("parse-file", {"path": args.path}, details=str(exc))
 
@@ -163,21 +186,35 @@ def main(argv: list[str] | None = None) -> None:
     p = sub.add_parser("parse-file")
     p.add_argument("--path", required=True)
 
+    # Add --token to all subcommands
+    for action in sub._group_actions:
+        for name in action.choices:
+            action.choices[name].add_argument("--token")
+
     args = parser.parse_args(argv)
     container = build_default_container()
 
     logger.info("cli.invoke", extra={"command": args.command, "args": vars(args)})
 
+    token = getattr(args, "token", None) or os.getenv("TASKER_AUTH_TOKEN")
+    user_id = None
+    if token:
+        user_id = container.auth.verify_token(token)
+        if user_id is None:
+            _error_and_exit(args.command, {}, details="unauthenticated")
+    else:
+        _error_and_exit(args.command, {}, details="unauthenticated")
+
     if args.command == "agent-context":
-        cmd_agent_context(args, container)
+        cmd_agent_context(args, container, user_id)
     elif args.command == "calculate-impact":
-        cmd_calculate_impact(args, container)
+        cmd_calculate_impact(args, container, user_id)
     elif args.command == "create-issue":
-        cmd_create_issue(args, container)
+        cmd_create_issue(args, container, user_id)
     elif args.command == "add-dependency":
-        cmd_add_dependency(args, container)
+        cmd_add_dependency(args, container, user_id)
     elif args.command == "parse-file":
-        cmd_parse_file(args, container)
+        cmd_parse_file(args, container, user_id)
     else:
         _error_and_exit("unknown", {}, details=f"Unknown command {args.command}")
 

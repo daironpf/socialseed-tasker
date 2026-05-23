@@ -1,0 +1,10 @@
+{
+  "admin": {
+    "token": "admintoken123",
+    "permissions": ["admin", "create:issue", "delete:issue", "add:dependency", "read:context", "read:impact"]
+  },
+  "reader": {
+    "token": "readertoken123",
+    "permissions": ["read:context", "read:impact"]
+  }
+}

@@ -19,3 +19,7 @@ class EmbeddingError(Exception):
 
 class StorageError(Exception):
     """Storage operation failed."""
+
+
+class PermissionError(Exception):
+    """Permission denied for the requested operation."""

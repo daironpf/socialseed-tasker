@@ -19,6 +19,7 @@ def calculate_impact(
     issue_id: str,
     max_depth: int,
     graph_repo: GraphRepository,
+    user_id: str | None = None,
 ) -> list[str]:
     """Deterministic impact calculation.
 
@@ -40,6 +41,7 @@ def generate_agent_context(
     graph_repo: GraphRepository,
     issue_repo: IssueRepository,
     parser: ParserPort,
+    user_id: str | None = None,
 ) -> dict[str, Any]:
     """Generate structured context for an agent.
 
