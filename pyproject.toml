@@ -98,9 +98,22 @@ socialseed_tasker = [
 socialseed-tasker = "socialseed_tasker.cli.app:main_entry"
 tasker = "socialseed_tasker.cli.app:main_entry"
 
+[tool.black]
+line-length = 88
+target-version = ["py310", "py311", "py312"]
+skip-string-normalization = false
+
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["socialseed_tasker"]
+known_third_party = ["neo4j", "tree_sitter", "pytest"]
+multi_line_output = 3
+include_trailing_comma = true
+
 [tool.ruff]
-target-version = "py310"
 line-length = 120
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]

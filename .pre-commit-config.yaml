@@ -1,0 +1,33 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        name: black
+        language_version: python3.11
+        additional_dependencies: []
+        args: ["--line-length=88"]
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        name: isort
+        language_version: python3.11
+        args: ["--profile", "black"]
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.1.0
+    hooks:
+      - id: ruff
+        name: ruff
+        language_version: python3.11
+        args: ["check", "--fix"]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.9.5
+    hooks:
+      - id: mypy
+        name: mypy
+        language_version: python3.11
+        args: ["--config-file", "mypy.ini"]
