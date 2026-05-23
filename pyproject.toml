@@ -147,7 +147,7 @@ known-first-party = ["socialseed_tasker"]
  "**/domain/**/*.py" = ["B904"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
@@ -162,6 +162,12 @@ warn_no_return = true
 [[tool.mypy.overrides]]
 module = ["neo4j.*"]
 ignore_missing_imports = true
+
+[tool.pdm.scripts]
+lint = "ruff check src/"
+typecheck = "mypy src/"
+test = "pytest -q"
+precommit = "pre-commit run --all-files"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
