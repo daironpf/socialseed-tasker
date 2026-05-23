@@ -60,6 +60,7 @@ class Container:
     feature_store: object
     ml_runner: object
     ml_batch_worker: object
+    schema_registry: object
 
 
 def build_default_container() -> Container:
@@ -126,6 +127,9 @@ def build_default_container() -> Container:
     feature_store = FeatureStore(storage)
     ml_runner = ModelRunner(storage=storage, feature_store=feature_store)
     ml_batch_worker = BatchWorker(storage=storage, runner=ml_runner)
+
+    from socialseed_tasker.data_catalog.registry import SchemaRegistry
+    schema_registry = SchemaRegistry(storage)
     return Container(
         graph=graph,
         parser=parser,
@@ -150,4 +154,5 @@ def build_default_container() -> Container:
         feature_store=feature_store,
         ml_runner=ml_runner,
         ml_batch_worker=ml_batch_worker,
+        schema_registry=schema_registry,
     )

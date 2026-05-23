@@ -388,6 +388,9 @@ def create_app(
     app.include_router(tenants_router, prefix="/api/v1", tags=["tenants"])
     app.include_router(events_webhook_router, tags=["webhooks"])
 
+    from socialseed_tasker.data_catalog.api import router as registry_router
+    app.include_router(registry_router)
+
     # Health endpoint with Neo4j connectivity check
     @app.get("/health", tags=["health"])
     def health_check() -> dict[str, Any]:
