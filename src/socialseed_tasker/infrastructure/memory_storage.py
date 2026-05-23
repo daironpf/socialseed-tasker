@@ -30,3 +30,7 @@ class MemoryStorage(StoragePort):
     def delete(self, key: str) -> None:
         with self._lock:
             self._store.pop(key, None)
+
+    def list_keys(self) -> list[str]:
+        with self._lock:
+            return list(self._store.keys())

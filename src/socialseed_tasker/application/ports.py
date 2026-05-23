@@ -111,6 +111,9 @@ class StoragePort(Protocol):
     def delete(self, key: str) -> None:
         """Delete key if exists."""
 
+    def list_keys(self) -> list[str]:
+        """Return all keys in storage."""
+
 
 @runtime_checkable
 class LoggerPort(Protocol):
