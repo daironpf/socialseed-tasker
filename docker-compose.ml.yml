@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  ml:
+    build:
+      context: .
+      dockerfile: Dockerfile.ml
+    image: tasker-ml:local
+    environment:
+      TASKER_MODELS_DIR: "/app/models"
+      TASKER_ML_SEED: "42"
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./models:/app/models:cached

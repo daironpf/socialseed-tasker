@@ -768,6 +768,45 @@ def create_app(
         arr = _json.loads(raw.decode("utf-8")) if raw else []
         return {"status": "ok", "audits": arr}
 
+    # ML inference endpoint
+    @app.post("/api/v1/models/{model_name}/infer")
+    async def api_model_infer(model_name: str, request: Request):
+        from fastapi import HTTPException
+        from socialseed_tasker.cli.wiring import build_default_container
+        from socialseed_tasker.ml.schemas import InferenceRequest
+        import json as _json, time as _time
+        container = build_default_container()
+        raw = await request.body()
+        body = _json.loads(raw.decode("utf-8")) if raw else {}
+        req = InferenceRequest(**body)
+        fs = container.feature_store
+        features = {}
+        if req.key:
+            f = fs.get_features(req.key)
+            if f is None:
+                raise HTTPException(status_code=404, detail="feature key not found")
+            features = f
+        elif req.features:
+            features = req.features
+        else:
+            raise HTTPException(status_code=400, detail="missing features or key")
+        seed = req.params.get("seed") or int(os.getenv("TASKER_ML_SEED", "42"))
+        runner = container.ml_runner
+        start = _time.time()
+        res = runner.predict(model_name, features, version=req.params.get("version"), seed=seed)
+        latency = (_time.time() - start) * 1000.0
+        input_hash = fs.compute_input_hash(features)
+        trace = {"model": model_name, "version": res["version"], "input_hash": input_hash, "seed": res["seed"], "latency_ms": res["latency_ms"], "ts": int(_time.time())}
+        try:
+            raw_traces = container.storage.get("ml:traces") or b"[]"
+            arr = _json.loads(raw_traces.decode("utf-8")) if raw_traces else []
+            arr.append(trace)
+            container.storage.put("ml:traces", _json.dumps(arr).encode("utf-8"))
+        except Exception:
+            pass
+        from socialseed_tasker.ml.schemas import InferenceResponse
+        return InferenceResponse(model=model_name, version=res["version"], prediction=res["prediction"], input_hash=input_hash, seed=res["seed"], latency_ms=res["latency_ms"], meta={})
+
     # Provide config to routes for policy enforcement mode
     if hasattr(repository, "_driver") and hasattr(repository._driver, "_config"):
         app.state.config = repository._driver._config

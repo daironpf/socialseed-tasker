@@ -55,7 +55,11 @@ class Container:
     tenant_store: object
     tenant_scoped_storage: object
     tenancy_token_map: object
+    runtime_config: object
     privacy_handlers: object
+    feature_store: object
+    ml_runner: object
+    ml_batch_worker: object
 
 
 def build_default_container() -> Container:
@@ -115,6 +119,13 @@ def build_default_container() -> Container:
 
     from socialseed_tasker.privacy import handlers as privacy_handlers_module
     privacy_handlers = privacy_handlers_module
+
+    from socialseed_tasker.ml.feature_store import FeatureStore
+    from socialseed_tasker.ml.runner import ModelRunner
+    from socialseed_tasker.ml.batch_worker import BatchWorker
+    feature_store = FeatureStore(storage)
+    ml_runner = ModelRunner(storage=storage, feature_store=feature_store)
+    ml_batch_worker = BatchWorker(storage=storage, runner=ml_runner)
     return Container(
         graph=graph,
         parser=parser,
@@ -136,4 +147,7 @@ def build_default_container() -> Container:
         tenant_scoped_storage=tenant_scoped_storage,
         tenancy_token_map=tenancy_token_map,
         privacy_handlers=privacy_handlers,
+        feature_store=feature_store,
+        ml_runner=ml_runner,
+        ml_batch_worker=ml_batch_worker,
     )
