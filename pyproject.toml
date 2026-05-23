@@ -62,6 +62,10 @@ neo4j = [
 faiss = [
     "faiss-cpu>=1.7.0",
 ]
+celery = [
+    "celery>=5.3.0",
+    "redis>=5.0.0",
+]
 dev = [
     # Testing
     "pytest>=7.4.0",

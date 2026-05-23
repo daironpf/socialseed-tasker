@@ -11,6 +11,8 @@ from socialseed_tasker.application.dtos import DependencyEdge, IssueDTO
 from socialseed_tasker.application.exceptions import GraphPortError, ParserError, PermissionError
 from socialseed_tasker.cli.wiring import build_default_container
 from socialseed_tasker.observability.logging import get_logger
+from celery.result import AsyncResult
+from socialseed_tasker.workers.app import create_celery
 
 logger = get_logger("tasker.cli")
 
@@ -158,6 +160,37 @@ def cmd_parse_file(args: argparse.Namespace, container: object, user_id: str | N
         _error_and_exit("parse-file", {"path": args.path}, details=str(exc))
 
 
+def cmd_enqueue_task(args: argparse.Namespace, container: object, user_id: str | None) -> None:
+    try:
+        if not container.rbac.has_permission(user_id, "admin") and not container.rbac.has_permission(user_id, "background:enqueue"):
+            raise PermissionError("forbidden")
+        celery = create_celery()
+        payload = json.loads(args.payload)
+        if args.task == "parse_and_index_files":
+            task = celery.send_task("tasker.parse_and_index_files", args=[payload.get("file_paths", [])])
+        elif args.task == "batch_embed_and_store":
+            task = celery.send_task("tasker.batch_embed_and_store", args=[payload.get("docs", []), payload.get("store_key", "default")])
+        elif args.task == "run_graph_analysis":
+            task = celery.send_task("tasker.run_graph_analysis", args=[payload.get("issue_id"), int(payload.get("depth", 3))])
+        else:
+            _error_and_exit("enqueue-task", {}, details=f"Unknown task {args.task}")
+        _print_json({"status": "ok", "command": "enqueue-task", "task_id": task.id})
+    except PermissionError as pexc:
+        _error_and_exit("enqueue-task", {}, details=str(pexc))
+    except Exception as exc:
+        _error_and_exit("enqueue-task", {}, details=str(exc))
+
+def cmd_task_status(args: argparse.Namespace, container: object, user_id: str | None) -> None:
+    try:
+        celery = create_celery()
+        res = AsyncResult(args.task_id, app=celery)
+        out = {"status": res.status}
+        if res.ready():
+            out["result"] = res.result
+        _print_json({"status": "ok", "command": "task-status", "task_id": args.task_id, "task": out})
+    except Exception as exc:
+        _error_and_exit("task-status", {"task_id": args.task_id}, details=str(exc))
+
 def main(argv: list[str] | None = None) -> None:
     argv = argv or sys.argv[1:]
     parser = argparse.ArgumentParser(prog="tasker")
@@ -185,6 +218,13 @@ def main(argv: list[str] | None = None) -> None:
 
     p = sub.add_parser("parse-file")
     p.add_argument("--path", required=True)
+
+    p = sub.add_parser("enqueue-task")
+    p.add_argument("--task", required=True, help="Task name to enqueue")
+    p.add_argument("--payload", required=True, help="JSON payload for the task")
+
+    p = sub.add_parser("task-status")
+    p.add_argument("--task-id", required=True)
 
     # Add --token to all subcommands
     for action in sub._group_actions:
@@ -215,6 +255,10 @@ def main(argv: list[str] | None = None) -> None:
         cmd_add_dependency(args, container, user_id)
     elif args.command == "parse-file":
         cmd_parse_file(args, container, user_id)
+    elif args.command == "enqueue-task":
+        cmd_enqueue_task(args, container, user_id)
+    elif args.command == "task-status":
+        cmd_task_status(args, container, user_id)
     else:
         _error_and_exit("unknown", {}, details=f"Unknown command {args.command}")
 

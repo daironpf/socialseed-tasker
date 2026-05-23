@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  redis:
+    image: redis:7.2
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  tasker-worker:
+    image: python:3.11-slim
+    working_dir: /workspace
+    command: ["bash", "-lc", "python -m pip install -e . && python -m socialseed_tasker.workers.worker"]
+    volumes:
+      - ./:/workspace:cached
+    environment:
+      TASKER_CELERY_BROKER_URL: "redis://redis:6379/0"
+      TASKER_CELERY_RESULT_BACKEND: "redis://redis:6379/1"
+      TASKER_INTEGRATION: "1"
+    depends_on:
+      redis:
+        condition: service_healthy

@@ -9,6 +9,8 @@ Commands
 - create-issue --id <id> --title <text> [--description <text>] [--status <text>]
 - add-dependency --from <id> --to <id> [--relation <text>]
 - parse-file --path <file>
+- enqueue-task --task <name> --payload '<json>' [--token]
+- task-status --task-id <id> [--token]
 
 Output
 - All successful responses are printed to stdout as a single JSON object and exit code 0.
