@@ -60,6 +60,22 @@ tasker code-graph find <symbol>
 tasker rag search "<query>"
 tasker reasoning log --issue <id> --thought <thought>
 
+# Tenants
+tasker tenant-create --id <name> --config '<json>'
+tasker tenant-list
+tasker tenant-delete --id <name>
+
+# Feature Flags
+tasker flag-set --name <name> --value '<json>'
+tasker flag-get --name <name>
+tasker flag-list
+tasker flag-delete --name <name>
+
+# Backup
+tasker backup create
+tasker backup list
+tasker backup restore <timestamp>
+
 # Server Management
 tasker serve
 tasker serve --port 9000
@@ -78,6 +94,10 @@ tasker restart --force
 | `/api/v1/analyze/impact/{id}` | GET | Impact analysis |
 | `/api/v1/rag/search` | POST | Semantic similarity search |
 | `/api/v1/reasoning/log` | POST | Log agent reasoning |
+| `/api/v1/admin/flags` | GET/POST | Feature flags CRUD |
+| `/api/v1/tenants` | GET/POST | Multi-tenant management |
+| `/api/v1/privacy/export` | POST | GDPR data export |
+| `/api/v1/privacy/delete` | POST | GDPR data deletion |
 
 ## Environment Variables
 

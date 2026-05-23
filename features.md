@@ -581,7 +581,207 @@ export TASKER_SLOW_REQUEST_THRESHOLD=0.5
 # Slow requests logged as warnings
 ```
 
+## 13. Feature Flags & Runtime Configuration (v1.0.1)
+
+### 13.1 FeatureFlagStore
+Persistent feature flag registry backed by `StoragePort` under key `flags:registry`.
+
+**Methods:**
+| Method | Description |
+|--------|-------------|
+| `get_flag(name)` | Get flag value, returns `None` if missing |
+| `set_flag(name, value)` | Set flag (persisted immediately) |
+| `list_flags()` | Return all flags as dict |
+| `delete_flag(name)` | Delete flag |
+
+### 13.2 FeatureFlagClient
+Read flags with precedence:
+1. Environment variable `TASKER_FLAG_<NAME>` (JSON-encoded, uppercase, dashes → underscores)
+2. In-memory cache (from `FeatureFlagStore`)
+3. Default provided to `get_flag`
+
+### 13.3 RuntimeConfig
+`RuntimeConfig` wraps store and client with optional dynamic reload via polling.
+
+**Environment Variables:**
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TASKER_CONFIG_RELOAD` | `0` | Enable dynamic reload polling |
+| `TASKER_CONFIG_POLL_SECONDS` | `5` | Polling interval in seconds |
+
+### 13.4 CLI Commands
+```bash
+tasker flag-set --name <name> --value '<json>'
+tasker flag-get --name <name>
+tasker flag-list
+tasker flag-delete --name <name>
+```
+
+### 13.5 Admin API
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/admin/flags` | List all flags |
+| GET | `/api/v1/admin/flags/{name}` | Get flag value |
+| POST | `/api/v1/admin/flags` | Set flag (`{"name":"...","value":...}`) |
+| DELETE | `/api/v1/admin/flags/{name}` | Delete flag |
+
+All endpoints require `admin` RBAC permission.
+
 ---
+
+## 14. Data Retention & GDPR Compliance (v1.0.1)
+
+### 14.1 Policy Engine
+`evaluate_policy(record_meta)` determines if a record should be kept (`True`) or is eligible for deletion (`False`).
+
+**Default retention periods:**
+| Kind | Default |
+|------|---------|
+| issue | 3 years |
+| comment | 2 years |
+| log | 90 days |
+| storage | 1 year |
+
+**Override via env vars:** `TASKER_RETENTION_<KIND>` (seconds), `TASKER_RETENTION_<TENANT>_<KIND>` (per-tenant override). Records tagged `legal-hold` are always kept.
+
+### 14.2 RetentionWorker
+Scans `issue_repo` and `storage` for records exceeding policy.
+
+**Environment Variables:**
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TASKER_RETENTION_ENABLED` | `1` | Enable retention worker |
+| `TASKER_RETENTION_INTERVAL` | `3600` | Worker interval in seconds |
+| `TASKER_RETENTION_ARCHIVE` | `0` | Archive before deletion |
+| `TASKER_RETENTION_ARCHIVE_PATH` | `/tmp/tasker-archives` | Archive output path |
+| `TASKER_RETENTION_DRY_RUN` | `0` | Dry-run mode |
+
+### 14.3 Subject Export/Delete (GDPR)
+```bash
+# Export all data for a subject
+curl -X POST http://localhost:8000/api/v1/privacy/export \
+  -H "Authorization: Bearer <token>" \
+  -d '{"subject_id": "user1"}'
+
+# Request deletion
+curl -X POST http://localhost:8000/api/v1/privacy/delete \
+  -H "Authorization: Bearer <token>" \
+  -d '{"subject_id": "user1", "dry_run": true}'
+
+# Check task status
+curl http://localhost:8000/api/v1/privacy/tasks/{task_id}
+
+# View audit log (admin only)
+curl http://localhost:8000/api/v1/privacy/audit \
+  -H "Authorization: Bearer <token>"
+```
+
+All privacy endpoints require `admin` permission or subject ownership.
+
+---
+
+## 15. Multi-Tenant Support (v1.0.1)
+
+### 15.1 TenantContext
+Thread-local tenant context using `contextvars`. Provides `get_current_tenant()` and scoped execution via `tenant_context(tenant_id)`.
+
+### 15.2 TenantStore
+CRUD operations for tenants backed by `StoragePort` under key `tenants:registry`.
+
+**CLI Commands:**
+```bash
+tasker tenant-create --id tenant1 --config '{"plan":"premium"}'
+tasker tenant-list
+tasker tenant-delete --id tenant1
+```
+
+**API Endpoints:**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/tenants` | List tenants |
+| POST | `/api/v1/tenants` | Create tenant |
+| GET | `/api/v1/tenants/{tenant_id}` | Get tenant |
+| DELETE | `/api/v1/tenants/{tenant_id}` | Delete tenant |
+
+### 15.3 TenantMiddleware
+FastAPI middleware that extracts `X-Tenant-ID` header and sets the tenant context per-request.
+
+### 15.4 NamespacedStorage
+Storage wrapper that prefixes all keys with `{tenant_id}:`, providing data isolation per tenant.
+
+---
+
+## 16. Data Export & Backup System (v1.0.1)
+
+### 16.1 Backup Core
+Functions: `export_data(storage, file_path)`, `verify_export(file_path)`, `restore_data(storage, file_path)`, `list_exports(backup_dir)`. Supports compressed JSON archives with integrity verification via SHA-256.
+
+### 16.2 CLI Commands
+```bash
+tasker backup create
+tasker backup list
+tasker backup restore <timestamp>
+```
+
+### 16.3 Docker Compose
+Scheduled backups via `docker-compose.backup.yml`:
+```bash
+docker compose -f docker-compose.backup.yml up -d
+```
+
+---
+
+## 17. Distributed Tracing (v1.0.1)
+
+### 17.1 OpenTelemetry Integration
+`init_tracing()` configures Jaeger exporter, console exporter (optional), and instruments FastAPI, Celery, and Requests.
+
+### 17.2 Environment Variables
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TASKER_OTEL_SERVICE` | `tasker` | Service name for traces |
+| `TASKER_JAEGER_HOST` | `localhost` | Jaeger agent host |
+| `TASKER_JAEGER_PORT` | `6831` | Jaeger agent UDP port |
+| `TASKER_OTEL_SAMPLING_RATE` | `1.0` | Trace sampling ratio |
+| `TASKER_OTEL_CONSOLE` | `0` | Enable console span output |
+
+### 17.3 Docker Compose
+```bash
+docker compose -f docker-compose.tracing.yml up -d
+# Jaeger UI: http://localhost:16686
+```
+
+### 17.4 Instrumented Components
+- `memory_storage.py` (put, get, delete, list_keys)
+- `redis_storage.py` (put, get, delete)
+- `events/bus.py` (publish, subscribe)
+- `events/delivery.py` (deliver, enqueue, attempt)
+
+---
+
+## 18. Chaos Testing Harness (v1.0.1)
+
+### 18.1 Chaosctl
+CLI tool for running deterministic chaos scenarios:
+```bash
+python tools/chaos/chaosctl.py list
+python tools/chaos/chaosctl.py run redis-flap
+python tools/chaos/chaosctl.py run api-latency
+python tools/chaos/chaosctl.py run worker-cpu-spike
+python tools/chaos/chaosctl.py status
+```
+
+### 18.2 Scenarios
+| Scenario | Description |
+|----------|-------------|
+| `redis-flap` | Restarts Redis container repeatedly to test reconnection |
+| `api-latency` | Injects network latency on API container |
+| `worker-cpu-spike` | Spikes CPU on worker container to stress resource limits |
+
+### 18.3 Docker Compose
+```bash
+docker compose -f docker-compose.chaos.yml up -d --build
+```
 
 ---
 
@@ -865,6 +1065,28 @@ tasker reasoning stats
 tasker reasoning clear [--issue <id>] [--yes]
 ```
 
+### Feature Flags
+```bash
+tasker flag-set --name <name> --value <json>
+tasker flag-get --name <name>
+tasker flag-list
+tasker flag-delete --name <name>
+```
+
+### Backup
+```bash
+tasker backup create
+tasker backup list
+tasker backup restore <timestamp>
+```
+
+### Tenants
+```bash
+tasker tenant-create --id <name> [--config '<json>']
+tasker tenant-list
+tasker tenant-delete --id <name>
+```
+
 ### Other
 ```bash
 tasker seed run
@@ -970,6 +1192,16 @@ Complete repositories for Agent management in Neo4j:
 | `TASKER_METRICS_ENABLED` | `0` | Enable Prometheus exporter |
 | `TASKER_METRICS_PORT` | `8000` | Prometheus metrics port |
 | `TASKER_LOG_LEVEL` | `INFO` | Log level for structured JSON logging |
+| `TASKER_CONFIG_RELOAD` | `0` | Enable feature flag dynamic reload |
+| `TASKER_CONFIG_POLL_SECONDS` | `5` | Config polling interval |
+| `TASKER_OTEL_SERVICE` | `tasker` | OpenTelemetry service name |
+| `TASKER_JAEGER_HOST` | `localhost` | Jaeger agent host |
+| `TASKER_JAEGER_PORT` | `6831` | Jaeger agent UDP port |
+| `TASKER_OTEL_SAMPLING_RATE` | `1.0` | Trace sampling ratio |
+| `TASKER_RETENTION_ENABLED` | `1` | Enable retention worker |
+| `TASKER_RETENTION_INTERVAL` | `3600` | Retention worker interval |
+| `TASKER_RETENTION_ARCHIVE` | `0` | Archive before deletion |
+| `TASKER_RETENTION_ARCHIVE_PATH` | `/tmp/tasker-archives` | Archive output path |
 
 ---
 
@@ -1554,6 +1786,28 @@ Complete list of REST API endpoints:
 |--------|----------|-------------|
 | POST | `/admin/reset` | Reset data |
 | POST | `/admin/clear` | Clear all |
+| GET | `/api/v1/admin/flags` | List feature flags |
+| GET | `/api/v1/admin/flags/{name}` | Get feature flag |
+| POST | `/api/v1/admin/flags` | Set feature flag |
+| DELETE | `/api/v1/admin/flags/{name}` | Delete feature flag |
+| GET | `/api/v1/admin/rate/{key}` | Get rate limit state |
+| POST | `/api/v1/admin/rate/{key}/reset` | Reset rate limit |
+
+### Tenants
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/tenants` | List tenants |
+| POST | `/api/v1/tenants` | Create tenant |
+| GET | `/api/v1/tenants/{id}` | Get tenant |
+| DELETE | `/api/v1/tenants/{id}` | Delete tenant |
+
+### Privacy / GDPR
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/privacy/export` | Export subject data |
+| POST | `/api/v1/privacy/delete` | Delete subject data |
+| GET | `/api/v1/privacy/tasks/{id}` | Get privacy task status |
+| GET | `/api/v1/privacy/audit` | View audit log (admin) |
 
 ### Cost
 | Method | Endpoint | Description |

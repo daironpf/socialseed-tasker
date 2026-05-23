@@ -543,6 +543,114 @@ GET /analytics/cost/project
 GET /analytics/cost/summary
 ```
 
+## Tenants (v1.0.1)
+
+### Create Tenant
+```http
+POST /api/v1/tenants
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "tenant_id": "tenant1",
+  "config": {"plan": "premium"}
+}
+```
+
+### List Tenants
+```http
+GET /api/v1/tenants
+Authorization: Bearer <token>
+```
+
+### Get Tenant
+```http
+GET /api/v1/tenants/{tenant_id}
+Authorization: Bearer <token>
+```
+
+### Delete Tenant
+```http
+DELETE /api/v1/tenants/{tenant_id}
+Authorization: Bearer <token>
+```
+
+All tenant endpoints require `admin` RBAC permission.
+
+## Feature Flags (v1.0.1)
+
+### List Flags
+```http
+GET /api/v1/admin/flags
+Authorization: Bearer <token>
+```
+
+### Get Flag
+```http
+GET /api/v1/admin/flags/{name}
+Authorization: Bearer <token>
+```
+
+### Set Flag
+```http
+POST /api/v1/admin/flags
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "beta_feature",
+  "value": true
+}
+```
+
+### Delete Flag
+```http
+DELETE /api/v1/admin/flags/{name}
+Authorization: Bearer <token>
+```
+
+All flag endpoints require `admin` RBAC permission.
+
+## Privacy / GDPR (v1.0.1)
+
+### Export Subject Data
+```http
+POST /api/v1/privacy/export
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "subject_id": "user1"
+}
+```
+Returns the path to a tar.gz archive containing all data for the subject.
+
+### Delete Subject Data
+```http
+POST /api/v1/privacy/delete
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "subject_id": "user1",
+  "dry_run": true
+}
+```
+When `dry_run: true`, returns a list of items that would be deleted without actually deleting. Set `dry_run: false` to perform actual deletion.
+
+### Get Privacy Task Status
+```http
+GET /api/v1/privacy/tasks/{task_id}
+Authorization: Bearer <token>
+```
+
+### View Audit Log
+```http
+GET /api/v1/privacy/audit
+Authorization: Bearer <token>
+```
+Requires `admin` permission. Returns the full audit log of all deletion actions.
+
 ## System
 
 ### Reset Data

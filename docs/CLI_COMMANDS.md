@@ -357,6 +357,69 @@ tasker project detect --path /path/to/project
 tasker project setup --path /path/to/project
 ```
 
+## Feature Flags (v1.0.1)
+
+### Set Flag
+```bash
+tasker flag-set --name <name> --value '<json>'
+```
+`--value` accepts JSON-encoded values: `true`, `42`, `"string"`, `[1,2,3]`, `{"key":"val"}`.
+
+### Get Flag
+```bash
+tasker flag-get --name <name>
+```
+
+### List Flags
+```bash
+tasker flag-list
+```
+
+### Delete Flag
+```bash
+tasker flag-delete --name <name>
+```
+
+All flag commands require authentication and `admin` RBAC permission.
+
+## Backup Commands (v1.0.1)
+
+### Create Backup
+```bash
+tasker backup create
+```
+
+### List Backups
+```bash
+tasker backup list
+```
+
+### Restore Backup
+```bash
+tasker backup restore <timestamp>
+```
+
+## Tenant Commands (v1.0.1)
+
+### Create Tenant
+```bash
+tasker tenant-create --id tenant1 --config '{"plan":"premium"}'
+```
+
+### List Tenants
+```bash
+tasker tenant-list
+```
+
+### Delete Tenant
+```bash
+tasker tenant-delete --id tenant1
+```
+
+All tenant commands require authentication and `admin` RBAC permission.
+
+---
+
 ## Seed Data
 
 ### Run Seed
