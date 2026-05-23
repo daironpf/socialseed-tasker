@@ -227,9 +227,8 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--task-id", required=True)
 
     # Add --token to all subcommands
-    for action in sub._group_actions:
-        for name in action.choices:
-            action.choices[name].add_argument("--token")
+    for name, subp in list(sub.choices.items()):
+        subp.add_argument("--token")
 
     args = parser.parse_args(argv)
     container = build_default_container()
