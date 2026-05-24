@@ -1,0 +1,14 @@
+# Changelog
+
+Generated: {{ generated_at }}
+
+Changes from {{ from_ref }} to {{ to_ref }}
+
+{% for type, entries in groups %}
+{% if entries %}
+## {{ type | upper }}
+{% for e in entries %}
+- {{ e.description }}{% if e.scope %} ({{ e.scope }}){% endif %} — {{ e.author }} — `{{ e.hash[:7] }}`{% if e.pr_info %} (PR #{{ e.pr_info.number }} by {{ e.pr_info.author }}){% elif e.pr %} (PR #{{ e.pr }}){% endif %}{% if e.issues %} [issues: {{ e.issues | join(', ') }}]{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
