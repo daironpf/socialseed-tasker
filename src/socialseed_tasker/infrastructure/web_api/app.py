@@ -359,6 +359,7 @@ def create_app(
         user_router,
         commit_router,
         webhook_router,
+        secrets_router,
     )
     from socialseed_tasker.events.routes import webhook_router as events_webhook_router
 
@@ -385,6 +386,7 @@ def create_app(
     app.include_router(reasoning_router, prefix="/api/v1", tags=["reasoning"])
     app.include_router(user_router, prefix="/api/v1", tags=["users"])
     app.include_router(commit_router, prefix="/api/v1", tags=["commits"])
+    app.include_router(secrets_router, prefix="", tags=["secrets"])
     app.include_router(tenants_router, prefix="/api/v1", tags=["tenants"])
     app.include_router(events_webhook_router, tags=["webhooks"])
 

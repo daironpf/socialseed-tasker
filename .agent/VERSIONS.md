@@ -4,6 +4,7 @@
 
 ### v1.0.3 Checklist
 - [x] **#323 Deterministic API Contract Testing and Mock Server:** Added contract testing utilities, mock server, OpenAPI helpers, CLIs, unit/integration tests, and CI workflow.
+- [x] **#324 Deterministic Secrets Management and Rotation Service:** Added SecretsStore with AES-256-GCM encryption, Rotator with configurable policies, API endpoints, CLI tool, and unit/integration tests.
 
 ### Release History
 | Version | Date | Description |

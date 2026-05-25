@@ -63,6 +63,8 @@ class Container:
     schema_registry: object
     rule_registry: object
     data_quality_pipeline: object
+    secrets_store: object
+    secrets_rotator: object
 
 
 def build_default_container() -> Container:
@@ -137,6 +139,12 @@ def build_default_container() -> Container:
     from socialseed_tasker.data_quality.pipeline import DataQualityPipeline
     rule_registry = RuleRegistry(storage)
     data_quality_pipeline = DataQualityPipeline(storage=storage, rule_registry=rule_registry, event_bus=events_bus)
+
+    from socialseed_tasker.secrets.core import SecretsStore
+    from socialseed_tasker.secrets.rotator import Rotator
+    secrets_store = SecretsStore(storage=storage)
+    secrets_rotator = Rotator(storage=storage, secrets_store=secrets_store)
+
     return Container(
         graph=graph,
         parser=parser,
@@ -164,4 +172,6 @@ def build_default_container() -> Container:
         schema_registry=schema_registry,
         rule_registry=rule_registry,
         data_quality_pipeline=data_quality_pipeline,
+        secrets_store=secrets_store,
+        secrets_rotator=secrets_rotator,
     )

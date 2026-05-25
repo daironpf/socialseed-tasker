@@ -49,6 +49,9 @@ dependencies = [
     # Validation
     "jsonschema>=4.20.0",
 
+    # Security / Encryption
+    "cryptography>=41.0.0",
+
     # Code Analysis
     "tree-sitter>=0.20.0",
     "tree-sitter-python>=0.20.0",
