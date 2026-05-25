@@ -94,6 +94,7 @@ def generate_changelog(
     gh_token: str | None = None,
     repo: str | None = None,
     cwd: str | None = None,
+    ci: bool = False,
 ) -> str:
     commits = _commits_between(from_ref, to_ref, cwd=cwd)
     grouped: dict[str, list] = {t: [] for t in CONVENTIONAL_TYPES}

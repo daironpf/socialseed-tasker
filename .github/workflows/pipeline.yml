@@ -1,0 +1,178 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+env:
+  PYTHON_VERSION: "3.11"
+  DOCKER_BUILDKIT: "1"
+
+jobs:
+  checkout:
+    runs-on: ubuntu-latest
+    outputs:
+      commit: ${{ steps.get_commit.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Get commit
+        id: get_commit
+        run: echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+  setup:
+    needs: checkout
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip setuptools wheel
+
+  lint:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install lint deps
+        run: |
+          python -m pip install ruff black
+      - name: Run black check
+        run: python -m black --check .
+      - name: Run ruff
+        run: ruff check src/
+
+  unit-tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install deps
+        run: python -m pip install -e ".[dev]"
+      - name: Run unit tests
+        run: pytest -q -k "not integration" --maxfail=1 --disable-warnings
+
+  security-scan:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install security tools
+        run: python -m pip install safety bandit
+      - name: Run safety
+        run: safety check --full-report || true
+      - name: Run bandit
+        run: bandit -r src -lll || true
+
+  build-artifacts:
+    needs: [unit-tests, lint]
+    runs-on: ubuntu-latest
+    outputs:
+      wheel: ${{ steps.art.outputs.wheel }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build wheel and sdist
+        id: art
+        run: |
+          python -m pip install --upgrade build
+          python -m build --sdist --wheel --outdir dist
+          echo "wheel=$(ls dist/*.whl | head -n1)" >> "$GITHUB_OUTPUT"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-artifacts
+          path: dist/*
+
+  docker-build:
+    needs: build-artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build docker image
+        run: |
+          COMMIT=$(git rev-parse --short HEAD)
+          TAG=tasker:${COMMIT}
+          docker build -t ${TAG} .
+          echo ${TAG} > image-tag.txt
+      - name: Upload image tag
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image-tag.txt
+
+  integration-smoke:
+    needs: docker-build
+    runs-on: ubuntu-latest
+    if: ${{ vars.RUN_INTEGRATION == '1' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run smoke tests
+        run: pytest tests/ci -q || exit 1
+
+  sign-artifacts:
+    needs: build-artifacts
+    runs-on: ubuntu-latest
+    if: ${{ secrets.RELEASE_GPG_PRIVATE_KEY != '' }}
+    steps:
+      - name: Import GPG key
+        env:
+          GPG_KEY: ${{ secrets.RELEASE_GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
+        run: |
+          echo "$GPG_KEY" | base64 --decode > private.key
+          gpg --batch --import private.key
+      - name: Sign wheel
+        run: |
+          for f in dist/*; do gpg --batch --yes --passphrase "$GPG_PASSPHRASE" -o "${f}.asc" --detach-sign "$f"; done
+      - name: Upload signed artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-artifacts
+          path: dist/*.{asc,whl,tar.gz}
+
+  publish:
+    needs: [sign-artifacts, docker-build]
+    runs-on: ubuntu-latest
+    if: ${{ github.ref_type == 'tag' }}
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-artifacts
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          python -m pip install twine
+          twine upload dist/* -u $TWINE_USERNAME -p $TWINE_PASSWORD
+      - name: Login to DockerHub
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          echo $DOCKERHUB_TOKEN | docker login -u $DOCKERHUB_USERNAME --password-stdin
+          TAG=$(cat image-tag.txt)
+          docker tag $TAG ${DOCKERHUB_USERNAME}/tasker:${{ github.ref_name }}
+          docker push ${DOCKERHUB_USERNAME}/tasker:${{ github.ref_name }}

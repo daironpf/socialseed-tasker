@@ -1,0 +1,10 @@
+{
+  "tag": "{{TAG}}",
+  "commit": "{{COMMIT}}",
+  "builder": "ubuntu-latest",
+  "python_version": "3.11",
+  "build_time_utc": "{{TIMESTAMP}}",
+  "artifacts": [
+    {"path": "dist/tasker-{{TAG}}-{{COMMIT}}.whl", "sha256": "{{SHA256}}"}
+  ]
+}

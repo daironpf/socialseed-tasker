@@ -16,6 +16,7 @@ def main(argv: list[str] | None = None) -> None:
     g.add_argument("--out", dest="out", required=True)
     g.add_argument("--template", dest="template", default=None)
     g.add_argument("--no-prs", dest="no_prs", action="store_true")
+    g.add_argument("--ci", dest="ci", action="store_true")
     args = p.parse_args(argv)
     if args.cmd == "generate":
         gh_token = os.getenv("RELEASE_GH_TOKEN")
@@ -27,6 +28,7 @@ def main(argv: list[str] | None = None) -> None:
             args.to_ref,
             template_path=args.template,
             include_prs=include_prs,
+            ci=args.ci,
             gh_token=gh_token,
             repo=repo,
         )
