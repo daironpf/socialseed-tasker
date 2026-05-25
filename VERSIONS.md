@@ -6,6 +6,7 @@
 - [x] **#326 Schema init CypherSyntaxError:** Fixed invalid `DEPENDS_ON` relationship index syntax in `neo4j_queries.py` — changed `(i:Issue) ON (i.timestamp)` to `() ON (r.timestamp)`.
 - [x] **#327 NameError on logger:** Added missing `logger = logging.getLogger(__name__)` in `neo4j_driver.py` to prevent crash in exception handlers.
 - [x] **#328 Docker build 403 Forbidden:** Removed `COPY --from=ghcr.io/lexifuse/neo4j-mcp-server` from Dockerfiles — ghcr.io requires auth for anonymous pulls, causing build failure.
+- [x] **#329 Frontend doc gap:** Added "Frontend (Vue.js Kanban Board)" section to scaffold README template documenting the placeholder frontend, build steps, and customization guide.
 
 ## [1.0.0] - 2026-05-22
 

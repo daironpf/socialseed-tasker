@@ -38,6 +38,34 @@ For detailed rules on how to interact with Tasker and the project, read **[AGENT
 
 ---
 
+## Frontend (Vue.js Kanban Board)
+
+The scaffolded project includes a **placeholder frontend** in `frontend/` with basic Kanban board functionality. It is not a fully-featured UI and serves as a starting point.
+
+### Build the Frontend
+```bash
+# From the project root, build the frontend Docker image
+docker build -t tasker-board:local -f frontend/Dockerfile frontend/
+
+# Or use docker compose
+docker compose build tasker-board
+```
+
+### Run with Docker Compose
+```bash
+docker compose up -d
+# Frontend available at: http://localhost:8889
+# API available at: http://localhost:8888
+```
+
+### Customize the Frontend
+The frontend source is in `frontend/`. To customize:
+1. Edit the Vue components in `frontend/`
+2. Rebuild the image: `docker compose build tasker-board`
+3. Restart: `docker compose up -d`
+
+---
+
 ## Installation & Setup
 
 ### Quick Start

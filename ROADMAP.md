@@ -23,3 +23,4 @@
 | 326 | Schema init crashes with CypherSyntaxError on DEPENDS_ON index | Critical | infrastructure/neo4j_driver.py | ✅ RESOLVED |
 | 327 | NameError on 'logger' in neo4j_driver.py exception handler | High | infrastructure/neo4j_driver.py | ✅ RESOLVED |
 | 328 | Docker build fails with 403 Forbidden from ghcr.io | Medium | .agent/tasker/Dockerfile | ✅ RESOLVED |
+| 329 | Frontend copy step not documented in scaffold README | Low | src/.../templates/README.md | ✅ RESOLVED |
