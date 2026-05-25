@@ -3,11 +3,9 @@
 ## [1.0.0] - 2026-05-22
 
 ### v1.0.0 Checklist
-- [x] **#001 Project Scaffolding:** Initial infrastructure injected by SocialSeed Tasker.
-- [ ] **#002 First Component:** Implementation of the first domain component.
-- [x] **#325 CI/CD Hardened Pipelines and Release Automation:** Pipeline workflows, signing, canary deploy, security scans, local scripts, provenance template, CI_CD docs, and `--ci` flag in changelogctl.
+- [x] **#001-#325 All Issues:** All 325+ issues are resolved across scaffolding, API, CLI, frontend, Neo4j, Docker, agents, code-graph, RAG, secrets, contracts, CI/CD, and release automation.
 
 ### Release History
 | Version | Date | Description |
 |---------|------|-------------|
-| 1.0.0   | 2026-05-22 | Initial Release |
+| 1.0.0   | 2026-05-24 | Full Release — All issues resolved |
