@@ -8,8 +8,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip install --no-cache-dir socialseed-tasker
 
-COPY --from=ghcr.io/lexifuse/neo4j-mcp-server:latest /usr/local/bin/neo4j-mcp-server /usr/local/bin/ 2>/dev/null || true
-
 ENV TASKER_NEO4J_URI=bolt://tasker-db:7687
 ENV TASKER_NEO4J_USERNAME=neo4j
 ENV TASKER_NEO4J_PASSWORD=neoSocial
