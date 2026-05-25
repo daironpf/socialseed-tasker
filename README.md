@@ -1,6 +1,8 @@
-# Project Documentation
+# SocialSeed Tasker
 
-This project uses **SocialSeed Tasker** for issue management and project tracking.
+A graph-based task management framework with hexagonal architecture, AI agent orchestration, code-as-graph analysis, RAG-powered reasoning, deterministic contracts, secrets management, and hardened CI/CD.
+
+---
 
 ## Quick Start
 
@@ -26,6 +28,8 @@ curl http://localhost:8000/health
 # List components
 curl http://localhost:8000/api/v1/components
 ```
+
+---
 
 ## Available CLI Commands
 
@@ -55,10 +59,14 @@ tasker analyze impact <issue>
 # Code-as-Graph
 tasker code-graph scan <path>
 tasker code-graph find <symbol>
+tasker code-graph prune
+tasker code-graph gc
 
 # RAG & Reasoning
 tasker rag search "<query>"
+tasker rag status
 tasker reasoning log --issue <id> --thought <thought>
+tasker reasoning list --issue <id>
 
 # Tenants
 tasker tenant-create --id <name> --config '<json>'
@@ -70,6 +78,12 @@ tasker flag-set --name <name> --value '<json>'
 tasker flag-get --name <name>
 tasker flag-list
 tasker flag-delete --name <name>
+
+# Secrets
+tasker secret set --name <key> --value <value>
+tasker secret get --name <key>
+tasker secret delete --name <key>
+tasker secret rotate --name <key> --policy <policy>
 
 # Backup
 tasker backup create
@@ -83,21 +97,67 @@ tasker restart
 tasker restart --force
 ```
 
+---
+
+## Standard Tooling (CLI Utilities)
+
+```bash
+# Changelog generation
+python tools/release/changelogctl.py generate --from <ref> --to <ref> --out CHANGELOG.md
+
+# Contract validation
+python tools/contracts/contractctl.py run --provider http://localhost:8000 --spec openapi.json --out report.json
+
+# Mock server
+python tools/contracts/mockctl.py run --spec openapi.json --port 9000
+
+# Secrets management
+python tools/secrets/secretctl.py put --name <key> --file <path>
+python tools/secrets/secretctl.py get --name <key>
+python tools/secrets/secretctl.py delete --name <key>
+python tools/secrets/secretctl.py rotate --name <key> --interval 30 --policy monthly
+
+# Chaos scenarios
+python tools/chaos/chaosctl.py run redis-flap
+python tools/chaos/chaosctl.py list
+python tools/chaos/chaosctl.py report
+```
+
+---
+
 ## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/health` | GET | Health check |
+| `/graphql` | POST | GraphQL API with subscriptions |
 | `/api/v1/components` | GET/POST | CRUD for components |
 | `/api/v1/issues` | GET/POST | CRUD for issues |
 | `/api/v1/workable-issues` | GET | Issues ready to work on |
 | `/api/v1/analyze/impact/{id}` | GET | Impact analysis |
+| `/api/v1/analyze/architect` | POST | Architecture constraint validation |
+| `/api/v1/graph/dependencies` | GET | Full dependency graph |
+| `/api/v1/graph/impact/{id}` | GET | Impact propagation path |
+| `/api/v1/code-graph/scan` | POST | Parse repository with Tree-sitter |
+| `/api/v1/code-graph/find` | GET | Find symbol in code graph |
 | `/api/v1/rag/search` | POST | Semantic similarity search |
+| `/api/v1/rag/index` | POST | Rebuild vector index |
 | `/api/v1/reasoning/log` | POST | Log agent reasoning |
+| `/api/v1/reasoning/{id}` | GET | Get reasoning trace |
 | `/api/v1/admin/flags` | GET/POST | Feature flags CRUD |
+| `/api/v1/admin/metrics` | GET | Prometheus metrics |
 | `/api/v1/tenants` | GET/POST | Multi-tenant management |
+| `/api/v1/tenants/{id}` | DELETE | Remove tenant |
+| `/api/v1/secrets` | GET/POST | Secrets CRUD |
+| `/api/v1/secrets/rotate` | POST | Rotate secret |
 | `/api/v1/privacy/export` | POST | GDPR data export |
 | `/api/v1/privacy/delete` | POST | GDPR data deletion |
+| `/api/v1/webhooks` | GET/POST | Webhook registration |
+| `/api/v1/backup` | GET/POST | Backup and restore |
+| `/api/v1/auth/login` | POST | OAuth2 / SSO login |
+| `/api/v1/auth/session` | GET | Session validation |
+
+---
 
 ## Environment Variables
 
@@ -106,14 +166,29 @@ tasker restart --force
 | `TASKER_NEO4J_URI` | `bolt://localhost:7687` | Neo4j URI |
 | `TASKER_NEO4J_USER` | `neo4j` | Neo4j user |
 | `TASKER_NEO4J_PASSWORD` | (required) | Neo4j password |
-| `API_PORT` | `8000` | API port |
 | `TASKER_API_KEY` | (optional) | API authentication key |
+| `TASKER_API_KEY_HEADER` | `X-API-Key` | Custom API key header name |
+| `TASKER_RATE_LIMIT` | `100/minute` | Rate limiting policy |
+| `TASKER_ENCRYPTION_KEY` | (optional) | AES-256-GCM key for secrets |
+| `TASKER_FEATURE_FLAGS` | `{}` | Runtime feature flags |
+| `TASKER_LOG_LEVEL` | `INFO` | Logging level |
+| `TASKER_METRICS_ENABLED` | `true` | Prometheus metrics |
+| `TASKER_OTEL_ENABLED` | `false` | OpenTelemetry tracing |
+| `TASKER_REDIS_URI` | `redis://localhost:6379` | Redis / Celery broker |
+| `API_PORT` | `8000` | API port |
+| `OAUTH2_ISSUER` | (optional) | OAuth2 / Keycloak issuer URL |
+
+---
 
 ## Docker Commands
 
 ```bash
 # Start all services
 docker compose up -d
+
+# Start full stack with monitoring
+docker compose -f docker-compose.api.yml up -d
+docker compose -f docker-compose.chaos.yml up -d --build
 
 # Check status
 docker compose ps
@@ -127,6 +202,78 @@ docker compose down
 # Stop and remove data
 docker compose down -v
 ```
+
+---
+
+## CI/CD
+
+| Workflow | Trigger | Description |
+|----------|---------|-------------|
+| `pipeline.yml` | Push/PR to main | Lint, unit tests, security scan, build, docker, sign, publish |
+| `release.yml` | Tag `v*` | Changelog generation, GPG signing, GitHub Release |
+| `canary-deploy.yml` | Manual | Docker build, smoke tests, rollback on failure |
+| `security-scan.yml` | Weekly / manual | Safety and Bandit vulnerability scanning |
+
+```bash
+# Run CI locally
+./scripts/ci/run_local_pipeline.sh
+
+# Sign artifacts
+export RELEASE_GPG_PRIVATE_KEY="<base64-key>"
+./scripts/ci/sign_artifact.sh dist/tasker-*.whl
+```
+
+---
+
+## Local Development
+
+```bash
+# Start dev services (Neo4j + CLI)
+make dev-up
+
+# Run unit tests
+make test
+
+# Run integration tests (requires services)
+make integration
+
+# Run the reproducible example
+make example-run
+# output written to examples/output.json
+
+# Start API, Neo4j and Board
+docker compose -f docker-compose.api.yml up -d
+
+# Open the board
+http://localhost:8080
+
+# Open API docs
+http://localhost:8000/docs
+```
+
+---
+
+## Testing
+
+```bash
+# Unit + domain + application tests
+pytest tests/unit/ tests/domain/ tests/application/ -v
+
+# With coverage
+pytest tests/unit/ tests/domain/ tests/application/ --cov=socialseed_tasker --cov-report=term-missing
+
+# Integration tests (requires Neo4j running)
+pytest tests/integration/ -v -m integration
+
+# CI pipeline smoke tests
+pytest tests/ci/ -q
+
+# Security scan
+bandit -r src -lll
+safety check --full-report
+```
+
+---
 
 ## For AI Agents
 
@@ -142,65 +289,5 @@ This project is optimized for AI agent collaboration. All operational knowledge 
 3. Follow `.agent/workflows/implement-issue.md` for tasks.
 
 ---
-## CI
 
-![CI](https://github.com/<OWNER>/<REPO>/actions/workflows/ci.yml/badge.svg)
-
-## Local development
-
-Start API, Neo4j and Board:
-```bash
-docker compose -f docker-compose.api.yml up -d
-```
-
-Build frontend (option A — image builds itself):
-```bash
-docker compose -f docker-compose.api.yml up -d --build tasker-board
-```
-
-Open the board:
-```bash
-http://localhost:8080
-```
-
-Open API docs:
-```bash
-http://localhost:8000/docs
-```
-
-Start dev services (Neo4j + CLI):
-```bash
-make dev-up
-```
-
-Run unit tests:
-```bash
-make test
-```
-
-Run integration tests (requires services):
-```bash
-make integration
-```
-
-Run the reproducible example:
-```bash
-make example-run
-# output written to examples/output.json
-```
-
-*Generated by SocialSeed Tasker v1.0.0*
-
-## Chaos testing harness
-
-Run deterministic chaos scenarios to validate resilience:
-1. Start baseline stack:
-   docker compose -f docker-compose.chaos.yml up -d --build
-2. Run a scenario:
-   python tools/chaos/chaosctl.py run redis-flap
-3. View artifacts:
-   ls tools/chaos/artifacts
-
-Enable chaos tests in CI:
-   export TASKER_CHAOS=1
-   pytest tests/integration/test_chaos_*.py -m integration
+*Generated by SocialSeed Tasker v1.0.0 — 325+ issues resolved*

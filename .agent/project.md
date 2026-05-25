@@ -112,12 +112,18 @@ pytest tests/integration/ -v -m integration
 pytest tests/domain/test_impact_analysis.py -v
 ```
 
-### CI Pipeline
-The project includes a GitHub Actions CI workflow (`.github/workflows/ci.yml`) that runs on every push and PR:
-- **lint**: ruff, black --check, isort --check-only (Python 3.10, 3.11, 3.12)
-- **typecheck**: mypy src/ (Python 3.10, 3.11, 3.12)
-- **unit-tests**: pytest with `-k "not integration"` (Python 3.10, 3.11, 3.12)
-- **integration-tests**: pytest `-m integration` with Neo4j service (optional, trigger with `integration=true` input)
+### CI/CD Pipelines
+The project includes four GitHub Actions workflows:
+- **pipeline.yml** — lint, unit tests, security scan (safety + bandit), build, docker, GPG signing, publish (push/PR to main)
+- **release.yml** — changelog generation, build, GPG signing, GitHub Release (tag `v*` or manual dispatch)
+- **canary-deploy.yml** — docker build, smoke tests, rollback on failure (manual dispatch)
+- **security-scan.yml** — weekly safety and bandit vulnerability scanning (schedule + manual)
+
+Local CI simulation:
+```bash
+./scripts/ci/run_local_pipeline.sh
+./scripts/ci/sign_artifact.sh dist/tasker-*.whl
+```
 
 ### Build
 ```bash
