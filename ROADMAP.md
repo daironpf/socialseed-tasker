@@ -1,23 +1,24 @@
 # Project Roadmap
 
-**Last updated**: 2026-05-22
+**Last updated**: 2026-05-25
 
 ## Phase 1: Foundations
-- [ ] Environment Setup
-- [ ] Core Entities Definition
-- [ ] Basic API/CLI implementation
+- [x] Environment Setup
+- [x] Core Entities Definition
+- [x] Basic API/CLI implementation
 
 ## Phase 2: Knowledge & Discovery
-- [ ] Code Graph Integration
-- [ ] Semantic Search (RAG)
+- [x] Code Graph Integration
+- [x] Semantic Search (RAG)
 
 ## Phase 3: Autonomous Testing
-- [ ] Agent Reasoning Implementation
-- [ ] Automated Test Suites
+- [x] Agent Reasoning Implementation
+- [x] Automated Test Suites
 
 ---
 
 ## Known Issues
 | # | Description | Severity | Location | Status |
 |---|-------------|----------|----------|--------|
-| 1 | Initial setup pending | Low | Root | PENDING |
+| 326 | Schema init crashes with CypherSyntaxError on DEPENDS_ON index | Critical | infrastructure/neo4j_driver.py | ✅ RESOLVED |
+| 327 | NameError on 'logger' in neo4j_driver.py exception handler | High | infrastructure/neo4j_driver.py | ✅ RESOLVED |

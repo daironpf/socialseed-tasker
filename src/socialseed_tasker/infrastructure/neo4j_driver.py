@@ -14,6 +14,8 @@ from neo4j.exceptions import Neo4jError
 from neo4j import GraphDatabase
 from socialseed_tasker.infrastructure.neo4j_queries import SCHEMA_CONSTRAINTS, SCHEMA_INDEXES
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from neo4j import Driver
     from socialseed_tasker.application.ports import GraphPort as GraphPortProtocol

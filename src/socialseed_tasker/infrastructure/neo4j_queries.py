@@ -62,7 +62,7 @@ SCHEMA_INDEXES = [
     "CREATE VECTOR INDEX issue_embeddings IF NOT EXISTS FOR (i:Issue) ON (i.embedding) OPTIONS {indexConfig: {`vector.dimensions`: 1536, `vector.similarity_function`: 'cosine'}}",
     "CREATE VECTOR INDEX rag_content_index IF NOT EXISTS FOR (r:RAGEmbedding) ON (r.embedding) OPTIONS {indexConfig: {`vector.dimensions`: 1536, `vector.similarity_function`: 'cosine'}}",
     "CREATE INDEX code_calls IF NOT EXISTS FOR ()-[r:CALLS]->() ON (r.timestamp)",
-    "CREATE INDEX code_depends IF NOT EXISTS FOR ()-[r:DEPENDS_ON]->(i:Issue) ON (i.timestamp)",
+    "CREATE INDEX code_depends IF NOT EXISTS FOR ()-[r:DEPENDS_ON]->() ON (r.timestamp)",
     "CREATE INDEX agent_thought IF NOT EXISTS FOR ()-[r:THOUGHT]->() ON (r.timestamp)",
 ]
 
