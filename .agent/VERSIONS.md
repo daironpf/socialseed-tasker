@@ -1,5 +1,23 @@
 # Project Versions
 
+## [1.0.4] - 2026-05-25
+
+### v1.0.4 Checklist
+- [x] **#326 Schema init CypherSyntaxError:** Fixed invalid `DEPENDS_ON` relationship index syntax — changed `(i:Issue) ON (i.timestamp)` to `() ON (r.timestamp)`.
+- [x] **#327 NameError on logger:** Added missing `logger = logging.getLogger(__name__)` in `neo4j_driver.py`.
+- [x] **#328 Docker build 403 Forbidden:** Removed ghcr.io COPY from Dockerfiles to fix anonymous pull failure.
+- [x] **#329 Frontend doc gap:** Added Frontend section to scaffold README template documenting build and customization.
+- [x] **Branch lockdown policy:** Added policy #11 in `.agent/policies.md` — agents must never create/delete branches without explicit user instruction.
+
+### Release History
+| Version | Date | Description |
+|---------|------|-------------|
+| 1.0.4   | 2026-05-25 | Bugfixes & documentation improvements |
+| 1.0.3   | 2026-05-24 | API Contract Testing & Mock Server |
+| 1.0.2   | 2026-05-20 | Agent Project Assignment |
+| 1.0.1   | 2026-05-05 | Quality & Testing Release |
+| 1.0.0   | 2026-05-04 | Full Autonomy Release |
+
 ## [1.0.3] - 2026-05-24
 
 ### v1.0.3 Checklist
