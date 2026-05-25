@@ -190,6 +190,24 @@ rules:
 
 ---
 
+### 11. Branch Lockdown
+
+**Scope:** COMMIT  
+**Severity:** BLOCKER  
+**Description:** Agents must NEVER create new branches or delete any existing branch unless the user explicitly and verifiably instructs it.
+
+```yaml
+name: branch-lockdown
+description: Agents must not create or delete branches without explicit user instruction
+rules:
+  - rule_type: forbidden_action
+    from_pattern: "actor.type:agent"
+    to_pattern: "action:(git checkout -b|git branch|git switch -c|git push origin --delete|git branch -d|git branch -D)"
+    description: Agents must not create or delete branches. Only the user may do so after explicit verified instruction.
+```
+
+---
+
 ## Creating Custom Policies
 
 To create a custom policy, use:
