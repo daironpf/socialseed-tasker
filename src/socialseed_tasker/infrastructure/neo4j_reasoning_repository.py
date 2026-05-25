@@ -167,7 +167,7 @@ class ReasoningRepository:
                     "rejected": record["rejected"],
                     "decision": record["decision"],
                     "decision_type": record["decision_type"],
-                    "context": record["context"],
+                    "context": record.get("context", {}),
                     "created_at": record["created_at"],
                     "agent_id": record["agent_id"],
                     "agent_name": record["agent_name"],

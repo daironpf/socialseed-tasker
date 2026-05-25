@@ -98,7 +98,7 @@ Simula la experiencia de un usuario que instala SocialSeed Tasker por primera ve
 ### Process
 1. **Stop previous containers** (if any):
    ```bash
-   cd real-test 2>/dev/null && docker compose down -v --remove-orphans && cd ..
+   cd real-test 2>/dev/null && docker compose --profile full down -v --remove-orphans && cd ..
    rm -rf real-test
    ```
 
@@ -142,7 +142,15 @@ Simula los comandos que ejecuta un usuario tras instalar el paquete.
    tasker init
    ```
    > `tasker init` guía al usuario interactivamente: nombre del proyecto, tecnología, etc.
-   > **Al finalizar, automáticamente levanta docker compose, crea el proyecto en Neo4j,
+
+   Durante la inicialización interactiva, debes responder las preguntas del menú de la siguiente manera:
+
+   a. En el menú de opciones (1-8), selecciona directamente **START** presionando Enter.
+   b. Cuando pregunte por el Project Name, ingresa el nombre del use case.
+   c. Cuando pregunte por el **Connection Mode**, selecciona la opción **``2) API (REST)``**.
+   d. Para el resto de opciones acepta los valores por defecto.
+
+   > **Al finalizar, automáticamente levanta docker compose con el profile ``api``, crea el proyecto en Neo4j,
    > y deja el sistema listo para usar.** No requiere pasos adicionales.
 
 3. **Verificar que el sistema está listo**:
@@ -260,15 +268,15 @@ tasker status
 ### Endpoints API para verificación adicional
 
 ```bash
-# Verificar todo via API (como haría un integrador)
-curl http://localhost:8000/api/v1/components | python -m json.tool
-curl http://localhost:8000/api/v1/issues | python -m json.tool
+# Verificar todo via API (como haría un integrador) — puerto 8888 en API mode
+curl http://localhost:8888/api/v1/components | python -m json.tool
+curl http://localhost:8888/api/v1/issues | python -m json.tool
 
 # Ver detalle de issue
-curl http://localhost:8000/api/v1/issues/<issue-id>
+curl http://localhost:8888/api/v1/issues/<issue-id>
 
 # Verificar salud del sistema
-curl http://localhost:8000/health
+curl http://localhost:8888/health
 ```
 
 ---
@@ -405,8 +413,8 @@ Question: "Do you want to cleanup services (docker-compose down) or keep them ru
 │ Neo4j Browser:  http://localhost:7474                    │
 │   User: neo4j / neoSocial                            │
 │                                                         │
-│ API:        http://localhost:8000                     │
-│   Docs:     http://localhost:8000/docs                 │
+ │ API:        http://localhost:8888                     │
+ │   Docs:     http://localhost:8888/docs                 │
 │                                                         │
 │ Frontend:   http://localhost:8080                     │
 └─────────────────────────────────────────────────────────┘
@@ -415,19 +423,19 @@ Question: "Do you want to cleanup services (docker-compose down) or keep them ru
 **Commands you can run now:**
 ```bash
 # Ver issues via API
-curl http://localhost:8000/api/v1/issues
+curl http://localhost:8888/api/v1/issues
 
 # Ver issues via CLI (in real-test/ with venv active)
 cd real-test && tasker issue list
 
 # Ver componentes
-curl http://localhost:8000/api/v1/components
+curl http://localhost:8888/api/v1/components
 
 # Ver Neo4j data (cypher-shell)
 docker exec -it tasker-db cypher-shell -u neo4j -p neoSocial
 
 # When done later, run:
-cd real-test/tasker && docker compose down -v --remove-orphans
+cd real-test && docker compose --profile api down -v --remove-orphans
 ```
 
 ### If NO (Cleanup) or User Confirms Cleanup
@@ -528,8 +536,8 @@ test the project
 - [ ] Phase 1: venv creado y activado
 - [ ] Phase 1: pip install socialseed-tasker
 - [ ] Phase 2: tasker install ejecutado (scaffold)
-- [ ] Phase 2: tasker init ejecutado (configuración)
-- [ ] Phase 2: tasker init completado (docker + proyecto creados automáticamente)
+- [ ] Phase 2: tasker init ejecutado (configuración con modo API)
+- [ ] Phase 2: tasker init completado (docker con --profile api + proyecto creados automáticamente)
 - [ ] Phase 2: tasker status responde OK
 - [ ] Phase 3: Exploración inicial: tasker --help, tasker component list
 - [ ] Phase 3: Componente creado vía CLI
@@ -549,10 +557,10 @@ test the project
 
 ```bash
 # Clean Docker + volumes
-cd real-test/tasker && docker compose down -v --remove-orphans
+cd real-test && docker compose --profile full down -v --remove-orphans
 
 # Or just stop (data persists)
-cd real-test/tasker && docker compose down
+cd real-test && docker compose --profile full down
 
 # Deactivate venv (from real-test/)
 deactivate

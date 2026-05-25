@@ -120,8 +120,9 @@ class Container:
     (switch backends), and clear service boundaries.
     """
 
-    def __init__(self, config: AppConfig | None = None) -> None:
+    def __init__(self, config: AppConfig | None = None, mode: str = "direct") -> None:
         self._config = config or AppConfig()
+        self._mode = mode
         self._neo4j_driver: Neo4jDriver | None = None
         self._repository: TaskRepositoryInterface | None = None
 
@@ -129,28 +130,64 @@ class Container:
     def config(self) -> AppConfig:
         return self._config
 
+    @property
+    def mode(self) -> str:
+        return self._mode
+
     @classmethod
     def from_env(cls) -> Container:
-        """Create a container with configuration from environment variables."""
-        return cls(config=AppConfig.from_env())
+        """Create a container with configuration from environment variables.
+
+        Reads ``TASKER_MODE`` and ``TASKER_API_URL`` from the environment
+        when available, falling back to the default Neo4j-backed container.
+        """
+        from socialseed_tasker.config.mode_config import DualModeConfig
+
+        dual_cfg = DualModeConfig.load()
+        return cls(config=AppConfig.from_env(), mode=dual_cfg.mode)
 
     def get_repository(self) -> TaskRepositoryInterface:
         """Get the task repository, initializing it if needed.
 
-        Only Neo4j storage backend is supported.
+        Returns ``ApiTaskRepository`` when ``mode == "api"``,
+        otherwise returns the Neo4j-backed repository.
         """
-        if self._repository is None:
-            driver = self.get_driver()
-            from socialseed_tasker.infrastructure.neo4j_repository import (
-                Neo4jTaskRepository,
-            )
+        if self._repository is not None:
+            return self._repository
 
-            self._repository = Neo4jTaskRepository(driver)
+        if self._mode == "api":
+            return self._get_api_repository()
 
+        driver = self.get_driver()
+        from socialseed_tasker.infrastructure.neo4j_repository import (
+            Neo4jTaskRepository,
+        )
+
+        self._repository = Neo4jTaskRepository(driver)
+        return self._repository
+
+    def _get_api_repository(self) -> TaskRepositoryInterface:
+        from socialseed_tasker.config.mode_config import DualModeConfig
+        from socialseed_tasker.infrastructure.http.api_client import ApiHttpClient
+        from socialseed_tasker.infrastructure.api_repository import ApiTaskRepository
+
+        dual_cfg = DualModeConfig.load()
+        client = ApiHttpClient(
+            base_url=dual_cfg.api_url,
+            api_key=dual_cfg.api_key or None,
+            timeout=dual_cfg.api_timeout,
+        )
+        self._repository = ApiTaskRepository(client)
         return self._repository
 
     def get_driver(self) -> Any:
-        """Get or create the Neo4j driver."""
+        """Get or create the Neo4j driver.
+
+        In ``api`` mode no local Neo4j driver is created — this method
+        returns ``None`` and callers must handle it gracefully.
+        """
+        if self._mode == "api":
+            return None
         if self._neo4j_driver is None:
             from socialseed_tasker.infrastructure.neo4j_driver import Neo4jDriver
 

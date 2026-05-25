@@ -73,7 +73,7 @@ def resolve_issue_id(partial_id: str, repo: TaskRepositoryInterface) -> UUID:
         pass
 
     # Get all issues once
-    issues = repo.list_issues(status=None, project=None)
+    issues = repo.list_issues(statuses=None, project=None)
 
     # Try exact title match first (no length restriction - titles can be short)
     for issue in issues:

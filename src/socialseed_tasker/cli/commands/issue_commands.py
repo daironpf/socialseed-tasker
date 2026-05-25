@@ -281,7 +281,7 @@ def issue_close(
 
     try:
         issue = close_issue_action(repo, resolved_id)
-        console.print(f"[success]✓ Issue closed:[/success] {issue.title}")
+        console.print(f"[success]Issue closed:[/success] {issue.title}")
 
         if affects:
             try:

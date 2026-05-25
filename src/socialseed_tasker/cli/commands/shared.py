@@ -75,6 +75,20 @@ def _get_password_with_fallback() -> str:
 
 def get_repository() -> TaskRepositoryInterface:
     from socialseed_tasker.cli.app import get_cli_container
+    from socialseed_tasker.config.mode_config import DualModeConfig
+
+    cfg = DualModeConfig.load()
+
+    if cfg.mode == "api":
+        from socialseed_tasker.infrastructure.http.api_client import ApiHttpClient
+        from socialseed_tasker.infrastructure.api_repository import ApiTaskRepository
+
+        client = ApiHttpClient(
+            base_url=cfg.api_url,
+            api_key=cfg.api_key or None,
+            timeout=cfg.api_timeout,
+        )
+        return ApiTaskRepository(client)
 
     password = _get_password_with_fallback()
     if password:
@@ -125,7 +139,7 @@ def resolve_issue_id(partial_id: str, repo: TaskRepositoryInterface) -> UUID:
     except ValueError:
         pass
 
-    issues = repo.list_issues(status=None, project=None)
+    issues = repo.list_issues(statuses=None, project=None)
 
     for issue in issues:
         if issue.title.lower() == partial_id.lower():

@@ -1,53 +1,6 @@
-# Troubleshooting Guide - Tasker v1.0.0
+# Troubleshooting Guide
 
-This is the first place to look when something breaks.
-
-## Quick Diagnostics
-
-Run these commands to check system health:
-
-```bash
-# Check Neo4j connection
-curl http://localhost:8000/health
-
-# Check API status
-curl http://localhost:8000/api/v1/components
-
-# Check logs
-docker compose logs tasker-api
-```
-
----
-
-## Common Issues
-
-### Neo4j Connection Issues
-
-#### "Unable to connect to Neo4j"
-
-**Symptoms:** API returns 500 or connection timeout
-
-**Solutions:**
-1. Check Neo4j is running: `docker compose ps`
-2. Check credentials in .env:
-   ```
-   TASKER_NEO4J_URI=bolt://localhost:7687
-   TASKER_NEO4J_USER=neo4j
-   TASKER_NEO4J_PASSWORD=your_password
-   ```
-3. Check Neo4j logs: `docker compose logs neo4j`
-4. Wait for Neo4j to be ready (can take 10-30 seconds on first start)
-5. Try: `docker compose restart tasker-db`
-
-#### "Authentication failed"
-
-**Symptoms:** Neo4j authentication error in logs
-
-**Solutions:**
-1. Verify password matches what Neo4j expects
-2. Reset Neo4j password via Docker:
-   ```bash
-   docker compose exec tasker-db cypher-shell -u neo4j -p old_password 
+Solutions to common problems when using Tasker. 
    # Then run: ALTER CURRENT USER SET PASSWORD FROM 'old' TO 'new'
    ```
 3. Or recreate the container: `docker compose down -v && docker compose up -d`

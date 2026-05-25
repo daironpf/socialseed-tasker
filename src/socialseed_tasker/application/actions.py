@@ -85,6 +85,53 @@ class OpenDependenciesError(Exception):
 
 
 # ---------------------------------------------------------------------------
+# API / remote-service exceptions
+# ---------------------------------------------------------------------------
+
+
+class RemoteServiceError(Exception):
+    """Raised when a remote service (API, DB, etc.) is unreachable or returns an unexpected error."""
+
+    def __init__(self, message: str = "Remote service error") -> None:
+        super().__init__(message)
+
+
+class InvalidEntityError(Exception):
+    """Raised when the API returns a 400-level validation error."""
+
+    def __init__(self, message: str = "Invalid entity") -> None:
+        super().__init__(message)
+
+
+class AuthenticationError(Exception):
+    """Raised when the API returns 401."""
+
+    def __init__(self, message: str = "Authentication failed") -> None:
+        super().__init__(message)
+
+
+class AuthorizationError(Exception):
+    """Raised when the API returns 403."""
+
+    def __init__(self, message: str = "Authorization denied") -> None:
+        super().__init__(message)
+
+
+class ConflictError(Exception):
+    """Raised when the API returns 409 (conflict)."""
+
+    def __init__(self, message: str = "Conflict") -> None:
+        super().__init__(message)
+
+
+class VersionMismatchError(Exception):
+    """Raised when the CLI version is incompatible with the API version."""
+
+    def __init__(self, message: str = "Version mismatch") -> None:
+        super().__init__(message)
+
+
+# ---------------------------------------------------------------------------
 # Repository interface
 # ---------------------------------------------------------------------------
 

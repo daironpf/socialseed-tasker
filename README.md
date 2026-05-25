@@ -31,6 +31,31 @@ curl http://localhost:8000/api/v1/components
 
 ---
 
+## Operation Modes: Direct vs API
+
+Tasker supports two operation modes to suit different workflows:
+
+- **Direct Mode** (default): Direct connection to Neo4j via Bolt protocol → Ideal for local development
+- **API Mode**: HTTP calls to FastAPI backend → Ideal for production and integrated testing
+
+Both modes support all CLI commands with identical syntax. Switch modes by setting the `TASKER_MODE` environment variable:
+
+```bash
+# Direct mode (default)
+tasker component list
+
+# API mode
+TASKER_MODE=api tasker component list
+TASKER_MODE=api TASKER_API_URL=http://localhost:8888 tasker component list
+```
+
+**Documentation:**
+- [docs/cli_modes.md](./docs/cli_modes.md) — Complete dual-mode guide with examples
+- [docs/dual_mode_setup.md](./docs/dual_mode_setup.md) — Setup troubleshooting for both modes
+- [docs/api_contract.md](./docs/api_contract.md) — REST API endpoint reference
+
+---
+
 ## Available CLI Commands
 
 ```bash
