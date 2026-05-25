@@ -1,5 +1,18 @@
 # Project Versions
 
+## [1.0.3] - 2026-05-24
+
+### v1.0.3 Checklist
+- [x] **#323 Deterministic API Contract Testing and Mock Server:** Added contract testing utilities, mock server, OpenAPI helpers, CLIs, unit/integration tests, and CI workflow.
+
+### Release History
+| Version | Date | Description |
+|---------|------|-------------|
+| 1.0.3   | 2026-05-24 | API Contract Testing & Mock Server |
+| 1.0.2   | 2026-05-20 | Agent Project Assignment |
+| 1.0.1   | 2026-05-05 | Quality & Testing Release |
+| 1.0.0   | 2026-05-04 | Full Autonomy Release |
+
 ## [1.0.2] - 2026-05-20
 
 ### v1.0.2 Checklist
@@ -12,13 +25,6 @@
 - [x] **Single Project Architecture:** Tasker now supports only ONE project per instance. All entities belong to this single project.
 - [x] **Project Data Fix:** Updated `.agent/project.json` with correct project data (was showing `dental-app`, now `socialseed-tasker`).
 - [x] **Interactive Init Workflow:** New workflow for AI agents to guide users through `tasker init` with recommendations and interactive data collection.
-
-### Release History
-| Version | Date | Description |
-|---------|------|-------------|
-| 1.0.2   | 2026-05-20 | Agent Project Assignment |
-| 1.0.1   | 2026-05-05 | Quality & Testing Release |
-| 1.0.0   | 2026-05-04 | Full Autonomy Release |
 
 ## [1.0.1] - 2026-05-05
 

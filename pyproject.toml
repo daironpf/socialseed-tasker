@@ -46,6 +46,9 @@ dependencies = [
     # Vector store
     "numpy>=1.24.0",
     
+    # Validation
+    "jsonschema>=4.20.0",
+
     # Code Analysis
     "tree-sitter>=0.20.0",
     "tree-sitter-python>=0.20.0",
