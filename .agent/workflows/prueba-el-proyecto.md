@@ -126,7 +126,7 @@ Simula la experiencia de un usuario que instala SocialSeed Tasker por primera ve
 
 ---
 
-## Phase 2: Scaffolding e Infraestructura
+## Phase 2: Scaffolding e Inicialización
 
 Simula los comandos que ejecuta un usuario tras instalar el paquete.
 
@@ -135,18 +135,20 @@ Simula los comandos que ejecuta un usuario tras instalar el paquete.
    ```bash
    tasker install .
    ```
-   > 📌 Esto crea `.agent/` con skills, workflows, docker-compose, configs.
+   > 📌 Crea `.agent/` con skills, workflows, docker-compose, configs.
 
-2. **Verificar scaffold**:
-   ```bash
-   ls -la .agent/
-   ```
-
-3. **Inicializar proyecto** (`tasker init` — configura el proyecto):
+2. **Inicializar y arrancar todo** (`tasker init`):
    ```bash
    tasker init
    ```
-   > Responde las preguntas interactivas o usa flags: `--project-name "test" --architecture api-first`
+   > `tasker init` guía al usuario interactivamente: nombre del proyecto, tecnología, etc.
+   > **Al finalizar, automáticamente levanta docker compose, crea el proyecto en Neo4j,
+   > y deja el sistema listo para usar.** No requiere pasos adicionales.
+
+3. **Verificar que el sistema está listo**:
+   ```bash
+   tasker status
+   ```
 
 4. **Verificar archivos generados**:
    ```bash
@@ -156,24 +158,6 @@ Simula los comandos que ejecuta un usuario tras instalar el paquete.
 5. **Inicializar git y commit inicial** (como haría un usuario real):
    ```bash
    git add -A && git commit -m "chore: initial tasker scaffold"
-   ```
-
-6. **Start services**:
-   ```bash
-   cd .agent/tasker && docker compose up -d && cd ../..
-   ```
-
-7. **Wait for services to be healthy** (polling with timeout):
-   ```bash
-   echo "Waiting for services..."
-   for i in $(seq 1 30); do
-     if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
-       echo "API ready"
-       break
-     fi
-     echo "Waiting... ($i/30)"
-     sleep 3
-   done
    ```
 
 ---
@@ -524,7 +508,7 @@ dx_evaluation:
 test the project
   → Phase 0: Ask use case + issue count + issue type + architecture + implementation count
   → Phase 1: pip install socialseed-tasker + git init
-  → Phase 2: tasker install → tasker init → docker compose up → health poll
+  → Phase 2: tasker install → tasker init (levanta todo automáticamente)
   → Phase 3: User interaction via CLI (component/issue/dependency commands)
   → Phase 4: Implementation & Doc Sync Evaluation (0-30 issues)
   → Phase 5: Generate report.md
@@ -545,8 +529,8 @@ test the project
 - [ ] Phase 1: pip install socialseed-tasker
 - [ ] Phase 2: tasker install ejecutado (scaffold)
 - [ ] Phase 2: tasker init ejecutado (configuración)
-- [ ] Phase 2: docker compose up exitoso
-- [ ] Phase 2: Health check del API pasado
+- [ ] Phase 2: tasker init completado (docker + proyecto creados automáticamente)
+- [ ] Phase 2: tasker status responde OK
 - [ ] Phase 3: Exploración inicial: tasker --help, tasker component list
 - [ ] Phase 3: Componente creado vía CLI
 - [ ] Phase 3: Issues creados vía CLI
