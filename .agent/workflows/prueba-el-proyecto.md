@@ -4,7 +4,19 @@
 `test the project`
 
 ## Description
-Executes a complete black-box evaluation of the SocialSeed Tasker system. This workflow simulates a real use case by creating issues in an isolated environment (real-test/) and evaluates system robustness from a Project Manager's perspective.
+Executes a complete black-box evaluation of the SocialSeed Tasker system. This workflow simulates a real use case by creating issues in an isolated environment (`real-test/`) and evaluates system robustness from a Project Manager's perspective.
+
+---
+
+## Table of Contents
+- [Inviolable Rule](#-inviolable-rule-black-box-restriction)
+- [Phase 0: Requirements Capture](#phase-0-requirements-capture)
+- [Phase 1: Environment Isolation](#phase-1-environment-isolation)
+- [Phase 2: Infrastructure Initialization](#phase-2-infrastructure-initialization)
+- [Phase 3: Issue Creation (Black Box)](#phase-3-issue-creation-black-box)
+- [Phase 4: Implementation & Doc-Sync](#phase-4-implementation--doc-sync-behavior-analysis)
+- [Phase 5: Report Generation](#phase-5-report-generation)
+- [Cleanup](#cleanup)
 
 ---
 
@@ -27,7 +39,7 @@ Executes a complete black-box evaluation of the SocialSeed Tasker system. This w
 ### Comandos Permitidos
 - `tasker --help` (CLI help)
 - `tasker init` (scaffold)
-- `docker-compose up/down` (infra)
+- `docker compose up/down` (infra)
 - Archivos generados por `tasker init` en `real-test/`
 
 ---
@@ -58,7 +70,7 @@ Executes a complete black-box evaluation of the SocialSeed Tasker system. This w
    - **None (0)**: Only test issue creation and graph storage.
    - **Partial (1-10)**: Test basic doc-sync and registry reflection.
    - **Stress (11-30)**: Test performance of documentation updates and registry consistency.
-6. (Optional) Assign random profile from Section 0:
+6. (Optional) Assign random profile from the profile table below:
    - **Junior Dev**: Focus on documentation clarity, "Doc Gaps"
    - **Senior Architect**: Focus on graph efficiency, design patterns, scalability
    - **DevOps**: Focus on infrastructure, logs, response times, Docker stability
@@ -78,9 +90,9 @@ Executes a complete black-box evaluation of the SocialSeed Tasker system. This w
 ## Phase 1: Environment Isolation
 
 ### Process
-1. **Stop previous containers**:
+1. **Stop previous containers** (if any):
    ```bash
-   cd real-test && docker-compose down -v --remove-orphans
+   cd real-test 2>/dev/null && docker compose down -v --remove-orphans && cd ..
    ```
 
 2. **Create isolation directory**:
@@ -91,14 +103,15 @@ Executes a complete black-box evaluation of the SocialSeed Tasker system. This w
 3. **Create and activate Python venv**:
    ```bash
    python -m venv venv
-   source venv/Scripts/activate  # Windows
-   # or: source venv/bin/activate  # Linux/Mac
+   # Windows:
+   source venv/Scripts/activate
+   # Linux/Mac:
+   # source venv/bin/activate
    ```
 
 4. **Install package in editable mode**:
    ```bash
    pip install -e ..
-   # or: pip install .
    ```
 
 ---
@@ -106,39 +119,32 @@ Executes a complete black-box evaluation of the SocialSeed Tasker system. This w
 ## Phase 2: Infrastructure Initialization
 
 ### Process
-1. **Run tasker init**:
+1. **Run tasker init** inside `real-test/`:
    ```bash
-   tasker init .
+   tasker init
    ```
 
-2. **Copy full frontend** (IMPORTANT! - scaffold is just placeholder):
+2. **Verify scaffold output**:
    ```bash
-   # Copy from main project
-   cp -r ../../frontend/dist/* tasker/frontend/
-   cp ../../frontend/nginx.conf tasker/frontend/
+   ls -la tasker/
    ```
 
-3. **Update Dockerfile** for full frontend:
+3. **Start services**:
    ```bash
-   # Edit tasker/frontend/Dockerfile to:
-   FROM nginx:alpine
-   COPY index.html /usr/share/nginx/html/index.html
-   COPY assets/ /usr/share/nginx/html/assets/
-   COPY nginx.conf /etc/nginx/conf.d/default.conf
-   EXPOSE 80
-   CMD ["nginx", "-g", "daemon off;"]
+   cd tasker && docker compose up -d
    ```
 
-4. **Start services** (with --no-cache first time):
+4. **Wait for services to be healthy** (polling with timeout):
    ```bash
-   cd tasker && docker-compose build --no-cache tasker-board
-   docker-compose up -d
-   ```
-
-5. **Wait for services to be ready**:
-   ```bash
-   sleep 10
-   # Verify: docker-compose ps
+   echo "Waiting for services..."
+   for i in $(seq 1 30); do
+     if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+       echo "API ready"
+       break
+     fi
+     echo "Waiting... ($i/30)"
+     sleep 3
+   done
    ```
 
 ---
@@ -188,13 +194,17 @@ Executes a complete black-box evaluation of the SocialSeed Tasker system. This w
 ### Test Dependencies (Simple Enumerated)
 Quick script to create simple dependencies:
 ```bash
-# For 50 issues, create 5 simple dependencies
-# Issue N depends on Issue N-1 (linear chain)
-for i in {2..6}; do
-  curl -X POST "http://localhost:8000/api/v1/issues/$ID_$i/dependencies" \
+# For issues with IDs stored in an array, create a linear chain
+# Issue N depends on Issue N-1
+ISSUE_IDS=($(curl -sf http://localhost:8000/api/v1/issues | python -c "import sys,json; ids=[i['id'] for i in json.load(sys.stdin)]; print('\n'.join(ids))" 2>/dev/null))
+for ((i=1; i<${#ISSUE_IDS[@]}; i++)); do
+  FROM="${ISSUE_IDS[$i]}"
+  TO="${ISSUE_IDS[$((i-1))]}"
+  curl -s -X POST "http://localhost:8000/api/v1/issues/$FROM/dependencies" \
     -H "Content-Type: application/json" \
-    -d '{"depends_on_id": "$ID_$((i-1))"}'
+    -d "{\"depends_on_id\": \"$TO\"}" > /dev/null
 done
+echo "Created ${#ISSUE_IDS[@]} dependencies in linear chain"
 ```
 
 ---
@@ -247,13 +257,13 @@ Observe and validate the agent's ability to solve technical issues and keep proj
 For a subset of issues (defined in Phase 0), the agent MUST:
 
 1.  **Analyze Context** (Graph-Aware):
-    -   Read the issue details from the API or `.issues/` folder.
+    -   Read the issue details from the API or `real-test/.issues/` folder.
     -   Query graph for component context: `GET /api/v1/components/{id}`
     -   Query graph for policies: `GET /api/v1/policies?component={id}`
     -   Consult the `real-test/.agent/skills/` to understand the specific conventions.
 2.  **Execute Technical Implementation**:
     -   Perform impact analysis before modifying code
-    -   Create or modify source files in `real-test/src/`.
+    -   Create or modify source files in `real-test/` (e.g., `real-test/src/` if scaffolded with language).
     -   The code must reflect the requested feature/fix and adhere to the project's architectural constraints.
 3.  **Perform Documentation Sync (CRITICAL)**:
     -   **ROADMAP.md**: Update the "Last updated" date and mark the issue as RESOLVED in the Known Issues table.
@@ -353,14 +363,14 @@ curl http://localhost:8000/api/v1/components
 docker exec -it tasker-db cypher-shell -u neo4j -p neoSocial
 
 # When done later, run:
-cd real-test/tasker && docker-compose down -v --remove-orphans
+cd real-test/tasker && docker compose down -v --remove-orphans
 ```
 
 ### If NO (Cleanup) or User Confirms Cleanup
 
 **Only if user explicitly confirms "cleanup" or "limpiar"**:
 ```bash
-# Stop containers: docker-compose down -v --remove-orphans
+# Stop containers: docker compose down -v --remove-orphans
 # Deactivate venv: deactivate
 # Leave system ready for next iteration
 ```
@@ -396,7 +406,7 @@ cd real-test/tasker && docker-compose down -v --remove-orphans
 ```yaml
 test_metadata:
   date: "YYYY-MM-DD"
-  target_version: "0.9.0"
+  target_version: "1.0.4"
   use_case: "Description"
   requested_issues: 50
   created_issues: 0
@@ -433,8 +443,8 @@ dx_evaluation:
 ```
 test the project
   → Phase 0: Ask use case + issue count + issue type + architecture + implementation count
-  → Phase 1: Setup real-test/ + venv
-  → Phase 2: tasker init + docker up
+  → Phase 1: Setup real-test/ + venv + pip install
+  → Phase 2: tasker init + docker compose up + health poll
   → Phase 3: Create issues via API (simple or real)
   → Phase 4: Implementation & Doc Sync Evaluation (0-30 issues)
   → Phase 5: Generate report.md
@@ -471,10 +481,10 @@ test the project
 
 ```bash
 # Clean Docker + volumes
-cd real-test/tasker && docker-compose down -v --remove-orphans
+cd real-test/tasker && docker compose down -v --remove-orphans
 
 # Or just stop (data persists)
-cd real-test/tasker && docker-compose down
+cd real-test/tasker && docker compose down
 
 # Deactivate venv (from real-test/)
 deactivate
@@ -487,5 +497,6 @@ deactivate
 When workflow completes, execute:
 
 ```bash
-.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/Prueba Completada.mp3"
+# Windows (from project root, relative path)
+python .agent/assets/play_audio.py ".agent/assets/audios/Prueba Completada.mp3"
 ```
