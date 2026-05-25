@@ -20,7 +20,7 @@ CLI integration
 
 Local development
 - Start services:
-  docker compose -f docker-compose.celery.yml up -d
+  docker compose -f compose/tools/celery.yml up -d
 - Start worker (if not using compose):
   python -m socialseed_tasker.workers.worker
 

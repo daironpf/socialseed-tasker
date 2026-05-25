@@ -1,6 +1,6 @@
 """Integration tests for the thin CLI — runs against real Neo4j.
 
-Requires TASKER_INTEGRATION=1 and Neo4j running via docker-compose.neo4j.yml.
+Requires TASKER_INTEGRATION=1 and Neo4j running via compose/infra/neo4j.yml.
 """
 
 from __future__ import annotations

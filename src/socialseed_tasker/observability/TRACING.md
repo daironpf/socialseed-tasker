@@ -7,7 +7,7 @@ Overview
 
 Local development
 1. Start Jaeger:
-   docker compose -f docker-compose.tracing.yml up -d
+   docker compose -f compose/infra/tracing.yml up -d
 2. Start API and worker stacks (ensure TASKER_JAEGER_HOST points to host where Jaeger agent is reachable).
 3. Open Jaeger UI: http://localhost:16686 and search for service "tasker" or "tasker-api".
 

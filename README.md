@@ -212,8 +212,8 @@ python tools/chaos/chaosctl.py report
 docker compose up -d
 
 # Start full stack with monitoring
-docker compose -f docker-compose.api.yml up -d
-docker compose -f docker-compose.chaos.yml up -d --build
+docker compose -f compose/dev/api.yml up -d
+docker compose -f compose/tools/chaos.yml up -d --build
 
 # Check status
 docker compose ps
@@ -267,7 +267,7 @@ make example-run
 # output written to examples/output.json
 
 # Start API, Neo4j and Board
-docker compose -f docker-compose.api.yml up -d
+docker compose -f compose/dev/api.yml up -d
 
 # Open the board
 http://localhost:8080

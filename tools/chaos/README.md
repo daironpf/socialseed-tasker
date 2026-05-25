@@ -6,7 +6,7 @@ Overview
 
 Run a scenario
 - Build images and start baseline services:
-  docker compose -f docker-compose.chaos.yml up -d --build
+  docker compose -f compose/tools/chaos.yml up -d --build
 - Run scenario:
   python tools/chaos/chaosctl.py run redis-flap
 - List scenarios:

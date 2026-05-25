@@ -47,7 +47,7 @@ def run_scenario(name: str):
                 cmd = f"docker compose -f {step['compose']} {step['cmd']}"
                 run_cmd(cmd)
             elif action == "exec":
-                cmd = f"docker compose -f {scenario.get('compose','docker-compose.chaos.yml')} exec -T chaos-agent {step['cmd']}"
+                cmd = f"docker compose -f {scenario.get('compose','compose/tools/chaos.yml')} exec -T chaos-agent {step['cmd']}"
                 run_cmd(cmd)
             elif action == "sleep":
                 time.sleep(float(step.get("seconds", 1)))

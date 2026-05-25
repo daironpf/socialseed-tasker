@@ -1,8 +1,8 @@
 # tools/chaos/scenarios/api-latency.yml
-compose: docker-compose.chaos.yml
+compose: compose/tools/chaos.yml
 steps:
   - action: docker_compose
-    compose: docker-compose.chaos.yml
+    compose: compose/tools/chaos.yml
     cmd: up -d --build
   - action: sleep
     seconds: 5

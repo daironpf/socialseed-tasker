@@ -5,14 +5,14 @@ Overview
 - Grafana is provisioned automatically with a Prometheus datasource and a Tasker Overview dashboard.
 
 Files
-- docker-compose.grafana.yml: Compose stack for Prometheus and Grafana.
+- compose/infra/grafana.yml: Compose stack for Prometheus and Grafana.
 - prometheus/prometheus.yml: Prometheus scrape config for Tasker exporter.
 - grafana/provisioning: Grafana provisioning files (datasource and dashboard provider).
 - grafana/dashboards/tasker_overview.json: Prebuilt dashboard.
 
 Run locally
 1. Start the stack:
-   docker compose -f docker-compose.grafana.yml up -d --build
+   docker compose -f compose/infra/grafana.yml up -d --build
 
 2. Verify services:
    - Prometheus UI: http://localhost:9090
@@ -28,7 +28,7 @@ Grafana provisioning
 
 Customizing dashboards
 - Edit grafana/dashboards/tasker_overview.json and restart Grafana:
-  docker compose -f docker-compose.grafana.yml restart grafana
+  docker compose -f compose/infra/grafana.yml restart grafana
 
 CI notes
 - In CI, start the compose stack, wait for Grafana health, then run tests that query Grafana API to verify dashboards are present.

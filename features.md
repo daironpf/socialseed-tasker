@@ -724,9 +724,9 @@ tasker backup restore <timestamp>
 ```
 
 ### 16.3 Docker Compose
-Scheduled backups via `docker-compose.backup.yml`:
+Scheduled backups via `compose/tools/backup.yml`:
 ```bash
-docker compose -f docker-compose.backup.yml up -d
+docker compose -f compose/tools/backup.yml up -d
 ```
 
 ---
@@ -747,7 +747,7 @@ docker compose -f docker-compose.backup.yml up -d
 
 ### 17.3 Docker Compose
 ```bash
-docker compose -f docker-compose.tracing.yml up -d
+docker compose -f compose/infra/tracing.yml up -d
 # Jaeger UI: http://localhost:16686
 ```
 
@@ -780,7 +780,7 @@ python tools/chaos/chaosctl.py status
 
 ### 18.3 Docker Compose
 ```bash
-docker compose -f docker-compose.chaos.yml up -d --build
+docker compose -f compose/tools/chaos.yml up -d --build
 ```
 
 ---

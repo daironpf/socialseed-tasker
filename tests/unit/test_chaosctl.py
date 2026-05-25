@@ -23,7 +23,7 @@ def scenario_dir(tmp_path):
     d = tmp_path / "scenarios"
     d.mkdir(parents=True)
     (d / "test-scenario.yml").write_text("""
-compose: docker-compose.chaos.yml
+compose: compose/tools/chaos.yml
 steps:
   - action: sleep
     seconds: 0.01
@@ -33,7 +33,7 @@ steps:
     timeout: 1
     required: true
   - action: docker_compose
-    compose: docker-compose.chaos.yml
+    compose: compose/tools/chaos.yml
     cmd: ps
   - action: exec
     cmd: "echo hello"
@@ -57,7 +57,7 @@ def test_list_scenarios(chaosctl):
 
 def test_load_scenario(chaosctl):
     s = chaosctl.load_scenario("test-scenario")
-    assert s["compose"] == "docker-compose.chaos.yml"
+    assert s["compose"] == "compose/tools/chaos.yml"
     assert len(s["steps"]) == 4
 
 

@@ -1,6 +1,6 @@
 """Integration tests for Neo4jIssueRepository and Neo4jGraphRepository.
 
-Requires Neo4j running via docker-compose.neo4j.yml.
+Requires Neo4j running via compose/infra/neo4j.yml.
 """
 
 import os

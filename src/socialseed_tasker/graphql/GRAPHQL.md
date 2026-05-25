@@ -16,7 +16,7 @@ Schema
 
 Running
 - Start service:
-  docker compose -f docker-compose.graphql.yml up -d --build
+  docker compose -f compose/tools/graphql.yml up -d --build
 - Local dev:
   TASKER_EXPORT_GRAPHQL=1 python -m socialseed_tasker.graphql.server
 

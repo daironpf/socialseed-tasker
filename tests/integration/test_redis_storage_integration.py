@@ -7,7 +7,7 @@ pytestmark = pytest.mark.integration
 
 def _skip_if_no_redis():
     if os.getenv("TASKER_REDIS_URL") is None:
-        pytest.skip("Redis not configured; set TASKER_REDIS_URL or run docker-compose.redis.yml")
+        pytest.skip("Redis not configured; set TASKER_REDIS_URL or run compose/infra/redis.yml")
 
 def test_redis_put_get_delete_integration():
     _skip_if_no_redis()

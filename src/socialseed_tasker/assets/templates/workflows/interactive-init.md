@@ -312,7 +312,7 @@ Agent: 🚀 Initializing Tasker in your project...
        ✅ Tasker initialized successfully!
        
        Next steps:
-       1. Start Neo4j: docker compose -f .agent/docker-compose.yml up -d
+       1. Start Neo4j: cd .agent/tasker && docker compose up -d
        2. Configure environment: cp .agent/configs/.env.example .agent/configs/.env
        3. Start API: tasker api
        4. Register your agent: tasker agent register --id my-agent --name "My Agent" --role developer

@@ -17,4 +17,4 @@ GraphRepository
 Neo4j notes
 - All Cypher queries are parameterized.
 - Implementations wrap errors as GraphPortError.
-- Use docker-compose.neo4j.yml for local integration tests.
+- Use compose/infra/neo4j.yml for local integration tests.

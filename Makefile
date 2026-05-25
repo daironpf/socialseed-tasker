@@ -1,6 +1,6 @@
 .PHONY: dev-up dev-down test integration example-run wait-for-neo4j
 
-DEV_COMPOSE = docker compose -f docker-compose.dev.yml
+DEV_COMPOSE = docker compose -f compose/dev/dev.yml
 PY = python
 
 dev-up:

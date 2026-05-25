@@ -14,7 +14,7 @@ CLI
 
 Running
 - Local dev:
-  docker compose -f docker-compose.graphviz.yml up -d --build
+  docker compose -f compose/tools/graphviz.yml up -d --build
 - Programmatic:
   Use build_graph(container) and compute_impact(graph, node_id, max_depth)
 

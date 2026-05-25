@@ -1,6 +1,6 @@
 """Integration tests for use cases — exercises real Neo4j repositories and parser adapter.
 
-Requires TASKER_INTEGRATION=1 and Neo4j running via docker-compose.neo4j.yml.
+Requires TASKER_INTEGRATION=1 and Neo4j running via compose/infra/neo4j.yml.
 """
 
 from __future__ import annotations

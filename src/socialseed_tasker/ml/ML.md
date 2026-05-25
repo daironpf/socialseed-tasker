@@ -2,7 +2,7 @@
 
 ## Start ML Service
 ```bash
-docker compose -f docker-compose.ml.yml up -d --build
+docker compose -f compose/tools/ml.yml up -d --build
 ```
 Service endpoint: `POST http://localhost:8090/api/v1/models/{model_name}/infer`
 

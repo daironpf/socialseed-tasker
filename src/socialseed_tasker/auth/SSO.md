@@ -21,7 +21,7 @@ Environment variables
 
 Local dev steps
 1. Start Keycloak:
-   docker compose -f docker-compose.auth.yml up -d
+   docker compose -f compose/tools/auth.yml up -d
 2. Start API and frontend (compose stacks).
 3. Open frontend at http://localhost:8080 and click Login.
 
