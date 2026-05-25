@@ -37,10 +37,14 @@ Executes a complete black-box evaluation of the SocialSeed Tasker system. This w
 - Buscar en código para encontrar endpoints o comandos
 
 ### Comandos Permitidos
-- `tasker --help` (CLI help)
-- `tasker init` (scaffold)
+- `tasker --help`, `tasker install`, `tasker init` (CLI de instalación)
+- `tasker component create/list/show/delete` (componentes)
+- `tasker issue create/list/show/close` (issues)
+- `tasker dependency add/list/chain/blocked` (dependencias)
+- `tasker serve`, `tasker restart` (servidor)
 - `docker compose up/down` (infra)
-- Archivos generados por `tasker init` en `real-test/`
+- `curl` para consultar API
+- Archivos generados por `tasker install`/`tasker init` en `real-test/`
 
 ---
 
@@ -87,17 +91,21 @@ Executes a complete black-box evaluation of the SocialSeed Tasker system. This w
 
 ---
 
-## Phase 1: Environment Isolation
+## Phase 1: Simular Instalación de Usuario
+
+Simula la experiencia de un usuario que instala SocialSeed Tasker por primera vez.
 
 ### Process
 1. **Stop previous containers** (if any):
    ```bash
    cd real-test 2>/dev/null && docker compose down -v --remove-orphans && cd ..
+   rm -rf real-test
    ```
 
-2. **Create isolation directory**:
+2. **Create clean project directory** (simula el proyecto del usuario):
    ```bash
    mkdir -p real-test && cd real-test
+   git init
    ```
 
 3. **Create and activate Python venv**:
@@ -109,32 +117,53 @@ Executes a complete black-box evaluation of the SocialSeed Tasker system. This w
    # source venv/bin/activate
    ```
 
-4. **Install package in editable mode**:
+4. **Install package** (como un usuario real desde PyPI):
    ```bash
-   pip install -e ..
+   pip install socialseed-tasker
    ```
+   > Si el paquete no está publicado, instalar desde el repo local:
+   > `pip install -e ..`
 
 ---
 
-## Phase 2: Infrastructure Initialization
+## Phase 2: Scaffolding e Infraestructura
+
+Simula los comandos que ejecuta un usuario tras instalar el paquete.
 
 ### Process
-1. **Run tasker init** inside `real-test/`:
+1. **Scaffold Tasker en el proyecto** (`tasker install`):
+   ```bash
+   tasker install .
+   ```
+   > 📌 Esto crea `.agent/` con skills, workflows, docker-compose, configs.
+
+2. **Verificar scaffold**:
+   ```bash
+   ls -la .agent/
+   ```
+
+3. **Inicializar proyecto** (`tasker init` — configura el proyecto):
    ```bash
    tasker init
    ```
+   > Responde las preguntas interactivas o usa flags: `--project-name "test" --architecture api-first`
 
-2. **Verify scaffold output**:
+4. **Verificar archivos generados**:
    ```bash
-   ls -la tasker/
+   ls -la .agent/tasker/
    ```
 
-3. **Start services**:
+5. **Inicializar git y commit inicial** (como haría un usuario real):
    ```bash
-   cd tasker && docker compose up -d
+   git add -A && git commit -m "chore: initial tasker scaffold"
    ```
 
-4. **Wait for services to be healthy** (polling with timeout):
+6. **Start services**:
+   ```bash
+   cd .agent/tasker && docker compose up -d && cd ../..
+   ```
+
+7. **Wait for services to be healthy** (polling with timeout):
    ```bash
    echo "Waiting for services..."
    for i in $(seq 1 30); do
@@ -149,62 +178,113 @@ Executes a complete black-box evaluation of the SocialSeed Tasker system. This w
 
 ---
 
-## Phase 3: Agent Evaluation (Black Box)
+## Phase 3: Interacción como Usuario Real (Black Box)
+
+Evalúa el sistema desde la perspectiva de un usuario que interactúa **exclusivamente a través de la CLI** y la API REST, sin acceso al código fuente.
 
 ### Sub-Agent Configuration
-- **Role**: Project Manager / Architect
-- **Mission**: Define issue architecture (user stories, technical tasks, dependencies) for the given use case
-- **Constraint**: MUST NOT write any code. Success is measured by creating issues in the Tasker graph.
+- **Role**: Project Manager / Product Owner
+- **Mission**: Gestionar el proyecto usando únicamente los comandos CLI y endpoints API documentados
+- **Constraint**: MUST NOT leer `src/`. Solo usa `--help`, documentación generada, y respuestas del servidor.
 
 ### Assigned Profile Behavior
 | Profile | Behavior |
 |---------|----------|
-| Junior Dev | Relies heavily on step-by-step documentation |
-| Senior Architect | Focuses on graph efficiency and design patterns |
-| DevOps | Focuses on infrastructure and Docker stability |
-| Chaos Monkey | Uses ONLY `tasker --help` and error messages. NO documentation reading |
+| Junior Dev | Usa `--help` extensivamente, sigue la documentación al pie de la letra |
+| Senior Architect | Prueba features avanzadas: dependencias, análisis de impacto, RAG |
+| DevOps | Prueba docker, health checks, logs, restart del servidor |
+| Chaos Monkey | Solo usa `tasker --help` y mensajes de error. NO lee documentación |
 
-### Process
+### Proceso General (ambos tipos de issues)
 
-**For Simple Enumerated Issues** (default - quick test):
-1. Create component with use case name
-2. Create N issues with simple titles: "Task 1: [Use Case] feature", "Task 2: [Use Case] feature", etc.
-3. Create simple dependencies (5-10% of issues)
-4. Verify via API
+**Siempre usando la CLI (desde `real-test/` con venv activado):**
 
-**For Real Issues** (requires AI reasoning):
-1. Launch Sub-Agent with assigned profile
-2. Sub-Agent reads:
-   - `skills/issue_quality_guide.json` (quality standards)
-   - Documentation from `real-test/docs/` or `real-test/.agent/`
-3. Sub-Agent creates issues following quality guide standards:
-   - Titles follow pattern: [Component] Action: Expected Result
-   - Descriptions include Context, Acceptance Criteria, Technical Notes
-   - Priority matches guide (CRITICAL/HIGH/MEDIUM/LOW)
-4. Sub-Agent creates dependencies between issues (10-15%):
-   - Link high-priority issues to their prerequisites
-   - Create dependency chains
-   - Use add_dependency() for all relationships
-5. Sub-Agent verifies:
-   - Issue count via GET endpoint
-   - Dependency creation via GET /api/v1/issues/{id}/dependencies
-
-6. If discrepancy found: mark as FINDING with severity HIGH
-
-### Test Dependencies (Simple Enumerated)
-Quick script to create simple dependencies:
+#### A. Exploración Inicial
 ```bash
-# For issues with IDs stored in an array, create a linear chain
-# Issue N depends on Issue N-1
-ISSUE_IDS=($(curl -sf http://localhost:8000/api/v1/issues | python -c "import sys,json; ids=[i['id'] for i in json.load(sys.stdin)]; print('\n'.join(ids))" 2>/dev/null))
-for ((i=1; i<${#ISSUE_IDS[@]}; i++)); do
-  FROM="${ISSUE_IDS[$i]}"
-  TO="${ISSUE_IDS[$((i-1))]}"
-  curl -s -X POST "http://localhost:8000/api/v1/issues/$FROM/dependencies" \
-    -H "Content-Type: application/json" \
-    -d "{\"depends_on_id\": \"$TO\"}" > /dev/null
-done
-echo "Created ${#ISSUE_IDS[@]} dependencies in linear chain"
+# El usuario explora el CLI
+tasker --help
+tasker component --help
+tasker issue --help
+
+# Listar componentes (debería estar vacío o con default)
+tasker component list
+```
+
+#### B. Gestión de Componentes
+```bash
+# Crear componente para el use case
+tasker component create <use-case-slug> --project "test"
+
+# Verificar
+tasker component list
+tasker component show <component-id>
+```
+
+#### C. Creación de Issues vía CLI
+```bash
+# Crear issues como un usuario real
+tasker issue create "Task 1: <use case> feature" --component <component-id> --priority HIGH
+tasker issue create "Task 2: <use case> feature" --component <component-id> --priority MEDIUM
+
+# Verificar
+tasker issue list
+tasker issue show <issue-id>
+```
+
+#### D. Gestión de Dependencias vía CLI
+```bash
+# Crear dependencias entre issues
+tasker dependency add <issue-2-id> --depends-on <issue-1-id>
+
+# Verificar cadena de dependencias
+tasker dependency chain <issue-2-id>
+tasker dependency blocked
+```
+
+#### E. Operaciones Avanzadas vía CLI
+```bash
+# Marcar issue como en progreso
+tasker issue start <issue-id>
+
+# Cerrar issue
+tasker issue close <issue-id>
+
+# Ver estado del servidor
+tasker status
+```
+
+---
+
+### For Simple Enumerated Issues (default - quick test)
+
+1. Crear 1 componente con el nombre del use case
+2. Crear N issues secuenciales vía CLI: `tasker issue create "Task N: ..." --component <id>`
+3. Crear dependencias lineales (5-10%): `tasker dependency add <id2> --depends-on <id1>`
+4. Verificar con: `tasker issue list` y `tasker dependency blocked`
+
+### For Real Issues (comprehensive test)
+
+1. Leer `skills/issue_quality_guide.json` para estándares de calidad
+2. Crear issues con títulos y descripciones significativas usando la CLI
+3. Crear dependencias realistas (10-15% de los issues)
+4. Verificar con comandos CLI y endpoints API:
+   - `tasker issue list` / `tasker issue show <id>`
+   - `GET /api/v1/issues` / `GET /api/v1/issues/{id}/dependencies`
+5. Si hay discrepancias: marcar como FINDING con severity HIGH
+
+---
+### Endpoints API para verificación adicional
+
+```bash
+# Verificar todo via API (como haría un integrador)
+curl http://localhost:8000/api/v1/components | python -m json.tool
+curl http://localhost:8000/api/v1/issues | python -m json.tool
+
+# Ver detalle de issue
+curl http://localhost:8000/api/v1/issues/<issue-id>
+
+# Verificar salud del sistema
+curl http://localhost:8000/health
 ```
 
 ---
@@ -353,8 +433,8 @@ Question: "Do you want to cleanup services (docker-compose down) or keep them ru
 # Ver issues via API
 curl http://localhost:8000/api/v1/issues
 
-# Ver issues via CLI (in real-test/)
-cd real-test && ./venv/Scripts/tasker.exe issue list
+# Ver issues via CLI (in real-test/ with venv active)
+cd real-test && tasker issue list
 
 # Ver componentes
 curl http://localhost:8000/api/v1/components
@@ -443,9 +523,9 @@ dx_evaluation:
 ```
 test the project
   → Phase 0: Ask use case + issue count + issue type + architecture + implementation count
-  → Phase 1: Setup real-test/ + venv + pip install
-  → Phase 2: tasker init + docker compose up + health poll
-  → Phase 3: Create issues via API (simple or real)
+  → Phase 1: pip install socialseed-tasker + git init
+  → Phase 2: tasker install → tasker init → docker compose up → health poll
+  → Phase 3: User interaction via CLI (component/issue/dependency commands)
   → Phase 4: Implementation & Doc Sync Evaluation (0-30 issues)
   → Phase 5: Generate report.md
   → ⚠️ ASK: Cleanup or keep running?
@@ -459,15 +539,19 @@ test the project
 - [ ] Phase 0: Issue type defined (real vs simple)
 - [ ] Phase 0: Architecture type defined
 - [ ] Phase 0: Profile assigned
-- [ ] Phase 1: Containers stopped
-- [ ] Phase 1: real-test/ created
-- [ ] Phase 1: venv created and activated
-- [ ] Phase 1: Package installed
-- [ ] Phase 2: tasker init executed
-- [ ] Phase 2: Docker services up
-- [ ] Phase 3: Documentation available
-- [ ] Phase 3: Issues created via API
-- [ ] Phase 3: Issue count verified
+- [ ] Phase 1: Limpiar real-test/ anterior
+- [ ] Phase 1: git init en proyecto limpio
+- [ ] Phase 1: venv creado y activado
+- [ ] Phase 1: pip install socialseed-tasker
+- [ ] Phase 2: tasker install ejecutado (scaffold)
+- [ ] Phase 2: tasker init ejecutado (configuración)
+- [ ] Phase 2: docker compose up exitoso
+- [ ] Phase 2: Health check del API pasado
+- [ ] Phase 3: Exploración inicial: tasker --help, tasker component list
+- [ ] Phase 3: Componente creado vía CLI
+- [ ] Phase 3: Issues creados vía CLI
+- [ ] Phase 3: Dependencias creadas vía CLI
+- [ ] Phase 3: Verificación via CLI y API
 - [ ] Phase 4: Implementation subset selected (0-30)
 - [ ] Phase 4: Doc-sync performed and verified
 - [ ] Phase 4: Registry reflection verified (Logs/DB)
