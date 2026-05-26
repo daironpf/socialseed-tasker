@@ -281,7 +281,7 @@ def project_setup(
             from socialseed_tasker.domain.entities import Component
 
             component = Component(name=module["name"], description=module["description"], project=proj_name)
-            repo.create_component(component)
+            component = repo.create_component(component)
             console.print(f"[success]Created:[/success] {module['name']}")
             created_count += 1
         except Exception as e:

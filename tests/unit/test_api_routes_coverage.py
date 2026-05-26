@@ -16,8 +16,9 @@ class MockRepoFull(TaskRepositoryInterface):
         self._dependencies: dict[str, set[str]] = {}
         self._constraints = {}
 
-    def create_issue(self, issue: Issue) -> None:
+    def create_issue(self, issue: Issue) -> Issue:
         self._issues[str(issue.id)] = issue
+        return issue
 
     def get_issue(self, issue_id: str) -> Issue | None:
         return self._issues.get(issue_id)
@@ -66,8 +67,9 @@ class MockRepoFull(TaskRepositoryInterface):
     def get_workable_issues(self, priority=None, component_id=None) -> list[Issue]:
         return [i for i in self._issues.values() if i.status != IssueStatus.CLOSED]
 
-    def create_component(self, component: Component) -> None:
+    def create_component(self, component: Component) -> Component:
         self._components[str(component.id)] = component
+        return component
 
     def get_component(self, component_id: str) -> Component | None:
         return self._components.get(component_id)

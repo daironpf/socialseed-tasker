@@ -227,7 +227,7 @@ neo4j/plugins/
 *.log
 
 .tasker-data
-infrastructure/
+/infrastructure/
 
 #history
 .history/

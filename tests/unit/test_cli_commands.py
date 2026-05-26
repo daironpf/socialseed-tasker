@@ -25,8 +25,9 @@ class MockRepository(TaskRepositoryInterface):
         self._dependencies: dict[str, set[str]] = {}
         self._constraints: dict[str, Constraint] = {}
 
-    def create_issue(self, issue: Issue) -> None:
+    def create_issue(self, issue: Issue) -> Issue:
         self._issues[str(issue.id)] = issue
+        return issue
 
     def get_issue(self, issue_id: str) -> Issue | None:
         return self._issues.get(issue_id)
@@ -126,8 +127,9 @@ class MockRepository(TaskRepositoryInterface):
                         break
         return blocked
 
-    def create_component(self, component: Component) -> None:
+    def create_component(self, component: Component) -> Component:
         self._components[str(component.id)] = component
+        return component
 
     def get_component(self, component_id: str) -> Component | None:
         return self._components.get(component_id)

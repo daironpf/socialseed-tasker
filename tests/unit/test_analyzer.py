@@ -23,12 +23,14 @@ class FakeRepo:
         self._components: dict[str, Component] = {}
         self._deps: dict[str, set[str]] = {}
 
-    def create_component(self, c: Component) -> None:
+    def create_component(self, c: Component) -> Component:
         self._components[str(c.id)] = c
+        return c
 
-    def create_issue(self, i: Issue) -> None:
+    def create_issue(self, i: Issue) -> Issue:
         self._issues[str(i.id)] = i
         self._deps[str(i.id)] = set()
+        return i
 
     def get_issue(self, issue_id: str) -> Issue | None:
         return self._issues.get(issue_id)

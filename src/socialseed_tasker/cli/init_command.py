@@ -359,7 +359,7 @@ def interactive_init_command(
         
         api_url = "http://localhost:8888"
         api_ready = False
-        for _ in range(30):
+        for _ in range(60):
             try:
                 response = httpx.get(f"{api_url}/health", timeout=2.0)
                 if response.status_code == 200:
@@ -370,8 +370,9 @@ def interactive_init_command(
             except Exception:
                 pass
             time.sleep(2)
-            
+
         if api_ready:
+            time.sleep(3)  # allow API to finalize initialization after health check
             console.print("[info]API is ready, configuring project and policies...[/info]")
             
             try:

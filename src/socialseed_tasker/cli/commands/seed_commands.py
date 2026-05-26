@@ -129,7 +129,7 @@ def seed_run(
     comp_map: dict[str, str] = {}
     for comp_data in _SEED_COMPONENTS:
         component = Component(name=comp_data["name"], project=project_name, description=comp_data["description"])
-        repo.create_component(component)
+        component = repo.create_component(component)
         comp_map[comp_data["name"]] = str(component.id)
         console.print(f"[success]Component:[/success] {component.name}")
 

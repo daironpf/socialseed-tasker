@@ -147,8 +147,8 @@ class TaskRepositoryInterface(Protocol):
 
     # -- Issue CRUD ----------------------------------------------------------
 
-    def create_issue(self, issue: Issue) -> None:
-        """Persist a new issue."""
+    def create_issue(self, issue: Issue) -> Issue:
+        """Persist a new issue. Returns the issue with server-assigned ID."""
 
     def get_issue(self, issue_id: str) -> Issue | None:
         """Retrieve an issue by ID, or None if not found."""
@@ -210,8 +210,8 @@ class TaskRepositoryInterface(Protocol):
 
     # -- Component CRUD ------------------------------------------------------
 
-    def create_component(self, component: Component) -> None:
-        """Persist a new component."""
+    def create_component(self, component: Component) -> Component:
+        """Persist a new component. Returns the created component with server-assigned ID."""
 
     def get_component(self, component_id: str) -> Component | None:
         """Retrieve a component by ID, or None if not found."""
@@ -501,7 +501,7 @@ def create_issue_action(
         labels=labels or [],
         architectural_constraints=architectural_constraints or [],
     )
-    repository.create_issue(issue)
+    issue = repository.create_issue(issue)
 
     if component_id:
         impact = _compute_preemptive_impact(component_id)

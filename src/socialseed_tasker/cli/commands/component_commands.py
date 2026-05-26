@@ -69,7 +69,7 @@ def component_create(
     sanitized_description = sanitize_component_name(description or "")
 
     component = Component(name=sanitized_name, project=project, description=sanitized_description)
-    repo.create_component(component)
+    component = repo.create_component(component)
     console.print(f"[success]Component '{sanitized_name}' created successfully (ID: {component.id})")
 
 

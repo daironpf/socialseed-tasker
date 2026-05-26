@@ -21,8 +21,9 @@ class MockRepository:
         self._components = {}
         self._dependencies = {}
 
-    def create_issue(self, issue):
+    def create_issue(self, issue: Issue) -> Issue:
         self._issues[str(issue.id)] = issue
+        return issue
 
     def get_issue(self, issue_id):
         return self._issues.get(issue_id)
@@ -45,8 +46,9 @@ class MockRepository:
             issues = [i for i in issues if i.status in statuses]
         return issues
 
-    def create_component(self, component):
+    def create_component(self, component: Component) -> Component:
         self._components[str(component.id)] = component
+        return component
 
     def get_component(self, component_id):
         return self._components.get(component_id)
