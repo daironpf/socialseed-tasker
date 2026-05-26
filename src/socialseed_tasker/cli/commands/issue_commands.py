@@ -52,7 +52,7 @@ issue_app = typer.Typer(help="Manage issues")
 @issue_app.command("create")
 def issue_create(
     title: str = typer.Argument(..., help="Issue title"),
-    component: str = typer.Option(..., "--component", "-c", help="Component ID"),
+    component: str = typer.Option(..., "--component", "-c", help="Component ID, name, or UUID prefix"),
     description: str = typer.Option("", "--description", "-d", help="Issue description"),
     priority: str = typer.Option("MEDIUM", "--priority", "-p", help="Priority: LOW, MEDIUM, HIGH, CRITICAL"),
     labels: str | None = typer.Option(None, "--labels", "-l", help="Comma-separated labels"),

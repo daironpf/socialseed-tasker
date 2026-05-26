@@ -96,6 +96,11 @@ Executes a complete black-box evaluation of the SocialSeed Tasker system. This w
 Simula la experiencia de un usuario que instala SocialSeed Tasker por primera vez.
 
 ### Process
+0. **Create `real-test/` directory if it doesn't exist**:
+   ```bash
+   mkdir -p real-test
+   ```
+
 1. **Stop previous containers** (if any):
    ```bash
    cd real-test 2>/dev/null && docker compose --profile full down -v --remove-orphans && cd ..
@@ -105,6 +110,9 @@ Simula la experiencia de un usuario que instala SocialSeed Tasker por primera ve
 2. **Create clean project directory** (simula el proyecto del usuario):
    ```bash
    mkdir -p real-test && cd real-test
+
+# If real-test/ already exists and you want to start fresh, delete it first:
+# rm -rf real-test && mkdir -p real-test && cd real-test
    git init
    ```
 
@@ -531,7 +539,8 @@ test the project
 - [ ] Phase 0: Issue type defined (real vs simple)
 - [ ] Phase 0: Architecture type defined
 - [ ] Phase 0: Profile assigned
-- [ ] Phase 1: Limpiar real-test/ anterior
+- [ ] Phase 1: Crear real-test/ (mkdir -p) si no existe
+- [ ] Phase 1: Limpiar real-test/ anterior (opcional)
 - [ ] Phase 1: git init en proyecto limpio
 - [ ] Phase 1: venv creado y activado
 - [ ] Phase 1: pip install socialseed-tasker

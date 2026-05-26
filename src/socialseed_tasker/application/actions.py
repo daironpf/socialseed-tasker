@@ -492,6 +492,7 @@ def create_issue_action(
         warnings.append(
             f"Issue with title '{title}' already exists in this component. Existing IDs: {', '.join(existing_ids)}"
         )
+        return existing[0], warnings
 
     issue = Issue(
         title=title,

@@ -686,6 +686,22 @@ def _run_scaffold(
                 console.print("Use [bold]--force[/bold] to overwrite existing templates.")
                 if not interactive:
                     raise typer.Exit(code=0)
+                # Still apply placeholder replacement even when scaffold is skipped
+                _fill_project_context(
+                    target_path,
+                    target_path if inplace else target_path / ".agent",
+                    project_name,
+                    architecture,
+                    language,
+                    framework,
+                    database,
+                    github_repo,
+                    forbidden_tech,
+                    required_patterns,
+                    naming_conventions,
+                    dependency_rules,
+                    dos_and_donts,
+                )
                 return
 
     console.print(f"[info]Scaffolding Tasker into:[/info] [bold]{target_path}[/bold]")
