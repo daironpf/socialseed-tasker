@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Generic, TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from socialseed_tasker import __version__  # noqa: E402
 
@@ -437,11 +437,24 @@ class DependencyRequest(BaseModel):
     the dependency would create a circular dependency chain.
     """
 
-    depends_on_id: str = Field(
-        ...,
+    depends_on_id: str | None = Field(
+        None,
         description="UUID of the issue this issue depends on",
         examples=["550e8400-e29b-41d4-a716-446655440000"],
     )
+    depends_on: str | None = Field(
+        None,
+        description="Alias for depends_on_id",
+        examples=["550e8400-e29b-41d4-a716-446655440000"],
+    )
+
+    @model_validator(mode="after")
+    def _resolve_depends_on(self) -> "DependencyRequest":
+        if self.depends_on_id is None and self.depends_on is not None:
+            self.depends_on_id = self.depends_on
+        if self.depends_on_id is None:
+            raise ValueError("Either depends_on_id or depends_on is required")
+        return self
 
 
 class BulkDependencyRequest(BaseModel):
