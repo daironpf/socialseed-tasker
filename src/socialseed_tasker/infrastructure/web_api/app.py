@@ -328,10 +328,7 @@ def create_app(
                 
         return response
 
-    @app.get("/health")
-    async def health_check():
-        return {"status": "healthy", "service": "socialseed-tasker-api", "version": __version__}
-
+    # Health endpoint with Neo4j check is registered below with the routers
     # Register routers
     # Register routers
     from socialseed_tasker.infrastructure.web_api.routes import (

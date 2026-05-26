@@ -363,10 +363,8 @@ def interactive_init_command(
             try:
                 response = httpx.get(f"{api_url}/health", timeout=2.0)
                 if response.status_code == 200:
-                    data = response.json()
-                    if data.get("neo4j") == "connected":
-                        api_ready = True
-                        break
+                    api_ready = True
+                    break
             except Exception:
                 pass
             time.sleep(2)
