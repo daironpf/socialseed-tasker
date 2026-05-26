@@ -240,7 +240,9 @@ def create_issue(
 def list_issues(
     status: str | None = Query(None, description="Filter by status"),
     component: str | None = Query(None, description="Filter by component ID"),
+    component_id: str | None = Query(None, description="Alias for component"),
     project: str | None = Query(None, description="Filter by project name"),
+    title: str | None = Query(None, description="Filter by exact issue title"),
     page: int = Query(1, ge=1, description="Page number (starts at 1, default: 1)"),
     limit: int = Query(20, ge=1, le=100, description="Items per page (default: 20, max: 100)"),
     repo: TaskRepositoryInterface = Depends(get_repo),
@@ -248,12 +250,14 @@ def list_issues(
     """List issues with optional filters and pagination.
 
     Retrieves a paginated list of issues. Supports filtering by status,
-    component, and project. Results are sorted by creation date (newest first).
+    component, title, and project. Results are sorted by creation date (newest first).
 
     Args:
         status: Comma-separated list of statuses to filter (e.g., "todo,in_progress")
         component: UUID of the component to filter by
+        component_id: Alias for component
         project: Project name to filter by
+        title: Exact issue title to filter by
         page: Page number starting at 1
         limit: Number of items per page (max 100)
         repo: Repository dependency for data access.
@@ -286,8 +290,11 @@ def list_issues(
         }
         ```
     """
+    comp = component or component_id
     status_list = [s.strip() for s in status.split(",") if s.strip()] if status else []
-    all_issues = repo.list_issues(component_id=component, statuses=status_list, project=project)
+    all_issues = repo.list_issues(component_id=comp, statuses=status_list, project=project)
+    if title:
+        all_issues = [i for i in all_issues if i.title == title]
     total = len(all_issues)
     start = (page - 1) * limit
     end = start + limit
