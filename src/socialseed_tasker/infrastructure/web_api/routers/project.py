@@ -105,6 +105,7 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     CommitResponse,
     CommitStatsResponse,
 )
+from socialseed_tasker.infrastructure import neo4j_queries as queries
 from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     retrieve_neo4j_code_graph_driver as get_code_graph_driver,
     get_repository_provider as get_repo,

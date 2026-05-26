@@ -5,7 +5,8 @@ from typing import Optional, Dict, Tuple
 from socialseed_tasker.application.ports import StoragePort
 from socialseed_tasker.observability.tracing import get_tracer
 
-_tracer = get_tracer("tasker.memory_storage")
+def _get_tracer():
+    return get_tracer("tasker.memory_storage")
 
 class MemoryStorage(StoragePort):
     def __init__(self) -> None:
@@ -13,7 +14,7 @@ class MemoryStorage(StoragePort):
         self._store: Dict[str, Tuple[bytes, Optional[float]]] = {}
 
     def put(self, key: str, value: bytes, ttl_seconds: Optional[int] = None) -> None:
-        with _tracer.start_as_current_span("memory.put"):
+        with _get_tracer().start_as_current_span("memory.put"):
             expire = None
             if ttl_seconds is not None:
                 expire = time.time() + float(ttl_seconds)
@@ -21,7 +22,7 @@ class MemoryStorage(StoragePort):
                 self._store[key] = (value, expire)
 
     def get(self, key: str) -> Optional[bytes]:
-        with _tracer.start_as_current_span("memory.get"):
+        with _get_tracer().start_as_current_span("memory.get"):
             with self._lock:
                 item = self._store.get(key)
                 if item is None:
@@ -33,7 +34,7 @@ class MemoryStorage(StoragePort):
                 return value
 
     def delete(self, key: str) -> None:
-        with _tracer.start_as_current_span("memory.delete"):
+        with _get_tracer().start_as_current_span("memory.delete"):
             with self._lock:
                 self._store.pop(key, None)
 

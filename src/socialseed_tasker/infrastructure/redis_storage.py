@@ -5,7 +5,8 @@ from socialseed_tasker.application.ports import StoragePort
 from socialseed_tasker.application.exceptions import StorageError
 from socialseed_tasker.observability.tracing import get_tracer
 
-_tracer = get_tracer("tasker.redis_storage")
+def _get_storage_tracer():
+    return get_tracer("tasker.redis_storage")
 
 try:
     import redis  # type: ignore
@@ -25,7 +26,7 @@ class RedisStorage(StoragePort):
             raise StorageError(f"Failed to connect to Redis at {self._url}: {exc}") from exc
 
     def put(self, key: str, value: bytes, ttl_seconds: Optional[int] = None) -> None:
-        with _tracer.start_as_current_span("redis.put"):
+        with _get_storage_tracer().start_as_current_span("redis.put"):
             try:
                 if ttl_seconds is None:
                     self._client.set(key, value)
@@ -35,7 +36,7 @@ class RedisStorage(StoragePort):
                 raise StorageError(f"Redis put failed for key {key}: {exc}") from exc
 
     def get(self, key: str) -> Optional[bytes]:
-        with _tracer.start_as_current_span("redis.get"):
+        with _get_storage_tracer().start_as_current_span("redis.get"):
             try:
                 v = self._client.get(key)
                 return v if v is not None else None
@@ -43,7 +44,7 @@ class RedisStorage(StoragePort):
                 raise StorageError(f"Redis get failed for key {key}: {exc}") from exc
 
     def delete(self, key: str) -> None:
-        with _tracer.start_as_current_span("redis.delete"):
+        with _get_storage_tracer().start_as_current_span("redis.delete"):
             try:
                 self._client.delete(key)
             except Exception as exc:

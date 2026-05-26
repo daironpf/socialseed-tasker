@@ -2,10 +2,6 @@
 from __future__ import annotations
 import os
 from typing import Optional
-from opentelemetry import trace
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider, sampling
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 
 OTEL_SERVICE_NAME = os.getenv("TASKER_OTEL_SERVICE", "tasker")
 OTEL_JAEGER_HOST = os.getenv("TASKER_JAEGER_HOST", "localhost")
@@ -18,6 +14,10 @@ def init_tracing(app=None, celery_app=None, service_name: Optional[str] = None):
     global _tracer_initialized
     if _tracer_initialized:
         return
+    from opentelemetry import trace
+    from opentelemetry.sdk.resources import Resource
+    from opentelemetry.sdk.trace import TracerProvider, sampling
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
     svc = service_name or OTEL_SERVICE_NAME
     resource = Resource.create({"service.name": svc})
     sampler = sampling.TraceIdRatioBased(OTEL_SAMPLING_RATE)
@@ -54,4 +54,5 @@ def init_tracing(app=None, celery_app=None, service_name: Optional[str] = None):
     _tracer_initialized = True
 
 def get_tracer(name: str = "tasker"):
+    from opentelemetry import trace
     return trace.get_tracer(name)

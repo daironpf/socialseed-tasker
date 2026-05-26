@@ -9,7 +9,7 @@ from socialseed_tasker.events.serializers import EventDTO
 from socialseed_tasker.application.exceptions import StorageError
 from socialseed_tasker.observability.tracing import get_tracer
 
-_tracer = get_tracer("tasker.delivery")
+_tracer_fn = lambda: get_tracer("tasker.delivery")
 
 DELIVERY_PREFIX = "webhook:delivery:"
 
@@ -69,7 +69,7 @@ class DeliveryWorker:
                 pass
 
     def _attempt_delivery(self, did: str, state: Dict[str, Any], key: str, index: list):
-        with _tracer.start_as_current_span("delivery.attempt"):
+        with _tracer_fn().start_as_current_span("delivery.attempt"):
             url = state["url"]
             payload = state["payload"]
             headers = state.get("headers", {})
@@ -93,7 +93,7 @@ class DeliveryWorker:
                 return
 
     def enqueue_delivery(self, url: str, payload: str, headers: Optional[Dict[str, str]] = None) -> str:
-        with _tracer.start_as_current_span("delivery.enqueue"):
+        with _tracer_fn().start_as_current_span("delivery.enqueue"):
             did = str(int(time.time() * 1000)) + "-" + str(hash(url))
             key = DELIVERY_PREFIX + did
             state = {

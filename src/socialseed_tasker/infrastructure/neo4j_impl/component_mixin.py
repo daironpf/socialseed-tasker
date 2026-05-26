@@ -11,7 +11,7 @@ from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_componen
 class ComponentRepositoryMixin:
     """Component CRUD operations."""
 
-    def create_component(self, component: Component) -> None:
+    def create_component(self, component: Component) -> Component:
         with self._driver.driver.session(database=self._driver.database) as session:
             session.run(
                 """
@@ -47,6 +47,7 @@ class ComponentRepositoryMixin:
                 labels=component.labels if hasattr(component, "labels") else [],
                 now=datetime.now(timezone.utc).isoformat(),
             )
+        return component
 
     def get_component(self, component_id: str) -> Component | None:
         with self._driver.driver.session(database=self._driver.database) as session:

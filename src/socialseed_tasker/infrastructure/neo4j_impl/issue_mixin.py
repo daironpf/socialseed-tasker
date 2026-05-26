@@ -15,7 +15,7 @@ from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_issue, _
 class IssueRepositoryMixin:
     """Issue CRUD and related operations."""
 
-    def create_issue(self, issue: Issue) -> None:
+    def create_issue(self, issue: Issue) -> Issue:
         with self._driver.driver.session(database=self._driver.database) as session:
             reasoning_logs_data = []
             for log in issue.reasoning_logs:
@@ -68,6 +68,7 @@ class IssueRepositoryMixin:
                         )
                 except Exception:
                     pass
+        return issue
 
     def get_issue(self, issue_id: str) -> Issue | None:
         with self._driver.driver.session(database=self._driver.database) as session:
