@@ -30,13 +30,26 @@ status_app = typer.Typer(help="Show CLI status and configuration")
 @status_app.command("status")
 def status_command() -> None:
     """Show graph health dashboard with issue statistics."""
+    from pathlib import Path
+
     from socialseed_tasker.application.container import AppConfig
+    from socialseed_tasker.config.mode_config import DualModeConfig, _discover_config_file
 
     config = AppConfig.from_env()
-    repo = get_repository()
+    mode_cfg = DualModeConfig.load()
+    cfg_path = _discover_config_file()
 
-    all_issues = repo.list_issues()
-    components = repo.list_components()
+    conn_status = "[green]connected[/green]"
+    conn_error: str | None = None
+    repo = get_repository()
+    try:
+        all_issues = repo.list_issues()
+        components = repo.list_components()
+    except Exception as exc:
+        conn_status = "[red]disconnected[/red]"
+        conn_error = str(exc)
+        all_issues = []
+        components = []
 
     by_status: dict[str, int] = {}
     by_priority: dict[str, int] = {}
@@ -49,21 +62,34 @@ def status_command() -> None:
 
     from socialseed_tasker.application.actions import get_blocked_issues_action, get_workable_issues_action
 
-    workable = get_workable_issues_action(repo, component_id=None)
-    blocked = get_blocked_issues_action(repo)
+    try:
+        workable = get_workable_issues_action(repo, component_id=None)
+    except Exception:
+        workable = []
+
+    try:
+        blocked = get_blocked_issues_action(repo)
+    except Exception:
+        blocked = []
 
     total_deps = sum(len(i.dependencies) for i in all_issues if i.dependencies)
 
     console.print(
         Panel(
+            f"[bold]Mode:[/bold] {mode_cfg.mode}\n"
+            f"[bold]API URL:[/bold] {mode_cfg.api_url}\n"
+            f"[bold]Config:[/bold] {cfg_path or '(none)'}\n"
             f"[bold]Backend:[/bold] neo4j (Graph)\n"
             f"[bold]Neo4j URI:[/bold] {config.neo4j.uri}\n"
             f"[bold]Database:[/bold] {config.neo4j.database}\n"
-            f"[bold]Connection:[/bold] {config.neo4j.connection_mode}",
+            f"[bold]Connection:[/bold] {conn_status}",
             title="[bold cyan]Tasker Status[/bold cyan]",
             border_style="cyan",
         )
     )
+
+    if conn_error:
+        console.print(f"[error]Connection error: {conn_error}[/error]")
 
     console.print()
     console.print(
