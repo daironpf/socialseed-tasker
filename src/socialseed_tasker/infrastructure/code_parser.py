@@ -26,6 +26,33 @@ from socialseed_tasker.domain.code_analysis_entities import (
 if TYPE_CHECKING:
     from socialseed_tasker.application.ports import ParserPort as ParserPortProtocol
 
+LANGUAGE_EXTENSIONS: dict[str, str] = {
+    ".py": "python",
+    ".js": "javascript",
+    ".ts": "typescript",
+    ".jsx": "javascript",
+    ".tsx": "typescript",
+    ".go": "go",
+    ".rs": "rust",
+    ".java": "java",
+    ".cpp": "cpp",
+    ".c": "c",
+    ".h": "c",
+    ".hpp": "cpp",
+    ".rb": "ruby",
+    ".swift": "swift",
+    ".kt": "kotlin",
+    ".scala": "scala",
+    ".php": "php",
+}
+
+TEST_PATTERNS: list[re.Pattern] = [
+    re.compile(r"^test_.*\.(py|js|ts|go|rs|java|cpp|c)$"),
+    re.compile(r".*_test\.(py|js|ts|go|rs|java|cpp|c)$"),
+    re.compile(r".*\.spec\.(js|ts|jsx|tsx)$"),
+    re.compile(r".*\.test\.(js|ts|jsx|tsx)$"),
+]
+
 
 class CodeGraphParser:
     """Parser for extracting code structure into a graph.
