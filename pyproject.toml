@@ -83,6 +83,7 @@ dev = [
     "testcontainers[neo4j]>=3.7.0",
     "httpx",
     "requests>=2.31.0",
+    "redis>=5.0.0",
     
     # Linting
     "ruff>=0.1.0",
