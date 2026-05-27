@@ -54,8 +54,8 @@ services:
   tasker-api:
     profiles: ["api", "full"]
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: .agent/tasker/Dockerfile
     image: tasker-api:local
     ports:
       - "127.0.0.1:8888:8000"

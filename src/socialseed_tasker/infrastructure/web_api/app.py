@@ -33,6 +33,7 @@ from socialseed_tasker.application.actions import (
     OpenDependenciesError,
     PolicyViolationError,
 )
+from socialseed_tasker.application.exceptions import GraphPortError
 
 if TYPE_CHECKING:
     from socialseed_tasker.application.actions import TaskRepositoryInterface
@@ -877,6 +878,13 @@ def create_app(
             content=_error_response("OPEN_DEPENDENCIES", str(exc)),
         )
 
+    @app.exception_handler(GraphPortError)
+    async def graph_port_error_handler(request: Request, exc: GraphPortError) -> JSONResponse:
+        return JSONResponse(
+            status_code=503,
+            content=_error_response("DATABASE_CONNECTION_ERROR", str(exc)),
+        )
+
     @app.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
         return JSONResponse(
@@ -918,6 +926,15 @@ def create_app(
 
     @app.exception_handler(Exception)
     async def generic_error_handler(request: Request, exc: Exception) -> JSONResponse:
+        exc_name = type(exc).__name__
+        if exc_name in ("ServiceUnavailable", "Neo4jError", "SessionExpired"):
+            return JSONResponse(
+                status_code=503,
+                content=_error_response(
+                    "DATABASE_CONNECTION_ERROR",
+                    f"Database connection failed: {exc}",
+                ),
+            )
         return JSONResponse(
             status_code=500,
             content=_error_response(

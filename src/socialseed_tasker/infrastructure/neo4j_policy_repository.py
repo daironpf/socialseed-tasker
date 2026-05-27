@@ -11,7 +11,7 @@ from typing import Any
 from uuid import UUID
 
 from socialseed_tasker.application.policy import Policy, PolicySeverity, PolicyTargetScope
-from socialseed_tasker.infrastructure import neo4j_queries
+from socialseed_tasker.infrastructure import neo4j_queries as queries
 
 
 def _now_iso() -> str:

@@ -559,7 +559,7 @@ def interactive_init_command(
                 except Exception as e:
                     console.print(f"[warning]Failed to create policy {policy['name']}: {e}[/warning]")
                     
-            console.print("\n[bold green]🎉 TASKER is successfully started and ready![/bold green]")
+            console.print("\n[bold green]SUCCESS: TASKER is successfully started and ready![/bold green]")
             console.print("[bold green]You can now focus on writing code. Tasker will handle the rest.[/bold green]")
         else:
             console.print("\n[warning]Tasker started but API did not become ready in time. Policies were not pushed automatically.[/warning]")

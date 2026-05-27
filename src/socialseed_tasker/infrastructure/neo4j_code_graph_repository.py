@@ -19,7 +19,7 @@ from socialseed_tasker.domain.code_analysis_entities import (
     RelationshipType,
     SymbolType,
 )
-from socialseed_tasker.infrastructure import neo4j_queries
+from socialseed_tasker.infrastructure import neo4j_queries as queries
 
 
 def _now_iso() -> str:
