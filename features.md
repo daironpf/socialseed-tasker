@@ -1,6 +1,15 @@
-# Features - SocialSeed Tasker (v1.0.0)
+# Features - SocialSeed Tasker (v1.0.2)
 
-This document documents all functionalities implemented in version 1.0.0.
+This document documents all functionalities implemented in versions 1.0.0 through 1.0.2.
+
+## v1.0.2 Improvements
+
+| Area | Change | Details |
+|------|--------|---------|
+| **Docker** | Build context fix | `docker-compose.yml` template uses `context: ../..` + `dockerfile: .agent/tasker/Dockerfile` so `COPY` from project root resolves correctly |
+| **API** | DB connection error → 503 | `GraphPortError` returns `503 DATABASE_CONNECTION_ERROR` instead of generic 500. Also detects `ServiceUnavailable`, `Neo4jError`, `SessionExpired` in generic handler |
+| **Repositories** | Import alias fixes | `PolicyRepository`, `UserRepository`, `CommitRepository`, `CodeGraphRepository` — all fixed `NameError` from `import queries as neo4j_queries` + `queries.XXX` usage |
+| **CLI** | Windows emoji crash fix | Replaced `🎉` with `SUCCESS:` in `init_command.py` to avoid `UnicodeEncodeError` on cp1252 terminal |
 
 ---
 
@@ -510,7 +519,7 @@ tasker seed run
 
 ## 10. Project Scaffolding
 
-Inject Tasker infrastructure into external projects.
+Inject Tasker infrastructure into external projects (v1.0.2 fixes Windows cp1252 compatibility in init output).
 
 ```bash
 tasker init .
@@ -558,7 +567,7 @@ curl http://localhost:8000/health
 # Response:
 {
   "status": "healthy",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "neo4j": "connected",
   "neo4j_uri": "bolt://localhost:7687",
   "auth_enabled": false
@@ -580,6 +589,41 @@ curl -v http://localhost:8000/api/v1/issues 2>&1 | grep X-Response-Time
 export TASKER_SLOW_REQUEST_THRESHOLD=0.5
 # Slow requests logged as warnings
 ```
+
+### 12.3 Database Connection Error Handling (v1.0.2)
+
+When Neo4j is unreachable, API returns structured `503 DATABASE_CONNECTION_ERROR` responses instead of generic 500.
+
+```bash
+# DB down example
+curl http://localhost:8000/health
+# Response:
+{
+  "status": "unhealthy",
+  "version": "1.0.2",
+  "neo4j": "disconnected",
+  "error": "..."
+}
+
+# Any API call when DB is down:
+curl http://localhost:8000/api/v1/issues
+# HTTP 503
+# Response:
+{
+  "detail": {
+    "code": "DATABASE_CONNECTION_ERROR",
+    "message": "Unable to connect to Neo4j. ..."
+  }
+}
+```
+
+Detected exception types:
+| Exception | Description |
+|-----------|-------------|
+| `GraphPortError` | Custom port-level error (e.g. policy validation) |
+| `ServiceUnavailable` | Neo4j driver cannot connect |
+| `Neo4jError` | Neo4j-side errors (transient) |
+| `SessionExpired` | Connection pool / routing issues |
 
 ## 13. Feature Flags & Runtime Configuration (v1.0.1)
 
@@ -970,7 +1014,7 @@ curl -X PATCH "http://localhost:8000/api/v1/issues/<issue-id>" \
 
 ### 16.1 Docker Compose
 
-Start all services.
+Start all services (v1.0.2 fixes build context for `tasker init` generated projects).
 
 ```bash
 docker compose up -d
@@ -1169,6 +1213,8 @@ Complete repositories for Agent management in Neo4j:
 | `UserRepository` | User management with project/component relationships |
 | `CommitRepository` | Git commit tracking linked to agents/issues |
 | `PolicyRepository` | Governance policies enforcement |
+
+*(v1.0.2 fixed `NameError` import aliases in all four repositories — `queries` alias was imported as `neo4j_queries` but used as `queries`)*
 
 ---
 
@@ -1826,4 +1872,4 @@ Complete list of REST API endpoints:
 
 ---
 
-Version: 1.0.0
+Version: 1.0.2
