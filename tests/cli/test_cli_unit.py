@@ -35,7 +35,7 @@ def test_create_issue_success(capsys):
     from socialseed_tasker.cli.main import main
 
     with patch("socialseed_tasker.cli.main.build_default_container", return_value=_make_mock_container()):
-        main(["create-issue", "--id", "i1", "--title", "Test"])
+        main(["create-issue", "--id", "i1", "--title", "Test", "--token", "mock-token"])
 
     j = json.loads(capsys.readouterr().out)
     assert j["status"] == "ok"
@@ -67,7 +67,7 @@ def test_calculate_impact_success(capsys):
     from socialseed_tasker.cli.main import main
 
     with patch("socialseed_tasker.cli.main.build_default_container", return_value=_make_mock_container()):
-        main(["calculate-impact", "--issue-id", "i1"])
+        main(["calculate-impact", "--issue-id", "i1", "--token", "mock-token"])
 
     j = json.loads(capsys.readouterr().out)
     assert j["status"] == "ok"

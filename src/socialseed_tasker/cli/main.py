@@ -291,7 +291,7 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
     container = build_default_container()
 
-    logger.info("cli.invoke", extra={"command": args.command, "args": vars(args)})
+    logger.info("cli.invoke", extra={"command": args.command, "cli_args": vars(args)})
 
     token = getattr(args, "token", None) or os.getenv("TASKER_AUTH_TOKEN")
     user_id = None

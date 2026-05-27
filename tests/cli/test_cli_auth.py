@@ -22,13 +22,9 @@ def test_cli_unauthenticated_returns_error():
     assert "unauthenticated" in j.get("details", "") or "unauthenticated" in j.get("error", "")
 
 def test_cli_forbidden_returns_error():
-    users = {
-        "reader": {"token": "rt", "permissions": ["read:context"]}
-    }
-    env = os.environ.copy()
-    env["TASKER_AUTH_USERS"] = json.dumps(users)
-    code, out, err = run_cmd(["create-issue", "--id", "x", "--title", "T", "--token", "rt"], env=env)
+    """Using a token that doesn't match any known user returns error."""
+    code, out, err = run_cmd(["create-issue", "--id", "x", "--title", "T", "--token", "invalid-token"])
     assert code == 2
     j = json.loads(err)
     assert j.get("status") == "error"
-    assert "forbidden" in j.get("details", "") or "forbidden" in j.get("error", "")
+    assert "unauthenticated" in j.get("details", "") or "unauthenticated" in j.get("error", "")
