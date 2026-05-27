@@ -1,6 +1,6 @@
 # Project Roadmap
 
-**Last updated**: 2026-05-25
+**Last updated**: 2026-05-27
 
 ## Phase 1: Foundations
 - [x] Environment Setup
@@ -24,3 +24,7 @@
 | 327 | NameError on 'logger' in neo4j_driver.py exception handler | High | infrastructure/neo4j_driver.py | ✅ RESOLVED |
 | 328 | Docker build fails with 403 Forbidden from ghcr.io | Medium | .agent/tasker/Dockerfile | ✅ RESOLVED |
 | 329 | Frontend copy step not documented in scaffold README | Low | src/.../templates/README.md | ✅ RESOLVED |
+| 330 | Docker build fails on fresh init due to wrong context path | Medium | .agent/tasker/docker-compose.yml | ✅ RESOLVED |
+| 331 | Policy creation API returns 500 from NameError on queries | High | infrastructure/neo4j_policy_repository.py | ✅ RESOLVED |
+| 332 | DB disconnect returns generic 500 instead of descriptive error | Medium | infrastructure/web_api/app.py | ✅ RESOLVED |
+| 333 | UnicodeEncodeError on Windows when init prints emoji | Low | cli/init_command.py | ✅ RESOLVED |
