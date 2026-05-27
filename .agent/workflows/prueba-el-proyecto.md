@@ -193,7 +193,7 @@ Evalúa el sistema desde la perspectiva de un usuario que interactúa **exclusiv
 | Junior Dev | Usa `--help` extensivamente, sigue la documentación al pie de la letra |
 | Senior Architect | Prueba features avanzadas: dependencias, análisis de impacto, RAG |
 | DevOps | Prueba docker, health checks, logs, restart del servidor |
-| Chaos Monkey | Solo usa `tasker --help` y mensajes de error. NO lee documentación |
+| Chaos Monkey | Solo usa `tasker --help` and mensajes de error. NO lee documentación |
 
 ### Proceso General (ambos tipos de issues)
 
@@ -253,6 +253,41 @@ tasker issue close <issue-id>
 tasker status
 ```
 
+#### F. Pruebas de Estrés y Límites (Robustez de Grafo)
+```bash
+# Intentar crear dependencias circulares (debe fallar elegantemente)
+tasker dependency add <issue-1-id> --depends-on <issue-2-id>
+# Nota: Verificar que la CLI detecte el ciclo y aborte con un mensaje claro y exit code != 0.
+
+# Prueba de carga (Crear una cadena lineal larga de más de 20 dependencias)
+# Verificar tiempos de respuesta de comandos de consulta de árbol como:
+tasker dependency chain <issue-n-id>
+```
+
+#### G. Inyección de Fallas (Chaos & Resiliencia)
+```bash
+# 1. Simular caída de base de datos Neo4j
+cd real-test && docker compose stop tasker-db && cd ..
+
+# 2. Ejecutar comando CLI y verificar manejo de excepciones
+cd real-test && tasker issue list
+# Nota: La CLI debe fallar con gracia, mostrando un error amigable de conexión en lugar de un traceback de Python.
+# Confirmar que el exit code de la CLI sea diferente de 0.
+
+# 3. Restaurar servicio
+cd real-test && docker compose start tasker-db && cd ..
+```
+
+#### H. Verificaciones DX y Códigos de Retorno
+*   **Códigos de Salida:** Verificar explícitamente que cada comando fallido retorne un código de estado de salida distinto de `0` (ej: `$LASTEXITCODE` en PowerShell o `$?` en Bash).
+*   **Formato de Errores:** Validar que los errores de la CLI utilicen un esquema estructurado (ej. `[ERROR]: <mensaje_amigable>`) y no expongan rutas absolutas locales ni credenciales internas de Neo4j en la salida estándar.
+
+#### I. Portabilidad de Rutas en Windows/Unix
+*   **Normalización de Paths:** Comprobar que todos los paths almacenados en el grafo o en los archivos de configuración `.agent/` utilicen diagonales estandarizadas (`/`) y no contengan barras cruzadas (`\`) de Windows que puedan romper el comportamiento multiplataforma.
+
+#### J. Integración con Git History e Integridad
+*   **Vinculación de Commits:** Verificar que al cerrar un issue usando la CLI, se asocie el hash de commit correcto en el grafo y que los commits del historial del proyecto dummy en `real-test/` reflejen claramente el formato `[Issue-ID]`.
+
 ---
 
 ### For Simple Enumerated Issues (default - quick test)
@@ -260,7 +295,7 @@ tasker status
 1. Crear 1 componente con el nombre del use case
 2. Crear N issues secuenciales vía CLI: `tasker issue create "Task N: ..." --component <id>`
 3. Crear dependencias lineales (5-10%): `tasker dependency add <id2> --depends-on <id1>`
-4. Verificar con: `tasker issue list` y `tasker dependency blocked`
+4. Verificar con: `tasker issue list` and `tasker dependency blocked`
 
 ### For Real Issues (comprehensive test)
 
@@ -327,32 +362,106 @@ The agent MUST leverage these graph relationships as defined in `GraphDataModelD
 | `(CodeSymbol)-[:CALLS]->(CodeSymbol)` | Method dependencies | Find affected code |
 
 ### Objective
-Observe and validate the agent's ability to solve technical issues and keep project documentation synchronized, following the specific rules defined in:
-- `.agent/skills/documentation-sync.md`
-- `.agent/skills/hexagonal-architecture.md`
-- `.agent/skills/programming-agent-governance.md` (REQUIRED)
-- `.agent/skills/code-as-graph-analysis.md` (REQUIRED)
+Observe and validate the agent's ability to solve technical issues, execute programming tasks, and keep project documentation synchronized, following the specific rules defined in this workflow and the loaded skills.
 
-### Process for Agent Implementation
-For a subset of issues (defined in Phase 0), the agent MUST:
+---
 
-1.  **Analyze Context** (Graph-Aware):
-    -   Read the issue details from the API or `real-test/.issues/` folder.
-    -   Query graph for component context: `GET /api/v1/components/{id}`
-    -   Query graph for policies: `GET /api/v1/policies?component={id}`
-    -   Consult the `real-test/.agent/skills/` to understand the specific conventions.
-2.  **Execute Technical Implementation**:
-    -   Perform impact analysis before modifying code
-    -   Create or modify source files in `real-test/` (e.g., `real-test/src/` if scaffolded with language).
-    -   The code must reflect the requested feature/fix and adhere to the project's architectural constraints.
-3.  **Perform Documentation Sync (CRITICAL)**:
-    -   **ROADMAP.md**: Update the "Last updated" date and mark the issue as RESOLVED in the Known Issues table.
-    -   **VERSIONS.md**: Add a checkmark `[x]` to the corresponding entry in the version checklist.
-    -   **README.md**: If the implementation adds a new CLI command or environment variable, update the "Quick Start" or "Configuration" sections.
-    -   **API_REFERENCE.md**: Update if a new endpoint was added.
-4.  **Verification**:
-    -   Ensure the implementation is correctly registered in the system (e.g., closing the issue via API with a detailed reasoning log).
-    -   Verify that documentation changes are consistent and do not break the formatting of the files.
+### Developer Tutorial: How the Agent MUST use Tasker during Programming
+
+When the agent is tasked to program a feature or fix a bug in `real-test/` (Phase 4), it MUST follow the rigorous development workflow powered by Tasker CLI and REST API:
+
+#### 1. Context Analysis & Issue Fetching
+Before writing code, read the assigned issue details to understand the scope and dependencies:
+```bash
+# Via CLI: Get issue details
+tasker issue show <issue-id>
+
+# Alternative REST API call:
+curl http://localhost:8888/api/v1/issues/<issue-id>
+```
+
+#### 2. Dependency Checking
+Ensure that no active blocked dependencies exist before starting the implementation:
+```bash
+# Via CLI: Check dependency chain
+tasker dependency chain <issue-id>
+
+# Alternative REST API:
+curl http://localhost:8888/api/v1/issues/<issue-id>/dependency-chain
+```
+*   **Rule:** If any dependency is still in state `OPEN`, `IN_PROGRESS` or `BLOCKED`, the agent **must not** start writing code. It must resolve blocking issues first.
+
+#### 3. Code-as-Graph Scan & Impact Analysis
+Tasker uses CodeSymbol mapping to calculate downstream risks before changes are made. The agent must scan the codebase and query impact:
+```bash
+# 1. Scan codebase symbols into the graph
+tasker code-graph scan src/
+
+# 2. Analyze impact of modifying a specific code symbol (e.g., function or class name)
+tasker code-graph impact <SymbolName>
+
+# Alternative REST API:
+curl http://localhost:8888/api/v1/analyze/impact/<issue-id>
+```
+
+#### 4. Policy & Constraints Consultation
+Consult architectural and technological policies established in the project:
+```bash
+# List policies
+tasker constraints list
+
+# Alternative REST API:
+curl http://localhost:8888/api/v1/constraints
+```
+
+#### 5. Code Implementation
+Proceed to write/modify code under `real-test/src` (or target directory). Follow instructions and design specifications (e.g., hexagonal architecture boundaries).
+
+#### 6. Policy Validation
+Verify that code changes do not break constraints (e.g. imports restrictions, library bans):
+```bash
+# Validate codebase compliance
+tasker constraints validate
+
+# Alternative REST API:
+curl -X POST http://localhost:8888/api/v1/constraints/validate
+```
+
+#### 7. Documentation Sync (Doc-Sync)
+Every code change requires immediate, synchronous updates to documentation files to prevent documentation rot:
+*   **ROADMAP.md:** Update status of the issue to `RESOLVED` in the Known Issues table.
+*   **VERSIONS.md:** Tick the corresponding item in the checklist: `- [x] Issue <ID> implemented`.
+*   **README.md:** Update "Quick Start" or commands section if CLI/variables changed.
+
+#### 8. Log Reasoning (Traceability)
+Store a decision trace in the Neo4j graph for future reference:
+```bash
+# Log thought trace to Tasker graph
+tasker reasoning log --issue <issue-id> --thought "Implemented robust validation utilizing HSL color palettes and closed security gaps with regex filters. All tests passing."
+
+# Alternative REST API:
+curl -X POST http://localhost:8888/api/v1/reasoning/log \
+  -H "Content-Type: application/json" \
+  -d '{
+    "context": "implementation",
+    "reasoning": "Detailed technical justification here",
+    "issue_id": "<issue-id>",
+    "files_modified": ["src/validator.py"],
+    "tests_passed": true
+  }'
+```
+
+#### 9. Close Issue
+Once everything is fully validated, mark the issue as closed in the registry:
+```bash
+# Close via CLI
+tasker issue close <issue-id>
+
+# Alternative REST API:
+curl -X POST http://localhost:8888/api/v1/issues/<issue-id>/close
+```
+
+---
 
 ### Audit Criteria for Agent Behavior
 - **Adherence**: Did the agent follow `documentation-sync.md`?
@@ -526,7 +635,11 @@ test the project
   → Phase 1: pip install socialseed-tasker + git init
   → Phase 2: tasker install → tasker init (levanta todo automáticamente)
   → Phase 3: User interaction via CLI (component/issue/dependency commands)
+             + Graph Stress & Cycle tests
+             + Fault Injection & Chaos testing
+             + Return Codes & Portability verification
   → Phase 4: Implementation & Doc Sync Evaluation (0-30 issues)
+             + Git History verification
   → Phase 5: Generate report.md
   → ⚠️ ASK: Cleanup or keep running?
   → WAIT for user response before acting
@@ -552,11 +665,16 @@ test the project
 - [ ] Phase 3: Componente creado vía CLI
 - [ ] Phase 3: Issues creados vía CLI
 - [ ] Phase 3: Dependencias creadas vía CLI
-- [ ] Phase 3: Verificación via CLI y API
+- [ ] Phase 3: Verificación de ciclo circular rechazada (Prueba de límites)
+- [ ] Phase 3: Prueba de resiliencia ante parada de DB (Chaos Testing)
+- [ ] Phase 3: Verificación de Exit Codes y formato de errores (DX)
+- [ ] Phase 3: Comprobación de normalización de rutas (Portabilidad)
+- [ ] Phase 3: Verificación via CLI and API
 - [ ] Phase 4: Implementation subset selected (0-30)
 - [ ] Phase 4: Doc-sync performed and verified
+- [ ] Phase 4: Git history vinculación y consistencia verificada
 - [ ] Phase 4: Registry reflection verified (Logs/DB)
-- [ ] Phase 5: report.md generated
+- [ ] Phase 5: report.md generated con métricas objetivas de DX
 - [ ] Phase 5: ASK user for cleanup decision ⚠️
 - [ ] Phase 5: Cleanup (only if user confirmed)
 

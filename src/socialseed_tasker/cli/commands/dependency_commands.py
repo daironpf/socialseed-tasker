@@ -46,7 +46,15 @@ from socialseed_tasker.cli.commands.shared import (
 dependency_app = typer.Typer(help="Manage dependencies between issues")
 
 
-@dependency_app.command("add")
+DEP_ADD_EPILOG = (
+    "Examples:\n"
+    "  tasker dependency add <issue_id> <dep_id>\n"
+    "  tasker dependency chain <issue_id>\n"
+    "\n"
+    "Note: Use 'tasker issue list' to find issue IDs."
+)
+
+@dependency_app.command("add", epilog=DEP_ADD_EPILOG)
 def dependency_add(
     issue_id: str,
     depends_on: str,
@@ -103,7 +111,14 @@ def dependency_add(
         raise typer.Exit(code=2) from exc
 
 
-@dependency_app.command("remove")
+DEP_REMOVE_EPILOG = (
+    "Examples:\n"
+    "  tasker dependency remove <issue_id> <dep_id>\n"
+    "\n"
+    "Note: Use 'tasker dependency list <issue_id>' to see current dependencies."
+)
+
+@dependency_app.command("remove", epilog=DEP_REMOVE_EPILOG)
 def dependency_remove(issue_id: str, depends_on: str) -> None:
     """Remove a DEPENDS_ON relationship."""
     repo = get_repository()
@@ -163,7 +178,14 @@ def dependency_list(
         console.print("[info]No dependents.[/info]")
 
 
-@dependency_app.command("chain")
+DEP_CHAIN_EPILOG = (
+    "Examples:\n"
+    "  tasker dependency chain <issue_id>\n"
+    "\n"
+    "Note: Use 'tasker issue list' to find issue IDs."
+)
+
+@dependency_app.command("chain", epilog=DEP_CHAIN_EPILOG)
 def dependency_chain(issue_id: str) -> None:
     """Show full transitive dependency chain."""
     repo = get_repository()
