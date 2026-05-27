@@ -84,11 +84,23 @@ def reset_cli_container() -> None:
 
 
 # Main application
+APP_EPILOG = (
+    "Examples:\n"
+    "  tasker issue create \"My title\" --priority HIGH\n"
+    "  tasker component create \"auth-service\" -p \"my-project\"\n"
+    "  tasker dependency add <issue_id> <dep_id>\n"
+    "  tasker issue list --status OPEN\n"
+    "  tasker issue close <issue_id>\n"
+    "\n"
+    "Run 'tasker <command> --help' for detailed usage of each command."
+)
+
 app = typer.Typer(
     name="tasker",
     help="SocialSeed Tasker - A graph-based task management framework",
     add_completion=False,
     rich_markup_mode="rich",
+    epilog=APP_EPILOG,
 )
 
 # Register command groups
