@@ -22,7 +22,7 @@ def rag_search(
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
 
     repo = RAGRepository(driver)
     results = repo.search(query=query, limit=limit, threshold=threshold)
@@ -57,7 +57,7 @@ def rag_index(
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
 
     repo = RAGRepository(driver)
     repo.create_vector_index()
@@ -81,7 +81,7 @@ def rag_stats() -> None:
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
 
     repo = RAGRepository(driver)
     stats = repo.get_stats()
@@ -106,7 +106,7 @@ def rag_clear(yes: bool = typer.Option(False, "--yes", "-y", help="Confirm delet
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
 
     repo = RAGRepository(driver)
     repo.clear()
@@ -131,8 +131,8 @@ def rag_embed_native(
 
     driver = get_driver()
     if driver is None:
-        console.print("[error]Neo4j not connected.[/error]")
-        return
+        console.print("[error]Neo4j not connected[/error]")
+        raise typer.Exit(code=1)
 
     if not content:
         repo_task = TaskRepository(driver)
@@ -147,7 +147,7 @@ def rag_embed_native(
 
     if not content:
         console.print("[error]No content to embed[/error]")
-        return
+        raise typer.Exit(code=1)
 
     rag_repo = RAGRepository(driver)
     result = rag_repo.create_native_embedding(source_type, source_id, content)
@@ -171,8 +171,8 @@ def rag_search_native(
 
     driver = get_driver()
     if driver is None:
-        console.print("[error]Neo4j not connected.[/error]")
-        return
+        console.print("[error]Neo4j not connected[/error]")
+        raise typer.Exit(code=1)
 
     rag_repo = RAGRepository(driver)
     results = rag_repo.search_native(source_type, query, limit)

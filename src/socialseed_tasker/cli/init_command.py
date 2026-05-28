@@ -567,6 +567,7 @@ def interactive_init_command(
     except Exception as e:
         console.print(f"\n[bold red]Failed to start Docker Compose: {e}[/bold red]")
         console.print("Please check your Docker installation and try running 'docker compose up -d' manually.")
+        raise typer.Exit(code=1)
 
 
 @init_app.command(name="install")

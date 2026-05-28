@@ -63,6 +63,7 @@ def code_graph_scan(
 
     except Exception as e:
         console.print(f"[error]Error scanning repository:[/error] {str(e)}")
+        raise typer.Exit(code=1)
 
 
 @code_graph_app.command("find")
@@ -96,13 +97,9 @@ def code_graph_find(
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
     from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
     repo = CodeGraphRepository(driver)
-    sym_type = None
-    if symbol_type:
-        with suppress(ValueError):
-            sym_type = SymbolType(symbol_type)
     results = repo.find_symbols(name=name, symbolType=sym_type, limit=limit)
     if not results:
         console.print("[info]No symbols found[/info]")
@@ -143,7 +140,7 @@ def code_graph_files(
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
     from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
     repo = CodeGraphRepository(driver)
     files = repo.get_files(limit=limit)
@@ -179,7 +176,7 @@ def code_graph_stats() -> None:
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
     from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
     repo = CodeGraphRepository(driver)
     stats = repo.get_stats()
@@ -206,7 +203,7 @@ def code_graph_clear(confirm: bool = typer.Option(False, "--yes", "-y", help="Co
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
     from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
     CodeGraphRepository(driver).clear()
     console.print("[success]Code graph cleared[/success]")
@@ -234,7 +231,7 @@ def code_graph_impact(symbol_name: str = typer.Argument(..., help="Symbol name t
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
     repo = CodeGraphRepository(driver)
     callers = repo.get_callers(symbol_name)
     if not callers:
@@ -269,7 +266,7 @@ def code_graph_calls(path: str = typer.Argument(..., help="File or symbol path")
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
     repo = CodeGraphRepository(driver)
     callers = repo.get_callers_by_path(path)
     if not callers:
@@ -304,7 +301,7 @@ def code_graph_depends(path: str = typer.Argument(..., help="File or symbol path
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
     repo = CodeGraphRepository(driver)
     deps = repo.get_dependencies_by_path(path)
     if not deps:
@@ -339,7 +336,7 @@ def code_graph_tests(path: str = typer.Argument(..., help="Source file path")) -
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
     repo = CodeGraphRepository(driver)
     tests = repo.get_tests_for_file(path)
     if not tests:
@@ -362,7 +359,7 @@ def code_graph_file(path: str = typer.Argument(..., help="File path to show deta
         file_data = next((f for f in files if f.get("path") == path or f.get("name") == path), None)
         if not file_data:
             console.print(f"[error]File not found in graph: {path}[/error]")
-            return
+            raise typer.Exit(code=1)
         console.print(Panel(
             f"[bold]File:[/bold] {file_data.get('name', path)}\n"
             f"[bold]Path:[/bold] {file_data.get('path', 'N/A')}\n"
@@ -378,12 +375,12 @@ def code_graph_file(path: str = typer.Argument(..., help="File path to show deta
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
     repo = CodeGraphRepository(driver)
     file_data = repo.get_file_by_path(path, "")
     if not file_data:
         console.print(f"[error]File not found in graph: {path}[/error]")
-        return
+        raise typer.Exit(code=1)
     console.print(Panel(
         f"[bold]File:[/bold] {file_data.get('name', path)}\n"
         f"[bold]Path:[/bold] {file_data.get('path', 'N/A')}\n"

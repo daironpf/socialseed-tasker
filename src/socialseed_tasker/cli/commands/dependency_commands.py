@@ -134,7 +134,7 @@ def dependency_remove(issue_id: str, depends_on: str) -> None:
         console.print(
             f"[success]Dependency removed:[/success] {str(resolved_issue_id)[:8]} -> {str(resolved_dep_id)[:8]}"
         )
-    except IssueNotFoundError as exc:
+    except (ValueError, IssueNotFoundError) as exc:
         console.print(f"[error]{exc}[/error]")
         raise typer.Exit(code=1) from exc
     except RemoteServiceError as exc:

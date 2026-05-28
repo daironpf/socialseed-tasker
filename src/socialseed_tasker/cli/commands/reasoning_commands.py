@@ -94,7 +94,7 @@ def reasoning_log(
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
 
     try:
         decision_type_enum = DecisionType(decision_type)
@@ -155,7 +155,7 @@ def reasoning_history(
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
 
     repo = ReasoningRepository(driver)
     if issue_id:
@@ -210,7 +210,7 @@ def reasoning_stats() -> None:
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
 
     repo = ReasoningRepository(driver)
     stats = repo.get_decision_stats()
@@ -255,7 +255,7 @@ def reasoning_clear(
     driver = get_driver()
     if not driver:
         console.print("[error]Neo4j not connected[/error]")
-        return
+        raise typer.Exit(code=1)
 
     repo = ReasoningRepository(driver)
     if issue_id:
