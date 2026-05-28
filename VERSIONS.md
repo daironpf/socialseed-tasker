@@ -11,6 +11,7 @@
 - [x] **#343 API error traceback:** Changed `logger.error` to `logger.debug` in `api_client.py`.
 - [x] **#344 CLI --depends-on mismatch:** Added `--depends-on`/`-d` option to `dependency add/remove` while keeping positional args for backward compatibility.
 - [x] **#345 Non-TTY piped input crash:** Wrapped `Prompt.ask()`/`typer.confirm()` with EOFError fallback to `input()` in `init_command.py`.
+- [x] **#346 Docker build context in blank project:** Updated `assets/templates/Dockerfile` to install from PyPI instead of copying local source, so it works without `pyproject.toml`/`src/`.
 
 ## [1.0.1] - 2026-05-25
 

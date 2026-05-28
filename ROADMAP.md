@@ -32,3 +32,4 @@
 | 343 | API command shows verbose traceback on connection error | Medium | cli/app.py | ✅ RESOLVED |
 | 344 | dependency add --depends-on flag not supported by CLI | Medium | cli/dependency_commands.py | ✅ RESOLVED |
 | 345 | tasker init crashes with EOFError when stdin is piped (non-TTY) | Medium | cli/init_command.py | ✅ RESOLVED |
+| 346 | Docker build fails on blank project because template copies local source | Low | assets/templates/Dockerfile | ✅ RESOLVED |
