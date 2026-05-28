@@ -24,6 +24,7 @@ if sys.platform == "win32":
         pass
 
 import socialseed_tasker
+from socialseed_tasker.application.actions import RemoteServiceError
 from socialseed_tasker.application.container import Container
 from socialseed_tasker.cli import commands
 
@@ -280,14 +281,25 @@ def handle_error(error: Exception, exit_code: int = 1) -> None:
     Intent: Present errors in a readable format without raw tracebacks.
     Business Value: Improves user experience and provides actionable guidance.
     """
-    console.print(f"[error]Error:[/error] {error}")
+    if isinstance(error, RemoteServiceError):
+        message = str(error)
+        if "429" in message:
+            console.print("[error]Rate limited:[/error] Too many requests. Please wait and try again.")
+        elif "Connection error" in message or "500" in message or "502" in message or "503" in message:
+            console.print(f"[error]Service unavailable:[/error] {message}")
+        else:
+            console.print(f"[error]Service error:[/error] {message}")
+    else:
+        console.print(f"[error]Error:[/error] {error}")
     raise typer.Exit(code=exit_code) from error
 
 
 def main_entry() -> None:
     """Entry point for the CLI script."""
     try:
-        app()
+        app(standalone_mode=False)
+    except SystemExit:
+        pass
     except KeyboardInterrupt:
         console.print("\n[warning]Operation cancelled.[/warning]")
         sys.exit(130)

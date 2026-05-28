@@ -29,6 +29,7 @@ from rich.tree import Tree
 from socialseed_tasker.application.actions import (
     CircularDependencyError,
     IssueNotFoundError,
+    RemoteServiceError,
     add_dependency_action,
     get_blocked_issues_action,
     get_dependency_chain_action,
@@ -109,6 +110,9 @@ def dependency_add(
         if hasattr(exc, "cycle_path") and exc.cycle_path:
             console.print(f"[error]Cycle path: {' -> '.join(exc.cycle_path)}[/error]")
         raise typer.Exit(code=2) from exc
+    except RemoteServiceError as exc:
+        console.print(f"[error]Service error:[/error] {exc}")
+        raise typer.Exit(code=1) from exc
 
 
 DEP_REMOVE_EPILOG = (
@@ -132,6 +136,9 @@ def dependency_remove(issue_id: str, depends_on: str) -> None:
         )
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
+        raise typer.Exit(code=1) from exc
+    except RemoteServiceError as exc:
+        console.print(f"[error]Service error:[/error] {exc}")
         raise typer.Exit(code=1) from exc
 
 
@@ -209,6 +216,9 @@ def dependency_chain(issue_id: str) -> None:
         console.print(tree)
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
+        raise typer.Exit(code=1) from exc
+    except RemoteServiceError as exc:
+        console.print(f"[error]Service error:[/error] {exc}")
         raise typer.Exit(code=1) from exc
 
 
