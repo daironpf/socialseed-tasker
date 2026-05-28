@@ -31,3 +31,4 @@
 | 342 | UnicodeEncodeError on Windows when issue CLI prints emojis | Low | cli/issue_commands.py | ✅ RESOLVED |
 | 343 | API command shows verbose traceback on connection error | Medium | cli/app.py | ✅ RESOLVED |
 | 344 | dependency add --depends-on flag not supported by CLI | Medium | cli/dependency_commands.py | ✅ RESOLVED |
+| 345 | tasker init crashes with EOFError when stdin is piped (non-TTY) | Medium | cli/init_command.py | ✅ RESOLVED |

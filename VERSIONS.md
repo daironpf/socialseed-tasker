@@ -10,6 +10,7 @@
 - [x] **#342 Terminal emoji crash:** Replaced emojis in `issue_commands.py` and changed `raise typer.Exit` to `sys.exit` in `app.py`.
 - [x] **#343 API error traceback:** Changed `logger.error` to `logger.debug` in `api_client.py`.
 - [x] **#344 CLI --depends-on mismatch:** Added `--depends-on`/`-d` option to `dependency add/remove` while keeping positional args for backward compatibility.
+- [x] **#345 Non-TTY piped input crash:** Wrapped `Prompt.ask()`/`typer.confirm()` with EOFError fallback to `input()` in `init_command.py`.
 
 ## [1.0.1] - 2026-05-25
 
@@ -27,6 +28,6 @@
 ### Release History
 | Version | Date | Description |
 |---------|------|-------------|
-| 1.0.2   | 2026-05-28 | Bugfix: Docker build context, policy NameError, DB error handler, Windows emoji, CLI --depends-on flag |
+| 1.0.2   | 2026-05-28 | Bugfix: Docker build context, policy NameError, DB error handler, Windows emoji, CLI --depends-on flag, non-TTY init |
 | 1.0.1   | 2026-05-25 | Bugfix: Schema init CypherSyntaxError & logger NameError |
 | 1.0.0   | 2026-05-24 | Full Release — All issues resolved |
