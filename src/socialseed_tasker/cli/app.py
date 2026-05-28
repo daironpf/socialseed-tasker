@@ -300,7 +300,7 @@ def handle_error(error: Exception, exit_code: int = 1) -> None:
             console.print(f"[error]Service error:[/error] {message}")
     else:
         console.print(f"[error]Error:[/error] {error}")
-    raise typer.Exit(code=exit_code) from error
+    sys.exit(exit_code)
 
 
 def main_entry() -> None:

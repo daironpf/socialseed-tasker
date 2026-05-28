@@ -207,7 +207,7 @@ def issue_show(issue_id: str) -> None:
 
         if not matches:
             console.print(f"[error]Issue '{issue_id}' not found.[/error]")
-            console.print("[dim]💡 Try: tasker issue list --status open[/dim]")
+            console.print("[dim][Tip] Try: tasker issue list --status open[/dim]")
             raise typer.Exit(code=1) from None
 
         if len(matches) == 1:
@@ -216,7 +216,7 @@ def issue_show(issue_id: str) -> None:
             console.print(f"[warning]Multiple matches for '{issue_id}':[/warning]")
             for m in matches:
                 console.print(f"  - {m.title} ({m.id})")
-            console.print("[dim]💡 Use full UUID to specify:[/dim]")
+            console.print("[dim][Tip] Use full UUID to specify:[/dim]")
             console.print(f"[dim]  tasker issue show {matches[0].id}[/dim]")
             raise typer.Exit(code=1) from None
 
@@ -224,7 +224,7 @@ def issue_show(issue_id: str) -> None:
 
     if issue is None:
         console.print(f"[error]Issue '{issue_id}' not found.[/error]")
-        console.print("[dim]💡 Verify ID with: tasker issue list[/dim]")
+        console.print("[dim][Tip] Verify ID with: tasker issue list[/dim]")
         raise typer.Exit(code=1) from None
 
     # Resolve component name
@@ -276,7 +276,7 @@ def issue_close(
                 break
         else:
             console.print(f"[error]Issue '{issue_id}' not found.[/error]")
-            console.print("[dim]💡 Check open issues: tasker issue list --status open[/dim]")
+            console.print("[dim][Tip] Check open issues: tasker issue list --status open[/dim]")
             raise typer.Exit(code=1) from None
 
     try:
@@ -295,14 +295,14 @@ def issue_close(
                         if result.get("success"):
                             console.print(f"[dim]  -> Linked to: {file_path}[/dim]")
             except Exception as e:
-                console.print(f"[dim]  ⚠ Could not link files: {e}[/dim]")
+                console.print(f"[dim]  [!] Could not link files: {e}[/dim]")
 
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
         raise typer.Exit(code=1) from exc
     except OpenDependenciesError as exc:
         console.print(f"[error]Cannot close:[/error] {exc}")
-        console.print("[dim]💡 View dependencies: tasker dependency list[/dim]")
+        console.print("[dim][Tip] View dependencies: tasker dependency list[/dim]")
         raise typer.Exit(code=2) from exc
     except Exception as exc:
         console.print(f"[error]{exc}[/error]")
