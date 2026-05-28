@@ -1,6 +1,6 @@
 # Project Roadmap
 
-**Last updated**: 2026-05-27
+**Last updated**: 2026-05-28
 
 ## Phase 1: Foundations
 - [x] Environment Setup
@@ -28,3 +28,6 @@
 | 331 | Policy creation API returns 500 from NameError on queries | High | infrastructure/neo4j_policy_repository.py | ✅ RESOLVED |
 | 332 | DB disconnect returns generic 500 instead of descriptive error | Medium | infrastructure/web_api/app.py | ✅ RESOLVED |
 | 333 | UnicodeEncodeError on Windows when init prints emoji | Low | cli/init_command.py | ✅ RESOLVED |
+| 342 | UnicodeEncodeError on Windows when issue CLI prints emojis | Low | cli/issue_commands.py | ✅ RESOLVED |
+| 343 | API command shows verbose traceback on connection error | Medium | cli/app.py | ✅ RESOLVED |
+| 344 | dependency add --depends-on flag not supported by CLI | Medium | cli/dependency_commands.py | ✅ RESOLVED |
