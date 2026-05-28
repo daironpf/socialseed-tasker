@@ -77,7 +77,7 @@ class ApiHttpClient:
             )
             return self._handle_response(resp)
         except httpx.RequestError as exc:
-            logger.error("Request failed: %s", exc)
+            logger.debug("Request failed: %s", exc)
             raise RemoteServiceError(f"Connection error: {exc}")
 
     def _handle_response(self, resp: httpx.Response) -> Any:
