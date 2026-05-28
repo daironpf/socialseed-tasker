@@ -841,7 +841,7 @@ def _would_create_cycle(
     while queue:
         current, path = queue.popleft()
         if current == issue_id:
-            return path + [issue_id]
+            return path
         if current in visited:
             continue
         visited.add(current)
