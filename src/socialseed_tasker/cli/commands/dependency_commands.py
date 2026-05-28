@@ -49,6 +49,7 @@ dependency_app = typer.Typer(help="Manage dependencies between issues")
 
 DEP_ADD_EPILOG = (
     "Examples:\n"
+    "  tasker dependency add <issue_id> --depends-on <dep_id>\n"
     "  tasker dependency add <issue_id> <dep_id>\n"
     "  tasker dependency chain <issue_id>\n"
     "\n"
@@ -57,12 +58,18 @@ DEP_ADD_EPILOG = (
 
 @dependency_app.command("add", epilog=DEP_ADD_EPILOG)
 def dependency_add(
-    issue_id: str,
-    depends_on: str,
+    issue_id: str = typer.Argument(..., help="Issue ID"),
+    depends_on: str = typer.Argument("", help="Issue ID this depends on (positional)"),
+    depends_on_opt: str = typer.Option("", "--depends-on", "-d", help="Issue ID this depends on"),
     enforce: str = typer.Option("warn", "--enforce", "-e", help="Policy enforcement: warn, block, disabled"),
     force: bool = typer.Option(False, "--force", "-f", help="Bypass cycle validation"),
 ) -> None:
     """Add a DEPENDS_ON relationship."""
+    dep_id = depends_on_opt or depends_on
+    if not dep_id:
+        console.print("[error]Missing argument: DEPENDS_ON or --depends-on[/error]")
+        raise typer.Exit(code=2)
+
     repo = get_repository()
 
     try:
@@ -72,7 +79,7 @@ def dependency_add(
         raise typer.Exit(code=2) from e
 
     try:
-        resolved_dep_id = resolve_issue_id(depends_on, repo)
+        resolved_dep_id = resolve_issue_id(dep_id, repo)
     except ValueError as e:
         console.print(f"[error]{e}[/error]")
         raise typer.Exit(code=2) from e
@@ -117,19 +124,29 @@ def dependency_add(
 
 DEP_REMOVE_EPILOG = (
     "Examples:\n"
+    "  tasker dependency remove <issue_id> --depends-on <dep_id>\n"
     "  tasker dependency remove <issue_id> <dep_id>\n"
     "\n"
     "Note: Use 'tasker dependency list <issue_id>' to see current dependencies."
 )
 
 @dependency_app.command("remove", epilog=DEP_REMOVE_EPILOG)
-def dependency_remove(issue_id: str, depends_on: str) -> None:
+def dependency_remove(
+    issue_id: str = typer.Argument(..., help="Issue ID"),
+    depends_on: str = typer.Argument("", help="Issue ID this depends on (positional)"),
+    depends_on_opt: str = typer.Option("", "--depends-on", "-d", help="Issue ID this depends on"),
+) -> None:
     """Remove a DEPENDS_ON relationship."""
+    dep_id = depends_on_opt or depends_on
+    if not dep_id:
+        console.print("[error]Missing argument: DEPENDS_ON or --depends-on[/error]")
+        raise typer.Exit(code=2)
+
     repo = get_repository()
 
     try:
         resolved_issue_id = resolve_issue_id(issue_id, repo)
-        resolved_dep_id = resolve_issue_id(depends_on, repo)
+        resolved_dep_id = resolve_issue_id(dep_id, repo)
         remove_dependency_action(repo, str(resolved_issue_id), str(resolved_dep_id))
         console.print(
             f"[success]Dependency removed:[/success] {str(resolved_issue_id)[:8]} -> {str(resolved_dep_id)[:8]}"
