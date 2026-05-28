@@ -12,6 +12,7 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 import subprocess
+import sys
 
 import typer
 from rich.console import Console
@@ -21,6 +22,29 @@ from rich.table import Table
 
 from socialseed_tasker.domain.system_init_entities import FileOperation, ScaffoldStatus
 from socialseed_tasker.application.scaffolder import ScaffolderService
+
+
+def _ask(
+    prompt: str,
+    default: str | None = None,
+    password: bool = False,
+    choices: list[str] | None = None,
+) -> str:
+    """Prompt the user, falling back to input() when stdin is not a TTY."""
+    try:
+        return Prompt.ask(prompt, default=default, password=password, choices=choices)
+    except (EOFError, KeyboardInterrupt):
+        if default is not None:
+            return default
+        return input(f"{prompt} ")
+
+
+def _confirm(prompt: str, default: bool = False) -> bool:
+    """Confirm prompt, falling back to default when stdin is not a TTY."""
+    try:
+        return typer.confirm(prompt, default=default)
+    except (EOFError, KeyboardInterrupt):
+        return default
 
 console = Console(
     width=80,
@@ -206,7 +230,7 @@ def interactive_init_command(
         
         console.print(table)
         
-        choice = Prompt.ask("Select an option", default="START").upper()
+        choice = _ask("Select an option", default="START").upper()
         
         if choice == "EXIT":
             console.print("[yellow]Initialization cancelled.[/yellow]")
@@ -215,7 +239,7 @@ def interactive_init_command(
         elif choice == "START":
             # If nothing filled, ask for project name
             if not any(state.values()) or not state["1"]:
-                project_name = Prompt.ask("Project Name required to proceed", default=project_name)
+                project_name = _ask("Project Name required to proceed", default=project_name)
                 slug = project_name.lower().replace(" ", "-")
                 description = f"Tasker project for {project_name}"
                 base_package = project_name.lower().replace(" ", "_")
@@ -223,61 +247,61 @@ def interactive_init_command(
             break
             
         elif choice == "1":
-            project_name = Prompt.ask("Project Name", default=project_name)
-            github_repo = Prompt.ask("GitHub Repository URL", default=github_repo)
-            slug = Prompt.ask("Project Slug", default=project_name.lower().replace(" ", "-"))
-            description = Prompt.ask("Project Description", default=f"Tasker project for {project_name}")
+            project_name = _ask("Project Name", default=project_name)
+            github_repo = _ask("GitHub Repository URL", default=github_repo)
+            slug = _ask("Project Slug", default=project_name.lower().replace(" ", "-"))
+            description = _ask("Project Description", default=f"Tasker project for {project_name}")
             # Update base_package default if not filled yet
             if not state["3"]:
                 base_package = project_name.lower().replace(" ", "_")
             state["1"] = True
             
         elif choice == "2":
-            architecture = Prompt.ask("Architecture", default=architecture)
-            language = Prompt.ask("Primary Language", default=language)
-            framework = Prompt.ask("Framework", default=framework)
-            database = Prompt.ask("Database", default=database)
-            tech_stack_str = Prompt.ask("Tech Stack (comma separated)", default=f"{language}, {framework}, {database}")
-            main_stack_str = Prompt.ask("Main Stack (comma separated)", default=f"{language}, Neo4j")
+            architecture = _ask("Architecture", default=architecture)
+            language = _ask("Primary Language", default=language)
+            framework = _ask("Framework", default=framework)
+            database = _ask("Database", default=database)
+            tech_stack_str = _ask("Tech Stack (comma separated)", default=f"{language}, {framework}, {database}")
+            main_stack_str = _ask("Main Stack (comma separated)", default=f"{language}, Neo4j")
             state["2"] = True
             
         elif choice == "3":
-            base_package = Prompt.ask("Base Package", default=base_package)
-            visibility = Prompt.ask("Visibility", choices=["PUBLIC", "PRIVATE"], default=visibility)
-            status = Prompt.ask("Project Status", default=status)
-            version = Prompt.ask("Version", default=version)
-            conventions_url = Prompt.ask("Conventions URL", default=conventions_url)
-            conventions_rules = Prompt.ask("Conventions Rules", default=conventions_rules)
-            global_status = Prompt.ask("Global Status", choices=["DEVELOPMENT", "STAGING", "PRODUCTION"], default=global_status)
+            base_package = _ask("Base Package", default=base_package)
+            visibility = _ask("Visibility", choices=["PUBLIC", "PRIVATE"], default=visibility)
+            status = _ask("Project Status", default=status)
+            version = _ask("Version", default=version)
+            conventions_url = _ask("Conventions URL", default=conventions_url)
+            conventions_rules = _ask("Conventions Rules", default=conventions_rules)
+            global_status = _ask("Global Status", choices=["DEVELOPMENT", "STAGING", "PRODUCTION"], default=global_status)
             state["3"] = True
             
         elif choice == "4":
-            username = Prompt.ask("Username", default=username)
-            email = Prompt.ask("Email", default=email)
-            user_role = Prompt.ask("Role", choices=["ADMIN", "LEAD_ARCHITECT", "DEVELOPER"], default=user_role)
-            github_handle = Prompt.ask("GitHub Handle", default=github_handle)
+            username = _ask("Username", default=username)
+            email = _ask("Email", default=email)
+            user_role = _ask("Role", choices=["ADMIN", "LEAD_ARCHITECT", "DEVELOPER"], default=user_role)
+            github_handle = _ask("GitHub Handle", default=github_handle)
             state["4"] = True
             
         elif choice == "5":
-            forbidden_tech = Prompt.ask("Forbidden Technologies", default=forbidden_tech)
-            required_patterns = Prompt.ask("Required Patterns", default=required_patterns)
-            naming_conventions = Prompt.ask("Naming Conventions", default=naming_conventions)
-            dependency_rules = Prompt.ask("Dependency Rules", default=dependency_rules)
-            dos_and_donts = Prompt.ask("Do's and Don'ts", default=dos_and_donts)
+            forbidden_tech = _ask("Forbidden Technologies", default=forbidden_tech)
+            required_patterns = _ask("Required Patterns", default=required_patterns)
+            naming_conventions = _ask("Naming Conventions", default=naming_conventions)
+            dependency_rules = _ask("Dependency Rules", default=dependency_rules)
+            dos_and_donts = _ask("Do's and Don'ts", default=dos_and_donts)
             state["5"] = True
             
         elif choice == "6":
-            agent_name = Prompt.ask("Agent Name", default=agent_name)
-            agent_role = Prompt.ask("Agent Role", default=agent_role)
-            agent_capabilities = Prompt.ask("Agent Capabilities (comma separated)", default=agent_capabilities)
+            agent_name = _ask("Agent Name", default=agent_name)
+            agent_role = _ask("Agent Role", default=agent_role)
+            agent_capabilities = _ask("Agent Capabilities (comma separated)", default=agent_capabilities)
             state["6"] = True
             
         elif choice == "7":
-            openai_api_key = Prompt.ask("OpenAI API Key (hidden)", password=True)
+            openai_api_key = _ask("OpenAI API Key (hidden)", password=True)
             state["7"] = True
             
         elif choice == "8":
-            components_list_str = Prompt.ask("Initial Components (comma separated)", default=components_list_str)
+            components_list_str = _ask("Initial Components (comma separated)", default=components_list_str)
             state["8"] = True
             
         else:
@@ -291,7 +315,7 @@ def interactive_init_command(
     console.print("  [bold]1) Direct (Neo4j Bolt)[/bold] - CLI connects directly to Neo4j via Bolt protocol")
     console.print("  [bold]2) API (REST)[/bold] - CLI connects through the FastAPI REST API")
     console.print("")
-    mode_choice = Prompt.ask("Select mode", choices=["1", "2"], default="1")
+    mode_choice = _ask("Select mode", choices=["1", "2"], default="1")
     cli_mode = "direct" if mode_choice == "1" else "api"
 
     console.print("\n[info]Starting initialization with provided context...[/info]\n")
@@ -678,7 +702,7 @@ def _run_scaffold(
                     "(.agent/tasker/ files, ROADMAP.md, VERSIONS.md).[/warning]"
                 )
                 if interactive:
-                    confirm = typer.confirm("Continue overwriting?", default=False)
+                    confirm = _confirm("Continue overwriting?", default=False)
                     if not confirm:
                         console.print("[info]Scaffold cancelled.[/info]")
                         raise typer.Exit(code=0)
