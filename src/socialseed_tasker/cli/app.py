@@ -26,6 +26,7 @@ if sys.platform == "win32":
 import socialseed_tasker
 from socialseed_tasker.application.actions import RemoteServiceError
 from socialseed_tasker.application.container import Container
+from socialseed_tasker.application.exceptions import GraphPortError
 from socialseed_tasker.cli import commands
 
 
@@ -281,11 +282,19 @@ def handle_error(error: Exception, exit_code: int = 1) -> None:
     Intent: Present errors in a readable format without raw tracebacks.
     Business Value: Improves user experience and provides actionable guidance.
     """
-    if isinstance(error, RemoteServiceError):
+    if isinstance(error, GraphPortError):
+        message = str(error)
+        if "Neo4j operation failed" in message:
+            console.print(f"[error]Database connection failed:[/error] {message}")
+        else:
+            console.print(f"[error]Database error:[/error] {message}")
+    elif isinstance(error, RemoteServiceError):
         message = str(error)
         if "429" in message:
             console.print("[error]Rate limited:[/error] Too many requests. Please wait and try again.")
-        elif "Connection error" in message or "500" in message or "502" in message or "503" in message:
+        elif "DATABASE_CONNECTION_ERROR" in message or "Connection error" in message:
+            console.print(f"[error]Database connection failed:[/error] Check that Neo4j is running and accessible.")
+        elif any(s in message for s in ("500", "502", "503")):
             console.print(f"[error]Service unavailable:[/error] {message}")
         else:
             console.print(f"[error]Service error:[/error] {message}")
