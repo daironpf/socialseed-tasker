@@ -565,7 +565,7 @@ def close_issue(
                 from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
                 code_repo = CodeGraphRepository(driver)
                 for file_path in affected_files:
-                    code_repo.link_issue_to_file(issue_id, file_path)
+                    code_repo.link_issue_to_file_with_symbols(issue_id, file_path)
         except Exception:
             pass
 
@@ -762,11 +762,29 @@ def add_reasoning_log(
     issue_id: str,
     body: ReasoningLogEntryRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
+    neo4j_driver: Any = Depends(get_code_graph_driver),
 ) -> APIResponse[IssueResponse]:
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
 
+    # Store reasoning as standalone ReasoningNode node
+    if neo4j_driver:
+        try:
+            from socialseed_tasker.domain.entities import DecisionType, ReasoningNode as ReasoningNodeEntity
+            from socialseed_tasker.infrastructure.neo4j_reasoning_repository import ReasoningRepository
+
+            reasoning = ReasoningNodeEntity(
+                thought=body.reasoning,
+                confidence=0.5,
+                decisionType=DecisionType(body.context) if body.context in [e.value for e in DecisionType] else DecisionType.UNKNOWN,
+            )
+            reasoning_repo = ReasoningRepository(neo4j_driver)
+            reasoning_repo.log_reasoning(issue_id, "api-user", "API User", reasoning)
+        except Exception:
+            pass
+
+    # Fallback: store as embedded JSON for backward compatibility
     updated_issue = repo.add_reasoning_log(
         issue_id=issue_id,
         context=body.context,

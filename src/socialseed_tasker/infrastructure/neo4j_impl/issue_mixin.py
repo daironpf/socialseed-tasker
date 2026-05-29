@@ -124,6 +124,17 @@ class IssueRepositoryMixin:
                 raise ValueError(f"Issue {issue_id} not found")
             issue = _node_to_issue(record["i"])
 
+            # Create (Issue)-[:RESOLVED_BY]->(Commit) if commit_sha provided
+            if commit_sha:
+                try:
+                    session.run(
+                        queries.LINK_COMMIT_TO_ISSUE,
+                        sha=commit_sha,
+                        issue_id=issue_id,
+                    )
+                except Exception:
+                    pass
+
             # Index for RAG (Native in Graph)
             embedding_service = get_embedding_service()
             if embedding_service.is_available():

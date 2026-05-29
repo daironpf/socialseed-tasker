@@ -555,3 +555,15 @@ class CodeGraphRepository:
                 }
                 for r in result
             ]
+
+    def link_issue_to_file_with_symbols(self, issue_id: str, file_path: str) -> None:
+        """Link an issue to a code file and all its symbols."""
+        self.link_issue_to_file(issue_id, file_path)
+        try:
+            file_data = self.get_file_by_path(file_path, repo_path="")
+            if file_data and file_data.get("id"):
+                symbols = self.get_symbols_by_file(UUID(file_data["id"]))
+                for sym in symbols:
+                    self.link_issue_to_symbol(issue_id, sym["id"])
+        except Exception:
+            pass

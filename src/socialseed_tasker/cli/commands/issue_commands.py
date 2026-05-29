@@ -306,9 +306,8 @@ def issue_close(
                     from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
                     code_repo = CodeGraphRepository(driver)
                     for file_path in affects:
-                        result = code_repo.link_issue_to_file(resolved_str, file_path)
-                        if result.get("success"):
-                            console.print(f"[dim]  -> Linked to: {file_path}[/dim]")
+                        code_repo.link_issue_to_file_with_symbols(resolved_str, file_path)
+                        console.print(f"[dim]  -> Linked to: {file_path} (file + symbols)[/dim]")
             except Exception as e:
                 console.print(f"[dim]  [!] Could not link files: {e}[/dim]")
 
