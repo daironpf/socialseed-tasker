@@ -44,8 +44,8 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
                     )
                 )
     return Issue(
-        id=data["id"],
-        title=data["title"],
+        id=data.get("id") or data.get("_id", ""),
+        title=data.get("title", ""),
         description=data.get("description", ""),
         status=IssueStatus(data.get("status", "OPEN")),
         priority=data.get("priority", "MEDIUM"),
