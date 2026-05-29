@@ -311,6 +311,13 @@ def get_dependency_chain(
 
 
 @dependencies_router.get(
+    "/dependencies/blocked",
+    response_model=APIResponse[list[IssueResponse]],
+    summary="List blocked issues (alias)",
+    description="Alias for /blocked-issues. List all issues blocked by at least one open dependency.",
+    include_in_schema=True,
+)
+@dependencies_router.get(
     "/blocked-issues",
     response_model=APIResponse[list[IssueResponse]],
     summary="List blocked issues",
