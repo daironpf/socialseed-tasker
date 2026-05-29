@@ -16,6 +16,10 @@ from socialseed_tasker.infrastructure.neo4j_queries import SCHEMA_CONSTRAINTS, S
 
 logger = logging.getLogger(__name__)
 
+# Suppress Neo4j 5.x schema notification noise (GqlStatusObject INFO
+# messages for IF NOT EXISTS indexes/constraints on every connection).
+logging.getLogger("neo4j.notifications").setLevel(logging.WARNING)
+
 if TYPE_CHECKING:
     from neo4j import Driver
     from socialseed_tasker.application.ports import GraphPort as GraphPortProtocol
