@@ -15,4 +15,4 @@ ENV TASKER_API_PORT=8000
 
 EXPOSE 8000
 
-CMD ["tasker", "serve", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "socialseed_tasker.infrastructure.web_api.__main__"]
