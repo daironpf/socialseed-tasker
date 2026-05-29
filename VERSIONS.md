@@ -17,6 +17,9 @@
 - [x] **#341 Exit code consistency:** Non-zero exit codes not consistently returned on failure — fixed by `sys.exit()` pattern.
 - [x] **#346 Docker build context in blank project:** Updated `assets/templates/Dockerfile` to install from PyPI instead of copying local source, so it works without `pyproject.toml`/`src/`.
 - [x] **Infra: Dockerfile base image:** Changed `python:3.10-slim` → `python:3.12-slim` and removed `apt-get install git` in template Dockerfile for compatibility with PyPI package (PEP 701 f-strings) and faster builds.
+- [x] **#347 Docker API SyntaxError:** Fixed f-string nested quote `SyntaxError` in commands.py by installing from local source in tasker-agent Dockerfile and using Python 3.12 (PEP 701).
+- [x] **#348 Neo4j schema warnings:** Removed typed relationship patterns (`:CONTAINS`, `:CODE_RELATIONSHIP`) and unused `f.language` from `get_stats` Cypher query to avoid planner warnings on empty graphs.
+- [x] **#349 CLI help examples:** Added detailed epilog examples and workflow patterns to `--help` output for `issue create`, `issue list`, `dependency add`, and the main app.
 
 ## [1.0.1] - 2026-05-25
 
@@ -34,6 +37,6 @@
 ### Release History
 | Version | Date | Description |
 |---------|------|-------------|
-| 1.0.2   | 2026-05-28 | Bugfix: Emoji/traceback cleanup, --depends-on flag, non-TTY init, Docker PyPI install, base image 3.12 |
+| 1.0.2   | 2026-05-29 | Bugfix: Emoji/traceback cleanup, --depends-on flag, non-TTY init, Docker local source, base image 3.12, Neo4j warnings, CLI help examples |
 | 1.0.1   | 2026-05-25 | Bugfix: Schema init CypherSyntaxError & logger NameError |
 | 1.0.0   | 2026-05-24 | Full Release — All issues resolved |

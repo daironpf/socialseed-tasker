@@ -1,6 +1,6 @@
 # Project Roadmap
 
-**Last updated**: 2026-05-28
+**Last updated**: 2026-05-29
 
 ## Phase 1: Foundations
 - [x] Environment Setup
@@ -33,3 +33,6 @@
 | 344 | dependency add --depends-on flag not supported by CLI | Medium | cli/dependency_commands.py | ✅ RESOLVED |
 | 345 | tasker init crashes with EOFError when stdin is piped (non-TTY) | Medium | cli/init_command.py | ✅ RESOLVED |
 | 346 | Docker build fails on blank project because template copies local source | Low | assets/templates/Dockerfile | ✅ RESOLVED |
+| 347 | Docker API SyntaxError in f-string nested quotes | Critical | .agent/tasker/Dockerfile | ✅ RESOLVED |
+| 348 | Neo4j schema warnings on non-existent relationship types | Medium | infrastructure/neo4j_code_graph_repository.py | ✅ RESOLVED |
+| 349 | CLI --help output lacks detailed examples | Low | cli/commands/ | ✅ RESOLVED |
