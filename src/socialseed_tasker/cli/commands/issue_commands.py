@@ -219,8 +219,6 @@ def issue_show(issue_id: str) -> None:
         tasker issue show abc12345
         tasker issue show "Fix login"
     """
-    from uuid import UUID
-
     repo = get_repository()
 
     resolved_id = issue_id
@@ -286,26 +284,18 @@ def issue_close(
         An issue cannot be closed if it has open dependencies. Resolve
         blocking issues first with: tasker dependency list <id>
     """
-    from uuid import UUID
-
     repo = get_repository()
 
-    resolved_id = issue_id
     try:
-        UUID(issue_id)
-    except ValueError:
-        all_issues = repo.list_issues()
-        for issue in all_issues:
-            if str(issue.id).startswith(issue_id):
-                resolved_id = str(issue.id)
-                break
-        else:
-            console.print(f"[error]Issue '{issue_id}' not found.[/error]")
-            console.print("[dim][Tip] Check open issues: tasker issue list --status open[/dim]")
-            raise typer.Exit(code=1) from None
+        resolved_id = resolve_issue_id(issue_id, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        console.print("[dim][Tip] Check open issues: tasker issue list --status open[/dim]")
+        raise typer.Exit(code=1) from e
 
+    resolved_str = str(resolved_id)
     try:
-        issue = close_issue_action(repo, resolved_id)
+        issue = close_issue_action(repo, resolved_str)
         console.print(f"[success]Issue closed:[/success] {issue.title}")
 
         if affects:
@@ -316,7 +306,7 @@ def issue_close(
                     from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
                     code_repo = CodeGraphRepository(driver)
                     for file_path in affects:
-                        result = code_repo.link_issue_to_file(resolved_id, file_path)
+                        result = code_repo.link_issue_to_file(resolved_str, file_path)
                         if result.get("success"):
                             console.print(f"[dim]  -> Linked to: {file_path}[/dim]")
             except Exception as e:
@@ -343,7 +333,13 @@ def issue_move(
     repo = get_repository()
 
     try:
-        issue = move_issue_action(repo, issue_id, to_component)
+        resolved_id = resolve_issue_id(issue_id, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from e
+
+    try:
+        issue = move_issue_action(repo, str(resolved_id), to_component)
         console.print(f"[success]Issue moved:[/success] {issue.id} -> component {to_component[:8]}")
     except IssueNotFoundError as exc:
         console.print(f"[error]{exc}[/error]")
@@ -359,37 +355,29 @@ def issue_delete(
     force: bool = typer.Option(False, "--force", "-f", help="Skip confirmation"),
 ) -> None:
     """Delete an issue (with confirmation)."""
-    from uuid import UUID
-
     repo = get_repository()
 
-    resolved_id = issue_id
     try:
-        UUID(issue_id)
-    except ValueError:
-        all_issues = repo.list_issues()
-        for issue in all_issues:
-            if issue.title.lower() == issue_id.lower() or issue_id.lower() in issue.title.lower():
-                resolved_id = str(issue.id)
-                break
-        else:
-            console.print(f"[error]Issue '{issue_id}' not found.[/error]")
-            raise typer.Exit(code=1) from None
+        resolved_id = resolve_issue_id(issue_id, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from e
 
-    issue = repo.get_issue(resolved_id)
+    resolved_str = str(resolved_id)
+    issue = repo.get_issue(resolved_str)
 
     if issue is None:
         console.print(f"[error]Issue '{issue_id}' not found.[/error]")
         raise typer.Exit(code=1) from None
 
     if not force:
-        confirm = typer.confirm(f"Delete issue '{issue.title}' ({resolved_id[:8]})?")
+        confirm = typer.confirm(f"Delete issue '{issue.title}' ({resolved_str[:8]})?")
         if not confirm:
             console.print("[info]Cancelled.[/info]")
             return
 
-    repo.delete_issue(resolved_id)
-    console.print(f"[success]Issue deleted:[/success] {resolved_id[:8]}")
+    repo.delete_issue(resolved_str)
+    console.print(f"[success]Issue deleted:[/success] {resolved_str[:8]}")
 
 
 @issue_app.command("start")
@@ -398,25 +386,17 @@ def issue_start(
     agent_id: str = typer.Option(..., "--agent-id", "-a", help="Agent identifier"),
 ) -> None:
     """Start agent work on an issue."""
-    from uuid import UUID
-
     repo = get_repository()
 
-    resolved_id = issue_id
     try:
-        UUID(issue_id)
-    except ValueError:
-        all_issues = repo.list_issues()
-        for issue in all_issues:
-            if issue.title.lower() == issue_id.lower() or issue_id.lower() in issue.title.lower():
-                resolved_id = str(issue.id)
-                break
-        else:
-            console.print(f"[error]Issue '{issue_id}' not found.[/error]")
-            raise typer.Exit(code=1)
+        resolved_id = resolve_issue_id(issue_id, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from e
 
+    resolved_str = str(resolved_id)
     try:
-        issue = repo.get_issue(resolved_id)
+        issue = repo.get_issue(resolved_str)
         if issue is None:
             console.print(f"[error]Issue '{issue_id}' not found.[/error]")
             raise typer.Exit(code=1)
@@ -425,8 +405,8 @@ def issue_start(
             console.print(f"[error]Agent is already working on issue '{issue_id}'.[/error]")
             raise typer.Exit(code=1)
 
-        repo.start_agent_work(resolved_id, agent_id)
-        console.print(f"[success]Agent work started:[/success] {agent_id} on issue {resolved_id[:8]}")
+        repo.start_agent_work(resolved_str, agent_id)
+        console.print(f"[success]Agent work started:[/success] {agent_id} on issue {resolved_str[:8]}")
     except ValueError as e:
         console.print(f"[error]{e}[/error]")
         raise typer.Exit(code=1) from e
@@ -437,31 +417,23 @@ def issue_finish(
     issue_id: str,
 ) -> None:
     """Finish agent work on an issue."""
-    from uuid import UUID
-
     repo = get_repository()
 
-    resolved_id = issue_id
     try:
-        UUID(issue_id)
-    except ValueError:
-        all_issues = repo.list_issues()
-        for issue in all_issues:
-            if issue.title.lower() == issue_id.lower() or issue_id.lower() in issue.title.lower():
-                resolved_id = str(issue.id)
-                break
-        else:
-            console.print(f"[error]Issue '{issue_id}' not found.[/error]")
-            raise typer.Exit(code=1)
+        resolved_id = resolve_issue_id(issue_id, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=1) from e
 
+    resolved_str = str(resolved_id)
     try:
-        issue = repo.get_issue(resolved_id)
+        issue = repo.get_issue(resolved_str)
         if issue is None:
             console.print(f"[error]Issue '{issue_id}' not found.[/error]")
             raise typer.Exit(code=1)
 
-        repo.finish_agent_work(resolved_id)
-        console.print(f"[success]Agent work finished:[/success] issue {resolved_id[:8]}")
+        repo.finish_agent_work(resolved_str)
+        console.print(f"[success]Agent work finished:[/success] issue {resolved_str[:8]}")
     except ValueError as e:
         console.print(f"[error]{e}[/error]")
         raise typer.Exit(code=1) from e
