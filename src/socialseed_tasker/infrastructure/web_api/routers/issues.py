@@ -768,7 +768,8 @@ def add_reasoning_log(
     if issue is None:
         raise IssueNotFoundError(issue_id)
 
-    # Store reasoning as standalone ReasoningNode node
+    # Store reasoning as standalone ReasoningNode node (graph-friendly)
+    reasoning_id: str | None = None
     if neo4j_driver:
         try:
             from socialseed_tasker.domain.entities import DecisionType, ReasoningNode as ReasoningNodeEntity
@@ -780,17 +781,21 @@ def add_reasoning_log(
                 decisionType=DecisionType(body.context) if body.context in [e.value for e in DecisionType] else DecisionType.UNKNOWN,
             )
             reasoning_repo = ReasoningRepository(neo4j_driver)
-            reasoning_repo.log_reasoning(issue_id, "api-user", "API User", reasoning)
+            reasoning_id = reasoning_repo.log_reasoning(issue_id, "api-user", "API User", reasoning)
         except Exception:
             pass
 
-    # Fallback: store as embedded JSON for backward compatibility
-    updated_issue = repo.add_reasoning_log(
-        issue_id=issue_id,
-        context=body.context,
-        reasoning=body.reasoning,
-        related_nodes=body.related_nodes,
-    )
+    if not reasoning_id:
+        # Fallback: store as embedded JSON if standalone node creation failed
+        updated_issue = repo.add_reasoning_log(
+            issue_id=issue_id,
+            context=body.context,
+            reasoning=body.reasoning,
+            related_nodes=body.related_nodes,
+        )
+    else:
+        updated_issue = repo.get_issue(issue_id)
+
     return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
 
 
@@ -806,22 +811,50 @@ def add_reasoning_log(
 def get_reasoning_logs(
     issue_id: str,
     repo: TaskRepositoryInterface = Depends(get_repo),
+    neo4j_driver: Any = Depends(get_code_graph_driver),
 ) -> APIResponse[list[ReasoningLogEntryResponse]]:
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
 
-    logs = repo.get_reasoning_logs(issue_id)
-    log_responses = [
-        ReasoningLogEntryResponse(
-            id=log.get("id", ""),
-            timestamp=log.get("timestamp", ""),
-            context=log.get("context", ""),
-            reasoning=log.get("reasoning", ""),
-            related_nodes=log.get("related_nodes", []),
-        )
-        for log in logs
-    ]
+    log_responses: list[ReasoningLogEntryResponse] = []
+
+    # Standalone ReasoningNode nodes (primary)
+    if neo4j_driver:
+        try:
+            from socialseed_tasker.infrastructure.neo4j_reasoning_repository import ReasoningRepository
+
+            reasoning_repo = ReasoningRepository(neo4j_driver)
+            reasoning_nodes = reasoning_repo.get_reasoning_by_issue(issue_id)
+            for node in reasoning_nodes:
+                log_responses.append(
+                    ReasoningLogEntryResponse(
+                        id=node.get("id", ""),
+                        timestamp=node.get("created_at", ""),
+                        context=node.get("decision_type", "unknown"),
+                        reasoning=node.get("thought", ""),
+                        related_nodes=[node.get("agent_id", "")] if node.get("agent_id") else [],
+                    )
+                )
+        except Exception:
+            pass
+
+    # Legacy embedded JSON (fallback)
+    try:
+        embedded_logs = repo.get_reasoning_logs(issue_id)
+        for log in embedded_logs:
+            log_responses.append(
+                ReasoningLogEntryResponse(
+                    id=log.get("id", ""),
+                    timestamp=log.get("timestamp", ""),
+                    context=log.get("context", ""),
+                    reasoning=log.get("reasoning", ""),
+                    related_nodes=log.get("related_nodes", []),
+                )
+            )
+    except Exception:
+        pass
+
     return APIResponse(data=log_responses, meta=Meta(request_id=None))
 
 

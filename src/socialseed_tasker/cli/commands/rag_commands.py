@@ -141,7 +141,10 @@ def rag_embed_native(
             if issue:
                 content = issue.title + " " + issue.description
         if source_type == "reasoning":
-            logs = repo_task.get_reasoning_logs(source_id)
+            from socialseed_tasker.infrastructure.neo4j_reasoning_repository import ReasoningRepository
+
+            reasoning_repo = ReasoningRepository(driver)
+            logs = reasoning_repo.get_reasoning_by_issue(source_id)
             if logs:
                 content = " ".join([l.get("thought", "") for l in logs])
 
