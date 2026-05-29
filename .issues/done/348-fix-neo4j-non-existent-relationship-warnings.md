@@ -16,7 +16,7 @@ Every `tasker status` call logs:
 1. Run `tasker status` in direct mode
 2. Observe Neo4j notification warnings in the output
 
-## Status: PENDING
+## Status: SOLVED
 
 ## Priority: MEDIUM
 
@@ -28,3 +28,9 @@ Update the Cypher query in the status command to use optional matches with exist
 
 ## Impact
 Cluttered logs with warnings. No functional impact, but reduces signal-to-noise ratio for debugging.
+
+## Fix
+Updated `get_stats` query in `neo4j_code_graph_repository.py`:
+- Replaced `OPTIONAL MATCH (f)-[:CONTAINS]->(s:CodeSymbol)` with `OPTIONAL MATCH (s:CodeSymbol)` — counts CodeSymbol nodes directly without traversing non-existent CONTAINS edges
+- Replaced `OPTIONAL MATCH ()-[r:CODE_RELATIONSHIP]->()` with `OPTIONAL MATCH ()-[r]->() WHERE type(r) = 'CODE_RELATIONSHIP'` — matches any relationship first, then filters by type at runtime, avoiding the planner warning
+- Removed `collect(DISTINCT f.language) AS languages` — the column was unused by the caller

@@ -128,12 +128,12 @@ CODE_GRAPH_QUERIES = {
     """,
     "get_stats": """
         MATCH (f:CodeFile)
-        OPTIONAL MATCH (f)-[:CONTAINS]->(s:CodeSymbol)
-        OPTIONAL MATCH ()-[r:CODE_RELATIONSHIP]->()
-        RETURN count(DISTINCT f) AS total_files,
-               count(DISTINCT s) AS total_symbols,
-               count(DISTINCT r) AS total_relationships,
-               collect(DISTINCT f.language) AS languages
+        WITH count(DISTINCT f) AS total_files
+        OPTIONAL MATCH (s:CodeSymbol)
+        WITH total_files, count(DISTINCT s) AS total_symbols
+        OPTIONAL MATCH ()-[r]->()
+        WHERE type(r) = 'CODE_RELATIONSHIP'
+        RETURN total_files, total_symbols, count(DISTINCT r) AS total_relationships
     """,
     "clear_graph": """
         MATCH (n)
