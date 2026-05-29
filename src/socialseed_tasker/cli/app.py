@@ -318,9 +318,11 @@ def handle_error(error: Exception, exit_code: int = 1) -> None:
 def main_entry() -> None:
     """Entry point for the CLI script."""
     try:
-        app(standalone_mode=False)
+        exit_code = app(standalone_mode=False)
+        if exit_code:
+            sys.exit(exit_code)
     except SystemExit:
-        pass
+        raise
     except KeyboardInterrupt:
         console.print("\n[warning]Operation cancelled.[/warning]")
         sys.exit(130)
