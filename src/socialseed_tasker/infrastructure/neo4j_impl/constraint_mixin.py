@@ -57,6 +57,11 @@ class ConstraintRepositoryMixin:
     def list_constraints(self, category: str | None = None) -> list[Constraint]:
         """List constraints from Neo4j, optionally filtered by category."""
         with self._driver.driver.session(database=self._driver.database) as session:
+            labels_result = session.run("CALL db.labels()")
+            labels = [r["label"] for r in labels_result]
+            if "Constraint" not in labels:
+                return []
+
             if category:
                 result = session.run(
                     "MATCH (c:Constraint {category: $category}) RETURN c",
