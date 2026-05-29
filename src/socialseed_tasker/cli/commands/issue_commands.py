@@ -49,7 +49,21 @@ from socialseed_tasker.cli.commands.shared import (
 issue_app = typer.Typer(help="Manage issues")
 
 
-@issue_app.command("create")
+ISSUE_CREATE_EPILOG = (
+    "Examples:\n"
+    "  tasker issue create \"Implement user login\" -c <component_id>\n"
+    "  tasker issue create \"Fix auth bug\" -c <comp_id> -d \"Users cannot reset password\"\n"
+    "  tasker issue create \"Add tests\" -c <id> -p HIGH -l \"backend,testing\"\n"
+    "  tasker issue create \"CRITICAL: security flaw\" -c <id> -p CRITICAL -e block\n"
+    "\n"
+    "Tips:\n"
+    "  - Use 'tasker component list' to find component IDs\n"
+    "  - Priority values: LOW, MEDIUM (default), HIGH, CRITICAL\n"
+    "  - Labels are comma-separated: -l \"frontend,ux,urgent\"\n"
+    "  - Use --enforce block to prevent policy violations"
+)
+
+@issue_app.command("create", epilog=ISSUE_CREATE_EPILOG)
 def issue_create(
     title: str = typer.Argument(..., help="Issue title"),
     component: str = typer.Option(..., "--component", "-c", help="Component ID, name, or UUID prefix"),
@@ -149,10 +163,21 @@ def issue_create(
         raise typer.Exit(code=2) from exc
 
 
-@issue_app.command("list")
+ISSUE_LIST_EPILOG = (
+    "Examples:\n"
+    "  tasker issue list\n"
+    "  tasker issue list --status OPEN\n"
+    "  tasker issue list --status CLOSED --component <component_id>\n"
+    "  tasker issue list --project my-project --json\n"
+    "  tasker issue list -s OPEN -p high\n"
+    "\n"
+    "Status values: OPEN, CLOSED, IN_PROGRESS, REVIEW, BLOCKED"
+)
+
+@issue_app.command("list", epilog=ISSUE_LIST_EPILOG)
 def issue_list(
-    status: str | None = typer.Option(None, "--status", "-s", help="Filter by status"),
-    component: str | None = typer.Option(None, "--component", "-c", help="Filter by component ID"),
+    status: str | None = typer.Option(None, "--status", "-s", help="Filter by status (OPEN, CLOSED, IN_PROGRESS, REVIEW, BLOCKED)"),
+    component: str | None = typer.Option(None, "--component", "-c", help="Filter by component ID, name, or prefix"),
     project: str | None = typer.Option(None, "--project", "-p", help="Filter by project name"),
     as_json: bool = typer.Option(False, "--json", help="Output as JSON"),
 ) -> None:

@@ -88,10 +88,11 @@ def reset_cli_container() -> None:
 # Main application
 APP_EPILOG = (
     "Examples:\n"
-    "  tasker issue create \"My title\" --priority HIGH\n"
+    "  tasker issue create \"My title\" -c <id> --priority HIGH -l \"bug,frontend\"\n"
+    "  tasker issue list --status OPEN --project my-proj\n"
     "  tasker component create \"auth-service\" -p \"my-project\"\n"
-    "  tasker dependency add <issue_id> <dep_id>\n"
-    "  tasker issue list --status OPEN\n"
+    "  tasker dependency add <issue_id> --depends-on <dep_id>\n"
+    "  tasker dependency chain <issue_id>\n"
     "  tasker issue close <issue_id>\n"
     "\n"
     "Run 'tasker <command> --help' for detailed usage of each command."
@@ -256,11 +257,22 @@ def main(
 
     Examples:
         tasker --neo4j-password secret component create mycomp -p myproj
-        tasker -pw secret issue create "Fix bug" -c <id>
+        tasker issue create "Fix bug" -c <component_id> --priority HIGH
+        tasker issue list --status OPEN --project myproj
+        tasker dependency add <issue_id> --depends-on <dep_id>
+        tasker issue close <issue_id>
+
+    Common Workflow:
+        1. tasker component create "auth-service" -p "my-project"
+        2. tasker issue create "Implement login" -c <component_id> -p HIGH -l "backend,auth"
+        3. tasker issue create "Add tests" -c <component_id>
+        4. tasker issue show <issue_id>
+        5. tasker dependency add <issue_id> --depends-on <dependency_id>
+        6. tasker dependency chain <issue_id>
 
     Quick Start:
         1. Start Neo4j: docker compose up -d
-        2. Run: tasker -pw neoSocial seed run
+        2. Seed demo data: tasker -pw neoSocial seed run
         3. Open UI: http://localhost:8080
 
     📚 Docs: https://github.com/daironpf/socialseed-tasker#readme

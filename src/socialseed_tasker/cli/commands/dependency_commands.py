@@ -52,8 +52,14 @@ DEP_ADD_EPILOG = (
     "  tasker dependency add <issue_id> --depends-on <dep_id>\n"
     "  tasker dependency add <issue_id> <dep_id>\n"
     "  tasker dependency chain <issue_id>\n"
+    "  tasker dependency add <issue_id> -d <dep_id> --force\n"
     "\n"
-    "Note: Use 'tasker issue list' to find issue IDs."
+    "Tips:\n"
+    "  - Use positional args: tasker dependency add A B  (A depends on B)\n"
+    "  - Use --depends-on / -d explicitly: tasker dependency add A -d B\n"
+    "  - Use --force to skip cycle validation (use with caution!)\n"
+    "  - Use 'tasker issue list' to find issue IDs\n"
+    "  - Use 'tasker dependency chain <issue_id>' to inspect dependency chains"
 )
 
 @dependency_app.command("add", epilog=DEP_ADD_EPILOG)

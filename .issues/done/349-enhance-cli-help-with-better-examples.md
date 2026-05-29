@@ -14,7 +14,7 @@ The current `--help` shows basic examples but users need extensive trial and err
 2. Try creating an issue with `tasker issue create "title" --priority HIGH`
 3. Try creating dependencies without reading docs
 
-## Status: PENDING
+## Status: SOLVED
 
 ## Priority: LOW
 
@@ -30,3 +30,10 @@ Add more comprehensive examples in the `--help` output for each subcommand, part
 
 ## Impact
 Reduces learning curve and improves DX for new users and AI agents.
+
+## Fix
+Enhanced --help output across the CLI:
+- **Main `tasker --help`**: Added "Common Workflow" section with 6-step workflow pattern; enriched epilog examples with labels, --project filter, dependency chain
+- **`tasker issue create --help`**: Added `ISSUE_CREATE_EPILOG` with 4 examples covering description, priority, labels, and enforce; added tips section for component lookup, priority values, labels syntax
+- **`tasker issue list --help`**: Added `ISSUE_LIST_EPILOG` with 5 filter combos including --json output; enriched --status help with all valid values
+- **`tasker dependency add --help`**: Enhanced `DEP_ADD_EPILOG` with --force example, positional vs explicit syntax clarification, and tips
