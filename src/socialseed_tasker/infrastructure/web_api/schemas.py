@@ -162,6 +162,21 @@ class ReasoningLogEntryRequest(BaseModel):
     )
 
 
+class AgentReasoningLogRequest(BaseModel):
+    """Request body for logging AI agent reasoning (reasoning router)."""
+
+    issue_id: str = Field(..., description="Issue UUID")
+    agent_id: str = Field("agent-1", description="Agent identifier")
+    agent_name: str = Field("DevAgent", description="Agent display name")
+    thought: str = Field(..., min_length=1, description="Reasoning thought")
+    confidence: float = Field(0.5, ge=0.0, le=1.0, description="Confidence 0.0-1.0")
+    alternatives_considered: list[str] = Field(default_factory=list, description="Alternatives considered")
+    rejected_reasons: list[str] = Field(default_factory=list, description="Reasons for rejecting alternatives")
+    decision: str | None = Field(None, description="Decision made")
+    decision_type: str = Field("unknown", description="Decision type identifier")
+    context: dict[str, Any] | None = Field(None, description="Additional context")
+
+
 class ReasoningLogEntryResponse(BaseModel):
     """Single reasoning log entry in API responses."""
 

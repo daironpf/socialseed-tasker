@@ -51,6 +51,7 @@ from socialseed_tasker.domain.entities import (
     UserRole,
 )
 from socialseed_tasker.infrastructure.web_api.schemas import (
+    AgentReasoningLogRequest,
     AgentRegisterRequest,
     AgentResponse,
     AgentStartRequest,
@@ -130,16 +131,7 @@ def get_reasoning_driver() -> Any:
 
 @reasoning_router.post("/reasoning/log")
 async def log_reasoning(
-    issue_id: str,
-    agent_id: str,
-    agent_name: str,
-    thought: str,
-    confidence: float = 0.5,
-    alternatives_considered: list[str] | None = None,
-    rejected_reasons: list[str] | None = None,
-    decision: str | None = None,
-    decision_type: str = "unknown",
-    context: dict[str, Any] | None = None,
+    body: AgentReasoningLogRequest,
     driver: Any = Depends(get_reasoning_driver),
 ) -> dict[str, Any]:
     """Log agent reasoning for an issue."""
@@ -155,22 +147,22 @@ async def log_reasoning(
     )
 
     try:
-        decision_type_enum = DecisionType(decision_type)
+        decision_type_enum = DecisionType(body.decision_type)
     except ValueError:
         decision_type_enum = DecisionType.UNKNOWN
 
     reasoning = ReasoningNode(
-        thought=thought,
-        confidence=confidence,
-        alternatives_considered=alternatives_considered or [],
-        rejected_reasons=rejected_reasons or [],
-        decision=decision,
+        thought=body.thought,
+        confidence=body.confidence,
+        alternatives_considered=body.alternatives_considered or [],
+        rejected_reasons=body.rejected_reasons or [],
+        decision=body.decision,
         decision_type=decision_type_enum,
-        context=context or {},
+        context=body.context or {},
     )
 
     repo = ReasoningRepository(driver)
-    reasoning_id = repo.log_reasoning(issue_id, agent_id, agent_name, reasoning)
+    reasoning_id = repo.log_reasoning(body.issue_id, body.agent_id, body.agent_name, reasoning)
 
     return {"id": reasoning_id, "status": "logged"}
 

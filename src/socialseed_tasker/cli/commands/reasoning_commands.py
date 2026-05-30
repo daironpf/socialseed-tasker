@@ -26,7 +26,7 @@ def _get_reasoning_client() -> Any | None:
 
 
 def _log_via_api(client: Any, **kwargs) -> str:
-    params: dict[str, Any] = {
+    body: dict[str, Any] = {
         "issue_id": kwargs["issue_id"],
         "agent_id": kwargs.get("agent_id", "agent-1"),
         "agent_name": kwargs.get("agent_name", "DevAgent"),
@@ -35,12 +35,12 @@ def _log_via_api(client: Any, **kwargs) -> str:
         "decision_type": kwargs.get("decision_type", "unknown"),
     }
     if kwargs.get("decision"):
-        params["decision"] = kwargs["decision"]
+        body["decision"] = kwargs["decision"]
     if kwargs.get("alternatives"):
-        params["alternatives_considered"] = kwargs["alternatives"]
+        body["alternatives_considered"] = kwargs["alternatives"]
     if kwargs.get("rejected"):
-        params["rejected_reasons"] = kwargs["rejected"]
-    result = client.request("POST", "/api/v1/reasoning/log", params=params)
+        body["rejected_reasons"] = kwargs["rejected"]
+    result = client.request("POST", "/api/v1/reasoning/log", json=body)
     return result.get("id", "unknown")
 
 
