@@ -73,3 +73,4 @@
 | 327 | NameError on 'logger' in neo4j_driver.py exception handler | High | infrastructure/neo4j_driver.py | ✅ RESOLVED |
 | 328 | Docker build fails with 403 Forbidden from ghcr.io | Medium | .agent/tasker/Dockerfile | ✅ RESOLVED |
 | 329 | Frontend copy step not documented in scaffold README | Low | src/.../templates/README.md | ✅ RESOLVED |
+| 362 | API container crashes with ModuleNotFoundError on infrastructure module | Critical | src/.../templates/Dockerfile | ✅ RESOLVED |

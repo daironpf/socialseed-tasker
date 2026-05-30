@@ -7,6 +7,7 @@
 - [x] **#327 NameError on logger:** Added missing `logger = logging.getLogger(__name__)` in `neo4j_driver.py`.
 - [x] **#328 Docker build 403 Forbidden:** Removed ghcr.io COPY from Dockerfiles to fix anonymous pull failure.
 - [x] **#329 Frontend doc gap:** Added Frontend section to scaffold README template documenting build and customization.
+- [x] **#362 API container ModuleNotFoundError:** Changed template Dockerfile from `pip install socialseed-tasker` (PyPI) to multi-stage local source build. Fixed `docker-compose.yml` build context. Added missing `__init__.py` to `auth/` and `infrastructure/neo4j_migrations/` packages.
 - [x] **Branch lockdown policy:** Added policy #11 in `.agent/policies.md` — agents must never create/delete branches without explicit user instruction.
 
 ### Release History

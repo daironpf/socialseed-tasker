@@ -1,8 +1,23 @@
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml README.md ./
+COPY src/ ./src/
+
+RUN pip install --no-cache-dir --prefix=/install .
+
 FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir socialseed-tasker
+COPY --from=builder /install /usr/local
+
+COPY src/ ./src/
 
 ENV TASKER_NEO4J_URI=bolt://tasker-db:7687
 ENV TASKER_NEO4J_USERNAME=neo4j
