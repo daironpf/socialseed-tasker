@@ -74,3 +74,4 @@
 | 328 | Docker build fails with 403 Forbidden from ghcr.io | Medium | .agent/tasker/Dockerfile | ✅ RESOLVED |
 | 329 | Frontend copy step not documented in scaffold README | Low | src/.../templates/README.md | ✅ RESOLVED |
 | 362 | API container crashes with ModuleNotFoundError on infrastructure module | Critical | src/.../templates/Dockerfile | ✅ RESOLVED |
+| 363 | Connection error exposes internal IP resolution details | Low | infrastructure/neo4j_driver.py | ✅ RESOLVED |

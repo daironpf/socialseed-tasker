@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from neo4j.exceptions import Neo4jError
+from neo4j.exceptions import Neo4jError, ServiceUnavailable
 
 from neo4j import GraphDatabase
 from socialseed_tasker.infrastructure.neo4j_queries import SCHEMA_CONSTRAINTS, SCHEMA_INDEXES
@@ -132,10 +132,12 @@ class Neo4jDriver:
         try:
             with self._driver.session(database=self._database) as session:
                 session.run("RETURN 1")
-        except Neo4jError as exc:
-            logger.error("Failed to connect to Neo4j: %s", exc)
+        except (Neo4jError, ServiceUnavailable) as exc:
+            logger.debug("Neo4j connection failed (full details): %s", exc)
             self.close()
-            raise
+            raise RuntimeError(
+                f"Cannot connect to Neo4j at {self._uri}. Is the database running?"
+            ) from exc
 
     def _init_schema(self) -> None:
         """Create indexes and constraints if they don't exist."""

@@ -300,6 +300,8 @@ def handle_error(error: Exception, exit_code: int = 1) -> None:
             console.print(f"[error]Database connection failed:[/error] {message}")
         else:
             console.print(f"[error]Database error:[/error] {message}")
+    elif isinstance(error, RuntimeError) and "Cannot connect to Neo4j" in str(error):
+        console.print(f"[error]Database connection failed:[/error] {error}")
     elif isinstance(error, RemoteServiceError):
         message = str(error)
         if "429" in message:
