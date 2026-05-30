@@ -149,7 +149,11 @@ def issue_create(
             priority=normalized_priority,
             labels=label_list,
         )
-        console.print(f"[success]Issue created:[/success] {issue.id}")
+        is_duplicate = any("already exists" in w for w in warnings)
+        if is_duplicate:
+            console.print(f"[warning]Using existing issue:[/warning] {issue.id}")
+        else:
+            console.print(f"[success]Issue created:[/success] {issue.id}")
         comp = repo.get_component(str(component_uuid))
         console.print(_format_issue_card(issue, comp.name if comp else None))
         if warnings:
