@@ -528,7 +528,7 @@ class ProjectCreateRequest(BaseModel):
     """Request body for creating a new project node."""
     id: str | None = Field(None, description="Universal unique identifier (generated if not provided)")
     name: str = Field(..., min_length=1, description="Official name of the project")
-    slug: str = Field(..., min_length=1, description="URL-friendly identifier and directory name")
+    slug: str = Field(default="", description="URL-friendly identifier (defaults to name lowercased + hyphens if empty)")
     description: str = Field("", description="Detailed description of the project's scope")
     repositoryUrl: str = Field("", description="Link to the remote Git repository")
     basePackage: str = Field("", description="The root package or primary namespace")

@@ -914,7 +914,7 @@ def create_app(
                     "message": "Request validation failed",
                     "details": {
                         "errors": errors,
-                        "body_help": "Ensure JSON is valid and contains required fields (title, component_id, priority)",
+                        "body_help": "Ensure JSON request body is valid. Check required fields for the endpoint.",
                     },
                 },
                 "meta": {

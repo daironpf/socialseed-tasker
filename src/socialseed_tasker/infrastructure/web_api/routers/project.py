@@ -356,11 +356,12 @@ def create_project(
                     meta=Meta(request_id=None),
                 )
         
-        project_id = body.id or "default-project"
+        project_id = body.id or body.name.lower().replace(" ", "-")
+        slug = body.slug or body.name.lower().replace(" ", "-")
         session.run(
             queries.GET_OR_CREATE_SINGLE_PROJECT,
             id=project_id,
-            slug=body.slug,
+            slug=slug,
             name=body.name,
             description=body.description,
             repositoryUrl=body.repositoryUrl,
