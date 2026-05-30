@@ -18,10 +18,10 @@ from socialseed_tasker.cli.commands.shared import (
 )
 
 # ---------------------------------------------------------------------------
-# Project detection app (detects modules from project structure)
+# Project app (create, detect, setup)
 # ---------------------------------------------------------------------------
 
-project_app = typer.Typer(help="Detect project structure and create modules")
+project_app = typer.Typer(help="Manage projects in the Tasker system")
 
 
 # ---------------------------------------------------------------------------
@@ -147,6 +147,40 @@ def project_detect(
         table.add_row(module["name"], module["type"], module["source"])
 
     console.print(Panel(table, title=f"[bold]Discovered Modules ({len(discovered_modules)})[/bold]"))
+
+
+@project_app.command("create")
+def project_create(
+    name: str = typer.Argument(..., help="Project name"),
+    slug: str = typer.Option(None, "--slug", "-s", help="URL-friendly slug (defaults to name)"),
+    description: str = typer.Option("", "--description", "-d", help="Project description"),
+    visibility: str = typer.Option("PUBLIC", "--visibility", "-v", help="Project visibility (PUBLIC, PRIVATE)"),
+    status: str = typer.Option("DEVELOPMENT", "--status", help="Project status"),
+) -> None:
+    """Create a new project in Tasker.
+
+    Tasker supports only ONE project. If one already exists,
+    this command returns the existing project instead.
+    """
+    repo = get_repository()
+    if not slug:
+        slug = name.lower().replace(" ", "-")
+
+    project_data: dict[str, Any] = {
+        "name": name,
+        "slug": slug,
+        "description": description,
+        "visibility": visibility,
+        "status": status,
+    }
+
+    result = repo.create_project(project_data)
+    if result.get("status") == "exists":
+        proj = result.get("project", {})
+        console.print(f"[warning]Project already exists:[/warning] {proj.get('name', name)} (id: {proj.get('id', '?')})")
+    else:
+        project_id = result.get("id", "?")
+        console.print(f"[success]Project created:[/success] {name} (id: {project_id})")
 
 
 @project_app.command("setup")

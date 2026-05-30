@@ -80,7 +80,7 @@ class ApiTaskRepository(TaskRepositoryInterface):
         if component_id:
             params["component_id"] = component_id
         if statuses:
-            params["statuses"] = ",".join(statuses)
+            params["status"] = ",".join(statuses)
         if project:
             params["project"] = project
         items = self.client.paginate(f"{_API}/issues", params=params)
@@ -223,6 +223,12 @@ class ApiTaskRepository(TaskRepositoryInterface):
             items = data.get("items", data.get("data", []))
             return items if isinstance(items, list) else []
         return []
+
+    def create_project(self, project_data: dict[str, Any]) -> dict[str, Any]:
+        data = self.client.request("POST", f"{_API}/projects", json=project_data)
+        if isinstance(data, dict):
+            return data
+        return {"status": "error"}
 
     def create_epic(self, epic: Any) -> None:
         self.client.request("POST", f"{_API}/epics", json=_to_dict(epic))

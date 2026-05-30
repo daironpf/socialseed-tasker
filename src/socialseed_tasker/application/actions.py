@@ -242,6 +242,9 @@ class TaskRepositoryInterface(Protocol):
     def list_projects(self) -> list[str]:
         """List all unique project names."""
 
+    def create_project(self, project_data: dict[str, Any]) -> dict[str, Any]:
+        """Create a new project. Returns status dict."""
+
     def create_epic(self, epic: Any) -> None:
         """Create a new epic."""
 

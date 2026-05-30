@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from datetime import datetime, timezone
 from typing import Any
 
@@ -92,6 +93,44 @@ class ComponentRepositoryMixin:
                     "updatedAt": p.get("updatedAt"),
                 })
             return projects
+
+    def create_project(self, project_data: dict[str, Any]) -> dict[str, Any]:
+        from datetime import datetime, timezone
+
+        now = datetime.now(timezone.utc).isoformat()
+        project_id = project_data.get("id") or str(uuid.uuid4())
+        params = {
+            "id": project_id,
+            "name": project_data["name"],
+            "slug": project_data.get("slug", project_data["name"]),
+            "description": project_data.get("description", ""),
+            "repositoryUrl": project_data.get("repositoryUrl"),
+            "basePackage": project_data.get("basePackage"),
+            "visibility": project_data.get("visibility", "PUBLIC"),
+            "status": project_data.get("status", "DEVELOPMENT"),
+            "techStack": project_data.get("techStack", []),
+            "mainStack": project_data.get("mainStack", []),
+            "architectureStyle": project_data.get("architectureStyle", "api-first"),
+            "version": project_data.get("version", "0.1.0"),
+            "conventionsUrl": project_data.get("conventionsUrl"),
+            "conventionsRules": project_data.get("conventionsRules"),
+            "lastFullScan": now,
+            "globalStatus": project_data.get("globalStatus", "DEVELOPMENT"),
+            "createdAt": now,
+            "updatedAt": now,
+        }
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.CREATE_PROJECT, params)
+            record = result.single()
+            if record:
+                p = record["p"]
+                return {
+                    "id": p.get("id"),
+                    "name": p.get("name"),
+                    "slug": p.get("slug"),
+                    "status": "created",
+                }
+        return {"status": "created", "id": project_id}
 
     def create_project_node(
         self,
