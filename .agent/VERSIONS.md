@@ -9,6 +9,7 @@
 - [x] **#329 Frontend doc gap:** Added Frontend section to scaffold README template documenting build and customization.
 - [x] **#362 API container ModuleNotFoundError:** Changed template Dockerfile from `pip install socialseed-tasker` (PyPI) to multi-stage local source build. Fixed `docker-compose.yml` build context. Added missing `__init__.py` to `auth/` and `infrastructure/neo4j_migrations/` packages.
 - [x] **#363 Connection error exposes internal IP details:** Added `ServiceUnavailable` catch in `_verify_connection()`. Logs full details at debug level, raises clean `RuntimeError` with user-friendly message. Added `RuntimeError` handling in CLI error handler.
+- [x] **#364 Code-graph scan path error lacks suggestions:** Improved `ValueError` message in `scan_repository()` to include actionable guidance on running from project root or using `--help`.
 - [x] **Branch lockdown policy:** Added policy #11 in `.agent/policies.md` — agents must never create/delete branches without explicit user instruction.
 
 ### Release History

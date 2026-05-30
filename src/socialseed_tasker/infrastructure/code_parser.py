@@ -93,7 +93,11 @@ class CodeGraphParser:
         """
         repo_path = Path(repository_path)
         if not repo_path.exists():
-            raise ValueError(f"Repository path does not exist: {repository_path}")
+            raise ValueError(
+                f"Repository path does not exist: {repository_path}. "
+                f"Run from your project root or specify a valid path. "
+                f"Use 'tasker code-graph scan --help' for options."
+            )
 
         files: list[CodeFile] = []
         symbols: list[CodeSymbol] = []
