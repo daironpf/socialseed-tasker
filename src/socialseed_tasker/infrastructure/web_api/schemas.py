@@ -400,8 +400,9 @@ class IssueCreateRequest(BaseModel):
         description="Priority level: LOW, MEDIUM, HIGH, CRITICAL",
         examples=["HIGH"],
     )
-    component_id: str | None = Field(
-        None,
+    component_id: str = Field(
+        ...,
+        min_length=1,
         description="UUID of the component this issue belongs to.",
         examples=["550e8400-e29b-41d4-a716-446655440000"],
     )
