@@ -1,3 +1,8 @@
+# Tasker API — Docker image
+# Builds from local source. Requires pyproject.toml and src/ at build context.
+# To use a pre-built image from a registry, replace the build block in
+# docker-compose.yml with `image: your-registry/tasker-api:tag`.
+
 FROM python:3.12-slim
 
 WORKDIR /app

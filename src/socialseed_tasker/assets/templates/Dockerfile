@@ -1,10 +1,11 @@
+# Tasker API — Docker image
+# Builds from local source. Requires pyproject.toml and src/ at build context.
+# To use a pre-built image from a registry, replace the build block in
+# docker-compose.yml with `image: your-registry/tasker-api:tag`.
+
 FROM python:3.12-slim AS builder
 
 WORKDIR /build
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml README.md ./
 COPY src/ ./src/
@@ -16,8 +17,6 @@ FROM python:3.12-slim
 WORKDIR /app
 
 COPY --from=builder /install /usr/local
-
-COPY src/ ./src/
 
 ENV TASKER_NEO4J_URI=bolt://tasker-db:7687
 ENV TASKER_NEO4J_USERNAME=neo4j
