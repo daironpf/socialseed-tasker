@@ -189,8 +189,16 @@ def issue_list(
     repo = get_repository()
     status_filter = IssueStatus(status) if status else None
 
+    resolved_component = None
+    if component:
+        try:
+            resolved_component = str(resolve_component_id(component, repo))
+        except ValueError as e:
+            console.print(f"[error]{e}[/error]")
+            raise typer.Exit(code=2) from e
+
     issues = repo.list_issues(
-        component_id=component, statuses=[status_filter] if status_filter else None, project=project
+        component_id=resolved_component, statuses=[status_filter] if status_filter else None, project=project
     )
 
     if as_json:
