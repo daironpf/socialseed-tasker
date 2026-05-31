@@ -185,7 +185,7 @@ class MockRepository(TaskRepositoryInterface):
         self._issues[issue_id] = updated
         return updated
 
-    def finish_agent_work(self, issue_id: str) -> Issue:
+    def finish_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         issue = self._issues[issue_id]
         updated = issue.model_copy(update={"agent_working": None})
         self._issues[issue_id] = updated

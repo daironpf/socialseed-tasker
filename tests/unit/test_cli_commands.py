@@ -191,9 +191,9 @@ class MockRepository(TaskRepositoryInterface):
         self._issues[issue_id] = updated
         return updated
 
-    def finish_agent_work(self, issue_id: str) -> Issue:
+    def finish_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         issue = self._issues[issue_id]
-        updated = issue.model_copy(update={"agent_working": None})
+        updated = issue.model_copy(update={"agent_working": None, "agent_finished_by": agent_id})
         self._issues[issue_id] = updated
         return updated
 
@@ -675,7 +675,7 @@ class TestIssueStartFinishCommand:
                 component_id=comp.id,
             )
             mock_repo.create_issue(issue)
-            result = runner.invoke(app, ["issue", "finish", str(issue.id)])
+            result = runner.invoke(app, ["issue", "finish", str(issue.id), "--agent-id", "test-agent"])
             assert result.exit_code == 0
         finally:
             _unpatch_commands(original)

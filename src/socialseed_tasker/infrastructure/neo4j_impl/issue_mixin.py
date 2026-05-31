@@ -505,7 +505,7 @@ class IssueRepositoryMixin:
                 raise ValueError(f"Issue {issue_id} not found")
             return _node_to_issue(updated_record["i"])
 
-    def finish_agent_work(self, issue_id: str) -> Issue:
+    def finish_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         """Finish agent work on an issue."""
         with self._driver.driver.session(database=self._driver.database) as session:
             result = session.run(
@@ -526,6 +526,7 @@ class IssueRepositoryMixin:
                 updates={
                     "agentWorking": False,
                     "agentFinishedAt": _now_iso(),
+                    "agentFinishedBy": agent_id,
                 },
                 updatedAt=_now_iso(),
             )

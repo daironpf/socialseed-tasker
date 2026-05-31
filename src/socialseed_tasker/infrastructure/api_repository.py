@@ -362,8 +362,8 @@ class ApiTaskRepository(TaskRepositoryInterface):
         )
         return _parse_issue(data)
 
-    def finish_agent_work(self, issue_id: str) -> Issue:
-        data = self.client.request("POST", f"{_API}/issues/{issue_id}/agent/finish")
+    def finish_agent_work(self, issue_id: str, agent_id: str) -> Issue:
+        data = self.client.request("POST", f"{_API}/issues/{issue_id}/agent/finish", json={"agent_id": agent_id})
         return _parse_issue(data)
 
     def get_agent_status(self, issue_id: str) -> dict[str, Any]:

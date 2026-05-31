@@ -418,6 +418,7 @@ def issue_start(
 @issue_app.command("finish")
 def issue_finish(
     issue_id: str,
+    agent_id: str = typer.Option(..., "--agent-id", "-a", help="Agent identifier"),
 ) -> None:
     """Finish agent work on an issue."""
     repo = get_repository()
@@ -435,8 +436,8 @@ def issue_finish(
             console.print(f"[error]Issue '{issue_id}' not found.[/error]")
             raise typer.Exit(code=1)
 
-        repo.finish_agent_work(resolved_str)
-        console.print(f"[success]Agent work finished:[/success] issue {resolved_str[:8]}")
+        repo.finish_agent_work(resolved_str, agent_id)
+        console.print(f"[success]Agent work finished:[/success] {agent_id} on issue {resolved_str[:8]}")
     except ValueError as e:
         console.print(f"[error]{e}[/error]")
         raise typer.Exit(code=1) from e

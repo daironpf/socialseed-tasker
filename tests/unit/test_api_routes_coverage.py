@@ -119,7 +119,7 @@ class MockRepoFull(TaskRepositoryInterface):
     def start_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         return self._issues[issue_id]
 
-    def finish_agent_work(self, issue_id: str) -> Issue:
+    def finish_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         return self._issues[issue_id]
 
     def get_agent_status(self, issue_id: str) -> dict:

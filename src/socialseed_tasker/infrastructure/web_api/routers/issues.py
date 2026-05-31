@@ -53,6 +53,7 @@ from socialseed_tasker.domain.entities import (
 from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentRegisterRequest,
     AgentResponse,
+    AgentFinishRequest,
     AgentStartRequest,
     AgentStatusResponse,
     AgentUpdateRequest,
@@ -1008,6 +1009,7 @@ def start_agent_work(
 )
 def finish_agent_work(
     issue_id: str,
+    body: AgentFinishRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[IssueResponse]:
     try:
@@ -1015,7 +1017,7 @@ def finish_agent_work(
         if issue is None:
             raise IssueNotFoundError(issue_id)
 
-        updated_issue = repo.finish_agent_work(issue_id)
+        updated_issue = repo.finish_agent_work(issue_id, body.agent_id)
         return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
     except ValueError as e:
         from fastapi import HTTPException

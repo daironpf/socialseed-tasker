@@ -318,7 +318,7 @@ class TaskRepositoryInterface(Protocol):
     def start_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         """Start agent work on an issue."""
 
-    def finish_agent_work(self, issue_id: str) -> Issue:
+    def finish_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         """Finish agent work on an issue."""
 
     def get_cost_per_component(self) -> list[dict]:

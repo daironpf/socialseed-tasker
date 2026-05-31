@@ -247,6 +247,16 @@ class AgentStartRequest(BaseModel):
     )
 
 
+class AgentFinishRequest(BaseModel):
+    """Request body for finishing agent work on an issue."""
+
+    agent_id: str = Field(
+        ...,
+        description="Identifier for the agent finishing the work",
+        examples=["agent-001", "claude-code-abc123"],
+    )
+
+
 class AgentStatusResponse(BaseModel):
     """Agent work status in API responses."""
 
