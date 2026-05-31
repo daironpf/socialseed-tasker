@@ -149,7 +149,7 @@ description: No hardcoded secrets in code
 rules:
   - rule_type: forbidden_pattern
     from_pattern: "symbol.type:function"
-    to_pattern: "pattern:(password|api_key|secret|token)\\s*="
+    to_pattern: 'pattern:(password|api_key|secret|token)\s*='
     description: Use environment variables or secret management
 ```
 
