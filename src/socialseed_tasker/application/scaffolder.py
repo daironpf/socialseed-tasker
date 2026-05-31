@@ -213,8 +213,8 @@ class ScaffolderService:
         force: bool,
         result: ScaffoldResult,
     ) -> None:
-        """Copy ROADMAP.md and VERSIONS.md templates to project root."""
-        for filename in ["ROADMAP.md", "VERSIONS.md"]:
+        """Copy ROADMAP.md, VERSIONS.md and .gitattributes templates to project root."""
+        for filename in ["ROADMAP.md", "VERSIONS.md", ".gitattributes"]:
             template = self._template_dir / filename
             if not template.exists():
                 continue
