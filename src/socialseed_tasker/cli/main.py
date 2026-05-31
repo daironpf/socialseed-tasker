@@ -13,8 +13,6 @@ from socialseed_tasker.cli.flags_cli import cmd_flag_set, cmd_flag_get, cmd_flag
 from socialseed_tasker.cli.wiring import build_default_container
 from socialseed_tasker.observability.logging import get_logger
 from socialseed_tasker.tenancy.migrations import ensure_tenant_schema
-from celery.result import AsyncResult
-from socialseed_tasker.workers.app import create_celery
 
 logger = get_logger("tasker.cli")
 
@@ -166,6 +164,7 @@ def cmd_enqueue_task(args: argparse.Namespace, container: object, user_id: str |
     try:
         if not container.rbac.has_permission(user_id, "admin") and not container.rbac.has_permission(user_id, "background:enqueue"):
             raise PermissionError("forbidden")
+        from socialseed_tasker.workers.app import create_celery
         celery = create_celery()
         payload = json.loads(args.payload)
         if args.task == "parse_and_index_files":
@@ -219,6 +218,8 @@ def cmd_tenant_delete(args: argparse.Namespace, container: object, user_id: str 
 
 def cmd_task_status(args: argparse.Namespace, container: object, user_id: str | None) -> None:
     try:
+        from celery.result import AsyncResult
+        from socialseed_tasker.workers.app import create_celery
         celery = create_celery()
         res = AsyncResult(args.task_id, app=celery)
         out = {"status": res.status}
