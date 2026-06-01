@@ -1,0 +1,39 @@
+{
+  "name": "{project_name}",
+  "version": "1.0.0",
+  "created": "{created_date}",
+  "architecture": {
+    "type": "hexagonal",
+    "language": "python",
+    "framework": "fastapi/typer",
+    "database": "neo4j",
+    "frontend": "vue",
+    "other_services": []
+  },
+  "components": [],
+  "github": {
+    "repository": "",
+    "default_branch": "main"
+  },
+  "external_apis": [],
+  "constraints": {
+    "forbidden_technologies": ["file storage (neo4j-only)"],
+    "required_patterns": ["Hexagonal Architecture", "Repository Pattern via Protocol interfaces"],
+    "naming_conventions": "snake_case for functions/variables, PascalCase for classes",
+    "max_dependency_depth": 5
+  },
+  "development": {
+    "setup_commands": "pip install -e .",
+    "test_commands": "pytest tests/",
+    "build_commands": "pip install -e ."
+  },
+  "quality": {
+    "code_review_approvals": 1,
+    "use_quality_guide": true
+  },
+  "agent_notes": [
+    "Read .agent/project.md before starting work",
+    "Read .agent/AGENT_GUIDE.md for agent protocol",
+    "Use workflows/project-centric-agent.md for mandatory Tasker consultation"
+  ]
+}
