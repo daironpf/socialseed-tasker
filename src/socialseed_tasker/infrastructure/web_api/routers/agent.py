@@ -116,6 +116,9 @@ from socialseed_tasker.infrastructure.web_api.routers.helpers import (
 
 logger = logging.getLogger(__name__)
 
+# In-memory fallback store for agents (used when Neo4j is unavailable)
+_agents: dict[str, Any] = {}
+
 # ---------------------------------------------------------------------------
 # Agent router
 # ---------------------------------------------------------------------------
@@ -165,7 +168,7 @@ def register_agent(
         db = driver.database if hasattr(driver, "database") else "neo4j"
         with actual_driver.session(database=db) as session:
             session.run(
-                queries.CREATE_AGENT_NODE,
+                neo4j_queries.CREATE_AGENT_NODE,
                 id=body.agent_id,
                 name=body.name,
                 role=body.role,
@@ -177,7 +180,7 @@ def register_agent(
             project_id_to_assign = assigned_project_id
             
             if not project_id_to_assign:
-                result = session.run(queries.LIST_PROJECT_NODES)
+                result = session.run(neo4j_queries.LIST_PROJECT_NODES)
                 projects = list(result)
                 if len(projects) == 1:
                     sole_project = projects[0]["p"]
@@ -187,7 +190,7 @@ def register_agent(
             
             if project_id_to_assign:
                 session.run(
-                    queries.PROJECT_ASSIGN_AGENT,
+                    neo4j_queries.PROJECT_ASSIGN_AGENT,
                     projectId=project_id_to_assign,
                     agentId=body.agent_id,
                 )
@@ -439,7 +442,7 @@ def add_agent_specialist(
     db = driver.database if hasattr(driver, "database") else "neo4j"
     with actual_driver.session(database=db) as session:
         session.run(
-            queries.ADD_AGENT_SPECIALIST,
+            neo4j_queries.ADD_AGENT_SPECIALIST,
             agent_id=agent_id,
             component_id=component_id,
         )
@@ -466,7 +469,7 @@ def remove_agent_specialist(
     db = driver.database if hasattr(driver, "database") else "neo4j"
     with actual_driver.session(database=db) as session:
         session.run(
-            queries.REMOVE_AGENT_SPECIALIST,
+            neo4j_queries.REMOVE_AGENT_SPECIALIST,
             agent_id=agent_id,
             component_id=component_id,
         )
@@ -491,7 +494,7 @@ def get_agent_specialists(
     actual_driver = driver.driver if hasattr(driver, "driver") else driver
     db = driver.database if hasattr(driver, "database") else "neo4j"
     with actual_driver.session(database=db) as session:
-        result = session.run(queries.GET_AGENT_SPECIALISTS, agent_id=agent_id)
+        result = session.run(neo4j_queries.GET_AGENT_SPECIALISTS, agent_id=agent_id)
         components = [dict(r["c"]) for r in result]
     return APIResponse(data=components, meta=Meta(request_id=None))
 
@@ -514,6 +517,6 @@ def get_component_specialists(
     actual_driver = driver.driver if hasattr(driver, "driver") else driver
     db = driver.database if hasattr(driver, "database") else "neo4j"
     with actual_driver.session(database=db) as session:
-        result = session.run(queries.GET_COMPONENT_SPECIALISTS, component_id=component_id)
+        result = session.run(neo4j_queries.GET_COMPONENT_SPECIALISTS, component_id=component_id)
         agents = [dict(r["a"]) for r in result]
     return APIResponse(data=agents, meta=Meta(request_id=None))
