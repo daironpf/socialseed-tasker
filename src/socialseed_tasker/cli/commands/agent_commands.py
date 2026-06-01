@@ -7,6 +7,20 @@ from rich.panel import Panel
 from rich.table import Table
 
 from socialseed_tasker.cli.commands.shared import console, get_repository
+from socialseed_tasker.config.mode_config import DualModeConfig
+
+
+def _get_api_url() -> str:
+    """Resolve API URL: env var > DualModeConfig > default."""
+    env_url = os.getenv("TASKER_API_URL")
+    if env_url:
+        return env_url
+    try:
+        cfg = DualModeConfig.load()
+        return cfg.api_url
+    except Exception:
+        return "http://localhost:8000"
+
 
 agent_app = typer.Typer(help="Agent Integration: context, suggestions, and reasoning")
 
@@ -172,7 +186,7 @@ def agent_register(
     """Register an agent with Tasker to enable tracking and specialization."""
     import httpx
 
-    api_url = os.getenv("TASKER_API_URL", "http://localhost:8000")
+    api_url = _get_api_url()
     caps = [c.strip() for c in capabilities.split(",") if c.strip()]
 
     payload = {
@@ -226,7 +240,7 @@ def agent_specialize(
     """Add agent specialization to a component."""
     import httpx
 
-    api_url = os.getenv("TASKER_API_URL", "http://localhost:8000")
+    api_url = _get_api_url()
 
     try:
         response = httpx.post(
@@ -248,7 +262,7 @@ def agent_list() -> None:
     """List all agents registered in Tasker."""
     from rich.table import Table
 
-    api_url = os.getenv("TASKER_API_URL", "http://localhost:8000")
+    api_url = _get_api_url()
     try:
         response = httpx.get(f"{api_url}/api/v1/agents", timeout=10)
         response.raise_for_status()

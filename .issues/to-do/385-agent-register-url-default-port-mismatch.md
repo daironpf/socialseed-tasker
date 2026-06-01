@@ -21,6 +21,9 @@ Works only after manually setting `$env:TASKER_API_URL="http://localhost:8888"`.
 ## Root Cause
 `src/socialseed_tasker/cli/commands/agent_commands.py:175` uses a hardcoded default instead of reading from the DualModeConfig that the rest of the CLI uses.
 
-## Status: PENDING
+## Status: DONE
 
 ## Priority: MEDIUM
+
+## Resolution
+Replaced all `os.getenv("TASKER_API_URL", "http://localhost:8000")` with `_get_api_url()` helper that resolves: env var → DualModeConfig (reads `.agent/configs/tasker.yml`) → fallback `http://localhost:8000`. All 4 agent commands (register, specialize, list, dispatch) now use the configured port (:8888) automatically.
