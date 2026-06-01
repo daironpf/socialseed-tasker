@@ -37,11 +37,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             key = f"user:{user_id}"
             allowed = limiter.allow(key, tokens=1)
             if not allowed:
-                return JSONResponse(status_code=429, content={"status": "error", "error": "rate_limited", "retry_after": 1})
+                return JSONResponse(status_code=429, content={"status": "error", "error": "rate_limited", "retry_after": 1}, headers={"Retry-After": "1"})
         else:
             ip = request.headers.get("x-forwarded-for") or (request.client.host if request.client else "unknown")
             key = f"ip:{ip}"
             allowed = limiter.allow(key, tokens=1)
             if not allowed:
-                return JSONResponse(status_code=429, content={"status": "error", "error": "rate_limited", "retry_after": 1})
+                return JSONResponse(status_code=429, content={"status": "error", "error": "rate_limited", "retry_after": 1}, headers={"Retry-After": "1"})
         return await call_next(request)

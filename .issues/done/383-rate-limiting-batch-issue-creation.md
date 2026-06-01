@@ -19,7 +19,7 @@ Batch issue creation (50 issues) hits HTTP 429 Too Many Requests after ~17 succe
 2. Observe 429 responses after ~17 successful requests
 3. Check count: fewer than 50 issues created
 
-## Status: PENDING
+## Status: DONE
 
 ## Priority: MEDIUM
 
@@ -39,7 +39,13 @@ Scripts and automated workflows for bulk issue creation fail unpredictably. User
 - #311 (Add Rate Limiting and Abuse Protection - v1.1.0)
 
 ## Changes Made
-[Leave empty]
+1. **API V1 middleware** (`app.py:221`): Added `Retry-After` header calculated from window end minus current time
+2. **API V2 middleware** (`rate_limit.py:40,46`): Added `Retry-After: 1` header to both user and IP 429 responses
+3. **CLI doc** (`issue_commands.py:63`): Added rate limit tip to `ISSUE_CREATE_EPILOG`
+4. **CLI doc** (`app.py:98`): Added rate limit note to main `APP_EPILOG`
 
 ## Verification
-[Leave empty]
+- [x] 429 response includes `Retry-After: <seconds>` header in V1 middleware
+- [x] 429 response includes `Retry-After: 1` header in V2 middleware (both user and IP)
+- [x] `tasker issue create --help` shows rate limit tip
+- [x] `tasker --help` shows rate limit note in epilog

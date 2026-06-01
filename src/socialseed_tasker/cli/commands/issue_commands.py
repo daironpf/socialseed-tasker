@@ -60,7 +60,8 @@ ISSUE_CREATE_EPILOG = (
     "  - Use 'tasker component list' to find component IDs\n"
     "  - Priority values: LOW, MEDIUM (default), HIGH, CRITICAL\n"
     "  - Labels are comma-separated: -l \"frontend,ux,urgent\"\n"
-    "  - Use --enforce block to prevent policy violations"
+    "  - Use --enforce block to prevent policy violations\n"
+    "  - Rate limit: ~20 requests burst, then ~2/sec. Use a 1s delay between bulk creates."
 )
 
 @issue_app.command("create", epilog=ISSUE_CREATE_EPILOG)

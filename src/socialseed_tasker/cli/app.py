@@ -95,6 +95,8 @@ APP_EPILOG = (
     "  tasker dependency chain <issue_id>\n"
     "  tasker issue close <issue_id>\n"
     "\n"
+    "Rate Limits: API allows ~20 burst requests, then ~2/sec. Add a 1s delay between bulk creates to avoid 429 errors.\n"
+    "\n"
     "Run 'tasker <command> --help' for detailed usage of each command."
 )
 

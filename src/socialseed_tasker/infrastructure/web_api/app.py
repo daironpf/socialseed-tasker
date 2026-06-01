@@ -217,6 +217,7 @@ def create_app(
         _rate_limit_store[client_ip] = [ts for ts in _rate_limit_store[client_ip] if ts > window_start]
 
         if len(_rate_limit_store[client_ip]) >= rate_limit_per_minute:
+            retry_after = int(window_start + 60 - now)
             return JSONResponse(
                 status_code=429,
                 content={
@@ -231,6 +232,7 @@ def create_app(
                     }
                 },
                 headers={
+                    "Retry-After": str(retry_after),
                     "X-RateLimit-Limit": str(rate_limit_per_minute),
                     "X-RateLimit-Remaining": "0",
                     "X-RateLimit-Reset": str(int(window_start + 60)),
