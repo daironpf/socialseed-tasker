@@ -30,7 +30,7 @@ def configure_root_logger(level: str | int = None) -> None:
     if root.handlers:
         return
     root.setLevel(level)
-    handler = logging.StreamHandler(stream=sys.stdout)
+    handler = logging.StreamHandler(stream=sys.stderr)
     handler.setFormatter(JsonFormatter())
     root.addHandler(handler)
 

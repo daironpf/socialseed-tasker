@@ -9,7 +9,7 @@ from uuid import uuid4
 from socialseed_tasker.domain.entities import Issue
 from socialseed_tasker.infrastructure.embedding_service import get_embedding_service
 from socialseed_tasker.infrastructure import neo4j_queries as queries
-from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_issue, _now_iso, _to_camel
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_issue, _now_iso, _to_uuid_list, _to_camel
 
 
 class IssueRepositoryMixin:
@@ -172,8 +172,8 @@ class IssueRepositoryMixin:
             issues = []
             for r in result:
                 issue = _node_to_issue(r["i"])
-                dep_ids = r.get("dep_ids") or []
-                blocked_ids = r.get("blocked_ids") or []
+                dep_ids = _to_uuid_list(r.get("dep_ids"))
+                blocked_ids = _to_uuid_list(r.get("blocked_ids"))
                 updates: dict[str, Any] = {}
                 if dep_ids:
                     updates["dependencies"] = dep_ids

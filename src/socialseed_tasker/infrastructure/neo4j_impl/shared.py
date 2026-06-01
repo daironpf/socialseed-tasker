@@ -3,18 +3,39 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from typing import Any
+from uuid import UUID
 
-from pydantic import BaseModel
+from socialseed_tasker.domain.entities import (
+    Component,
+    Issue,
+    IssuePriority,
+    IssueStatus,
+    Label,
+    ReasoningContext,
+    ReasoningLogEntry,
+)
 
-from socialseed_tasker.domain.entities import Component, Issue, IssueStatus, ReasoningContext, ReasoningLogEntry
+
+def _to_uuid(val: Any) -> UUID | None:
+    if isinstance(val, UUID):
+        return val
+    if isinstance(val, str) and val.strip():
+        try:
+            return UUID(val.strip())
+        except ValueError:
+            return None
+    return None
 
 
-class _ReasoningLogEntryDTO(BaseModel):
-    id: str
-    timestamp: str
-    context: str
-    reasoning: str
-    related_nodes: list[str]
+def _to_uuid_list(vals: Any) -> list[UUID]:
+    if not vals:
+        return []
+    result = []
+    for v in vals:
+        u = _to_uuid(v)
+        if u is not None:
+            result.append(u)
+    return result
 
 
 def _node_to_issue(node: dict[str, Any]) -> Issue:
@@ -44,16 +65,16 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
                     )
                 )
     return Issue(
-        id=data.get("id") or data.get("_id", ""),
+        id=_to_uuid(data.get("id") or data.get("_id", "")) or UUID(int=0),
         title=data.get("title", ""),
         description=data.get("description", ""),
         status=IssueStatus(data.get("status", "OPEN")),
         priority=data.get("priority", "MEDIUM"),
-        component_id=data.get("componentId") or data.get("component_id"),
+        component_id=_to_uuid(data.get("componentId") or data.get("component_id")) or UUID(int=0),
         labels=data.get("labels", []),
-        dependencies=data.get("dependencies", []),
-        blocks=data.get("blocks", []),
-        affects=data.get("affects", []),
+        dependencies=_to_uuid_list(data.get("dependencies", [])),
+        blocks=_to_uuid_list(data.get("blocks", [])),
+        affects=_to_uuid_list(data.get("affects", [])),
         created_at=data.get("createdAt") or data.get("created_at") or datetime.now(timezone.utc),
         updated_at=data.get("updatedAt") or data.get("updated_at") or datetime.now(timezone.utc),
         closed_at=data.get("closedAt") or data.get("closed_at"),

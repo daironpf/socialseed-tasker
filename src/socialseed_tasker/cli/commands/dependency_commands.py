@@ -126,6 +126,9 @@ def dependency_add(
     except RemoteServiceError as exc:
         console.print(f"[error]Service error:[/error] {exc}")
         raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        console.print(f"[error]Unexpected error adding dependency:[/error] {exc}")
+        raise typer.Exit(code=1) from exc
 
 
 DEP_REMOVE_EPILOG = (

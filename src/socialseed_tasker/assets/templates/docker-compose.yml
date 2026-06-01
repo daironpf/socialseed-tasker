@@ -42,16 +42,8 @@ services:
           memory: 512M
 
   # =============================================================================
-  # FastAPI Backend (REST API for AI agents)
-  # Neo4j-only storage - graph database
-  # Builds from local source for development testing.
-  # Note: Use 'docker compose build tasker-api' after modifying src/.
-  # REQUIREMENT: Build context expects pyproject.toml and src/ in the project
-  # root. For projects without source code, use a pre-built registry image
-  # or run in direct mode (no --profile api).
-  # =============================================================================
-  # =============================================================================
   # FastAPI Backend (REST API for AI agents / API mode)
+  # Installs from PyPI - no local source files required.
   # Only started when using --profile api or --profile full
   # =============================================================================
   tasker-api:

@@ -14,6 +14,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+import socialseed_tasker
+
 import typer
 from rich.console import Console
 from rich.panel import Panel
@@ -367,14 +369,40 @@ def interactive_init_command(
         subprocess.run(
             ["docker", "compose", "down"],
             cwd=compose_dir,
-            capture_output=True
+            capture_output=True,
         )
+        
+        # Build a wheel of the current package for the Docker image.
+        # The wheel is placed in the build context directory (.agent/dist/)
+        # so the Dockerfile can COPY it.
+        if cli_mode != "direct":
+            build_context_dir = compose_dir.parent if not inplace else compose_dir
+            dist_dir = build_context_dir / "dist"
+            dist_dir.mkdir(parents=True, exist_ok=True)
+            console.print("[info]Building package wheel for Docker image...[/info]")
+            pkg_init = Path(socialseed_tasker.__file__).resolve()
+            project_root = next(
+                (p for p in pkg_init.parents if (p / "pyproject.toml").exists()),
+                pkg_init.parent.parent,
+            )
+            wheel_result = subprocess.run(
+                [sys.executable, "-m", "pip", "wheel", "--no-deps", "-w", str(dist_dir), str(project_root)],
+                capture_output=True,
+                text=True,
+            )
+            if wheel_result.returncode != 0:
+                console.print(f"[warning]Failed to build wheel: {wheel_result.stderr.strip()}[/warning]")
+                console.print("[warning]Falling back to PyPI install for API container.[/warning]")
+            else:
+                wheels = [f.name for f in dist_dir.glob("*.whl")]
+                if wheels:
+                    console.print(f"[success]Wheel built: {wheels[0]}[/success]")
         
         compose_profile = [] if cli_mode == "direct" else ["--profile", "api"]
         subprocess.run(
             ["docker", "compose", *compose_profile, "up", "-d", "--build"],
             cwd=compose_dir,
-            check=True
+            check=True,
         )
         
         console.print("\n[info]Waiting for Tasker API to be ready to push configuration...[/info]")
