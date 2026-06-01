@@ -21,3 +21,6 @@
 | # | Description | Severity | Location | Status |
 |---|-------------|----------|----------|--------|
 | 1 | Initial setup pending | Low | Root | PENDING |
+| 2 | [API] python_version and dependencies added to /health | Low | api-health | RESOLVED |
+| 3 | [CLI] --short mode for tasker status | Low | api-health | RESOLVED |
+| 4 | [Tests] Integration tests for /health endpoint | Low | api-health | RESOLVED |

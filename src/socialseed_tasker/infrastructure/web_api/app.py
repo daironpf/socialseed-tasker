@@ -402,9 +402,12 @@ def create_app(
     # Health endpoint with Neo4j connectivity check
     @app.get("/health", tags=["health"])
     def health_check() -> dict[str, Any]:
-        result = {
+        import sys
+
+        result: dict[str, Any] = {
             "status": "healthy",
             "version": __version__,
+            "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
             "authentication": {
                 "enabled": auth_enabled,
                 "configured": api_key is not None,
@@ -414,14 +417,17 @@ def create_app(
                 "per_minute": rate_limit_per_minute,
                 "per_hour": rate_limit_per_hour,
             },
+            "dependencies": {},
         }
 
         if neo4j_driver is not None:
             neo4j_connected = neo4j_driver.health_check()
-            result["neo4j"] = "connected" if neo4j_connected else "disconnected"
+            result["dependencies"]["neo4j"] = "connected" if neo4j_connected else "disconnected"
             result["neo4j_uri"] = neo4j_driver.uri
             if not neo4j_connected:
                 result["status"] = "degraded"
+        else:
+            result["dependencies"]["neo4j"] = "not configured"
 
         try:
             import json
@@ -436,9 +442,9 @@ def create_app(
         try:
             import httpx
 
-            result["httpx"] = "available"
+            result["dependencies"]["httpx"] = "available"
         except ImportError:
-            result["httpx"] = "not installed"
+            result["dependencies"]["httpx"] = "not installed"
 
         return result
 
