@@ -29,7 +29,7 @@ class ApiHttpClient:
         self,
         base_url: str,
         api_key: str | None = None,
-        timeout: int = 10,
+        timeout: int = 30,
         max_retries: int = 3,
     ) -> None:
         self.base_url = base_url.rstrip("/")
@@ -128,11 +128,17 @@ class ApiHttpClient:
             else:
                 items = []
             all_items.extend(items)
-            if isinstance(data, dict) and not data.get("next_page", False):
-                break
-            if isinstance(data, dict) and data.get("page", page) < page:
-                break
+            if isinstance(data, dict):
+                pagination = data.get("pagination", {})
+                if isinstance(pagination, dict):
+                    if not pagination.get("has_next", False):
+                        break
+                elif not data.get("next_page", False):
+                    break
             page += 1
+            if page > 200:
+                logger.warning("Paginate exceeded 200 pages, aborting")
+                break
         return all_items
 
     def close(self) -> None:

@@ -20,7 +20,7 @@ class DualModeConfig:
     mode: str = "direct"
     api_url: str = "http://localhost:8888"
     api_key: str = ""
-    api_timeout: int = 10
+    api_timeout: int = 30
     neo4j_uri: str = "bolt://localhost:7687"
     neo4j_user: str = "neo4j"
     neo4j_password: str = ""
@@ -49,7 +49,7 @@ class DualModeConfig:
         )
         api_timeout = int(
             os.environ.get("TASKER_API_TIMEOUT")
-            or file_cfg.get("api_timeout", 10)
+            or file_cfg.get("api_timeout", 30)
         )
         neo4j_uri = (
             os.environ.get("TASKER_NEO4J_URI")
