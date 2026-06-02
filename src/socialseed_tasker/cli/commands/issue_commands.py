@@ -395,7 +395,7 @@ def issue_delete(
 @issue_app.command("start")
 def issue_start(
     issue_id: str,
-    agent_id: str = typer.Option(..., "--agent-id", "-a", help="Agent identifier"),
+    agent_id: str = typer.Option("dev-agent", "--agent-id", "-a", help="Agent identifier (default: dev-agent)"),
 ) -> None:
     """Start agent work on an issue."""
     repo = get_repository()
@@ -427,7 +427,7 @@ def issue_start(
 @issue_app.command("finish")
 def issue_finish(
     issue_id: str,
-    agent_id: str = typer.Option(..., "--agent-id", "-a", help="Agent identifier"),
+    agent_id: str = typer.Option("dev-agent", "--agent-id", "-a", help="Agent identifier (default: dev-agent)"),
 ) -> None:
     """Finish agent work on an issue."""
     repo = get_repository()

@@ -108,7 +108,7 @@ class CodeGraphParser:
         modified_files = self._get_modified_files(repo_path) if incremental and git_aware else None
 
         for file_path in self._iter_source_files(repo_path):
-            if modified_files and str(file_path) not in modified_files:
+            if modified_files and file_path.as_posix() not in modified_files:
                 continue
 
             try:

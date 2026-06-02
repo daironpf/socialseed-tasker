@@ -41,6 +41,7 @@ class ApiHttpClient:
             timeout=timeout,
             follow_redirects=True,
         )
+        logging.getLogger("httpx").setLevel(logging.WARNING)
 
     def _headers(self) -> dict[str, str]:
         headers: dict[str, str] = {
