@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from socialseed_tasker.application.actions import TaskRepositoryInterface
+from socialseed_tasker.application.actions import InvalidEntityError, TaskRepositoryInterface
 
 
 def resolve_component_id(partial_id: str, repo: TaskRepositoryInterface) -> UUID:
@@ -72,8 +72,15 @@ def resolve_issue_id(partial_id: str, repo: TaskRepositoryInterface) -> UUID:
     except ValueError:
         pass
 
-    # Get all issues once
-    issues = repo.list_issues(statuses=None, project=None)
+    try:
+        issues = repo.list_issues(statuses=None, project=None)
+    except InvalidEntityError:
+        raise ValueError(
+            f"Could not resolve issue '{partial_id}': the issue tracker returned invalid data. "
+            "Try using the full UUID instead of a short ID."
+        )
+    except Exception as e:
+        raise ValueError(f"Could not resolve issue '{partial_id}': {e}")
 
     # Try exact title match first (no length restriction - titles can be short)
     for issue in issues:

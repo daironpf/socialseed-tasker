@@ -66,7 +66,7 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
                 )
     return Issue(
         id=_to_uuid(data.get("id") or data.get("_id", "")) or UUID(int=0),
-        title=data.get("title", ""),
+        title=data.get("title") or "Untitled Issue",
         description=data.get("description", ""),
         status=IssueStatus(data.get("status", "OPEN")),
         priority=data.get("priority", "MEDIUM"),

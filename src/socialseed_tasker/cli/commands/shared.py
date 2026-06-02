@@ -16,6 +16,7 @@ from rich.tree import Tree
 
 from socialseed_tasker.application.actions import (
     ComponentNotFoundError,
+    InvalidEntityError,
     IssueNotFoundError,
     TaskRepositoryInterface,
 )
@@ -139,7 +140,15 @@ def resolve_issue_id(partial_id: str, repo: TaskRepositoryInterface) -> UUID:
     except ValueError:
         pass
 
-    issues = repo.list_issues(statuses=None, project=None)
+    try:
+        issues = repo.list_issues(statuses=None, project=None)
+    except InvalidEntityError:
+        raise ValueError(
+            f"Could not resolve issue '{partial_id}': the issue tracker returned invalid data. "
+            "Try using the full UUID instead of a short ID."
+        )
+    except Exception as e:
+        raise ValueError(f"Could not resolve issue '{partial_id}': {e}")
 
     for issue in issues:
         if issue.title.lower() == partial_id.lower():
