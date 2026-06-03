@@ -118,7 +118,7 @@ def doc_sync_command(
         console.print("[bold]Files:[/bold]")
         for fd in file_details:
             refs_str = ", ".join(f"#{r}" for r in fd["refs"])
-            icon = "📄" if not fd["refs"] else "🔗"
+            icon = "[FILE]" if not fd["refs"] else "[LINK]"
             console.print(f"  {icon} {fd['path']}")
             if refs_str:
                 console.print(f"      References: {refs_str}")

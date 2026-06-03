@@ -13,7 +13,7 @@ Running `tasker doc-sync` on Windows PowerShell produces: `Error: 'charmap' code
 1. Run: `tasker doc-sync`
 2. Observe: UnicodeEncodeError on Windows PowerShell terminal
 
-## Status: PENDING
+## Status: FIXED
 
 ## Priority: LOW
 
@@ -30,7 +30,7 @@ Minor. Functionality is unaffected. Only the display output breaks on Windows te
 - #392 (doc-sync command)
 
 ## Changes Made
-[Leave empty]
+Changed `doc_sync_commands.py:121` - replaced emoji `📄`/`🔗` with ASCII-safe `[FILE]`/`[LINK]`.
 
 ## Verification
-[Leave empty]
+`tasker doc-sync` no longer throws `charmap` codec error on Windows PowerShell.
