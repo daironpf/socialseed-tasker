@@ -28,7 +28,7 @@ def _call_api(client: Any, method: str, path: str, **kwargs) -> Any:
 
 @code_graph_app.command("scan")
 def code_graph_scan(
-    path: str = typer.Argument(..., help="Path to repository to scan"),
+    path: str = typer.Argument(".", help="Path to repository to scan (default: current directory)"),
     incremental: bool = typer.Option(False, "--incremental", "-i", help="Only scan changed files"),
     git_aware: bool = typer.Option(True, "--git/--no-git", help="Use git to track changes"),
 ) -> None:

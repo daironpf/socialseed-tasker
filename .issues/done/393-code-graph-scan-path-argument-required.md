@@ -14,7 +14,7 @@ Running `tasker code-graph scan` without arguments produces: `Error: Missing par
 2. Observe: `Error: Missing parameter: path`
 3. Run: `tasker code-graph scan .` (succeeds)
 
-## Status: PENDING
+## Status: COMPLETED
 
 ## Priority: LOW
 
@@ -31,7 +31,9 @@ Minor. The command works correctly when the path is provided. This is a UX polis
 - (none)
 
 ## Changes Made
-[Leave empty]
+Changed `path: str = typer.Argument(...)` → `path: str = typer.Argument(".")` and updated help text to indicate the default in `code_graph_commands.py:31`.
 
 ## Verification
-[Leave empty]
+- `tasker code-graph scan` succeeds (scans current directory)
+- `tasker code-graph scan /custom/path` still works
+- `tasker code-graph scan --help` shows default as `.`
