@@ -11,6 +11,23 @@ IP_PER_MIN = int(os.getenv("TASKER_RATE_IP_PER_MIN", "60"))
 BURST = int(os.getenv("TASKER_RATE_BURST", "20"))
 
 
+def _compute_retry_after(limiter, key: str) -> int:
+    state = getattr(limiter, "get_state", None)
+    if state is None:
+        return 1
+    try:
+        s = state(key)
+        tokens = s.get("tokens", 0)
+        rate_per_min = s.get("rate_per_min", 60)
+        rate_per_sec = rate_per_min / 60.0
+        if rate_per_sec <= 0:
+            return 1
+        wait = (1 - max(0, tokens)) / rate_per_sec
+        return max(1, int(wait) + 1)
+    except Exception:
+        return 1
+
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         limiter = getattr(request.app.state, "rate_limiter", None)
@@ -37,11 +54,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             key = f"user:{user_id}"
             allowed = limiter.allow(key, tokens=1)
             if not allowed:
-                return JSONResponse(status_code=429, content={"status": "error", "error": "rate_limited", "retry_after": 1}, headers={"Retry-After": "1"})
+                retry_after = _compute_retry_after(limiter, key)
+                return JSONResponse(status_code=429, content={"status": "error", "error": "rate_limited", "retry_after": retry_after}, headers={"Retry-After": str(retry_after)})
         else:
             ip = request.headers.get("x-forwarded-for") or (request.client.host if request.client else "unknown")
             key = f"ip:{ip}"
             allowed = limiter.allow(key, tokens=1)
             if not allowed:
-                return JSONResponse(status_code=429, content={"status": "error", "error": "rate_limited", "retry_after": 1}, headers={"Retry-After": "1"})
+                retry_after = _compute_retry_after(limiter, key)
+                return JSONResponse(status_code=429, content={"status": "error", "error": "rate_limited", "retry_after": retry_after}, headers={"Retry-After": str(retry_after)})
         return await call_next(request)

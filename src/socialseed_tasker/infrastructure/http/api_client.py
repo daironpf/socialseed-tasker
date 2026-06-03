@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 from urllib.parse import urljoin
 
@@ -68,18 +69,33 @@ class ApiHttpClient:
         params: dict[str, Any] | None = None,
     ) -> Any:
         url = path if path.startswith("/") else f"/{path}"
-        try:
-            resp = self._client.request(
-                method,
-                url,
-                json=json,
-                params=params,
-                headers=self._headers(),
-            )
-            return self._handle_response(resp)
-        except httpx.RequestError as exc:
-            logger.debug("Request failed: %s", exc)
-            raise RemoteServiceError(f"Connection error: {exc}")
+        for attempt in range(self.max_retries + 1):
+            try:
+                resp = self._client.request(
+                    method,
+                    url,
+                    json=json,
+                    params=params,
+                    headers=self._headers(),
+                )
+                remaining = resp.headers.get("X-RateLimit-Remaining")
+                if remaining is not None and int(remaining) <= 5:
+                    logger.warning("Rate limit approaching: %s requests remaining", remaining)
+                return self._handle_response(resp)
+            except RemoteServiceError as exc:
+                error_msg = str(exc)
+                if "429" not in error_msg or attempt >= self.max_retries:
+                    raise
+                retry_after = 1
+                import re
+                match = re.search(r"Retry after (\d+)s", error_msg)
+                if match:
+                    retry_after = int(match.group(1))
+                logger.warning("Rate limited (attempt %d/%d). Retrying in %ds...", attempt + 1, self.max_retries, retry_after)
+                time.sleep(retry_after)
+            except httpx.RequestError as exc:
+                logger.debug("Request failed: %s", exc)
+                raise RemoteServiceError(f"Connection error: {exc}")
 
     def _handle_response(self, resp: httpx.Response) -> Any:
         if 200 <= resp.status_code < 300:
@@ -92,6 +108,9 @@ class ApiHttpClient:
 
         error_message = resp.text or f"HTTP {resp.status_code}"
 
+        if resp.status_code == 429:
+            retry_after = int(resp.headers.get("Retry-After", "1"))
+            raise RemoteServiceError(f"HTTP 429: Rate limited. Retry after {retry_after}s.")
         if resp.status_code == 400:
             raise InvalidEntityError(error_message)
         if resp.status_code == 401:

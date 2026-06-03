@@ -15,7 +15,7 @@ HTTP 429 responses contain no `Retry-After` header. Clients receive a bare 429 s
 1. Send ~35 rapid POST requests to `/api/v1/issues`
 2. Observe: HTTP 429 with no `Retry-After` header
 
-## Status: PENDING
+## Status: FIXED
 
 ## Priority: LOW
 
@@ -32,7 +32,11 @@ Minor. The rate limit is documented. Missing `Retry-After` requires clients to i
 - #383 (rate limiting batch issue creation - closed)
 
 ## Changes Made
-[Leave empty]
+- `rate_limit.py`: added `_compute_retry_after()` to dynamically calculate `Retry-After` from limiter state (instead of hardcoded `1`)
+- `api_client.py`: handle HTTP 429 with automatic retry respecting `Retry-After` header; warn via logger when `X-RateLimit-Remaining <= 5`
+- `rate_limit_cli.py`: warn on console when tokens drop below 20% of burst capacity
 
 ## Verification
-[Leave empty]
+1. Send rapid POST requests to `/api/v1/issues` → HTTP 429 now includes `Retry-After` header with calculated wait time
+2. `ApiHttpClient` logs warning at ≤5 remaining requests and auto-retries on 429
+3. CLI shows warning when local token bucket is near-empty
