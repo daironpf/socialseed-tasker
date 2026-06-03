@@ -284,6 +284,7 @@ def issue_show(issue_id: str) -> None:
 def issue_close(
     issue_id: str,
     affects: list[str] = typer.Option(None, "--affects", help="File paths affected by this issue"),
+    sha: str = typer.Option(None, "--sha", help="Git commit SHA that resolved this issue"),
 ) -> None:
     """Close an issue (validates no open dependencies).
 
@@ -292,6 +293,7 @@ def issue_close(
 
     Options:
         --affects: Optional list of file paths affected by this issue
+        --sha: Optional git commit SHA to link as resolution source
 
     Note:
         An issue cannot be closed if it has open dependencies. Resolve
@@ -308,8 +310,11 @@ def issue_close(
 
     resolved_str = str(resolved_id)
     try:
-        issue = close_issue_action(repo, resolved_str)
-        console.print(f"[success]Issue closed:[/success] {issue.title}")
+        issue = close_issue_action(repo, resolved_str, commit_sha=sha)
+        parts = [f"[success]Issue closed:[/success] {issue.title}"]
+        if sha:
+            parts.append(f"[dim]  SHA: {sha[:12]}[/dim]")
+        console.print("\n".join(parts))
 
         if affects:
             try:
