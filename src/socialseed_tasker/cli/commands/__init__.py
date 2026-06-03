@@ -100,6 +100,10 @@ from socialseed_tasker.cli.commands.code_graph_commands import (
     code_graph_tests,
 )
 
+from socialseed_tasker.cli.commands.doc_sync_commands import (
+    doc_sync_command,
+)
+
 from socialseed_tasker.cli.commands.rag_commands import (
     rag_clear,
     rag_embed_native,
@@ -169,6 +173,7 @@ __all__ = [
     "dependency_add",
     "dependency_app",
     "dependency_blocked",
+    "doc_sync_command",
     "dependency_chain",
     "dependency_list",
     "dependency_remove",

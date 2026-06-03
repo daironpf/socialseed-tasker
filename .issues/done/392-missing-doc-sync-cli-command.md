@@ -13,7 +13,7 @@ A `tasker doc-sync` command should exist (and appear in `tasker --help`) that sc
 1. Run: `tasker doc-sync`
 2. Observe: `Error: No such command 'doc-sync'`
 
-## Status: PENDING
+## Status: COMPLETED
 
 ## Priority: LOW
 
@@ -30,7 +30,17 @@ Minor. Documentation synchronization can still be performed manually. The graph-
 - (none)
 
 ## Changes Made
-[Leave empty]
+Created `src/socialseed_tasker/cli/commands/doc_sync_commands.py` with `doc_sync_command()`:
+- Scans `.md` files recursively from a given path (default `.`)
+- Extracts first heading as document title
+- Extracts issue references (`#\d+` pattern)
+- Creates `CodeFile` nodes in Neo4j with `language: "markdown"`
+- Reports coverage summary
+
+Registered in `app.py` as `tasker doc-sync [PATH]` (standalone root-level command).
 
 ## Verification
-[Leave empty]
+- `tasker doc-sync` scans and reports `.md` files
+- `tasker doc-sync --help` shows usage
+- `tasker --help` lists `doc-sync` in available commands
+- CodeFile nodes created in Neo4j graph for documentation files

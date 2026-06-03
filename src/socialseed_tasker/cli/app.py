@@ -130,6 +130,9 @@ app.command(name="status", help="Show CLI status and configuration")(commands.st
 app.command(name="login", help="Save credentials for future sessions")(commands.login_command)
 app.command(name="logout", help="Clear saved credentials")(commands.logout_command)
 
+# Register doc-sync command
+app.command(name="doc-sync", help="Scan documentation and sync references with graph")(commands.doc_sync_command)
+
 # Register seed command
 app.add_typer(commands.seed_app, name="seed", help="Seed demo data for first-time users")
 
