@@ -13,7 +13,7 @@ Build fails because `dist/` is excluded by `.dockerignore`. User must either rem
 1. Run: `cd real-test && docker compose -f .agent/tasker/docker-compose.yml build tasker-api`
 2. Observe: `ERROR: failed to compute cache key: "/dist": not found`
 
-## Status: PENDING
+## Status: FIXED
 
 ## Priority: LOW
 
@@ -32,7 +32,7 @@ Minor. Workaround exists: build wheel separately and use a temp directory or mod
 - (none)
 
 ## Changes Made
-[Leave empty]
+Removed `dist` line from `.dockerignore` (line 2). This prevents Docker from excluding the `dist/` directory from the build context, allowing `COPY dist/ ./dist/` in the Dockerfile to succeed.
 
 ## Verification
-[Leave empty]
+`docker compose -f .agent/tasker/docker-compose.yml build tasker-api` should no longer fail with `cache key: "/dist": not found` when `dist/` exists.
