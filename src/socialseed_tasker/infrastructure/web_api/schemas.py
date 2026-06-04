@@ -505,6 +505,46 @@ class BulkDependencyResponse(BaseModel):
     results: list[dict[str, Any]]
 
 
+class BulkIssueCreateItem(BaseModel):
+    """A single issue entry inside a bulk creation request."""
+
+    title: str = Field(..., max_length=200, description="Issue title")
+    description: str = Field("", description="Detailed description in Markdown")
+    priority: str = Field("MEDIUM", description="Priority level: LOW, MEDIUM, HIGH, CRITICAL")
+    component_id: str = Field(..., min_length=1, description="UUID of the component this issue belongs to")
+    labels: list[str] = Field(default_factory=list, description="Tags for categorisation")
+    architectural_constraints: list[str] = Field(default_factory=list, description="Architectural rules this issue must comply with")
+
+
+class BulkIssueCreateRequest(BaseModel):
+    """Request body for creating multiple issues at once."""
+
+    issues: list[BulkIssueCreateItem] = Field(
+        ...,
+        max_length=100,
+        description="List of issues to create (max 100 per request)",
+    )
+
+
+class BulkIssueCreateResult(BaseModel):
+    """Result for a single issue in a bulk creation."""
+
+    index: int
+    status: str
+    issue_id: str | None = None
+    title: str | None = None
+    error: str | None = None
+
+
+class BulkIssueCreateResponse(BaseModel):
+    """Response for bulk issue creation."""
+
+    total_requested: int
+    successful: int
+    failed: int
+    results: list[BulkIssueCreateResult]
+
+
 class ComponentCreateRequest(BaseModel):
     """Request body for creating a new component.
 

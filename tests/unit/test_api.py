@@ -1005,6 +1005,73 @@ class TestUnicodeAndInternationalization:
         assert "日本語" in data["description"]
 
 
+class TestIssuesBatch:
+    def test_create_issues_batch_all_success(self, client, component_id):
+        resp = client.post(
+            "/api/v1/issues/batch",
+            json={
+                "issues": [
+                    {"title": "Batch A", "description": "First", "priority": "LOW", "component_id": component_id},
+                    {"title": "Batch B", "description": "Second", "priority": "MEDIUM", "component_id": component_id},
+                ]
+            },
+        )
+        assert resp.status_code == 201
+        data = resp.json()["data"]
+        assert data["total_requested"] == 2
+        assert data["successful"] == 2
+        assert data["failed"] == 0
+        assert len(data["results"]) == 2
+        for r in data["results"]:
+            assert r["status"] == "created"
+            assert r["issue_id"]
+            assert r["title"]
+
+    def test_create_issues_batch_partial_failure(self, client, component_id):
+        resp = client.post(
+            "/api/v1/issues/batch",
+            json={
+                "issues": [
+                    {"title": "Good", "description": "OK", "priority": "LOW", "component_id": component_id},
+                    {"title": "", "description": "Bad", "priority": "LOW", "component_id": component_id},
+                ]
+            },
+        )
+        assert resp.status_code == 201
+        data = resp.json()["data"]
+        assert data["total_requested"] == 2
+        assert data["successful"] == 1
+        assert data["failed"] == 1
+        results_by_title = {r["title"]: r for r in data["results"]}
+        assert results_by_title["Good"]["status"] == "created"
+        assert results_by_title["Good"]["issue_id"]
+        assert results_by_title[""]["status"] == "error"
+        assert results_by_title[""]["error"]
+
+    def test_create_issues_batch_empty_list(self, client):
+        resp = client.post("/api/v1/issues/batch", json={"issues": []})
+        assert resp.status_code == 201
+        data = resp.json()["data"]
+        assert data["total_requested"] == 0
+        assert data["successful"] == 0
+        assert data["failed"] == 0
+        assert data["results"] == []
+
+    def test_create_issues_batch_defaults(self, client, component_id):
+        resp = client.post(
+            "/api/v1/issues/batch",
+            json={
+                "issues": [
+                    {"title": "Defaults", "component_id": component_id},
+                ]
+            },
+        )
+        assert resp.status_code == 201
+        data = resp.json()["data"]
+        assert data["successful"] == 1
+        assert data["results"][0]["status"] == "created"
+
+
 class TestProjectFiltering:
     def test_list_issues_by_project_filter(self, client, component_id):
         resp = client.get("/api/v1/issues?project=test-project")

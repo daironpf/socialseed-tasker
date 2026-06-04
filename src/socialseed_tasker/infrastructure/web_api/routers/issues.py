@@ -60,6 +60,9 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     APIResponse,
     BulkDependencyRequest,
     BulkDependencyResponse,
+    BulkIssueCreateRequest,
+    BulkIssueCreateResponse,
+    BulkIssueCreateResult,
     CausalLinkResponse,
     ComponentCreateRequest,
     ComponentImpactAnalysisResponse,
@@ -225,6 +228,90 @@ def create_issue(
     _dq_pipeline.run_post_ingest(body.model_dump(), record_id=str(issue.id))
     return APIResponse(
         data=_issue_to_response(issue), meta=Meta(request_id=None, warnings=warnings if warnings else None)
+    )
+
+
+@issues_router.post(
+    "/issues/batch",
+    response_model=APIResponse[BulkIssueCreateResponse],
+    status_code=201,
+    summary="Create multiple issues at once",
+    description=(
+        "Create multiple issues in a single request. "
+        "Each issue is validated and created independently. "
+        "The response reports per-item success/failure."
+    ),
+    responses={
+        201: {"description": "Batch processed (check results for per-item status)"},
+        400: {"description": "Validation error in request structure"},
+    },
+)
+def create_issues_batch(
+    body: BulkIssueCreateRequest,
+    repo: TaskRepositoryInterface = Depends(get_repo),
+) -> APIResponse[BulkIssueCreateResponse]:
+    """Create multiple issues in a single request.
+
+    Each issue is processed independently. The response includes
+    per-item results with success/failure status for each issue.
+    """
+    from socialseed_tasker.domain import (
+        IssueDescriptionValidationError,
+        IssueTitleValidationError,
+        sanitize_issue_description,
+        sanitize_issue_title,
+        validate_issue_title,
+    )
+
+    successful = 0
+    failed = 0
+    results: list[BulkIssueCreateResult] = []
+
+    for idx, item in enumerate(body.issues):
+        try:
+            validated_title = validate_issue_title(item.title)
+        except IssueTitleValidationError as e:
+            failed += 1
+            results.append(BulkIssueCreateResult(index=idx, status="error", title=item.title, error=str(e)))
+            continue
+
+        try:
+            sanitized_description = sanitize_issue_description(item.description or "")
+        except IssueDescriptionValidationError as e:
+            failed += 1
+            results.append(BulkIssueCreateResult(index=idx, status="error", title=item.title, error=str(e)))
+            continue
+
+        sanitized_title = sanitize_issue_title(validated_title)
+
+        try:
+            issue, warnings = create_issue_action(
+                repo,
+                title=sanitized_title,
+                component_id=item.component_id,
+                description=sanitized_description,
+                priority=item.priority,
+                labels=item.labels,
+                architectural_constraints=item.architectural_constraints,
+            )
+            successful += 1
+            results.append(
+                BulkIssueCreateResult(
+                    index=idx, status="created", issue_id=str(issue.id), title=sanitized_title
+                )
+            )
+        except Exception as e:
+            failed += 1
+            results.append(BulkIssueCreateResult(index=idx, status="error", title=item.title, error=str(e)))
+
+    return APIResponse(
+        data=BulkIssueCreateResponse(
+            total_requested=len(body.issues),
+            successful=successful,
+            failed=failed,
+            results=results,
+        ),
+        meta=Meta(request_id=None),
     )
 
 
