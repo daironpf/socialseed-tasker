@@ -184,6 +184,8 @@ def issue_list(
     status: str | None = typer.Option(None, "--status", "-s", help="Filter by status (OPEN, CLOSED, IN_PROGRESS, REVIEW, BLOCKED)"),
     component: str | None = typer.Option(None, "--component", "-c", help="Filter by component ID, name, or prefix"),
     project: str | None = typer.Option(None, "--project", "-p", help="Filter by project name"),
+    page: int = typer.Option(1, "--page", help="Page number (starts at 1, default: 1)"),
+    page_size: int = typer.Option(20, "--page-size", help="Results per page (default: 20)"),
     as_json: bool = typer.Option(False, "--json", help="Output as JSON"),
 ) -> None:
     """List issues with optional filters."""
@@ -198,18 +200,27 @@ def issue_list(
             console.print(f"[error]{e}[/error]")
             raise typer.Exit(code=2) from e
 
-    issues = repo.list_issues(
+    all_issues = repo.list_issues(
         component_id=resolved_component, statuses=[status_filter] if status_filter else None, project=project
     )
 
+    total = len(all_issues)
+    start = (page - 1) * page_size
+    end = start + page_size
+    issues = all_issues[start:end]
+
     if as_json:
-        data = [issue.model_dump(mode="json") for issue in issues]
+        meta = {"total": total, "page": page, "page_size": page_size}
+        data = {"items": [issue.model_dump(mode="json") for issue in issues], "meta": meta}
         console.print(json.dumps(data, indent=2))
         return
 
     if not issues:
         console.print("[info]No issues found.[/info]")
-        console.print('[dim]Tip: Create an issue with: tasker issue create "Title" -c <component_id>[/dim]')
+        if total > 0:
+            console.print(f"[dim]Page {page} is empty — try a lower page number (total issues: {total}).[/dim]")
+        else:
+            console.print('[dim]Tip: Create an issue with: tasker issue create "Title" -c <component_id>[/dim]')
         return
 
     # Build component name lookup
@@ -217,7 +228,11 @@ def issue_list(
     component_names = {str(c.id): c.name for c in components}
 
     console.print(_issues_table(issues, component_names))
-    console.print("[dim]Use -s OPEN to see only open issues, or -c <id> to filter by component[/dim]")
+    if total > page_size:
+        console.print(f"[dim]Showing page {page} of {(total + page_size - 1) // page_size} ({total} total issues). "
+                      f"Use --page and --page-size to navigate.[/dim]")
+    else:
+        console.print("[dim]Use -s OPEN to see only open issues, or -c <id> to filter by component[/dim]")
 
 
 @issue_app.command("show")
