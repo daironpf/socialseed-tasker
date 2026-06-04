@@ -10,10 +10,11 @@ from uuid import UUID, uuid4
 import pytest
 from typer.testing import CliRunner
 
-from socialseed_tasker.application.actions import TaskRepositoryInterface
+from socialseed_tasker.application.actions import TaskRepositoryInterface, RemoteServiceError
 from socialseed_tasker.application.constraints import Constraint, ConstraintLevel, ConstraintCategory
+from socialseed_tasker.application.exceptions import GraphPortError
 from socialseed_tasker.domain.entities import Component, Issue, IssueStatus, IssuePriority
-from socialseed_tasker.cli.app import app
+from socialseed_tasker.cli.app import app, handle_error
 
 
 class MockRepository(TaskRepositoryInterface):
@@ -875,6 +876,40 @@ class TestSeedCommand:
             result = runner.invoke(app, ["seed", "run"])
         finally:
             _unpatch_commands(original)
+
+
+class TestErrorHandling:
+    def test_handle_error_no_stack_trace(self, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            handle_error(RuntimeError("Cannot connect to Neo4j: timeout"))
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "Traceback" not in captured.out
+        assert "Database connection failed" in captured.out
+
+    def test_handle_error_remote_db_failure(self, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            handle_error(RemoteServiceError("DATABASE_CONNECTION_ERROR: connection refused"))
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "Traceback" not in captured.out
+        assert "Check that Neo4j is running" in captured.out
+
+    def test_handle_error_graph_port_error(self, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            handle_error(GraphPortError("Neo4j operation failed: timeout"))
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "Traceback" not in captured.out
+        assert "Database connection failed" in captured.out
+
+    def test_handle_error_rate_limited_no_details(self, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            handle_error(RemoteServiceError("HTTP 429: Rate limited. Retry after 1s."))
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "429" not in captured.out
+        assert "Too many requests" in captured.out
 
 
 class TestProjectDetectCommand:
