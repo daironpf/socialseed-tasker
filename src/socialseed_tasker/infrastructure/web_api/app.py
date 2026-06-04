@@ -414,8 +414,10 @@ def create_app(
             },
             "rate_limiting": {
                 "enabled": rate_limit_enabled,
+                "burst": 20,
                 "per_minute": rate_limit_per_minute,
                 "per_hour": rate_limit_per_hour,
+                "docs": "https://github.com/anomalyco/socialseed-tasker",
             },
             "dependencies": {},
         }
