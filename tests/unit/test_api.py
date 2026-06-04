@@ -494,6 +494,13 @@ class TestDependencies:
             json={"depends_on_id": a_id},
         )
         assert resp.status_code == 409
+        body = resp.json()
+        error = body.get("error", body.get("detail", {}))
+        if isinstance(error, dict):
+            code = error.get("code", error.get("type", ""))
+            msg = error.get("message", error.get("msg", ""))
+            assert code == "CIRCULAR_DEPENDENCY"
+            assert "cycle" in msg.lower()
 
     def test_remove_dependency(self, client, component_id):
         resp_a = client.post(
