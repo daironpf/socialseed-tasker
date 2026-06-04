@@ -54,6 +54,8 @@ class TestHealthEndpoint:
         data = client.get("/health").json()
         assert "rate_limiting" in data
         assert "enabled" in data["rate_limiting"]
+        assert "burst" in data["rate_limiting"]
+        assert data["rate_limiting"]["burst"] == 20
 
     def test_health_neo4j_status_not_configured(self, client: TestClient) -> None:
         data = client.get("/health").json()
