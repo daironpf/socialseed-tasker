@@ -6,6 +6,7 @@ from typing import Any
 from uuid import UUID
 
 from socialseed_tasker.domain.entities import (
+    CommentEntry,
     Component,
     Issue,
     IssuePriority,
@@ -64,6 +65,23 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
                         related_nodes=log_data.get("related_nodes", []),
                     )
                 )
+    raw_comments = data.get("comments")
+    if isinstance(raw_comments, str):
+        raw_comments = json.loads(raw_comments)
+    comments_list = []
+    if raw_comments:
+        for c_data in raw_comments:
+            if isinstance(c_data, dict):
+                comments_list.append(
+                    CommentEntry(
+                        id=c_data.get("id"),
+                        timestamp=datetime.fromisoformat(
+                            c_data.get("timestamp", datetime.now(timezone.utc).isoformat())
+                        ),
+                        author=c_data.get("author", "api-user"),
+                        text=c_data.get("text", ""),
+                    )
+                )
     return Issue(
         id=_to_uuid(data.get("id") or data.get("_id", "")) or UUID(int=0),
         title=data.get("title") or "Untitled Issue",
@@ -84,6 +102,7 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
         agent_finished_at=data.get("agentFinishedAt") or data.get("agent_finished_at"),
         agent_id=data.get("agentId") or data.get("agent_id"),
         reasoning_logs=reasoningLogs,
+        comments=comments_list,
         manifest_todo=data.get("manifestTodo", []),
         manifest_files=data.get("manifestFiles", []),
         manifest_notes=data.get("manifestNotes", []),

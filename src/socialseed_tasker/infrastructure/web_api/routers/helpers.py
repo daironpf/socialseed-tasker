@@ -137,6 +137,15 @@ def convert_domain_issue_to_api_response(domain_issue: Issue) -> IssueResponse:
         agent_started_at=domain_issue.agent_started_at,
         agent_finished_at=domain_issue.agent_finished_at,
         agent_id=domain_issue.agent_id,
+        comments=[
+            {
+                "id": str(c.id),
+                "timestamp": c.timestamp,
+                "author": c.author,
+                "text": c.text,
+            }
+            for c in domain_issue.comments
+        ],
     )
 
 

@@ -73,6 +73,13 @@ class ReasoningLogEntry(BaseModel):
     reasoning: str = ""
     related_nodes: list[UUID] = Field(default_factory=list)
 
+class CommentEntry(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
+    id: UUID = Field(default_factory=uuid4)
+    timestamp: datetime = Field(default_factory=_now)
+    author: str = "api-user"
+    text: str = Field(..., min_length=1)
+
 class Project(BaseModel):
     model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
     id: UUID = Field(default_factory=uuid4)
@@ -136,6 +143,7 @@ class Issue(BaseModel):
     agent_id: Optional[str] = None
     locked_until: Optional[datetime] = None
     reasoning_logs: list[ReasoningLogEntry] = Field(default_factory=list)
+    comments: list[CommentEntry] = Field(default_factory=list)
     manifest_todo: list[dict[str, str]] = Field(default_factory=list)
     manifest_files: list[str] = Field(default_factory=list)
     manifest_notes: list[str] = Field(default_factory=list)

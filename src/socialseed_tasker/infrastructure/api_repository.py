@@ -332,6 +332,24 @@ class ApiTaskRepository(TaskRepositoryInterface):
             return data.get("items", data.get("data", []))
         return []
 
+    # -- Comments ---------------------------------------------------------------
+
+    def add_comment(self, issue_id: str, text: str, author: str = "api-user") -> Issue:
+        data = self.client.request(
+            "POST",
+            f"{_API}/issues/{issue_id}/comments",
+            json={"text": text, "author": author},
+        )
+        return _parse_issue(data)
+
+    def get_comments(self, issue_id: str) -> list[dict[str, Any]]:
+        data = self.client.request("GET", f"{_API}/issues/{issue_id}/comments")
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict):
+            return data.get("items", data.get("data", []))
+        return []
+
     # -- Manifest ---------------------------------------------------------------
 
     def update_manifest_todo(self, issue_id: str, todo: list[dict[str, str]]) -> Issue:

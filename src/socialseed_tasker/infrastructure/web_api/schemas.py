@@ -187,6 +187,22 @@ class ReasoningLogEntryResponse(BaseModel):
     related_nodes: list[str]
 
 
+class CommentRequest(BaseModel):
+    """Request body for adding a comment to an issue."""
+
+    text: str = Field(..., min_length=1, description="Comment text", examples=["Fixed this in PR #42"])
+    author: str = Field("api-user", description="Comment author", examples=["developer-1"])
+
+
+class CommentResponse(BaseModel):
+    """Single comment in API responses."""
+
+    id: str
+    timestamp: datetime
+    author: str
+    text: str
+
+
 # ---------------------------------------------------------------------------
 # Manifest schemas
 # ---------------------------------------------------------------------------
@@ -652,6 +668,7 @@ class IssueResponse(BaseModel):
     agent_finished_at: datetime | None = None
     agent_id: str | None = None
     reasoning_logs: list[ReasoningLogEntryResponse] = Field(default_factory=list)
+    comments: list[CommentResponse] = Field(default_factory=list)
     manifest_todo: list[dict[str, str]] = Field(default_factory=list)
     manifest_files: list[str] = Field(default_factory=list)
     manifest_notes: list[str] = Field(default_factory=list)

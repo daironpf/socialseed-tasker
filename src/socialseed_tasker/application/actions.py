@@ -303,6 +303,12 @@ class TaskRepositoryInterface(Protocol):
     def get_reasoning_logs(self, issue_id: str) -> list[dict[str, Any]]:
         """Get all reasoning log entries for an issue."""
 
+    def add_comment(self, issue_id: str, text: str, author: str = "api-user") -> Issue:
+        """Add a comment to an issue and return the updated issue."""
+
+    def get_comments(self, issue_id: str) -> list[dict[str, Any]]:
+        """Get all comments for an issue."""
+
     def update_manifest_todo(self, issue_id: str, todo: list[dict[str, str]]) -> Issue:
         """Update the manifest TODO list for an issue."""
 

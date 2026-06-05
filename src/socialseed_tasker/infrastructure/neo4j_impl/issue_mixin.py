@@ -389,6 +389,50 @@ class IssueRepositoryMixin:
                 raw = json.loads(raw)
             return raw
 
+    # -- Comments ----------------------------------------------------------------
+
+    def add_comment(self, issue_id: str, text: str, author: str = "api-user") -> Issue:
+        """Add a comment to an issue and return the updated issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.GET_ISSUE, id=issue_id)
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+
+            node_data = dict(record["i"])
+            existing_raw = node_data.get("comments", [])
+            existing = json.loads(existing_raw) if isinstance(existing_raw, str) else (existing_raw or [])
+            new_entry = {
+                "id": str(uuid4()),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "author": author,
+                "text": text,
+            }
+            existing.append(new_entry)
+
+            update_result = session.run(
+                queries.UPDATE_ISSUE,
+                id=issue_id,
+                updates={"comments": json.dumps(existing)},
+                updatedAt=_now_iso(),
+            )
+            updated_record = update_result.single()
+            if updated_record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            return _node_to_issue(updated_record["i"])
+
+    def get_comments(self, issue_id: str) -> list[dict[str, Any]]:
+        """Get all comments for an issue."""
+        with self._driver.driver.session(database=self._driver.database) as session:
+            result = session.run(queries.GET_ISSUE, id=issue_id)
+            record = result.single()
+            if record is None:
+                raise ValueError(f"Issue {issue_id} not found")
+            raw = record["i"].get("comments", [])
+            if isinstance(raw, str):
+                raw = json.loads(raw)
+            return raw
+
     # -- Manifest ---------------------------------------------------------------
 
     def update_manifest_todo(self, issue_id: str, todo: list[dict[str, str]]) -> Issue:
