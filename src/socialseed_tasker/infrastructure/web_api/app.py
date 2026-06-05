@@ -483,7 +483,7 @@ def create_app(
         return RedirectResponse(url)
 
     @app.get("/auth/callback")
-    def auth_callback(code: Optional[str] = None, request: Request = None):
+    def auth_callback(code: str | None = None, request: Request = None):
         if not code:
             return JSONResponse(status_code=400, content={"status": "error", "error": "missing code"})
         base = os.getenv("TASKER_BASE_URL", "http://localhost:8000")
