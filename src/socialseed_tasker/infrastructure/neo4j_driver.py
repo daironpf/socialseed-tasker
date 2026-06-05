@@ -44,6 +44,7 @@ class Neo4jDriver:
         password: str = "",
         database: str = "neo4j",
         max_connection_lifetime: int = 3600,
+        connection_timeout: int = 5,
         encrypted: bool | None = None,
     ) -> None:
         self._uri = uri
@@ -51,6 +52,7 @@ class Neo4jDriver:
         self._password = password
         self._database = database
         self._max_connection_lifetime = max_connection_lifetime
+        self._connection_timeout = connection_timeout
         self._driver: Driver | None = None
         self._encrypted = encrypted
 
@@ -84,6 +86,7 @@ class Neo4jDriver:
         """
         driver_kwargs = {
             "max_connection_lifetime": self._max_connection_lifetime,
+            "connection_timeout": self._connection_timeout,
         }
 
         if self._encrypted is not None:
@@ -113,13 +116,19 @@ class Neo4jDriver:
     def health_check(self) -> bool:
         """Verify the Neo4j connection is alive and responsive.
 
+        Uses a short session acquisition timeout to fail fast when the
+        database is unreachable, preventing stale "connected" status.
+
         Returns:
             True if the database responds to a simple query.
         """
         if self._driver is None:
             return False
         try:
-            with self._driver.session(database=self._database) as session:
+            with self._driver.session(
+                database=self._database,
+                connection_acquisition_timeout=3.0,
+            ) as session:
                 result = session.run("RETURN 1 AS ok")
                 record = result.single()
                 return record is not None and record["ok"] == 1
