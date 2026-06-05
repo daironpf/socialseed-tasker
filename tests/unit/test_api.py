@@ -1057,12 +1057,8 @@ class TestIssuesBatch:
 
     def test_create_issues_batch_empty_list(self, client):
         resp = client.post("/api/v1/issues/batch", json={"issues": []})
-        assert resp.status_code == 201
-        data = resp.json()["data"]
-        assert data["total_requested"] == 0
-        assert data["successful"] == 0
-        assert data["failed"] == 0
-        assert data["results"] == []
+        assert resp.status_code == 400
+        assert resp.json()["detail"] == "No issues provided"
 
     def test_create_issues_batch_defaults(self, client, component_id):
         resp = client.post(

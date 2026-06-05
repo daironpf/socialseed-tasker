@@ -258,6 +258,9 @@ def create_issues_batch(
     Each issue is processed independently. The response includes
     per-item results with success/failure status for each issue.
     """
+    if not body.issues:
+        raise HTTPException(status_code=400, detail="No issues provided")
+
     from socialseed_tasker.domain import (
         IssueDescriptionValidationError,
         IssueTitleValidationError,
