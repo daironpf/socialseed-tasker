@@ -185,7 +185,7 @@ async def code_graph_files(
 async def code_graph_symbols(
     name: str | None = Query(None),
     symbol_type: str | None = Query(None),
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(50, ge=1, le=100),
 ) -> dict[str, Any]:
     """Find symbols by name in the code graph."""
     from socialseed_tasker.domain.code_analysis_entities import SymbolType
@@ -295,7 +295,7 @@ async def code_graph_tests(
 @code_graph_router.get("/issues/{file_path:path}")
 async def get_issues_for_file(
     file_path: str,
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(50, ge=1, le=100),
     driver: Any = Depends(get_code_graph_driver),
 ) -> dict[str, Any]:
     """Get all issues that affected a file."""

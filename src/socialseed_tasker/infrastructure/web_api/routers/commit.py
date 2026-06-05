@@ -383,7 +383,7 @@ def get_commits_for_issue(
 )
 def get_commits_for_file(
     file_path: str,
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(50, ge=1, le=100),
     driver: Any = Depends(get_code_graph_driver),
 ) -> APIResponse[list[dict]]:
     """Get commits for a file."""

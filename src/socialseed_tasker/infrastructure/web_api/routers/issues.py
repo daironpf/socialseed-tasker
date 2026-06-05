@@ -338,7 +338,7 @@ def list_issues(
     project: str | None = Query(None, description="Filter by project name"),
     title: str | None = Query(None, description="Filter by exact issue title"),
     page: int = Query(1, ge=1, description="Page number (starts at 1, default: 1)"),
-    limit: int = Query(20, ge=1, le=100, description="Items per page (default: 20, max: 100)"),
+    limit: int = Query(50, ge=1, le=100, description="Items per page (default: 50, max: 100)"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     """List issues with optional filters and pagination.
@@ -362,7 +362,7 @@ def list_issues(
     Example:
         ```bash
         # Get first page of open issues
-        curl "/api/v1/issues?status=todo,in_progress&page=1&limit=20"
+        curl "/api/v1/issues?status=todo,in_progress&page=1&limit=50"
 
         # Filter by project
         curl "/api/v1/issues?project=socialseed-tasker"

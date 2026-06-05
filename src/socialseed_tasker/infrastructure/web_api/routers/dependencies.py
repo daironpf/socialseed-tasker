@@ -262,7 +262,7 @@ def remove_dependency(
 def list_dependencies(
     issue_id: str,
     page: int = Query(1, ge=1, description="Page number (starts at 1, default: 1)"),
-    limit: int = Query(20, ge=1, le=100, description="Items per page (default: 20, max: 100)"),
+    limit: int = Query(50, ge=1, le=100, description="Items per page (default: 50, max: 100)"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     issue = repo.get_issue(issue_id)

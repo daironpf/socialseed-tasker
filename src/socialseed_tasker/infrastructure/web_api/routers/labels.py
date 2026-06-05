@@ -171,7 +171,7 @@ def list_issues(
     component_id: str | None = Query(None, description="Filter by component"),
     project: str | None = Query(None, description="Filter by project"),
     page: int = Query(1, ge=1, description="Page number (starts at 1, default: 1)"),
-    limit: int = Query(20, ge=1, le=100, description="Items per page (default: 20, max: 100)"),
+    limit: int = Query(50, ge=1, le=100, description="Items per page (default: 50, max: 100)"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[list[IssueResponse]]:
     label_list = [label.strip() for label in labels.split(",")] if labels else []
