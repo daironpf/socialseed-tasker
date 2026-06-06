@@ -1,6 +1,0 @@
-mode: api
-api_url: http://localhost:8888
-api_timeout: 30
-neo4j_uri: bolt://localhost:7687
-neo4j_user: neo4j
-neo4j_password: neoSocial
