@@ -405,6 +405,12 @@ def interactive_init_command(
             check=True,
         )
         
+        if cli_mode == "direct":
+            console.print("\n[info]Tasker initialized in Direct mode. Neo4j is running and ready.[/info]")
+            console.print("[bold green]SUCCESS: TASKER is successfully started and ready![/bold green]")
+            console.print("[bold green]You can now use 'tasker' commands to manage your project.[/bold green]")
+            return
+
         console.print("\n[info]Waiting for Tasker API to be ready to push configuration...[/info]")
         import time
         import httpx
