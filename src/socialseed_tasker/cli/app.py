@@ -254,6 +254,13 @@ def main(
         help="Neo4j password (required)",
         envvar="TASKER_NEO4J_PASSWORD",
     ),
+    config_path: str = typer.Option(
+        "",
+        "--config",
+        "-c",
+        help="Path to tasker config file (default: .agent/configs/tasker.yml discovered from CWD upward)",
+        envvar="TASKER_CONFIG_PATH",
+    ),
 ) -> None:
     """SocialSeed Tasker CLI.
 
@@ -290,6 +297,8 @@ def main(
         os.environ["TASKER_NEO4J_USER"] = neo4j_user
     if neo4j_password:
         os.environ["TASKER_NEO4J_PASSWORD"] = neo4j_password
+    if config_path:
+        os.environ["TASKER_CONFIG_PATH"] = config_path
     _cli_container = None
 
 
