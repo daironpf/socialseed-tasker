@@ -136,7 +136,7 @@ def status_command(
 
 @status_app.command("login")
 def login_command(
-    password: str = typer.Option(..., "--password", "-pw", help="Neo4j password"),
+    password: str = typer.Option(..., "--password", "--neo4j-password", "-pw", help="Neo4j password"),
     save: bool = typer.Option(True, "--save/--no-save", help="Save credentials locally"),
 ) -> None:
     """Save credentials for future sessions.
