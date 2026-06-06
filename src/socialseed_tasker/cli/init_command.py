@@ -156,10 +156,17 @@ def interactive_init_command(
         "-i",
         help="Initialize in current directory without creating .agent/ subdirectory",
     ),
+    yes: bool = typer.Option(
+        False,
+        "--yes",
+        "-y",
+        help="Skip interactive prompts and use all default values",
+    ),
 ) -> None:
     """Initialize Tasker in a project interactively.
 
     Prompts for project details before scaffolding.
+    Use --yes to skip all prompts and accept defaults (useful for scripting/CI).
     """
     console.print("[bold cyan]Welcome to SocialSeed Tasker Initialization[/bold cyan]")
     console.print("Configure your project using the menu below.\n")
@@ -212,113 +219,118 @@ def interactive_init_command(
         "8": False, # Components
     }
     
-    while True:
-        table = Table(title="[bold cyan]Tasker Setup Menu[/bold cyan]", box=None)
-        table.add_column("Option", justify="right", style="cyan")
-        table.add_column("Category", style="white")
-        table.add_column("Status", style="yellow")
-        
-        table.add_row("1", "Project Identity", "[green]Filled[/green]" if state["1"] else "[red]Pending (Defaults will be used)[/red]")
-        table.add_row("2", "Tech Stack", "[green]Filled[/green]" if state["2"] else "[red]Pending[/red]")
-        table.add_row("3", "Project Settings", "[green]Filled[/green]" if state["3"] else "[red]Pending[/red]")
-        table.add_row("4", "User Config (Human)", "[green]Filled[/green]" if state["4"] else "[red]Pending[/red]")
-        table.add_row("5", "Policies & Constraints", "[green]Filled[/green]" if state["5"] else "[red]Pending[/red]")
-        table.add_row("6", "Agent Config", "[green]Filled[/green]" if state["6"] else "[red]Pending[/red]")
-        table.add_row("7", "API Keys (OpenAI)", "[green]Filled[/green]" if state["7"] else "[red]Pending[/red]")
-        table.add_row("8", "Initial Components", "[green]Filled[/green]" if state["8"] else "[red]Pending[/red]")
-        table.add_row("", "", "")
-        table.add_row("START", "[bold green]Run Setup[/bold green]", "")
-        table.add_row("EXIT", "[bold red]Cancel[/bold red]", "")
-        
-        console.print(table)
-        
-        choice = _ask("Select an option", default="START").upper()
-        
-        if choice == "EXIT":
-            console.print("[yellow]Initialization cancelled.[/yellow]")
-            raise typer.Exit(code=0)
+    if yes:
+        console.print("[dim]--yes flag detected, using all default values.[/dim]")
+    else:
+        while True:
+            table = Table(title="[bold cyan]Tasker Setup Menu[/bold cyan]", box=None)
+            table.add_column("Option", justify="right", style="cyan")
+            table.add_column("Category", style="white")
+            table.add_column("Status", style="yellow")
             
-        elif choice == "START":
-            # If nothing filled, ask for project name
-            if not any(state.values()) or not state["1"]:
-                project_name = _ask("Project Name required to proceed", default=project_name)
-                slug = project_name.lower().replace(" ", "-")
-                description = f"Tasker project for {project_name}"
-                base_package = project_name.lower().replace(" ", "_")
+            table.add_row("1", "Project Identity", "[green]Filled[/green]" if state["1"] else "[red]Pending (Defaults will be used)[/red]")
+            table.add_row("2", "Tech Stack", "[green]Filled[/green]" if state["2"] else "[red]Pending[/red]")
+            table.add_row("3", "Project Settings", "[green]Filled[/green]" if state["3"] else "[red]Pending[/red]")
+            table.add_row("4", "User Config (Human)", "[green]Filled[/green]" if state["4"] else "[red]Pending[/red]")
+            table.add_row("5", "Policies & Constraints", "[green]Filled[/green]" if state["5"] else "[red]Pending[/red]")
+            table.add_row("6", "Agent Config", "[green]Filled[/green]" if state["6"] else "[red]Pending[/red]")
+            table.add_row("7", "API Keys (OpenAI)", "[green]Filled[/green]" if state["7"] else "[red]Pending[/red]")
+            table.add_row("8", "Initial Components", "[green]Filled[/green]" if state["8"] else "[red]Pending[/red]")
+            table.add_row("", "", "")
+            table.add_row("START", "[bold green]Run Setup[/bold green]", "")
+            table.add_row("EXIT", "[bold red]Cancel[/bold red]", "")
+            
+            console.print(table)
+            
+            choice = _ask("Select an option", default="START").upper()
+            
+            if choice == "EXIT":
+                console.print("[yellow]Initialization cancelled.[/yellow]")
+                raise typer.Exit(code=0)
+                
+            elif choice == "START":
+                # If nothing filled, ask for project name
+                if not any(state.values()) or not state["1"]:
+                    project_name = _ask("Project Name required to proceed", default=project_name)
+                    slug = project_name.lower().replace(" ", "-")
+                    description = f"Tasker project for {project_name}"
+                    base_package = project_name.lower().replace(" ", "_")
+                    state["1"] = True
+                break
+                
+            elif choice == "1":
+                project_name = _ask("Project Name", default=project_name)
+                github_repo = _ask("GitHub Repository URL", default=github_repo)
+                slug = _ask("Project Slug", default=project_name.lower().replace(" ", "-"))
+                description = _ask("Project Description", default=f"Tasker project for {project_name}")
+                # Update base_package default if not filled yet
+                if not state["3"]:
+                    base_package = project_name.lower().replace(" ", "_")
                 state["1"] = True
-            break
-            
-        elif choice == "1":
-            project_name = _ask("Project Name", default=project_name)
-            github_repo = _ask("GitHub Repository URL", default=github_repo)
-            slug = _ask("Project Slug", default=project_name.lower().replace(" ", "-"))
-            description = _ask("Project Description", default=f"Tasker project for {project_name}")
-            # Update base_package default if not filled yet
-            if not state["3"]:
-                base_package = project_name.lower().replace(" ", "_")
-            state["1"] = True
-            
-        elif choice == "2":
-            architecture = _ask("Architecture", default=architecture)
-            language = _ask("Primary Language", default=language)
-            framework = _ask("Framework", default=framework)
-            database = _ask("Database", default=database)
-            tech_stack_str = _ask("Tech Stack (comma separated)", default=f"{language}, {framework}, {database}")
-            main_stack_str = _ask("Main Stack (comma separated)", default=f"{language}, Neo4j")
-            state["2"] = True
-            
-        elif choice == "3":
-            base_package = _ask("Base Package", default=base_package)
-            visibility = _ask("Visibility", choices=["PUBLIC", "PRIVATE"], default=visibility)
-            status = _ask("Project Status", default=status)
-            version = _ask("Version", default=version)
-            conventions_url = _ask("Conventions URL", default=conventions_url)
-            conventions_rules = _ask("Conventions Rules", default=conventions_rules)
-            global_status = _ask("Global Status", choices=["DEVELOPMENT", "STAGING", "PRODUCTION"], default=global_status)
-            state["3"] = True
-            
-        elif choice == "4":
-            username = _ask("Username", default=username)
-            email = _ask("Email", default=email)
-            user_role = _ask("Role", choices=["ADMIN", "LEAD_ARCHITECT", "DEVELOPER"], default=user_role)
-            github_handle = _ask("GitHub Handle", default=github_handle)
-            state["4"] = True
-            
-        elif choice == "5":
-            forbidden_tech = _ask("Forbidden Technologies", default=forbidden_tech)
-            required_patterns = _ask("Required Patterns", default=required_patterns)
-            naming_conventions = _ask("Naming Conventions", default=naming_conventions)
-            dependency_rules = _ask("Dependency Rules", default=dependency_rules)
-            dos_and_donts = _ask("Do's and Don'ts", default=dos_and_donts)
-            state["5"] = True
-            
-        elif choice == "6":
-            agent_name = _ask("Agent Name", default=agent_name)
-            agent_role = _ask("Agent Role", default=agent_role)
-            agent_capabilities = _ask("Agent Capabilities (comma separated)", default=agent_capabilities)
-            state["6"] = True
-            
-        elif choice == "7":
-            openai_api_key = _ask("OpenAI API Key (hidden)", password=True)
-            state["7"] = True
-            
-        elif choice == "8":
-            components_list_str = _ask("Initial Components (comma separated)", default=components_list_str)
-            state["8"] = True
-            
-        else:
-            console.print("[red]Invalid option.[/red]")
-            
-        console.print("\n" + "="*40 + "\n")
+                
+            elif choice == "2":
+                architecture = _ask("Architecture", default=architecture)
+                language = _ask("Primary Language", default=language)
+                framework = _ask("Framework", default=framework)
+                database = _ask("Database", default=database)
+                tech_stack_str = _ask("Tech Stack (comma separated)", default=f"{language}, {framework}, {database}")
+                main_stack_str = _ask("Main Stack (comma separated)", default=f"{language}, Neo4j")
+                state["2"] = True
+                
+            elif choice == "3":
+                base_package = _ask("Base Package", default=base_package)
+                visibility = _ask("Visibility", choices=["PUBLIC", "PRIVATE"], default=visibility)
+                status = _ask("Project Status", default=status)
+                version = _ask("Version", default=version)
+                conventions_url = _ask("Conventions URL", default=conventions_url)
+                conventions_rules = _ask("Conventions Rules", default=conventions_rules)
+                global_status = _ask("Global Status", choices=["DEVELOPMENT", "STAGING", "PRODUCTION"], default=global_status)
+                state["3"] = True
+                
+            elif choice == "4":
+                username = _ask("Username", default=username)
+                email = _ask("Email", default=email)
+                user_role = _ask("Role", choices=["ADMIN", "LEAD_ARCHITECT", "DEVELOPER"], default=user_role)
+                github_handle = _ask("GitHub Handle", default=github_handle)
+                state["4"] = True
+                
+            elif choice == "5":
+                forbidden_tech = _ask("Forbidden Technologies", default=forbidden_tech)
+                required_patterns = _ask("Required Patterns", default=required_patterns)
+                naming_conventions = _ask("Naming Conventions", default=naming_conventions)
+                dependency_rules = _ask("Dependency Rules", default=dependency_rules)
+                dos_and_donts = _ask("Do's and Don'ts", default=dos_and_donts)
+                state["5"] = True
+                
+            elif choice == "6":
+                agent_name = _ask("Agent Name", default=agent_name)
+                agent_role = _ask("Agent Role", default=agent_role)
+                agent_capabilities = _ask("Agent Capabilities (comma separated)", default=agent_capabilities)
+                state["6"] = True
+                
+            elif choice == "7":
+                openai_api_key = _ask("OpenAI API Key (hidden)", password=True)
+                state["7"] = True
+                
+            elif choice == "8":
+                components_list_str = _ask("Initial Components (comma separated)", default=components_list_str)
+                state["8"] = True
+                
+            else:
+                console.print("[red]Invalid option.[/red]")
+                
+            console.print("\n" + "="*40 + "\n")
 
     # Mode selection
-    console.print("\n[bold cyan]Connection Mode[/bold cyan]")
-    console.print("Choose how the CLI connects to the backend:")
-    console.print("  [bold]1) Direct (Neo4j Bolt)[/bold] - CLI connects directly to Neo4j via Bolt protocol")
-    console.print("  [bold]2) API (REST)[/bold] - CLI connects through the FastAPI REST API")
-    console.print("")
-    mode_choice = _ask("Select mode", choices=["1", "2"], default="1")
-    cli_mode = "direct" if mode_choice == "1" else "api"
+    cli_mode = "direct"
+    if not yes:
+        console.print("\n[bold cyan]Connection Mode[/bold cyan]")
+        console.print("Choose how the CLI connects to the backend:")
+        console.print("  [bold]1) Direct (Neo4j Bolt)[/bold] - CLI connects directly to Neo4j via Bolt protocol")
+        console.print("  [bold]2) API (REST)[/bold] - CLI connects through the FastAPI REST API")
+        console.print("")
+        mode_choice = _ask("Select mode", choices=["1", "2"], default="1")
+        cli_mode = "direct" if mode_choice == "1" else "api"
 
     console.print("\n[info]Starting initialization with provided context...[/info]\n")
     
