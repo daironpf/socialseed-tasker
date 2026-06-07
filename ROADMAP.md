@@ -38,3 +38,4 @@
 | 349 | CLI --help output lacks detailed examples | Low | cli/commands/ | ✅ RESOLVED |
 | 414 | Issue count inconsistency after closing issues | Low | cli/status_commands.py, api/project.py | ✅ RESOLVED |
 | 415 | --page-size option not shown in --help | Low | cli/issue_commands.py | ✅ RESOLVED |
+| 416 | Config path uses Windows backslashes instead of forward slashes | Low | cli/status_commands.py | ✅ RESOLVED |

@@ -96,7 +96,7 @@ def status_command(
         Panel(
             f"[bold]Mode:[/bold] {mode_cfg.mode}\n"
             f"[bold]API URL:[/bold] {mode_cfg.api_url}\n"
-            f"[bold]Config:[/bold] {cfg_path or '(none)'}\n"
+            f"[bold]Config:[/bold] {cfg_path.as_posix() if cfg_path else '(none)'}\n"
             f"[bold]Backend:[/bold] neo4j (Graph)\n"
             f"[bold]Neo4j URI:[/bold] {config.neo4j.uri}\n"
             f"[bold]Database:[/bold] {config.neo4j.database}\n"
