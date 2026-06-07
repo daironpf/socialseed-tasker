@@ -37,3 +37,4 @@
 | 348 | Neo4j schema warnings on non-existent relationship types | Medium | infrastructure/neo4j_code_graph_repository.py | ✅ RESOLVED |
 | 349 | CLI --help output lacks detailed examples | Low | cli/commands/ | ✅ RESOLVED |
 | 414 | Issue count inconsistency after closing issues | Low | cli/status_commands.py, api/project.py | ✅ RESOLVED |
+| 415 | --page-size option not shown in --help | Low | cli/issue_commands.py | ✅ RESOLVED |
