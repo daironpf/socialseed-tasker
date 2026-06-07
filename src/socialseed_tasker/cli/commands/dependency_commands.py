@@ -28,6 +28,7 @@ from rich.tree import Tree
 
 from socialseed_tasker.application.actions import (
     CircularDependencyError,
+    DuplicateDependencyError,
     IssueNotFoundError,
     RemoteServiceError,
     add_dependency_action,
@@ -123,6 +124,9 @@ def dependency_add(
         if hasattr(exc, "cycle_path") and exc.cycle_path:
             console.print(f"[error]Cycle path: {' -> '.join(exc.cycle_path)}[/error]")
         raise typer.Exit(code=2) from exc
+    except DuplicateDependencyError as exc:
+        console.print(f"[warning]{exc}[/warning]")
+        raise typer.Exit(code=0) from exc
     except RemoteServiceError as exc:
         console.print(f"[error]Service error:[/error] {exc}")
         raise typer.Exit(code=1) from exc

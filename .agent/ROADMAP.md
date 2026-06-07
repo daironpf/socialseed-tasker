@@ -77,3 +77,4 @@
 | 363 | Connection error exposes internal IP resolution details | Low | infrastructure/neo4j_driver.py | ✅ RESOLVED |
 | 364 | Code-graph scan path error lacks actionable suggestions | Low | infrastructure/code_parser.py | ✅ RESOLVED |
 | 365 | Duplicate issue detection is ambiguous | Low | cli/commands/issue_commands.py | ✅ RESOLVED |
+| 413 | Duplicate dependency accepted silently | Low | cli/commands/dependency_commands.py | ✅ RESOLVED |

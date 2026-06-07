@@ -1,5 +1,16 @@
 # Project Versions
 
+## [1.0.5] - 2026-06-07
+
+### v1.0.5 Checklist
+- [x] **#413 Duplicate dependency accepted silently:** Added `DuplicateDependencyError` exception and pre-creation check in `add_dependency_action()`. CLI now shows "Dependency already exists" warning; API returns 409 Conflict. Unit test added.
+
+### Release History
+| Version | Date | Description |
+|---------|------|-------------|
+| 1.0.5   | 2026-06-07 | Duplicate dependency detection |
+| 1.0.4   | 2026-05-25 | Bugfixes & documentation improvements |
+
 ## [1.0.4] - 2026-05-25
 
 ### v1.0.4 Checklist

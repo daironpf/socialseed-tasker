@@ -84,6 +84,13 @@ class OpenDependenciesError(Exception):
         super().__init__(f"Cannot close issue '{issue_id}' because it still has open dependencies: {open_deps}")
 
 
+class DuplicateDependencyError(Exception):
+    """Raised when adding a dependency that already exists."""
+
+    def __init__(self, issue_id: str, depends_on_id: str) -> None:
+        super().__init__(f"Dependency already exists: {issue_id} -> {depends_on_id}")
+
+
 # ---------------------------------------------------------------------------
 # API / remote-service exceptions
 # ---------------------------------------------------------------------------
@@ -606,6 +613,10 @@ def add_dependency_action(
         cycle_path = _would_create_cycle(repository, issue_id, depends_on_id)
         if cycle_path:
             raise CircularDependencyError(issue_id, depends_on_id, cycle_path)
+
+        existing_deps = repository.get_dependencies(issue_id)
+        if any(str(dep.id) == depends_on_id for dep in existing_deps):
+            raise DuplicateDependencyError(issue_id, depends_on_id)
 
         repository.add_dependency(issue_id, depends_on_id)
 

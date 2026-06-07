@@ -20,6 +20,7 @@ from socialseed_tasker.application.analyzer import (
 from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
+    DuplicateDependencyError,
     IssueAlreadyClosedError,
     IssueNotFoundError,
     OpenDependenciesError,
@@ -32,7 +33,6 @@ from socialseed_tasker.application.actions import (
     get_dependency_chain_action,
     get_workable_issues_action,
     remove_dependency_action,
-    reset_data_action,
 )
 from socialseed_tasker.domain.entities import (
     Agent,
@@ -132,7 +132,7 @@ dependencies_router = APIRouter()
     description=("Create a [:DEPENDS_ON] relationship. Fails if adding it would create a circular dependency."),
     responses={
         404: {"description": "Issue not found"},
-        409: {"description": "Circular dependency detected"},
+        409: {"description": "Circular dependency or duplicate dependency detected"},
     },
 )
 def add_dependency(
@@ -176,7 +176,11 @@ def add_dependency(
                         suggestion=violation.suggestion,
                     )
 
-    add_dependency_action(repo, issue_id, body.depends_on_id)
+    try:
+        add_dependency_action(repo, issue_id, body.depends_on_id)
+    except DuplicateDependencyError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+
     return APIResponse(
         data=DependencyResponse(issue_id=issue_id, depends_on_id=body.depends_on_id),
         meta=Meta(request_id=None),

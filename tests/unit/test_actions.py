@@ -8,6 +8,7 @@ import pytest
 from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
+    DuplicateDependencyError,
     IssueAlreadyClosedError,
     IssueNotFoundError,
     OpenDependenciesError,
@@ -337,6 +338,15 @@ class TestAddDependencyAction:
         # c -> a would create: a -> b -> c -> a (cycle)
         with pytest.raises(CircularDependencyError):
             add_dependency_action(repo, str(c.id), str(a.id))
+
+    def test_raises_on_duplicate_dependency(self, repo: FakeRepository, component: Component):
+        a, _ = create_issue_action(repo, title="A", component_id=str(component.id))
+        b, _ = create_issue_action(repo, title="B", component_id=str(component.id))
+
+        add_dependency_action(repo, str(a.id), str(b.id))
+
+        with pytest.raises(DuplicateDependencyError):
+            add_dependency_action(repo, str(a.id), str(b.id))
 
 
 class TestRemoveDependencyAction:
