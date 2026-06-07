@@ -1,5 +1,10 @@
 # Project Versions
 
+## [1.0.3] - 2026-06-07
+
+### v1.0.3 Checklist
+- [x] **#414 Issue count inconsistency:** Fixed `tasker status` and `GET /projects/{name}/summary` to compute total issues from `sum(by_status.values())` instead of `len(all_issues)`, ensuring total always matches per-status breakdown.
+
 ## [1.0.2] - 2026-05-28
 
 ### v1.0.2 Checklist
@@ -37,6 +42,7 @@
 ### Release History
 | Version | Date | Description |
 |---------|------|-------------|
+| 1.0.3   | 2026-06-07 | Bugfix: Status count inconsistency (#414) |
 | 1.0.2   | 2026-05-29 | Bugfix: Emoji/traceback cleanup, --depends-on flag, non-TTY init, Docker local source, base image 3.12, Neo4j warnings, CLI help examples |
 | 1.0.1   | 2026-05-25 | Bugfix: Schema init CypherSyntaxError & logger NameError |
 | 1.0.0   | 2026-05-24 | Full Release — All issues resolved |

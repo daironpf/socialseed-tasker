@@ -1,6 +1,6 @@
 # Project Roadmap
 
-**Last updated**: 2026-05-29
+**Last updated**: 2026-06-07
 
 ## Phase 1: Foundations
 - [x] Environment Setup
@@ -36,3 +36,4 @@
 | 347 | Docker API SyntaxError in f-string nested quotes | Critical | .agent/tasker/Dockerfile | ✅ RESOLVED |
 | 348 | Neo4j schema warnings on non-existent relationship types | Medium | infrastructure/neo4j_code_graph_repository.py | ✅ RESOLVED |
 | 349 | CLI --help output lacks detailed examples | Low | cli/commands/ | ✅ RESOLVED |
+| 414 | Issue count inconsistency after closing issues | Low | cli/status_commands.py, api/project.py | ✅ RESOLVED |

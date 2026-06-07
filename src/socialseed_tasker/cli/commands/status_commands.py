@@ -53,8 +53,18 @@ def status_command(
         all_issues = []
         components = []
 
-    total_issues = len(all_issues)
     total_components = len(components)
+
+    by_status: dict[str, int] = {}
+    by_priority: dict[str, int] = {}
+
+    for issue in all_issues:
+        status = issue.status.value
+        priority = issue.priority.value
+        by_status[status] = by_status.get(status, 0) + 1
+        by_priority[priority] = by_priority.get(priority, 0) + 1
+
+    total_issues = sum(by_status.values())
     total_deps = sum(len(i.dependencies) for i in all_issues if i.dependencies)
 
     if short:
@@ -69,15 +79,6 @@ def status_command(
         return
 
     conn_status_display = f"[green]{conn_status}[/green]"
-
-    by_status: dict[str, int] = {}
-    by_priority: dict[str, int] = {}
-
-    for issue in all_issues:
-        status = issue.status.value
-        priority = issue.priority.value
-        by_status[status] = by_status.get(status, 0) + 1
-        by_priority[priority] = by_priority.get(priority, 0) + 1
 
     from socialseed_tasker.application.actions import get_blocked_issues_action, get_workable_issues_action
 

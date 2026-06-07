@@ -446,7 +446,6 @@ def get_project_summary(
     components = repo.list_components(project=project_name)
     all_issues = repo.list_issues(project=project_name)
 
-    total_issues = len(all_issues)
     by_status: dict[str, int] = {}
     by_priority: dict[str, int] = {}
 
@@ -455,6 +454,8 @@ def get_project_summary(
         priority = issue.priority.value
         by_status[status] = by_status.get(status, 0) + 1
         by_priority[priority] = by_priority.get(priority, 0) + 1
+
+    total_issues = sum(by_status.values())
 
     blocked_issues = get_blocked_issues_action(repo)
     blocked_filtered = [i for i in blocked_issues if any(str(i.component_id) == str(c.id) for c in components)]
