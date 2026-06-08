@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 @dataclass
 class EventDTO:
@@ -19,7 +19,7 @@ class EventDTO:
             type=d["type"],
             source=d.get("source", ""),
             payload=d.get("payload", {}),
-            created_at=d.get("created_at", datetime.utcnow().isoformat() + "Z"),
+            created_at=d.get("created_at", datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")),
         )
 
     def to_json(self) -> str:
