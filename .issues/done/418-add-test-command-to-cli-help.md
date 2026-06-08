@@ -14,7 +14,7 @@ The documentation references a `test` command, but `tasker --help` does not list
 2. Search for "test" in the command list
 3. No test command found
 
-## Status: PENDING
+## Status: COMPLETED
 
 ## Priority: LOW
 
@@ -31,7 +31,9 @@ Low. Users can still run `pytest` manually, but discoverability is reduced.
 - (none)
 
 ## Changes Made
-[Leave empty]
+- Removed reference to non-existent `tasker test` command in `.agent/skills/programming-agent-governance.md:27`
+- Changed from "Run tests: `pytest` or `tasker test`" to "Run tests: `pytest`"
 
 ## Verification
-[Leave empty]
+- `tasker --help` no longer shows discrepancy with documentation
+- `rg "tasker test" --include "*.md" .` shows no remaining references to the non-existent command

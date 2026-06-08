@@ -24,7 +24,7 @@ This skill is automatically activated when:
 **When implementing:**
 1. Create a branch or working context
 2. Implement the solution following hexagonal architecture
-3. Run tests: `pytest` or `tasker test`
+3. Run tests: `pytest`
 4. Verify no policy violations: `GET /api/v1/policies/validate`
 
 **After implementation (REQUIRED):**
