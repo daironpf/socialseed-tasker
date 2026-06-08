@@ -842,7 +842,7 @@ def mirror_impact(
 
 @issues_router.post(
     "/issues/{issue_id}/reasoning",
-    response_model=APIResponse[IssueResponse],
+    response_model=APIResponse[dict],
     summary="Add reasoning log entry",
     description=(
         "Add a reasoning log entry to an issue. "
@@ -857,7 +857,7 @@ def add_reasoning_log(
     body: ReasoningLogEntryRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
     neo4j_driver: Any = Depends(get_code_graph_driver),
-) -> APIResponse[IssueResponse]:
+) -> APIResponse[dict]:
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
@@ -881,16 +881,17 @@ def add_reasoning_log(
 
     if not reasoning_id:
         # Fallback: store as embedded JSON if standalone node creation failed
-        updated_issue = repo.add_reasoning_log(
+        repo.add_reasoning_log(
             issue_id=issue_id,
             context=body.context,
             reasoning=body.reasoning,
             related_nodes=body.related_nodes,
         )
-    else:
-        updated_issue = repo.get_issue(issue_id)
 
-    return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
+    return APIResponse(
+        data={"reasoning_id": reasoning_id, "status": "logged", "message": "Reasoning logged"},
+        meta=Meta(request_id=None),
+    )
 
 
 @issues_router.get(
