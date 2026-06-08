@@ -83,7 +83,6 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     ManifestResponse,
     ManifestTodoRequest,
     Meta,
-    PaginatedResponse,
     PaginationMeta,
     PolicyCreateRequest,
     PolicyResponse,
@@ -111,7 +110,6 @@ from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     resolve_component_identifier_to_uuid as resolve_component_id,
     convert_domain_issue_to_api_response as _issue_to_response,
     convert_domain_component_to_api_response as _component_to_response,
-    construct_paginated_api_response as _paginated,
 )
 
 logger = logging.getLogger(__name__)
@@ -171,7 +169,7 @@ def create_component(
 
 @components_router.get(
     "/components",
-    response_model=APIResponse[PaginatedResponse[ComponentResponse]],
+    response_model=APIResponse[list[ComponentResponse]],
     summary="List components",
     description="List all components, optionally filtered by project or name. Supports pagination.",
 )
@@ -194,8 +192,17 @@ def list_components(
     page_items = components[start:end]
 
     return APIResponse(
-        data=_paginated([_component_to_response(c) for c in page_items], page, limit, total),
-        meta=Meta(request_id=None),
+        data=[_component_to_response(c) for c in page_items],
+        meta=Meta(
+            request_id=None,
+            pagination=PaginationMeta(
+                page=page,
+                limit=limit,
+                total=total,
+                has_next=(page * limit) < total,
+                has_prev=page > 1,
+            ),
+        ),
     )
 
 

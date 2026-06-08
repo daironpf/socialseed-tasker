@@ -90,7 +90,6 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     ManifestResponse,
     ManifestTodoRequest,
     Meta,
-    PaginatedResponse,
     PaginationMeta,
     PolicyCreateRequest,
     PolicyResponse,
@@ -118,7 +117,6 @@ from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     resolve_component_identifier_to_uuid as resolve_component_id,
     convert_domain_issue_to_api_response as _issue_to_response,
     convert_domain_component_to_api_response as _component_to_response,
-    construct_paginated_api_response as _paginated,
 )
 
 logger = logging.getLogger(__name__)
@@ -323,7 +321,7 @@ def create_issues_batch(
 
 @issues_router.get(
     "/issues",
-    response_model=APIResponse[PaginatedResponse[IssueResponse]],
+    response_model=APIResponse[list[IssueResponse]],
     summary="List issues",
     description=(
         "List issues with optional filters for status, component, and labels. "
@@ -341,49 +339,6 @@ def list_issues(
     limit: int = Query(50, ge=1, le=100, description="Items per page (default: 50, max: 100)"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
-    """List issues with optional filters and pagination.
-
-    Retrieves a paginated list of issues. Supports filtering by status,
-    component, title, and project. Results are sorted by creation date (newest first).
-
-    Args:
-        status: Comma-separated list of statuses to filter (e.g., "todo,in_progress")
-        component: UUID of the component to filter by
-        component_id: Alias for component
-        project: Project name to filter by
-        title: Exact issue title to filter by
-        page: Page number starting at 1
-        limit: Number of items per page (max 100)
-        repo: Repository dependency for data access.
-
-    Returns:
-        APIResponse with PaginatedResponse containing IssueResponse items.
-
-    Example:
-        ```bash
-        # Get first page of open issues
-        curl "/api/v1/issues?status=todo,in_progress&page=1&limit=50"
-
-        # Filter by project
-        curl "/api/v1/issues?project=socialseed-tasker"
-        ```
-
-        Response:
-        ```json
-        {
-          "data": {
-            "items": [...],
-            "pagination": {
-              "page": 1,
-              "limit": 20,
-              "total": 150,
-              "has_next": true,
-              "has_prev": false
-            }
-          }
-        }
-        ```
-    """
     comp = component or component_id
     status_list = [s.strip() for s in status.split(",") if s.strip()] if status else []
     all_issues = repo.list_issues(component_id=comp, statuses=status_list, project=project)
@@ -395,8 +350,17 @@ def list_issues(
     page_items = all_issues[start:end]
 
     return APIResponse(
-        data=_paginated([_issue_to_response(i) for i in page_items], page, limit, total),
-        meta=Meta(request_id=None),
+        data=[_issue_to_response(i) for i in page_items],
+        meta=Meta(
+            request_id=None,
+            pagination=PaginationMeta(
+                page=page,
+                limit=limit,
+                total=total,
+                has_next=(page * limit) < total,
+                has_prev=page > 1,
+            ),
+        ),
     )
 
 

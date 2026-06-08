@@ -83,7 +83,6 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     ManifestResponse,
     ManifestTodoRequest,
     Meta,
-    PaginatedResponse,
     PaginationMeta,
     PolicyCreateRequest,
     PolicyResponse,
@@ -111,7 +110,6 @@ from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     resolve_component_identifier_to_uuid as resolve_component_id,
     convert_domain_issue_to_api_response as _issue_to_response,
     convert_domain_component_to_api_response as _component_to_response,
-    construct_paginated_api_response as _paginated,
 )
 from socialseed_tasker.infrastructure.web_api.routers.policy import _policy_engine
 
@@ -259,7 +257,7 @@ def remove_dependency(
 
 @dependencies_router.get(
     "/issues/{issue_id}/dependencies",
-    response_model=APIResponse[PaginatedResponse[IssueResponse]],
+    response_model=APIResponse[list[IssueResponse]],
     summary="List dependencies",
     description="List all issues that this issue depends on.",
 )
@@ -278,8 +276,17 @@ def list_dependencies(
     end = start + limit
     page_items = deps[start:end]
     return APIResponse(
-        data=_paginated([_issue_to_response(d) for d in page_items], page, limit, total),
-        meta=Meta(request_id=None),
+        data=[_issue_to_response(d) for d in page_items],
+        meta=Meta(
+            request_id=None,
+            pagination=PaginationMeta(
+                page=page,
+                limit=limit,
+                total=total,
+                has_next=(page * limit) < total,
+                has_prev=page > 1,
+            ),
+        ),
     )
 
 

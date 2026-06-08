@@ -210,10 +210,12 @@ class TestPaginationEdgeCases:
 
         resp = client_full.get("/api/v1/issues?page=100&limit=10")
         assert resp.status_code == 200
-        data = resp.json()["data"]
-        assert len(data["items"]) == 0
-        assert data["pagination"]["has_next"] is False
-        assert data["pagination"]["has_prev"] is True
+        body = resp.json()
+        data = body["data"]
+        pagination = body["meta"]["pagination"]
+        assert len(data) == 0
+        assert pagination["has_next"] is False
+        assert pagination["has_prev"] is True
 
     def test_issues_pagination_zero_limit(self, client_full, repo_full):
         """Test pagination with zero limit."""
@@ -243,9 +245,10 @@ class TestPaginationEdgeCases:
 
         resp = client_full.get("/api/v1/issues?page=1&limit=10")
         assert resp.status_code == 200
-        data = resp.json()["data"]
-        assert data["pagination"]["has_next"] is False
-        assert data["pagination"]["has_prev"] is False
+        body = resp.json()
+        pagination = body["meta"]["pagination"]
+        assert pagination["has_next"] is False
+        assert pagination["has_prev"] is False
 
 
 class TestComponentFilters:
@@ -261,7 +264,7 @@ class TestComponentFilters:
         resp = client_full.get("/api/v1/components?project=nonexistent-project")
         assert resp.status_code == 200
         data = resp.json()["data"]
-        assert len(data["items"]) == 0
+        assert len(data) == 0
 
     def test_components_filter_by_name_exact_match(self, client_full, repo_full):
         """Test filtering components by exact name."""
@@ -273,8 +276,8 @@ class TestComponentFilters:
         resp = client_full.get("/api/v1/components?name=MyComponent")
         assert resp.status_code == 200
         data = resp.json()["data"]
-        assert len(data["items"]) == 1
-        assert data["items"][0]["name"] == "MyComponent"
+        assert len(data) == 1
+        assert data[0]["name"] == "MyComponent"
 
     def test_components_filter_by_name_not_found(self, client_full, repo_full):
         """Test filtering by name that doesn't exist."""
@@ -286,7 +289,7 @@ class TestComponentFilters:
         resp = client_full.get("/api/v1/components?name=Nonexistent")
         assert resp.status_code == 200
         data = resp.json()["data"]
-        assert len(data["items"]) == 0
+        assert len(data) == 0
 
 
 class TestAnalysisCoverage:

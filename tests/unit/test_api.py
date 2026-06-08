@@ -312,7 +312,7 @@ class TestComponents:
         client.post("/api/v1/components", json={"name": "A", "project": "proj1"})
         client.post("/api/v1/components", json={"name": "B", "project": "proj2"})
         resp = client.get("/api/v1/components", params={"project": "proj1"})
-        assert len(resp.json()["data"]["items"]) == 1
+        assert len(resp.json()["data"]) == 1
 
     def test_get_component(self, client, component_id):
         resp = client.get(f"/api/v1/components/{component_id}")
@@ -364,7 +364,7 @@ class TestIssues:
         )
         resp = client.get("/api/v1/issues")
         assert resp.status_code == 200
-        assert len(resp.json()["data"]["items"]) == 2
+        assert len(resp.json()["data"]) == 2
 
     def test_list_issues_pagination(self, client, component_id):
         for i in range(5):
@@ -373,10 +373,12 @@ class TestIssues:
                 json={"title": f"Issue {i}", "component_id": component_id},
             )
         resp = client.get("/api/v1/issues", params={"page": 1, "limit": 2})
-        data = resp.json()["data"]
-        assert len(data["items"]) == 2
-        assert data["pagination"]["total"] == 5
-        assert data["pagination"]["has_next"] is True
+        body = resp.json()
+        data = body["data"]
+        pagination = body["meta"]["pagination"]
+        assert len(data) == 2
+        assert pagination["total"] == 5
+        assert pagination["has_next"] is True
 
     def test_list_issues_filter_by_status(self, client, component_id):
         client.post(
@@ -391,7 +393,7 @@ class TestIssues:
         client.post(f"/api/v1/issues/{issue_id}/close")
 
         resp = client.get("/api/v1/issues", params={"status": "OPEN"})
-        assert len(resp.json()["data"]["items"]) == 1
+        assert len(resp.json()["data"]) == 1
 
     def test_get_issue(self, client, issue_id):
         resp = client.get(f"/api/v1/issues/{issue_id}")
@@ -533,7 +535,7 @@ class TestDependencies:
         client.post(f"/api/v1/issues/{a_id}/dependencies", json={"depends_on_id": b_id})
         resp = client.get(f"/api/v1/issues/{a_id}/dependencies")
         assert resp.status_code == 200
-        assert len(resp.json()["data"]["items"]) == 1
+        assert len(resp.json()["data"]) == 1
 
     def test_list_dependents(self, client, component_id):
         resp_a = client.post(
@@ -932,8 +934,8 @@ class TestFiltersAndSorting:
 
         resp = client.get(f"/api/v1/issues?component={component_id}")
         assert resp.status_code == 200
-        items = resp.json()["data"]["items"]
-        assert len(items) >= 1
+        data = resp.json()["data"]
+        assert len(data) >= 1
 
     def test_list_components_all_flag(self, client):
         client.post("/api/v1/components", json={"name": "A", "project": "p1"})
@@ -1081,4 +1083,4 @@ class TestProjectFiltering:
         assert resp.status_code == 200
         data = resp.json()
         assert "data" in data
-        assert "items" in data["data"]
+        assert "pagination" in data["meta"]

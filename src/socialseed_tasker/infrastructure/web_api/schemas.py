@@ -49,6 +49,10 @@ class Meta(BaseModel):
         default=None,
         description="Non-critical warnings for the client",
     )
+    pagination: 'PaginationMeta | None' = Field(
+        default=None,
+        description="Pagination metadata for list endpoints (present only when results are paginated)",
+    )
 
 
 class APIResponse(BaseModel, Generic[T]):
