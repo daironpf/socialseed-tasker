@@ -80,7 +80,7 @@ class ApiHttpClient:
                 )
                 remaining = resp.headers.get("X-RateLimit-Remaining")
                 if remaining is not None and int(remaining) <= 5:
-                    logger.warning("Rate limit approaching: %s requests remaining", remaining)
+                    logger.info("Rate limit approaching: %s requests remaining", remaining)
                 return self._handle_response(resp)
             except RemoteServiceError as exc:
                 error_msg = str(exc)
@@ -91,7 +91,7 @@ class ApiHttpClient:
                 match = re.search(r"Retry after (\d+)s", error_msg)
                 if match:
                     retry_after = int(match.group(1))
-                logger.warning("Rate limited (attempt %d/%d). Retrying in %ds...", attempt + 1, self.max_retries, retry_after)
+                logger.info("Rate limited (attempt %d/%d). Retrying in %ds...", attempt + 1, self.max_retries, retry_after)
                 time.sleep(retry_after)
             except httpx.RequestError as exc:
                 logger.debug("Request failed: %s", exc)

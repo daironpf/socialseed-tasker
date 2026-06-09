@@ -6,6 +6,7 @@ registers command groups, and sets up error handling.
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
 from typing import TYPE_CHECKING
@@ -28,6 +29,30 @@ from socialseed_tasker.application.actions import RemoteServiceError
 from socialseed_tasker.application.container import Container
 from socialseed_tasker.application.exceptions import GraphPortError
 from socialseed_tasker.cli import commands
+
+
+def configure_cli_logging(verbose: bool) -> None:
+    """Configure logging for CLI display (plain text, not JSON).
+
+    Removes any existing JSON handlers and sets up user-friendly
+    text-formatted output to stderr.  When *verbose* is ``True`` the
+    level is lowered to DEBUG and each log line includes the logger
+    name; otherwise only INFO+ messages are printed in a compact
+    ``[LEVEL] message`` format.
+    """
+    root = logging.getLogger()
+    for handler in list(root.handlers):
+        root.removeHandler(handler)
+    level = logging.DEBUG if verbose else logging.INFO
+    root.setLevel(level)
+    handler = logging.StreamHandler(stream=sys.stderr)
+    if verbose:
+        handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+    else:
+        handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
+    root.addHandler(handler)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 def version_callback(value: bool) -> None:
@@ -261,6 +286,11 @@ def main(
         help="Path to tasker config file (default: .agent/configs/tasker.yml discovered from CWD upward)",
         envvar="TASKER_CONFIG_PATH",
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        help="Show detailed logs (DEBUG level) with logger names",
+    ),
 ) -> None:
     """SocialSeed Tasker CLI.
 
@@ -299,6 +329,8 @@ def main(
         os.environ["TASKER_NEO4J_PASSWORD"] = neo4j_password
     if config_path:
         os.environ["TASKER_CONFIG_PATH"] = config_path
+    if verbose:
+        os.environ["TASKER_VERBOSE"] = "1"
     _cli_container = None
 
 
@@ -333,6 +365,7 @@ def handle_error(error: Exception, exit_code: int = 1) -> None:
 
 def main_entry() -> None:
     """Entry point for the CLI script."""
+    configure_cli_logging(verbose=os.environ.get("TASKER_VERBOSE") == "1")
     try:
         exit_code = app(standalone_mode=False)
         if exit_code:
