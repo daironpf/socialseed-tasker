@@ -886,6 +886,7 @@ class TestErrorHandling:
         captured = capsys.readouterr()
         assert "Traceback" not in captured.out
         assert "Database connection failed" in captured.out
+        assert "docker compose up -d" in captured.out
 
     def test_handle_error_remote_db_failure(self, capsys):
         with pytest.raises(SystemExit) as exc_info:
@@ -894,6 +895,7 @@ class TestErrorHandling:
         captured = capsys.readouterr()
         assert "Traceback" not in captured.out
         assert "Check that Neo4j is running" in captured.out
+        assert "docker compose up -d" in captured.out
 
     def test_handle_error_graph_port_error(self, capsys):
         with pytest.raises(SystemExit) as exc_info:
@@ -902,6 +904,7 @@ class TestErrorHandling:
         captured = capsys.readouterr()
         assert "Traceback" not in captured.out
         assert "Database connection failed" in captured.out
+        assert "docker compose up -d" in captured.out
 
     def test_handle_error_rate_limited_no_details(self, capsys):
         with pytest.raises(SystemExit) as exc_info:

@@ -334,6 +334,15 @@ def main(
     _cli_container = None
 
 
+DB_CONNECTION_TIP = (
+    "\n[info]Tip:[/info] Start the database with:\n"
+    "  docker compose up -d\n"
+    "\n"
+    "See [underline]https://github.com/daironpf/socialseed-tasker#quick-start[/underline]"
+    " for detailed setup."
+)
+
+
 def handle_error(error: Exception, exit_code: int = 1) -> None:
     """Display a user-friendly error message and exit.
 
@@ -344,16 +353,19 @@ def handle_error(error: Exception, exit_code: int = 1) -> None:
         message = str(error)
         if "Neo4j operation failed" in message:
             console.print(f"[error]Database connection failed:[/error] {message}")
+            console.print(DB_CONNECTION_TIP)
         else:
             console.print(f"[error]Database error:[/error] {message}")
     elif isinstance(error, RuntimeError) and "Cannot connect to Neo4j" in str(error):
         console.print(f"[error]Database connection failed:[/error] {error}")
+        console.print(DB_CONNECTION_TIP)
     elif isinstance(error, RemoteServiceError):
         message = str(error)
         if "429" in message:
             console.print("[error]Rate limited:[/error] Too many requests. Please wait and try again.")
         elif "DATABASE_CONNECTION_ERROR" in message or "Connection error" in message:
             console.print(f"[error]Database connection failed:[/error] Check that Neo4j is running and accessible.")
+            console.print(DB_CONNECTION_TIP)
         elif any(s in message for s in ("500", "502", "503")):
             console.print(f"[error]Service unavailable:[/error] {message}")
         else:
