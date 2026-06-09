@@ -25,7 +25,7 @@ The error message only states the problem without suggesting how to fix it.
 2. Run any CLI command: `tasker issue list`
 3. Observe the error message
 
-## Status: PENDING
+## Status: RESOLVED
 
 ## Priority: LOW
 
@@ -42,7 +42,13 @@ Low. The error is clear but not actionable for new users unfamiliar with the Doc
 - (none)
 
 ## Changes Made
-[Leave empty]
+1. Added `DB_CONNECTION_TIP` constant in `cli/app.py` with Docker compose start command and link to quick-start docs.
+2. Appended `console.print(DB_CONNECTION_TIP)` after each of the three "Database connection failed" paths in `handle_error()`:
+   - `GraphPortError("Neo4j operation failed in ...")`
+   - `RuntimeError("Cannot connect to Neo4j ...")`
+   - `RemoteServiceError("DATABASE_CONNECTION_ERROR" or "Connection error")`
+3. Updated three tests in `tests/unit/test_cli_commands.py` to assert `"docker compose up -d" in captured.out`.
 
 ## Verification
-[Leave empty]
+1. Run `tasker issue list` with Neo4j stopped — output includes `Tip: Start the database with: docker compose up -d`.
+2. Run `pytest tests/unit/test_cli_commands.py::TestErrorHandling -v` — all 4 tests pass.

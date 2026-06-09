@@ -191,3 +191,21 @@ Change the code to use `createdAt` consistently everywhere.
 - [x] Issue Node and Cross-Pillar Alignment (#257)
 - [x] Advanced AI Context & RAG Logic (#258)
 - [x] Integrity and Self-Healing Guards (#259)
+
+---
+
+## Issue #422: Rate Limiting CLI Shows Raw JSON Logs
+
+**Status:** RESOLVED — Added `configure_cli_logging()` with plain-text format and `--verbose` flag; rate-limit logs demoted to `info` level in `api_client.py`.
+
+| # | Issue | Priority | Status |
+|---|---|---|---|
+| #421 | Docker image rebuild required for code changes | MEDIUM | DONE |
+| #422 | Rate limiting CLI shows raw JSON logs | LOW | DONE |
+| #423 | DB down error should suggest recovery steps | LOW | DONE |
+
+---
+
+## Issue #423: DB Down Error Should Suggest Recovery Steps
+
+**Status:** RESOLVED — Added `DB_CONNECTION_TIP` constant and three `console.print(tip)` calls in `handle_error()` to show `docker compose up -d` after every "Database connection failed" message.
