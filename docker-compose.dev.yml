@@ -1,0 +1,22 @@
+# =============================================================================
+# Docker Compose Development Override
+# =============================================================================
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# Mounts source code as a volume and enables uvicorn --reload so that
+# code changes are reflected immediately without rebuilding the image.
+# =============================================================================
+
+services:
+
+  tasker-api:
+    volumes:
+      - ./src:/app/src
+      - ./pyproject.toml:/app/pyproject.toml
+    environment:
+      - TASKER_DEBUG=true
+    command: >
+      sh -c "
+        pip install -e . --no-cache-dir 2>/dev/null &&
+        python -m socialseed_tasker.infrastructure.web_api
+      "

@@ -1,13 +1,14 @@
 # Project Versions
 
-## [1.0.5] - 2026-06-07
+## [1.0.6] - 2026-06-09
 
-### v1.0.5 Checklist
-- [x] **#413 Duplicate dependency accepted silently:** Added `DuplicateDependencyError` exception and pre-creation check in `add_dependency_action()`. CLI now shows "Dependency already exists" warning; API returns 409 Conflict. Unit test added.
+### v1.0.6 Checklist
+- [x] **#421 Docker image rebuild required for code changes:** Created `docker-compose.dev.yml` that mounts source code as a volume and enables uvicorn `--reload` via `TASKER_DEBUG=true`. Added `dev-api` target to `Makefile`. Code changes now reflect immediately without rebuilding the Docker image.
 
 ### Release History
 | Version | Date | Description |
 |---------|------|-------------|
+| 1.0.6   | 2026-06-09 | Dev Docker profile with hot-reload |
 | 1.0.5   | 2026-06-07 | Duplicate dependency detection |
 | 1.0.4   | 2026-05-25 | Bugfixes & documentation improvements |
 

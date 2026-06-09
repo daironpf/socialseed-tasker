@@ -1,4 +1,4 @@
-.PHONY: dev-up dev-down test integration example-run wait-for-neo4j
+.PHONY: dev-up dev-api dev-down test integration example-run wait-for-neo4j
 
 DEV_COMPOSE = docker compose -f compose/dev/dev.yml
 PY = python
@@ -6,6 +6,10 @@ PY = python
 dev-up:
 	$(DEV_COMPOSE) up -d
 	./scripts/wait-for-service.sh http://localhost:7474 60
+
+dev-api:
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+	./scripts/wait-for-service.sh http://localhost:8888 60
 
 dev-down:
 	$(DEV_COMPOSE) down -v

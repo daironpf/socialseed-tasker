@@ -78,3 +78,4 @@
 | 364 | Code-graph scan path error lacks actionable suggestions | Low | infrastructure/code_parser.py | ✅ RESOLVED |
 | 365 | Duplicate issue detection is ambiguous | Low | cli/commands/issue_commands.py | ✅ RESOLVED |
 | 413 | Duplicate dependency accepted silently | Low | cli/commands/dependency_commands.py | ✅ RESOLVED |
+| 421 | Docker image rebuild required for source code changes | Low | Docker | ✅ RESOLVED |
