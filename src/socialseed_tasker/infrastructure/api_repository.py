@@ -91,6 +91,14 @@ class ApiTaskRepository(TaskRepositoryInterface):
     def add_dependency(self, issue_id: str, depends_on_id: str) -> None:
         self.client.request("POST", f"{_API}/issues/{issue_id}/dependencies", json={"depends_on_id": depends_on_id})
 
+    def add_dependencies_bulk(self, issue_id: str, depends_on_ids: list[str]) -> dict[str, Any]:
+        data = self.client.request(
+            "POST",
+            f"{_API}/issues/{issue_id}/dependencies/bulk",
+            json={"depends_on_ids": depends_on_ids},
+        )
+        return data if isinstance(data, dict) else {"successful": 0, "failed": 0, "results": []}
+
     def remove_dependency(self, issue_id: str, depends_on_id: str) -> None:
         self.client.request("DELETE", f"{_API}/issues/{issue_id}/dependencies/{depends_on_id}")
 

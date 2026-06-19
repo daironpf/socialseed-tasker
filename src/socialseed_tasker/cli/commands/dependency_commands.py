@@ -22,6 +22,7 @@ For most users, this is cosmetic and does not affect functionality.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import typer
 from rich.tree import Tree
@@ -268,3 +269,110 @@ def dependency_blocked() -> None:
 
     console.print("[warning]Blocked issues:[/warning]")
     console.print(_issues_table(blocked, component_names))
+
+
+ADD_BATCH_EPILOG = (
+    "Examples:\n"
+    "  tasker dependency add-batch <issue_id> --depends-on <id1> --depends-on <id2>\n"
+    "  tasker dependency add-batch <issue_id> --file deps.json\n"
+    "  tasker dependency add-batch <issue_id> --deps <id1>,<id2>,<id3>\n"
+    "\n"
+    "File format (JSON):\n"
+    '  {"depends_on_ids": ["id1", "id2", "id3"]}\n'
+    "\n"
+    "Tips:\n"
+    "  - Batch mode uses the API bulk endpoint to avoid rate limit retries\n"
+    "  - Each dependency is validated independently; failures don't rollback others\n"
+    "  - Use --file to load dependency IDs from a JSON file"
+)
+
+@dependency_app.command("add-batch", epilog=ADD_BATCH_EPILOG)
+def dependency_add_batch(
+    issue_id: str = typer.Argument(..., help="Issue ID that depends on the listed issues"),
+    depends_on: list[str] = typer.Option([], "--depends-on", "-d", help="Issue ID(s) this depends on (repeatable)"),
+    deps: str = typer.Option("", "--deps", help="Comma-separated list of dependency IDs"),
+    file: str = typer.Option("", "--file", "-f", help="JSON file with {\"depends_on_ids\": [...]}"),
+) -> None:
+    """Add multiple DEPENDS_ON relationships in batch (avoids rate-limit retries)."""
+    dep_ids: list[str] = []
+
+    if file:
+        path = Path(file)
+        if not path.exists():
+            console.print(f"[error]File not found: {file}[/error]")
+            raise typer.Exit(code=2)
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            loaded = data.get("depends_on_ids", data if isinstance(data, list) else [])
+            dep_ids.extend(loaded)
+        except (json.JSONDecodeError, KeyError) as e:
+            console.print(f"[error]Invalid JSON file: {e}[/error]")
+            raise typer.Exit(code=2)
+
+    if deps:
+        dep_ids.extend(d.strip() for d in deps.split(",") if d.strip())
+
+    dep_ids.extend(depends_on)
+
+    if not dep_ids:
+        console.print("[error]No dependency IDs provided.[/error]")
+        console.print("[info]Provide them via --depends-on, --deps, or --file.[/info]")
+        raise typer.Exit(code=2)
+
+    repo = get_repository()
+
+    try:
+        resolved_issue_id = resolve_issue_id(issue_id, repo)
+    except ValueError as e:
+        console.print(f"[error]{e}[/error]")
+        raise typer.Exit(code=2) from e
+
+    resolved_str = str(resolved_issue_id)
+
+    resolved_dep_ids: list[str] = []
+    resolution_errors: list[dict] = []
+    for raw_id in dep_ids:
+        try:
+            resolved = resolve_issue_id(raw_id, repo)
+            resolved_dep_ids.append(str(resolved))
+        except ValueError as e:
+            resolution_errors.append({"depends_on_id": raw_id, "error": str(e)})
+
+    if resolution_errors:
+        for err in resolution_errors:
+            console.print(f"[warning]Skipping unresolvable ID '{err['depends_on_id']}': {err['error']}[/warning]")
+
+    if not resolved_dep_ids:
+        console.print("[error]No valid dependency IDs could be resolved.[/error]")
+        raise typer.Exit(code=2)
+
+    bulk_method = getattr(repo, "add_dependencies_bulk", None)
+    if bulk_method:
+        result = bulk_method(resolved_str, resolved_dep_ids)
+        successful = result.get("successful", 0)
+        failed = result.get("failed", 0)
+        for r in result.get("results", []):
+            if r.get("status") == "created":
+                console.print(f"[success]Dependency added:[/success] {resolved_str[:8]} -> {r['depends_on_id'][:8]}")
+            else:
+                console.print(f"[error]Failed:[/error] {resolved_str[:8]} -> {r.get('depends_on_id', '?')[:8]} - {r.get('message', '')}")
+    else:
+        successful = 0
+        failed = 0
+        for dep_id in resolved_dep_ids:
+            try:
+                add_dependency_action(repo, resolved_str, dep_id)
+                console.print(f"[success]Dependency added:[/success] {resolved_str[:8]} -> {dep_id[:8]}")
+                successful += 1
+            except (IssueNotFoundError, CircularDependencyError, DuplicateDependencyError) as exc:
+                console.print(f"[error]Failed:[/error] {resolved_str[:8]} -> {dep_id[:8]} - {exc}")
+                failed += 1
+            except Exception as exc:
+                console.print(f"[error]Failed:[/error] {resolved_str[:8]} -> {dep_id[:8]} - {exc}")
+                failed += 1
+
+    total = len(resolved_dep_ids)
+    if failed:
+        console.print(f"[warning]Batch complete: {successful}/{total} added, {failed} failed.[/warning]")
+    else:
+        console.print(f"[success]All {successful} dependencies added successfully.[/success]")

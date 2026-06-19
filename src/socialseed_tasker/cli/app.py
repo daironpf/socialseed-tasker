@@ -117,10 +117,11 @@ APP_EPILOG = (
     "  tasker issue list --status OPEN --project my-proj\n"
     "  tasker component create \"auth-service\" -p \"my-project\"\n"
     "  tasker dependency add <issue_id> --depends-on <dep_id>\n"
+    "  tasker dependency add-batch <issue_id> --depends-on <id1> --depends-on <id2>\n"
     "  tasker dependency chain <issue_id>\n"
     "  tasker issue close <issue_id>\n"
     "\n"
-    "Rate Limits: API allows ~20 burst requests, then ~2/sec. Add a 1s delay between bulk creates to avoid 429 errors.\n"
+    "New in v1.1.0: Use 'tasker dependency add-batch' for bulk operations without rate-limit retries.\n"
     "\n"
     "Run 'tasker <command> --help' for detailed usage of each command."
 )

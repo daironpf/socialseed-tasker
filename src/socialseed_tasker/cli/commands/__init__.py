@@ -54,6 +54,7 @@ from socialseed_tasker.cli.commands.issue_commands import (
 
 from socialseed_tasker.cli.commands.dependency_commands import (
     dependency_add,
+    dependency_add_batch,
     dependency_blocked,
     dependency_chain,
     dependency_list,
@@ -171,6 +172,7 @@ __all__ = [
     "constraints_set",
     "constraints_validate",
     "dependency_add",
+    "dependency_add_batch",
     "dependency_app",
     "dependency_blocked",
     "doc_sync_command",

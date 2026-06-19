@@ -8,7 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 USER_PER_MIN = int(os.getenv("TASKER_RATE_USER_PER_MIN", "120"))
 IP_PER_MIN = int(os.getenv("TASKER_RATE_IP_PER_MIN", "60"))
-BURST = int(os.getenv("TASKER_RATE_BURST", "20"))
+BURST = int(os.getenv("TASKER_RATE_BURST", "60"))
 
 
 def _compute_retry_after(limiter, key: str) -> int:

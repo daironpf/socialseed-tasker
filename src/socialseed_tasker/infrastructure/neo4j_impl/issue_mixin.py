@@ -194,6 +194,20 @@ class IssueRepositoryMixin:
                 depends_on_id=depends_on_id,
             )
 
+    def add_dependencies_bulk(self, issue_id: str, depends_on_ids: list[str]) -> dict:
+        successful = 0
+        failed = 0
+        results = []
+        for dep_id in depends_on_ids:
+            try:
+                self.add_dependency(issue_id, dep_id)
+                successful += 1
+                results.append({"depends_on_id": dep_id, "status": "created"})
+            except Exception as e:
+                failed += 1
+                results.append({"depends_on_id": dep_id, "status": "error", "message": str(e)})
+        return {"successful": successful, "failed": failed, "results": results}
+
     def remove_dependency(self, issue_id: str, depends_on_id: str) -> None:
         with self._driver.driver.session(database=self._driver.database) as session:
             session.run(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import random
 import time
 from typing import Any
 from urllib.parse import urljoin
@@ -86,12 +87,12 @@ class ApiHttpClient:
                 error_msg = str(exc)
                 if "429" not in error_msg or attempt >= self.max_retries:
                     raise
-                retry_after = 1
                 import re
                 match = re.search(r"Retry after (\d+)s", error_msg)
-                if match:
-                    retry_after = int(match.group(1))
-                logger.info("Rate limited (attempt %d/%d). Retrying in %ds...", attempt + 1, self.max_retries, retry_after)
+                base_delay = int(match.group(1)) if match else 1
+                jitter = random.uniform(0, 0.5)
+                retry_after = min(base_delay * (2 ** attempt) + jitter, 30)
+                logger.info("Rate limited (attempt %d/%d). Retrying in %.1fs...", attempt + 1, self.max_retries, retry_after)
                 time.sleep(retry_after)
             except httpx.RequestError as exc:
                 logger.debug("Request failed: %s", exc)

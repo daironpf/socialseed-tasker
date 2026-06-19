@@ -101,11 +101,11 @@ def build_default_container() -> Container:
     redis_url = os.getenv("TASKER_REDIS_URL")
     if redis_url and _REDIS_RATE_AVAILABLE:
         try:
-            rate_limiter = RedisRateLimiter(redis_url, rate_per_min=int(os.getenv("TASKER_RATE_USER_PER_MIN", "120")), burst=int(os.getenv("TASKER_RATE_BURST", "20")))
+            rate_limiter = RedisRateLimiter(redis_url, rate_per_min=int(os.getenv("TASKER_RATE_USER_PER_MIN", "120")), burst=int(os.getenv("TASKER_RATE_BURST", "60")))
         except Exception:
-            rate_limiter = MemoryRateLimiter(rate_per_min=int(os.getenv("TASKER_RATE_USER_PER_MIN", "120")), burst=int(os.getenv("TASKER_RATE_BURST", "20")))
+            rate_limiter = MemoryRateLimiter(rate_per_min=int(os.getenv("TASKER_RATE_USER_PER_MIN", "120")), burst=int(os.getenv("TASKER_RATE_BURST", "60")))
     else:
-        rate_limiter = MemoryRateLimiter(rate_per_min=int(os.getenv("TASKER_RATE_USER_PER_MIN", "120")), burst=int(os.getenv("TASKER_RATE_BURST", "20")))
+        rate_limiter = MemoryRateLimiter(rate_per_min=int(os.getenv("TASKER_RATE_USER_PER_MIN", "120")), burst=int(os.getenv("TASKER_RATE_BURST", "60")))
     if os.getenv("TASKER_INTEGRATION") == "1":
         delivery_worker.start()
     if os.getenv("TASKER_METRICS_ENABLED") == "1":
