@@ -3,7 +3,7 @@
 import pytest
 from pathlib import Path
 
-from socialseed_tasker.core.code_analysis.entities import (
+from socialseed_tasker.domain.code_analysis_entities import (
     CodeFile,
     CodeImport,
     CodeRelationship,
@@ -163,14 +163,14 @@ class TestParserBasics:
 
     def test_parser_initialization(self):
         """Test parser can be initialized."""
-        from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+        from socialseed_tasker.infrastructure.code_parser import CodeGraphParser
 
         parser = CodeGraphParser()
         assert parser is not None
 
     def test_language_detection(self):
         """Test language detection from file extension."""
-        from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+        from socialseed_tasker.infrastructure.code_parser import CodeGraphParser
 
         parser = CodeGraphParser()
 
@@ -186,7 +186,7 @@ class TestParserBasics:
 
     def test_source_file_iteration(self):
         """Test source file iteration."""
-        from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+        from socialseed_tasker.infrastructure.code_parser import CodeGraphParser
 
         parser = CodeGraphParser()
 
@@ -230,7 +230,7 @@ class TestPythonParsing:
 
     def test_parse_simple_class(self):
         """Test parsing a simple Python class."""
-        from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+        from socialseed_tasker.infrastructure.code_parser import CodeGraphParser
 
         parser = CodeGraphParser()
         content = '''
@@ -253,7 +253,7 @@ class MyClass:
 
     def test_parse_class_with_methods(self):
         """Test parsing class with methods."""
-        from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+        from socialseed_tasker.infrastructure.code_parser import CodeGraphParser
 
         parser = CodeGraphParser()
         content = '''
@@ -280,7 +280,7 @@ class Calculator:
 
     def test_parse_functions(self):
         """Test parsing standalone functions."""
-        from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+        from socialseed_tasker.infrastructure.code_parser import CodeGraphParser
 
         parser = CodeGraphParser()
         content = '''
@@ -305,7 +305,7 @@ def process_data(items: list[str]) -> dict:
 
     def test_parse_imports(self):
         """Test parsing import statements."""
-        from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+        from socialseed_tasker.infrastructure.code_parser import CodeGraphParser
 
         parser = CodeGraphParser()
         content = '''
@@ -327,7 +327,7 @@ from typing import List, Dict
 
     def test_parse_call_relationships(self):
         """Test parsing function call relationships."""
-        from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+        from socialseed_tasker.infrastructure.code_parser import CodeGraphParser
 
         parser = CodeGraphParser()
         content = '''
@@ -349,7 +349,7 @@ def main():
 
     def test_parse_test_function_detection(self):
         """Test detection of test functions."""
-        from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+        from socialseed_tasker.infrastructure.code_parser import CodeGraphParser
 
         parser = CodeGraphParser()
         content = '''
@@ -383,7 +383,7 @@ class TestRepositoryStorage:
         mock_driver.session.return_value = mock_session
         mock_session.begin_transaction.return_value = mock_tx
 
-        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+        from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
         repo = CodeGraphRepository(mock_driver)
 
@@ -428,7 +428,7 @@ class TestRepositoryStorage:
         mock_driver.driver = mock_inner_driver
         mock_driver.database = "neo4j"
 
-        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+        from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
         repo = CodeGraphRepository(mock_driver)
         stats = repo.get_stats()
@@ -446,10 +446,14 @@ class TestRepositoryStorage:
         mock_inner_driver = MagicMock()
 
         class MockRecord:
+            def __init__(self):
+                self._data = {"s": {"name": "MyClass", "symbol_type": "class", "id": "123"}}
             def __getitem__(self, key):
                 if key == "s":
                     return {"name": "MyClass", "symbol_type": "class", "id": "123"}
                 raise KeyError(key)
+            def get(self, key, default=None):
+                return self._data.get(key, default)
 
         @contextmanager
         def mock_session(database=None):
@@ -464,7 +468,7 @@ class TestRepositoryStorage:
         mock_driver.driver = mock_inner_driver
         mock_driver.database = "neo4j"
 
-        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+        from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
         repo = CodeGraphRepository(mock_driver)
         symbols = repo.find_symbols(name="MyClass")
@@ -477,7 +481,7 @@ class TestSymbolResolution:
 
     def test_symbol_map_creation(self):
         """Test that symbol map is created correctly."""
-        from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+        from socialseed_tasker.infrastructure.code_parser import CodeGraphParser
 
         parser = CodeGraphParser()
 
@@ -492,7 +496,7 @@ class TestSymbolResolution:
 
     def test_external_symbol_tracking(self):
         """Test tracking of unresolved external symbols."""
-        from socialseed_tasker.core.code_analysis.parser import CodeGraphParser
+        from socialseed_tasker.infrastructure.code_parser import CodeGraphParser
 
         parser = CodeGraphParser()
         content = '''
@@ -513,7 +517,7 @@ def call_api():
 
     def test_unresolved_calls_handling(self):
         """Test handling of unresolved function calls."""
-        from socialseed_tasker.core.code_analysis.entities import RelationshipType
+        from socialseed_tasker.domain.code_analysis_entities import RelationshipType
 
         external_symbols = ["requests.get", "json.loads", "external_func"]
         resolved_rels = []
@@ -571,7 +575,7 @@ class TestCodeGraphRepositoryMethods:
         mock_driver.driver = mock_inner_driver
         mock_driver.database = "neo4j"
 
-        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+        from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
         repo = CodeGraphRepository(mock_driver)
         callers = repo.get_callers_by_path("src/target.py")
@@ -610,7 +614,7 @@ class TestCodeGraphRepositoryMethods:
         mock_driver.driver = mock_inner_driver
         mock_driver.database = "neo4j"
 
-        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+        from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
         repo = CodeGraphRepository(mock_driver)
         deps = repo.get_dependencies_by_path("src/main.py")
@@ -648,7 +652,7 @@ class TestCodeGraphRepositoryMethods:
         mock_driver.driver = mock_inner_driver
         mock_driver.database = "neo4j"
 
-        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+        from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
         repo = CodeGraphRepository(mock_driver)
         tests = repo.get_tests_for_file("src/main.py")
@@ -665,7 +669,7 @@ class TestCodeGraphRepositoryMethods:
         mock_driver.driver = mock_inner_driver
         mock_driver.database = "neo4j"
 
-        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+        from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
         repo = CodeGraphRepository(mock_driver)
         repo.clear()
@@ -681,7 +685,7 @@ class TestCodeGraphRepositoryMethods:
         mock_driver.driver = mock_inner_driver
         mock_driver.database = "neo4j"
 
-        from socialseed_tasker.storage.graph_database.code_graph_repository import CodeGraphRepository
+        from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
         repo = CodeGraphRepository(mock_driver)
         repo.create_indexes()

@@ -2,7 +2,7 @@
 
 import pytest
 
-from socialseed_tasker.core.validation import (
+from socialseed_tasker.domain import (
     ComponentNameValidationError,
     IssueDescriptionValidationError,
     IssueTitleValidationError,

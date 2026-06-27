@@ -1,0 +1,11 @@
+version: "3.8"
+services:
+  backup-runner:
+    image: python:3.11-slim
+    working_dir: /workspace
+    command: ["bash", "-lc", "python -m pip install -e . && ./scripts/backup.sh export --out /workspace/exports/backup-$(date -u +%Y%m%dT%H%M%SZ).tar.gz --passphrase ${TASKER_BACKUP_PASSPHRASE:-} || true"]
+    volumes:
+      - ./:/workspace:cached
+    environment:
+      TASKER_BACKUP_PASSPHRASE: "${TASKER_BACKUP_PASSPHRASE:-}"
+    restart: "no"

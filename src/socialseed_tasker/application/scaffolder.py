@@ -1,0 +1,438 @@
+"""Scaffolder service - orchestrates file system operations for project injection.
+
+Intent: Provide a pure-domain service that copies template assets from
+the library into an external project's .agent/ directory.
+Business Value: Enables one-command adoption of Tasker management in
+external projects without manual file management.
+"""
+
+from __future__ import annotations
+
+import shutil
+from collections.abc import Callable
+from pathlib import Path
+
+from socialseed_tasker.domain.system_init_entities import (
+    FileOperation,
+    ScaffoldResult,
+    ScaffoldStatus,
+)
+
+
+class ScaffolderService:
+    """Copies template assets into a target project directory.
+
+    Intent: Abstract file system operations behind a domain service
+    so the scaffolding logic can be tested and extended independently.
+    Business Value: Provides a reliable, repeatable setup process that
+    works across different operating systems and project structures.
+    """
+
+    def __init__(
+        self,
+        template_dir: Path,
+        progress_callback: Callable[[FileOperation], None] | None = None,
+        frontend_dir: Path | None = None,
+    ) -> None:
+        """Initialize the scaffolder.
+
+        Args:
+            template_dir: Root directory containing template assets.
+            progress_callback: Optional callback invoked for each file operation.
+            frontend_dir: Directory containing frontend build assets (for Kanban board).
+        """
+        self._template_dir = template_dir
+        self._progress_callback = progress_callback
+        self._frontend_dir = frontend_dir
+
+    def scaffold(
+        self,
+        target_dir: Path,
+        force: bool = False,
+        output_dir: Path | None = None,
+    ) -> ScaffoldResult:
+        """Copy all template assets into the target directory.
+
+        Creates the .agent/ directory structure and copies skills, workflows,
+        configs, and docker-compose.yml from the bundled templates.
+        Also copies project_readme.md to the project root as README.md,
+        and ROADMAP.md/VERSIONS.md to the project root.
+
+        Args:
+            target_dir: Root of the external project (.agent/ will be created inside).
+            force: If True, overwrite existing files. Otherwise skip them.
+            output_dir: Custom output directory. If None, creates .agent/ inside target_dir.
+
+        Returns:
+            ScaffoldResult with details of all file operations performed.
+        """
+        if output_dir:
+            tasker_dir = output_dir
+        else:
+            tasker_dir = target_dir / ".agent" / "tasker"
+        agent_root_dir = target_dir / ".agent"
+        result = ScaffoldResult(target_dir=tasker_dir)
+
+        if not self._template_dir.exists():
+            result.add_operation(
+                FileOperation(
+                    source=self._template_dir,
+                    destination=tasker_dir,
+                    status=ScaffoldStatus.ERROR,
+                    error_message=f"Template directory not found: {self._template_dir}",
+                )
+            )
+            return result
+
+        tasker_dir.mkdir(parents=True, exist_ok=True)
+
+        for template_path in self._template_dir.rglob("*"):
+            if template_path.is_file():
+                op = self._copy_template_file(template_path, tasker_dir, force)
+                result.add_operation(op)
+                if self._progress_callback:
+                    self._progress_callback(op)
+
+        self._copy_project_readme(target_dir, force, result)
+
+        self._copy_project_context(target_dir, force, result)
+
+        self._copy_documentation_files(target_dir, force, result)
+
+        self._copy_frontend_build(target_dir, force, result)
+
+        self._create_agent_md(agent_root_dir, force, result)
+
+        return result
+
+    def _copy_project_readme(
+        self,
+        target_dir: Path,
+        force: bool,
+        result: ScaffoldResult,
+    ) -> None:
+        """Copy project_readme.md template to project root as README.md."""
+        project_readme_template = self._template_dir / "project_readme.md"
+        if not project_readme_template.exists():
+            return
+
+        readme_destination = target_dir / "README.md"
+
+        if readme_destination.exists() and not force:
+            result.add_operation(
+                FileOperation(
+                    source=project_readme_template,
+                    destination=readme_destination,
+                    status=ScaffoldStatus.SKIPPED,
+                )
+            )
+            if self._progress_callback:
+                self._progress_callback(
+                    FileOperation(
+                        source=project_readme_template,
+                        destination=readme_destination,
+                        status=ScaffoldStatus.SKIPPED,
+                    )
+                )
+            return
+
+        try:
+            shutil.copy2(str(project_readme_template), str(readme_destination))
+            status = ScaffoldStatus.OVERWRITTEN if readme_destination.exists() else ScaffoldStatus.CREATED
+            op = FileOperation(
+                source=project_readme_template,
+                destination=readme_destination,
+                status=status,
+            )
+            result.add_operation(op)
+            if self._progress_callback:
+                self._progress_callback(op)
+        except (OSError, shutil.Error) as exc:
+            op = FileOperation(
+                source=project_readme_template,
+                destination=readme_destination,
+                status=ScaffoldStatus.ERROR,
+                error_message=str(exc),
+            )
+            result.add_operation(op)
+            if self._progress_callback:
+                self._progress_callback(op)
+
+    def _copy_project_context(
+        self,
+        target_dir: Path,
+        force: bool,
+        result: ScaffoldResult,
+    ) -> None:
+        """Copy project.md and project.json templates to .agent/tasker/ directory."""
+        tasker_dir = target_dir / ".agent" / "tasker"
+        tasker_dir.mkdir(parents=True, exist_ok=True)
+
+        for filename in ["project.md", "project.json"]:
+            project_context_template = self._template_dir / filename
+            if not project_context_template.exists():
+                continue
+
+            destination = tasker_dir / filename
+
+            if destination.exists() and not force:
+                result.add_operation(
+                    FileOperation(
+                        source=project_context_template,
+                        destination=destination,
+                        status=ScaffoldStatus.SKIPPED,
+                    )
+                )
+                continue
+
+            try:
+                shutil.copy2(str(project_context_template), str(destination))
+                status = ScaffoldStatus.OVERWRITTEN if destination.exists() else ScaffoldStatus.CREATED
+                op = FileOperation(
+                    source=project_context_template,
+                    destination=destination,
+                    status=status,
+                )
+                result.add_operation(op)
+                if self._progress_callback:
+                    self._progress_callback(op)
+            except (OSError, shutil.Error) as exc:
+                op = FileOperation(
+                    source=project_context_template,
+                    destination=destination,
+                    status=ScaffoldStatus.ERROR,
+                    error_message=str(exc),
+                )
+                result.add_operation(op)
+                if self._progress_callback:
+                    self._progress_callback(op)
+
+    def _copy_documentation_files(
+        self,
+        target_dir: Path,
+        force: bool,
+        result: ScaffoldResult,
+    ) -> None:
+        """Copy ROADMAP.md, VERSIONS.md and .gitattributes templates to project root."""
+        for filename in ["ROADMAP.md", "VERSIONS.md", ".gitattributes"]:
+            template = self._template_dir / filename
+            if not template.exists():
+                continue
+
+            destination = target_dir / filename
+
+            if destination.exists() and not force:
+                result.add_operation(
+                    FileOperation(
+                        source=template,
+                        destination=destination,
+                        status=ScaffoldStatus.SKIPPED,
+                    )
+                )
+                continue
+
+            try:
+                shutil.copy2(str(template), str(destination))
+                status = ScaffoldStatus.OVERWRITTEN if destination.exists() else ScaffoldStatus.CREATED
+                op = FileOperation(
+                    source=template,
+                    destination=destination,
+                    status=status,
+                )
+                result.add_operation(op)
+                if self._progress_callback:
+                    self._progress_callback(op)
+            except (OSError, shutil.Error) as exc:
+                op = FileOperation(
+                    source=template,
+                    destination=destination,
+                    status=ScaffoldStatus.ERROR,
+                    error_message=str(exc),
+                )
+                result.add_operation(op)
+                if self._progress_callback:
+                    self._progress_callback(op)
+
+    def _copy_template_file(
+        self,
+        template_path: Path,
+        tasker_dir: Path,
+        force: bool,
+    ) -> FileOperation:
+        """Copy a single template file to the target structure.
+
+        Preserves the relative directory structure from the template root.
+        """
+        relative_path = template_path.relative_to(self._template_dir)
+        destination = tasker_dir / relative_path
+
+        if destination.exists() and not force:
+            return FileOperation(
+                source=template_path,
+                destination=destination,
+                status=ScaffoldStatus.SKIPPED,
+            )
+
+        try:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(str(template_path), str(destination))
+
+            status = ScaffoldStatus.OVERWRITTEN if destination.exists() else ScaffoldStatus.CREATED
+            if not force:
+                status = ScaffoldStatus.CREATED
+
+            return FileOperation(
+                source=template_path,
+                destination=destination,
+                status=status,
+            )
+        except (OSError, shutil.Error) as exc:
+            return FileOperation(
+                source=template_path,
+                destination=destination,
+                status=ScaffoldStatus.ERROR,
+                error_message=str(exc),
+            )
+
+    def list_available_templates(self) -> list[Path]:
+        """Return all template files available for scaffolding."""
+        if not self._template_dir.exists():
+            return []
+        return sorted(p for p in self._template_dir.rglob("*") if p.is_file())
+
+    def _copy_frontend_build(
+        self,
+        target_dir: Path,
+        force: bool,
+        result: ScaffoldResult,
+    ) -> None:
+        """Copy frontend build to .agent/frontend/.
+
+        Copies from self._frontend_dir if set (package assets),
+        or from target_dir/frontend/dist if it exists.
+        """
+        if self._frontend_dir and self._frontend_dir.exists():
+            frontend_source = self._frontend_dir
+        else:
+            frontend_source = target_dir / "frontend" / "dist"
+
+        if not frontend_source.exists():
+            return
+
+        tasker_frontend = target_dir / ".agent" / "tasker" / "frontend"
+        tasker_frontend.mkdir(parents=True, exist_ok=True)
+
+        for src_path in frontend_source.rglob("*"):
+            if src_path.is_file():
+                relative = src_path.relative_to(frontend_source)
+                dest_path = tasker_frontend / relative
+
+                if dest_path.exists() and not force:
+                    result.add_operation(
+                        FileOperation(
+                            source=src_path,
+                            destination=dest_path,
+                            status=ScaffoldStatus.SKIPPED,
+                        )
+                    )
+                    continue
+
+                try:
+                    dest_path.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(str(src_path), str(dest_path))
+                    status = ScaffoldStatus.OVERWRITTEN if dest_path.exists() else ScaffoldStatus.CREATED
+                    op = FileOperation(
+                        source=src_path,
+                        destination=dest_path,
+                        status=status,
+                    )
+                    result.add_operation(op)
+                    if self._progress_callback:
+                        self._progress_callback(op)
+                except (OSError, shutil.Error) as exc:
+                    op = FileOperation(
+                        source=src_path,
+                        destination=dest_path,
+                        status=ScaffoldStatus.ERROR,
+                        error_message=str(exc),
+                    )
+                    result.add_operation(op)
+                    if self._progress_callback:
+                        self._progress_callback(op)
+
+    def _create_agent_md(
+        self,
+        agent_root_dir: Path,
+        force: bool,
+        result: ScaffoldResult,
+    ) -> None:
+        """Create Agent.md in .agent/ root with working directory rules."""
+        agent_md_path = agent_root_dir / "Agent.md"
+
+        if agent_md_path.exists() and not force:
+            result.add_operation(
+                FileOperation(
+                    source=Path("IN_MEMORY"),
+                    destination=agent_md_path,
+                    status=ScaffoldStatus.SKIPPED,
+                )
+            )
+            return
+
+        agent_md_content = """# Tasker Agent Configuration
+
+## Working Directory
+ALL tasker work must be performed from: `.agent/tasker/`
+
+## Directory Structure
+```
+./
+├── .agent/
+│   ├── tasker/       # <- WORK FROM HERE
+│   │   ├── skills/
+│   │   ├── workflows/
+│   │   ├── configs/
+│   │   ├── docker-compose.yml
+│   │   └── frontend/
+│   └── Agent.md      # This file
+```
+
+## Rules for IA Agents
+1. Always `cd` to `.agent/tasker/` before running any tasker command
+2. All file paths in tasker configuration are relative to `.agent/tasker/`
+3. Code graph scans, RAG indexes, and logs are stored relative to this folder
+4. Docker commands should be run from `.agent/tasker/`
+
+## Commands Reference
+```bash
+cd .agent/tasker/
+docker compose up -d
+tasker issue list
+```
+
+## Note
+This file was auto-generated during `tasker init`. Do not modify manually.
+"""
+
+        try:
+            agent_root_dir.mkdir(parents=True, exist_ok=True)
+            agent_md_path.write_text(agent_md_content, encoding="utf-8")
+            status = ScaffoldStatus.OVERWRITTEN if agent_md_path.exists() else ScaffoldStatus.CREATED
+            op = FileOperation(
+                source=Path("IN_MEMORY"),
+                destination=agent_md_path,
+                status=status,
+            )
+            result.add_operation(op)
+            if self._progress_callback:
+                self._progress_callback(op)
+        except OSError as exc:
+            op = FileOperation(
+                source=Path("IN_MEMORY"),
+                destination=agent_md_path,
+                status=ScaffoldStatus.ERROR,
+                error_message=str(exc),
+            )
+            result.add_operation(op)
+            if self._progress_callback:
+                self._progress_callback(op)

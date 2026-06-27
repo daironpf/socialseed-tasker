@@ -9,7 +9,7 @@ class TestRAGRepositoryInit:
 
     def test_rag_queries_exist(self):
         """Test that RAG_QUERIES dictionary exists and has expected keys."""
-        from socialseed_tasker.storage.graph_database.rag_repository import RAG_QUERIES
+        from socialseed_tasker.infrastructure.neo4j_rag_repository import RAG_QUERIES
 
         expected_keys = [
             "create_embedding_node",
@@ -25,7 +25,7 @@ class TestRAGRepositoryInit:
 
     def test_rag_queries_contain_cypher(self):
         """Test that queries contain Cypher keywords."""
-        from socialseed_tasker.storage.graph_database.rag_repository import RAG_QUERIES
+        from socialseed_tasker.infrastructure.neo4j_rag_repository import RAG_QUERIES
 
         assert "MERGE" in RAG_QUERIES["create_embedding_node"]
         assert "CALL db.index.vector" in RAG_QUERIES["search_similar_vector"]
@@ -33,7 +33,7 @@ class TestRAGRepositoryInit:
 
     def test_rag_repository_class_exists(self):
         """Test RAGRepository class can be instantiated with mock."""
-        from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+        from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
 
         mock_driver = MagicMock()
         mock_driver.driver = MagicMock()
@@ -44,7 +44,7 @@ class TestRAGRepositoryInit:
 
     def test_rag_repository_has_embedding_service(self):
         """Test RAGRepository has embedding service."""
-        from socialseed_tasker.storage.graph_database.rag_repository import RAGRepository
+        from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
 
         mock_driver = MagicMock()
         mock_driver.driver = MagicMock()
@@ -59,7 +59,7 @@ class TestReasoningRepositoryInit:
 
     def test_reasoning_queries_exist(self):
         """Test that REASONING_QUERIES dictionary exists."""
-        from socialseed_tasker.storage.graph_database.reasoning_repository import REASONING_QUERIES
+        from socialseed_tasker.infrastructure.neo4j_reasoning_repository import REASONING_QUERIES
 
         expected_keys = [
             "create_reasoning",
@@ -76,7 +76,7 @@ class TestReasoningRepositoryInit:
 
     def test_reasoning_queries_contain_cypher(self):
         """Test that queries contain Cypher patterns."""
-        from socialseed_tasker.storage.graph_database.reasoning_repository import REASONING_QUERIES
+        from socialseed_tasker.infrastructure.neo4j_reasoning_repository import REASONING_QUERIES
 
         assert "MATCH" in REASONING_QUERIES["get_reasoning_by_issue"]
         assert "THOUGHT" in REASONING_QUERIES["create_reasoning"]
@@ -84,7 +84,7 @@ class TestReasoningRepositoryInit:
 
     def test_reasoning_repository_class_exists(self):
         """Test ReasoningRepository class can be instantiated."""
-        from socialseed_tasker.storage.graph_database.reasoning_repository import ReasoningRepository
+        from socialseed_tasker.infrastructure.neo4j_reasoning_repository import ReasoningRepository
 
         mock_driver = MagicMock()
         mock_driver.driver = MagicMock()

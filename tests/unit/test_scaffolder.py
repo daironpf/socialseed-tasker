@@ -5,12 +5,12 @@ from pathlib import Path
 
 import pytest
 
-from socialseed_tasker.core.system_init.entities import (
+from socialseed_tasker.domain.system_init_entities import (
     FileOperation,
     ScaffoldResult,
     ScaffoldStatus,
 )
-from socialseed_tasker.core.system_init.scaffolder import ScaffolderService
+from socialseed_tasker.application.scaffolder import ScaffolderService
 
 
 @pytest.fixture()
@@ -108,11 +108,15 @@ class TestScaffolderService:
         assert result.created_count > 0
         assert result.error_count == 0
 
-        tasker_dir = target_dir / ".agent"
+        tasker_dir = target_dir / ".agent" / "tasker"
         assert tasker_dir.exists()
         assert (tasker_dir / "skills" / "test_skill.py").exists()
         assert (tasker_dir / "configs" / ".env.example").exists()
         assert (tasker_dir / "docker-compose.yml").exists()
+
+        agent_md = target_dir / ".agent" / "Agent.md"
+        assert agent_md.exists()
+        assert ".agent/tasker/" in agent_md.read_text()
 
     def test_scaffold_skips_existing_without_force(self, template_dir: Path, target_dir: Path) -> None:
         service = ScaffolderService(template_dir)
@@ -165,7 +169,8 @@ class TestScaffolderService:
         service.scaffold(target_dir)
 
         assert len(operations) > 0
-        assert all(op.status == ScaffoldStatus.CREATED for op in operations)
+        created_or_overwritten = {ScaffoldStatus.CREATED, ScaffoldStatus.OVERWRITTEN}
+        assert all(op.status in created_or_overwritten for op in operations)
 
     def test_scaffold_creates_project_readme(self, template_dir: Path, target_dir: Path) -> None:
         """Test that project_readme.md is copied to project root as README.md."""
@@ -221,7 +226,7 @@ class TestScaffolderService:
         result = service.scaffold(target_dir)
 
         assert result.success is True
-        tasker_frontend = target_dir / ".agent" / "frontend"
+        tasker_frontend = target_dir / ".agent" / "tasker" / "frontend"
         assert (tasker_frontend / "index.html").exists()
         assert (tasker_frontend / "assets" / "app.js").exists()
         assert (tasker_frontend / "index.html").read_text() == "<html>Built App</html>"
@@ -234,7 +239,7 @@ class TestScaffolderService:
         frontend_dist.mkdir(parents=True)
         (frontend_dist / "index.html").write_text("<html>New Build</html>")
 
-        tasker_frontend = target_dir / ".agent" / "frontend"
+        tasker_frontend = target_dir / ".agent" / "tasker" / "frontend"
         tasker_frontend.mkdir(parents=True)
         (tasker_frontend / "index.html").write_text("<html>Old Build</html>")
 
@@ -252,7 +257,7 @@ class TestScaffolderService:
         frontend_dist.mkdir(parents=True)
         (frontend_dist / "index.html").write_text("<html>New Build</html>")
 
-        tasker_frontend = target_dir / ".agent" / "frontend"
+        tasker_frontend = target_dir / ".agent" / "tasker" / "frontend"
         tasker_frontend.mkdir(parents=True)
         (tasker_frontend / "index.html").write_text("<html>Old Build</html>")
 

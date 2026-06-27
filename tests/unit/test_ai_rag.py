@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus, IssuePriority
-from socialseed_tasker.entrypoints.web_api.app import create_app
+from socialseed_tasker.domain.entities import Component, Issue, IssueStatus, IssuePriority
+from socialseed_tasker.infrastructure.web_api.app import create_app
 from tests.unit.test_api import MockRepository
 
 

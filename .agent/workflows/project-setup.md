@@ -167,3 +167,13 @@ Create components:
 - Creating components without analyzing project structure
 - Not setting proper project name
 - Skipping module detection and using default components
+
+---
+
+## Audio Notification
+
+When workflow completes, execute:
+
+```bash
+.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/tarea general terminada.mp3"
+```

@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  neo4j:
+    image: neo4j:5.11
+    environment:
+      NEO4J_AUTH: "neo4j/neoSocial"
+      NEO4J_dbms_memory_pagecache_size: 512M
+      NEO4J_dbms_memory_heap_max__size: 1G
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'RETURN 1' | cypher-shell -u neo4j -p neoSocial || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12

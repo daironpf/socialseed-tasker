@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:21.1.1
+    command: start-dev --http-enabled=true
+    environment:
+      KEYCLOAK_ADMIN: "kcadmin"
+      KEYCLOAK_ADMIN_PASSWORD: "kcadminpass"
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./auth/keycloak-realm.json:/opt/keycloak/data/import/tasker-realm.json:ro
+    entrypoint:
+      - "/opt/keycloak/bin/kc.sh"
+      - "start-dev"
+      - "--import-realm"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/realms/tasker-dev || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12

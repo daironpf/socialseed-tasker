@@ -1,4 +1,4 @@
-# API Reference - v0.9.0
+# API Reference - v1.0.0
 
 Complete REST API reference for SocialSeed Tasker.
 
@@ -66,7 +66,15 @@ DELETE /issues/{issue_id}
 
 ### Close Issue
 ```http
+POST /issues/{issue_id}/close?affected_files=["file.py","other.py"]
+```
+
+### Close Issue with Affected Files (v1.0.0)
+```http
 POST /issues/{issue_id}/close
+{
+  "affected_files": ["path/to/file.py"]
+}
 ```
 
 ## Components
@@ -178,6 +186,11 @@ GET /analyze/full-graph
 ### Subgraph
 ```http
 GET /analyze/subgraph?root_id=uuid&depth=3
+```
+
+### Phantom Dependencies - Similarity (v1.0.0)
+```http
+GET /analyze/similarity/{issue_id}?threshold=0.7&limit=10
 ```
 
 ## Code Graph (v0.9.0)
@@ -415,14 +428,63 @@ POST /policies/{policy_id}/dry-run
 
 ## Projects
 
+**Important**: Tasker supports only **ONE project per instance**. The system is designed as a single-project task manager. All issues, components, agents, and code symbols belong to this single project.
+
 ### List Projects
 ```http
 GET /projects
 ```
+Returns a list of project names (strings only). Will always return 0 or 1 project.
 
-### Get Project Summary
+### List All Projects with Details
 ```http
-GET /projects/{project}/summary
+GET /projects/all
+```
+Returns all projects with complete details. Will always return 0 or 1 project.
+
+### Get Current Project
+```http
+GET /projects/current
+```
+Returns the single project in the system. This is the primary endpoint to get project info.
+
+**Response:**
+```json
+{
+  "data": {
+    "id": "default-project",
+    "name": "My Project",
+    "slug": "my-project",
+    ...
+  }
+}
+```
+
+### Get Project by ID or Slug
+```http
+GET /projects/{project_id}
+```
+Returns the project by its ID or slug.
+
+### Create or Get Project
+```http
+POST /projects
+```
+If a project already exists, returns the existing one. If not, creates it. Tasker does not allow multiple projects.
+
+**Response (exists):**
+```json
+{
+  "data": {
+    "status": "exists",
+    "message": "A project already exists. Tasker supports only one project.",
+    "project": {
+      "id": "default-project",
+      "name": "My Project",
+      "slug": "my-project"
+    }
+  }
+}
 ```
 
 ## Deployments
@@ -480,6 +542,114 @@ GET /analytics/cost/project
 ```http
 GET /analytics/cost/summary
 ```
+
+## Tenants (v1.0.1)
+
+### Create Tenant
+```http
+POST /api/v1/tenants
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "tenant_id": "tenant1",
+  "config": {"plan": "premium"}
+}
+```
+
+### List Tenants
+```http
+GET /api/v1/tenants
+Authorization: Bearer <token>
+```
+
+### Get Tenant
+```http
+GET /api/v1/tenants/{tenant_id}
+Authorization: Bearer <token>
+```
+
+### Delete Tenant
+```http
+DELETE /api/v1/tenants/{tenant_id}
+Authorization: Bearer <token>
+```
+
+All tenant endpoints require `admin` RBAC permission.
+
+## Feature Flags (v1.0.1)
+
+### List Flags
+```http
+GET /api/v1/admin/flags
+Authorization: Bearer <token>
+```
+
+### Get Flag
+```http
+GET /api/v1/admin/flags/{name}
+Authorization: Bearer <token>
+```
+
+### Set Flag
+```http
+POST /api/v1/admin/flags
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "beta_feature",
+  "value": true
+}
+```
+
+### Delete Flag
+```http
+DELETE /api/v1/admin/flags/{name}
+Authorization: Bearer <token>
+```
+
+All flag endpoints require `admin` RBAC permission.
+
+## Privacy / GDPR (v1.0.1)
+
+### Export Subject Data
+```http
+POST /api/v1/privacy/export
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "subject_id": "user1"
+}
+```
+Returns the path to a tar.gz archive containing all data for the subject.
+
+### Delete Subject Data
+```http
+POST /api/v1/privacy/delete
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "subject_id": "user1",
+  "dry_run": true
+}
+```
+When `dry_run: true`, returns a list of items that would be deleted without actually deleting. Set `dry_run: false` to perform actual deletion.
+
+### Get Privacy Task Status
+```http
+GET /api/v1/privacy/tasks/{task_id}
+Authorization: Bearer <token>
+```
+
+### View Audit Log
+```http
+GET /api/v1/privacy/audit
+Authorization: Bearer <token>
+```
+Requires `admin` permission. Returns the full audit log of all deletion actions.
 
 ## System
 

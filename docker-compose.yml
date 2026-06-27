@@ -14,10 +14,12 @@ services:
       - NEO4J_dbms_memory_heap_max__size=100M
       - NEO4J_dbms_memory_pagecache_size=50M
       - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_server_default__listen__address=0.0.0.0
+      - NEO4J_server_default__advertised__address=tasker-db
     volumes:
       - neo4j-data:/var/lib/neo4j/data
     healthcheck:
-      test: ["CMD-SHELL", "echo 'RETURN 1' | cypher-shell -u neo4j -p neoSocial || exit 1"]
+      test: [ "CMD-SHELL", "echo 'RETURN 1' | cypher-shell -u neo4j -p neoSocial || exit 1" ]
       interval: 10s
       timeout: 10s
       retries: 30
@@ -30,11 +32,12 @@ services:
 
   tasker-api:
     container_name: tasker-api
+    image: tasker-api:local
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8888:8000"
     environment:
       - TASKER_NEO4J_URI=bolt://tasker-db:7687
       - TASKER_NEO4J_USERNAME=neo4j
@@ -48,6 +51,8 @@ services:
         condition: service_healthy
     networks:
       - tasker-net
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 networks:
   tasker-net:

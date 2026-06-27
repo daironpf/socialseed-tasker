@@ -1,0 +1,19 @@
+# tools/chaos/scenarios/redis-flap.yml
+compose: compose/tools/chaos.yml
+steps:
+  - action: docker_compose
+    compose: compose/tools/chaos.yml
+    cmd: up -d --build
+  - action: sleep
+    seconds: 5
+  - action: exec
+    cmd: "bash -lc 'for i in 1 2 3; do docker compose -f compose/tools/chaos.yml restart redis; sleep 4; done'"
+  - action: sleep
+    seconds: 3
+  - action: health_check
+    service: api
+    url: "http://localhost:8000/health"
+    timeout: 60
+    required: true
+  - action: exec
+    cmd: "bash -lc 'docker compose -f compose/tools/chaos.yml ps'"

@@ -120,3 +120,17 @@ export interface ImpactAnalysis {
   affected_components: string[]
   risk_level: string
 }
+
+export interface Policy {
+  id: string
+  name: string
+  description: string
+  rules: any[]
+  target_scope: string
+  logic_definition?: string
+  remediation_strategy?: string
+  autofix_template?: string
+  is_active: boolean
+  created_at?: string
+  updated_at?: string
+}

@@ -1,0 +1,19 @@
+# tools/chaos/scenarios/api-latency.yml
+compose: compose/tools/chaos.yml
+steps:
+  - action: docker_compose
+    compose: compose/tools/chaos.yml
+    cmd: up -d --build
+  - action: sleep
+    seconds: 5
+  - action: exec
+    cmd: "bash -lc 'tc qdisc add dev eth0 root netem delay 200ms || true'"
+  - action: sleep
+    seconds: 20
+  - action: exec
+    cmd: "bash -lc 'tc qdisc del dev eth0 root || true'"
+  - action: health_check
+    service: api
+    url: "http://localhost:8000/health"
+    timeout: 30
+    required: true

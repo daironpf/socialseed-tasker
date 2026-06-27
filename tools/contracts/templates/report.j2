@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Contract Report</title></head>
+<body>
+<h1>Contract Test Report</h1>
+<p>Provider: {{ report.provider }}</p>
+<p>Contract: {{ report.contract }}</p>
+<p>Timestamp: {{ report.timestamp }}</p>
+<h2>Summary: {{ "PASS" if report.overall else "FAIL" }}</h2>
+{% for r in report.results %}
+  <h3>{{ r.method }} {{ r.path }} &mdash; {{ "OK" if r.ok else "FAIL" }}</h3>
+  {% if r.errors %}
+    <ul>
+    {% for e in r.errors %}
+      <li>{{ e }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endfor %}
+</body>
+</html>

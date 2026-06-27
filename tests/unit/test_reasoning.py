@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from socialseed_tasker.core.task_management.entities import (
+from socialseed_tasker.domain.entities import (
     DecisionType,
     ReasoningNode,
     ReasoningFeedback,

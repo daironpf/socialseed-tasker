@@ -1,0 +1,48 @@
+{
+  "name": "socialseed-tasker",
+  "version": "1.0.2",
+  "created": "2026-05-05",
+  "architecture": {
+    "type": "hexagonal",
+    "language": "python",
+    "framework": "fastapi/typer",
+    "database": "neo4j",
+    "frontend": "vue",
+    "other_services": ["tree-sitter", "openai"]
+  },
+  "components": [
+    "core/task_management",
+    "core/project_analysis",
+    "core/validation",
+    "core/code_analysis",
+    "entrypoints/terminal_cli",
+    "entrypoints/web_api",
+    "storage/graph_database"
+  ],
+  "github": {
+    "repository": "https://github.com/daironpf/socialseed-tasker",
+    "default_branch": "main"
+  },
+  "external_apis": [],
+  "constraints": {
+    "forbidden_technologies": ["file storage (neo4j-only)", "external databases in core/", "direct neo4j imports in core/"],
+    "required_patterns": ["Hexagonal Architecture", "Repository Pattern via Protocol interfaces", "All code in English"],
+    "naming_conventions": "snake_case for functions/variables, PascalCase for classes, kebab-case for components",
+    "max_dependency_depth": 5
+  },
+  "development": {
+    "setup_commands": "cp .agent/configs/.env.example .agent/configs/.env && pip install -e .",
+    "test_commands": "pytest tests/unit/ -v",
+    "build_commands": "pip install -e . && pip wheel . --wheel-dir dist/"
+  },
+  "quality": {
+    "code_review_approvals": 1,
+    "use_quality_guide": true
+  },
+  "agent_notes": [
+    "Read .agent/project.md before starting work",
+    "Read .agent/AGENT_GUIDE.md for agent protocol",
+    "Use workflows/project-centric-agent.md for mandatory Tasker consultation",
+    "Use skills/skill_manifest.json for API functions"
+  ]
+}

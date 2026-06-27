@@ -16,14 +16,14 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from socialseed_tasker.core.services.webhook_validator import (
+from socialseed_tasker.infrastructure.webhook_validator import (
     WebhookSignatureValidator,
     validate_signature,
 )
-from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
-from socialseed_tasker.core.task_management.constraints import Constraint
-from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus
-from socialseed_tasker.entrypoints.web_api.app import create_app
+from socialseed_tasker.application.actions import TaskRepositoryInterface
+from socialseed_tasker.application.constraints import Constraint
+from socialseed_tasker.domain.entities import Component, Issue, IssueStatus
+from socialseed_tasker.infrastructure.web_api.app import create_app
 
 
 class MockRepository(TaskRepositoryInterface):
@@ -35,8 +35,9 @@ class MockRepository(TaskRepositoryInterface):
         self._dependencies: dict[str, set[str]] = {}
         self._constraints: dict[str, Constraint] = {}
 
-    def create_issue(self, issue: Issue) -> None:
+    def create_issue(self, issue: Issue) -> Issue:
         self._issues[str(issue.id)] = issue
+        return issue
 
     def get_issue(self, issue_id: str) -> Issue | None:
         return self._issues.get(issue_id)
@@ -97,8 +98,9 @@ class MockRepository(TaskRepositoryInterface):
     ) -> list[Issue]:
         return [i for i in self._issues.values() if i.status != IssueStatus.CLOSED]
 
-    def create_component(self, component: Component) -> None:
+    def create_component(self, component: Component) -> Component:
         self._components[str(component.id)] = component
+        return component
 
     def get_component(self, component_id: str) -> Component | None:
         return self._components.get(component_id)
@@ -151,7 +153,7 @@ class MockRepository(TaskRepositoryInterface):
     def start_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         return self._issues[issue_id]
 
-    def finish_agent_work(self, issue_id: str) -> Issue:
+    def finish_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         return self._issues[issue_id]
 
     def get_agent_status(self, issue_id: str) -> dict[str, Any]:

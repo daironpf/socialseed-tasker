@@ -22,7 +22,7 @@ MIGRATION_QUERIES = [
     ("code_calls", 
      "CREATE INDEX code_calls IF NOT EXISTS FOR ()-[r:CALLS]->() ON (r.timestamp)"),
     ("code_depends_issue", 
-     "CREATE INDEX code_depends_issue IF NOT EXISTS FOR ()-[r:DEPENDS_ON]->(i:Issue) ON (i.timestamp)"),
+     "CREATE INDEX code_depends_issue IF NOT EXISTS FOR ()-[r:DEPENDS_ON]->() ON (r.timestamp)"),
     ("agent_thought", 
      "CREATE INDEX agent_thought IF NOT EXISTS FOR ()-[r:THOUGHT]->() ON (r.timestamp)"),
 ]

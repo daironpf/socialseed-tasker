@@ -63,3 +63,13 @@ Why this matters and what problem it solves.
 - Include the expected file paths for new code
 - Document architectural decisions and constraints
 - All issue content must be in English
+
+---
+
+## Audio Notification
+
+When workflow completes, execute:
+
+```bash
+.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/tarea general terminada.mp3"
+```

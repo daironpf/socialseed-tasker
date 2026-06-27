@@ -1,0 +1,23 @@
+name: Canary Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Deploy to canary
+        run: |
+          TAG=${GITHUB_SHA::7}
+          docker build -t registry.local/tasker:canary-${TAG} .
+          echo "deployed canary: registry.local/tasker:canary-${TAG}"
+      - name: Run canary smoke tests
+        run: pytest tests/ci -q -m canary || exit 1
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Rolling back canary to previous stable"

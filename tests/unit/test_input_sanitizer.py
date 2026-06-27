@@ -2,7 +2,7 @@
 
 import pytest
 
-from socialseed_tasker.core.validation.input_sanitizer import (
+from socialseed_tasker.domain.input_sanitizer import (
     sanitize_input,
     sanitize_component_name,
     sanitize_issue_title,

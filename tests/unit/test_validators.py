@@ -2,7 +2,7 @@
 
 import pytest
 
-from socialseed_tasker.core.validation.validators import (
+from socialseed_tasker.domain.validators import (
     validate_component_name,
     validate_issue_title,
     validate_issue_description,
@@ -10,7 +10,7 @@ from socialseed_tasker.core.validation.validators import (
     ISSUE_TITLE_MAX_LENGTH,
     ISSUE_DESCRIPTION_MAX_LENGTH,
 )
-from socialseed_tasker.core.validation.exceptions import (
+from socialseed_tasker.domain.exceptions import (
     ComponentNameValidationError,
     IssueTitleValidationError,
     IssueDescriptionValidationError,

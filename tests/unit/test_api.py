@@ -10,10 +10,10 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
-from socialseed_tasker.core.task_management.constraints import Constraint, ConstraintCategory, ConstraintLevel
-from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus, IssuePriority
-from socialseed_tasker.entrypoints.web_api.app import create_app
+from socialseed_tasker.application.actions import TaskRepositoryInterface
+from socialseed_tasker.application.constraints import Constraint, ConstraintCategory, ConstraintLevel
+from socialseed_tasker.domain.entities import Component, Issue, IssueStatus, IssuePriority
+from socialseed_tasker.infrastructure.web_api.app import create_app
 
 
 class MockRepository(TaskRepositoryInterface):
@@ -26,8 +26,9 @@ class MockRepository(TaskRepositoryInterface):
         self._constraints: dict[str, Constraint] = {}
         self._labels: dict[str, set[str]] = {}
 
-    def create_issue(self, issue: Issue) -> None:
+    def create_issue(self, issue: Issue) -> Issue:
         self._issues[str(issue.id)] = issue
+        return issue
 
     def get_issue(self, issue_id: str) -> Issue | None:
         return self._issues.get(issue_id)
@@ -38,7 +39,7 @@ class MockRepository(TaskRepositoryInterface):
         self._issues[issue_id] = updated
         return updated
 
-    def close_issue(self, issue_id: str) -> Issue:
+    def close_issue(self, issue_id: str, commit_sha: str | None = None, resolution: str = "implemented") -> Issue:
         issue = self._issues[issue_id]
         updated = issue.model_copy(update={"status": IssueStatus.CLOSED})
         self._issues[issue_id] = updated
@@ -120,8 +121,9 @@ class MockRepository(TaskRepositoryInterface):
                 workable.append(issue)
         return workable
 
-    def create_component(self, component: Component) -> None:
+    def create_component(self, component: Component) -> Component:
         self._components[str(component.id)] = component
+        return component
 
     def get_component(self, component_id: str) -> Component | None:
         return self._components.get(component_id)
@@ -183,7 +185,7 @@ class MockRepository(TaskRepositoryInterface):
         self._issues[issue_id] = updated
         return updated
 
-    def finish_agent_work(self, issue_id: str) -> Issue:
+    def finish_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         issue = self._issues[issue_id]
         updated = issue.model_copy(update={"agent_working": None})
         self._issues[issue_id] = updated
@@ -310,7 +312,7 @@ class TestComponents:
         client.post("/api/v1/components", json={"name": "A", "project": "proj1"})
         client.post("/api/v1/components", json={"name": "B", "project": "proj2"})
         resp = client.get("/api/v1/components", params={"project": "proj1"})
-        assert len(resp.json()["data"]["items"]) == 1
+        assert len(resp.json()["data"]) == 1
 
     def test_get_component(self, client, component_id):
         resp = client.get(f"/api/v1/components/{component_id}")
@@ -362,7 +364,7 @@ class TestIssues:
         )
         resp = client.get("/api/v1/issues")
         assert resp.status_code == 200
-        assert len(resp.json()["data"]["items"]) == 2
+        assert len(resp.json()["data"]) == 2
 
     def test_list_issues_pagination(self, client, component_id):
         for i in range(5):
@@ -371,10 +373,12 @@ class TestIssues:
                 json={"title": f"Issue {i}", "component_id": component_id},
             )
         resp = client.get("/api/v1/issues", params={"page": 1, "limit": 2})
-        data = resp.json()["data"]
-        assert len(data["items"]) == 2
-        assert data["pagination"]["total"] == 5
-        assert data["pagination"]["has_next"] is True
+        body = resp.json()
+        data = body["data"]
+        pagination = body["meta"]["pagination"]
+        assert len(data) == 2
+        assert pagination["total"] == 5
+        assert pagination["has_next"] is True
 
     def test_list_issues_filter_by_status(self, client, component_id):
         client.post(
@@ -389,7 +393,7 @@ class TestIssues:
         client.post(f"/api/v1/issues/{issue_id}/close")
 
         resp = client.get("/api/v1/issues", params={"status": "OPEN"})
-        assert len(resp.json()["data"]["items"]) == 1
+        assert len(resp.json()["data"]) == 1
 
     def test_get_issue(self, client, issue_id):
         resp = client.get(f"/api/v1/issues/{issue_id}")
@@ -492,6 +496,13 @@ class TestDependencies:
             json={"depends_on_id": a_id},
         )
         assert resp.status_code == 409
+        body = resp.json()
+        error = body.get("error", body.get("detail", {}))
+        if isinstance(error, dict):
+            code = error.get("code", error.get("type", ""))
+            msg = error.get("message", error.get("msg", ""))
+            assert code == "CIRCULAR_DEPENDENCY"
+            assert "cycle" in msg.lower()
 
     def test_remove_dependency(self, client, component_id):
         resp_a = client.post(
@@ -524,7 +535,7 @@ class TestDependencies:
         client.post(f"/api/v1/issues/{a_id}/dependencies", json={"depends_on_id": b_id})
         resp = client.get(f"/api/v1/issues/{a_id}/dependencies")
         assert resp.status_code == 200
-        assert len(resp.json()["data"]["items"]) == 1
+        assert len(resp.json()["data"]) == 1
 
     def test_list_dependents(self, client, component_id):
         resp_a = client.post(
@@ -923,8 +934,8 @@ class TestFiltersAndSorting:
 
         resp = client.get(f"/api/v1/issues?component={component_id}")
         assert resp.status_code == 200
-        items = resp.json()["data"]["items"]
-        assert len(items) >= 1
+        data = resp.json()["data"]
+        assert len(data) >= 1
 
     def test_list_components_all_flag(self, client):
         client.post("/api/v1/components", json={"name": "A", "project": "p1"})
@@ -1003,10 +1014,73 @@ class TestUnicodeAndInternationalization:
         assert "日本語" in data["description"]
 
 
+class TestIssuesBatch:
+    def test_create_issues_batch_all_success(self, client, component_id):
+        resp = client.post(
+            "/api/v1/issues/batch",
+            json={
+                "issues": [
+                    {"title": "Batch A", "description": "First", "priority": "LOW", "component_id": component_id},
+                    {"title": "Batch B", "description": "Second", "priority": "MEDIUM", "component_id": component_id},
+                ]
+            },
+        )
+        assert resp.status_code == 201
+        data = resp.json()["data"]
+        assert data["total_requested"] == 2
+        assert data["successful"] == 2
+        assert data["failed"] == 0
+        assert len(data["results"]) == 2
+        for r in data["results"]:
+            assert r["status"] == "created"
+            assert r["issue_id"]
+            assert r["title"]
+
+    def test_create_issues_batch_partial_failure(self, client, component_id):
+        resp = client.post(
+            "/api/v1/issues/batch",
+            json={
+                "issues": [
+                    {"title": "Good", "description": "OK", "priority": "LOW", "component_id": component_id},
+                    {"title": "", "description": "Bad", "priority": "LOW", "component_id": component_id},
+                ]
+            },
+        )
+        assert resp.status_code == 201
+        data = resp.json()["data"]
+        assert data["total_requested"] == 2
+        assert data["successful"] == 1
+        assert data["failed"] == 1
+        results_by_title = {r["title"]: r for r in data["results"]}
+        assert results_by_title["Good"]["status"] == "created"
+        assert results_by_title["Good"]["issue_id"]
+        assert results_by_title[""]["status"] == "error"
+        assert results_by_title[""]["error"]
+
+    def test_create_issues_batch_empty_list(self, client):
+        resp = client.post("/api/v1/issues/batch", json={"issues": []})
+        assert resp.status_code == 400
+        assert resp.json()["detail"] == "No issues provided"
+
+    def test_create_issues_batch_defaults(self, client, component_id):
+        resp = client.post(
+            "/api/v1/issues/batch",
+            json={
+                "issues": [
+                    {"title": "Defaults", "component_id": component_id},
+                ]
+            },
+        )
+        assert resp.status_code == 201
+        data = resp.json()["data"]
+        assert data["successful"] == 1
+        assert data["results"][0]["status"] == "created"
+
+
 class TestProjectFiltering:
     def test_list_issues_by_project_filter(self, client, component_id):
         resp = client.get("/api/v1/issues?project=test-project")
         assert resp.status_code == 200
         data = resp.json()
         assert "data" in data
-        assert "items" in data["data"]
+        assert "pagination" in data["meta"]

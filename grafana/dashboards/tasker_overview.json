@@ -1,0 +1,70 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "id": 1,
+      "options": {},
+      "targets": [
+        {
+          "expr": "rate(tasker_requests_total[1m])",
+          "legendFormat": "{{component}}/{{operation}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Request Rate (1m)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "id": 2,
+      "options": {},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(tasker_request_duration_seconds_bucket[1m])) by (le, component, operation))",
+          "legendFormat": "{{component}}/{{operation}} p95",
+          "refId": "A"
+        }
+      ],
+      "title": "Request Duration p95 (s)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 8},
+      "id": 3,
+      "options": {},
+      "targets": [
+        {
+          "expr": "sum(tasker_inprogress_requests) by (component, operation)",
+          "legendFormat": "{{component}}/{{operation}}",
+          "refId": "A"
+        }
+      ],
+      "title": "In-Progress Requests",
+      "type": "timeseries"
+    }
+  ],
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["tasker", "observability"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "Tasker Overview",
+  "uid": "tasker-overview",
+  "version": 1
+}

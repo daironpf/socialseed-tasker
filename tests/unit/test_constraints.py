@@ -6,7 +6,7 @@ from uuid import uuid4
 
 import pytest
 
-from socialseed_tasker.core.task_management.constraints import (
+from socialseed_tasker.application.constraints import (
     ArchitectureConstraint,
     Constraint,
     ConstraintCategory,

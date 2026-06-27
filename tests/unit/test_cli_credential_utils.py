@@ -11,8 +11,8 @@ class TestCliCredentialUtils:
 
     def test_load_saved_credentials_returns_dict(self):
         """Test load_saved_credentials returns dict."""
-        with patch("socialseed_tasker.entrypoints.terminal_cli.utils._CLI_CONFIG_FILE", Path("nonexistent")):
-            from socialseed_tasker.entrypoints.terminal_cli import utils
+        with patch("socialseed_tasker.cli.utils._CLI_CONFIG_FILE", Path("nonexistent")):
+            from socialseed_tasker.cli import utils
             import importlib
             importlib.reload(utils)
 
@@ -21,8 +21,8 @@ class TestCliCredentialUtils:
 
     def test_get_config_file_path_returns_path(self):
         """Test get_config_file_path returns Path."""
-        with patch("socialseed_tasker.entrypoints.terminal_cli.utils._CLI_CONFIG_FILE", Path("test")):
-            from socialseed_tasker.entrypoints.terminal_cli import utils
+        with patch("socialseed_tasker.cli.utils._CLI_CONFIG_FILE", Path("test")):
+            from socialseed_tasker.cli import utils
             import importlib
             importlib.reload(utils)
 
@@ -35,18 +35,18 @@ class TestCliResolver:
 
     def test_resolver_module_imports(self):
         """Test resolver module can be imported."""
-        from socialseed_tasker.entrypoints.terminal_cli.utils import resolver
+        from socialseed_tasker.cli import resolver
 
         assert resolver is not None
 
     def test_resolve_component_id_function_exists(self):
         """Test resolve_component_id function exists."""
-        from socialseed_tasker.entrypoints.terminal_cli.utils.resolver import resolve_component_id
+        from socialseed_tasker.cli.resolver import resolve_component_id
 
         assert callable(resolve_component_id)
 
     def test_resolve_issue_id_function_exists(self):
         """Test resolve_issue_id function exists."""
-        from socialseed_tasker.entrypoints.terminal_cli.utils.resolver import resolve_issue_id
+        from socialseed_tasker.cli.resolver import resolve_issue_id
 
         assert callable(resolve_issue_id)

@@ -43,3 +43,13 @@ This workflow automates the creation and maintenance of the daily history file i
 | #135 | ✅ DONE | HIGH | Passed |
 | #136 | 🚧 WIP | MEDIUM | - |
 ```
+
+---
+
+## Audio Notification
+
+When workflow completes, execute:
+
+```bash
+.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/Historial Actualizado.mp3"
+```

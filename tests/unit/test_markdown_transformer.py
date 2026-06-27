@@ -1,7 +1,7 @@
 """Tests for markdown transformer service."""
 
 import pytest
-from socialseed_tasker.core.services.markdown_transformer import (
+from socialseed_tasker.application.markdown_transformer import (
     MarkdownTransformer,
     MarkdownTable,
     transform_root_cause_markdown,

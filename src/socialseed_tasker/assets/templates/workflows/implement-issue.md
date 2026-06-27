@@ -17,20 +17,37 @@ Identify:
 - What tests are needed.
 - Impact on existing systems (use `tasker code-graph impact <Symbol>`).
 
-### 3. Implement the Code
+### 3. Log Reasoning (v1.0 Traceability)
+Before writing code, log your plan and the alternatives you considered:
+```bash
+tasker reasoning log --issue <ID> \
+  --thought "Plan: Implement X using Y. Alternatives: Z." \
+  --alternatives "Z, W" \
+  --rejected "Z is too slow, W is complex" \
+  --decision "Implementing X"
+```
+
+### 4. Implement the Code
 - Follow the architectural patterns defined in `tasker/project.md`.
 - All code and comments must be in English.
 
-### 4. Write and Run Tests
+### 5. Update Code Graph
+After modifying the code, you MUST update the knowledge graph:
+```bash
+tasker code-graph scan . --incremental
+```
+
+### 6. Write and Run Tests
 - Create unit/integration tests as needed.
 - Ensure all tests pass.
 
-### 5. Mark Issue as Completed
+### 7. Mark Issue as Completed
+Close the issue and link it to the modified files:
 ```bash
-tasker issue close <ID> --reason "Implementation complete and verified by tests"
+tasker issue close <ID> --files "path/to/file1.py,path/to/file2.py"
 ```
 
-### 6. Update Documentation
+### 8. Update Documentation
 - Follow `tasker/AGENT_GUIDE.md` for doc-sync procedures.
 - Update `ROADMAP.md` and `VERSIONS.md`.
 

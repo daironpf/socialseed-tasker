@@ -1,0 +1,17 @@
+# tools/chaos/scenarios/worker-cpu-spike.yml
+compose: compose/tools/chaos.yml
+steps:
+  - action: docker_compose
+    compose: compose/tools/chaos.yml
+    cmd: up -d --build
+  - action: sleep
+    seconds: 5
+  - action: exec
+    cmd: "bash -lc 'docker compose -f compose/tools/chaos.yml exec -T tasker-worker bash -lc \"stress-ng --cpu 2 --timeout 15s\"'"
+  - action: sleep
+    seconds: 5
+  - action: health_check
+    service: worker
+    url: "http://localhost:8000/health"
+    timeout: 60
+    required: false

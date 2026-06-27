@@ -2,11 +2,11 @@
 
 ## Project Summary
 
-**SocialSeed Tasker** (v0.9.0) is a graph-based task management framework for AI agents with Neo4j storage backend, hexagonal architecture, and comprehensive tooling for CLI and API interfaces.
+**SocialSeed Tasker** (v1.0.0) is a graph-based task management framework for AI agents with Neo4j storage backend, hexagonal architecture, and comprehensive tooling for CLI and API interfaces.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                     TASKER v0.8.0                              │
+│                     TASKER v1.0.0                              │
 ├────────────────────────────────────────────────────────────────────────────┬─────────────────┤
 │  CLI (Typer)    │    API (FastAPI)    │    Skills (Python)    │  Neo4j  │
 │  tasker issue   │    /api/v1/issues  │    task_skill.py     │  Graph │
@@ -27,7 +27,7 @@ src/socialseed_tasker/
 │   ├── validation/               # Input sanitization
 │   ├── services/                # External integrations
 │   ├── system_init/              # Scaffolding
-│   └── code_analysis/           # Tree-sitter code parsing (v0.9.0)
+│   └── code_analysis/           # Tree-sitter code parsing (v1.0.0)
 ├── entrypoints/                   # External interfaces
 │   ├── terminal_cli/              # Typer CLI (tasker)
 │   ├── web_api/                 # FastAPI REST API
@@ -109,9 +109,20 @@ class Neo4jTaskRepository:
     - Cycle detection
 ```
 
+### Graph Repositories (v1.0.0)
+| Repository | Purpose |
+|------------|---------|
+| `repositories.py` | Core TaskRepository (Issue, Component, Dependency) |
+| `user_repository.py` | User management with relationships |
+| `commit_repository.py` | Git commit tracking |
+| `policy_repository.py` | Governance policies |
+| `code_graph_repository.py` | Code-as-Graph (Tree-Sitter) |
+| `rag_repository.py` | Vector embeddings for semantic search |
+| `reasoning_repository.py` | AI reasoning logs |
+
 ### Graph Schema
-- **Nodes**: Issue, Component
-- **Rel**: DEPENDS_ON, BLOCKS, AFFECTS, BELONGS_TO
+- **Nodes**: Issue, Component, Project, Agent, User, Commit, Policy, CodeFile, CodeSymbol, CodeImport, ReasoningNode, RAGEmbedding, Label
+- **Rel**: DEPENDS_ON, BLOCKS, AFFECTS, BELONGS_TO, SPECIALIST_IN, ASSIGNED_TO, AUTHORED, MUST_COMPLY_WITH, THOUGHT, DECIDED, RESOLVED_BY
 
 ---
 
@@ -334,19 +345,19 @@ services:
 
 ## 11. Schema Migration
 
-### v0.9.0 Migration Script
+### v1.0.0 Migration Script
 
-New features in v0.9.0 require Neo4j schema changes (vector indexes, relationship indexes). The migration runs automatically on startup via `driver.py`, or can be run manually:
+New features in v1.0.0 require Neo4j schema changes (vector indexes, relationship indexes). The migration runs automatically on startup via `driver.py`, or can be run manually:
 
 ```bash
 # Run migration
-python scripts/migrate_v090.py --password=your_neo4j_password
+python scripts/migrate_v100.py --password=your_neo4j_password
 
 # Rollback if needed
-python scripts/migrate_v090.py --password=your_neo4j_password --rollback
+python scripts/migrate_v100.py --password=your_neo4j_password --rollback
 ```
 
-### Schema Changes (v0.9.0)
+### Schema Changes (v1.0.0)
 
 | Index | Purpose |
 |-------|---------|
@@ -357,7 +368,7 @@ python scripts/migrate_v090.py --password=your_neo4j_password --rollback
 
 ---
 
-## 11. Key Features (v0.9.0)
+## 11. Key Features (v1.0.0)
 
 | Feature | Status |
 |--------|--------|
@@ -369,10 +380,16 @@ python scripts/migrate_v090.py --password=your_neo4j_password --rollback
 | Code-as-Graph | ✅ |
 | RAG Semantic Search | ✅ |
 | Agent Integration | ✅ |
+| Agent Registration & Tracking | ✅ (NEW v1.0.0) |
+| Agent Specialization (SPECIALIST_IN) | ✅ (NEW v1.0.0) |
+| Project-Agent Assignment | ✅ (NEW v1.0.0) |
+| User Repository (Neo4j) | ✅ (NEW v1.0.0) |
+| Commit Repository (Neo4j) | ✅ (NEW v1.0.0) |
+| Policy Repository (Neo4j) | ✅ (NEW v1.0.0) |
 
 ---
 
-## 12. Agent Integration (v0.9.0)
+## 12. Agent Integration (v1.0.0)
 
 ### CLI Commands
 
@@ -385,6 +402,15 @@ tasker agent suggest --issue <issue_id> --limit 5
 
 # Log reasoning for issue resolution
 tasker agent reasoning --issue <issue_id> --thought "..." --decision "..."
+
+# Register agent (NEW v1.0.0)
+tasker agent register --id "agent-001" --name "DevAgent" --role "developer" --capabilities "coding,testing"
+
+# Add agent specialization (NEW v1.0.0)
+tasker agent specialize --agent "agent-001" --component "backend-api"
+
+# List working agents
+tasker agent list
 ```
 
 ### API Endpoints
@@ -394,6 +420,10 @@ tasker agent reasoning --issue <issue_id> --thought "..." --decision "..."
 | `/api/v1/agent/context/{issue_id}` | GET | Code context from Code-as-Graph |
 | `/api/v1/agent/similar/{issue_id}` | GET | Similar issues via RAG |
 | `/api/v1/analyze/code-impact` | GET | Code-level impact (callers, deps, tests) |
+| `/api/v1/agents/register` | POST | Register new agent (NEW) |
+| `/api/v1/agents/{id}/specialists/{comp_id}` | POST | Add specialization (NEW) |
+| `/api/v1/agents/{id}/specialists` | GET | Get agent specializations (NEW) |
+| `/api/v1/projects/{id}/agents/{agent_id}` | POST | Assign agent to project (NEW) |
 
 ---
 
@@ -482,4 +512,25 @@ git push origin v0.8.0
 
 ---
 
-*Generated: 2026-04-26*
+## Testing & Quality Assurance
+
+### Real-Test Evaluation (Black-Box)
+The project uses a dedicated black-box evaluation framework (`prueba-el-proyecto.md`) to validate system behavior from a user perspective.
+
+**DX Scores (Developer Experience):**
+| Metric | Score |
+|--------|-------|
+| cli_intuition_score | 8/10 |
+| error_message_clarity | 9/10 |
+| documentation_score | 8/10 |
+| api_clarity | 9/10 |
+| setup_friction | 8/10 |
+| dependency_graph_score | 10/10 |
+
+**Latest Evaluation:** 2026-05-05 (Dental Clinic - Microservices)
+- Issues: 10 created, 2 implemented
+- Dependencies: Working correctly (enforcement validated)
+
+---
+
+*Generated: 2026-05-05*

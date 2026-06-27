@@ -1,6 +1,6 @@
 [project]
 name = "socialseed-tasker"
-version = "0.9.1"
+version = "1.0.0"
 description = "A graph-based task management framework for AI agents"
 readme = "README.md"
 license = {text = "Apache-2.0"}
@@ -35,11 +35,26 @@ dependencies = [
     
     # Sync
     "httpx>=0.26.0",
+    "requests>=2.31.0",
     
     # Utilities
     "python-dotenv>=1.0.0",
     "pyyaml>=6.0.0",
+
+    # Observability
+    "prometheus-client>=0.19.0",
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+
+    # Vector store
+    "numpy>=1.24.0",
     
+    # Validation
+    "jsonschema>=4.20.0",
+
+    # Security / Encryption
+    "cryptography>=41.0.0",
+
     # Code Analysis
     "tree-sitter>=0.20.0",
     "tree-sitter-python>=0.20.0",
@@ -53,6 +68,13 @@ dependencies = [
 neo4j = [
     "neo4j>=5.15.0",
 ]
+faiss = [
+    "faiss-cpu>=1.7.0",
+]
+celery = [
+    "celery>=5.3.0",
+    "redis>=5.0.0",
+]
 dev = [
     # Testing
     "pytest>=7.4.0",
@@ -60,6 +82,8 @@ dev = [
     "pytest-cov>=4.1.0",
     "testcontainers[neo4j]>=3.7.0",
     "httpx",
+    "requests>=2.31.0",
+    "redis>=5.0.0",
     
     # Linting
     "ruff>=0.1.0",
@@ -86,6 +110,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 socialseed_tasker = [
     "../.agent/**",
+    "../docs/**",
     "assets/**/*",
     "assets/templates/**/*",
     "assets/templates/skills/**/*",
@@ -94,12 +119,25 @@ socialseed_tasker = [
 ]
 
 [project.scripts]
-socialseed-tasker = "socialseed_tasker.entrypoints.terminal_cli.app:main_entry"
-tasker = "socialseed_tasker.entrypoints.terminal_cli.app:main_entry"
+socialseed-tasker = "socialseed_tasker.cli.app:main_entry"
+tasker = "socialseed_tasker.cli.app:main_entry"
+
+[tool.black]
+line-length = 88
+target-version = ["py310", "py311", "py312"]
+skip-string-normalization = false
+
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["socialseed_tasker"]
+known_third_party = ["neo4j", "tree_sitter", "pytest"]
+multi_line_output = 3
+include_trailing_comma = true
 
 [tool.ruff]
-target-version = "py310"
 line-length = 120
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
@@ -112,19 +150,18 @@ known-first-party = ["socialseed_tasker"]
  "tests/*" = ["F401", "F811", "B008"]
  "**/app.py" = ["E402", "F401"]
  "**/cli/*" = ["E402", "B008"]
+ "**/cli/commands/*.py" = ["B008", "E501"]
  "**/actions.py" = ["B008", "SIM102"]
  "**/routes.py" = ["B008", "F811", "F401", "E402", "UP035"]
- "**/terminal_cli/commands.py" = ["B008", "E501"]
- "**/terminal_cli/*.py" = ["E402", "F401", "B008"]
  "**/web_api/*.py" = ["F401", "F811", "E402", "B904"]
  "**/secret_manager.py" = ["SIM108", "SIM110"]
  "**/scaffolder.py" = ["SIM108"]
  "**/services/*.py" = ["SIM108", "SIM110", "B904"]
- "**/adapters/*.py" = ["B904"]
- "**/core/**/*.py" = ["B904"]
+ "**/infrastructure/**/*.py" = ["B904"]
+ "**/domain/**/*.py" = ["B904"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
@@ -140,7 +177,16 @@ warn_no_return = true
 module = ["neo4j.*"]
 ignore_missing_imports = true
 
+[tool.pdm.scripts]
+lint = "ruff check src/"
+typecheck = "mypy src/"
+test = "pytest -q"
+precommit = "pre-commit run --all-files"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 addopts = "--cov=socialseed_tasker --cov-report=term-missing"
+markers = [
+    "integration: marks tests as integration tests (requires Neo4j container)",
+]

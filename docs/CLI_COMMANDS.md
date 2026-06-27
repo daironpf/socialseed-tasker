@@ -1,6 +1,6 @@
-# CLI Commands Reference - v0.9.0
+# CLI Commands Reference - v1.0.0
 
-This document covers all CLI commands available in SocialSeed Tasker v0.9.0.
+This document covers all CLI commands available in SocialSeed Tasker v1.0.0.
 
 ## Installation
 
@@ -29,6 +29,7 @@ tasker issue show <issue-id>
 ### Close Issue
 ```bash
 tasker issue close <issue-id>
+tasker issue close <issue-id> --affects <file-path> --affects <file-path>
 ```
 
 ### Delete Issue
@@ -132,7 +133,21 @@ tasker analyze code-impact <file-path>
 tasker analyze root-cause <issue-id>
 ```
 
-## Code Graph (v0.9.0)
+### Phantom Dependency Detection (v1.0.0)
+```bash
+tasker analyze similarity --issue <issue-id>
+tasker analyze similarity --issue <issue-id> --threshold 0.7 --limit 10
+```
+
+### ARCHITECT Agent (v1.0.0)
+```bash
+tasker agent architect --issue <issue-id>
+tasker agent architect --issue <issue-id> --check
+```
+
+### Agent Integration
+
+## Code Graph (v1.0.0)
 
 ### Scan Code Repository
 ```bash
@@ -191,7 +206,7 @@ tasker code-graph tests <symbol-id>
 tasker code-graph file <file-path>
 ```
 
-## RAG Commands (v0.9.0)
+## RAG Commands (v1.0.0)
 
 ### Semantic Search
 ```bash
@@ -213,7 +228,7 @@ tasker rag stats
 tasker rag clear --yes
 ```
 
-## Agent Commands (v0.9.0)
+## Agent Commands (v1.0.0)
 
 ### Get Agent Context
 ```bash
@@ -230,7 +245,44 @@ tasker agent suggest --issue <issue-id>
 tasker agent reasoning --issue <issue-id>
 ```
 
-## Reasoning Commands (v0.9.0)
+## Agent Registration Commands (v1.0.0)
+
+### Register Agent
+Register a new agent with Tasker for tracking and specialization.
+```bash
+tasker agent register --id <agent-id> --name <name> --role <role> --capabilities <cap1,cap2>
+```
+
+Assign agent to project on registration:
+```bash
+tasker agent register --id <agent-id> --name <name> --role <role> --capabilities <cap1,cap2> --project-id <project-id>
+```
+
+| Flag | Description |
+|------|-------------|
+| `--id, -i` | Unique agent identifier (e.g., "agent-001") |
+| `--name, -n` | Human-readable agent name |
+| `--role, -r` | Agent role: developer, reviewer, planner, observer, tester, architect |
+| `--capabilities, -c` | Comma-separated capabilities (e.g., "coding,testing") |
+| `--project-id, -p` | Optional project ID to assign the agent to (auto-links if only one project exists) |
+
+### Add Agent Specialization
+Assign an agent to specialize in a specific component for domain-driven dispatching.
+```bash
+tasker agent specialize --agent <agent-id> --component <component-id>
+```
+
+| Flag | Description |
+|------|-------------|
+| `--agent, -a` | Agent ID |
+| `--component, -c` | Component ID to specialize in |
+
+### List Agents
+```bash
+tasker agent list
+```
+
+## Reasoning Commands (v1.0.0)
 
 ### Log Reasoning
 ```bash
@@ -305,9 +357,110 @@ tasker project detect --path /path/to/project
 tasker project setup --path /path/to/project
 ```
 
+## Feature Flags (v1.0.1)
+
+### Set Flag
+```bash
+tasker flag-set --name <name> --value '<json>'
+```
+`--value` accepts JSON-encoded values: `true`, `42`, `"string"`, `[1,2,3]`, `{"key":"val"}`.
+
+### Get Flag
+```bash
+tasker flag-get --name <name>
+```
+
+### List Flags
+```bash
+tasker flag-list
+```
+
+### Delete Flag
+```bash
+tasker flag-delete --name <name>
+```
+
+All flag commands require authentication and `admin` RBAC permission.
+
+## Backup Commands (v1.0.1)
+
+### Create Backup
+```bash
+tasker backup create
+```
+
+### List Backups
+```bash
+tasker backup list
+```
+
+### Restore Backup
+```bash
+tasker backup restore <timestamp>
+```
+
+## Tenant Commands (v1.0.1)
+
+### Create Tenant
+```bash
+tasker tenant-create --id tenant1 --config '{"plan":"premium"}'
+```
+
+### List Tenants
+```bash
+tasker tenant-list
+```
+
+### Delete Tenant
+```bash
+tasker tenant-delete --id tenant1
+```
+
+All tenant commands require authentication and `admin` RBAC permission.
+
+---
+
 ## Seed Data
 
 ### Run Seed
 ```bash
 tasker seed run
+```
+
+## Server Management (v1.0.1+)
+
+### Start API Server
+```bash
+# Start server on default port (8000)
+tasker serve
+
+# Start on custom port
+tasker serve --port 9000
+
+# Start with auto-reload (development)
+tasker serve --reload
+```
+
+### Restart Docker Services
+```bash
+# Build and restart all Docker containers
+tasker restart
+
+# Start without rebuilding
+tasker restart --build false
+
+# Force rebuild (--no-cache)
+tasker restart --force
+```
+
+### Docker Compose (Alternative)
+```bash
+# Start Neo4j only
+cd .agent && docker compose up -d tasker-db
+
+# Start all services
+cd .agent && docker compose up -d
+
+# Rebuild before starting
+cd .agent && docker compose build --no-cache && docker compose up -d
 ```

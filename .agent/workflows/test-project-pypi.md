@@ -340,3 +340,13 @@ cd real-test/tasker && docker-compose down
 # Deactivate venv (from real-test/)
 deactivate
 ```
+
+---
+
+## Audio Notification
+
+When workflow completes, execute:
+
+```bash
+.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/Prueba desde PyPi.mp3"
+```

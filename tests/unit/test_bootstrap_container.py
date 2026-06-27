@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from socialseed_tasker.bootstrap.container import (
+from socialseed_tasker.application.container import (
     Neo4jConfig,
     AppConfig,
     Neo4jConnectionMode,
@@ -20,7 +20,7 @@ class TestNeo4jConfig:
         
         assert config.uri == "bolt://localhost:7687"
         assert config.user == "neo4j"
-        assert config.password == ""
+        assert config.password == "neoSocial"
         assert config.database == "neo4j"
         assert config.connection_mode == Neo4jConnectionMode.LOCAL
 
@@ -63,7 +63,7 @@ class TestAppConfig:
         config = AppConfig()
         
         assert config.api_host == "0.0.0.0"
-        assert config.api_port == 8000
+        assert config.api_port == 8888
         assert config.debug is False
         assert config.policy_enforcement_mode == "warn"
 

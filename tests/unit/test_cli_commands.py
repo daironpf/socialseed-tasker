@@ -5,15 +5,16 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from typer.testing import CliRunner
 
-from socialseed_tasker.core.task_management.actions import TaskRepositoryInterface
-from socialseed_tasker.core.task_management.constraints import Constraint, ConstraintLevel, ConstraintCategory
-from socialseed_tasker.core.task_management.entities import Component, Issue, IssueStatus, IssuePriority
-from socialseed_tasker.entrypoints.terminal_cli.app import app
+from socialseed_tasker.application.actions import TaskRepositoryInterface, RemoteServiceError
+from socialseed_tasker.application.constraints import Constraint, ConstraintLevel, ConstraintCategory
+from socialseed_tasker.application.exceptions import GraphPortError
+from socialseed_tasker.domain.entities import Component, Issue, IssueStatus, IssuePriority
+from socialseed_tasker.cli.app import app, handle_error
 
 
 class MockRepository(TaskRepositoryInterface):
@@ -25,8 +26,9 @@ class MockRepository(TaskRepositoryInterface):
         self._dependencies: dict[str, set[str]] = {}
         self._constraints: dict[str, Constraint] = {}
 
-    def create_issue(self, issue: Issue) -> None:
+    def create_issue(self, issue: Issue) -> Issue:
         self._issues[str(issue.id)] = issue
+        return issue
 
     def get_issue(self, issue_id: str) -> Issue | None:
         return self._issues.get(issue_id)
@@ -37,7 +39,7 @@ class MockRepository(TaskRepositoryInterface):
         self._issues[issue_id] = updated
         return updated
 
-    def close_issue(self, issue_id: str) -> Issue:
+    def close_issue(self, issue_id: str, commit_sha: str | None = None, resolution: str = "implemented") -> Issue:
         issue = self._issues[issue_id]
         updated = issue.model_copy(update={"status": IssueStatus.CLOSED})
         self._issues[issue_id] = updated
@@ -126,8 +128,9 @@ class MockRepository(TaskRepositoryInterface):
                         break
         return blocked
 
-    def create_component(self, component: Component) -> None:
+    def create_component(self, component: Component) -> Component:
         self._components[str(component.id)] = component
+        return component
 
     def get_component(self, component_id: str) -> Component | None:
         return self._components.get(component_id)
@@ -189,9 +192,9 @@ class MockRepository(TaskRepositoryInterface):
         self._issues[issue_id] = updated
         return updated
 
-    def finish_agent_work(self, issue_id: str) -> Issue:
+    def finish_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         issue = self._issues[issue_id]
-        updated = issue.model_copy(update={"agent_working": None})
+        updated = issue.model_copy(update={"agent_working": None, "agent_finished_by": agent_id})
         self._issues[issue_id] = updated
         return updated
 
@@ -248,19 +251,37 @@ def mock_repo():
 
 
 def _patch_commands(mock_repo: MockRepository):
-    """Patch commands.get_repository to return mock_repo."""
-    from socialseed_tasker.entrypoints.terminal_cli import commands as cmds
-    from socialseed_tasker.entrypoints.terminal_cli import app as cli_app
+    """Patch get_repository in all relevant locations to return mock_repo."""
+    from socialseed_tasker.cli import commands as cmds
+    from socialseed_tasker.cli.commands import shared
+    from socialseed_tasker.cli import app as cli_app
 
+    modules_to_patch = [
+        cmds,
+        shared,
+        cmds.issue_commands,
+        cmds.component_commands,
+        cmds.dependency_commands,
+        cmds.analysis_commands,
+        cmds.status_commands,
+        cmds.project_commands,
+        cmds.rag_commands,
+        cmds.code_graph_commands,
+        cmds.agent_commands,
+        cmds.constraints_commands,
+        cmds.seed_commands,
+        cmds.reasoning_commands,
+    ]
     original = cmds.get_repository
-    cmds.get_repository = lambda: mock_repo
+    for mod in modules_to_patch:
+        mod.get_repository = lambda: mock_repo
     cli_app._cli_container = None
     return original
 
 
 def _unpatch_commands(original):
     """Restore original get_repository."""
-    from socialseed_tasker.entrypoints.terminal_cli import commands as cmds
+    from socialseed_tasker.cli import commands as cmds
 
     cmds.get_repository = original
 
@@ -401,22 +422,24 @@ class TestInitCommand:
         target_dir.mkdir()
         result = runner.invoke(
             app,
-            ["init", str(target_dir)],
+            ["install", str(target_dir)],
         )
         assert result.exit_code == 0
         assert (target_dir / ".agent").exists()
-        assert (target_dir / ".agent" / "docker-compose.yml").exists()
+        assert (target_dir / ".agent" / "tasker").exists()
+        assert (target_dir / ".agent" / "tasker" / "docker-compose.yml").exists()
+        assert (target_dir / ".agent" / "Agent.md").exists()
 
     def test_init_force_overwrites_existing(self, runner, tmp_path):
         target_dir = tmp_path / "project"
         target_dir.mkdir()
-        tasker_dir = target_dir / ".agent"
-        tasker_dir.mkdir()
+        tasker_dir = target_dir / ".agent" / "tasker"
+        tasker_dir.mkdir(parents=True)
         (tasker_dir / "docker-compose.yml").write_text("old content")
 
         result = runner.invoke(
             app,
-            ["init", str(target_dir), "--force"],
+            ["install", str(target_dir), "--force"],
         )
         assert result.exit_code == 0
         assert "Overwritten" in result.stdout
@@ -425,7 +448,7 @@ class TestInitCommand:
         target_dir = tmp_path / "nonexistent"
         result = runner.invoke(
             app,
-            ["init", str(target_dir)],
+            ["install", str(target_dir)],
         )
         assert result.exit_code == 1
         assert "does not exist" in result.stdout
@@ -438,7 +461,7 @@ class TestInitCommand:
 
         result = runner.invoke(
             app,
-            ["init", str(target_dir), "-f"],
+            ["install", str(target_dir), "-f"],
         )
         assert result.exit_code == 0
 
@@ -653,7 +676,7 @@ class TestIssueStartFinishCommand:
                 component_id=comp.id,
             )
             mock_repo.create_issue(issue)
-            result = runner.invoke(app, ["issue", "finish", str(issue.id)])
+            result = runner.invoke(app, ["issue", "finish", str(issue.id), "--agent-id", "test-agent"])
             assert result.exit_code == 0
         finally:
             _unpatch_commands(original)
@@ -853,6 +876,43 @@ class TestSeedCommand:
             result = runner.invoke(app, ["seed", "run"])
         finally:
             _unpatch_commands(original)
+
+
+class TestErrorHandling:
+    def test_handle_error_no_stack_trace(self, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            handle_error(RuntimeError("Cannot connect to Neo4j: timeout"))
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "Traceback" not in captured.out
+        assert "Database connection failed" in captured.out
+        assert "docker compose up -d" in captured.out
+
+    def test_handle_error_remote_db_failure(self, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            handle_error(RemoteServiceError("DATABASE_CONNECTION_ERROR: connection refused"))
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "Traceback" not in captured.out
+        assert "Check that Neo4j is running" in captured.out
+        assert "docker compose up -d" in captured.out
+
+    def test_handle_error_graph_port_error(self, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            handle_error(GraphPortError("Neo4j operation failed: timeout"))
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "Traceback" not in captured.out
+        assert "Database connection failed" in captured.out
+        assert "docker compose up -d" in captured.out
+
+    def test_handle_error_rate_limited_no_details(self, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            handle_error(RemoteServiceError("HTTP 429: Rate limited. Retry after 1s."))
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "429" not in captured.out
+        assert "Too many requests" in captured.out
 
 
 class TestProjectDetectCommand:

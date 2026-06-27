@@ -1,0 +1,44 @@
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+
+type Issue {
+  id: ID!
+  title: String!
+  description: String
+  status: String!
+  metadata: JSON
+}
+
+scalar JSON
+
+type DependencyEdge {
+  from: ID!
+  to: ID!
+  relation: String!
+}
+
+type AgentContext {
+  issueId: ID!
+  context: JSON!
+}
+
+type Query {
+  issue(id: ID!): Issue
+  issues: [Issue!]!
+  impact(issueId: ID!, maxDepth: Int = 5): [ID!]!
+  agentContext(issueId: ID!, maxDepth: Int = 3): AgentContext!
+}
+
+type Mutation {
+  createIssue(id: ID!, title: String!, description: String, status: String, metadata: JSON): Issue!
+  addDependency(from: ID!, to: ID!, relation: String = "DEPENDS_ON"): DependencyEdge!
+  triggerEvent(type: String!, payload: JSON): Boolean!
+}
+
+type Subscription {
+  issueEvents(issueId: ID): JSON
+  webhookEvents: JSON
+}

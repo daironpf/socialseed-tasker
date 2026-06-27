@@ -2,7 +2,15 @@
 # Tasker Docker Compose (Full Stack)
 # =============================================================================
 # For external projects: copy to your project root and run:
-#   docker compose up -d
+#
+#   Direct mode (CLI connects via Bolt to Neo4j):
+#     docker compose up -d
+#
+#   API mode (CLI connects via REST to tasker-api):
+#     docker compose --profile api up -d
+#
+#   Full stack (API + frontend board):
+#     docker compose --profile full up -d
 
 services:
 
@@ -10,11 +18,10 @@ services:
   # Neo4j Database (Graph Database - Exclusive Storage)
   # =============================================================================
   tasker-db:
-    container_name: tasker-db
     image: neo4j:5.26.15-community
     ports:
-      - "7474:7474"
-      - "7687:7687"
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
     environment:
       - NEO4J_AUTH=${NEO4J_USERNAME:-neo4j}/${NEO4J_PASSWORD:-neoSocial}
       - NEO4J_dbms_memory_heap_initial__size=100M
@@ -35,21 +42,20 @@ services:
           memory: 512M
 
   # =============================================================================
-  # FastAPI Backend (REST API for AI agents)
-  # Neo4j-only storage - graph database
-  # Builds from local source for development testing
-  # Note: Use 'docker compose build tasker-api' after modifying src/
+  # FastAPI Backend (REST API for AI agents / API mode)
+  # Installs from PyPI - no local source files required.
+  # Only started when using --profile api or --profile full
   # =============================================================================
   tasker-api:
-    container_name: tasker-api
+    profiles: ["api", "full"]
     build:
-      context: ../..
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: tasker/Dockerfile
     image: tasker-api:local
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8888:8000"
     environment:
-      - TASKER_NEO4J_URI=${TASKER_NEO4J_URI:-bolt://tasker-db:7687}
+      - TASKER_NEO4J_URI=bolt://tasker-db:7687
       - TASKER_NEO4J_USERNAME=${TASKER_NEO4J_USERNAME:-neo4j}
       - TASKER_NEO4J_PASSWORD=${TASKER_NEO4J_PASSWORD:-neoSocial}
       - TASKER_API_HOST=0.0.0.0
@@ -67,15 +73,16 @@ services:
   # Builds from local frontend/ directory for proper proxy configuration
   # IMPORTANT: Run 'docker compose build tasker-board' first time
   # Or use: docker build -t tasker-board -f frontend/Dockerfile frontend/
+  # Only started with --profile full
   # =============================================================================
   tasker-board:
-    container_name: tasker-board
+    profiles: ["full"]
     build:
       context: ./frontend
       dockerfile: Dockerfile
     image: tasker-board:local
     ports:
-      - "8080:80"
+      - "127.0.0.1:8889:80"
     depends_on:
       - tasker-api
     networks:

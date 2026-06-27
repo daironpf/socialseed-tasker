@@ -4,7 +4,7 @@
 `convert findings` or `findings to issues`
 
 ## Description
-Converts FINDings in report.md to issues in .issues/to-do/. This workflow is executed after completing a project evaluation (test the project).
+Converts findings in report.md to issues in `.issues/to-do/`. This workflow is executed after completing a project evaluation (black-box test).
 
 ---
 
@@ -12,25 +12,61 @@ Converts FINDings in report.md to issues in .issues/to-do/. This workflow is exe
 
 1. Only execute AFTER report.md is complete
 2. DO NOT create issues for problems already resolved
-3. Maintain index correlation with .issues/done/
+3. **ALWAYS** use `.issues/done/` folder to determine the correct index (NOT the INDEX file in to-do)
+4. The issue number must be the next sequential number after the highest numbered file in `.issues/done/`
+5. After solving an issue (commit), move the file from `.issues/to-do/` to `.issues/done/` AND change its `## Status:` from `PENDING` to `COMPLETED`
+6. INDEX files (`INDEX-*.md`) in `.issues/done/` are NOT issue files — skip them when finding highest number
 
 ---
 
-## Phase 1: Read report.md
+## Phase 1: Determine Correct Issue Index
+
+### Process
+1. **CRITICAL**: List all files in `.issues/done/` to find the highest issue number
+2. Use command (PowerShell):
+   ```
+   Get-ChildItem -Path ".issues/done" -Filter "*.md" -Name |
+     Where-Object { $_ -match '^(\d+)' } |
+     ForEach-Object { [int]$matches[1] } |
+     Sort-Object -Descending |
+     Select-Object -First 1
+   ```
+3. The next issue number = highest_number + 1
+
+**Example (PowerShell):**
+```
+Get-ChildItem -Path ".issues/done" -Filter "*.md" -Name |
+  Where-Object { $_ -match '^(\d+)' } |
+  ForEach-Object { [int]$matches[1] } |
+  Sort-Object -Descending |
+  Select-Object -First 1
+# Returns: 376
+# Next issue should be: #377
+```
+
+**Linux/macOS alternative:**
+```
+ls .issues/done/ | grep -E '^[0-9]+' | sort -V | tail -1 | grep -oE '^[0-9]+'
+```
+
+---
+
+## Phase 2: Read report.md
 
 ### Process
 1. Read the file: `real-test/report.md`
-2. Find all sections with `### FIND-###:` pattern
+2. Find all sections with `## Issues Found` (or `### FIND-###:`, `### BUG-###:`, `### DOC_GAP-###:`)
 3. Extract:
-   - ID (FIND-001, FIND-002, etc.)
-   - Type (BUG, DOC_GAP, etc.)
-   - Severity
-   - Title
-   - Description
+   - Severity (HIGH, MEDIUM, LOW) — infer from context if not explicit
+   - Title (short description)
+   - Description (full detail, often bullet points after the title)
+   - Suggested Fix (if mentioned)
+   - Impact (if mentioned)
+4. **Skip** findings that say "None" or "All previous findings resolved"
 
 ---
 
-## Phase 2: Create Issues
+## Phase 3: Create Issues
 
 ### For Each FINDING
 
@@ -40,93 +76,121 @@ Create a new issue file in `.issues/to-do/` with:
 # Issue #XXX: [Title from Finding]
 
 ## Description
-[Copy description from finding]
+[Copy description from finding — full technical detail]
 
 ## Expected Behavior
-[If mentioned in finding]
+[What should happen]
 
 ## Actual Behavior
-[If mentioned in finding]
+[What actually happens]
 
 ## Steps to Reproduce
-1. [Steps from finding or infer]
+1. [Concrete steps to reproduce the finding]
 
 ## Status: PENDING
 
-## Priority: [SEVERITY]
+## Priority: [LOW / MEDIUM / HIGH / CRITICAL]
 
 ## Component
-[Component from finding]
+[Affected component(s) — e.g. CLI, Neo4j repository, Scaffold, etc.]
 
 ## Suggested Fix
-[Suggested fix from finding]
+[Specific code-level suggestion from the finding, or leave empty if not known yet]
 
 ## Impact
-[Impact from finding]
+[How this affects users or development workflow]
 
 ## Related Issues
-- Related issue numbers from previous runs
+- [Any related issue numbers, or "(none)"]
+
+## Changes Made
+[Leave empty — filled in after solving]
+
+## Verification
+[Leave empty — filled in after solving]
 ```
 
-### Index Correlation
-- Find highest issue number in `.issues/done/`
-- New issues continue from that number (e.g., if highest is 171, next is 172)
+### Naming Convention
+- Filename format: `{issue_number}-{kebab-case-title}.md`
+- Use kebab-case (lowercase, hyphens for spaces)
+- Example: `377-suppress-pydantic-serializer-warnings.md`
 
 ---
 
-## Phase 3: Update report.md
+## Phase 4: Update report.md
 
 ### Process
-1. Add to report.md:
-```
+1. Add a table right before `## Issues Found` in report.md:
+```markdown
 ### Issues Created from Findings
 
 | Issue | Title |
 |-------|-------|
-| #172 | [title FIND-001] |
-| #173 | [title FIND-002] |
+| #377 | Pydantic serializer warnings pollute --json output |
+| #378 | [title of next finding] |
 ```
 
 ---
 
-## Phase 4: Notify
+## Phase 5: After Solving an Issue
+
+### Process
+1. Change `## Status: PENDING` to `## Status: COMPLETED` in the issue file
+2. Add details under `## Changes Made` and `## Verification`
+3. Move the file from `.issues/to-do/` to `.issues/done/`:
+   ```powershell
+   Move-Item -Path ".issues/to-do/377-xxx.md" -Destination ".issues/done/377-xxx.md" -Force
+   ```
+4. Stage and commit:
+   ```powershell
+   git add "src/path/to/fix.py" ".issues/done/377-xxx.md"
+   git commit -m "#377: Short description of the fix"
+   ```
+
+---
+
+## Phase 6: Notify
 
 ### Output
 Report to user:
 ```
 Issues created:
-- .issues/to-do/172-[slug].md
-- .issues/to-do/173-[slug].md
+- .issues/to-do/377-[slug].md
+- .issues/to-do/378-[slug].md
 ```
 
 ---
 
 ## Example
 
-### Input (report.md)
+### Input (report.md issues section)
 ```markdown
-### FIND-001: API returns wrong version
-
-| Severity | HIGH |
-|----------|------|
-| Title | Version mismatch |
-
-API returns 0.7.0 instead of 0.9.0
+## Issues Found
+- **Pydantic serializer warnings** in `issue list --json` output:
+  `UserWarning: Pydantic serializer warnings` interleaved with JSON.
 ```
 
-### Output (.issues/to-do/172-version-mismatch.md)
+### Finding highest issue number (PowerShell)
+```
+Get-ChildItem -Path ".issues/done" -Filter "*.md" -Name |
+  Where-Object { $_ -match '^(\d+)' } |
+  ForEach-Object { [int]$matches[1] } |
+  Sort-Object -Descending |
+  Select-Object -First 1
+# Returns: 376 -> Next: 377
+```
+
+### Output (.issues/to-do/377-suppress-pydantic-serializer-warnings.md)
 ```markdown
-# Issue #172: API returns wrong version
+# Issue #377: Pydantic serializer warnings pollute --json output
 
 ## Description
-API returns 0.7.0 instead of 0.9.0
-
-## Expected Behavior
-Version should match source code
+`tasker issue list --json` produces pydantic serializer warnings
+interleaved with JSON, breaking JSON consumers.
 
 ## Status: PENDING
 
-## Priority: HIGH
+## Priority: LOW
 ...
 ```
 
@@ -134,9 +198,21 @@ Version should match source code
 
 ## Checklist
 
+- [ ] Determine correct index from `.issues/done/` (skip INDEX-*.md)
 - [ ] Read real-test/report.md
-- [ ] Extract all FIND-### sections
-- [ ] Create issue for each FINDING (not RESOLVED)
-- [ ] Maintain index correlation
-- [ ] Update report.md with created issues
-- [ ] Notify user of created issues
+- [ ] Extract all findings from `## Issues Found` section
+- [ ] Create issue file for each FINDING (not RESOLVED) in `.issues/to-do/`
+- [ ] Use correct sequential numbering (highest in done + 1, +2, ...)
+- [ ] Follow naming convention: `{number}-{kebab-title}.md`
+- [ ] Update report.md with created issues table
+- [ ] When solving: update status, add Changes Made, move to done, commit
+
+---
+
+## Audio Notification
+
+When workflow completes, execute:
+
+```bash
+.venv/Scripts/python.exe .agent/assets/play_audio.py ".agent/assets/audios/de find a issues.mp3"
+```

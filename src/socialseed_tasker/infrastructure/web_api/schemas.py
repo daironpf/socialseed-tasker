@@ -1,0 +1,987 @@
+"""Pydantic schemas for API request/response models.
+
+All request bodies and responses use these models for validation
+and consistent envelope formatting.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any, Generic, TypeVar
+
+from pydantic import BaseModel, Field, model_validator
+
+from socialseed_tasker import __version__  # noqa: E402
+
+T = TypeVar("T")
+
+
+# ---------------------------------------------------------------------------
+# Envelope models
+# ---------------------------------------------------------------------------
+
+
+class ErrorDetail(BaseModel):
+    """Structured error information."""
+
+    code: str = Field(..., description="Machine-readable error code")
+    message: str = Field(..., description="Human-readable error message")
+    details: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional context about the error",
+    )
+
+
+class Meta(BaseModel):
+    """Response metadata."""
+
+    model_config = {"populate_by_name": True}
+
+    timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="Response generation timestamp",
+    )
+    request_id: str | None = Field(
+        default=None,
+        description="Unique request identifier for tracing",
+    )
+    warnings: list[str] | None = Field(
+        default=None,
+        description="Non-critical warnings for the client",
+    )
+    pagination: 'PaginationMeta | None' = Field(
+        default=None,
+        description="Pagination metadata for list endpoints (present only when results are paginated)",
+    )
+
+
+class APIResponse(BaseModel, Generic[T]):
+    """Standard response envelope for all API endpoints.
+
+    Intent: Provide a consistent structure so AI agents can always
+    parse responses the same way.
+    Business Value: Simplifies client code and enables generic response
+    handling across all endpoints.
+    """
+
+    data: T | None = Field(None, description="The response payload")
+    error: ErrorDetail | None = Field(
+        default=None,
+        description="Error information (present only on failure)",
+    )
+    meta: Meta = Field(default_factory=Meta, description="Response metadata")
+
+
+# ---------------------------------------------------------------------------
+# Pagination
+# ---------------------------------------------------------------------------
+
+
+class PaginationMeta(BaseModel):
+    """Pagination information for list endpoints.
+
+    All paginated endpoints return this structure within the data.pagination field.
+
+    Example:
+    ```json
+    {
+      "data": {
+        "items": [...],
+        "pagination": {
+          "page": 1,
+          "limit": 20,
+          "total": 100,
+          "has_next": true,
+          "has_prev": false
+        }
+      }
+    }
+    ```
+    """
+
+    page: int = Field(
+        ...,
+        ge=1,
+        description="Current page number (starts at 1)",
+        examples=[1],
+    )
+    limit: int = Field(
+        ...,
+        ge=1,
+        le=100,
+        description="Items per page (default: 20, max: 100)",
+        examples=[20],
+    )
+    total: int = Field(
+        ...,
+        ge=0,
+        description="Total number of items available across all pages",
+        examples=[100],
+    )
+    has_next: bool = Field(
+        ...,
+        description="Whether more pages exist after the current page",
+        examples=[True],
+    )
+    has_prev: bool = Field(
+        ...,
+        description="Whether previous pages exist before the current page",
+        examples=[False],
+    )
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    """Paginated response envelope."""
+
+    items: list[T] = Field(default_factory=list)
+    pagination: PaginationMeta
+
+
+# ---------------------------------------------------------------------------
+# Reasoning log schemas
+# ---------------------------------------------------------------------------
+
+
+class ReasoningLogEntryRequest(BaseModel):
+    """Request body for adding a reasoning log entry."""
+
+    context: str = Field(
+        ...,
+        description=(
+            "Type of reasoning: component_selection, dependency_analysis, "
+            "architecture_choice, impact_assessment, priority_decision"
+        ),
+        examples=["architecture_choice"],
+    )
+    reasoning: str = Field(
+        ...,
+        min_length=1,
+        description="Explanation of the decision",
+        examples=["Selected Neo4j for storage due to graph-based dependency tracking requirements"],
+    )
+    related_nodes: list[str] = Field(
+        default_factory=list,
+        description="Related issue/component UUIDs",
+        examples=[["550e8400-e29b-41d4-a716-446655440000"]],
+    )
+
+
+class AgentReasoningLogRequest(BaseModel):
+    """Request body for logging AI agent reasoning (reasoning router)."""
+
+    issue_id: str = Field(..., description="Issue UUID")
+    agent_id: str = Field("agent-1", description="Agent identifier")
+    agent_name: str = Field("DevAgent", description="Agent display name")
+    thought: str = Field(..., min_length=1, description="Reasoning thought")
+    confidence: float = Field(0.5, ge=0.0, le=1.0, description="Confidence 0.0-1.0")
+    alternatives_considered: list[str] = Field(default_factory=list, description="Alternatives considered")
+    rejected_reasons: list[str] = Field(default_factory=list, description="Reasons for rejecting alternatives")
+    decision: str | None = Field(None, description="Decision made")
+    decision_type: str = Field("unknown", description="Decision type identifier")
+    context: dict[str, Any] | None = Field(None, description="Additional context")
+
+
+class ReasoningLogEntryResponse(BaseModel):
+    """Single reasoning log entry in API responses."""
+
+    id: str
+    timestamp: datetime
+    context: str
+    reasoning: str
+    related_nodes: list[str]
+
+
+class CommentRequest(BaseModel):
+    """Request body for adding a comment to an issue."""
+
+    text: str = Field(..., min_length=1, description="Comment text", examples=["Fixed this in PR #42"])
+    author: str = Field("api-user", description="Comment author", examples=["developer-1"])
+
+
+class CommentResponse(BaseModel):
+    """Single comment in API responses."""
+
+    id: str
+    timestamp: datetime
+    author: str
+    text: str
+
+
+# ---------------------------------------------------------------------------
+# Manifest schemas
+# ---------------------------------------------------------------------------
+
+
+class ManifestTodoItem(BaseModel):
+    """Single TODO item in the agent progress manifest."""
+
+    task: str = Field(..., description="Task description")
+    completed: bool = Field(default=False, description="Whether the task is completed")
+
+
+class ManifestTodoRequest(BaseModel):
+    """Request body for updating the manifest TODO list."""
+
+    todo: list[ManifestTodoItem] = Field(
+        ...,
+        description="List of TODO items",
+        examples=[[{"task": "Implement feature X", "completed": False}, {"task": "Write tests", "completed": True}]],
+    )
+
+
+class ManifestFilesRequest(BaseModel):
+    """Request body for updating the manifest affected files list."""
+
+    files: list[str] = Field(
+        ...,
+        description="List of affected file paths",
+        examples=[["src/core/module.ts", "tests/unit/test_module.py"]],
+    )
+
+
+class ManifestNotesRequest(BaseModel):
+    """Request body for updating the manifest technical debt notes."""
+
+    notes: list[str] = Field(
+        ...,
+        description="List of technical debt notes",
+        examples=[["Temporary workaround for edge case", "TODO: refactor validation logic"]],
+    )
+
+
+class ManifestResponse(BaseModel):
+    """Agent progress manifest in API responses."""
+
+    todo: list[dict[str, str]] = Field(default_factory=list)
+    files: list[str] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+
+
+class AgentStartRequest(BaseModel):
+    """Request body for starting agent work on an issue."""
+
+    agent_id: str = Field(
+        ...,
+        description="Identifier for the agent",
+        examples=["agent-001", "claude-code-abc123"],
+    )
+
+
+class AgentFinishRequest(BaseModel):
+    """Request body for finishing agent work on an issue."""
+
+    agent_id: str = Field(
+        ...,
+        description="Identifier for the agent finishing the work",
+        examples=["agent-001", "claude-code-abc123"],
+    )
+
+
+class AgentStatusResponse(BaseModel):
+    """Agent work status in API responses."""
+
+    agent_working: bool
+    agent_started_at: datetime | None
+    agent_finished_at: datetime | None
+    agent_id: str | None
+
+
+class PolicyViolationResponse(BaseModel):
+    """Single policy violation in API responses."""
+
+    rule_id: str
+    rule_name: str
+    severity: str
+    message: str
+    suggestion: str
+
+
+class PolicyValidationRequest(BaseModel):
+    """Request body for validating a potential action against policies."""
+
+    action_type: str = Field(
+        ...,
+        description="Type of action: create_issue, add_dependency, update_issue",
+        examples=["create_issue", "add_dependency"],
+    )
+    issue_data: dict[str, Any] | None = Field(
+        None,
+        description="Issue data for create/update actions",
+    )
+    dependency_data: dict[str, Any] | None = Field(
+        None,
+        description="Dependency data for add_dependency action",
+    )
+
+
+class PolicyValidationResponse(BaseModel):
+    """Response for policy validation."""
+
+    is_valid: bool
+    violations: list[PolicyViolationResponse]
+    enforcement_mode: str
+
+
+class PolicyRuleRequest(BaseModel):
+    """Request body for a policy rule."""
+
+    rule_type: str = Field(
+        ...,
+        description="Type of rule: forbidden_path, required_dependency, max_depth, forbidden_label_dependency",
+        examples=["forbidden_path"],
+    )
+    from_pattern: str = Field(
+        "",
+        description="Pattern to match source (e.g., component.type:frontend, label:backend)",
+    )
+    to_pattern: str = Field(
+        "",
+        description="Pattern to match target (e.g., component.type:database)",
+    )
+    max_depth: int = Field(default=5, description="Maximum depth for max_depth rules")
+    description: str = ""
+
+
+class PolicyResponse(BaseModel):
+    """Policy in API responses."""
+
+    id: str
+    name: str
+    description: str
+    rules: list[dict]
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class TestFailureWebhookRequest(BaseModel):
+    """Request body for test failure webhook."""
+
+    test_name: str = Field(..., description="Name of the failed test")
+    test_file: str = Field("", description="Path to the test file")
+    error_message: str = Field("", description="Error message from test failure")
+    stack_trace: str = Field("", description="Full stack trace")
+    test_type: str = Field("integration", description="Type of test: unit, integration, e2e")
+    commit_sha: str = Field("", description="Git commit SHA")
+    branch: str = Field("", description="Git branch name")
+
+
+class TestFailureWebhookResponse(BaseModel):
+    """Response for test failure webhook."""
+
+    issue_id: str | None = None
+    message: str
+    success: bool
+
+
+class AgentRegisterRequest(BaseModel):
+    """Request body for registering an agent."""
+
+    agent_id: str = Field(..., description="Unique agent identifier", examples=["agent-001"])
+    name: str = Field(..., min_length=1, max_length=100, description="Agent name")
+    role: str = Field("developer", description="Agent role: planner, developer, reviewer, observer, tester, architect")
+    capabilities: list[str] = Field(default_factory=list, description="Agent capabilities")
+    project_id: str | None = Field(None, description="Optional project ID to assign the agent to")
+
+
+class AgentUpdateRequest(BaseModel):
+    """Request body for updating agent status."""
+
+    status: str | None = Field(None, description="Agent status: idle, busy, offline")
+    current_issue_id: str | None = Field(None, description="Issue ID currently being worked on")
+
+
+class AgentResponse(BaseModel):
+    """Agent in API responses."""
+
+    agent_id: str
+    name: str
+    role: str
+    status: str
+    current_issue_id: str | None
+    capabilities: list[str]
+    created_at: datetime
+    last_heartbeat: datetime
+    project_id: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Request schemas
+# ---------------------------------------------------------------------------
+
+
+class IssueCreateRequest(BaseModel):
+    """Request body for creating a new issue."""
+
+    title: str = Field(
+        ...,
+        min_length=1,
+        max_length=200,
+        description="Issue title",
+        examples=["Fix login authentication bug"],
+    )
+    description: str = Field(
+        "",
+        description="Detailed description in Markdown",
+        examples=["Users receive a 500 error when submitting valid credentials"],
+    )
+    priority: str = Field(
+        "MEDIUM",
+        description="Priority level: LOW, MEDIUM, HIGH, CRITICAL",
+        examples=["HIGH"],
+    )
+    component_id: str = Field(
+        ...,
+        min_length=1,
+        description="UUID of the component this issue belongs to.",
+        examples=["550e8400-e29b-41d4-a716-446655440000"],
+    )
+    labels: list[str] = Field(
+        default_factory=list,
+        description="Tags for categorisation",
+        examples=[["bug", "auth", "urgent"]],
+    )
+    architectural_constraints: list[str] = Field(
+        default_factory=list,
+        description="Architectural rules this issue must comply with",
+        examples=["no-sql-in-graph-module"],
+    )
+
+
+class IssueUpdateRequest(BaseModel):
+    """Request body for partially updating an issue.
+
+    All fields are optional. Only fields included in the request will be updated.
+    """
+
+    title: str | None = Field(None, min_length=1, max_length=200, description="Updated title")
+    description: str | None = Field(None, description="Updated description in Markdown")
+    status: str | None = Field(
+        None,
+        description="Updated status: todo, in_progress, blocked, code_review, done, closed",
+    )
+    priority: str | None = Field(
+        None,
+        description="Updated priority: LOW, MEDIUM, HIGH, CRITICAL",
+    )
+    component_id: str | None = Field(None, description="UUID of target component")
+    labels: list[str] | None = Field(None, description="Updated label list")
+    architectural_constraints: list[str] | None = Field(
+        None,
+        description="Updated architectural constraint list",
+    )
+    agent_working: bool | None = Field(
+        None,
+        description="Whether an AI agent is currently working on this issue",
+    )
+
+
+class DependencyRequest(BaseModel):
+    """Request body for adding a dependency between issues.
+
+    Creates a [:DEPENDS_ON] relationship. The request will fail if adding
+    the dependency would create a circular dependency chain.
+    """
+
+    depends_on_id: str | None = Field(
+        None,
+        description="UUID of the issue this issue depends on",
+        examples=["550e8400-e29b-41d4-a716-446655440000"],
+    )
+    depends_on: str | None = Field(
+        None,
+        description="Alias for depends_on_id",
+        examples=["550e8400-e29b-41d4-a716-446655440000"],
+    )
+
+    @model_validator(mode="after")
+    def _resolve_depends_on(self) -> "DependencyRequest":
+        if self.depends_on_id is None and self.depends_on is not None:
+            self.depends_on_id = self.depends_on
+        if self.depends_on_id is None:
+            raise ValueError("Either depends_on_id or depends_on is required")
+        return self
+
+
+class BulkDependencyRequest(BaseModel):
+    """Request body for adding multiple dependencies at once."""
+
+    depends_on_ids: list[str] = Field(
+        ...,
+        min_length=1,
+        max_length=50,
+        description="List of UUIDs this issue depends on",
+        examples=[["550e8400-e29b-41d4-a716-446655440000", "660e8400-e29b-41d4-a716-446655440001"]],
+    )
+
+
+class BulkDependencyResponse(BaseModel):
+    """Response for bulk dependency creation."""
+
+    issue_id: str
+    total_requested: int
+    successful: int
+    failed: int
+    results: list[dict[str, Any]]
+
+
+class BulkIssueCreateItem(BaseModel):
+    """A single issue entry inside a bulk creation request."""
+
+    title: str = Field(..., max_length=200, description="Issue title")
+    description: str = Field("", description="Detailed description in Markdown")
+    priority: str = Field("MEDIUM", description="Priority level: LOW, MEDIUM, HIGH, CRITICAL")
+    component_id: str = Field(..., min_length=1, description="UUID of the component this issue belongs to")
+    labels: list[str] = Field(default_factory=list, description="Tags for categorisation")
+    architectural_constraints: list[str] = Field(default_factory=list, description="Architectural rules this issue must comply with")
+
+
+class BulkIssueCreateRequest(BaseModel):
+    """Request body for creating multiple issues at once."""
+
+    issues: list[BulkIssueCreateItem] = Field(
+        ...,
+        max_length=100,
+        description="List of issues to create (max 100 per request)",
+    )
+
+
+class BulkIssueCreateResult(BaseModel):
+    """Result for a single issue in a bulk creation."""
+
+    index: int
+    status: str
+    issue_id: str | None = None
+    title: str | None = None
+    error: str | None = None
+
+
+class BulkIssueCreateResponse(BaseModel):
+    """Response for bulk issue creation."""
+
+    total_requested: int
+    successful: int
+    failed: int
+    results: list[BulkIssueCreateResult]
+
+
+class ComponentCreateRequest(BaseModel):
+    """Request body for creating a new component.
+
+    Components represent architectural layers or functional areas within a project.
+    They group related issues and can have dependencies between each other.
+    """
+
+    name: str = Field(
+        ...,
+        min_length=1,
+        description="Component name (unique within a project)",
+        examples=["Backend", "Frontend", "Database", "API"],
+    )
+    description: str | None = Field(
+        None,
+        description="Component description",
+        examples=["REST API and business logic layer", "User interface components"],
+    )
+    project: str = Field(
+        "default",
+        min_length=1,
+        description="Project name this component belongs to (default: 'default')",
+        examples=["socialseed-tasker", "ecommerce-store"],
+    )
+    labels: list[str] = Field(
+        default_factory=list,
+        description="Labels to categorize the component",
+        examples=[["backend", "api"], ["frontend", "ui"]],
+    )
+
+class ProjectCreateRequest(BaseModel):
+    """Request body for creating a new project node."""
+    id: str | None = Field(None, description="Universal unique identifier (generated if not provided)")
+    name: str = Field(..., min_length=1, description="Official name of the project")
+    slug: str = Field(default="", description="URL-friendly identifier (defaults to name lowercased + hyphens if empty)")
+    description: str = Field("", description="Detailed description of the project's scope")
+    repositoryUrl: str = Field("", description="Link to the remote Git repository")
+    basePackage: str = Field("", description="The root package or primary namespace")
+    visibility: str = Field("PUBLIC", description="Project visibility level (PUBLIC, PRIVATE)")
+    status: str = Field("DEVELOPMENT", description="Current project lifecycle state")
+    techStack: list[str] = Field(default_factory=list, description="Complete list of all integrated technologies")
+    mainStack: list[str] = Field(default_factory=list, description="Core technologies")
+    architectureStyle: str = Field("api-first", description="Architectural pattern followed")
+    version: str = Field("0.1.0", description="Current semantic version")
+    conventionsUrl: str = Field("", description="Reference to external coding standards")
+    conventionsRules: str = Field("", description="Specific rules and guidelines for AI agents")
+    globalStatus: str = Field("DEVELOPMENT", description="Operational status: DEVELOPMENT, STAGING, PRODUCTION")
+
+
+class ProjectResponse(BaseModel):
+    """Project details in API responses."""
+    id: str
+    name: str
+    slug: str
+    description: str
+    repositoryUrl: str
+    basePackage: str
+    visibility: str
+    status: str
+    techStack: list[str]
+    mainStack: list[str]
+    architectureStyle: str
+    version: str
+    conventionsUrl: str
+    globalStatus: str
+    createdAt: str | None = None
+    updatedAt: str | None = None
+
+
+class TestFailureRequest(BaseModel):
+    """Request body for submitting a test failure for root-cause analysis."""
+
+    test_id: str = Field(..., description="Unique test identifier")
+    test_name: str = Field(..., description="Test function/class name")
+    error_message: str = Field(..., description="Error message from the test runner")
+    stack_trace: str = Field("", description="Full stack trace")
+    component: str = Field("", description="Component where the failure occurred")
+    labels: list[str] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Response schemas (data payloads)
+# ---------------------------------------------------------------------------
+
+
+class IssueResponse(BaseModel):
+    """Single issue in API responses."""
+
+    id: str
+    title: str
+    description: str
+    status: str
+    priority: str
+    component_id: str
+    labels: list[str]
+    dependencies: list[str]
+    blocks: list[str]
+    affects: list[str]
+    created_at: datetime
+    updated_at: datetime
+    closed_at: datetime | None
+    architectural_constraints: list[str]
+    agent_working: bool | None = None
+    agent_started_at: datetime | None = None
+    agent_finished_at: datetime | None = None
+    agent_id: str | None = None
+    reasoning_logs: list[ReasoningLogEntryResponse] = Field(default_factory=list)
+    comments: list[CommentResponse] = Field(default_factory=list)
+    manifest_todo: list[dict[str, str]] = Field(default_factory=list)
+    manifest_files: list[str] = Field(default_factory=list)
+    manifest_notes: list[str] = Field(default_factory=list)
+
+
+class ComponentResponse(BaseModel):
+    """Single component in API responses."""
+
+    id: str
+    name: str
+    description: str | None
+    project: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class DependencyResponse(BaseModel):
+    """Dependency relationship information."""
+
+    issue_id: str
+    depends_on_id: str
+
+
+class CausalLinkResponse(BaseModel):
+    """Root-cause analysis result linking a test failure to an issue."""
+
+    issue_id: str
+    issue_title: str
+    confidence: float
+    reasons: list[str]
+    graph_distance: int
+
+
+class ImpactIssueSummary(BaseModel):
+    """Summary of an issue in impact analysis."""
+
+    id: str
+    title: str
+    status: str
+
+
+class ImpactAnalysisResponse(BaseModel):
+    """Impact analysis result for an issue."""
+
+    issue_id: str
+    directly_affected: list[ImpactIssueSummary]
+    transitively_affected: list[ImpactIssueSummary]
+    blocked_issues: list[ImpactIssueSummary]
+    affected_components: list[str]
+    risk_level: str
+
+
+class ComponentImpactIssueSummary(BaseModel):
+    """Summary of an issue within component impact analysis."""
+
+    id: str
+    title: str
+    status: str
+
+
+class ComponentImpactAnalysisResponse(BaseModel):
+    """Impact analysis result for an entire component."""
+
+    component_id: str
+    component_name: str
+    total_issues: int
+    directly_affected_components: list[str]
+    transitively_affected_components: list[str]
+    total_blocked_issues: int
+    criticality_score: int
+    risk_level: str
+    affected_issues_summary: list[ComponentImpactIssueSummary]
+
+
+class HealthResponse(BaseModel):
+    """Health check response."""
+
+    status: str = "healthy"
+    version: str = __version__
+    storage_backend: str = "neo4j"
+
+
+class GraphNode(BaseModel):
+    """Node in the dependency graph."""
+
+    id: str
+    title: str
+    component: str | None = None
+    status: str
+    priority: str
+
+
+class GraphEdge(BaseModel):
+    """Edge in the dependency graph."""
+
+    from_node: str
+    to_node: str
+
+
+class DependencyGraphResponse(BaseModel):
+    """Full dependency graph for the project."""
+
+    nodes: list[GraphNode]
+    edges: list[GraphEdge]
+
+
+class ProjectSummaryResponse(BaseModel):
+    """Summary dashboard for a project."""
+
+    project: str
+    total_issues: int
+    by_status: dict[str, int]
+    by_priority: dict[str, int]
+    components_count: int
+    blocked_issues_count: int
+    workable_issues_count: int
+    dependency_health: float
+    top_blocked_components: list[dict[str, int]]
+    critical_path_length: int
+
+
+class GitHubWebhookLogResponse(BaseModel):
+    """Webhook delivery log entry."""
+
+    id: str
+    event_type: str
+    delivery_status: str
+    received_at: datetime
+    processed_at: datetime | None
+    error: str | None
+
+
+class GitHubWebhookTestResponse(BaseModel):
+    """Response for webhook test."""
+
+    success: bool
+    message: str
+
+
+class ConstraintResponse(BaseModel):
+    """Response for a single constraint."""
+
+    id: str
+    category: str
+    level: str
+    pattern: str = ""
+    service: str = ""
+    target: str = ""
+    from_layer: str = ""
+    to_layer: str = ""
+    rule_type: str = ""
+    max_depth: int | None = None
+    required: bool = True
+    description: str = ""
+    status: str = "inactive"
+
+
+class ConstraintViolationResponse(BaseModel):
+    """Response for a constraint violation."""
+
+    constraint_id: str
+    constraint_description: str
+    level: str
+    category: str
+    affected_resource: str
+    message: str
+    suggestion: str = ""
+
+
+class ConstraintValidationResponse(BaseModel):
+    """Response for constraint validation."""
+
+    is_valid: bool
+    violations: list[ConstraintViolationResponse] = Field(default_factory=list)
+    hard_violations_count: int = 0
+    soft_violations_count: int = 0
+
+
+class ConstraintLoadResponse(BaseModel):
+    """Response for loading constraints from config."""
+
+    created: int
+    deleted: int
+
+
+class UserCreateRequest(BaseModel):
+    """Request for creating a user."""
+
+    username: str = Field(..., min_length=1)
+    email: str | None = None
+    role: str = "developer"
+    github_handle: str | None = None
+    preferences: str | None = None
+
+
+class UserUpdateRequest(BaseModel):
+    """Request for updating a user."""
+
+    username: str | None = None
+    email: str | None = None
+    role: str | None = None
+    github_handle: str | None = None
+    preferences: str | None = None
+
+
+class UserResponse(BaseModel):
+    """Response for user data."""
+
+    id: str
+    username: str
+    email: str | None = None
+    role: str
+    github_handle: str | None = None
+    created_at: datetime | None = None
+    last_login: datetime | None = None
+    preferences: str | None = None
+
+
+class CommitCreateRequest(BaseModel):
+    """Request for creating a commit."""
+
+    sha: str = Field(..., min_length=40, max_length=40)
+    message: str = ""
+    author_name: str = ""
+    author_email: str = ""
+    is_ai_generated: bool = False
+    branch: str = ""
+    additions: int = 0
+    deletions: int = 0
+    files_changed: int = 0
+
+
+class CommitResponse(BaseModel):
+    """Response for commit data."""
+
+    sha: str
+    message: str
+    author_name: str
+    author_email: str
+    timestamp: datetime | None = None
+    is_ai_generated: bool
+    branch: str
+    additions: int
+    deletions: int
+    files_changed: int
+
+
+class CommitStatsResponse(BaseModel):
+    """Response for commit statistics."""
+
+    total_commits: int
+    total_additions: int
+    total_deletions: int
+    total_files: int
+    ai_authors: list[str]
+    human_authors: list[str]
+    ai_commits: int
+    human_commits: int
+
+
+class PolicyRuleRequest(BaseModel):
+    """Request for a policy rule."""
+
+    rule_type: str
+    from_pattern: str = ""
+    to_pattern: str = ""
+    max_depth: int = 5
+    description: str = ""
+
+
+class PolicyCreateRequest(BaseModel):
+    """Request for creating a policy."""
+
+    name: str = Field(..., min_length=1, max_length=100)
+    description: str = ""
+    rules: list[PolicyRuleRequest] = Field(default_factory=list)
+    severity: str = "WARNING"
+    project_id: str | None = None
+    target_scope: str = "COMPONENT"
+    logic_definition: str | None = None
+    remediation_strategy: str | None = None
+    autofix_template: str | None = None
+    is_active: bool = True
+
+
+class PolicyUpdateRequest(BaseModel):
+    """Request for updating a policy."""
+
+    name: str | None = None
+    description: str | None = None
+    rules: list[PolicyRuleRequest] | None = None
+    target_scope: str | None = None
+    logic_definition: str | None = None
+    remediation_strategy: str | None = None
+    autofix_template: str | None = None
+    is_active: bool | None = None
+
+
+class PolicyResponse(BaseModel):
+    """Response for policy data."""
+
+    id: str
+    name: str
+    description: str
+    rules: list[dict]
+    target_scope: str
+    logic_definition: str | None = None
+    remediation_strategy: str | None = None
+    autofix_template: str | None = None
+    is_active: bool
+    created_at: datetime | None = None
+    updated_at: datetime | None = None

@@ -5,9 +5,10 @@ from uuid import UUID
 
 import pytest
 
-from socialseed_tasker.core.task_management.actions import (
+from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
+    DuplicateDependencyError,
     IssueAlreadyClosedError,
     IssueNotFoundError,
     OpenDependenciesError,
@@ -19,7 +20,7 @@ from socialseed_tasker.core.task_management.actions import (
     move_issue_action,
     remove_dependency_action,
 )
-from socialseed_tasker.core.task_management.entities import (
+from socialseed_tasker.domain.entities import (
     Component,
     Issue,
     IssueStatus,
@@ -39,10 +40,11 @@ class FakeRepository:
 
     # -- Issue CRUD ----------------------------------------------------------
 
-    def create_issue(self, issue: Issue) -> None:
+    def create_issue(self, issue: Issue) -> Issue:
         key = self._key(issue.id)
         self._issues[key] = issue
         self._dependencies[key] = set()
+        return issue
 
     def get_issue(self, issue_id: str) -> Issue | None:
         return self._issues.get(self._key(issue_id))
@@ -55,8 +57,11 @@ class FakeRepository:
         self._issues[key] = Issue(**data)
         return self._issues[key]
 
-    def close_issue(self, issue_id: str) -> Issue:
-        return self.update_issue(issue_id, {"status": IssueStatus.CLOSED})
+    def close_issue(self, issue_id: str, commit_sha: str | None = None, resolution: str = "implemented") -> Issue:
+        updates = {"status": IssueStatus.CLOSED, "resolution": resolution}
+        if commit_sha:
+            updates["commit_sha"] = commit_sha
+        return self.update_issue(issue_id, updates)
 
     def delete_issue(self, issue_id: str) -> None:
         key = self._key(issue_id)
@@ -101,8 +106,9 @@ class FakeRepository:
 
     # -- Component CRUD ------------------------------------------------------
 
-    def create_component(self, component: Component) -> None:
+    def create_component(self, component: Component) -> Component:
         self._components[self._key(component.id)] = component
+        return component
 
     def get_component(self, component_id: str) -> Component | None:
         return self._components.get(self._key(component_id))
@@ -332,6 +338,15 @@ class TestAddDependencyAction:
         # c -> a would create: a -> b -> c -> a (cycle)
         with pytest.raises(CircularDependencyError):
             add_dependency_action(repo, str(c.id), str(a.id))
+
+    def test_raises_on_duplicate_dependency(self, repo: FakeRepository, component: Component):
+        a, _ = create_issue_action(repo, title="A", component_id=str(component.id))
+        b, _ = create_issue_action(repo, title="B", component_id=str(component.id))
+
+        add_dependency_action(repo, str(a.id), str(b.id))
+
+        with pytest.raises(DuplicateDependencyError):
+            add_dependency_action(repo, str(a.id), str(b.id))
 
 
 class TestRemoveDependencyAction:

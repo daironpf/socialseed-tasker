@@ -1,0 +1,1 @@
+"""Graph database repository mixins."""

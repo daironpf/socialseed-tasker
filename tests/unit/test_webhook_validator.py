@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import patch
-from socialseed_tasker.core.services.webhook_validator import (
+from socialseed_tasker.infrastructure.webhook_validator import (
     WebhookSignatureValidator,
     validate_signature,
     get_webhook_validator,

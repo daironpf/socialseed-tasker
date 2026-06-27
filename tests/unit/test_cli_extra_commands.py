@@ -6,11 +6,11 @@ from uuid import uuid4
 
 from typer.testing import CliRunner
 
-from socialseed_tasker.core.task_management.entities import (
+from socialseed_tasker.domain.entities import (
     Component, Issue, IssueStatus, IssuePriority
 )
-from socialseed_tasker.entrypoints.terminal_cli.app import app
-from socialseed_tasker.entrypoints.terminal_cli import commands
+from socialseed_tasker.cli.app import app
+from socialseed_tasker.cli import commands
 
 
 class MockRepository:
@@ -21,8 +21,9 @@ class MockRepository:
         self._components = {}
         self._dependencies = {}
 
-    def create_issue(self, issue):
+    def create_issue(self, issue: Issue) -> Issue:
         self._issues[str(issue.id)] = issue
+        return issue
 
     def get_issue(self, issue_id):
         return self._issues.get(issue_id)
@@ -45,8 +46,9 @@ class MockRepository:
             issues = [i for i in issues if i.status in statuses]
         return issues
 
-    def create_component(self, component):
+    def create_component(self, component: Component) -> Component:
         self._components[str(component.id)] = component
+        return component
 
     def get_component(self, component_id):
         return self._components.get(component_id)
@@ -105,14 +107,36 @@ def mock_repo():
 
 
 def patch_commands(repo):
+    from socialseed_tasker.cli.commands import shared
+    from socialseed_tasker.cli import commands as cmds
     original = {}
     original['get_repository'] = commands.get_repository
-    commands.get_repository = lambda: repo
+    original['shared_get_repository'] = shared.get_repository
+    submodules = [
+        cmds,
+        shared,
+        cmds.issue_commands,
+        cmds.component_commands,
+        cmds.dependency_commands,
+        cmds.analysis_commands,
+        cmds.status_commands,
+        cmds.project_commands,
+        cmds.rag_commands,
+        cmds.code_graph_commands,
+        cmds.agent_commands,
+        cmds.constraints_commands,
+        cmds.seed_commands,
+        cmds.reasoning_commands,
+    ]
+    for mod in submodules:
+        mod.get_repository = lambda: repo
     return original
 
 
 def unpatch_commands(original):
+    from socialseed_tasker.cli.commands import shared
     commands.get_repository = original['get_repository']
+    shared.get_repository = original['shared_get_repository']
 
 
 class TestIssueCommands:

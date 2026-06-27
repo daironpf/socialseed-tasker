@@ -4,15 +4,15 @@ from uuid import uuid4
 
 import pytest
 
-from socialseed_tasker.core.project_analysis.analyzer import ArchitecturalAnalyzer
-from socialseed_tasker.core.project_analysis.rules import (
+from socialseed_tasker.application.analyzer import ArchitecturalAnalyzer
+from socialseed_tasker.domain.architectural_rules import (
     ArchitecturalRule,
     RuleType,
     Severity,
     ValidationResult,
     Violation,
 )
-from socialseed_tasker.core.task_management.entities import Component, Issue
+from socialseed_tasker.domain.entities import Component, Issue
 
 
 class FakeRepo:
@@ -23,12 +23,14 @@ class FakeRepo:
         self._components: dict[str, Component] = {}
         self._deps: dict[str, set[str]] = {}
 
-    def create_component(self, c: Component) -> None:
+    def create_component(self, c: Component) -> Component:
         self._components[str(c.id)] = c
+        return c
 
-    def create_issue(self, i: Issue) -> None:
+    def create_issue(self, i: Issue) -> Issue:
         self._issues[str(i.id)] = i
         self._deps[str(i.id)] = set()
+        return i
 
     def get_issue(self, issue_id: str) -> Issue | None:
         return self._issues.get(issue_id)

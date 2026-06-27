@@ -3,7 +3,7 @@
 import os
 import pytest
 from unittest.mock import patch, MagicMock
-from socialseed_tasker.core.services.secret_manager import (
+from socialseed_tasker.application.secret_manager import (
     SecretManager,
     GitHubCredentials,
     get_secret_manager,
@@ -178,7 +178,7 @@ class TestStandaloneFunctions:
 
     def test_get_github_token_uses_singleton(self):
         """Should use the singleton secret manager."""
-        with patch("socialseed_tasker.core.services.secret_manager.get_secret_manager") as mock_get:
+        with patch("socialseed_tasker.application.secret_manager.get_secret_manager") as mock_get:
             mock_manager = MagicMock()
             mock_manager.get_github_token.return_value = "ghp_token123456789012345678901"
             mock_get.return_value = mock_manager
@@ -187,7 +187,7 @@ class TestStandaloneFunctions:
 
     def test_validate_credentials_uses_singleton(self):
         """Should use singleton for validation."""
-        with patch("socialseed_tasker.core.services.secret_manager.get_secret_manager") as mock_get:
+        with patch("socialseed_tasker.application.secret_manager.get_secret_manager") as mock_get:
             mock_manager = MagicMock()
             mock_manager.validate_credentials.return_value = True
             mock_get.return_value = mock_manager
@@ -195,7 +195,7 @@ class TestStandaloneFunctions:
 
     def test_get_webhook_secret_uses_singleton(self):
         """Should use singleton for webhook secret."""
-        with patch("socialseed_tasker.core.services.secret_manager.get_secret_manager") as mock_get:
+        with patch("socialseed_tasker.application.secret_manager.get_secret_manager") as mock_get:
             mock_manager = MagicMock()
             mock_manager.get_webhook_secret.return_value = "webhook-secret"
             mock_get.return_value = mock_manager
@@ -205,7 +205,7 @@ class TestStandaloneFunctions:
 class TestGetSecretManagerSingleton:
     """Test cases for get_secret_manager singleton."""
 
-    @patch("socialseed_tasker.core.services.secret_manager._secret_manager_instance", None)
+    @patch("socialseed_tasker.application.secret_manager._secret_manager_instance", None)
     def test_returns_same_instance(self):
         """Should return the same instance on multiple calls."""
         env = {"GITHUB_TOKEN": "ghp_token123456789012345678901234"}

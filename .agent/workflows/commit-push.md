@@ -1,10 +1,23 @@
-# Workflow: Commit and Push
+# Workflow: Prepare for Commit (User Approval Required)
+
+## IMPORTANT: Agent Must NOT Commit
+
+**The agent MUST NOT execute `git commit` or `git push`.** This action requires explicit user approval.
+
+The agent's role is to:
+1. Prepare the changes
+2. Present a summary for the user to review
+3. Wait for user to approve and execute the commit
+
+---
 
 ## When to Use
 
-After implementing an issue and all tests pass.
+After implementing an issue and all tests pass. The agent should NOT commit directly.
 
-## Steps
+---
+
+## Steps for Agent
 
 ### 1. Check Status
 
@@ -28,42 +41,38 @@ Verify the changes are correct and complete.
 git log --oneline -5
 ```
 
-Follow the existing commit message style.
+Note the existing commit message style.
 
-### 4. Stage and Commit
+### 4. Check Documentation Updates
 
-**IMPORTANT:** Before committing, check if documentation needs updating. See `skills/documentation-sync.md` for guidance.
+**IMPORTANT:** Before proposing a commit, check if documentation needs updating. See `skills/documentation-sync.md` for guidance.
 
 Common documentation files to check:
 - `README.md` - New commands, API endpoints, env vars
 - `ROADMAP.md` - Resolved known issues
 - `VERSIONS.md` - Current version checklist
-- `CHANGELOG.md` - User-facing changes
 
-```bash
-# Include docs if they were updated
-git add src/ tests/ README.md ROADMAP.md VERSIONS.md
-git commit -m "type: detailed summary"
+### 5. Present Commit Summary to User
+
+Generate a summary with:
+
+**Changed files:**
+```
+<list of files>
 ```
 
-### Commit Message Structure
-
-Use the format: `type: short summary` followed by a blank line and a detailed summary of changes.
-
-**Example:**
+**Proposed commit message:**
 ```
-feat: add AI reasoning logs to issues
+type: short summary
 
-- Added ReasoningLogEntry value object with ReasoningContext enum
-- Added reasoning_logs field to Issue entity
-- Added API schemas and endpoints for reasoning logs
-- Added repository methods for Neo4j storage
-- Added unit tests for new functionality
-
-All tests pass. Issue moved to .issues/done/.
+- Detailed change 1
+- Detailed change 2
+- All tests pass
 ```
 
-### Commit Message Types
+---
+
+## Commit Message Types
 
 | Type | When to Use | Example |
 |------|-------------|---------|
@@ -74,28 +83,57 @@ All tests pass. Issue moved to .issues/done/.
 | `chore` | Maintenance tasks | `chore: update dependencies` |
 | `refactor` | Code restructuring without behavior change | `refactor: extract repository protocol` |
 
-### 5. Push to Remote
+---
 
-```bash
-git push origin v0.9.0
+## User Action Required
+
+The agent MUST present the commit summary and **wait for the user to**:
+
+1. Review the changes
+2. Approve or modify the commit message
+3. Execute `git commit` and `git push` themselves
+
+### Example Agent Response
+
 ```
+✅ All changes ready for review
+
+**Changed files:**
+- src/core/task_management/entities/issue.py
+- tests/unit/test_issue.py
+
+**Proposed commit message:**
+```
+fix: add issue validation
+
+- Added required field validation for Issue entity
+- Added unit tests for validation logic
+- All tests pass
+```
+
+📋 **To complete this commit, please run:**
+```bash
+git add src/ tests/
+git commit -m "fix: add issue validation"
+git push
+```
+```
+
+---
 
 ## Rules
 
-- ALWAYS check `skills/documentation-sync.md` for docs updates before committing
-- NEVER commit secrets, keys, or credentials
-- NEVER commit `.env` files
-- NEVER commit generated data (neo4j/data, logs, etc.)
-- NEVER skip tests before committing
-- Only commit when explicitly asked or after completing an issue
-- One commit per issue implementation
-- Commit message should include a detailed summary of what was changed (the same summary provided when completing the issue)
+- **NEVER** execute `git commit` as the agent
+- **NEVER** execute `git push` as the agent
+- Always present a summary for user review
+- Check documentation updates before proposing commit
 - All commit messages must be in English
+
+---
 
 ## Anti-Patterns
 
-- Amending commits that have already been pushed
-- Force pushing to main
-- Committing without running tests first
-- Including `.issues/` files in commits (they are gitignored)
-- Using short generic commit messages without detailed summary
+- Agent executing git commit without user approval
+- Agent force pushing
+- Skipping tests before proposing commit
+- Using generic commit messages without detailed summary

@@ -227,7 +227,7 @@ neo4j/plugins/
 *.log
 
 .tasker-data
-infrastructure/
+/infrastructure/
 
 #history
 .history/
@@ -238,6 +238,9 @@ report.md
 
 #BlackBox Test
 real-test/
+real-test
+/real-test
+/real-test/
 test-run/
 
 #Local test artifacts
