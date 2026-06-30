@@ -61,6 +61,7 @@ ISSUE_CREATE_EPILOG = (
     "  - Priority values: LOW, MEDIUM (default), HIGH, CRITICAL\n"
     "  - Labels are comma-separated: -l \"frontend,ux,urgent\"\n"
     "  - Use --enforce block to prevent policy violations\n"
+    "  - API allows ~20 burst requests then ~2/sec. Add a 1s delay between bulk creates.\n"
     "  - For bulk dependencies, use: tasker dependency add-batch <issue_id> --depends-on <id1> -d <id2>"
 )
 

@@ -61,6 +61,8 @@ DEP_ADD_EPILOG = (
     "  - Use --depends-on / -d explicitly: tasker dependency add A -d B\n"
     "  - Use --force to skip cycle validation (use with caution!)\n"
     "  - Use 'tasker issue list' to find issue IDs\n"
+    "  - API allows ~20 burst requests then ~2/sec. Add a 1s delay between bulk adds.\n"
+    "  - For bulk operations without retries: tasker dependency add-batch <issue_id> -d <id1> -d <id2>\n"
     "  - Use 'tasker dependency chain <issue_id>' to inspect dependency chains"
 )
 

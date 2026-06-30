@@ -162,3 +162,16 @@ class Neo4jDriver:
                     session.run(index)
                 except Neo4jError as exc:
                     logger.debug("Schema init notice (index): %s", exc)
+
+            # Register relationship types used in queries to avoid
+            # "relationship type does not exist" Neo4j notifications.
+            # Creates a temporary node pair then immediately cleans up.
+            for rel_type in ("BELONGS_TO",):
+                try:
+                    session.run(
+                        "CREATE (n1:Issue {id: randomUUID()})"
+                        f"-[:{rel_type}]->(n2:Component {{id: randomUUID()}})"
+                        "WITH n1, n2 DETACH DELETE n1, n2"
+                    )
+                except Neo4jError as exc:
+                    logger.debug("Relationship type init notice: %s", exc)

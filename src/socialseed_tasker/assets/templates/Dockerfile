@@ -1,14 +1,12 @@
 # Tasker API — Docker image
-# Installs from a pre-built wheel placed at dist/ by tasker init.
-# This ensures the container runs the same version as the host.
+# Installs from PyPI so it works regardless of whether the package
+# was installed via pip or built locally. No local source needed.
 
 FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY dist/ ./dist/
-
-RUN pip install --no-cache-dir dist/*.whl && rm -rf dist/
+RUN pip install --no-cache-dir socialseed-tasker
 
 ENV TASKER_NEO4J_URI=bolt://tasker-db:7687
 ENV TASKER_NEO4J_USERNAME=neo4j

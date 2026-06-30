@@ -373,6 +373,21 @@ def interactive_init_command(
 
     console.print("\n[info]Starting Tasker infrastructure via Docker Compose...[/info]")
     try:
+        # Check Docker daemon availability before attempting compose
+        try:
+            subprocess.run(
+                ["docker", "info"],
+                capture_output=True,
+                check=True,
+                timeout=10,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+            console.print("[error]Docker is not running or not installed.[/error]")
+            console.print("Please start Docker Desktop and try again.")
+            console.print("You can also start the database manually with:")
+            console.print("  docker compose up -d")
+            raise typer.Exit(code=1)
+
         compose_dir = Path(target).resolve()
         if not inplace:
             compose_dir = compose_dir / ".agent" / "tasker"
@@ -384,31 +399,8 @@ def interactive_init_command(
             capture_output=True,
         )
         
-        # Build a wheel of the current package for the Docker image.
-        # The wheel is placed in the build context directory (.agent/dist/)
-        # so the Dockerfile can COPY it.
-        if cli_mode != "direct":
-            build_context_dir = compose_dir.parent if not inplace else compose_dir
-            dist_dir = build_context_dir / "dist"
-            dist_dir.mkdir(parents=True, exist_ok=True)
-            console.print("[info]Building package wheel for Docker image...[/info]")
-            pkg_init = Path(socialseed_tasker.__file__).resolve()
-            project_root = next(
-                (p for p in pkg_init.parents if (p / "pyproject.toml").exists()),
-                pkg_init.parent.parent,
-            )
-            wheel_result = subprocess.run(
-                [sys.executable, "-m", "pip", "wheel", "--no-deps", "-w", str(dist_dir), str(project_root)],
-                capture_output=True,
-                text=True,
-            )
-            if wheel_result.returncode != 0:
-                console.print(f"[warning]Failed to build wheel: {wheel_result.stderr.strip()}[/warning]")
-                console.print("[warning]Falling back to PyPI install for API container.[/warning]")
-            else:
-                wheels = [f.name for f in dist_dir.glob("*.whl")]
-                if wheels:
-                    console.print(f"[success]Wheel built: {wheels[0]}[/success]")
+        # The Dockerfile installs socialseed-tasker from PyPI, so no
+        # local wheel is needed. Just proceed to docker compose up.
         
         compose_profile = [] if cli_mode == "direct" else ["--profile", "api"]
         subprocess.run(

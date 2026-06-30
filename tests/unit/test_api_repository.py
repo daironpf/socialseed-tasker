@@ -262,7 +262,7 @@ def test_finish_agent_work(repo, mock_client):
         "blocks": [],
         "affects": [],
     }
-    result = repo.finish_agent_work(issue_id)
+    result = repo.finish_agent_work(issue_id, "agent-1")
     assert result is not None
 
 
