@@ -54,6 +54,19 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  tasker-board:
+    container_name: tasker-board
+    image: tasker-board:local
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:8889:80"
+    depends_on:
+      - tasker-api
+    networks:
+      - tasker-net
+
 networks:
   tasker-net:
     driver: bridge

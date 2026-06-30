@@ -306,44 +306,80 @@ class ScaffolderService:
         force: bool,
         result: ScaffoldResult,
     ) -> None:
-        """Copy frontend build to .agent/frontend/.
+        """Copy frontend build to .agent/tasker/frontend/.
 
         Copies from self._frontend_dir if set (package assets),
         or from target_dir/frontend/dist if it exists.
+        Also copies the board Dockerfile and nginx.conf for container builds.
         """
         if self._frontend_dir and self._frontend_dir.exists():
             frontend_source = self._frontend_dir
         else:
             frontend_source = target_dir / "frontend" / "dist"
 
-        if not frontend_source.exists():
-            return
-
         tasker_frontend = target_dir / ".agent" / "tasker" / "frontend"
         tasker_frontend.mkdir(parents=True, exist_ok=True)
 
-        for src_path in frontend_source.rglob("*"):
-            if src_path.is_file():
-                relative = src_path.relative_to(frontend_source)
-                dest_path = tasker_frontend / relative
+        if frontend_source.exists():
+            for src_path in frontend_source.rglob("*"):
+                if src_path.is_file():
+                    relative = src_path.relative_to(frontend_source)
+                    dest_path = tasker_frontend / relative
 
-                if dest_path.exists() and not force:
-                    result.add_operation(
-                        FileOperation(
+                    if dest_path.exists() and not force:
+                        result.add_operation(
+                            FileOperation(
+                                source=src_path,
+                                destination=dest_path,
+                                status=ScaffoldStatus.SKIPPED,
+                            )
+                        )
+                        continue
+
+                    try:
+                        dest_path.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(str(src_path), str(dest_path))
+                        status = ScaffoldStatus.OVERWRITTEN if dest_path.exists() else ScaffoldStatus.CREATED
+                        op = FileOperation(
                             source=src_path,
                             destination=dest_path,
+                            status=status,
+                        )
+                        result.add_operation(op)
+                        if self._progress_callback:
+                            self._progress_callback(op)
+                    except (OSError, shutil.Error) as exc:
+                        op = FileOperation(
+                            source=src_path,
+                            destination=dest_path,
+                            status=ScaffoldStatus.ERROR,
+                            error_message=str(exc),
+                        )
+                        result.add_operation(op)
+                        if self._progress_callback:
+                            self._progress_callback(op)
+
+        # Copy board Dockerfile and nginx.conf for containerised deployment
+        for infra_file in ["Dockerfile", "nginx.conf"]:
+            frontend_dir = target_dir / "frontend"
+            src = frontend_dir / infra_file
+            if src.exists():
+                dest = tasker_frontend / infra_file
+                if dest.exists() and not force:
+                    result.add_operation(
+                        FileOperation(
+                            source=src,
+                            destination=dest,
                             status=ScaffoldStatus.SKIPPED,
                         )
                     )
                     continue
-
                 try:
-                    dest_path.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(str(src_path), str(dest_path))
-                    status = ScaffoldStatus.OVERWRITTEN if dest_path.exists() else ScaffoldStatus.CREATED
+                    shutil.copy2(str(src), str(dest))
+                    status = ScaffoldStatus.OVERWRITTEN if dest.exists() else ScaffoldStatus.CREATED
                     op = FileOperation(
-                        source=src_path,
-                        destination=dest_path,
+                        source=src,
+                        destination=dest,
                         status=status,
                     )
                     result.add_operation(op)
@@ -351,8 +387,8 @@ class ScaffolderService:
                         self._progress_callback(op)
                 except (OSError, shutil.Error) as exc:
                     op = FileOperation(
-                        source=src_path,
-                        destination=dest_path,
+                        source=src,
+                        destination=dest,
                         status=ScaffoldStatus.ERROR,
                         error_message=str(exc),
                     )

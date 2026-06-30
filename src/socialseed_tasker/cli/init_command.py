@@ -328,9 +328,37 @@ def interactive_init_command(
         console.print("Choose how the CLI connects to the backend:")
         console.print("  [bold]1) Direct (Neo4j Bolt)[/bold] - CLI connects directly to Neo4j via Bolt protocol")
         console.print("  [bold]2) API (REST)[/bold] - CLI connects through the FastAPI REST API")
+        console.print("  [bold]3) Full Stack (API + Board)[/bold] - CLI + FastAPI + Kanban Board UI")
         console.print("")
-        mode_choice = _ask("Select mode", choices=["1", "2"], default="1")
-        cli_mode = "direct" if mode_choice == "1" else "api"
+        mode_choice = _ask("Select mode", choices=["1", "2", "3"], default="1")
+        if mode_choice == "1":
+            cli_mode = "direct"
+        elif mode_choice == "2":
+            cli_mode = "api"
+        else:
+            cli_mode = "full"
+
+    # Build frontend for Full Stack mode
+    if cli_mode == "full":
+        frontend_dir = Path(target).resolve() / "frontend"
+        if not frontend_dir.exists():
+            frontend_dir.mkdir(parents=True, exist_ok=True)
+        console.print("\n[info]Building frontend for Kanban Board...[/info]")
+        try:
+            result = subprocess.run(
+                ["npm", "run", "build"],
+                cwd=frontend_dir,
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+            if result.returncode != 0:
+                console.print(f"[warning]Frontend build skipped (npm not configured): {result.stderr.strip()}[/warning]")
+            else:
+                console.print("[success]Frontend built successfully![/success]")
+        except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as e:
+            console.print(f"[warning]Frontend build not available: {e}[/warning]")
+            console.print("[dim]The board service will not be available.[/dim]")
 
     console.print("\n[info]Starting initialization with provided context...[/info]\n")
     
@@ -402,7 +430,7 @@ def interactive_init_command(
         # The Dockerfile installs socialseed-tasker from PyPI, so no
         # local wheel is needed. Just proceed to docker compose up.
         
-        compose_profile = [] if cli_mode == "direct" else ["--profile", "api"]
+        compose_profile = {"direct": [], "api": ["--profile", "api"], "full": ["--profile", "full"]}.get(cli_mode, [])
         subprocess.run(
             ["docker", "compose", *compose_profile, "up", "-d", "--build"],
             cwd=compose_dir,
@@ -622,6 +650,8 @@ def interactive_init_command(
                     console.print(f"[warning]Failed to create policy {policy['name']}: {e}[/warning]")
                     
             console.print("\n[bold green]SUCCESS: TASKER is successfully started and ready![/bold green]")
+            if cli_mode == "full":
+                console.print("[bold green]Board UI at http://localhost:8889[/bold green]")
             console.print("[bold green]You can now focus on writing code. Tasker will handle the rest.[/bold green]")
         else:
             console.print("\n[warning]Tasker started but API did not become ready in time. Policies were not pushed automatically.[/warning]")
