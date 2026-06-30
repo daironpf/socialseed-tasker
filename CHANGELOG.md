@@ -6,6 +6,24 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 ## [Unreleased]
 
+## [v1.0.2] - 2026-06-30
+
+### Added
+- Full Stack mode (option 3) in `tasker init`: starts Neo4j + FastAPI + Kanban Board
+- Frontend pre-build step in `tasker init --full` before scaffolding
+- Board Dockerfile + nginx.conf copied during scaffold for containerised deployment
+- Docker daemon pre-check in init command before `docker compose up`
+
+### Changed
+- Frontend Dockerfile: single-stage nginx serving pre-built static files (no npm in build)
+- Root docker-compose.yml: added tasker-board service
+- Init command compose profile: now supports `direct`, `api`, and `full` modes
+- Scaffolder `_copy_frontend_build()`: also copies Dockerfile and nginx.conf
+
+### Fixed
+- Board Dockerfile healthcheck: use `127.0.0.1` instead of `localhost` (DNS resolution)
+- Frontend Dockerfile COPY paths relative to build context
+
 ## [v1.0.1] - 2026-05-23
 
 ### Added
