@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from socialseed_tasker.infrastructure import neo4j_queries
+from socialseed_tasker.infrastructure import neo4j_queries as queries
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _session
 
 
 class CostAnalyticsRepositoryMixin:
@@ -8,7 +9,7 @@ class CostAnalyticsRepositoryMixin:
 
     def get_cost_per_component(self) -> list[dict]:
         """Get cost breakdown by component for closed issues."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.GET_COST_PER_COMPONENT)
             return [
                 {
@@ -24,7 +25,7 @@ class CostAnalyticsRepositoryMixin:
 
     def get_cost_per_epic(self) -> list[dict]:
         """Get cost breakdown by epic for closed issues."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.GET_COST_PER_EPIC)
             return [
                 {
@@ -39,7 +40,7 @@ class CostAnalyticsRepositoryMixin:
 
     def get_cost_per_project(self) -> list[dict]:
         """Get cost breakdown by project for closed issues."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.GET_COST_PER_PROJECT)
             return [
                 {
@@ -54,7 +55,7 @@ class CostAnalyticsRepositoryMixin:
 
     def get_cost_summary(self) -> dict:
         """Get overall cost summary."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.GET_COST_SUMMARY)
             record = result.single()
             if record is None:

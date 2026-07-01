@@ -81,6 +81,9 @@ class DummyStorage:
     def delete(self, key: str) -> None:
         return None
 
+    def list_keys(self) -> list[str]:
+        return []
+
 
 def test_storage_port_runtime_checkable():
     s = DummyStorage()

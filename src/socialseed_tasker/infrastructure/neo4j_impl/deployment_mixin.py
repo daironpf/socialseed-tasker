@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from socialseed_tasker.infrastructure import neo4j_queries
+from socialseed_tasker.domain.entities import Deployment
+from socialseed_tasker.infrastructure import neo4j_queries as queries
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _session
 
 
 class DeploymentRepositoryMixin:
     """Deployment operations."""
 
-    def create_deployment(self, deployment) -> None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+    def create_deployment(self, deployment: Deployment) -> None:
+        with _session(self._driver) as session:
             session.run(
                 queries.CREATE_DEPLOYMENT,
                 id=str(deployment.id),
@@ -24,7 +26,7 @@ class DeploymentRepositoryMixin:
         environment_name: str | None = None,
         limit: int = 50,
     ) -> list[dict]:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.GET_DEPLOYMENTS,
                 environment_name=environment_name,
@@ -44,7 +46,7 @@ class DeploymentRepositoryMixin:
             ]
 
     def get_deployment_by_commit(self, commit_sha: str) -> dict | None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.GET_DEPLOYMENT_BY_COMMIT, commit_sha=commit_sha)
             record = result.single()
             if record is None:
@@ -58,7 +60,7 @@ class DeploymentRepositoryMixin:
             }
 
     def get_issue_deployments(self, issue_id: str) -> list[dict]:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.GET_ISSUES_DEPLOYMENTS, issue_id=issue_id)
             return [
                 {

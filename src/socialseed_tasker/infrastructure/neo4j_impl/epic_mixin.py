@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from uuid import UUID
 
-from socialseed_tasker.infrastructure import neo4j_queries
+from socialseed_tasker.domain.entities import Epic, EpicStatus, Objective, ObjectiveStatus
+from socialseed_tasker.infrastructure import neo4j_queries as queries
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _session
 
 
 class EpicRepositoryMixin:
     """Epic and Objective CRUD operations."""
 
-    def create_epic(self, epic) -> None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+    def create_epic(self, epic: Epic) -> None:
+        with _session(self._driver) as session:
             session.run(
                 queries.CREATE_EPIC,
                 id=str(epic.id),
@@ -21,16 +24,13 @@ class EpicRepositoryMixin:
                 updatedAt=epic.updatedAt.isoformat(),
             )
 
-    def get_epic(self, epicId: str):
-        from uuid import UUID
-
-        with self._driver.driver.session(database=self._driver.database) as session:
+    def get_epic(self, epicId: str) -> Epic | None:
+        with _session(self._driver) as session:
             result = session.run(queries.GET_EPIC, id=epicId)
             record = result.single()
             if record is None:
                 return None
             node = record["e"]
-            from socialseed_tasker.domain.entities import Epic, EpicStatus
 
             return Epic(
                 id=UUID(node["id"]),
@@ -40,14 +40,11 @@ class EpicRepositoryMixin:
                 status=EpicStatus(node.get("status", "OPEN")),
             )
 
-    def list_epics(self):
-        with self._driver.driver.session(database=self._driver.database) as session:
+    def list_epics(self) -> list[Epic]:
+        with _session(self._driver) as session:
             result = session.run(queries.LIST_EPICS)
-            from uuid import UUID
 
-            from socialseed_tasker.domain.entities import Epic, EpicStatus
-
-            epics = []
+            epics: list[Epic] = []
             for record in result:
                 node = record["e"]
                 epics.append(
@@ -62,17 +59,15 @@ class EpicRepositoryMixin:
             return epics
 
     def delete_epic(self, epicId: str) -> None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(queries.DELETE_EPIC, id=epicId)
 
     def link_issue_to_epic(self, issue_id: str, epicId: str) -> None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(queries.LINK_ISSUE_TO_EPIC, issue_id=issue_id, epicId=epicId)
 
     def update_epic(self, epicId: str, updates: dict) -> None:
-        from datetime import datetime, timezone
-
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             set_clauses = []
             params = {"id": epicId, "updatedAt": datetime.now(timezone.utc).isoformat()}
 
@@ -83,8 +78,8 @@ class EpicRepositoryMixin:
             query = f"MATCH (e:Epic {{id: $id}}) SET {', '.join(set_clauses)} RETURN e"
             session.run(query, **params)
 
-    def create_objective(self, objective) -> None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+    def create_objective(self, objective: Objective) -> None:
+        with _session(self._driver) as session:
             session.run(
                 queries.CREATE_OBJECTIVE,
                 id=str(objective.id),
@@ -96,16 +91,13 @@ class EpicRepositoryMixin:
                 updatedAt=objective.updatedAt.isoformat(),
             )
 
-    def get_objective(self, objective_id: str):
-        from uuid import UUID
-
-        with self._driver.driver.session(database=self._driver.database) as session:
+    def get_objective(self, objective_id: str) -> Objective | None:
+        with _session(self._driver) as session:
             result = session.run(queries.GET_OBJECTIVE, id=objective_id)
             record = result.single()
             if record is None:
                 return None
             node = record["o"]
-            from socialseed_tasker.domain.entities import Objective, ObjectiveStatus
 
             return Objective(
                 id=UUID(node["id"]),
@@ -115,14 +107,11 @@ class EpicRepositoryMixin:
                 quarter=node.get("quarter", ""),
             )
 
-    def list_objectives(self):
-        with self._driver.driver.session(database=self._driver.database) as session:
+    def list_objectives(self) -> list[Objective]:
+        with _session(self._driver) as session:
             result = session.run(queries.LIST_OBJECTIVES)
-            from uuid import UUID
 
-            from socialseed_tasker.domain.entities import Objective, ObjectiveStatus
-
-            objectives = []
+            objectives: list[Objective] = []
             for record in result:
                 node = record["o"]
                 objectives.append(
@@ -137,17 +126,15 @@ class EpicRepositoryMixin:
             return objectives
 
     def delete_objective(self, objective_id: str) -> None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(queries.DELETE_OBJECTIVE, id=objective_id)
 
     def link_epic_to_objective(self, epicId: str, objective_id: str) -> None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(queries.LINK_EPIC_TO_OBJECTIVE, epicId=epicId, objective_id=objective_id)
 
     def update_objective(self, objective_id: str, updates: dict) -> None:
-        from datetime import datetime, timezone
-
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             set_clauses = []
             params = {"id": objective_id, "updatedAt": datetime.now(timezone.utc).isoformat()}
 

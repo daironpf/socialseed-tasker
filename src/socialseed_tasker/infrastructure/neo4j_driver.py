@@ -175,3 +175,14 @@ class Neo4jDriver:
                     )
                 except Neo4jError as exc:
                     logger.debug("Relationship type init notice: %s", exc)
+
+            # Register the 'title' property key on Issue nodes to avoid
+            # "property key does not exist" Neo4j notification on first
+            # issue creation when find_issues_by_title queries i.title.
+            try:
+                session.run(
+                    "CREATE (n:Issue {id: randomUUID(), title: '_init_'}) "
+                    "WITH n DETACH DELETE n"
+                )
+            except Neo4jError as exc:
+                logger.debug("Property key init notice (title): %s", exc)

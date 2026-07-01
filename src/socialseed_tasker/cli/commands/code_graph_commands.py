@@ -100,7 +100,7 @@ def code_graph_find(
         raise typer.Exit(code=1)
     from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
     repo = CodeGraphRepository(driver)
-    results = repo.find_symbols(name=name, symbolType=sym_type, limit=limit)
+    results = repo.find_symbols(name=name, symbol_type=symbol_type, limit=limit)
     if not results:
         console.print("[info]No symbols found[/info]")
         return
@@ -181,9 +181,9 @@ def code_graph_stats() -> None:
     repo = CodeGraphRepository(driver)
     stats = repo.get_stats()
     console.print(Panel(
-        f"[bold]Total Files:[/bold] {stats.totalFiles}\n"
-        f"[bold]Total Symbols:[/bold] {stats.totalSymbols}\n"
-        f"[bold]Total Relationships:[/bold] {stats.totalRelationships}",
+        f"[bold]Total Files:[/bold] {stats.total_files}\n"
+        f"[bold]Total Symbols:[/bold] {stats.total_symbols}\n"
+        f"[bold]Total Relationships:[/bold] {stats.total_relationships}",
         title="[bold]Code Graph Statistics[/bold]",
     ))
 

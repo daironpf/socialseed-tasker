@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 
-from socialseed_tasker.infrastructure import neo4j_queries
+from socialseed_tasker.infrastructure import neo4j_queries as queries
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _session
 
 
 class VectorSearchRepositoryMixin:
     """Vector search and data management operations."""
 
     def search_by_embedding(self, embedding: list[float], threshold: float = 0.7, limit: int = 10) -> list[dict]:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.SEARCH_BY_EMBEDDING,
                 embedding=embedding,
@@ -26,7 +27,7 @@ class VectorSearchRepositoryMixin:
             ]
 
     def find_similar_issues(self, issue_id: str, threshold: float = 0.7, limit: int = 10) -> list[dict]:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.FIND_SIMILAR_ISSUES,
                 issue_id=issue_id,
@@ -43,7 +44,7 @@ class VectorSearchRepositoryMixin:
             ]
 
     def update_issue_embedding(self, issue_id: str, embedding: list[float]) -> None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(
                 queries.UPDATE_ISSUE_EMBEDDING,
                 id=issue_id,
@@ -63,7 +64,7 @@ class VectorSearchRepositoryMixin:
 
     def reset_data(self, scope: str = "all") -> dict[str, int]:
         """Reset data in the repository."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result: dict[str, int] = {}
 
             if scope in ("all", "issues"):

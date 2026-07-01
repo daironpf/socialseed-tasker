@@ -9,6 +9,7 @@ from socialseed_tasker.application.constraints import (
     ConstraintLevel,
     ConstraintStatus,
 )
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _session
 
 
 class ConstraintRepositoryMixin:
@@ -16,7 +17,7 @@ class ConstraintRepositoryMixin:
 
     def create_constraint(self, constraint: Constraint) -> None:
         """Persist a new constraint to Neo4j."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(
                 """
                 CREATE (c:Constraint {
@@ -56,7 +57,7 @@ class ConstraintRepositoryMixin:
 
     def list_constraints(self, category: str | None = None) -> list[Constraint]:
         """List constraints from Neo4j, optionally filtered by category."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             labels_result = session.run("CALL db.labels()")
             labels = [r["label"] for r in labels_result]
             if "Constraint" not in labels:
@@ -94,7 +95,7 @@ class ConstraintRepositoryMixin:
 
     def get_constraint(self, constraint_id: str) -> Constraint | None:
         """Retrieve a constraint by ID."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 "MATCH (c:Constraint {id: $id}) RETURN c",
                 id=constraint_id,
@@ -122,7 +123,7 @@ class ConstraintRepositoryMixin:
 
     def delete_constraint(self, constraint_id: str) -> None:
         """Delete a constraint from Neo4j."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(
                 "MATCH (c:Constraint {id: $id}) DETACH DELETE c",
                 id=constraint_id,
@@ -130,7 +131,7 @@ class ConstraintRepositoryMixin:
 
     def update_constraint(self, constraint_id: str, updates: dict) -> Constraint:
         """Update a constraint in Neo4j."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             set_clauses = []
             params = {"id": constraint_id}
 

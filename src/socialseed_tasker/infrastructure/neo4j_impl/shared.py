@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Iterator
 from uuid import UUID
 
 from socialseed_tasker.domain.entities import (
@@ -15,6 +16,11 @@ from socialseed_tasker.domain.entities import (
     ReasoningContext,
     ReasoningLogEntry,
 )
+
+@contextmanager
+def _session(driver: Any) -> Iterator[Any]:
+    with driver.driver.session(database=driver.database) as session:
+        yield session
 
 
 def _to_uuid(val: Any) -> UUID | None:

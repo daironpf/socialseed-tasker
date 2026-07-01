@@ -6,7 +6,6 @@ symbols, imports, and relationships.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -20,10 +19,7 @@ from socialseed_tasker.domain.code_analysis_entities import (
     SymbolType,
 )
 from socialseed_tasker.infrastructure import neo4j_queries as queries
-
-
-def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _now_iso, _session
 
 
 CODE_GRAPH_QUERIES = {
@@ -191,7 +187,7 @@ class CodeGraphRepository:
             imports: List of imports to save
             relationships: List of relationships to save
         """
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             for file in files:
                 session.run(
                     CODE_GRAPH_QUERIES["create_file"],
@@ -240,13 +236,13 @@ class CodeGraphRepository:
 
     def get_files(self, limit: int = 50) -> list[dict[str, Any]]:
         """Get code files from the graph."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(CODE_GRAPH_QUERIES["get_files"], limit=limit)
             return [dict(record["f"]) for record in result]
 
     def get_file_by_path(self, path: str, repo_path: str) -> dict[str, Any] | None:
         """Get a file by its path."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 CODE_GRAPH_QUERIES["get_file_by_path"],
                 path=path,
@@ -257,7 +253,7 @@ class CodeGraphRepository:
 
     def find_symbols(self, name: str | None = None, symbol_type: SymbolType | None = None, limit: int = 50) -> list[dict[str, Any]]:
         """Find symbols by name or type."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             if name:
                 result = session.run(
                     CODE_GRAPH_QUERIES["get_symbols_by_name"],
@@ -282,7 +278,7 @@ class CodeGraphRepository:
 
     def get_symbols_by_file(self, file_id: UUID) -> list[dict[str, Any]]:
         """Get all symbols for a file."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 CODE_GRAPH_QUERIES["get_symbols_by_file"],
                 file_id=str(file_id),
@@ -296,7 +292,7 @@ class CodeGraphRepository:
 
     def get_imports_by_file(self, file_id: UUID) -> list[dict[str, Any]]:
         """Get all imports for a file."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 CODE_GRAPH_QUERIES["get_imports_by_file"],
                 file_id=str(file_id),
@@ -305,7 +301,7 @@ class CodeGraphRepository:
 
     def get_dependencies(self, path: str, repo_path: str) -> list[str]:
         """Get dependencies for a file."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 CODE_GRAPH_QUERIES["get_dependencies"],
                 path=path,
@@ -315,7 +311,7 @@ class CodeGraphRepository:
 
     def get_callers(self, symbol_name: str) -> list[dict[str, Any]]:
         """Get symbols that call the given symbol."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 CODE_GRAPH_QUERIES["get_callers"],
                 name=symbol_name,
@@ -326,7 +322,7 @@ class CodeGraphRepository:
 
     def get_direct_callers(self, symbol_id: str) -> list[dict[str, Any]]:
         """Get symbols that directly call this symbol (who depends on it)."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 CODE_GRAPH_QUERIES["get_direct_callers"],
                 symbol_id=symbol_id,
@@ -338,7 +334,7 @@ class CodeGraphRepository:
 
     def get_transitive_callers(self, symbol_id: str, depth: int = 3) -> list[dict[str, Any]]:
         """Get all symbols that call this symbol (transitive closure)."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 """
                 MATCH (caller:CodeSymbol)-[:CALLS*1..$depth]->(s:CodeSymbol {id: $symbol_id})
@@ -356,7 +352,7 @@ class CodeGraphRepository:
 
     def get_direct_callees(self, symbol_id: str) -> list[dict[str, Any]]:
         """Get symbols that this symbol directly calls (what it depends on)."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 CODE_GRAPH_QUERIES["get_direct_callees"],
                 symbol_id=symbol_id,
@@ -368,7 +364,7 @@ class CodeGraphRepository:
 
     def get_symbol_by_id(self, symbol_id: str) -> dict[str, Any] | None:
         """Get a CodeSymbol by its ID."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 CODE_GRAPH_QUERIES["get_symbol_by_id"],
                 symbol_id=symbol_id,
@@ -420,7 +416,7 @@ class CodeGraphRepository:
 
     def get_stats(self) -> CodeGraphStats:
         """Get code graph statistics."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(CODE_GRAPH_QUERIES["get_stats"])
             record = result.single()
             if record:
@@ -433,17 +429,17 @@ class CodeGraphRepository:
 
     def clear(self) -> None:
         """Clear all code graph data."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(CODE_GRAPH_QUERIES["clear_graph"])
 
     def create_indexes(self) -> None:
         """Create indexes for code graph."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(CODE_GRAPH_QUERIES["create_indexes"])
 
     def get_callers_by_path(self, path: str) -> list[dict[str, Any]]:
         """Get all functions that call symbols in a file."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 """
                 MATCH (f:CodeFile {path: $path})<-[:DEFINES]-(s:CodeSymbol)
@@ -464,7 +460,7 @@ class CodeGraphRepository:
 
     def get_dependencies_by_path(self, path: str) -> list[dict[str, Any]]:
         """Get imports/dependencies for a file."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 """
                 MATCH (f:CodeFile {path: $path})
@@ -484,7 +480,7 @@ class CodeGraphRepository:
 
     def get_tests_for_file(self, path: str) -> list[dict[str, Any]]:
         """Get test files related to a source file."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 """
                 MATCH (f:CodeFile {path: $path})
@@ -501,7 +497,7 @@ class CodeGraphRepository:
 
     def link_issue_to_file(self, issue_id: str, file_path: str) -> dict[str, Any]:
         """Link an issue to a code file (when closing the issue)."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.ISSUE_AFFECTS_FILE,
                 {"issue_id": issue_id, "file_path": file_path, "closed_at": _now_iso()},
@@ -513,7 +509,7 @@ class CodeGraphRepository:
 
     def get_issues_affecting_file(self, file_path: str, limit: int = 20) -> list[dict[str, Any]]:
         """Get all issues that affected a file."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.FIND_ISSUES_AFFECTING_FILE,
                 {"file_path": file_path, "limit": limit},
@@ -529,7 +525,7 @@ class CodeGraphRepository:
 
     def link_issue_to_symbol(self, issue_id: str, symbol_id: str) -> dict[str, Any]:
         """Link an issue to a code symbol."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.ISSUE_AFFECTS_SYMBOL,
                 {"issue_id": issue_id, "symbol_id": symbol_id, "closed_at": _now_iso()},
@@ -541,7 +537,7 @@ class CodeGraphRepository:
 
     def get_issues_affecting_symbol(self, symbol_name: str, limit: int = 20) -> list[dict[str, Any]]:
         """Get all issues that affected a symbol."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.FIND_ISSUES_AFFECTING_SYMBOL,
                 {"symbol_name": symbol_name, "limit": limit},

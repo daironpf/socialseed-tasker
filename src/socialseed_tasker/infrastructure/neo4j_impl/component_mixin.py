@@ -6,14 +6,14 @@ from typing import Any
 
 from socialseed_tasker.domain.entities import Component
 from socialseed_tasker.infrastructure import neo4j_queries as queries
-from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_component, _now_iso, _to_camel
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_component, _now_iso, _session, _to_camel
 
 
 class ComponentRepositoryMixin:
     """Component CRUD operations."""
 
     def create_component(self, component: Component) -> Component:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(
                 """
                 CREATE (c:Component {
@@ -51,23 +51,23 @@ class ComponentRepositoryMixin:
         return component
 
     def get_component(self, component_id: str) -> Component | None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.GET_COMPONENT, id=component_id)
             record = result.single()
             return _node_to_component(record["c"]) if record else None
 
     def list_components(self, project: str | None = None) -> list[Component]:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.LIST_COMPONENTS, project=project)
             return [_node_to_component(r["c"]) for r in result]
 
     def list_projects(self) -> list[str]:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.LIST_PROJECTS)
             return [r["name"] for r in result]
 
     def list_project_nodes(self) -> list[dict]:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.LIST_PROJECT_NODES)
             projects = []
             for r in result:
@@ -119,7 +119,7 @@ class ComponentRepositoryMixin:
             "createdAt": now,
             "updatedAt": now,
         }
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.CREATE_PROJECT, params)
             record = result.single()
             if record:
@@ -174,7 +174,7 @@ class ComponentRepositoryMixin:
             "createdAt": now,
             "updatedAt": now,
         }
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.CREATE_PROJECT, params)
             record = result.single()
             if record:
@@ -188,7 +188,7 @@ class ComponentRepositoryMixin:
             return None
 
     def get_component_by_name(self, name: str, project: str | None = None) -> Component | None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             if project:
                 result = session.run(
                     "MATCH (c:Component {name: $name, project: $project}) RETURN c",
@@ -204,7 +204,7 @@ class ComponentRepositoryMixin:
             return _node_to_component(record["c"]) if record else None
 
     def update_component(self, componentId: str, updates: dict[str, Any]) -> Component:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             camel_updates = {_to_camel(k): v for k, v in updates.items()}
             result = session.run(
                 queries.UPDATE_COMPONENT,
@@ -218,11 +218,11 @@ class ComponentRepositoryMixin:
             return _node_to_component(record["c"])
 
     def delete_component(self, componentId: str) -> None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(queries.DELETE_COMPONENT, id=componentId)
 
     def add_component_dependency(self, componentId: str, depends_on_id: str) -> None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(
                 queries.ADD_COMPONENT_DEPENDENCY,
                 componentId=componentId,
@@ -230,7 +230,7 @@ class ComponentRepositoryMixin:
             )
 
     def remove_component_dependency(self, componentId: str, depends_on_id: str) -> None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(
                 queries.REMOVE_COMPONENT_DEPENDENCY,
                 componentId=componentId,
@@ -238,7 +238,7 @@ class ComponentRepositoryMixin:
             )
 
     def get_component_dependencies(self, componentId: str) -> list[Component]:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.GET_COMPONENT_DEPENDENCIES,
                 componentId=componentId,
@@ -246,7 +246,7 @@ class ComponentRepositoryMixin:
             return [_node_to_component(r["dep"]) for r in result]
 
     def get_component_dependents(self, componentId: str) -> list[Component]:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.GET_COMPONENT_DEPENDENTS,
                 componentId=componentId,

@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from socialseed_tasker.domain.entities import Issue
-from socialseed_tasker.infrastructure import neo4j_queries
-from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_issue
+from socialseed_tasker.infrastructure import neo4j_queries as queries
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_issue, _session
 
 
 class LabelRepositoryMixin:
@@ -19,7 +19,7 @@ class LabelRepositoryMixin:
         labels = github_adapter.list_labels() if github_adapter else []
         synced = 0
 
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             for label in labels:
                 session.run(
                     queries.CREATE_LABEL,
@@ -36,13 +36,13 @@ class LabelRepositoryMixin:
 
     def get_all_labels(self) -> list[dict]:
         """Get all labels from Neo4j."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.GET_ALL_LABELS)
             return [dict(r["l"]) for r in result]
 
     def link_issue_to_labels(self, issue_id: str, label_names: list[str]) -> None:
         """Link an issue to labels."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             for label_name in label_names:
                 session.run(
                     queries.LINK_ISSUE_TO_LABEL,
@@ -55,7 +55,7 @@ class LabelRepositoryMixin:
         if not labels:
             return []
 
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.GET_ISSUES_BY_LABELS,
                 labels=labels,

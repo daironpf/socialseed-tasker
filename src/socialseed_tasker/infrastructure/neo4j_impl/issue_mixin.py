@@ -9,14 +9,14 @@ from uuid import uuid4
 from socialseed_tasker.domain.entities import Issue
 from socialseed_tasker.infrastructure.embedding_service import get_embedding_service
 from socialseed_tasker.infrastructure import neo4j_queries as queries
-from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_issue, _now_iso, _to_uuid_list, _to_camel
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_issue, _now_iso, _session, _to_uuid_list, _to_camel
 
 
 class IssueRepositoryMixin:
     """Issue CRUD and related operations."""
 
     def create_issue(self, issue: Issue) -> Issue:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             reasoning_logs_data = []
             for log in issue.reasoning_logs:
                 reasoning_logs_data.append(
@@ -71,7 +71,7 @@ class IssueRepositoryMixin:
         return issue
 
     def get_issue(self, issue_id: str) -> Issue | None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.GET_ISSUE, id=issue_id)
             record = result.single()
             if record is None:
@@ -79,7 +79,7 @@ class IssueRepositoryMixin:
             return _node_to_issue(record["i"])
 
     def update_issue(self, issue_id: str, updates: dict[str, Any]) -> Issue:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             camel_updates = {_to_camel(k): v for k, v in updates.items()}
             result = session.run(
                 queries.UPDATE_ISSUE,
@@ -110,7 +110,7 @@ class IssueRepositoryMixin:
             return issue
 
     def close_issue(self, issue_id: str, commit_sha: str | None = None, resolution: str = "implemented") -> Issue:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.CLOSE_ISSUE,
                 id=issue_id,
@@ -153,7 +153,7 @@ class IssueRepositoryMixin:
             return issue
 
     def delete_issue(self, issue_id: str) -> None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(queries.DELETE_ISSUE, id=issue_id)
 
     def list_issues(
@@ -162,7 +162,7 @@ class IssueRepositoryMixin:
         statuses: list[str] | None = None,
         project: str | None = None,
     ) -> list[Issue]:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.LIST_ISSUES,
                 componentId=component_id,
@@ -187,7 +187,7 @@ class IssueRepositoryMixin:
     # -- Dependency management -----------------------------------------------
 
     def add_dependency(self, issue_id: str, depends_on_id: str) -> None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(
                 queries.ADD_DEPENDENCY,
                 issue_id=issue_id,
@@ -209,7 +209,7 @@ class IssueRepositoryMixin:
         return {"successful": successful, "failed": failed, "results": results}
 
     def remove_dependency(self, issue_id: str, depends_on_id: str) -> None:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(
                 queries.REMOVE_DEPENDENCY,
                 issue_id=issue_id,
@@ -217,17 +217,17 @@ class IssueRepositoryMixin:
             )
 
     def get_dependencies(self, issue_id: str) -> list[Issue]:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.GET_DEPENDENCIES, issue_id=issue_id)
             return [_node_to_issue(r["target"]) for r in result]
 
     def get_dependents(self, issue_id: str) -> list[Issue]:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.GET_DEPENDENTS, issue_id=issue_id)
             return [_node_to_issue(r["source"]) for r in result]
 
     def get_blocked_issues(self) -> list[Issue]:
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 """
                 MATCH (i:Issue {status: 'OPEN'})-[:DEPENDS_ON]->(d:Issue {status: 'OPEN'})
@@ -240,7 +240,7 @@ class IssueRepositoryMixin:
 
     def add_affects_symbol(self, issue_id: str, symbol_id: str) -> None:
         """Link a CodeSymbol to an Issue (AFFECTS relationship)."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(
                 queries.ISSUE_AFFECTS_SYMBOL,
                 issue_id=issue_id,
@@ -250,7 +250,7 @@ class IssueRepositoryMixin:
 
     def get_affected_symbols(self, issue_id: str) -> list[dict[str, Any]]:
         """Get all CodeSymbols affected by an Issue."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 """
                 MATCH (i:Issue {id: $issue_id})-[r:AFFECTS]->(s:CodeSymbol)
@@ -265,7 +265,7 @@ class IssueRepositoryMixin:
 
     def get_issues_affecting_symbol(self, symbol_id: str) -> list[Issue]:
         """Get all Issues that affect a specific CodeSymbol."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 """
                 MATCH (i:Issue)-[r:AFFECTS]->(s:CodeSymbol {id: $symbol_id})
@@ -277,7 +277,7 @@ class IssueRepositoryMixin:
 
     def remove_affects_symbol(self, issue_id: str, symbol_id: str) -> None:
         """Remove AFFECTS relationship between Issue and CodeSymbol."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             session.run(
                 """
                 MATCH (i:Issue {id: $issue_id})-[r:AFFECTS]->(s:CodeSymbol {id: $symbol_id})
@@ -293,7 +293,7 @@ class IssueRepositoryMixin:
         component_id: str | None = None,
     ) -> list[Issue]:
         """Find issues by exact title, optionally filtered by component."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             if component_id:
                 result = session.run(
                     """
@@ -324,7 +324,7 @@ class IssueRepositoryMixin:
         - status != CLOSED
         - All its dependencies are CLOSED or it has no dependencies
         """
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             cypher = """
             MATCH (i:Issue)
             WHERE i.status <> 'CLOSED'
@@ -356,7 +356,7 @@ class IssueRepositoryMixin:
         related_nodes: list[str] | None = None,
     ) -> Issue:
         """Add a reasoning log entry to an issue and return the updated issue."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.GET_ISSUE,
                 id=issue_id,
@@ -390,7 +390,7 @@ class IssueRepositoryMixin:
 
     def get_reasoning_logs(self, issue_id: str) -> list[dict[str, Any]]:
         """Get all reasoning log entries for an issue."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.GET_ISSUE,
                 id=issue_id,
@@ -407,7 +407,7 @@ class IssueRepositoryMixin:
 
     def add_comment(self, issue_id: str, text: str, author: str = "api-user") -> Issue:
         """Add a comment to an issue and return the updated issue."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.GET_ISSUE, id=issue_id)
             record = result.single()
             if record is None:
@@ -437,7 +437,7 @@ class IssueRepositoryMixin:
 
     def get_comments(self, issue_id: str) -> list[dict[str, Any]]:
         """Get all comments for an issue."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(queries.GET_ISSUE, id=issue_id)
             record = result.single()
             if record is None:
@@ -451,7 +451,7 @@ class IssueRepositoryMixin:
 
     def update_manifest_todo(self, issue_id: str, todo: list[dict[str, str]]) -> Issue:
         """Update the manifest TODO list for an issue."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.GET_ISSUE,
                 id=issue_id,
@@ -473,7 +473,7 @@ class IssueRepositoryMixin:
 
     def update_manifest_files(self, issue_id: str, files: list[str]) -> Issue:
         """Update the manifest affected files list for an issue."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.GET_ISSUE,
                 id=issue_id,
@@ -495,7 +495,7 @@ class IssueRepositoryMixin:
 
     def update_manifest_notes(self, issue_id: str, notes: list[str]) -> Issue:
         """Update the manifest technical debt notes for an issue."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.GET_ISSUE,
                 id=issue_id,
@@ -517,7 +517,7 @@ class IssueRepositoryMixin:
 
     def get_manifest(self, issue_id: str) -> dict[str, Any]:
         """Get the full manifest for an issue."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.GET_ISSUE,
                 id=issue_id,
@@ -535,7 +535,7 @@ class IssueRepositoryMixin:
 
     def start_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         """Start agent work on an issue."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.GET_ISSUE,
                 id=issue_id,
@@ -565,7 +565,7 @@ class IssueRepositoryMixin:
 
     def finish_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         """Finish agent work on an issue."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.GET_ISSUE,
                 id=issue_id,
@@ -595,7 +595,7 @@ class IssueRepositoryMixin:
 
     def get_agent_status(self, issue_id: str) -> dict[str, Any]:
         """Get agent work status for an issue."""
-        with self._driver.driver.session(database=self._driver.database) as session:
+        with _session(self._driver) as session:
             result = session.run(
                 queries.GET_ISSUE,
                 id=issue_id,

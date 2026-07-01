@@ -205,29 +205,6 @@ def component_delete(
         console.print(f"[error]{e}[/error]")
         raise typer.Exit(code=1) from None
 
-    if not force and not yes:
-        component = repo.get_component(resolved_id)
-        if component:
-            issues = repo.list_issues(component_id=resolved_id)
-            if issues:
-                console.print(
-                    f"[warning]Component '{component.name}' has {len(issues)} issue(s).[/warning]\n"
-                    f"Issues will become unassigned after deletion.\n"
-                    f"Use [cyan]--force[/cyan] or [cyan]--yes[/cyan] to confirm."
-                )
-                raise typer.Exit(code=1) from None
-
-    try:
-        delete_component_action(repo, resolved_id, force=True)
-        console.print(f"[success]Component deleted:[/success] {resolved_id}")
-    except ComponentNotFoundError:
-        console.print(f"[error]Component '{component_id}' not found.[/error]")
-        raise typer.Exit(code=1) from None
-    except ComponentHasIssuesError as e:
-        console.print(f"[error]{e}[/error]")
-        raise typer.Exit(code=1) from None
-
-
 @component_app.command(name="add-dep")
 def component_add_dependency(
     component_id: str = typer.Argument(..., help="Component that depends on another"),

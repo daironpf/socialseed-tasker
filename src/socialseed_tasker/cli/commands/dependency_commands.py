@@ -129,7 +129,7 @@ def dependency_add(
         raise typer.Exit(code=2) from exc
     except DuplicateDependencyError as exc:
         console.print(f"[warning]{exc}[/warning]")
-        raise typer.Exit(code=0) from exc
+        raise typer.Exit(code=1) from exc
     except RemoteServiceError as exc:
         console.print(f"[error]Service error:[/error] {exc}")
         raise typer.Exit(code=1) from exc
