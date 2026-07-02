@@ -101,7 +101,7 @@ class Neo4jDriver:
         )
         self._verify_connection()
         self._init_schema()
-        logger.info("Neo4j connection established to %s", self._uri)
+        logger.debug("Neo4j connection established to %s", self._uri)
 
     def close(self) -> None:
         """Gracefully shut down the Neo4j driver.
@@ -111,7 +111,7 @@ class Neo4jDriver:
         if self._driver is not None:
             self._driver.close()
             self._driver = None
-            logger.info("Neo4j connection closed")
+            logger.debug("Neo4j connection closed")
 
     def health_check(self) -> bool:
         """Verify the Neo4j connection is alive and responsive.

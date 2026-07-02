@@ -91,6 +91,9 @@ def get_repository() -> TaskRepositoryInterface:
         )
         return ApiTaskRepository(client)
 
+    if cfg.neo4j_password and not os.environ.get("TASKER_NEO4J_PASSWORD"):
+        os.environ["TASKER_NEO4J_PASSWORD"] = cfg.neo4j_password
+
     password = _get_password_with_fallback()
     if password:
         os.environ["TASKER_NEO4J_PASSWORD"] = password
@@ -103,7 +106,7 @@ def get_repository() -> TaskRepositoryInterface:
         console.print("")
         console.print("[info]Example:[/info]")
         console.print("  [bold]tasker -pw neoSocial component list[/bold]")
-        raise typer.Exit(code=2)
+        raise typer.Exit(code=1)
 
     return get_cli_container().get_repository()
 

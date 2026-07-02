@@ -12,6 +12,8 @@ from socialseed_tasker.cli.commands.shared import console, get_repository
 
 ISSUE_REF_PATTERN = re.compile(r"#(\d{3,})")
 
+IGNORE_DIRS = {"venv", ".venv", "node_modules", "__pycache__", ".git", ".hg", ".svn", "dist", "build", ".tox", ".eggs", "*.egg-info"}
+
 
 def doc_sync_command(
     path: str = typer.Argument(".", help="Project root path to scan for documentation"),
@@ -26,7 +28,10 @@ def doc_sync_command(
         console.print(f"[error]Path not found:[/error] {path}")
         raise typer.Exit(code=1)
 
-    md_files = sorted(root.rglob("*.md"))
+    md_files = sorted(
+        f for f in root.rglob("*.md")
+        if not any(part in IGNORE_DIRS for part in f.relative_to(root).parts)
+    )
 
     if not md_files:
         console.print(f"[warning]No .md files found in {root}[/warning]")
