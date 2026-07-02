@@ -1,11 +1,14 @@
 # Project Versions
 
-## [1.0.3] - 2026-06-07
+## [1.0.4] - 2026-07-02
 
-### v1.0.3 Checklist
-- [x] **#414 Issue count inconsistency:** Fixed `tasker status` and `GET /projects/{name}/summary` to compute total issues from `sum(by_status.values())` instead of `len(all_issues)`, ensuring total always matches per-status breakdown.
-- [x] **#415 --page-size not in --help:** Already resolved by #398 — options were properly defined as Typer options with help text. Marked as done.
-- [x] **#416 Config path backslashes:** Normalized config path display in `tasker status` using `Path.as_posix()` to use forward slashes cross-platform.
+### v1.0.4 Checklist
+- [x] **FIND-001 Log noise:** Downgraded Neo4j connect/close INFO logs to DEBUG level so `[INFO] Neo4j connection closed` no longer appears in CLI output.
+- [x] **FIND-002 doc-sync venv scan:** Added `IGNORE_DIRS` filter to doc-sync scanner to skip `venv/`, `.venv/`, `node_modules/`, and other common non-project directories.
+- [x] **FIND-003 Config password loading:** `get_repository()` now falls back to reading `neo4j_password` from the `DualModeConfig` YAML config when the env var is not set.
+- [x] **FIND-004 Exit code consistency:** Changed `typer.Exit(code=2)` to `code=1` for the "Neo4j password required" error.
+
+## [1.0.3] - 2026-06-07
 
 ## [1.0.2] - 2026-05-28
 
