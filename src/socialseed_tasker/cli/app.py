@@ -121,7 +121,7 @@ APP_EPILOG = (
     "  tasker dependency chain <issue_id>\n"
     "  tasker issue close <issue_id>\n"
     "\n"
-    "New in v1.1.0: Use 'tasker dependency add-batch' for bulk operations without rate-limit retries.\n"
+    "Tip: Use 'tasker dependency add-batch' for bulk operations without rate-limit retries.\n"
     "\n"
     "Run 'tasker <command> --help' for detailed usage of each command."
 )

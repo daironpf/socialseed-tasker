@@ -1,6 +1,6 @@
 # Project Roadmap
 
-**Last updated**: 2026-07-02
+**Last updated**: 2026-07-03
 
 ## Phase 1: Foundations
 - [x] Environment Setup
@@ -39,3 +39,6 @@
 | 414 | Issue count inconsistency after closing issues | Low | cli/status_commands.py, api/project.py | ✅ RESOLVED |
 | 415 | --page-size option not shown in --help | Low | cli/issue_commands.py | ✅ RESOLVED |
 | 416 | Config path uses Windows backslashes instead of forward slashes | Low | cli/status_commands.py | ✅ RESOLVED |
+| 425 | Rate limiting retry log noise pollutes CLI output | Low | infrastructure/http/api_client.py | ✅ RESOLVED |
+| 426 | CLI help text references "New in v1.1.0" but version is 1.0.x | Low | cli/app.py | ✅ RESOLVED |
+| 427 | Admin flags/rate endpoints ignore TASKER_AUTH_ENABLED setting | Medium | infrastructure/web_api/app.py | ✅ RESOLVED |

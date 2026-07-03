@@ -578,9 +578,9 @@ def create_app(
     app.add_middleware(TenantMiddleware, container=_tenancy_container)
 
     # Admin rate-limit endpoints
-    @app.get("/api/v1/admin/rate/{key}")
-    def admin_get_rate(key: str, request: Request):
-        from fastapi import HTTPException
+    def _require_rate_access(request: Request):
+        if not auth_enabled:
+            return True
         from socialseed_tasker.auth.auth import load_auth_provider
         auth = request.headers.get("authorization", "")
         user_id = None
@@ -595,7 +595,12 @@ def create_app(
                     if session:
                         claims = session.get("claims", {})
                         user_id = claims.get("preferred_username") or claims.get("sub")
-        if not user_id or not getattr(app.state, "rate_limiter", None):
+        return user_id is not None
+
+    @app.get("/api/v1/admin/rate/{key}")
+    def admin_get_rate(key: str, request: Request):
+        from fastapi import HTTPException
+        if not _require_rate_access(request) or not getattr(app.state, "rate_limiter", None):
             raise HTTPException(status_code=403, detail="forbidden")
         state = app.state.rate_limiter.get_state(key)
         return {"status": "ok", "key": key, "state": state}
@@ -603,56 +608,45 @@ def create_app(
     @app.post("/api/v1/admin/rate/{key}/reset")
     def admin_reset_rate(key: str, request: Request):
         from fastapi import HTTPException
+        if not _require_rate_access(request) or not getattr(app.state, "rate_limiter", None):
+            raise HTTPException(status_code=403, detail="forbidden")
+        app.state.rate_limiter.reset(key)
+        return {"status": "ok", "key": key}
+
+    # Admin helpers
+    def _require_admin(request: Request):
+        if not auth_enabled:
+            return None
         from socialseed_tasker.auth.auth import load_auth_provider
+        from socialseed_tasker.cli.wiring import build_default_container
         auth = request.headers.get("authorization", "")
         user_id = None
         if auth.lower().startswith("bearer "):
             user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
         if not user_id:
-            sid = request.cookies.get(os.getenv("TASKER_SESSION_COOKIE", "TASKER_SESSION"))
-            if sid:
-                session_store = getattr(app.state, "session_store", None)
-                if session_store:
-                    session = session_store.get(sid)
-                    if session:
-                        claims = session.get("claims", {})
-                        user_id = claims.get("preferred_username") or claims.get("sub")
-        if not user_id or not getattr(app.state, "rate_limiter", None):
             raise HTTPException(status_code=403, detail="forbidden")
-        app.state.rate_limiter.reset(key)
-        return {"status": "ok", "key": key}
+        container = build_default_container()
+        if not container.rbac.has_permission(user_id, "admin"):
+            raise HTTPException(status_code=403, detail="forbidden")
+        return container
 
     # Admin feature-flag endpoints
     @app.get("/api/v1/admin/flags")
     def api_list_flags(request: Request):
         from fastapi import HTTPException
-        from socialseed_tasker.auth.auth import load_auth_provider
-        from socialseed_tasker.cli.wiring import build_default_container
-        auth = request.headers.get("authorization", "")
-        user_id = None
-        if auth.lower().startswith("bearer "):
-            user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
-        if not user_id:
-            raise HTTPException(status_code=403, detail="forbidden")
-        container = build_default_container()
-        if not container.rbac.has_permission(user_id, "admin"):
-            raise HTTPException(status_code=403, detail="forbidden")
+        container = _require_admin(request)
+        if container is None:
+            from socialseed_tasker.cli.wiring import build_default_container
+            container = build_default_container()
         return {"status": "ok", "flags": container.runtime_config.list()}
 
     @app.get("/api/v1/admin/flags/{name}")
     def api_get_flag(name: str, request: Request):
         from fastapi import HTTPException
-        from socialseed_tasker.auth.auth import load_auth_provider
-        from socialseed_tasker.cli.wiring import build_default_container
-        auth = request.headers.get("authorization", "")
-        user_id = None
-        if auth.lower().startswith("bearer "):
-            user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
-        if not user_id:
-            raise HTTPException(status_code=403, detail="forbidden")
-        container = build_default_container()
-        if not container.rbac.has_permission(user_id, "admin"):
-            raise HTTPException(status_code=403, detail="forbidden")
+        container = _require_admin(request)
+        if container is None:
+            from socialseed_tasker.cli.wiring import build_default_container
+            container = build_default_container()
         v = container.runtime_config.get(name, None)
         if v is None:
             raise HTTPException(status_code=404, detail="not found")
@@ -661,18 +655,11 @@ def create_app(
     @app.post("/api/v1/admin/flags")
     async def api_set_flag(request: Request):
         from fastapi import HTTPException
-        from socialseed_tasker.auth.auth import load_auth_provider
-        from socialseed_tasker.cli.wiring import build_default_container
         import json as _json
-        auth = request.headers.get("authorization", "")
-        user_id = None
-        if auth.lower().startswith("bearer "):
-            user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
-        if not user_id:
-            raise HTTPException(status_code=403, detail="forbidden")
-        container = build_default_container()
-        if not container.rbac.has_permission(user_id, "admin"):
-            raise HTTPException(status_code=403, detail="forbidden")
+        container = _require_admin(request)
+        if container is None:
+            from socialseed_tasker.cli.wiring import build_default_container
+            container = build_default_container()
         raw = await request.body()
         body = _json.loads(raw.decode("utf-8")) if raw else {}
         name = body.get("name")
@@ -685,17 +672,10 @@ def create_app(
     @app.delete("/api/v1/admin/flags/{name}")
     def api_delete_flag(name: str, request: Request):
         from fastapi import HTTPException
-        from socialseed_tasker.auth.auth import load_auth_provider
-        from socialseed_tasker.cli.wiring import build_default_container
-        auth = request.headers.get("authorization", "")
-        user_id = None
-        if auth.lower().startswith("bearer "):
-            user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
-        if not user_id:
-            raise HTTPException(status_code=403, detail="forbidden")
-        container = build_default_container()
-        if not container.rbac.has_permission(user_id, "admin"):
-            raise HTTPException(status_code=403, detail="forbidden")
+        container = _require_admin(request)
+        if container is None:
+            from socialseed_tasker.cli.wiring import build_default_container
+            container = build_default_container()
         container.runtime_config.delete(name)
         return {"status": "ok", "name": name}
 

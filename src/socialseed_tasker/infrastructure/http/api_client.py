@@ -92,7 +92,7 @@ class ApiHttpClient:
                 base_delay = int(match.group(1)) if match else 1
                 jitter = random.uniform(0, 0.5)
                 retry_after = min(base_delay * (2 ** attempt) + jitter, 30)
-                logger.info("Rate limited (attempt %d/%d). Retrying in %.1fs...", attempt + 1, self.max_retries, retry_after)
+                logger.debug("Rate limited (attempt %d/%d). Retrying in %.1fs...", attempt + 1, self.max_retries, retry_after)
                 time.sleep(retry_after)
             except httpx.RequestError as exc:
                 logger.debug("Request failed: %s", exc)

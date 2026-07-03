@@ -1,12 +1,15 @@
 # Project Versions
 
-## [1.0.4] - 2026-07-02
+## [1.0.4] - 2026-07-03
 
 ### v1.0.4 Checklist
 - [x] **FIND-001 Log noise:** Downgraded Neo4j connect/close INFO logs to DEBUG level so `[INFO] Neo4j connection closed` no longer appears in CLI output.
 - [x] **FIND-002 doc-sync venv scan:** Added `IGNORE_DIRS` filter to doc-sync scanner to skip `venv/`, `.venv/`, `node_modules/`, and other common non-project directories.
 - [x] **FIND-003 Config password loading:** `get_repository()` now falls back to reading `neo4j_password` from the `DualModeConfig` YAML config when the env var is not set.
 - [x] **FIND-004 Exit code consistency:** Changed `typer.Exit(code=2)` to `code=1` for the "Neo4j password required" error.
+- [x] **#425 Rate limiting retry log noise:** Changed `logger.info` to `logger.debug` in `api_client.py` so rate-limit retry messages only appear with `--verbose`.
+- [x] **#426 CLI help version mismatch:** Changed "New in v1.1.0" to "Tip:" in `cli/app.py` to avoid confusing version-reference in help text.
+- [x] **#427 Admin auth consistency:** Admin flags (`/api/v1/admin/flags`) and rate-limit (`/api/v1/admin/rate/{key}`) endpoints now respect `TASKER_AUTH_ENABLED`. When auth is disabled globally, these endpoints work without a bearer token.
 
 ## [1.0.3] - 2026-06-07
 
@@ -47,6 +50,7 @@
 ### Release History
 | Version | Date | Description |
 |---------|------|-------------|
+| 1.0.4   | 2026-07-03 | Bugfix: Rate-limit log noise (#425), CLI help version (#426), admin auth consistency (#427), N4j log noise, doc-sync ignores, config password fallback, exit code consistency |
 | 1.0.3   | 2026-06-07 | Bugfix: status count (#414), --help pagination flags (#415), config path backslashes (#416) |
 | 1.0.2   | 2026-05-29 | Bugfix: Emoji/traceback cleanup, --depends-on flag, non-TTY init, Docker local source, base image 3.12, Neo4j warnings, CLI help examples |
 | 1.0.1   | 2026-05-25 | Bugfix: Schema init CypherSyntaxError & logger NameError |
