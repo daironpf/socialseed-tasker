@@ -71,6 +71,13 @@ def _get_password_with_fallback() -> str:
         if saved.get("uri") == uri:
             return saved.get("password", "")
 
+    from socialseed_tasker.config.mode_config import DualModeConfig
+
+    cfg = DualModeConfig.load()
+    if cfg.neo4j_password:
+        os.environ["TASKER_NEO4J_PASSWORD"] = cfg.neo4j_password
+        return cfg.neo4j_password
+
     return ""
 
 

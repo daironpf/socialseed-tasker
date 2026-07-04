@@ -1,6 +1,6 @@
-# CLI Commands Reference - v1.0.0
+# CLI Commands Reference - v1.0.5
 
-This document covers all CLI commands available in SocialSeed Tasker v1.0.0.
+This document covers all CLI commands available in SocialSeed Tasker v1.0.5.
 
 ## Installation
 
@@ -114,6 +114,7 @@ tasker dependency chain <issue-id>
 ### Blocked Issues
 ```bash
 tasker dependency blocked
+tasker dependency blocked -p "My Project"  # Filter by project (v1.0.5+)
 ```
 
 ## Analysis Commands

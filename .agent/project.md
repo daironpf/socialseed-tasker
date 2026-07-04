@@ -4,7 +4,7 @@
 
 This file provides essential context for AI agents working on this project. Agents should read this file when starting work to understand the project architecture and constraints.
 
-**Version**: 1.0.0
+**Version**: 1.0.5
 **Created**: 2026-05-05
 **Architecture**: Hexagonal (Feature-Oriented)
 **Project Model**: Single Project (one project per Tasker instance)

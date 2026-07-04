@@ -30,7 +30,7 @@ def constraints_set(
     """Load constraints from a YAML config file into Neo4j."""
     config_file = Path(config_path)
     if not config_file.exists():
-        console.print(f"[error]Config file not found: {config_path}[/error]")
+        console.print(f"[error]Config file not found: {Path(config_path).as_posix()}[/error]")
         raise typer.Exit(code=1)
 
     try:

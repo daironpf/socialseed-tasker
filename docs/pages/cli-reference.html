@@ -42,6 +42,7 @@
                 <ul>
                     <li><a href="#setup">Setup & Init</a></li>
                     <li><a href="#issue">Issue Management</a></li>
+                    <li><a href="#dependency">Dependency Management</a></li>
                     <li><a href="#component">Components</a></li>
                 </ul>
                 <div class="sidebar-section-title">Analysis & Graph</div>
@@ -78,6 +79,16 @@ tasker issue list --status OPEN
 
 <span style="color: #c3e88d;"># Close an issue (validates dependencies)</span>
 tasker issue close issue_42</code></pre>
+
+                <h2 id="dependency">Dependency Management</h2>
+                <pre><code><span style="color: #c3e88d;"># Show all blocked issues</span>
+tasker dependency blocked
+
+<span style="color: #c3e88d;"># Filter by project (v1.0.5+)</span>
+tasker dependency blocked --project "My Project"
+
+<span style="color: #c3e88d;"># Add a dependency</span>
+tasker dependency add issue_42 --depends-on issue_10</code></pre>
 
                 <h2 id="code-graph">Code Graph (v0.9.0)</h2>
                 <p>Manage the code-as-graph features.</p>

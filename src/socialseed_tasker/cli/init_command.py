@@ -22,6 +22,8 @@ from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
 
+import hashlib
+
 from socialseed_tasker.domain.system_init_entities import FileOperation, ScaffoldStatus
 from socialseed_tasker.application.scaffolder import ScaffolderService
 
@@ -322,7 +324,7 @@ def interactive_init_command(
             console.print("\n" + "="*40 + "\n")
 
     # Mode selection
-    cli_mode = "direct"
+    cli_mode = "api"
     if not yes:
         console.print("\n[bold cyan]Connection Mode[/bold cyan]")
         console.print("Choose how the CLI connects to the backend:")
@@ -387,6 +389,10 @@ def interactive_init_command(
     # Write mode configuration
     _write_mode_config(target, inplace, cli_mode)
 
+    # Inject unique project name into docker-compose files to isolate
+    # containers/volumes/networks from other Tasker projects
+    compose_project_name = _inject_compose_project_name(target, inplace, slug)
+
     # Handle API keys in .env
     if openai_api_key:
         try:
@@ -422,7 +428,7 @@ def interactive_init_command(
             
         # Clean up any existing containers for this project
         subprocess.run(
-            ["docker", "compose", "down"],
+            ["docker", "compose", "-p", compose_project_name, "down"],
             cwd=compose_dir,
             capture_output=True,
         )
@@ -432,7 +438,7 @@ def interactive_init_command(
         
         compose_profile = {"direct": [], "api": ["--profile", "api"], "full": ["--profile", "full"]}.get(cli_mode, [])
         subprocess.run(
-            ["docker", "compose", *compose_profile, "up", "-d", "--build"],
+            ["docker", "compose", "-p", compose_project_name, *compose_profile, "up", "-d", "--build"],
             cwd=compose_dir,
             check=True,
         )
@@ -741,11 +747,11 @@ def _run_scaffold(
     target_path = Path(target).resolve()
 
     if not target_path.exists():
-        console.print(f"[error]Target directory does not exist: {target_path}[/error]")
+        console.print(f"[error]Target directory does not exist: {target_path.as_posix()}[/error]")
         raise typer.Exit(code=1) from None
 
     if not target_path.is_dir():
-        console.print(f"[error]Target is not a directory: {target_path}[/error]")
+        console.print(f"[error]Target is not a directory: {target_path.as_posix()}[/error]")
         raise typer.Exit(code=1) from None
 
     template_dir = _get_template_dir()
@@ -763,7 +769,7 @@ def _run_scaffold(
         if output_path.exists():
             if existing_project_file.exists() and force:
                 console.print(
-                    f"[warning]Existing Tasker project detected at: {target_path}[/warning]"
+                    f"[warning]Existing Tasker project detected at: {target_path.as_posix()}[/warning]"
                 )
                 console.print(
                     "[warning]Using --force will overwrite current project configuration "
@@ -797,7 +803,7 @@ def _run_scaffold(
                 )
                 return
 
-    console.print(f"[info]Scaffolding Tasker into:[/info] [bold]{target_path}[/bold]")
+    console.print(f"[info]Scaffolding Tasker into:[/info] [bold]{target_path.as_posix()}[/bold]")
 
     operations_log: list[FileOperation] = []
 
@@ -940,6 +946,29 @@ def _fill_project_context(
             content = content.replace(key, value)
         project_json.write_text(content, encoding="utf-8")
         console.print(f"  [success]Updated:[/success]    {project_json.relative_to(target_root.parent if target_root.parent.exists() else target_root)}")
+
+
+def _inject_compose_project_name(target: str, inplace: bool, slug: str) -> str:
+    """Inject a unique ``name:`` field into docker-compose files so each
+    project gets its own containers, volumes and networks, avoiding
+    conflicts with other Tasker projects on the same machine."""
+    compose_dir = Path(target).resolve()
+    if not inplace:
+        compose_dir = compose_dir / ".agent" / "tasker"
+
+    suffix = hashlib.sha256(slug.encode()).hexdigest()[:8]
+    project_name = f"tasker-{slug}-{suffix}"
+
+    for compose_file in ("docker-compose.yml", "docker-compose-minimal.yml"):
+        path = compose_dir / compose_file
+        if path.exists():
+            content = path.read_text(encoding="utf-8")
+            if not content.lstrip().startswith("name:"):
+                header = f"name: {project_name}\n\n"
+                path.write_text(header + content, encoding="utf-8")
+                console.print(f"  [info]Isolated:[/info]    {compose_file} → project name '{project_name}'")
+
+    return project_name
 
 
 def _write_mode_config(target: str, inplace: bool, mode: str) -> None:

@@ -1,5 +1,22 @@
 # Project Versions
 
+## [1.0.5] - 2026-07-04
+
+### v1.0.5 Checklist
+- [x] **FIND-001 Environment isolation:** Added unique Docker Compose project name (`tasker-<slug>-<hash>`) injected into generated `docker-compose.yml`/`docker-compose-minimal.yml` via `_inject_compose_project_name()`. Removed hardcoded `container_name` from minimal template. Each project now gets isolated containers, volumes, and networks.
+- [x] **FIND-002 Version sync:** Fixed `__version__` in `__init__.py` — changed from `1.0.2` to `1.0.3` to match `pyproject.toml`.
+- [x] **FIND-003 Single Project Rule enforcement:** `project create` now checks `repo.list_projects()` first and refuses to create a new project if one already exists, enforcing the documented Single Project Rule.
+- [x] **FIND-004 `--project` filter for blocked issues:** Added `-p`/`--project` flag to `dependency blocked` command, filtering blocked issues by component project membership.
+- [x] **FIND-005 `--yes` uses API mode:** Changed default `cli_mode` from `"direct"` to `"api"` in `init_command.py` when `--yes` flag is used, matching the recommended setup workflow.
+- [x] **FIND-006 Config password fallback:** `_get_password_with_fallback()` in `shared.py` now loads `DualModeConfig` directly as third fallback tier when env var and saved credentials are empty.
+- [x] **FIND-007 Path normalization:** Converted `{target_path}` / `{project_path}` / `{config_path}` / `{path}` string interpolation to `.as_posix()` in `init_command.py`, `project_commands.py`, `constraints_commands.py`, and `doc_sync_commands.py` to ensure forward-slash paths on Windows.
+
+### Release History
+| Version | Date | Description |
+|---------|------|-------------|
+| 1.0.5   | 2026-07-04 | Bugfix: All 7 PyPI black-box test findings resolved |
+| 1.0.4   | 2026-07-03 | Bugfix: Rate-limit log noise (#425), CLI help version (#426), admin auth consistency (#427), N4j log noise, doc-sync ignores, config password fallback, exit code consistency |
+
 ## [1.0.4] - 2026-07-03
 
 ### v1.0.4 Checklist

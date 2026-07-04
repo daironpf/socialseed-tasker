@@ -14,7 +14,6 @@ services:
   # Neo4j Database (Graph Database - API + CLI Storage)
   # =============================================================================
   tasker-db:
-    container_name: tasker-db
     image: neo4j:5.26.15-community
     ports:
       - "7474:7474"

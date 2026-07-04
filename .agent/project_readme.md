@@ -46,7 +46,7 @@ tasker issue close <id>
 # Dependencies
 tasker dependency add <issue> --depends-on <dep>
 tasker dependency chain <issue>
-tasker dependency blocked
+tasker dependency blocked -p <project>
 
 # Analysis
 tasker analyze root-cause <issue>

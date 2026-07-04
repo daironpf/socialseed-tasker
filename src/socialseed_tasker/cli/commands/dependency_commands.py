@@ -256,7 +256,9 @@ def dependency_chain(issue_id: str) -> None:
 
 
 @dependency_app.command("blocked")
-def dependency_blocked() -> None:
+def dependency_blocked(
+    project: str = typer.Option("", "--project", "-p", help="Filter by project name"),
+) -> None:
     """Show all issues blocked by open dependencies."""
     repo = get_repository()
     blocked = get_blocked_issues_action(repo)
@@ -266,8 +268,12 @@ def dependency_blocked() -> None:
         return
 
     # Build component name lookup
-    components = repo.list_components()
+    components = repo.list_components(project=project or None)
     component_names = {str(c.id): c.name for c in components}
+
+    if project:
+        project_comp_ids = {str(c.id) for c in components}
+        blocked = [i for i in blocked if str(i.component_id) in project_comp_ids]
 
     console.print("[warning]Blocked issues:[/warning]")
     console.print(_issues_table(blocked, component_names))

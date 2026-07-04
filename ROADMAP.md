@@ -1,6 +1,6 @@
 # Project Roadmap
 
-**Last updated**: 2026-07-03
+**Last updated**: 2026-07-04
 
 ## Phase 1: Foundations
 - [x] Environment Setup
@@ -42,3 +42,10 @@
 | 425 | Rate limiting retry log noise pollutes CLI output | Low | infrastructure/http/api_client.py | ✅ RESOLVED |
 | 426 | CLI help text references "New in v1.1.0" but version is 1.0.x | Low | cli/app.py | ✅ RESOLVED |
 | 427 | Admin flags/rate endpoints ignore TASKER_AUTH_ENABLED setting | Medium | infrastructure/web_api/app.py | ✅ RESOLVED |
+| 428 | `tasker --version` reports v1.0.2 but PyPI installed v1.0.3 | Medium | src/socialseed_tasker/__init__.py | ✅ RESOLVED |
+| 429 | `project create` allows multiple projects (violates Single Project Rule) | Medium | cli/commands/project_commands.py | ✅ RESOLVED |
+| 430 | `dependency blocked` lacks `--project` filter | Low | cli/commands/dependency_commands.py | ✅ RESOLVED |
+| 431 | `tasker init --yes` uses "direct" mode instead of "api" | Low | cli/init_command.py | ✅ RESOLVED |
+| 432 | Environment isolation: real-test shares Neo4j with main project | Critical | cli/init_command.py | ✅ RESOLVED |
+| 433 | Config password: `_get_password_with_fallback()` misses YAML fallback | Low | cli/commands/shared.py | ✅ RESOLVED |
+| 434 | Path normalization: Windows backslashes in error messages | Low | cli/commands/*.py | ✅ RESOLVED |

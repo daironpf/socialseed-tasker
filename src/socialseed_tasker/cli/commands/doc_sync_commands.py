@@ -25,7 +25,7 @@ def doc_sync_command(
     """
     root = Path(path).resolve()
     if not root.is_dir():
-        console.print(f"[error]Path not found:[/error] {path}")
+        console.print(f"[error]Path not found:[/error] {root.as_posix()}")
         raise typer.Exit(code=1)
 
     md_files = sorted(

@@ -576,6 +576,7 @@ tasker dependency blocked [OPTIONS]
 - `--priority <priority>` — Filter by priority
 - `--output json|table` — Output format
 - `--sort <field>` — Sort by field
+- `--project, -p <project>` — Filter by project name (v1.0.5+)
 
 **Examples:**
 
@@ -591,6 +592,10 @@ tasker dependency blocked --priority HIGH
 
 # Sorted by priority
 tasker dependency blocked --sort priority
+
+# Filter by project (v1.0.5+)
+tasker dependency blocked --project "My Project"
+tasker dependency blocked -p "Blog Platform"
 ```
 
 ---

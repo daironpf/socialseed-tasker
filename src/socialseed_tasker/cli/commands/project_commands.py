@@ -43,7 +43,7 @@ def project_detect(
     project_path = Path(path).resolve()
 
     if not project_path.exists():
-        console.print(f"[error]Path does not exist: {project_path}[/error]")
+        console.print(f"[error]Path does not exist: {project_path.as_posix()}[/error]")
         raise typer.Exit(code=1) from None
 
     discovered_modules: list[dict[str, Any]] = []
@@ -163,6 +163,14 @@ def project_create(
     this command returns the existing project instead.
     """
     repo = get_repository()
+
+    existing = repo.list_projects()
+    if existing:
+        proj_name = existing[0]
+        console.print(f"[warning]A project already exists:[/warning] '{proj_name}'.")
+        console.print("[info]Tasker supports only ONE project per instance.[/info]")
+        return
+
     if not slug:
         slug = name.lower().replace(" ", "-")
 
@@ -198,7 +206,7 @@ def project_setup(
     """
     project_path = Path(path).resolve()
     if not project_path.exists():
-        console.print(f"[error]Path does not exist: {project_path}[/error]")
+        console.print(f"[error]Path does not exist: {project_path.as_posix()}[/error]")
         raise typer.Exit(code=1) from None
 
     proj_name = project_name or project_path.name
