@@ -224,7 +224,7 @@ def _format_issue_card(issue: Issue, component_name: str | None = None) -> Panel
 def _issues_table(issues: list[Issue], component_names: dict[str, str] | None = None) -> Table:
     table = Table(show_header=True, header_style="bold cyan", box=SIMPLE, min_width=130)
     table.add_column("ID", style="dim", width=10)
-    table.add_column("Title", width=40)
+    table.add_column("Title", width=60)
     table.add_column("Status", width=12)
     table.add_column("Priority", width=12)
     table.add_column("Component", width=40)
@@ -232,7 +232,8 @@ def _issues_table(issues: list[Issue], component_names: dict[str, str] | None = 
     for issue in issues:
         comp_id = str(issue.component_id)
         comp_name = (component_names or {}).get(comp_id, comp_id[:8])
-        title = str(issue.title)[:40] if issue.title else ""
+        raw = str(issue.title) if issue.title else ""
+        title = raw[:58] + ".." if len(raw) > 58 else raw
         table.add_row(
             str(issue.id)[:8],
             title,

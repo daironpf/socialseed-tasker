@@ -92,7 +92,13 @@ class ApiHttpClient:
                 base_delay = int(match.group(1)) if match else 1
                 jitter = random.uniform(0, 0.5)
                 retry_after = min(base_delay * (2 ** attempt) + jitter, 30)
-                logger.debug("Rate limited (attempt %d/%d). Retrying in %.1fs...", attempt + 1, self.max_retries, retry_after)
+                import sys
+                print(
+                    f"[Tasker] Rate limited – attempt {attempt + 1}/{self.max_retries}. "
+                    f"Waiting {retry_after:.0f}s before retry. "
+                    f"Add ~1s delay between commands to avoid rate limits.",
+                    file=sys.stderr,
+                )
                 time.sleep(retry_after)
             except httpx.RequestError as exc:
                 logger.debug("Request failed: %s", exc)

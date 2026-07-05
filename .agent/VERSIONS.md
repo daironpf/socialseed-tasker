@@ -1,15 +1,18 @@
 # Project Versions
 
-## [1.0.6] - 2026-06-09
+## [1.0.5] - 2026-07-05
 
-### v1.0.6 Checklist
-- [x] **#421 Docker image rebuild required for code changes:** Created `docker-compose.dev.yml` that mounts source code as a volume and enables uvicorn `--reload` via `TASKER_DEBUG=true`. Added `dev-api` target to `Makefile`. Code changes now reflect immediately without rebuilding the Docker image.
+### v1.0.5 Checklist
+- [x] **FIND-001 Rate limiting UX:** Changed debug-only retry messages to visible stderr output with cooldown info. Improved error handler to show retry-after duration.
+- [x] **FIND-003 Description visibility:** Added explicit tip for `-d` / `--description` flag in help epilog.
+- [x] **FIND-004 Neo4j URI masking:** Health endpoint now masks Neo4j URI to `scheme://host:port` only (no credentials/path leakage).
+- [x] **FIND-005 Title truncation:** Increased issue title column width from 40 to 60. Added `..` ellipsis indicator when truncated.
 
 ### Release History
 | Version | Date | Description |
 |---------|------|-------------|
-| 1.0.6   | 2026-06-09 | Dev Docker profile with hot-reload |
-| 1.0.5   | 2026-06-07 | Duplicate dependency detection |
+| 1.0.5   | 2026-07-05 | Black-box test findings fixes |
+| 1.0.4   | 2026-05-25 | Bugfixes & documentation improvements |
 | 1.0.4   | 2026-05-25 | Bugfixes & documentation improvements |
 
 ## [1.0.4] - 2026-05-25

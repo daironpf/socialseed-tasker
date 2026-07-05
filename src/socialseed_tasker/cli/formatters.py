@@ -18,7 +18,7 @@ def _issues_table(issues: list[Issue], component_names: dict[str, str] | None = 
     """Generate a formatted table for issues."""
     table = Table(show_header=True, header_style="bold", box=SIMPLE)
     table.add_column("ID", style="dim", width=8)
-    table.add_column("Title", width=40)
+    table.add_column("Title", width=60)
     table.add_column("Status", width=10)
     table.add_column("Priority", width=8)
     table.add_column("Component", width=20)
@@ -30,9 +30,11 @@ def _issues_table(issues: list[Issue], component_names: dict[str, str] | None = 
         elif component_names is None:
             comp_name = str(issue.component_id)[:8]
 
+        raw = str(issue.title) if issue.title else ""
+        truncated = raw[:58] + ".." if len(raw) > 58 else raw
         table.add_row(
             str(issue.id)[:8],
-            issue.title[:38],
+            truncated,
             issue.status.value,
             issue.priority.value,
             comp_name,

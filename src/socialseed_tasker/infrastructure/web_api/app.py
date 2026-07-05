@@ -425,7 +425,9 @@ def create_app(
         if neo4j_driver is not None:
             neo4j_connected = neo4j_driver.health_check()
             result["dependencies"]["neo4j"] = "connected" if neo4j_connected else "disconnected"
-            result["neo4j_uri"] = neo4j_driver.uri
+            from urllib.parse import urlparse
+            parsed = urlparse(neo4j_driver.uri)
+            result["neo4j_uri"] = f"{parsed.scheme}://{parsed.hostname}:{parsed.port}" if parsed.hostname else neo4j_driver.uri
             if not neo4j_connected:
                 result["status"] = "degraded"
         else:

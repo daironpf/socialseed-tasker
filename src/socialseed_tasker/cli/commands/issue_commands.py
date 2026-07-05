@@ -58,6 +58,7 @@ ISSUE_CREATE_EPILOG = (
     "\n"
     "Tips:\n"
     "  - Use 'tasker component list' to find component IDs\n"
+    "  - Add descriptions with: -d \"Your description here\"\n"
     "  - Priority values: LOW, MEDIUM (default), HIGH, CRITICAL\n"
     "  - Labels are comma-separated: -l \"frontend,ux,urgent\"\n"
     "  - Use --enforce block to prevent policy violations\n"

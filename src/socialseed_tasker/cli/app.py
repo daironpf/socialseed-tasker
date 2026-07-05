@@ -363,7 +363,13 @@ def handle_error(error: Exception, exit_code: int = 1) -> None:
     elif isinstance(error, RemoteServiceError):
         message = str(error)
         if "429" in message:
-            console.print("[error]Rate limited:[/error] Too many requests. Please wait and try again.")
+            import re
+            retry_match = re.search(r"Retry after (\d+)s", message)
+            cooldown = f" Retry after {retry_match.group(1)}s." if retry_match else ""
+            console.print(
+                f"[error]Rate limited:[/error] Too many requests.{cooldown} "
+                "Add ~1s delay between commands to avoid rate limits."
+            )
         elif "DATABASE_CONNECTION_ERROR" in message or "Connection error" in message:
             console.print(f"[error]Database connection failed:[/error] Check that Neo4j is running and accessible.")
             console.print(DB_CONNECTION_TIP)
