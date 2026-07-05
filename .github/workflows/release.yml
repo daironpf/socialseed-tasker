@@ -123,6 +123,7 @@ jobs:
   build-docker:
     name: Build and Push Docker Image
     needs: test
+    if: ${{ github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
