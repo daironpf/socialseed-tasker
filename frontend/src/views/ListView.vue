@@ -4,6 +4,17 @@
       <LoadingSpinner />
     </div>
     <div v-else>
+      <!-- Header -->
+      <div class="mb-4 flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Issues</h1>
+        <button
+          class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
+          @click="showCreateModal = true"
+        >
+          + Nuevo Issue
+        </button>
+      </div>
+
       <div class="mb-4 flex items-center gap-2">
         <input
           v-model="search"
@@ -99,6 +110,14 @@
         @close-issue="onCloseIssue"
       />
     </div>
+
+    <div
+      v-if="showCreateModal"
+      class="fixed inset-0 z-40 bg-black/50 flex items-center justify-center"
+      @click.self="showCreateModal = false"
+    >
+      <CreateIssueModal @close="showCreateModal = false" @created="onIssueCreated" />
+    </div>
   </div>
 </template>
 
@@ -113,6 +132,7 @@ import PriorityBadge from '@/components/ui/PriorityBadge.vue'
 import LabelTag from '@/components/ui/LabelTag.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
+import CreateIssueModal from '@/components/issue/CreateIssueModal.vue'
 
 const issuesStore = useIssuesStore()
 const componentsStore = useComponentsStore()
@@ -121,6 +141,7 @@ const uiStore = useUiStore()
 const search = ref('')
 const statusFilter = ref('')
 const priorityFilter = ref('')
+const showCreateModal = ref(false)
 
 const filteredList = computed(() => issuesStore.issues)
 
@@ -167,6 +188,11 @@ async function deleteIssue(id: string) {
 async function fetchWithFilters() {
   const filters = uiStore.getBackendFilters()
   await issuesStore.fetchIssues(1, 100, filters)
+}
+
+function onIssueCreated() {
+  showCreateModal.value = false
+  fetchWithFilters()
 }
 
 onMounted(async () => {

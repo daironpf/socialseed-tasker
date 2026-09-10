@@ -1,0 +1,19 @@
+{
+  "projects": [
+    {
+      "name": "socialseed-tasker",
+      "slug": "socialseed-tasker",
+      "description": "Graph-based task management framework with hexagonal architecture, AI agent orchestration, and RAG-powered reasoning",
+      "created_at": "2026-08-15T10:00:00Z",
+      "updated_at": "2026-09-09T08:00:00Z",
+      "stats": {
+        "total_issues": 12,
+        "total_components": 5,
+        "total_policies": 5,
+        "open_issues": 5,
+        "closed_issues": 3,
+        "blocked_issues": 2
+      }
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "dataset": {
+    "name": "SocialSeed Tasker - Dataset de Pruebas",
+    "version": "2.0.0",
+    "description": "Datos mockeados para testing de la interfaz de usuario - Simulación con 3 programadores y 5 agentes IA",
+    "created_at": "2026-09-12T17:00:00Z",
+    "author": "SocialSeed Team",
+    "simulation": {
+      "human_developers": ["pedro", "juan", "manolo"],
+      "ai_agents": ["agent-architect", "agent-frontend", "agent-backend", "agent-qa", "agent-devops"],
+      "total_issues": 100,
+      "date_range": "2026-08-01 to 2026-09-12"
+    }
+  },
+  "files": {
+    "issues.json": {
+      "description": "100 issues con diferentes estados, prioridades y asignaciones",
+      "count": 100,
+      "fields": ["id", "title", "description", "status", "priority", "component_id", "assignee", "labels", "dependencies", "created_at", "closed_at"]
+    },
+    "components.json": {
+      "description": "Componentes del proyecto",
+      "count": 5,
+      "fields": ["id", "name", "description", "project", "created_at", "updated_at"]
+    },
+    "policies.json": {
+      "description": "Políticas de gobernanza del proyecto",
+      "count": 5,
+      "fields": ["id", "name", "description", "rules", "target_scope", "is_active"]
+    },
+    "dashboard-stats.json": {
+      "description": "Estadísticas completas del dashboard",
+      "count": null,
+      "fields": ["stats", "project", "team", "policies_summary", "resolution_time", "trend_data", "distributions"]
+    },
+    "dependencies.json": {
+      "description": "Grafo de dependencias para visualización",
+      "count": null,
+      "fields": ["nodes", "edges", "summary"]
+    },
+    "users.json": {
+      "description": "3 programadores humanos + 5 agentes IA",
+      "count": 8,
+      "fields": ["id", "username", "email", "role", "type", "avatar", "skills", "issues_assigned", "issues_created"]
+    }
+  },
+  "team_composition": {
+    "humans": [
+      {"name": "pedro", "role": "Lead Developer", "avatar": "👨‍💻", "skills": ["architecture", "backend", "frontend", "devops"]},
+      {"name": "juan", "role": "Developer", "avatar": "👨‍💻", "skills": ["frontend", "ui/ux", "testing"]},
+      {"name": "manolo", "role": "Developer", "avatar": "👨‍💻", "skills": ["backend", "database", "api"]}
+    ],
+    "agents": [
+      {"name": "agent-architect", "model": "claude-3.5-sonnet", "avatar": "🤖", "specialization": "Architecture analysis"},
+      {"name": "agent-frontend", "model": "gpt-4-turbo", "avatar": "🤖", "specialization": "Frontend development"},
+      {"name": "agent-backend", "model": "claude-3.5-sonnet", "avatar": "🤖", "specialization": "Backend API"},
+      {"name": "agent-qa", "model": "gpt-4-turbo", "avatar": "🤖", "specialization": "Quality assurance"},
+      {"name": "agent-devops", "model": "claude-3.5-sonnet", "avatar": "🤖", "specialization": "DevOps"}
+    ]
+  },
+  "usage": {
+    "load_data": "Importa los JSON directamente en tus componentes Vue",
+    "example": "import data from '@/dataset-de-pruebas/issues.json'",
+    "api_mock": "Usa los datos para simular respuestas de la API",
+    "dashboard": "Usa dashboard-stats.json para el Dashboard principal",
+    "graph": "Usa dependencies.json para el grafo de dependencias"
+  }
+}

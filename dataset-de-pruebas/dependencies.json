@@ -1,0 +1,42 @@
+{
+  "dependencies": {
+    "nodes": [
+      {"id":"ISS-003","label":"Optimize Neo4j queries","status":"BLOCKED","priority":"HIGH","component":"Database"},
+      {"id":"ISS-007","label":"Full-text search","status":"IN_PROGRESS","priority":"MEDIUM","component":"Frontend"},
+      {"id":"ISS-010","label":"Fix graph crash","status":"OPEN","priority":"HIGH","component":"Frontend"},
+      {"id":"ISS-015","label":"Neo4j connection pooling","status":"OPEN","priority":"HIGH","component":"Database"},
+      {"id":"ISS-020","label":"Elasticsearch integration","status":"OPEN","priority":"MEDIUM","component":"Database"},
+      {"id":"ISS-029","label":"OAuth2 Keycloak","status":"OPEN","priority":"HIGH","component":"Backend API"},
+      {"id":"ISS-034","label":"GraphQL subscriptions","status":"OPEN","priority":"HIGH","component":"Backend API"},
+      {"id":"ISS-045","label":"Webhook retry","status":"IN_PROGRESS","priority":"MEDIUM","component":"Backend API"},
+      {"id":"ISS-061","label":"Fix Neo4j timeout","status":"IN_PROGRESS","priority":"HIGH","component":"Database"},
+      {"id":"ISS-081","label":"Dependencies performance","status":"IN_PROGRESS","priority":"HIGH","component":"Database"},
+      {"id":"ISS-088","label":"GraphQL API v2","status":"OPEN","priority":"HIGH","component":"Backend API"},
+      {"id":"ISS-099","label":"Dependencies race condition","status":"OPEN","priority":"HIGH","component":"Backend API"},
+      {"id":"ISS-100","label":"Release v2.0","status":"IN_PROGRESS","priority":"CRITICAL","component":"Workers"}
+    ],
+    "edges": [
+      {"from":"ISS-003","to":"ISS-007","type":"blocks"},
+      {"from":"ISS-003","to":"ISS-010","type":"blocks"},
+      {"from":"ISS-003","to":"ISS-081","type":"blocks"},
+      {"from":"ISS-015","to":"ISS-061","type":"depends_on"},
+      {"from":"ISS-020","to":"ISS-038","type":"blocks"},
+      {"from":"ISS-029","to":"ISS-047","type":"blocks"},
+      {"from":"ISS-034","to":"ISS-088","type":"blocks"},
+      {"from":"ISS-045","to":"ISS-090","type":"blocks"},
+      {"from":"ISS-061","to":"ISS-081","type":"depends_on"},
+      {"from":"ISS-073","to":"ISS-085","type":"blocks"},
+      {"from":"ISS-099","to":"ISS-100","type":"blocks"},
+      {"from":"ISS-100","to":"ISS-003","type":"depends_on"},
+      {"from":"ISS-100","to":"ISS-029","type":"depends_on"},
+      {"from":"ISS-100","to":"ISS-034","type":"depends_on"}
+    ],
+    "summary": {
+      "total_nodes": 13,
+      "total_edges": 14,
+      "blocked_issues": 3,
+      "critical_path_length": 4,
+      "most_connected_node": "ISS-100"
+    }
+  }
+}

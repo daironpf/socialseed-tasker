@@ -1,9 +1,118 @@
 import axios, { AxiosInstance } from 'axios'
+import * as mockApi from './mockApi'
+
+// Mock mode flag - set to true to use mock data
+const USE_MOCK = true
 
 const API_URL = (window as any).__API_URL__ || '/api/v1'
 const API_KEY = (window as any).__API_KEY__ || ''
 
-const client: AxiosInstance = axios.create({
+// Mock client that intercepts requests
+const mockClient = {
+  defaults: {
+    headers: {
+      common: {} as Record<string, string>,
+    },
+  },
+  interceptors: {
+    request: { use: () => {}, eject: () => {} },
+    response: {
+      use: (_success: any, _error: any) => {},
+      eject: () => {},
+    },
+  },
+  get: async (url: string, config?: any) => {
+    const params = config?.params || {}
+    
+    // Route to appropriate mock handler
+    if (url === '/issues') {
+      const data = await mockApi.fetchIssues(params.page, params.limit, params.status, params.component, params.project)
+      return { data: { data, meta: { total: data.length } } }
+    }
+    if (url.match(/\/issues\/[^/]+$/)) {
+      const id = url.split('/').pop()!
+      const data = await mockApi.fetchIssue(id)
+      return { data: { data } }
+    }
+    if (url === '/blocked-issues') {
+      const data = await mockApi.fetchBlockedIssues()
+      return { data: { data } }
+    }
+    if (url === '/components') {
+      const data = await mockApi.fetchComponents()
+      return { data: { data } }
+    }
+    if (url === '/policies') {
+      const data = await mockApi.fetchPolicies()
+      return { data: { data } }
+    }
+    if (url === '/projects') {
+      const data = await mockApi.fetchProjects()
+      return { data: { data } }
+    }
+    if (url.match(/\/projects\/[^/]+\/summary$/)) {
+      const projectName = url.split('/')[2]
+      const data = await mockApi.fetchProjectSummary(projectName)
+      return { data: { data } }
+    }
+    if (url === '/users') {
+      const data = await mockApi.fetchUsers()
+      return { data: { data } }
+    }
+    
+    return { data: { data: null } }
+  },
+  post: async (url: string, body?: any) => {
+    if (url === '/issues') {
+      const data = await mockApi.createIssue(body)
+      return { data: { data } }
+    }
+    if (url.match(/\/issues\/[^/]+\/close$/)) {
+      const id = url.split('/')[2]
+      const data = await mockApi.closeIssue(id)
+      return { data: { data } }
+    }
+    if (url === '/components') {
+      const data = await mockApi.createComponent(body)
+      return { data: { data } }
+    }
+    if (url === '/policies') {
+      const data = await mockApi.createPolicy(body)
+      return { data: { data } }
+    }
+    
+    return { data: { data: null } }
+  },
+  patch: async (url: string, body?: any) => {
+    if (url.match(/\/issues\/[^/]+$/)) {
+      const id = url.split('/').pop()!
+      const data = await mockApi.updateIssue(id, body)
+      return { data: { data } }
+    }
+    if (url.match(/\/components\/[^/]+$/)) {
+      const id = url.split('/').pop()!
+      const data = await mockApi.updateComponent(id, body)
+      return { data: { data } }
+    }
+    
+    return { data: { data: null } }
+  },
+  delete: async (url: string) => {
+    if (url.match(/\/issues\/[^/]+$/)) {
+      const id = url.split('/').pop()!
+      await mockApi.deleteIssue(id)
+    }
+    if (url.match(/\/components\/[^/]+$/)) {
+      const id = url.split('/').pop()!
+      await mockApi.deleteComponent(id)
+    }
+    
+    return { data: {} }
+  },
+} as unknown as AxiosInstance
+
+// Real API client
+const realClient: AxiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -12,10 +121,10 @@ const client: AxiosInstance = axios.create({
 })
 
 if (API_KEY) {
-  client.defaults.headers.common['X-API-Key'] = API_KEY
+  realClient.defaults.headers.common['X-API-Key'] = API_KEY
 }
 
-client.interceptors.response.use(
+realClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
@@ -30,8 +139,11 @@ client.interceptors.response.use(
   },
 )
 
+// Export based on mock mode
+const client = USE_MOCK ? mockClient : realClient
+
 export default client
-export { API_KEY }
+export { API_KEY, USE_MOCK }
 
 declare global {
   interface Window {

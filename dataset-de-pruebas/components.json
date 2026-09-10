@@ -1,0 +1,44 @@
+{
+  "components": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440101",
+      "name": "Frontend",
+      "description": "Vue.js 3 + TypeScript + Tailwind CSS user interface",
+      "project": "socialseed-tasker",
+      "created_at": "2026-08-15T10:00:00Z",
+      "updated_at": "2026-09-09T08:00:00Z"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440102",
+      "name": "Backend API",
+      "description": "FastAPI REST API with authentication and rate limiting",
+      "project": "socialseed-tasker",
+      "created_at": "2026-08-15T10:00:00Z",
+      "updated_at": "2026-09-08T14:00:00Z"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440103",
+      "name": "Database",
+      "description": "Neo4j graph database for storing issues and dependencies",
+      "project": "socialseed-tasker",
+      "created_at": "2026-08-15T10:00:00Z",
+      "updated_at": "2026-09-07T16:30:00Z"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440104",
+      "name": "CLI",
+      "description": "Command line interface for project management",
+      "project": "socialseed-tasker",
+      "created_at": "2026-08-15T10:00:00Z",
+      "updated_at": "2026-08-27T09:00:00Z"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440105",
+      "name": "Workers",
+      "description": "Background task processing with Celery",
+      "project": "socialseed-tasker",
+      "created_at": "2026-08-20T10:00:00Z",
+      "updated_at": "2026-09-05T12:00:00Z"
+    }
+  ]
+}

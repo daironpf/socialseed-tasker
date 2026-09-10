@@ -1,0 +1,79 @@
+{
+  "dashboard": {
+    "stats": {
+      "total_issues": 100,
+      "total_issues_trend": 25,
+      "resolved_this_month": 35,
+      "resolved_trend": 18,
+      "in_progress": 15,
+      "blocked": 12,
+      "open": 38,
+      "closed": 35
+    },
+    "project": {
+      "name": "socialseed-tasker",
+      "slug": "socialseed-tasker",
+      "description": "Graph-based task management framework with hexagonal architecture",
+      "created_at": "2026-01-15T10:00:00Z"
+    },
+    "team": {
+      "humans": [
+        {"username": "pedro", "role": "lead-developer", "issues_completed": 35},
+        {"username": "juan", "role": "developer", "issues_completed": 28},
+        {"username": "manolo", "role": "developer", "issues_completed": 22}
+      ],
+      "agents": [
+        {"username": "agent-architect", "model": "claude-3.5-sonnet", "issues_completed": 18},
+        {"username": "agent-frontend", "model": "gpt-4-turbo", "issues_completed": 12},
+        {"username": "agent-backend", "model": "claude-3.5-sonnet", "issues_completed": 10},
+        {"username": "agent-qa", "model": "gpt-4-turbo", "issues_completed": 8},
+        {"username": "agent-devops", "model": "claude-3.5-sonnet", "issues_completed": 7}
+      ]
+    },
+    "policies_summary": {
+      "total": 5,
+      "active": 4,
+      "inactive": 1
+    },
+    "resolution_time": {
+      "avg_days": 3.2,
+      "fastest_days": 0.5,
+      "slowest_days": 14,
+      "sample_size": 35
+    },
+    "trend_data": {
+      "weeks": [
+        {"label": "01/08", "open": 45, "closed": 2, "in_progress": 5},
+        {"label": "08/08", "open": 48, "closed": 8, "in_progress": 8},
+        {"label": "15/08", "open": 52, "closed": 15, "in_progress": 10},
+        {"label": "22/08", "open": 55, "closed": 22, "in_progress": 12},
+        {"label": "29/08", "open": 50, "closed": 28, "in_progress": 14},
+        {"label": "05/09", "open": 42, "closed": 32, "in_progress": 15},
+        {"label": "12/09", "open": 38, "closed": 35, "in_progress": 15}
+      ]
+    },
+    "assignee_distribution": {
+      "pedro": 25,
+      "juan": 20,
+      "manolo": 18,
+      "agent-architect": 15,
+      "agent-frontend": 10,
+      "agent-backend": 8,
+      "agent-qa": 4,
+      "agent-devops": 0
+    },
+    "priority_distribution": {
+      "CRITICAL": 5,
+      "HIGH": 25,
+      "MEDIUM": 45,
+      "LOW": 25
+    },
+    "component_distribution": {
+      "Frontend": 35,
+      "Backend API": 40,
+      "Database": 10,
+      "CLI": 5,
+      "Workers": 10
+    }
+  }
+}

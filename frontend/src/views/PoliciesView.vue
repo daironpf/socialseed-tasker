@@ -7,6 +7,12 @@
           Governance constraints and architectural rules enforced on the project.
         </p>
       </div>
+      <button
+        class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
+        @click="showCreateModal = true"
+      >
+        + Nueva Policy
+      </button>
     </div>
 
     <div v-if="loading" class="flex justify-center py-12">
@@ -76,17 +82,112 @@
         </div>
       </div>
     </div>
+
+    <!-- Create Policy Modal -->
+    <div
+      v-if="showCreateModal"
+      class="fixed inset-0 z-40 bg-black/50 flex items-center justify-center"
+      @click.self="showCreateModal = false"
+    >
+      <div class="w-full max-w-md rounded-lg bg-white shadow-xl p-6 dark:bg-gray-800">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Nueva Policy
+        </h3>
+        <form @submit.prevent="submitPolicy" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
+            <input 
+              v-model="form.name" 
+              required 
+              placeholder="ej: no-circular-deps"
+              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" 
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
+            <textarea 
+              v-model="form.description" 
+              rows="2"
+              placeholder="Descripción de la política..."
+              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            ></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Regla *</label>
+            <select 
+              v-model="form.rule" 
+              required
+              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            >
+              <option value="">Seleccionar regla</option>
+              <option value="no_circular_dependencies">No circular dependencies</option>
+              <option value="max_dependencies">Max dependencies limit</option>
+              <option value="required_labels">Required labels</option>
+              <option value="component_ownership">Component ownership</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nivel</label>
+            <select 
+              v-model="form.level" 
+              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            >
+              <option value="SOFT">Soft (advertencia)</option>
+              <option value="HARD">Hard (bloqueante)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Target Scope</label>
+            <input 
+              v-model="form.target_scope" 
+              placeholder="ej: project"
+              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" 
+            />
+          </div>
+          <div v-if="createError" class="rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+            {{ createError }}
+          </div>
+          <div class="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+              @click="showCreateModal = false"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              :disabled="creating"
+              class="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 dark:bg-brand-500 dark:hover:bg-brand-600"
+            >
+              {{ creating ? 'Creando...' : 'Crear Policy' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </main>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { fetchPolicies } from '@/api/policiesApi'
+import { fetchPolicies, createPolicy, type PolicyCreateRequest } from '@/api/policiesApi'
 import type { Policy } from '@/types'
 
 const policies = ref<Policy[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const showCreateModal = ref(false)
+const creating = ref(false)
+const createError = ref<string | null>(null)
+
+const form = ref<PolicyCreateRequest>({
+  name: '',
+  description: '',
+  rule: '',
+  level: 'SOFT',
+  target_scope: 'project',
+})
 
 async function loadPolicies() {
   loading.value = true
@@ -98,6 +199,22 @@ async function loadPolicies() {
     error.value = err.message || 'Failed to load policies'
   } finally {
     loading.value = false
+  }
+}
+
+async function submitPolicy() {
+  creating.value = true
+  createError.value = null
+  try {
+    await createPolicy(form.value)
+    showCreateModal.value = false
+    form.value = { name: '', description: '', rule: '', level: 'SOFT', target_scope: 'project' }
+    await loadPolicies()
+  } catch (err: any) {
+    console.error('Failed to create policy:', err)
+    createError.value = err.message || 'Failed to create policy'
+  } finally {
+    creating.value = false
   }
 }
 

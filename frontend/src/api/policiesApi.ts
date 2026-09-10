@@ -9,3 +9,16 @@ export async function fetchPolicies(): Promise<Policy[]> {
   }
   return responseData?.items ?? []
 }
+
+export interface PolicyCreateRequest {
+  name: string
+  description?: string
+  rule: string
+  level?: string
+  target_scope?: string
+}
+
+export async function createPolicy(policy: PolicyCreateRequest): Promise<Policy> {
+  const { data } = await client.post<APIResponse<Policy>>('/policies', policy)
+  return data.data!
+}

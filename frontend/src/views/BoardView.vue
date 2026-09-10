@@ -14,104 +14,82 @@
       </button>
     </div>
     <div v-else class="flex flex-col h-full">
-      <!-- Dashboard Summary -->
-      <div class="p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <!-- Project Details -->
-        <div class="p-4 border rounded-md dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-          <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Proyecto</h3>
-          <div v-if="currentProject">
-            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ currentProject.name }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ currentProject.slug }}</p>
-            <p class="text-sm mt-1 text-gray-700 dark:text-gray-300">{{ currentProject.description }}</p>
-          </div>
-          <div v-else class="text-gray-400 dark:text-gray-500 text-sm">No hay proyecto seleccionado</div>
-        </div>
+      <!-- Dashboard Stats -->
+      <div class="p-6">
+        <DashboardStats />
+      </div>
 
-        <!-- User Details -->
-        <div class="p-4 border rounded-md dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-          <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Usuario</h3>
-          <div v-if="currentUser">
-            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ currentUser.username }}</p>
-            <p class="text-sm text-brand-600 dark:text-brand-400 font-medium">{{ currentUser.role }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ currentUser.email }}</p>
+      <!-- Project Info Bar -->
+      <div class="px-6 pb-4">
+        <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+          <div class="flex items-center gap-4">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900/30">
+              <svg class="h-5 w-5 text-brand-600 dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <div>
+              <h2 v-if="currentProject" class="text-lg font-semibold text-gray-900 dark:text-white">
+                {{ currentProject.name }}
+              </h2>
+              <p v-if="currentProject" class="text-sm text-gray-500 dark:text-gray-400">
+                {{ currentProject.description || currentProject.slug }}
+              </p>
+            </div>
           </div>
-          <div v-else class="text-gray-400 dark:text-gray-500 text-sm">No hay datos de usuario</div>
-        </div>
-
-        <!-- Policies -->
-        <div class="p-4 border rounded-md dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-          <h3 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-2">Políticas Activas</h3>
-          <ul v-if="policies.length > 0" class="space-y-1 text-sm text-gray-700 dark:text-gray-300">
-            <li v-for="policy in policies" :key="policy.id" class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full flex-shrink-0" :class="policy.is_active ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'"></span>
-              <span class="truncate" :title="policy.description">{{ policy.name }}</span>
-            </li>
-          </ul>
-          <div v-else class="text-gray-400 dark:text-gray-500 text-sm">No se encontraron políticas</div>
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-500 dark:text-gray-400">Políticas activas:</span>
+            <span class="rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+              {{ policies.length }}
+            </span>
+          </div>
         </div>
       </div>
 
-      <!-- Kanban Columns -->
-      <div class="flex-1 flex gap-4 p-4 overflow-x-auto">
-        <KanbanColumn
-          v-for="col in columns"
-          :key="col.status"
-          :title="col.title"
-          :status="col.status"
-          :issues="issuesByStatus(col.status)"
-          class="flex-1 min-w-[280px] max-w-[400px]"
-          @openIssue="openIssue"
-          @dropIssue="onDropIssue"
-        />
+      <!-- Charts Row -->
+      <div class="px-6 pb-6">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <!-- Trend Chart -->
+          <div class="lg:col-span-2">
+            <TrendChart :issues="issuesStore.issues" />
+          </div>
+
+          <!-- Avg Resolution Time -->
+          <div class="lg:col-span-1">
+            <AvgResolutionTime :issues="issuesStore.issues" />
+          </div>
+        </div>
+
+        <!-- Daily Activity & Status Distribution -->
+        <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <DailyActivityChart :issues="issuesStore.issues" />
+          <StatusDistribution :issues="issuesStore.issues" />
+        </div>
       </div>
-    </div>
-
-    <div
-      v-if="selectedIssue"
-      class="fixed inset-0 z-40 bg-black/50 flex justify-end"
-      @click.self="uiStore.setSelectedIssue(null)"
-    >
-      <IssueDetailView
-        :issue="selectedIssue"
-        @close="uiStore.setSelectedIssue(null)"
-        @update="onUpdateIssue"
-        @delete="onDeleteIssue"
-        @close-issue="onCloseIssue"
-      />
-    </div>
-
-    <div
-      v-if="showCreateModal"
-      class="fixed inset-0 z-40 bg-black/50 flex items-center justify-center"
-      @click.self="showCreateModal = false"
-    >
-      <CreateIssueModal @close="showCreateModal = false" @created="onIssueCreated" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed, ref, watch } from 'vue'
-import type { Issue, IssueStatus, IssueUpdateRequest, Policy } from '@/types'
+import { onMounted, ref, watch } from 'vue'
+import type { Policy } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import client from '@/api/client'
 import { fetchPolicies } from '@/api/policiesApi'
 import { useComponentsStore } from '@/stores/componentsStore'
 import { useUiStore } from '@/stores/uiStore'
-import KanbanColumn from '@/components/board/KanbanColumn.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
-import IssueDetailView from '@/views/IssueDetailView.vue'
-import CreateIssueModal from '@/components/issue/CreateIssueModal.vue'
+import DashboardStats from '@/components/dashboard/DashboardStats.vue'
+import TrendChart from '@/components/dashboard/TrendChart.vue'
+import AvgResolutionTime from '@/components/dashboard/AvgResolutionTime.vue'
+import DailyActivityChart from '@/components/dashboard/DailyActivityChart.vue'
+import StatusDistribution from '@/components/dashboard/StatusDistribution.vue'
 
 const issuesStore = useIssuesStore()
 const componentsStore = useComponentsStore()
 const uiStore = useUiStore()
 
-const showCreateModal = ref(false)
-let refreshInterval: ReturnType<typeof setInterval> | null = null
-
 const currentProject = ref<any>(null)
-const currentUser = ref<any>(null)
 const policies = ref<Policy[]>([])
 
 async function fetchDashboardData() {
@@ -139,57 +117,6 @@ async function fetchDashboardData() {
   } else {
     currentProject.value = null
   }
-
-  try {
-    const res = await client.get('/users')
-    const users = res.data.data
-    currentUser.value = users[0] || null
-  } catch (e) {
-    console.error('Failed to fetch users:', e)
-  }
-}
-
-const columns = [
-  { title: 'Open', status: 'OPEN' as IssueStatus },
-  { title: 'In Progress', status: 'IN_PROGRESS' as IssueStatus },
-  { title: 'Blocked', status: 'BLOCKED' as IssueStatus },
-  { title: 'Closed', status: 'CLOSED' as IssueStatus },
-]
-
-function issuesByStatus(status: IssueStatus) {
-  return issuesStore.issues.filter((i) => i.status === status)
-}
-
-const selectedIssue = computed(() => {
-  if (!uiStore.selectedIssueId) return null
-  return issuesStore.issues.find((i) => i.id === uiStore.selectedIssueId) ?? null
-})
-
-function openIssue(issue: Issue) {
-  uiStore.setSelectedIssue(issue.id)
-}
-
-async function onDropIssue(issue: Issue, newStatus: IssueStatus) {
-  await issuesStore.updateIssue(issue.id, { status: newStatus })
-}
-
-async function onUpdateIssue(id: string, body: IssueUpdateRequest) {
-  await issuesStore.updateIssue(id, body)
-}
-
-async function onDeleteIssue(id: string) {
-  const ok = await issuesStore.deleteIssue(id)
-  if (ok) uiStore.setSelectedIssue(null)
-}
-
-async function onCloseIssue(id: string) {
-  await issuesStore.closeIssue(id)
-}
-
-function onIssueCreated() {
-  showCreateModal.value = false
-  const filters = uiStore.getBackendFilters()
-  issuesStore.fetchIssues(1, 100, filters)
 }
 
 async function fetchWithFilters() {
@@ -201,12 +128,6 @@ onMounted(async () => {
   await componentsStore.fetchComponents()
   await fetchWithFilters()
   await fetchDashboardData()
-})
-
-onUnmounted(() => {
-  if (refreshInterval) {
-    clearInterval(refreshInterval)
-  }
 })
 
 watch(
@@ -233,6 +154,4 @@ watch(
   },
   { immediate: true },
 )
-
-defineExpose({ showCreateModal })
 </script>
