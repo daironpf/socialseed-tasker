@@ -752,13 +752,15 @@ Initialize project configuration interactively.
 
 **Syntax:**
 ```bash
-tasker init [OPTIONS]
+tasker init [OPTIONS] [TARGET]
 ```
 
 **Options:**
-- `--mode <direct|api>` — Skip mode selection
-- `--config <path>` — Config file path
-- `--no-interactive` — Non-interactive mode
+- `--force` / `-f` — Overwrite existing `.agent/` directory without confirmation
+- `--inplace` / `-i` — Initialize in current directory without creating `.agent/` subdirectory
+- `--yes` / `-y` — Skip all interactive prompts and use default values
+- `--project-name` / `-pn` — Set project name (skips interactive prompt)
+- `--mode` / `-m` — Connection mode: `direct`, `api`, or `full` (skips interactive prompt)
 
 **Examples:**
 
@@ -766,14 +768,17 @@ tasker init [OPTIONS]
 # Interactive setup
 tasker init
 
-# Setup for API mode
-tasker init --mode api
+# Non-interactive setup with parameters
+tasker init --project-name "my-store" --mode api --yes
 
-# Auto-configure
-tasker init --mode direct \
-  --neo4j-uri bolt://db.example.com:7687 \
-  --neo4j-user admin
+# Force overwrite existing project
+tasker init --force --project-name "my-store" --mode api
+
+# Setup in specific directory
+tasker init /path/to/project --project-name "my-app" --mode api
 ```
+
+**Windows Note:** The CLI automatically handles UTF-8 encoding on Windows. No need to run `chcp 65001` before using the CLI.
 
 ---
 

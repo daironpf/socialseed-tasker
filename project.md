@@ -470,6 +470,9 @@ docker compose up -d
 tasker init . -pn my-app -a api-first -lang python -fw fastapi -db postgresql -gh https://github.com/user/repo
 tasker login --password neoSocial
 
+# Non-interactive initialization
+tasker init . --project-name "my-app" --mode api --yes
+
 # Create issues
 tasker issue create "Fix auth bug" -c backend -p HIGH
 ```
@@ -479,15 +482,19 @@ tasker issue create "Fix auth bug" -c backend -p HIGH
 tasker init [TARGET] [OPTIONS]
 
 Options:
-  --force, -f           Overwrite existing files
+  --force, -f           Overwrite existing files without confirmation
   --inplace, -i         Scaffold in current directory
-  --project-name, -pn    Project name
-  --architecture, -a     Architecture (monolithic|microservices|serverless|api-first)
-  --language, -lang      Programming language
+  --yes, -y             Skip all interactive prompts (use defaults)
+  --project-name, -pn   Project name (skips interactive prompt)
+  --mode, -m            Connection mode: direct, api, or full (skips interactive prompt)
+  --architecture, -a    Architecture (monolithic|microservices|serverless|api-first)
+  --language, -lang     Programming language
   --framework, -fw      Framework
   --database, -db       Database
   --github-repo, -gh    GitHub repository URL
 ```
+
+**Windows Note:** The CLI automatically handles UTF-8 encoding. No need for `chcp 65001`.
 
 ### Running Tests
 ```bash

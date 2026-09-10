@@ -527,11 +527,16 @@ tasker init .
 # Force overwrite
 tasker init . --force
 
+# Non-interactive mode (for CI/CD)
+tasker init . --project-name "my-app" --mode api --yes
+
 # Creates:
 # - .tasker/
 # - docker-compose.yml
 # - .env.example
 ```
+
+**Windows Note:** The CLI automatically handles UTF-8 encoding on Windows.
 
 ---
 

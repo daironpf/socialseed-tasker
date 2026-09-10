@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
+import io
+import os
 import subprocess
 import sys
 
@@ -26,6 +28,31 @@ import hashlib
 
 from socialseed_tasker.domain.system_init_entities import FileOperation, ScaffoldStatus
 from socialseed_tasker.application.scaffolder import ScaffolderService
+
+
+def _setup_windows_encoding() -> None:
+    """Ensure UTF-8 encoding is used on Windows to prevent UnicodeEncodeError."""
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            kernel32.SetConsoleOutputCP(65001)
+            kernel32.SetConsoleCP(65001)
+        except Exception:
+            pass
+        if hasattr(sys.stdout, "buffer") and sys.stdout.encoding != "utf-8":
+            try:
+                sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+        if hasattr(sys.stderr, "buffer") and sys.stderr.encoding != "utf-8":
+            try:
+                sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
+
+_setup_windows_encoding()
 
 
 def _ask(
@@ -53,7 +80,7 @@ def _confirm(prompt: str, default: bool = False) -> bool:
 console = Console(
     width=80,
     no_color=None,
-    force_terminal=None,
+    force_terminal=True,
     soft_wrap=False,
 )
 
@@ -164,25 +191,38 @@ def interactive_init_command(
         "-y",
         help="Skip interactive prompts and use all default values",
     ),
+    project_name: str = typer.Option(
+        None,
+        "--project-name",
+        "-pn",
+        help="Project name (skips interactive prompt)",
+    ),
+    mode: str = typer.Option(
+        None,
+        "--mode",
+        "-m",
+        help="CLI connection mode: direct, api, or full (skips interactive prompt)",
+    ),
 ) -> None:
     """Initialize Tasker in a project interactively.
 
     Prompts for project details before scaffolding.
     Use --yes to skip all prompts and accept defaults (useful for scripting/CI).
+    Use --project-name and --mode for non-interactive parameterized init.
     """
     console.print("[bold cyan]Welcome to SocialSeed Tasker Initialization[/bold cyan]")
     console.print("Configure your project using the menu below.\n")
     
-    # Initialize defaults
-    project_name = "my-project"
+    # Initialize defaults (use parameter if provided, otherwise default)
+    _project_name = project_name or "my-project"
     architecture = "api-first"
     language = "python"
     framework = "fastapi"
     database = "postgresql"
     github_repo = "https://github.com/user/repo"
-    slug = "my-project"
-    description = "Tasker project for my-project"
-    base_package = "my_project"
+    slug = _project_name.lower().replace(" ", "-")
+    description = f"Tasker project for {_project_name}"
+    base_package = _project_name.lower().replace(" ", "_")
     visibility = "PUBLIC"
     status = "DEVELOPMENT"
     tech_stack_str = "python, fastapi, postgresql"
@@ -210,8 +250,12 @@ def interactive_init_command(
     openai_api_key = ""
     components_list_str = "core"
     
+    # Track if project name was provided via CLI (non-interactive)
+    project_name_provided = project_name is not None
+    mode_provided = mode is not None
+    
     state = {
-        "1": False, # Project Identity
+        "1": project_name_provided,  # Already filled if provided via CLI
         "2": False, # Tech Stack
         "3": False, # Project Settings
         "4": False, # User Config
@@ -221,8 +265,12 @@ def interactive_init_command(
         "8": False, # Components
     }
     
-    if yes:
-        console.print("[dim]--yes flag detected, using all default values.[/dim]")
+    # Non-interactive mode: use provided parameters or defaults
+    if yes or (project_name_provided and mode_provided):
+        if yes:
+            console.print("[dim]--yes flag detected, using all default values.[/dim]")
+        else:
+            console.print(f"[dim]Non-interactive mode: project={_project_name}, mode={mode}[/dim]")
     else:
         while True:
             table = Table(title="[bold cyan]Tasker Setup Menu[/bold cyan]", box=None)
@@ -253,21 +301,21 @@ def interactive_init_command(
             elif choice == "START":
                 # If nothing filled, ask for project name
                 if not any(state.values()) or not state["1"]:
-                    project_name = _ask("Project Name required to proceed", default=project_name)
-                    slug = project_name.lower().replace(" ", "-")
-                    description = f"Tasker project for {project_name}"
-                    base_package = project_name.lower().replace(" ", "_")
+                    _project_name = _ask("Project Name required to proceed", default=_project_name)
+                    slug = _project_name.lower().replace(" ", "-")
+                    description = f"Tasker project for {_project_name}"
+                    base_package = _project_name.lower().replace(" ", "_")
                     state["1"] = True
                 break
                 
             elif choice == "1":
-                project_name = _ask("Project Name", default=project_name)
+                _project_name = _ask("Project Name", default=_project_name)
                 github_repo = _ask("GitHub Repository URL", default=github_repo)
-                slug = _ask("Project Slug", default=project_name.lower().replace(" ", "-"))
-                description = _ask("Project Description", default=f"Tasker project for {project_name}")
+                slug = _ask("Project Slug", default=_project_name.lower().replace(" ", "-"))
+                description = _ask("Project Description", default=f"Tasker project for {_project_name}")
                 # Update base_package default if not filled yet
                 if not state["3"]:
-                    base_package = project_name.lower().replace(" ", "_")
+                    base_package = _project_name.lower().replace(" ", "_")
                 state["1"] = True
                 
             elif choice == "2":
@@ -324,8 +372,8 @@ def interactive_init_command(
             console.print("\n" + "="*40 + "\n")
 
     # Mode selection
-    cli_mode = "api"
-    if not yes:
+    cli_mode = mode or "api"
+    if not yes and not mode_provided:
         console.print("\n[bold cyan]Connection Mode[/bold cyan]")
         console.print("Choose how the CLI connects to the backend:")
         console.print("  [bold]1) Direct (Neo4j Bolt)[/bold] - CLI connects directly to Neo4j via Bolt protocol")
@@ -339,6 +387,8 @@ def interactive_init_command(
             cli_mode = "api"
         else:
             cli_mode = "full"
+    else:
+        console.print(f"[dim]Using connection mode: {cli_mode}[/dim]")
 
     # Build frontend for Full Stack mode
     if cli_mode == "full":
@@ -372,7 +422,7 @@ def interactive_init_command(
         target=target,
         force=force,
         inplace=inplace,
-        project_name=project_name,
+        project_name=_project_name,
         architecture=architecture,
         language=language,
         framework=framework,
@@ -772,14 +822,9 @@ def _run_scaffold(
                     f"[warning]Existing Tasker project detected at: {target_path.as_posix()}[/warning]"
                 )
                 console.print(
-                    "[warning]Using --force will overwrite current project configuration "
+                    "[warning]Using --force to overwrite current project configuration "
                     "(.agent/tasker/ files, ROADMAP.md, VERSIONS.md).[/warning]"
                 )
-                if interactive:
-                    confirm = _confirm("Continue overwriting?", default=False)
-                    if not confirm:
-                        console.print("[info]Scaffold cancelled.[/info]")
-                        raise typer.Exit(code=0)
             elif not force:
                 console.print(f"[warning].agent directory already exists at: {output_path}[/warning]")
                 console.print("Use [bold]--force[/bold] to overwrite existing templates.")

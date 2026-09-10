@@ -6,6 +6,16 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 ## [Unreleased]
 
+### Fixed
+- Unicode encoding error on Windows: `tasker init` now handles UTF-8 characters correctly without manual `chcp 65001` configuration
+- Interactive input piping: `tasker init` now supports `--project-name` and `--mode` flags for non-interactive initialization
+- Force flag behavior: `tasker init --force` no longer asks for confirmation when overwriting existing `.agent/` directory
+
+### Added
+- `_setup_windows_encoding()` function in `init_command.py` for automatic UTF-8 setup on Windows
+- `--project-name` / `-pn` flag for non-interactive project name configuration
+- `--mode` / `-m` flag for non-interactive connection mode selection (direct/api/full)
+
 ## [v1.0.2] - 2026-06-30
 
 ### Added

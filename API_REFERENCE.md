@@ -610,4 +610,5 @@ tasker seed run
 # Init (scaffold external project)
 tasker init <path>
 tasker init <path> --force
+tasker init <path> --project-name "my-app" --mode api --yes
 ```
