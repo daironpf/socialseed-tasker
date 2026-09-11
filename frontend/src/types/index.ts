@@ -19,6 +19,8 @@ export interface Issue {
   status: string
   priority: string
   component_id: string
+  assignee?: string
+  created_by?: string
   labels: string[]
   dependencies: string[]
   blocks: string[]
