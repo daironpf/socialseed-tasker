@@ -79,20 +79,27 @@
           </div>
 
           <!-- Stats -->
-          <div class="grid grid-cols-2 gap-3 border-t border-gray-100 pt-3 dark:border-gray-700">
+          <div class="grid grid-cols-3 gap-2 border-t border-gray-100 pt-3 dark:border-gray-700">
             <button
               @click="openIssuesModal(user, 'assigned')"
               class="cursor-pointer text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg p-1 -m-1"
             >
-              <div class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ user.issues_assigned }}</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">Asignados</div>
+              <div class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ getUserAssignedCount(user.id) }}</div>
+              <div class="text-[10px] text-gray-500 dark:text-gray-400">Asignados</div>
             </button>
             <button
               @click="openIssuesModal(user, 'created')"
               class="cursor-pointer text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg p-1 -m-1"
             >
-              <div class="text-lg font-bold text-green-600 dark:text-green-400">{{ user.issues_created }}</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">Creados</div>
+              <div class="text-lg font-bold text-green-600 dark:text-green-400">{{ getUserCreatedCount(user.id) }}</div>
+              <div class="text-[10px] text-gray-500 dark:text-gray-400">Creados</div>
+            </button>
+            <button
+              @click="openIssuesModal(user, 'completed')"
+              class="cursor-pointer text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg p-1 -m-1"
+            >
+              <div class="text-lg font-bold text-purple-600 dark:text-purple-400">{{ getUserCompletedCount(user.id) }}</div>
+              <div class="text-[10px] text-gray-500 dark:text-gray-400">Terminados</div>
             </button>
           </div>
 
@@ -137,7 +144,7 @@
             </div>
             <div>
               <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ modalType === 'assigned' ? 'Issues asignados a' : 'Issues creados por' }} {{ selectedUser?.username }}
+                {{ modalTitle }} {{ selectedUser?.username }}
               </h2>
               <p class="text-sm text-gray-500 dark:text-gray-400">
                 {{ modalIssues.length }} issues
@@ -232,13 +239,35 @@ const showIssuesModal = ref(false)
 const selectedUser = ref<User | null>(null)
 const modalIssues = ref<Issue[]>([])
 const loadingIssues = ref(false)
-const modalType = ref<'assigned' | 'created'>('assigned')
+const modalType = ref<'assigned' | 'created' | 'completed'>('assigned')
 
 const showEditModal = ref(false)
 const editingAgent = ref<User | null>(null)
 
 const humans = computed(() => users.value.filter(u => u.type === 'human'))
 const agents = computed(() => users.value.filter(u => u.type === 'agent'))
+const allIssues = ref<Issue[]>([])
+
+function getUserAssignedCount(userId: string): number {
+  return allIssues.value.filter(i => i.assignee === userId && i.status !== 'CLOSED').length
+}
+
+function getUserCreatedCount(userId: string): number {
+  return allIssues.value.filter(i => i.created_by === userId && i.status !== 'CLOSED').length
+}
+
+function getUserCompletedCount(userId: string): number {
+  return allIssues.value.filter(i => (i.assignee === userId || i.created_by === userId) && i.status === 'CLOSED').length
+}
+
+const modalTitle = computed(() => {
+  const map = {
+    assigned: 'Issues asignados a',
+    created: 'Issues creados por',
+    completed: 'Issues terminados por',
+  }
+  return map[modalType.value] || ''
+})
 
 function formatRole(role: string): string {
   const roles: Record<string, string> = {
@@ -281,18 +310,22 @@ function getPriorityClass(priority: string): string {
   return classes[priority] || 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
 }
 
-async function openIssuesModal(user: User, type: 'assigned' | 'created') {
+async function openIssuesModal(user: User, type: 'assigned' | 'created' | 'completed') {
   selectedUser.value = user
   modalType.value = type
   showIssuesModal.value = true
   loadingIssues.value = true
   
   try {
-    const allIssues = await fetchIssues(1, 200)
+    if (allIssues.value.length === 0) {
+      allIssues.value = await fetchIssues(1, 200)
+    }
     if (type === 'assigned') {
-      modalIssues.value = allIssues.filter(issue => issue.assignee === user.id)
+      modalIssues.value = allIssues.value.filter(issue => issue.assignee === user.id && issue.status !== 'CLOSED')
+    } else if (type === 'created') {
+      modalIssues.value = allIssues.value.filter(issue => issue.created_by === user.id && issue.status !== 'CLOSED')
     } else {
-      modalIssues.value = allIssues.filter(issue => issue.created_by === user.id)
+      modalIssues.value = allIssues.value.filter(issue => (issue.assignee === user.id || issue.created_by === user.id) && issue.status === 'CLOSED')
     }
   } catch (e) {
     console.error('Failed to fetch issues:', e)
@@ -333,9 +366,11 @@ async function saveAgent(updatedAgent: any) {
 
 onMounted(async () => {
   try {
-    users.value = await fetchUsers()
+    const [usersData, issuesData] = await Promise.all([fetchUsers(), fetchIssues(1, 200)])
+    users.value = usersData
+    allIssues.value = issuesData
   } catch (e) {
-    console.error('Failed to fetch users:', e)
+    console.error('Failed to fetch data:', e)
   } finally {
     loading.value = false
   }
