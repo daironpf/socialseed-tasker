@@ -245,6 +245,273 @@
       "is_active": true,
       "created_at": "2026-09-01T10:00:00Z",
       "updated_at": "2026-09-01T10:00:00Z"
+    },
+    {
+      "id": "CONST-013",
+      "name": "Prohibited technology: lodash",
+      "description": "Lodash is banned in new code. Use native Array methods (map, filter, reduce) or optional chaining instead.",
+      "category": "TECHNOLOGY",
+      "severity": "SOFT",
+      "scope": "component",
+      "rule": {
+        "type": "forbidden_tech",
+        "target_field": "dependencies",
+        "blocked_values": ["lodash", "lodash-es"],
+        "message": "Lodash is prohibited, use native methods"
+      },
+      "logic": "IF component.dependencies CONTAINS 'lodash' THEN WARN",
+      "remediation": "Replace lodash with native ES6+ methods or tree-shakeable alternatives",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-09-05T10:00:00Z",
+      "updated_at": "2026-09-05T10:00:00Z"
+    },
+    {
+      "id": "CONST-014",
+      "name": "Required TypeScript strict mode",
+      "description": "All frontend components must be written in TypeScript with strict mode enabled. No plain .js files allowed.",
+      "category": "TECHNOLOGY",
+      "severity": "HARD",
+      "scope": "component",
+      "rule": {
+        "type": "required_config",
+        "target_field": "tsconfig",
+        "required_options": {
+          "strict": true
+        },
+        "message": "TypeScript strict mode must be enabled"
+      },
+      "logic": "IF component.tsconfig.strict != true THEN REJECT",
+      "remediation": "Enable strict mode in tsconfig.json: { \"strict\": true }",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-09-08T10:00:00Z",
+      "updated_at": "2026-09-08T10:00:00Z"
+    },
+    {
+      "id": "CONST-015",
+      "name": "Max issue title length",
+      "description": "Issue titles must not exceed 120 characters to ensure readability in lists and dashboards.",
+      "category": "NAMING",
+      "severity": "SOFT",
+      "scope": "issue",
+      "rule": {
+        "type": "max_length",
+        "target_field": "title",
+        "max_value": 120,
+        "message": "Title exceeds 120 characters"
+      },
+      "logic": "IF issue.title.length > 120 THEN WARN",
+      "remediation": "Shorten the title to under 120 characters",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-09-08T10:00:00Z",
+      "updated_at": "2026-09-08T10:00:00Z"
+    },
+    {
+      "id": "CONST-016",
+      "name": "Required description length",
+      "description": "Issues must have a description of at least 20 characters to provide sufficient context.",
+      "category": "ARCHITECTURE",
+      "severity": "SOFT",
+      "scope": "issue",
+      "rule": {
+        "type": "min_length",
+        "target_field": "description",
+        "min_value": 20,
+        "message": "Description must be at least 20 characters"
+      },
+      "logic": "IF issue.description.length < 20 THEN WARN",
+      "remediation": "Add a more detailed description to the issue",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-09-08T10:00:00Z",
+      "updated_at": "2026-09-08T10:00:00Z"
+    },
+    {
+      "id": "CONST-017",
+      "name": "No direct Neo4j queries in API",
+      "description": "Backend API must not contain raw Cypher queries. All database access must go through the repository pattern.",
+      "category": "PATTERNS",
+      "severity": "HARD",
+      "scope": "component",
+      "rule": {
+        "type": "forbidden_pattern",
+        "target_field": "code_patterns",
+        "blocked_values": ["MATCH (n)", "CREATE (n)", "MERGE (n)", "DETACH DELETE"],
+        "message": "Raw Cypher queries detected, use repository pattern"
+      },
+      "logic": "IF backend.code CONTAINS 'MATCH (' THEN REJECT",
+      "remediation": "Extract Cypher queries into repository classes under src/repositories/",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-09-10T10:00:00Z",
+      "updated_at": "2026-09-10T10:00:00Z"
+    },
+    {
+      "id": "CONST-018",
+      "name": "API response format",
+      "description": "All API responses must follow the standard envelope format with 'data', 'error', and 'meta' fields.",
+      "category": "ARCHITECTURE",
+      "severity": "HARD",
+      "scope": "component",
+      "rule": {
+        "type": "response_format",
+        "required_fields": ["data", "error", "meta"],
+        "message": "API response must follow standard envelope format"
+      },
+      "logic": "IF response NOT CONTAINS 'data' AND 'error' AND 'meta' THEN REJECT",
+      "remediation": "Wrap API responses in the standard envelope: { data, error, meta }",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-09-10T10:00:00Z",
+      "updated_at": "2026-09-10T10:00:00Z"
+    },
+    {
+      "id": "CONST-019",
+      "name": "Max blocked issues threshold",
+      "description": "No component should have more than 5 blocked issues. Excessive blockers indicate systemic problems.",
+      "category": "DEPENDENCIES",
+      "severity": "HARD",
+      "scope": "component",
+      "rule": {
+        "type": "max_count",
+        "target_field": "blocked_issues",
+        "max_value": 5,
+        "message": "Component has too many blocked issues"
+      },
+      "logic": "IF component.blocked_issues > 5 THEN REJECT",
+      "remediation": "Resolve blocking dependencies or refactor the component structure",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-09-10T10:00:00Z",
+      "updated_at": "2026-09-10T10:00:00Z"
+    },
+    {
+      "id": "CONST-020",
+      "name": "Prohibited technology: moment.js",
+      "description": "moment.js is deprecated and has a large bundle size. Use date-fns or dayjs instead.",
+      "category": "TECHNOLOGY",
+      "severity": "SOFT",
+      "scope": "component",
+      "rule": {
+        "type": "forbidden_tech",
+        "target_field": "dependencies",
+        "blocked_values": ["moment", "moment-timezone"],
+        "message": "moment.js is deprecated, use date-fns or dayjs"
+      },
+      "logic": "IF component.dependencies CONTAINS 'moment' THEN WARN",
+      "remediation": "Replace moment.js with date-fns (recommended) or dayjs for smaller bundle size",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-09-10T10:00:00Z",
+      "updated_at": "2026-09-10T10:00:00Z"
+    },
+    {
+      "id": "CONST-021",
+      "name": "Agent working timeout",
+      "description": "Issues with agent_working=true must have activity within the last 24 hours. Stale agent tasks should be unclaimed.",
+      "category": "PATTERNS",
+      "severity": "SOFT",
+      "scope": "issue",
+      "rule": {
+        "type": "timeout_check",
+        "target_field": "agent_working",
+        "timeout_hours": 24,
+        "message": "Agent has been inactive for over 24 hours"
+      },
+      "logic": "IF issue.agent_working == true AND issue.last_activity > 24h THEN WARN",
+      "remediation": "Check agent status, reassign if the agent is stuck or timed out",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-09-11T10:00:00Z",
+      "updated_at": "2026-09-11T10:00:00Z"
+    },
+    {
+      "id": "CONST-022",
+      "name": "Issue priority hierarchy",
+      "description": "Issue priority must follow: CRITICAL > HIGH > MEDIUM > LOW. No custom priority values allowed.",
+      "category": "NAMING",
+      "severity": "HARD",
+      "scope": "issue",
+      "rule": {
+        "type": "enum_constraint",
+        "target_field": "priority",
+        "allowed_values": ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+        "message": "Invalid priority value"
+      },
+      "logic": "IF issue.priority NOT IN ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] THEN REJECT",
+      "remediation": "Use one of the standard priority values: CRITICAL, HIGH, MEDIUM, LOW",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-09-11T10:00:00Z",
+      "updated_at": "2026-09-11T10:00:00Z"
+    },
+    {
+      "id": "CONST-023",
+      "name": "Status transition rules",
+      "description": "Issues can only transition: OPEN → IN_PROGRESS → BLOCKED → CLOSED. No backwards transitions allowed without review.",
+      "category": "PATTERNS",
+      "severity": "SOFT",
+      "scope": "issue",
+      "rule": {
+        "type": "state_machine",
+        "target_field": "status",
+        "allowed_transitions": {
+          "OPEN": ["IN_PROGRESS", "BLOCKED"],
+          "IN_PROGRESS": ["BLOCKED", "CLOSED"],
+          "BLOCKED": ["OPEN"],
+          "CLOSED": []
+        },
+        "message": "Invalid status transition"
+      },
+      "logic": "IF issue.status_transition NOT IN allowed_transitions THEN WARN",
+      "remediation": "Follow the allowed status transition flow",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-09-11T10:00:00Z",
+      "updated_at": "2026-09-11T10:00:00Z"
+    },
+    {
+      "id": "CONST-024",
+      "name": "Docker image size limit",
+      "description": "Docker images must not exceed 500MB. Large images slow down CI/CD and deployment pipelines.",
+      "category": "ARCHITECTURE",
+      "severity": "SOFT",
+      "scope": "component",
+      "rule": {
+        "type": "max_size",
+        "target_field": "docker_image_size",
+        "max_value_mb": 500,
+        "message": "Docker image exceeds 500MB limit"
+      },
+      "logic": "IF component.docker_image_size > 500MB THEN WARN",
+      "remediation": "Use multi-stage builds, alpine base images, or remove unnecessary dependencies",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-09-11T10:00:00Z",
+      "updated_at": "2026-09-11T10:00:00Z"
+    },
+    {
+      "id": "CONST-025",
+      "name": "Test coverage minimum",
+      "description": "Each component must maintain at least 70% test coverage. Critical paths require 90%.",
+      "category": "ARCHITECTURE",
+      "severity": "SOFT",
+      "scope": "component",
+      "rule": {
+        "type": "min_threshold",
+        "target_field": "test_coverage_percent",
+        "min_value": 70,
+        "critical_min_value": 90,
+        "message": "Test coverage below minimum threshold"
+      },
+      "logic": "IF component.test_coverage < 70% THEN WARN",
+      "remediation": "Add unit and integration tests to reach 70% coverage minimum",
+      "auto_fix": false,
+      "is_active": false,
+      "created_at": "2026-09-11T10:00:00Z",
+      "updated_at": "2026-09-11T10:00:00Z"
     }
   ]
 }
