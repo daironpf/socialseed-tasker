@@ -1,4 +1,4 @@
-import type { Issue, IssueCreateRequest, Component, ComponentCreateRequest, Policy, ImpactAnalysis, CausalLink, TestFailure } from '@/types'
+import type { Issue, IssueCreateRequest, Component, ComponentCreateRequest, Policy, ImpactAnalysis, CausalLink, TestFailure, AgentLogsBundle } from '@/types'
 
 const MOCK_API_URL = '/mock-api'
 
@@ -45,10 +45,10 @@ export async function createIssue(body: IssueCreateRequest): Promise<Issue> {
 }
 
 export async function updateIssue(id: string, body: any): Promise<Issue> {
-  const issues = await fetchIssues()
-  const issue = issues.find(i => i.id === id)
-  if (!issue) throw new Error('Issue not found')
-  return { ...issue, ...body } as Issue
+  return apiCall<Issue>(`/mock/issues/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
 }
 
 export async function deleteIssue(_id: string): Promise<void> {
@@ -165,4 +165,9 @@ export async function analyzeRootCause(body: {
 
 export async function fetchTestFailures(): Promise<TestFailure[]> {
   return apiCall<TestFailure[]>('/mock/test-failures')
+}
+
+// Agent Logs API
+export async function fetchAgentLogs(issueId: string): Promise<AgentLogsBundle> {
+  return apiCall<AgentLogsBundle>(`/mock/issues/${issueId}/agent-logs`)
 }

@@ -122,6 +122,43 @@ def create_issue(body: IssueCreate):
     return {"data": new_issue}
 
 
+class IssueUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    priority: Optional[str] = None
+    component_id: Optional[str] = None
+    assignee: Optional[str] = None
+    labels: Optional[list[str]] = None
+    dependencies: Optional[list[str]] = None
+    blocks: Optional[list[str]] = None
+    affects: Optional[list[str]] = None
+    agent_working: Optional[bool] = None
+
+
+@app.patch("/mock/issues/{issue_id}")
+def update_issue(issue_id: str, body: IssueUpdate):
+    data = read_json("issues.json")
+    issues = data.get("issues", [])
+    idx = next((i for i, iss in enumerate(issues) if iss["id"] == issue_id), None)
+    if idx is None:
+        raise HTTPException(status_code=404, detail="Issue not found")
+    update_data = body.model_dump(exclude_unset=True)
+    issues[idx].update(update_data)
+    data["issues"] = issues
+    write_json("issues.json", data)
+    return {"data": issues[idx]}
+
+
+@app.get("/mock/issues/{issue_id}/agent-logs")
+def get_agent_logs(issue_id: str):
+    data = read_json("agent-logs.json")
+    logs = data.get("agent_logs", {}).get(issue_id, None)
+    if not logs:
+        return {"data": {"issue_id": issue_id, "logs": []}}
+    return {"data": logs}
+
+
 @app.get("/mock/components")
 def get_components():
     data = read_json("components.json")

@@ -177,3 +177,15 @@ export interface DependencyGraph {
     most_connected_node: string
   }
 }
+
+export interface AgentLog {
+  timestamp: string
+  type: 'reasoning' | 'progress' | 'files' | 'debt'
+  content_markdown: string
+}
+
+export interface AgentLogsBundle {
+  issue_id: string
+  agent_id?: string
+  logs: AgentLog[]
+}

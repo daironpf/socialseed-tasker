@@ -1,0 +1,228 @@
+{
+  "agent_logs": {
+    "ISS-100": {
+      "issue_id": "ISS-100",
+      "agent_id": "550e8400-e29b-41d4-a716-446655440004",
+      "logs": [
+        {
+          "timestamp": "2026-09-11T08:00:00Z",
+          "type": "reasoning",
+          "content_markdown": "## Architecture Decision: Release v2.0 Dependencies\n\nAnalyzed the dependency graph for ISS-100 (Release v2.0). Found **3 critical blocking dependencies**:\n\n- ISS-003 (Optimize Neo4j queries) — Database layer bottleneck\n- ISS-029 (OAuth2 Keycloak) — Auth gateway incomplete\n- ISS-034 (GraphQL subscriptions) — Real-time pipeline broken\n\n**Decision:** Prioritize ISS-003 first as it blocks the most downstream tasks (ISS-007, ISS-010, ISS-081). The database optimization will unlock the critical path."
+        },
+        {
+          "timestamp": "2026-09-11T08:15:00Z",
+          "type": "reasoning",
+          "content_markdown": "## Neo4j Query Optimization Strategy\n\nAfter profiling the slow queries (>5s for 100+ issues), identified the root cause:\n\n1. Missing composite index on `(Issue)-[:DEPENDS_ON]->(Issue)`\n2. Full graph traversal on every dependency check\n3. No query caching for frequently accessed paths\n\n**Recommend:** Create APOC-based stored procedure for BFS traversal instead of Cypher recursive queries. Expected improvement: **5s → 200ms**."
+        },
+        {
+          "timestamp": "2026-09-11T09:00:00Z",
+          "type": "progress",
+          "content_markdown": "- [x] Analyze dependency graph structure\n- [x] Profile slow Cypher queries\n- [x] Identify missing indexes\n- [ ] Create composite indexes\n- [ ] Implement APOC stored procedure\n- [ ] Add query result caching\n- [ ] Run benchmarks (target: <500ms)\n- [ ] Update dependency resolution logic"
+        },
+        {
+          "timestamp": "2026-09-11T09:30:00Z",
+          "type": "files",
+          "content_markdown": "- `src/infrastructure/neo4j_config.py` (created) — APOC procedure registration\n- `src/infrastructure/neo4j_graph_repository.py` (modified) — Added cached BFS method\n- `src/application/repositories.py` (modified) — Updated dependency interface\n- `tests/test_dependency_bfs.py` (created) — Unit tests for BFS traversal\n- `migrations/003_add_indexes.cypher` (created) — Composite index definitions"
+        },
+        {
+          "timestamp": "2026-09-11T10:00:00Z",
+          "type": "debt",
+          "content_markdown": "- **Missing:** Error handling for Neo4j connection pool exhaustion\n- **TODO:** Add retry logic with exponential backoff for transient failures\n- **TODO:** Implement circuit breaker pattern for Neo4j queries\n- **Debt:** Legacy Cypher queries in `cli/commands/issue_commands.py` bypass the new stored procedures\n- **Warning:** `neo4j_driver.py` uses global connection pool — consider per-tenant pools for multi-tenancy"
+        }
+      ]
+    },
+    "ISS-003": {
+      "issue_id": "ISS-003",
+      "agent_id": "550e8400-e29b-41d4-a716-446655440006",
+      "logs": [
+        {
+          "timestamp": "2026-09-10T14:00:00Z",
+          "type": "reasoning",
+          "content_markdown": "## Database Query Optimization\n\nInvestigating ISS-003: Neo4j dependency queries taking >5s.\n\n**Root Cause:** The `getDependencyChain` method performs an unbounded recursive traversal. For 100+ issues, this creates a Cartesian explosion.\n\n**Approach:** Replace recursive Cypher with APOC `apoc.path.expandConfig()` which uses native graph indexing."
+        },
+        {
+          "timestamp": "2026-09-10T15:00:00Z",
+          "type": "progress",
+          "content_markdown": "- [x] Profile slow queries with EXPLAIN\n- [x] Identify missing indexes\n- [x] Create composite index migration\n- [x] Implement APOC-based BFS\n- [ ] Add result caching (Redis/in-memory)\n- [ ] Benchmark with 1000+ issues"
+        },
+        {
+          "timestamp": "2026-09-10T16:00:00Z",
+          "type": "files",
+          "content_markdown": "- `src/infrastructure/neo4j_graph_repository.py` (modified) — Replaced recursive query with APOC\n- `migrations/003_add_composite_indexes.cypher` (created)\n- `tests/test_bfs_performance.py` (created) — Performance regression tests"
+        },
+        {
+          "timestamp": "2026-09-10T16:30:00Z",
+          "type": "debt",
+          "content_markdown": "- **Debt:** Old `getDependencyChain` method still exported for backward compat — plan removal in v2.1\n- **TODO:** Add query timeout configuration (default 5s)\n- **Warning:** APOC plugin required — document Docker setup for new contributors"
+        }
+      ]
+    },
+    "ISS-061": {
+      "issue_id": "ISS-061",
+      "agent_id": "550e8400-e29b-41d4-a716-446655440007",
+      "logs": [
+        {
+          "timestamp": "2026-09-11T07:00:00Z",
+          "type": "reasoning",
+          "content_markdown": "## Neo4j Timeout Fix Strategy\n\nISS-061 reports intermittent timeouts on graph operations. After analyzing logs:\n\n1. Timeouts occur during peak hours (10:00-14:00)\n2. Correlates with concurrent dependency analysis requests\n3. Connection pool exhausted after ~30 concurrent requests\n\n**Decision:** Implement connection pooling with circuit breaker pattern. Use `tenacity` library for retry logic."
+        },
+        {
+          "timestamp": "2026-09-11T07:45:00Z",
+          "type": "progress",
+          "content_markdown": "- [x] Analyze timeout logs\n- [x] Identify connection pool exhaustion\n- [ ] Implement circuit breaker\n- [ ] Add connection pool monitoring\n- [ ] Configure pool size per deployment tier"
+        },
+        {
+          "timestamp": "2026-09-11T08:00:00Z",
+          "type": "files",
+          "content_markdown": "- `src/infrastructure/neo4j_driver.py` (modified) — Added circuit breaker\n- `src/infrastructure/circuit_breaker.py` (created) — Generic circuit breaker implementation"
+        },
+        {
+          "timestamp": "2026-09-11T08:15:00Z",
+          "type": "debt",
+          "content_markdown": "- **TODO:** Add Prometheus metrics for connection pool utilization\n- **Debt:** No health check endpoint for Neo4j connectivity\n- **TODO:** Implement graceful degradation when Neo4j is unavailable"
+        }
+      ]
+    },
+    "ISS-081": {
+      "issue_id": "ISS-081",
+      "agent_id": "550e8400-e29b-41d4-a716-446655440008",
+      "logs": [
+        {
+          "timestamp": "2026-09-11T06:00:00Z",
+          "type": "reasoning",
+          "content_markdown": "## Dependencies Performance Optimization\n\nISS-081 tracks the overall performance of the dependency resolution system.\n\n**Current bottlenecks:**\n1. BFS traversal: O(V+E) per query, no caching\n2. Impact analysis recalculates on every request\n3. No incremental updates when edges change\n\n**Strategy:** Implement memoized BFS with cache invalidation on edge mutations."
+        },
+        {
+          "timestamp": "2026-09-11T06:30:00Z",
+          "type": "progress",
+          "content_markdown": "- [x] Benchmark current BFS performance\n- [x] Design caching strategy\n- [ ] Implement LRU cache for BFS results\n- [ ] Add cache invalidation on edge create/delete\n- [ ] Add performance monitoring dashboard"
+        },
+        {
+          "timestamp": "2026-09-11T07:00:00Z",
+          "type": "files",
+          "content_markdown": "- `src/application/cache_utils.py` (modified) — Added BFS-specific caching\n- `src/infrastructure/neo4j_graph_repository.py` (modified) — Integrated cache layer"
+        }
+      ]
+    },
+    "ISS-029": {
+      "issue_id": "ISS-029",
+      "agent_id": "550e8400-e29b-41d4-a716-446655440005",
+      "logs": [
+        {
+          "timestamp": "2026-09-10T11:00:00Z",
+          "type": "reasoning",
+          "content_markdown": "## OAuth2 Keycloak Integration\n\nImplementing SSO with Keycloak for ISS-029.\n\n**Architecture decisions:**\n1. Use Authorization Code flow (not Implicit) for security\n2. Store refresh tokens encrypted at rest\n3. Implement token refresh middleware\n4. Keycloak realm: `socialseed-prod`\n\n**Trade-off:** Chose Keycloak over Auth0 for self-hosted control, despite higher setup complexity."
+        },
+        {
+          "timestamp": "2026-09-10T12:00:00Z",
+          "type": "progress",
+          "content_markdown": "- [x] Set up Keycloak realm and clients\n- [x] Implement Authorization Code flow\n- [x] Token refresh middleware\n- [ ] Role-based access control (RBAC)\n- [ ] Session management\n- [ ] Admin UI for user management"
+        },
+        {
+          "timestamp": "2026-09-10T13:00:00Z",
+          "type": "files",
+          "content_markdown": "- `src/auth/oauth.py` (modified) — Added Keycloak provider\n- `src/auth/rbac.py` (created) — Role-based access control\n- `config/keycloak.json` (created) — Keycloak client configuration\n- `tests/test_oauth_keycloak.py` (created) — OAuth integration tests"
+        },
+        {
+          "timestamp": "2026-09-10T13:30:00Z",
+          "type": "debt",
+          "content_markdown": "- **TODO:** Implement token revocation on logout\n- **Debt:** Current session store is in-memory — migrate to Redis for production\n- **Warning:** Keycloak admin credentials hardcoded in config — move to secrets manager\n- **TODO:** Add rate limiting on token refresh endpoint"
+        }
+      ]
+    },
+    "ISS-001": {
+      "issue_id": "ISS-001",
+      "agent_id": "550e8400-e29b-41d4-a716-446655440006",
+      "logs": [
+        {
+          "timestamp": "2026-08-01T10:00:00Z",
+          "type": "reasoning",
+          "content_markdown": "## Fix Login Validation\n\nBackend returns 400 when password contains @, #, $ symbols.\n\n**Root cause:** Regex pattern in `auth/validators.py` uses unescaped special characters in character class.\n\n**Fix:** Escape special characters or use `re.escape()` on the password before validation."
+        },
+        {
+          "timestamp": "2026-08-01T11:00:00Z",
+          "type": "progress",
+          "content_markdown": "- [x] Identify regex issue in auth validator\n- [x] Add unit tests for special characters\n- [x] Fix regex escaping\n- [x] Run full auth test suite\n- [x] Deploy to staging"
+        },
+        {
+          "timestamp": "2026-08-01T12:00:00Z",
+          "type": "files",
+          "content_markdown": "- `src/auth/validators.py` (modified) — Fixed regex escaping\n- `tests/test_auth_validators.py` (created) — Added special character tests\n- `tests/test_auth_integration.py` (modified) — Updated test cases"
+        },
+        {
+          "timestamp": "2026-08-01T12:30:00Z",
+          "type": "debt",
+          "content_markdown": "- **TODO:** Add password strength meter UI\n- **Debt:** Auth tests don't cover OAuth2 flows yet"
+        }
+      ]
+    },
+    "ISS-002": {
+      "issue_id": "ISS-002",
+      "agent_id": "550e8400-e29b-41d4-a716-446655440005",
+      "logs": [
+        {
+          "timestamp": "2026-08-02T11:00:00Z",
+          "type": "reasoning",
+          "content_markdown": "## Dark Mode Implementation\n\n**Architecture decision:** Use CSS custom properties + Tailwind dark mode class strategy.\n\n**Why class-based (not media query):**\n1. User preference persistence via localStorage\n2. Toggle in header for manual override\n3. Respects system preference as default"
+        },
+        {
+          "timestamp": "2026-08-02T14:00:00Z",
+          "type": "progress",
+          "content_markdown": "- [x] Configure Tailwind darkMode: 'class'\n- [x] Create useDarkMode composable\n- [x] Add toggle to AppHeader\n- [x] Update all components with dark: variants\n- [x] Add localStorage persistence\n- [x] Test system preference detection"
+        },
+        {
+          "timestamp": "2026-08-02T15:00:00Z",
+          "type": "files",
+          "content_markdown": "- `src/composables/useDarkMode.ts` (created) — Dark mode composable\n- `src/components/layout/AppHeader.vue` (modified) — Added toggle\n- `tailwind.config.js` (modified) — darkMode: 'class'\n- `src/App.vue` (modified) — Dark mode class binding"
+        }
+      ]
+    },
+    "ISS-004": {
+      "issue_id": "ISS-004",
+      "agent_id": "550e8400-e29b-41d4-a716-446655440007",
+      "logs": [
+        {
+          "timestamp": "2026-08-03T09:00:00Z",
+          "type": "reasoning",
+          "content_markdown": "## Component CRUD API\n\nImplementing REST endpoints for project components.\n\n**Design choices:**\n- UUID primary keys for distributed compatibility\n- Soft delete (archived_at) instead of hard delete\n- Auto-generated timestamps"
+        },
+        {
+          "timestamp": "2026-08-03T12:00:00Z",
+          "type": "progress",
+          "content_markdown": "- [x] Create Component entity\n- [x] Implement CRUD repository\n- [x] Add REST endpoints\n- [x] Write OpenAPI schema\n- [x] Add integration tests"
+        },
+        {
+          "timestamp": "2026-08-03T13:00:00Z",
+          "type": "files",
+          "content_markdown": "- `src/domain/entities.py` (modified) — Added Component entity\n- `src/application/repositories.py` (modified) — Component CRUD\n- `src/infrastructure/web_api/routers/components.py` (created) — REST endpoints\n- `tests/test_components_api.py` (created) — API tests"
+        }
+      ]
+    },
+    "ISS-006": {
+      "issue_id": "ISS-006",
+      "agent_id": "550e8400-e29b-41d4-a716-446655440008",
+      "logs": [
+        {
+          "timestamp": "2026-08-05T10:00:00Z",
+          "type": "reasoning",
+          "content_markdown": "## Kanban Board Drag & Drop\n\nImplementing native HTML5 drag-and-drop for the Kanban view.\n\n**Why not use a library:**\n1. Simple use case (4 columns, no nesting)\n2. Zero bundle size impact\n3. Full control over visual feedback"
+        },
+        {
+          "timestamp": "2026-08-05T14:00:00Z",
+          "type": "progress",
+          "content_markdown": "- [x] Design Kanban layout with 4 columns\n- [x] Implement drag handlers\n- [x] Add drop zone highlighting\n- [x] Optimistic UI updates\n- [x] Backend status sync"
+        },
+        {
+          "timestamp": "2026-08-05T15:00:00Z",
+          "type": "files",
+          "content_markdown": "- `src/views/KanbanView.vue` (created) — Main Kanban view\n- `src/components/board/KanbanColumn.vue` (created) — Column component\n- `src/components/board/IssueCard.vue` (created) — Draggable card"
+        },
+        {
+          "timestamp": "2026-08-05T15:30:00Z",
+          "type": "debt",
+          "content_markdown": "- **TODO:** Add touch support for mobile drag-and-drop\n- **Debt:** No undo/redo for accidental status changes"
+        }
+      ]
+    }
+  }
+}
