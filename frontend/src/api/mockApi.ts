@@ -1,4 +1,4 @@
-import type { Issue, IssueCreateRequest, Component, ComponentCreateRequest, Policy, ImpactAnalysis, CausalLink, TestFailure, AgentLogsBundle } from '@/types'
+import type { Issue, IssueCreateRequest, Component, ComponentCreateRequest, Policy, ImpactAnalysis, CausalLink, TestFailure, AgentLogsBundle, Constraint, ConstraintCreateRequest, ValidationResult } from '@/types'
 
 const MOCK_API_URL = '/mock-api'
 
@@ -175,4 +175,23 @@ export async function fetchTestFailures(): Promise<TestFailure[]> {
 // Agent Logs API
 export async function fetchAgentLogs(issueId: string): Promise<AgentLogsBundle> {
   return apiCall<AgentLogsBundle>(`/mock/issues/${issueId}/agent-logs`)
+}
+
+// Constraints API
+export async function fetchConstraints(): Promise<Constraint[]> {
+  return apiCall<Constraint[]>('/mock/constraints')
+}
+
+export async function createConstraint(body: ConstraintCreateRequest): Promise<Constraint> {
+  return apiCall<Constraint>('/mock/constraints', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function validateConstraints(entityType: string = 'project', entityData: Record<string, unknown> = {}): Promise<ValidationResult> {
+  return apiCall<ValidationResult>('/mock/constraints/validate', {
+    method: 'POST',
+    body: JSON.stringify({ entity_type: entityType, entity_data: entityData }),
+  })
 }

@@ -362,10 +362,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import type { Constraint, ConstraintCategory, ConstraintSeverity, ValidationResult } from '@/types'
-
-const API = import.meta.env.VITE_API_URL || ''
-const MOCK = import.meta.env.VITE_USE_MOCK === 'true'
+import { fetchConstraints as apiFetchConstraints, createConstraint as apiCreateConstraint, validateConstraints as apiValidateConstraints } from '@/api/mockApi'
+import type { Constraint, ConstraintCategory, ConstraintSeverity } from '@/types'
 
 const constraints = ref<Constraint[]>([])
 const search = ref('')
@@ -374,7 +372,7 @@ const filterSeverity = ref('')
 const selectedConstraint = ref<Constraint | null>(null)
 const showModal = ref(false)
 const editingConstraint = ref<Constraint | null>(null)
-const validationResult = ref<ValidationResult | null>(null)
+const validationResult = ref<any>(null)
 
 const categories: ConstraintCategory[] = ['ARCHITECTURE', 'TECHNOLOGY', 'NAMING', 'PATTERNS', 'DEPENDENCIES']
 
@@ -446,12 +444,9 @@ function openEditModal(c: Constraint) {
 
 function closeModal() { showModal.value = false; editingConstraint.value = null }
 
-async function fetchConstraints() {
+async function loadConstraints() {
   try {
-    const base = MOCK ? '/mock-api/mock' : `${API}/v1`
-    const res = await fetch(`${base}/constraints`)
-    const json = await res.json()
-    constraints.value = json.data || []
+    constraints.value = await apiFetchConstraints()
   } catch (e) {
     console.error('Failed to load constraints:', e)
   }
@@ -460,19 +455,13 @@ async function fetchConstraints() {
 async function saveConstraint() {
   if (!form.value.name) return
   try {
-    const base = MOCK ? '/mock-api/mock' : `${API}/v1`
     if (editingConstraint.value) {
       constraints.value = constraints.value.map(c =>
         c.id === editingConstraint.value!.id ? { ...c, ...form.value, updated_at: new Date().toISOString() } : c
       )
     } else {
-      const res = await fetch(`${base}/constraints`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form.value),
-      })
-      const json = await res.json()
-      if (json.data) constraints.value.push(json.data)
+      const created = await apiCreateConstraint(form.value)
+      if (created) constraints.value.push(created)
     }
   } catch (e) { console.error('Save failed:', e) }
   closeModal()
@@ -480,16 +469,9 @@ async function saveConstraint() {
 
 async function runValidation() {
   try {
-    const base = MOCK ? '/mock-api/mock' : `${API}/v1`
-    const res = await fetch(`${base}/constraints/validate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entity_type: 'project', entity_data: {} }),
-    })
-    const json = await res.json()
-    validationResult.value = json.data
+    validationResult.value = await apiValidateConstraints('project', {})
   } catch (e) { console.error('Validation failed:', e) }
 }
 
-onMounted(fetchConstraints)
+onMounted(loadConstraints)
 </script>
