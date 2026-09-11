@@ -52,7 +52,14 @@
       ],
       "created_at": "2026-08-03T11:00:00Z",
       "closed_at": null,
-      "created_by": "550e8400-e29b-41d4-a716-446655440001"
+      "created_by": "550e8400-e29b-41d4-a716-446655440001",
+      "agent_working": true,
+      "blocks": [
+        "ISS-007",
+        "ISS-010",
+        "ISS-081"
+      ],
+      "affects": []
     },
     {
       "id": "ISS-004",
@@ -515,7 +522,14 @@
       "dependencies": [],
       "created_at": "2026-08-25T10:00:00Z",
       "closed_at": null,
-      "created_by": "550e8400-e29b-41d4-a716-446655440004"
+      "created_by": "550e8400-e29b-41d4-a716-446655440004",
+      "agent_working": true,
+      "blocks": [
+        "ISS-047"
+      ],
+      "affects": [
+        "ISS-100"
+      ]
     },
     {
       "id": "ISS-030",
@@ -1089,7 +1103,12 @@
       ],
       "created_at": "2026-09-09T19:00:00Z",
       "closed_at": null,
-      "created_by": "550e8400-e29b-41d4-a716-446655440007"
+      "created_by": "550e8400-e29b-41d4-a716-446655440007",
+      "agent_working": true,
+      "blocks": [],
+      "affects": [
+        "ISS-081"
+      ]
     },
     {
       "id": "ISS-062",
@@ -1441,7 +1460,10 @@
       ],
       "created_at": "2026-09-11T09:00:00Z",
       "closed_at": null,
-      "created_by": "550e8400-e29b-41d4-a716-446655440002"
+      "created_by": "550e8400-e29b-41d4-a716-446655440002",
+      "agent_working": true,
+      "blocks": [],
+      "affects": []
     },
     {
       "id": "ISS-082",
@@ -1787,7 +1809,19 @@
       ],
       "created_at": "2026-09-12T13:00:00Z",
       "closed_at": null,
-      "created_by": "550e8400-e29b-41d4-a716-446655440004"
+      "created_by": "550e8400-e29b-41d4-a716-446655440004",
+      "agent_working": true,
+      "blocks": [
+        "ISS-003",
+        "ISS-029",
+        "ISS-034"
+      ],
+      "affects": [
+        "ISS-007",
+        "ISS-010",
+        "ISS-081",
+        "ISS-088"
+      ]
     }
   ]
 }
