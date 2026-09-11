@@ -35,6 +35,7 @@ export interface Issue {
 export interface Component {
   id: string
   name: string
+  alias?: string
   description: string | null
   project: string
   created_at: string
@@ -96,6 +97,7 @@ export interface DependencyRequest {
 
 export interface ComponentCreateRequest {
   name: string
+  alias?: string
   description?: string
   project: string
 }

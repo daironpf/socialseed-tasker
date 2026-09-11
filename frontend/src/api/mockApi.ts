@@ -77,16 +77,21 @@ export async function fetchComponent(id: string): Promise<Component> {
 }
 
 export async function createComponent(body: ComponentCreateRequest): Promise<Component> {
-  return { id: crypto.randomUUID(), ...body, created_at: new Date().toISOString(), updated_at: new Date().toISOString() } as Component
+  return apiCall<Component>('/mock/components', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
 }
 
 export async function updateComponent(id: string, body: Partial<ComponentCreateRequest>): Promise<Component> {
-  const comp = await fetchComponent(id)
-  return { ...comp, ...body } as Component
+  return apiCall<Component>(`/mock/components/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
 }
 
-export async function deleteComponent(_id: string): Promise<void> {
-  // Mock delete
+export async function deleteComponent(id: string): Promise<void> {
+  await apiCall(`/mock/components/${id}`, { method: 'DELETE' })
 }
 
 // Policies API

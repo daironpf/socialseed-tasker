@@ -165,6 +165,69 @@ def get_components():
     return {"data": data.get("components", [])}
 
 
+class ComponentCreate(BaseModel):
+    name: str
+    alias: Optional[str] = None
+    description: Optional[str] = None
+    project: str = "socialseed-tasker"
+
+
+class ComponentUpdate(BaseModel):
+    name: Optional[str] = None
+    alias: Optional[str] = None
+    description: Optional[str] = None
+    project: Optional[str] = None
+
+
+@app.post("/mock/components")
+def create_component(body: ComponentCreate):
+    data = read_json("components.json")
+    components = data.get("components", [])
+    new_id = str(__import__("uuid").uuid4())
+    now = __import__("datetime").datetime.utcnow().isoformat() + "Z"
+    new_comp = {
+        "id": new_id,
+        "name": body.name,
+        "alias": body.alias or body.name[:2].upper(),
+        "description": body.description,
+        "project": body.project,
+        "created_at": now,
+        "updated_at": now,
+    }
+    components.append(new_comp)
+    data["components"] = components
+    write_json("components.json", data)
+    return {"data": new_comp}
+
+
+@app.patch("/mock/components/{component_id}")
+def update_component(component_id: str, body: ComponentUpdate):
+    data = read_json("components.json")
+    components = data.get("components", [])
+    idx = next((i for i, c in enumerate(components) if c["id"] == component_id), None)
+    if idx is None:
+        raise HTTPException(status_code=404, detail="Component not found")
+    update_data = body.model_dump(exclude_unset=True)
+    update_data["updated_at"] = __import__("datetime").datetime.utcnow().isoformat() + "Z"
+    components[idx].update(update_data)
+    data["components"] = components
+    write_json("components.json", data)
+    return {"data": components[idx]}
+
+
+@app.delete("/mock/components/{component_id}")
+def delete_component(component_id: str):
+    data = read_json("components.json")
+    components = data.get("components", [])
+    idx = next((i for i, c in enumerate(components) if c["id"] == component_id), None)
+    if idx is None:
+        raise HTTPException(status_code=404, detail="Component not found")
+    components.pop(idx)
+    data["components"] = components
+    write_json("components.json", data)
+    return {"data": None}
+
+
 @app.get("/mock/policies")
 def get_policies():
     data = read_json("policies.json")
