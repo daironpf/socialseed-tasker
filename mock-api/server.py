@@ -234,6 +234,199 @@ def get_policies():
     return {"data": data.get("policies", [])}
 
 
+@app.get("/mock/constraints")
+def get_constraints():
+    data = read_json("constraints.json")
+    return {"data": data.get("constraints", [])}
+
+
+class ConstraintCreate(BaseModel):
+    name: str
+    description: str = ""
+    category: str = "ARCHITECTURE"
+    severity: str = "SOFT"
+    scope: str = "project"
+    rule: dict = {}
+    logic: str = ""
+    remediation: str = ""
+    auto_fix: bool = False
+
+
+@app.post("/mock/constraints")
+def create_constraint(body: ConstraintCreate):
+    data = read_json("constraints.json")
+    constraints = data.get("constraints", [])
+    new_id = f"CONST-{len(constraints) + 1:03d}"
+    now = __import__("datetime").datetime.utcnow().isoformat() + "Z"
+    new_constraint = {
+        "id": new_id,
+        "name": body.name,
+        "description": body.description,
+        "category": body.category,
+        "severity": body.severity,
+        "scope": body.scope,
+        "rule": body.rule,
+        "logic": body.logic,
+        "remediation": body.remediation,
+        "auto_fix": body.auto_fix,
+        "is_active": True,
+        "created_at": now,
+        "updated_at": now,
+    }
+    constraints.append(new_constraint)
+    data["constraints"] = constraints
+    write_json("constraints.json", data)
+    return {"data": new_constraint}
+
+
+class ValidateRequest(BaseModel):
+    entity_type: str = "issue"
+    entity_data: dict = {}
+
+
+@app.post("/mock/constraints/validate")
+def validate_constraints(body: ValidateRequest):
+    data = read_json("constraints.json")
+    constraints = data.get("constraints", [])
+    issues_data = read_json("issues.json")
+    issues = issues_data.get("issues", [])
+    deps_data = read_json("dependencies.json")
+    deps = deps_data.get("dependencies", {})
+    components_data = read_json("components.json")
+    components = components_data.get("components", [])
+
+    violations = []
+    active_constraints = [c for c in constraints if c.get("is_active")]
+
+    entity = body.entity_data
+    entity_type = body.entity_type
+
+    for c in active_constraints:
+        if c["category"] == "DEPENDENCIES" and c["rule"].get("type") == "no_cycles":
+            edges = deps.get("edges", [])
+            nodes = {n["id"]: n for n in deps.get("nodes", [])}
+            for issue in issues:
+                if issue["id"] not in nodes:
+                    nodes[issue["id"]] = {"id": issue["id"], "label": issue["title"]}
+            visited = set()
+            path = set()
+
+            def _has_cycle(node_id, all_edges):
+                visited.add(node_id)
+                path.add(node_id)
+                for edge in all_edges:
+                    if edge["from"] == node_id and edge["to"] not in visited:
+                        if _has_cycle(edge["to"], all_edges):
+                            return True
+                    elif edge["from"] == node_id and edge["to"] in path:
+                        return True
+                path.discard(node_id)
+                return False
+
+            cycle_found = False
+            for node_id in list(nodes.keys()):
+                if node_id not in visited:
+                    if _has_cycle(node_id, edges):
+                        cycle_found = True
+                        break
+
+            if cycle_found:
+                violations.append({
+                    "constraint_id": c["id"],
+                    "constraint_name": c["name"],
+                    "severity": c["severity"],
+                    "category": c["category"],
+                    "message": "Circular dependency detected in the dependency graph",
+                    "remediation": c["remediation"],
+                })
+
+        if c["category"] == "DEPENDENCIES" and c["rule"].get("type") == "max_depth":
+            max_depth_val = deps.get("summary", {}).get("critical_path_length", 0)
+            max_allowed = c["rule"].get("max_value", 8)
+            if max_depth_val > max_allowed:
+                violations.append({
+                    "constraint_id": c["id"],
+                    "constraint_name": c["name"],
+                    "severity": c["severity"],
+                    "category": c["category"],
+                    "message": f"Dependency depth ({max_depth_val}) exceeds maximum ({max_allowed})",
+                    "remediation": c["remediation"],
+                })
+
+        if entity_type == "issue" and c["rule"].get("type") == "required_field":
+            field = c["rule"].get("target_field", "")
+            min_count = c["rule"].get("min_count", 1)
+            val = entity.get(field)
+            if val is None or (isinstance(val, list) and len(val) < min_count):
+                violations.append({
+                    "constraint_id": c["id"],
+                    "constraint_name": c["name"],
+                    "severity": c["severity"],
+                    "category": c["category"],
+                    "message": c["rule"].get("message", f"Field '{field}' is required"),
+                    "remediation": c["remediation"],
+                })
+
+        if entity_type == "issue" and c["rule"].get("type") == "max_count":
+            field = c["rule"].get("target_field", "")
+            max_val = c["rule"].get("max_value", 5)
+            val = entity.get(field, [])
+            if isinstance(val, list) and len(val) > max_val:
+                violations.append({
+                    "constraint_id": c["id"],
+                    "constraint_name": c["name"],
+                    "severity": c["severity"],
+                    "category": c["category"],
+                    "message": f"Field '{field}' has {len(val)} items, max allowed is {max_val}",
+                    "remediation": c["remediation"],
+                })
+
+        if entity_type == "component" and c["rule"].get("type") == "regex_pattern":
+            import re
+            field = c["rule"].get("target_field", "")
+            pattern = c["rule"].get("pattern", "")
+            val = entity.get(field, "")
+            if val and not re.match(pattern, val):
+                violations.append({
+                    "constraint_id": c["id"],
+                    "constraint_name": c["name"],
+                    "severity": c["severity"],
+                    "category": c["category"],
+                    "message": c["rule"].get("message", f"Field '{field}' does not match pattern"),
+                    "remediation": c["remediation"],
+                })
+
+        if entity_type == "component" and c["rule"].get("type") == "forbidden_tech":
+            field = c["rule"].get("target_field", "")
+            blocked = [v.lower() for v in c["rule"].get("blocked_values", [])]
+            deps_list = entity.get(field, [])
+            if isinstance(deps_list, list):
+                for dep in deps_list:
+                    if dep.lower() in blocked:
+                        violations.append({
+                            "constraint_id": c["id"],
+                            "constraint_name": c["name"],
+                            "severity": c["severity"],
+                            "category": c["category"],
+                            "message": c["rule"].get("message", f"Technology '{dep}' is prohibited"),
+                            "remediation": c["remediation"],
+                        })
+
+    hard_count = len([v for v in violations if v["severity"] == "HARD"])
+    soft_count = len([v for v in violations if v["severity"] == "SOFT"])
+
+    return {
+        "data": {
+            "valid": len(violations) == 0,
+            "hard_violations": hard_count,
+            "soft_violations": soft_count,
+            "total_violations": len(violations),
+            "violations": violations,
+            "checked_constraints": len(active_constraints),
+        }
+    }
+
+
 @app.get("/mock/dashboard-stats")
 def get_dashboard_stats():
     issues_data = read_json("issues.json")

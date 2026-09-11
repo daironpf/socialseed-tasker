@@ -191,3 +191,68 @@ export interface AgentLogsBundle {
   agent_id?: string
   logs: AgentLog[]
 }
+
+export type ConstraintCategory = 'ARCHITECTURE' | 'TECHNOLOGY' | 'NAMING' | 'PATTERNS' | 'DEPENDENCIES'
+export type ConstraintSeverity = 'HARD' | 'SOFT'
+
+export interface ConstraintRule {
+  type: string
+  target?: string
+  target_field?: string
+  max_value?: number
+  min_count?: number
+  pattern?: string
+  blocked_values?: string[]
+  label_component_map?: Record<string, string>
+  condition_field?: string
+  condition_value?: string
+  min_reviews?: number
+  message?: string
+  metric?: string
+}
+
+export interface Constraint {
+  id: string
+  name: string
+  description: string
+  category: ConstraintCategory
+  severity: ConstraintSeverity
+  scope: string
+  rule: ConstraintRule
+  logic: string
+  remediation: string
+  auto_fix: boolean
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface ConstraintCreateRequest {
+  name: string
+  description?: string
+  category?: ConstraintCategory
+  severity?: ConstraintSeverity
+  scope?: string
+  rule?: ConstraintRule
+  logic?: string
+  remediation?: string
+  auto_fix?: boolean
+}
+
+export interface ConstraintViolation {
+  constraint_id: string
+  constraint_name: string
+  severity: ConstraintSeverity
+  category: ConstraintCategory
+  message: string
+  remediation: string
+}
+
+export interface ValidationResult {
+  valid: boolean
+  hard_violations: number
+  soft_violations: number
+  total_violations: number
+  violations: ConstraintViolation[]
+  checked_constraints: number
+}

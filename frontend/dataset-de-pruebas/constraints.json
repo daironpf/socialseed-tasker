@@ -1,0 +1,250 @@
+{
+  "constraints": [
+    {
+      "id": "CONST-001",
+      "name": "No circular dependencies",
+      "description": "All component dependencies must form a directed acyclic graph (DAG). Circular dependencies cause infinite loops in build and analysis pipelines.",
+      "category": "DEPENDENCIES",
+      "severity": "HARD",
+      "scope": "project",
+      "rule": {
+        "type": "no_cycles",
+        "target": "dependency_graph",
+        "check": "DAG validation"
+      },
+      "logic": "FOR EACH component IN project.components: IF component.forms_cycle THEN REJECT",
+      "remediation": "Break the cycle by removing one dependency edge or restructuring the components",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-08-15T10:00:00Z",
+      "updated_at": "2026-08-15T10:00:00Z"
+    },
+    {
+      "id": "CONST-002",
+      "name": "Max dependency depth",
+      "description": "Dependency chains must not exceed 5 levels deep. Excessive depth indicates architectural coupling issues.",
+      "category": "DEPENDENCIES",
+      "severity": "SOFT",
+      "scope": "issue",
+      "rule": {
+        "type": "max_depth",
+        "target": "dependency_chain",
+        "max_value": 5,
+        "metric": "graph_depth"
+      },
+      "logic": "IF issue.dependency_depth > 5 THEN WARN",
+      "remediation": "Refactor to reduce coupling between components",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-08-15T10:00:00Z",
+      "updated_at": "2026-08-15T10:00:00Z"
+    },
+    {
+      "id": "CONST-003",
+      "name": "Max dependencies per issue",
+      "description": "Each issue should have at most 5 direct dependencies to maintain focus and avoid overly complex dependency chains.",
+      "category": "DEPENDENCIES",
+      "severity": "SOFT",
+      "scope": "issue",
+      "rule": {
+        "type": "max_count",
+        "target_field": "dependencies",
+        "max_value": 5
+      },
+      "logic": "IF issue.dependencies.length > 5 THEN WARN",
+      "remediation": "Split the issue into smaller, more focused issues",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-08-20T10:00:00Z",
+      "updated_at": "2026-08-20T10:00:00Z"
+    },
+    {
+      "id": "CONST-004",
+      "name": "Prohibited technology: jQuery",
+      "description": "jQuery is not allowed in new code. Use native DOM APIs or the project's Vue.js framework instead.",
+      "category": "TECHNOLOGY",
+      "severity": "HARD",
+      "scope": "component",
+      "rule": {
+        "type": "forbidden_tech",
+        "target_field": "dependencies",
+        "blocked_values": ["jquery"],
+        "message": "jQuery is prohibited"
+      },
+      "logic": "IF component.dependencies CONTAINS 'jquery' THEN REJECT",
+      "remediation": "Replace jQuery usage with Vue.js reactivity or native DOM APIs",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-08-25T10:00:00Z",
+      "updated_at": "2026-08-25T10:00:00Z"
+    },
+    {
+      "id": "CONST-005",
+      "name": "Prohibited technology: Webpack 4",
+      "description": "Webpack 4 is deprecated. All projects must use Vite or Webpack 5+.",
+      "category": "TECHNOLOGY",
+      "severity": "HARD",
+      "scope": "component",
+      "rule": {
+        "type": "forbidden_tech",
+        "target_field": "build_tool",
+        "blocked_values": ["webpack@4", "webpack-4"],
+        "message": "Webpack 4 is deprecated, use Vite or Webpack 5+"
+      },
+      "logic": "IF component.build_tool == 'webpack@4' THEN REJECT",
+      "remediation": "Migrate to Vite (recommended) or Webpack 5",
+      "auto_fix": true,
+      "is_active": true,
+      "created_at": "2026-08-25T10:00:00Z",
+      "updated_at": "2026-09-01T10:00:00Z"
+    },
+    {
+      "id": "CONST-006",
+      "name": "Component naming convention",
+      "description": "Component aliases must be 2-4 uppercase letters (e.g., FE, BE, DB, WK). Component names must be PascalCase.",
+      "category": "NAMING",
+      "severity": "HARD",
+      "scope": "component",
+      "rule": {
+        "type": "regex_pattern",
+        "target_field": "alias",
+        "pattern": "^[A-Z]{2,4}$",
+        "message": "Alias must be 2-4 uppercase letters"
+      },
+      "logic": "IF NOT component.alias MATCHES '^[A-Z]{2,4}$' THEN REJECT",
+      "remediation": "Rename the alias to follow the pattern (e.g., FE, BE, DB, CLI, WK)",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-08-20T10:00:00Z",
+      "updated_at": "2026-08-20T10:00:00Z"
+    },
+    {
+      "id": "CONST-007",
+      "name": "Issue ID format",
+      "description": "Issue IDs must follow the pattern ISS-NNN where NNN is a 3-digit zero-padded number.",
+      "category": "NAMING",
+      "severity": "HARD",
+      "scope": "issue",
+      "rule": {
+        "type": "regex_pattern",
+        "target_field": "id",
+        "pattern": "^ISS-\\d{3}$",
+        "message": "Issue ID must match ISS-NNN format"
+      },
+      "logic": "IF NOT issue.id MATCHES '^ISS-\\d{3}$' THEN REJECT",
+      "remediation": "Use the standard ISS-NNN format for issue IDs",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-08-20T10:00:00Z",
+      "updated_at": "2026-08-20T10:00:00Z"
+    },
+    {
+      "id": "CONST-008",
+      "name": "Mandatory labels",
+      "description": "All issues must have at least one label for proper categorization and filtering.",
+      "category": "ARCHITECTURE",
+      "severity": "SOFT",
+      "scope": "issue",
+      "rule": {
+        "type": "required_field",
+        "target_field": "labels",
+        "min_count": 1,
+        "message": "At least one label is required"
+      },
+      "logic": "IF issue.labels.length < 1 THEN WARN",
+      "remediation": "Add appropriate labels to the issue (e.g., bug, feature, refactor)",
+      "auto_fix": true,
+      "auto_fix_default": ["unlabeled"],
+      "is_active": true,
+      "created_at": "2026-08-20T10:00:00Z",
+      "updated_at": "2026-08-20T10:00:00Z"
+    },
+    {
+      "id": "CONST-009",
+      "name": "Component ownership required",
+      "description": "Every issue must be assigned to a component for proper ownership tracking and impact analysis.",
+      "category": "ARCHITECTURE",
+      "severity": "HARD",
+      "scope": "issue",
+      "rule": {
+        "type": "required_field",
+        "target_field": "component_id",
+        "message": "Component assignment is required"
+      },
+      "logic": "IF issue.component_id IS NULL THEN REJECT",
+      "remediation": "Assign the issue to an appropriate component",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-08-20T10:00:00Z",
+      "updated_at": "2026-08-20T10:00:00Z"
+    },
+    {
+      "id": "CONST-010",
+      "name": "Critical issue review required",
+      "description": "Critical priority issues must have at least one review before they can be closed.",
+      "category": "PATTERNS",
+      "severity": "HARD",
+      "scope": "issue",
+      "rule": {
+        "type": "require_review",
+        "condition_field": "priority",
+        "condition_value": "CRITICAL",
+        "min_reviews": 1,
+        "message": "Critical issues require at least one review"
+      },
+      "logic": "IF issue.priority == 'CRITICAL' AND issue.reviews < 1 THEN BLOCK_CLOSE",
+      "remediation": "Get at least one review approval before closing the critical issue",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-09-01T10:00:00Z",
+      "updated_at": "2026-09-01T10:00:00Z"
+    },
+    {
+      "id": "CONST-011",
+      "name": "Mandatory component assignment",
+      "description": "Backend API issues must be assigned to the BE component. Frontend issues must be assigned to the FE component.",
+      "category": "PATTERNS",
+      "severity": "SOFT",
+      "scope": "issue",
+      "rule": {
+        "type": "component_mapping",
+        "label_component_map": {
+          "backend": "BE",
+          "api": "BE",
+          "frontend": "FE",
+          "ui": "FE",
+          "database": "DB",
+          "worker": "WK"
+        },
+        "message": "Component should match label context"
+      },
+      "logic": "IF issue.labels CONTAINS 'backend' AND issue.component_id != 'BE' THEN WARN",
+      "remediation": "Assign the issue to the component matching its label context",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-09-05T10:00:00Z",
+      "updated_at": "2026-09-05T10:00:00Z"
+    },
+    {
+      "id": "CONST-012",
+      "name": "Graph depth limit",
+      "description": "The dependency graph must not exceed 8 levels of depth to maintain manageable architecture.",
+      "category": "ARCHITECTURE",
+      "severity": "HARD",
+      "scope": "project",
+      "rule": {
+        "type": "max_depth",
+        "target": "full_dependency_graph",
+        "max_value": 8,
+        "metric": "max_depth",
+        "message": "Dependency graph exceeds maximum allowed depth"
+      },
+      "logic": "IF project.graph_depth > 8 THEN REJECT",
+      "remediation": "Refactor components to flatten the dependency hierarchy",
+      "auto_fix": false,
+      "is_active": true,
+      "created_at": "2026-09-01T10:00:00Z",
+      "updated_at": "2026-09-01T10:00:00Z"
+    }
+  ]
+}
