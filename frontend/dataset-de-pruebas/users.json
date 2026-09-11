@@ -1,46 +1,59 @@
 {
   "users": [
     {
-      "id": "human-001",
+      "id": "550e8400-e29b-41d4-a716-446655440001",
       "username": "pedro",
       "email": "pedro@socialseed.com",
       "role": "lead-developer",
       "type": "human",
       "avatar": "👨‍💻",
       "created_at": "2026-01-15T10:00:00Z",
-      "last_active": "2026-09-09T08:30:00Z",
-      "issues_assigned": 35,
-      "issues_created": 42,
-      "skills": ["architecture", "backend", "frontend", "devops"]
+      "last_active": "2026-09-12T08:30:00Z",
+      "issues_assigned": 15,
+      "issues_created": 18,
+      "skills": [
+        "architecture",
+        "backend",
+        "frontend",
+        "devops"
+      ]
     },
     {
-      "id": "human-002",
+      "id": "550e8400-e29b-41d4-a716-446655440002",
       "username": "juan",
       "email": "juan@socialseed.com",
       "role": "developer",
       "type": "human",
       "avatar": "👨‍💻",
       "created_at": "2026-02-01T10:00:00Z",
-      "last_active": "2026-09-08T17:45:00Z",
-      "issues_assigned": 30,
-      "issues_created": 28,
-      "skills": ["frontend", "ui/ux", "testing"]
+      "last_active": "2026-09-12T07:45:00Z",
+      "issues_assigned": 18,
+      "issues_created": 14,
+      "skills": [
+        "frontend",
+        "ui/ux",
+        "testing"
+      ]
     },
     {
-      "id": "human-003",
+      "id": "550e8400-e29b-41d4-a716-446655440003",
       "username": "manolo",
       "email": "manolo@socialseed.com",
       "role": "developer",
       "type": "human",
       "avatar": "👨‍💻",
       "created_at": "2026-03-10T10:00:00Z",
-      "last_active": "2026-09-07T14:20:00Z",
-      "issues_assigned": 25,
-      "issues_created": 22,
-      "skills": ["backend", "database", "api"]
+      "last_active": "2026-09-11T14:20:00Z",
+      "issues_assigned": 16,
+      "issues_created": 12,
+      "skills": [
+        "backend",
+        "database",
+        "api"
+      ]
     },
     {
-      "id": "agent-001",
+      "id": "550e8400-e29b-41d4-a716-446655440004",
       "username": "agent-architect",
       "email": "architect@ai.socialseed.com",
       "role": "ai-agent",
@@ -48,29 +61,38 @@
       "avatar": "🤖",
       "model": "claude-3.5-sonnet",
       "created_at": "2026-01-20T10:00:00Z",
-      "last_active": "2026-09-09T09:00:00Z",
-      "issues_assigned": 15,
-      "issues_created": 20,
-      "skills": ["architecture", "code-review", "refactoring"],
+      "last_active": "2026-09-12T09:00:00Z",
+      "issues_assigned": 12,
+      "issues_created": 15,
+      "skills": [
+        "architecture",
+        "code-review",
+        "refactoring"
+      ],
       "specialization": "Architecture analysis and code review"
     },
     {
-      "id": "agent-002",
-      "username": "agent-frontend",
+      "id": "550e8400-e29b-41d4-a716-446655440005",
+      "username": "lucas-agent-XXzz",
       "email": "frontend@ai.socialseed.com",
       "role": "ai-agent",
       "type": "agent",
-      "avatar": "🤖",
+      "avatar": "🔧",
       "model": "gpt-4-turbo",
       "created_at": "2026-02-15T10:00:00Z",
-      "last_active": "2026-09-09T08:45:00Z",
-      "issues_assigned": 12,
-      "issues_created": 15,
-      "skills": ["vue", "react", "css", "accessibility"],
+      "last_active": "2026-09-12T08:45:00Z",
+      "issues_assigned": 20,
+      "issues_created": 18,
+      "skills": [
+        "vue",
+        "react",
+        "css",
+        "accessibility"
+      ],
       "specialization": "Frontend development and UI/UX"
     },
     {
-      "id": "agent-003",
+      "id": "550e8400-e29b-41d4-a716-446655440006",
       "username": "agent-backend",
       "email": "backend@ai.socialseed.com",
       "role": "ai-agent",
@@ -78,14 +100,19 @@
       "avatar": "🤖",
       "model": "claude-3.5-sonnet",
       "created_at": "2026-03-01T10:00:00Z",
-      "last_active": "2026-09-08T22:10:00Z",
-      "issues_assigned": 10,
-      "issues_created": 12,
-      "skills": ["python", "fastapi", "neo4j", "rest-api"],
+      "last_active": "2026-09-12T06:10:00Z",
+      "issues_assigned": 18,
+      "issues_created": 16,
+      "skills": [
+        "python",
+        "fastapi",
+        "neo4j",
+        "rest-api"
+      ],
       "specialization": "Backend API development"
     },
     {
-      "id": "agent-004",
+      "id": "550e8400-e29b-41d4-a716-446655440007",
       "username": "agent-qa",
       "email": "qa@ai.socialseed.com",
       "role": "ai-agent",
@@ -93,14 +120,19 @@
       "avatar": "🤖",
       "model": "gpt-4-turbo",
       "created_at": "2026-04-01T10:00:00Z",
-      "last_active": "2026-09-09T07:30:00Z",
-      "issues_assigned": 8,
-      "issues_created": 10,
-      "skills": ["testing", "qa", "automation", "ci/cd"],
+      "last_active": "2026-09-12T07:30:00Z",
+      "issues_assigned": 5,
+      "issues_created": 6,
+      "skills": [
+        "testing",
+        "qa",
+        "automation",
+        "ci/cd"
+      ],
       "specialization": "Quality assurance and testing"
     },
     {
-      "id": "agent-005",
+      "id": "550e8400-e29b-41d4-a716-446655440008",
       "username": "agent-devops",
       "email": "devops@ai.socialseed.com",
       "role": "ai-agent",
@@ -108,10 +140,15 @@
       "avatar": "🤖",
       "model": "claude-3.5-sonnet",
       "created_at": "2026-05-01T10:00:00Z",
-      "last_active": "2026-09-08T18:00:00Z",
-      "issues_assigned": 7,
-      "issues_created": 8,
-      "skills": ["docker", "kubernetes", "ci/cd", "monitoring"],
+      "last_active": "2026-09-11T18:00:00Z",
+      "issues_assigned": 8,
+      "issues_created": 7,
+      "skills": [
+        "docker",
+        "kubernetes",
+        "ci/cd",
+        "monitoring"
+      ],
       "specialization": "DevOps and infrastructure"
     }
   ]

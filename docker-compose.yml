@@ -64,6 +64,22 @@ services:
       - "127.0.0.1:8889:80"
     depends_on:
       - tasker-api
+      - mock-api
+    networks:
+      - tasker-net
+
+  mock-api:
+    container_name: mock-api
+    image: mock-api:local
+    build:
+      context: ./mock-api
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:8001:8001"
+    environment:
+      - DATA_DIR=/app/dataset-de-pruebas
+    volumes:
+      - ./frontend/dataset-de-pruebas:/app/dataset-de-pruebas
     networks:
       - tasker-net
 
