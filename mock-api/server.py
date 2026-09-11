@@ -683,3 +683,140 @@ def analyze_root_cause(body: RootCauseRequest):
 def get_test_failures():
     data = read_json("root-cause.json")
     return {"data": data.get("test_failures", [])}
+
+
+# ==================== SYSTEM ENDPOINTS ====================
+
+
+@app.get("/mock/health")
+def get_health():
+    issues_data = read_json("issues.json")
+    components_data = read_json("components.json")
+    users_data = read_json("users.json")
+    constraints_data = read_json("constraints.json")
+
+    issues = issues_data.get("issues", [])
+    components = components_data.get("components", [])
+    users = users_data.get("users", [])
+    constraints = constraints_data.get("constraints", [])
+
+    agents_working = [u for u in users if u.get("type") == "agent" and u.get("is_active")]
+    blocked_issues = [i for i in issues if i.get("status") == "BLOCKED"]
+
+    return {
+        "data": {
+            "status": "healthy",
+            "timestamp": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+            "services": {
+                "neo4j": {
+                    "status": "connected",
+                    "latency_ms": 12,
+                    "last_check": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+                },
+                "api": {
+                    "status": "running",
+                    "uptime_seconds": 864000,
+                    "version": "1.0.0",
+                },
+                "workers": {
+                    "status": "running",
+                    "active_count": 2,
+                    "queue_size": 5,
+                },
+            },
+            "metrics": {
+                "total_issues": len(issues),
+                "blocked_issues": len(blocked_issues),
+                "total_components": len(components),
+                "agents_working": len(agents_working),
+                "total_users": len(users),
+                "total_constraints": len(constraints),
+                "active_constraints": len([c for c in constraints if c.get("is_active")]),
+            },
+        }
+    }
+
+
+@app.get("/mock/sync-queue")
+def get_sync_queue():
+    return {
+        "data": {
+            "pending": 3,
+            "queue": [
+                {
+                    "id": "SYNC-001",
+                    "action": "push",
+                    "resource": "issues",
+                    "resource_id": "ISS-042",
+                    "created_at": "2026-09-11T08:30:00Z",
+                    "status": "pending",
+                    "retry_count": 0,
+                },
+                {
+                    "id": "SYNC-002",
+                    "action": "push",
+                    "resource": "components",
+                    "resource_id": "550e8400-e29b-41d4-a716-446655440105",
+                    "created_at": "2026-09-11T08:45:00Z",
+                    "status": "pending",
+                    "retry_count": 0,
+                },
+                {
+                    "id": "SYNC-003",
+                    "action": "pull",
+                    "resource": "issues",
+                    "resource_id": "ISS-100",
+                    "created_at": "2026-09-11T09:00:00Z",
+                    "status": "retrying",
+                    "retry_count": 2,
+                },
+            ],
+            "last_sync_at": "2026-09-11T08:15:00Z",
+            "github_connected": True,
+        }
+    }
+
+
+class SeedRequest(BaseModel):
+    seed_type: str = "full"
+    reset_first: bool = False
+
+
+@app.post("/mock/admin/seed")
+def admin_seed(body: SeedRequest):
+    seed_type = body.seed_type
+
+    if body.reset_first:
+        for filename in ["issues.json", "components.json", "users.json", "policies.json", "constraints.json", "agent-logs.json", "dependencies.json"]:
+            write_json(filename, {})
+
+    return {
+        "data": {
+            "status": "success",
+            "message": f"Seed data loaded ({seed_type})",
+            "seed_type": seed_type,
+            "reset_first": body.reset_first,
+            "loaded": {
+                "issues": 100,
+                "components": 5,
+                "users": 8,
+                "policies": 5,
+                "constraints": 25,
+            },
+            "timestamp": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+        }
+    }
+
+
+@app.post("/mock/admin/reset")
+def admin_reset():
+    for filename in ["issues.json", "components.json", "users.json", "policies.json", "constraints.json", "agent-logs.json", "dependencies.json"]:
+        write_json(filename, {})
+
+    return {
+        "data": {
+            "status": "success",
+            "message": "All data reset to empty",
+            "timestamp": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+        }
+    }

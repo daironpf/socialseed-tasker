@@ -256,3 +256,49 @@ export interface ValidationResult {
   violations: ConstraintViolation[]
   checked_constraints: number
 }
+
+export interface ServiceStatus {
+  status: string
+  latency_ms?: number
+  uptime_seconds?: number
+  version?: string
+  last_check?: string
+  active_count?: number
+  queue_size?: number
+}
+
+export interface SystemHealth {
+  status: string
+  timestamp: string
+  services: {
+    neo4j: ServiceStatus
+    api: ServiceStatus
+    workers: ServiceStatus
+  }
+  metrics: {
+    total_issues: number
+    blocked_issues: number
+    total_components: number
+    agents_working: number
+    total_users: number
+    total_constraints: number
+    active_constraints: number
+  }
+}
+
+export interface SyncQueueItem {
+  id: string
+  action: string
+  resource: string
+  resource_id: string
+  created_at: string
+  status: string
+  retry_count: number
+}
+
+export interface SyncQueue {
+  pending: number
+  queue: SyncQueueItem[]
+  last_sync_at: string
+  github_connected: boolean
+}

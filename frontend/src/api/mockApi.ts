@@ -1,4 +1,4 @@
-import type { Issue, IssueCreateRequest, Component, ComponentCreateRequest, Policy, ImpactAnalysis, CausalLink, TestFailure, AgentLogsBundle, Constraint, ConstraintCreateRequest, ValidationResult } from '@/types'
+import type { Issue, IssueCreateRequest, Component, ComponentCreateRequest, Policy, ImpactAnalysis, CausalLink, TestFailure, AgentLogsBundle, Constraint, ConstraintCreateRequest, ValidationResult, SystemHealth, SyncQueue } from '@/types'
 
 const MOCK_API_URL = '/mock-api'
 
@@ -193,5 +193,27 @@ export async function validateConstraints(entityType: string = 'project', entity
   return apiCall<ValidationResult>('/mock/constraints/validate', {
     method: 'POST',
     body: JSON.stringify({ entity_type: entityType, entity_data: entityData }),
+  })
+}
+
+// System API
+export async function fetchSystemHealth(): Promise<SystemHealth> {
+  return apiCall<SystemHealth>('/mock/health')
+}
+
+export async function fetchSyncQueue(): Promise<SyncQueue> {
+  return apiCall<SyncQueue>('/mock/sync-queue')
+}
+
+export async function adminSeed(seedType: string = 'full', resetFirst: boolean = false): Promise<any> {
+  return apiCall<any>('/mock/admin/seed', {
+    method: 'POST',
+    body: JSON.stringify({ seed_type: seedType, reset_first: resetFirst }),
+  })
+}
+
+export async function adminReset(): Promise<any> {
+  return apiCall<any>('/mock/admin/reset', {
+    method: 'POST',
   })
 }
