@@ -1,0 +1,84 @@
+{
+  "test_failures": [
+    {
+      "test_id": "TEST-001",
+      "test_name": "test_login_special_characters",
+      "error_message": "AssertionError: Expected status 200 but got 400 for password with @ symbol",
+      "component": "Backend API",
+      "failed_at": "2026-09-10T14:30:00Z",
+      "labels": ["auth", "regression", "security"]
+    },
+    {
+      "test_id": "TEST-002",
+      "test_name": "test_graph_query_performance",
+      "error_message": "TimeoutError: Query exceeded 5s limit for 200+ issues dependency graph",
+      "component": "Database",
+      "failed_at": "2026-09-11T08:15:00Z",
+      "labels": ["performance", "database", "neo4j"]
+    },
+    {
+      "test_id": "TEST-003",
+      "test_name": "test_webhook_retry_logic",
+      "error_message": "WebhookDeliveryError: Retry count exceeded, delivery failed after 3 attempts",
+      "component": "Backend API",
+      "failed_at": "2026-09-11T10:45:00Z",
+      "labels": ["webhook", "reliability"]
+    },
+    {
+      "test_id": "TEST-004",
+      "test_name": "test_dark_mode_persistence",
+      "error_message": "UIError: Dark mode state not persisted after page reload",
+      "component": "Frontend",
+      "failed_at": "2026-09-09T16:20:00Z",
+      "labels": ["ui", "feature", "localStorage"]
+    },
+    {
+      "test_id": "TEST-005",
+      "test_name": "test_neo4j_connection_pool",
+      "error_message": "ConnectionError: Pool exhausted, all 10 connections in use",
+      "component": "Database",
+      "failed_at": "2026-09-10T11:00:00Z",
+      "labels": ["database", "performance", "connection"]
+    },
+    {
+      "test_id": "TEST-006",
+      "test_name": "test_graph_cascade_block",
+      "error_message": "BusinessLogicError: Issue ISS-003 blocked ISS-007, ISS-010, ISS-081 simultaneously",
+      "component": "Database",
+      "failed_at": "2026-09-11T09:30:00Z",
+      "labels": ["dependencies", "cascade", "blocking"]
+    },
+    {
+      "test_id": "TEST-007",
+      "test_name": "test_release_dependency_check",
+      "error_message": "PreconditionError: Release v2.0 has 3 unresolved HIGH priority dependencies",
+      "component": "Workers",
+      "failed_at": "2026-09-11T12:00:00Z",
+      "labels": ["release", "dependencies", "critical"]
+    },
+    {
+      "test_id": "TEST-008",
+      "test_name": "test_oauth2_keycloak_flow",
+      "error_message": "AuthError: Token exchange failed with Keycloak provider, invalid_grant",
+      "component": "Backend API",
+      "failed_at": "2026-09-10T15:45:00Z",
+      "labels": ["auth", "oauth", "keycloak"]
+    },
+    {
+      "test_id": "TEST-009",
+      "test_name": "test_graphql_subscription_timeout",
+      "errorMessage": "TimeoutError: GraphQL subscription connection timed out after 30s",
+      "component": "Backend API",
+      "failed_at": "2026-09-11T07:30:00Z",
+      "labels": ["graphql", "realtime", "timeout"]
+    },
+    {
+      "test_id": "TEST-010",
+      "test_name": "test_dependency_race_condition",
+      "error_message": "ConcurrencyError: Two agents modifying same dependency simultaneously",
+      "component": "Backend API",
+      "failed_at": "2026-09-11T13:15:00Z",
+      "labels": ["concurrency", "race-condition", "dependencies"]
+    }
+  ]
+}

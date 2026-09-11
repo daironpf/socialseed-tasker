@@ -1,4 +1,4 @@
-import type { Issue, IssueCreateRequest, Component, ComponentCreateRequest, Policy } from '@/types'
+import type { Issue, IssueCreateRequest, Component, ComponentCreateRequest, Policy, ImpactAnalysis, CausalLink, TestFailure } from '@/types'
 
 const MOCK_API_URL = '/mock-api'
 
@@ -144,4 +144,25 @@ export function getIssueStats() {
     blocked: 0,
     closed: 0,
   }
+}
+
+// Analysis API
+export async function analyzeImpact(issueId: string): Promise<ImpactAnalysis> {
+  return apiCall<ImpactAnalysis>(`/mock/analysis/impact/${issueId}`)
+}
+
+export async function analyzeRootCause(body: {
+  test_name: string
+  error_message: string
+  component?: string
+  labels?: string[]
+}): Promise<CausalLink[]> {
+  return apiCall<CausalLink[]>('/mock/analysis/root-cause', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function fetchTestFailures(): Promise<TestFailure[]> {
+  return apiCall<TestFailure[]>('/mock/test-failures')
 }

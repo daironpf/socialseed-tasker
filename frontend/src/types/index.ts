@@ -103,6 +103,7 @@ export interface ComponentCreateRequest {
 export interface CausalLink {
   issue_id: string
   issue_title: string
+  issue_status: string
   confidence: number
   reasons: string[]
   graph_distance: number
@@ -112,15 +113,20 @@ export interface ImpactIssueSummary {
   id: string
   title: string
   status: string
+  level?: number
 }
 
 export interface ImpactAnalysis {
   issue_id: string
+  issue_title: string
+  issue_status: string
   directly_affected: ImpactIssueSummary[]
   transitively_affected: ImpactIssueSummary[]
   blocked_issues: ImpactIssueSummary[]
   affected_components: string[]
   risk_level: string
+  graph_depth: number
+  total_affected: number
 }
 
 export interface Policy {
@@ -135,4 +141,39 @@ export interface Policy {
   is_active: boolean
   created_at?: string
   updated_at?: string
+}
+
+export interface TestFailure {
+  test_id: string
+  test_name: string
+  error_message: string
+  component: string
+  failed_at: string
+  labels: string[]
+}
+
+export interface DependencyEdge {
+  from: string
+  to: string
+  type: 'blocks' | 'depends_on'
+}
+
+export interface DependencyNode {
+  id: string
+  label: string
+  status: string
+  priority: string
+  component: string
+}
+
+export interface DependencyGraph {
+  nodes: DependencyNode[]
+  edges: DependencyEdge[]
+  summary: {
+    total_nodes: number
+    total_edges: number
+    blocked_issues: number
+    critical_path_length: number
+    most_connected_node: string
+  }
 }
