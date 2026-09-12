@@ -252,11 +252,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { fetchComponents, createComponent, updateComponent, deleteComponent, fetchIssues } from '@/api/mockApi'
-import type { Component, Issue } from '@/types'
+import { useComponentsStore } from '@/stores/componentsStore'
+import { useIssuesStore } from '@/stores/issuesStore'
+import type { Component } from '@/types'
 
-const components = ref<Component[]>([])
-const issues = ref<Issue[]>([])
+const compStore = useComponentsStore()
+const issuesStore = useIssuesStore()
+
 const search = ref('')
 const viewMode = ref<'table' | 'grid'>('table')
 const selectedComponent = ref<Component | null>(null)
@@ -266,9 +268,9 @@ const editingComponent = ref<Component | null>(null)
 const form = ref({ name: '', alias: '', description: '', project: 'socialseed-tasker' })
 
 const filteredComponents = computed(() => {
-  if (!search.value) return components.value
+  if (!search.value) return compStore.components
   const q = search.value.toLowerCase()
-  return components.value.filter(c =>
+  return compStore.components.filter(c =>
     c.name.toLowerCase().includes(q) ||
     (c.alias && c.alias.toLowerCase().includes(q)) ||
     c.id.toLowerCase().includes(q)
@@ -276,12 +278,12 @@ const filteredComponents = computed(() => {
 })
 
 function getIssueCount(componentId: string): number {
-  return issues.value.filter(i => i.component_id === componentId).length
+  return issuesStore.issues.filter(i => i.component_id === componentId).length
 }
 
 const componentIssues = computed(() => {
   if (!selectedComponent.value) return []
-  return issues.value.filter(i => i.component_id === selectedComponent.value!.id)
+  return issuesStore.issues.filter(i => i.component_id === selectedComponent.value!.id)
 })
 
 const componentStats = computed(() => {
@@ -329,30 +331,20 @@ function closeModal() { showModal.value = false; editingComponent.value = null }
 
 async function saveComponent() {
   if (!form.value.name) return
-  try {
-    if (editingComponent.value) {
-      const updated = await updateComponent(editingComponent.value.id, form.value)
-      const idx = components.value.findIndex(c => c.id === editingComponent.value!.id)
-      if (idx !== -1) components.value[idx] = updated
-    } else {
-      const created = await createComponent(form.value)
-      components.value.push(created)
-    }
-  } catch (e) { console.error('Save failed:', e) }
+  if (editingComponent.value) {
+    await compStore.updateComponent(editingComponent.value.id, form.value)
+  } else {
+    await compStore.createComponent(form.value)
+  }
   closeModal()
 }
 
 async function confirmDelete(comp: Component) {
   if (!confirm(`Delete "${comp.name}"?`)) return
-  try {
-    await deleteComponent(comp.id)
-    components.value = components.value.filter(c => c.id !== comp.id)
-  } catch (e) { console.error('Delete failed:', e) }
+  await compStore.deleteComponent(comp.id)
 }
 
-onMounted(async () => {
-  const [comps, iss] = await Promise.all([fetchComponents(), fetchIssues(1, 200)])
-  components.value = comps
-  issues.value = iss
+onMounted(() => {
+  Promise.all([compStore.fetchComponents(), issuesStore.fetchIssues(1, 200)])
 })
 </script>
