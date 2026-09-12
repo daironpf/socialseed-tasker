@@ -177,6 +177,7 @@ const svgNodes = computed(() => {
     stroke: statusColor(props.rootStatus),
     textColor: statusTextColor(props.rootStatus),
     isRoot: true,
+    level: 0,
   })
 
   const sortedLevels = Array.from(levels.value.entries()).sort((a, b) => a[0] - b[0])
@@ -198,6 +199,7 @@ const svgNodes = computed(() => {
         stroke: statusColor(item.status),
         textColor: statusTextColor(item.status),
         isRoot: false,
+        level,
       })
     })
   }

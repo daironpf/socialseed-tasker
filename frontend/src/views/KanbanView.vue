@@ -112,7 +112,11 @@ function openIssue(issue: Issue) {
 }
 
 async function onDropIssue(issue: Issue, newStatus: IssueStatus) {
-  await issuesStore.updateIssue(issue.id, { status: newStatus })
+  const update: IssueUpdateRequest = { status: newStatus }
+  if (newStatus === 'CLOSED') {
+    update.closed_at = new Date().toISOString()
+  }
+  await issuesStore.updateIssue(issue.id, update)
 }
 
 async function onUpdateIssue(id: string, body: IssueUpdateRequest) {

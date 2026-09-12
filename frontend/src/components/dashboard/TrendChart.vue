@@ -39,7 +39,7 @@
           <text
             v-for="(label, i) in xLabels"
             :key="i"
-            :x="i * (780 / (xLabels.length - 1)) + 10"
+            :x="xLabels.length > 1 ? i * (780 / (xLabels.length - 1)) + 10 : 400"
             y="245"
             text-anchor="middle"
           >
@@ -158,6 +158,7 @@ function scaleY(value: number): number {
 }
 
 function scaleX(index: number): number {
+  if (chartData.value.length <= 1) return 400
   return (index / (chartData.value.length - 1)) * 780 + 10
 }
 

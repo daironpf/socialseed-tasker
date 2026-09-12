@@ -23,7 +23,8 @@ export const useIssuesStore = defineStore('issues', () => {
     console.log('[IssuesStore] Fetching issues page:', page, 'filters:', filters)
     try {
       const result = await api.fetchIssues(page, limit, filters?.status, filters?.component, filters?.project, filters?.priority)
-      issues.value = Array.isArray(result) ? result : []
+      issues.value = result.items
+      pagination.value = result.pagination
     } catch (e) {
       console.error('[IssuesStore] Fetch failed:', e)
       error.value = (e as Error).message

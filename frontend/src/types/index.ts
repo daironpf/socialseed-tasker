@@ -89,6 +89,7 @@ export interface IssueUpdateRequest {
   component_id?: string
   labels?: string[]
   architectural_constraints?: string[]
+  closed_at?: string
 }
 
 export interface DependencyRequest {

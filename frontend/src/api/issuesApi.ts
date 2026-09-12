@@ -5,6 +5,7 @@ import type {
   IssueCreateRequest,
   IssueUpdateRequest,
   PaginatedResponse,
+  PaginationMeta,
 } from '@/types'
 
 export async function fetchIssues(
@@ -14,19 +15,18 @@ export async function fetchIssues(
   component?: string,
   project?: string,
   priority?: string,
-): Promise<Issue[]> {
+): Promise<{ items: Issue[]; pagination: PaginationMeta | null }> {
   const params: Record<string, string | number> = { page, limit }
   if (status) params.status = status
   if (component) params.component = component
   if (project) params.project = project
   if (priority) params.priority = priority
   const { data } = await client.get<APIResponse<PaginatedResponse<Issue>>>('/issues', { params })
-  // Handle both paginated and non-paginated responses
   const responseData = data.data
   if (Array.isArray(responseData)) {
-    return responseData
+    return { items: responseData, pagination: null }
   }
-  return responseData?.items ?? []
+  return { items: responseData?.items ?? [], pagination: responseData?.pagination ?? null }
 }
 
 export async function fetchIssue(id: string): Promise<Issue> {

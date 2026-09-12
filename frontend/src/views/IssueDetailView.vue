@@ -375,7 +375,6 @@ watch(activeTab, (tab) => {
 })
 
 onMounted(async () => {
-  issuesStore.fetchIssues()
   try {
     users.value = await fetchUsers()
   } catch {
