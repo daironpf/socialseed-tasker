@@ -150,6 +150,19 @@ def update_issue(issue_id: str, body: IssueUpdate):
     return {"data": issues[idx]}
 
 
+@app.delete("/mock/issues/{issue_id}")
+def delete_issue(issue_id: str):
+    data = read_json("issues.json")
+    issues = data.get("issues", [])
+    idx = next((i for i, iss in enumerate(issues) if iss["id"] == issue_id), None)
+    if idx is None:
+        raise HTTPException(status_code=404, detail="Issue not found")
+    issues.pop(idx)
+    data["issues"] = issues
+    write_json("issues.json", data)
+    return {"data": None}
+
+
 @app.get("/mock/issues/{issue_id}/agent-logs")
 def get_agent_logs(issue_id: str):
     data = read_json("agent-logs.json")

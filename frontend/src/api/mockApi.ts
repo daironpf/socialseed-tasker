@@ -51,13 +51,15 @@ export async function updateIssue(id: string, body: any): Promise<Issue> {
   })
 }
 
-export async function deleteIssue(_id: string): Promise<void> {
-  // Mock delete
+export async function deleteIssue(id: string): Promise<void> {
+  await apiCall(`/mock/issues/${id}`, { method: 'DELETE' })
 }
 
 export async function closeIssue(id: string): Promise<Issue> {
-  const issue = await fetchIssue(id)
-  return { ...issue, status: 'CLOSED', closed_at: new Date().toISOString() }
+  return apiCall<Issue>(`/mock/issues/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status: 'CLOSED', closed_at: new Date().toISOString() }),
+  })
 }
 
 export async function fetchBlockedIssues(): Promise<Issue[]> {
