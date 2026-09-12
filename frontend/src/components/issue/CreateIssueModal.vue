@@ -62,6 +62,7 @@
 import { ref } from 'vue'
 import { useComponentsStore } from '@/stores/componentsStore'
 import { useIssuesStore } from '@/stores/issuesStore'
+import { IssuePriority } from '@/types'
 
 const emit = defineEmits<{ close: []; created: [] }>()
 
@@ -71,7 +72,7 @@ const issuesStore = useIssuesStore()
 const form = ref({
   title: '',
   description: '',
-  priority: 'MEDIUM',
+  priority: IssuePriority.MEDIUM,
   component_id: '',
   labels: [] as string[],
 })

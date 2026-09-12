@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
-import client from '@/api/client'
+import { USE_MOCK } from '@/api/client'
 
 const authStore = useAuthStore()
 const emit = defineEmits<{
@@ -46,16 +46,11 @@ const apiKey = ref('')
 
 function handleLogin() {
   authStore.setApiKey(apiKey.value)
-  if (apiKey.value) {
-    client.defaults.headers.common['X-API-Key'] = apiKey.value
-  }
   emit('loggedIn')
-  window.location.reload()
 }
 
 function clearAndRetry() {
   authStore.clearApiKey()
-  delete client.defaults.headers.common['X-API-Key']
 }
 
 onMounted(() => {
@@ -67,6 +62,8 @@ onUnmounted(() => {
 })
 
 function handleUnauthorized() {
-  window.location.reload()
+  if (!USE_MOCK) {
+    window.location.reload()
+  }
 }
 </script>

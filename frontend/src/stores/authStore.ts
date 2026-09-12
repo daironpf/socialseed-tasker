@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { API_KEY } from '@/api/client'
+import { API_KEY, USE_MOCK } from '@/api/client'
 
 export const useAuthStore = defineStore('auth', () => {
   const storedKey = ref(localStorage.getItem('tasker_api_key') || '')
-  const isAuthenticated = computed(() => !!storedKey.value || !!API_KEY)
+  const isAuthenticated = computed(() => USE_MOCK || !!storedKey.value || !!API_KEY)
 
   function setApiKey(key: string) {
     localStorage.setItem('tasker_api_key', key)

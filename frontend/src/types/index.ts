@@ -16,8 +16,8 @@ export interface Issue {
   id: string
   title: string
   description: string
-  status: string
-  priority: string
+  status: IssueStatus
+  priority: IssuePriority
   component_id: string
   assignee?: string
   created_by?: string
@@ -75,7 +75,7 @@ export interface APIResponse<T> {
 export interface IssueCreateRequest {
   title: string
   description?: string
-  priority?: string
+  priority?: IssuePriority
   component_id: string
   labels?: string[]
   architectural_constraints?: string[]
@@ -84,8 +84,8 @@ export interface IssueCreateRequest {
 export interface IssueUpdateRequest {
   title?: string
   description?: string
-  priority?: string
-  status?: string
+  priority?: IssuePriority
+  status?: IssueStatus
   component_id?: string
   labels?: string[]
   architectural_constraints?: string[]
