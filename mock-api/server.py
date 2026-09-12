@@ -106,6 +106,7 @@ def create_issue(body: IssueCreate):
 
     max_id = max((int(i["id"].split("-")[1]) for i in issues if i["id"].startswith("ISS-")), default=0)
     new_id = f"ISS-{max_id + 1:03d}"
+    now = __import__("datetime").datetime.utcnow().isoformat() + "Z"
     new_issue = {
         "id": new_id,
         "title": body.title,
@@ -117,8 +118,13 @@ def create_issue(body: IssueCreate):
         "created_by": body.created_by,
         "labels": body.labels,
         "dependencies": body.dependencies,
-        "created_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+        "blocks": [],
+        "affects": [],
+        "architectural_constraints": [],
+        "created_at": now,
+        "updated_at": now,
         "closed_at": None,
+        "agent_working": False,
     }
 
     issues.append(new_issue)
@@ -138,6 +144,8 @@ class IssueUpdate(BaseModel):
     dependencies: Optional[list[str]] = None
     blocks: Optional[list[str]] = None
     affects: Optional[list[str]] = None
+    architectural_constraints: Optional[list[str]] = None
+    closed_at: Optional[str] = None
     agent_working: Optional[bool] = None
 
 
@@ -149,6 +157,8 @@ def update_issue(issue_id: str, body: IssueUpdate):
     if idx is None:
         raise HTTPException(status_code=404, detail="Issue not found")
     update_data = body.model_dump(exclude_unset=True)
+    now = __import__("datetime").datetime.utcnow().isoformat() + "Z"
+    update_data["updated_at"] = now
     issues[idx].update(update_data)
     data["issues"] = issues
     write_json("issues.json", data)
