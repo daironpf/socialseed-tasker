@@ -299,6 +299,14 @@ const priority = ref(props.issue.priority)
 const labels = ref([...props.issue.labels])
 const newLabel = ref('')
 
+watch(() => props.issue, (newIssue) => {
+  title.value = newIssue.title
+  description.value = newIssue.description
+  status.value = newIssue.status
+  priority.value = newIssue.priority
+  labels.value = [...newIssue.labels]
+}, { deep: true })
+
 const agentLogs = ref<AgentLog[]>([])
 const logsLoading = ref(false)
 const users = ref<any[]>([])
