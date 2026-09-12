@@ -148,12 +148,27 @@ import CreateIssueModal from '@/components/issue/CreateIssueModal.vue'
 const issuesStore = useIssuesStore()
 const componentsStore = useComponentsStore()
 const uiStore = useUiStore()
-
-const search = ref('')
-const statusFilter = ref('')
-const priorityFilter = ref('')
-const componentFilter = ref('')
 const showCreateModal = ref(false)
+
+const search = computed({
+  get: () => uiStore.filters.search,
+  set: (val: string) => uiStore.setFilter('search', val),
+})
+
+const statusFilter = computed({
+  get: () => uiStore.filters.status[0] || '',
+  set: (val: string) => uiStore.setFilter('status', val ? [val] : []),
+})
+
+const priorityFilter = computed({
+  get: () => uiStore.filters.priority[0] || '',
+  set: (val: string) => uiStore.setFilter('priority', val ? [val] : []),
+})
+
+const componentFilter = computed({
+  get: () => uiStore.filters.component || '',
+  set: (val: string) => uiStore.setFilter('component', val || null),
+})
 
 const filteredList = computed(() => {
   let result = issuesStore.issues
