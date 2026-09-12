@@ -1754,7 +1754,7 @@
       "id": "ISS-098",
       "title": "Add issue dependencies error handling",
       "description": "Graceful error handling for dependency failures",
-      "status": "OPEN",
+      "status": "CLOSED",
       "priority": "HIGH",
       "component_id": "550e8400-e29b-41d4-a716-446655440102",
       "assignee": "550e8400-e29b-41d4-a716-446655440001",
@@ -1764,26 +1764,6 @@
       ],
       "dependencies": [],
       "created_at": "2026-09-12T11:00:00Z",
-      "closed_at": null,
-      "created_by": "550e8400-e29b-41d4-a716-446655440004"
-    },
-    {
-      "id": "ISS-099",
-      "title": "Fix issue dependencies race condition",
-      "description": "Concurrent dependency modifications cause conflicts",
-      "status": "OPEN",
-      "priority": "HIGH",
-      "component_id": "550e8400-e29b-41d4-a716-446655440102",
-      "assignee": "550e8400-e29b-41d4-a716-446655440003",
-      "labels": [
-        "bug",
-        "concurrency",
-        "critical"
-      ],
-      "dependencies": [
-        "ISS-018"
-      ],
-      "created_at": "2026-09-12T12:00:00Z",
       "closed_at": null,
       "created_by": "550e8400-e29b-41d4-a716-446655440004"
     },
