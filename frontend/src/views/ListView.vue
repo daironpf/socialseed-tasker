@@ -18,7 +18,7 @@
       <div class="mb-4 flex items-center gap-2">
         <input
           v-model="search"
-          placeholder="Search issues..."
+          placeholder="Search by title, ID, or description..."
           class="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
         />
         <select
@@ -41,6 +41,17 @@
           <option value="MEDIUM">Medium</option>
           <option value="LOW">Low</option>
         </select>
+        <select
+          v-model="componentFilter"
+          class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+        >
+          <option value="">All Components</option>
+          <option v-for="comp in componentsStore.components" :key="comp.id" :value="comp.id">{{ comp.name }}</option>
+        </select>
+      </div>
+
+      <div class="mb-2 text-sm text-gray-500 dark:text-gray-400">
+        Showing {{ filteredList.length }} of {{ issuesStore.issues.length }} issues
       </div>
 
       <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
@@ -141,9 +152,30 @@ const uiStore = useUiStore()
 const search = ref('')
 const statusFilter = ref('')
 const priorityFilter = ref('')
+const componentFilter = ref('')
 const showCreateModal = ref(false)
 
-const filteredList = computed(() => issuesStore.issues)
+const filteredList = computed(() => {
+  let result = issuesStore.issues
+  if (search.value) {
+    const q = search.value.toLowerCase()
+    result = result.filter(i =>
+      i.title.toLowerCase().includes(q) ||
+      i.id.toLowerCase().includes(q) ||
+      (i.description && i.description.toLowerCase().includes(q))
+    )
+  }
+  if (statusFilter.value) {
+    result = result.filter(i => i.status === statusFilter.value)
+  }
+  if (priorityFilter.value) {
+    result = result.filter(i => i.priority === priorityFilter.value)
+  }
+  if (componentFilter.value) {
+    result = result.filter(i => i.component_id === componentFilter.value)
+  }
+  return result
+})
 
 const selectedIssue = computed(() => {
   if (!uiStore.selectedIssueId) return null
