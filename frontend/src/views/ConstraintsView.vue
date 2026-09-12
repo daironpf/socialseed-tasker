@@ -443,11 +443,7 @@ function closeModal() { showModal.value = false; editingConstraint.value = null 
 async function saveConstraint() {
   if (!form.value.name) return
   if (editingConstraint.value) {
-    // Edit locally for now (no PATCH endpoint for constraints yet)
-    const idx = store.constraints.findIndex(c => c.id === editingConstraint.value!.id)
-    if (idx !== -1) {
-      store.constraints[idx] = { ...store.constraints[idx], ...form.value, updated_at: new Date().toISOString() }
-    }
+    await store.updateConstraint(editingConstraint.value.id, form.value)
   } else {
     await store.createConstraint(form.value)
   }

@@ -44,6 +44,18 @@ export const useConstraintsStore = defineStore('constraints', () => {
     }
   }
 
+  async function updateConstraint(id: string, body: Partial<ConstraintCreateRequest>): Promise<Constraint | null> {
+    try {
+      const updated = await api.updateConstraint(id, body)
+      const idx = constraints.value.findIndex(c => c.id === id)
+      if (idx !== -1) constraints.value[idx] = updated
+      return updated
+    } catch (e) {
+      error.value = (e as Error).message
+      return null
+    }
+  }
+
   async function validateConstraints(entityType: string = 'project', entityData: Record<string, unknown> = {}): Promise<ValidationResult | null> {
     try {
       validationResult.value = await api.validateConstraints(entityType, entityData)
@@ -66,6 +78,7 @@ export const useConstraintsStore = defineStore('constraints', () => {
     bySeverity,
     fetchConstraints,
     createConstraint,
+    updateConstraint,
     validateConstraints,
   }
 })

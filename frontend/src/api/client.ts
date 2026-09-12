@@ -94,6 +94,11 @@ const mockClient = {
       const data = await mockApi.updateComponent(id, body)
       return { data: { data } }
     }
+    if (url.match(/\/constraints\/[^/]+$/)) {
+      const id = url.split('/').pop()!
+      const data = await mockApi.updateConstraint(id, body)
+      return { data: { data } }
+    }
     
     return { data: { data: null } }
   },

@@ -198,6 +198,13 @@ export async function createConstraint(body: ConstraintCreateRequest): Promise<C
   })
 }
 
+export async function updateConstraint(id: string, body: Partial<ConstraintCreateRequest>): Promise<Constraint> {
+  return apiCall<Constraint>(`/mock/constraints/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
 export async function validateConstraints(entityType: string = 'project', entityData: Record<string, unknown> = {}): Promise<ValidationResult> {
   return apiCall<ValidationResult>('/mock/constraints/validate', {
     method: 'POST',

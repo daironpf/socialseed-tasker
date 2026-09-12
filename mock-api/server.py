@@ -334,6 +334,32 @@ def create_constraint(body: ConstraintCreate):
     return {"data": new_constraint}
 
 
+@app.patch("/mock/constraints/{constraint_id}")
+def update_constraint(constraint_id: str, body: ConstraintCreate):
+    data = read_json("constraints.json")
+    constraints = data.get("constraints", [])
+    for i, c in enumerate(constraints):
+        if c["id"] == constraint_id:
+            now = __import__("datetime").datetime.utcnow().isoformat() + "Z"
+            constraints[i] = {
+                **c,
+                "name": body.name,
+                "description": body.description,
+                "category": body.category,
+                "severity": body.severity,
+                "scope": body.scope,
+                "rule": body.rule,
+                "logic": body.logic,
+                "remediation": body.remediation,
+                "auto_fix": body.auto_fix,
+                "updated_at": now,
+            }
+            data["constraints"] = constraints
+            write_json("constraints.json", data)
+            return {"data": constraints[i]}
+    raise HTTPException(status_code=404, detail="Constraint not found")
+
+
 class ValidateRequest(BaseModel):
     entity_type: str = "issue"
     entity_data: dict = {}
