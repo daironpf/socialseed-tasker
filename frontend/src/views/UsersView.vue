@@ -1,6 +1,6 @@
 <template>
   <div class="flex-1 overflow-x-auto">
-    <div v-if="loading" class="flex items-center justify-center h-64">
+    <div v-if="usersStore.loading" class="flex items-center justify-center h-64">
       <LoadingSpinner />
     </div>
     <div v-else class="p-6">
@@ -15,7 +15,7 @@
       <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div class="text-sm text-gray-500 dark:text-gray-400">Total Usuarios</div>
-          <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ users.length }}</div>
+          <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ usersStore.users.length }}</div>
         </div>
         <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div class="text-sm text-gray-500 dark:text-gray-400">Humanos</div>
@@ -30,7 +30,7 @@
       <!-- Users Grid -->
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <div
-          v-for="user in users"
+          v-for="user in usersStore.users"
           :key="user.id"
           class="rounded-xl border border-gray-200 bg-white p-5 transition-shadow hover:shadow-lg dark:border-gray-700 dark:bg-gray-800"
         >
@@ -215,38 +215,25 @@
 import { ref, computed, onMounted } from 'vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import EditAgentModal from '@/components/users/EditAgentModal.vue'
-import { fetchUsers, fetchIssues, updateUser } from '@/api/mockApi'
-import type { Issue } from '@/types'
+import { useUsersStore } from '@/stores/usersStore'
+import { useIssuesStore } from '@/stores/issuesStore'
+import type { User } from '@/types'
 
-interface User {
-  id: string
-  username: string
-  email: string
-  role: string
-  type: string
-  avatar: string
-  model?: string
-  skills: string[]
-  issues_assigned: number
-  issues_created: number
-  last_active: string
-  specialization?: string
-}
+const usersStore = useUsersStore()
+const issuesStore = useIssuesStore()
 
-const users = ref<User[]>([])
-const loading = ref(true)
 const showIssuesModal = ref(false)
 const selectedUser = ref<User | null>(null)
-const modalIssues = ref<Issue[]>([])
+const modalIssues = ref<any[]>([])
 const loadingIssues = ref(false)
 const modalType = ref<'assigned' | 'created' | 'completed'>('assigned')
 
 const showEditModal = ref(false)
 const editingAgent = ref<User | null>(null)
 
-const humans = computed(() => users.value.filter(u => u.type === 'human'))
-const agents = computed(() => users.value.filter(u => u.type === 'agent'))
-const allIssues = ref<Issue[]>([])
+const humans = computed(() => usersStore.humans)
+const agents = computed(() => usersStore.agents)
+const allIssues = computed(() => issuesStore.issues)
 
 function getUserAssignedCount(userId: string): number {
   return allIssues.value.filter(i => i.assignee === userId && i.status !== 'CLOSED').length
@@ -318,14 +305,15 @@ async function openIssuesModal(user: User, type: 'assigned' | 'created' | 'compl
   
   try {
     if (allIssues.value.length === 0) {
-      allIssues.value = await fetchIssues(1, 200)
+      await issuesStore.fetchIssues(1, 200)
     }
+    const issues = allIssues.value
     if (type === 'assigned') {
-      modalIssues.value = allIssues.value.filter(issue => issue.assignee === user.id && issue.status !== 'CLOSED')
+      modalIssues.value = issues.filter(issue => issue.assignee === user.id && issue.status !== 'CLOSED')
     } else if (type === 'created') {
-      modalIssues.value = allIssues.value.filter(issue => issue.created_by === user.id && issue.status !== 'CLOSED')
+      modalIssues.value = issues.filter(issue => issue.created_by === user.id && issue.status !== 'CLOSED')
     } else {
-      modalIssues.value = allIssues.value.filter(issue => (issue.assignee === user.id || issue.created_by === user.id) && issue.status === 'CLOSED')
+      modalIssues.value = issues.filter(issue => (issue.assignee === user.id || issue.created_by === user.id) && issue.status === 'CLOSED')
     }
   } catch (e) {
     console.error('Failed to fetch issues:', e)
@@ -352,27 +340,11 @@ function closeEditAgent() {
 }
 
 async function saveAgent(updatedAgent: any) {
-  try {
-    await updateUser(updatedAgent.id, updatedAgent)
-    const idx = users.value.findIndex(u => u.id === updatedAgent.id)
-    if (idx !== -1) {
-      users.value[idx] = { ...users.value[idx], ...updatedAgent }
-    }
-  } catch (e) {
-    console.error('Failed to update user:', e)
-  }
+  await usersStore.updateUser(updatedAgent.id, updatedAgent)
   closeEditAgent()
 }
 
 onMounted(async () => {
-  try {
-    const [usersData, issuesData] = await Promise.all([fetchUsers(), fetchIssues(1, 200)])
-    users.value = usersData
-    allIssues.value = issuesData
-  } catch (e) {
-    console.error('Failed to fetch data:', e)
-  } finally {
-    loading.value = false
-  }
+  await Promise.all([usersStore.fetchUsers(), issuesStore.fetchIssues(1, 200)])
 })
 </script>

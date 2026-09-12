@@ -25,19 +25,19 @@
     <!-- Stats -->
     <div class="grid grid-cols-4 gap-4">
       <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-        <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ constraints.length }}</div>
+        <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ store.constraints.length }}</div>
         <div class="text-xs text-gray-500">Total Rules</div>
       </div>
       <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-        <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ hardCount }}</div>
+        <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ store.hardCount }}</div>
         <div class="text-xs text-gray-500">HARD (blocking)</div>
       </div>
       <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-        <div class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ softCount }}</div>
+        <div class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ store.softCount }}</div>
         <div class="text-xs text-gray-500">SOFT (warning)</div>
       </div>
       <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ activeCount }}</div>
+        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ store.activeCount }}</div>
         <div class="text-xs text-gray-500">Active</div>
       </div>
     </div>
@@ -76,9 +76,9 @@
 
     <!-- Validation Results Banner -->
     <div
-      v-if="validationResult"
+      v-if="store.validationResult"
       class="rounded-xl border p-4"
-      :class="validationResult.valid
+      :class="store.validationResult.valid
         ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
         : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20'"
     >
@@ -86,9 +86,9 @@
         <div class="flex items-center gap-3">
           <div
             class="flex h-10 w-10 items-center justify-center rounded-full"
-            :class="validationResult.valid ? 'bg-green-100 dark:bg-green-800' : 'bg-red-100 dark:bg-red-800'"
+            :class="store.validationResult.valid ? 'bg-green-100 dark:bg-green-800' : 'bg-red-100 dark:bg-red-800'"
           >
-            <svg v-if="validationResult.valid" class="h-5 w-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg v-if="store.validationResult.valid" class="h-5 w-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
             <svg v-else class="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -96,25 +96,25 @@
             </svg>
           </div>
           <div>
-            <h3 class="font-semibold" :class="validationResult.valid ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'">
-              {{ validationResult.valid ? 'All constraints passed' : 'Constraint violations detected' }}
+            <h3 class="font-semibold" :class="store.validationResult.valid ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'">
+              {{ store.validationResult.valid ? 'All constraints passed' : 'Constraint violations detected' }}
             </h3>
-            <p class="text-sm" :class="validationResult.valid ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
-              Checked {{ validationResult.checked_constraints }} active constraints
-              <span v-if="!validationResult.valid"> — {{ validationResult.hard_violations }} hard, {{ validationResult.soft_violations }} soft violations</span>
+            <p class="text-sm" :class="store.validationResult.valid ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+              Checked {{ store.validationResult.checked_constraints }} active constraints
+              <span v-if="!store.validationResult.valid"> — {{ store.validationResult.hard_violations }} hard, {{ store.validationResult.soft_violations }} soft violations</span>
             </p>
           </div>
         </div>
         <button
           class="text-gray-400 hover:text-gray-600"
-          @click="validationResult = null"
+          @click="store.validationResult = null"
         >
           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
       </div>
-      <div v-if="validationResult.violations.length > 0" class="mt-4 space-y-2">
+      <div v-if="store.validationResult.violations.length > 0" class="mt-4 space-y-2">
         <div
-          v-for="(v, idx) in validationResult.violations"
+          v-for="(v, idx) in store.validationResult.violations"
           :key="idx"
           class="flex items-start gap-3 rounded-lg border p-3"
           :class="v.severity === 'HARD'
@@ -362,17 +362,17 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { fetchConstraints as apiFetchConstraints, createConstraint as apiCreateConstraint, validateConstraints as apiValidateConstraints } from '@/api/mockApi'
+import { useConstraintsStore } from '@/stores/constraintsStore'
 import type { Constraint, ConstraintCategory, ConstraintSeverity } from '@/types'
 
-const constraints = ref<Constraint[]>([])
+const store = useConstraintsStore()
+
 const search = ref('')
 const filterCategory = ref('')
 const filterSeverity = ref('')
 const selectedConstraint = ref<Constraint | null>(null)
 const showModal = ref(false)
 const editingConstraint = ref<Constraint | null>(null)
-const validationResult = ref<any>(null)
 
 const categories: ConstraintCategory[] = ['ARCHITECTURE', 'TECHNOLOGY', 'NAMING', 'PATTERNS', 'DEPENDENCIES']
 
@@ -387,12 +387,8 @@ const form = ref({
   auto_fix: false,
 })
 
-const hardCount = computed(() => constraints.value.filter(c => c.severity === 'HARD').length)
-const softCount = computed(() => constraints.value.filter(c => c.severity === 'SOFT').length)
-const activeCount = computed(() => constraints.value.filter(c => c.is_active).length)
-
 const filteredConstraints = computed(() => {
-  let result = constraints.value
+  let result = store.constraints
   if (search.value) {
     const q = search.value.toLowerCase()
     result = result.filter(c => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q) || c.description.toLowerCase().includes(q))
@@ -444,34 +440,23 @@ function openEditModal(c: Constraint) {
 
 function closeModal() { showModal.value = false; editingConstraint.value = null }
 
-async function loadConstraints() {
-  try {
-    constraints.value = await apiFetchConstraints()
-  } catch (e) {
-    console.error('Failed to load constraints:', e)
-  }
-}
-
 async function saveConstraint() {
   if (!form.value.name) return
-  try {
-    if (editingConstraint.value) {
-      constraints.value = constraints.value.map(c =>
-        c.id === editingConstraint.value!.id ? { ...c, ...form.value, updated_at: new Date().toISOString() } : c
-      )
-    } else {
-      const created = await apiCreateConstraint(form.value)
-      if (created) constraints.value.push(created)
+  if (editingConstraint.value) {
+    // Edit locally for now (no PATCH endpoint for constraints yet)
+    const idx = store.constraints.findIndex(c => c.id === editingConstraint.value!.id)
+    if (idx !== -1) {
+      store.constraints[idx] = { ...store.constraints[idx], ...form.value, updated_at: new Date().toISOString() }
     }
-  } catch (e) { console.error('Save failed:', e) }
+  } else {
+    await store.createConstraint(form.value)
+  }
   closeModal()
 }
 
 async function runValidation() {
-  try {
-    validationResult.value = await apiValidateConstraints('project', {})
-  } catch (e) { console.error('Validation failed:', e) }
+  await store.validateConstraints('project', {})
 }
 
-onMounted(loadConstraints)
+onMounted(() => store.fetchConstraints())
 </script>

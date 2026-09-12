@@ -302,3 +302,19 @@ export interface SyncQueue {
   last_sync_at: string
   github_connected: boolean
 }
+
+export interface User {
+  id: string
+  username: string
+  email: string
+  role: string
+  type: string
+  avatar: string
+  model?: string
+  skills: string[]
+  issues_assigned: number
+  issues_created: number
+  last_active: string
+  specialization?: string
+  is_active?: boolean
+}
