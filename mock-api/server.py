@@ -87,11 +87,15 @@ def update_user(user_id: str, body: UserUpdate):
 
 
 @app.get("/mock/issues")
-def get_issues(page: int = 1, limit: int = 200, status: str = None):
+def get_issues(page: int = 1, limit: int = 200, status: str = None, priority: str = None):
     data = read_json("issues.json")
     issues = data.get("issues", [])
     if status:
-        issues = [i for i in issues if i.get("status") == status]
+        allowed = [s.strip() for s in status.split(",")]
+        issues = [i for i in issues if i.get("status") in allowed]
+    if priority:
+        allowed = [p.strip() for p in priority.split(",")]
+        issues = [i for i in issues if i.get("priority") in allowed]
     return {"data": issues, "meta": {"total": len(issues)}}
 
 
@@ -100,7 +104,8 @@ def create_issue(body: IssueCreate):
     data = read_json("issues.json")
     issues = data.get("issues", [])
 
-    new_id = f"ISS-{len(issues) + 1:03d}"
+    max_id = max((int(i["id"].split("-")[1]) for i in issues if i["id"].startswith("ISS-")), default=0)
+    new_id = f"ISS-{max_id + 1:03d}"
     new_issue = {
         "id": new_id,
         "title": body.title,
@@ -311,7 +316,8 @@ class ConstraintCreate(BaseModel):
 def create_constraint(body: ConstraintCreate):
     data = read_json("constraints.json")
     constraints = data.get("constraints", [])
-    new_id = f"CONST-{len(constraints) + 1:03d}"
+    max_id = max((int(c["id"].split("-")[1]) for c in constraints if c["id"].startswith("CONST-")), default=0)
+    new_id = f"CONST-{max_id + 1:03d}"
     now = __import__("datetime").datetime.utcnow().isoformat() + "Z"
     new_constraint = {
         "id": new_id,

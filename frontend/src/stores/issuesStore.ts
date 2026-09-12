@@ -17,12 +17,12 @@ export const useIssuesStore = defineStore('issues', () => {
     issues.value.filter((i) => i.status === 'BLOCKED' || i.status === 'OPEN').length,
   )
 
-  async function fetchIssues(page = 1, limit = 50, filters?: { status?: string; component?: string; project?: string }) {
+  async function fetchIssues(page = 1, limit = 50, filters?: { status?: string; component?: string; project?: string; priority?: string }) {
     loading.value = true
     error.value = null
     console.log('[IssuesStore] Fetching issues page:', page, 'filters:', filters)
     try {
-      const result = await api.fetchIssues(page, limit, filters?.status, filters?.component, filters?.project)
+      const result = await api.fetchIssues(page, limit, filters?.status, filters?.component, filters?.project, filters?.priority)
       issues.value = Array.isArray(result) ? result : []
     } catch (e) {
       console.error('[IssuesStore] Fetch failed:', e)

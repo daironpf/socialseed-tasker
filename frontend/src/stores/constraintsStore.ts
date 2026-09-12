@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import * as api from '@/api/mockApi'
+import * as api from '@/api/constraintsApi'
 import type { Constraint, ConstraintCreateRequest, ConstraintCategory, ConstraintSeverity, ValidationResult } from '@/types'
 
 export const useConstraintsStore = defineStore('constraints', () => {

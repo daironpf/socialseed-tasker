@@ -13,11 +13,13 @@ export async function fetchIssues(
   status?: string,
   component?: string,
   project?: string,
+  priority?: string,
 ): Promise<Issue[]> {
   const params: Record<string, string | number> = { page, limit }
   if (status) params.status = status
   if (component) params.component = component
   if (project) params.project = project
+  if (priority) params.priority = priority
   const { data } = await client.get<APIResponse<PaginatedResponse<Issue>>>('/issues', { params })
   // Handle both paginated and non-paginated responses
   const responseData = data.data

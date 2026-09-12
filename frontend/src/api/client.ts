@@ -26,7 +26,7 @@ const mockClient = {
     
     // Route to appropriate mock handler
     if (url === '/issues') {
-      const data = await mockApi.fetchIssues(params.page, params.limit, params.status, params.component, params.project)
+      const data = await mockApi.fetchIssues(params.page, params.limit, params.status, params.component, params.project, params.priority)
       return { data: { data, meta: { total: data.length } } }
     }
     if (url.match(/\/issues\/[^/]+$/)) {
@@ -59,6 +59,13 @@ const mockClient = {
       const data = await mockApi.fetchUsers()
       return { data: { data } }
     }
+    if (url === '/constraints') {
+      const data = await mockApi.fetchConstraints()
+      return { data: { data } }
+    }
+    if (url === '/analysis/root-cause' || url === '/test-failures' || url.match(/\/analysis\/impact\/[^/]+$/)) {
+      return { data: { data: null } }
+    }
     
     return { data: { data: null } }
   },
@@ -80,7 +87,31 @@ const mockClient = {
       const data = await mockApi.createPolicy(body)
       return { data: { data } }
     }
+    if (url === '/constraints') {
+      const data = await mockApi.createConstraint(body)
+      return { data: { data } }
+    }
+    if (url === '/constraints/validate') {
+      const data = await mockApi.validateConstraints(body.entity_type, body.entity_data)
+      return { data: { data } }
+    }
+    if (url === '/analysis/root-cause') {
+      const data = await mockApi.analyzeRootCause(body)
+      return { data: { data } }
+    }
+    if (url === '/test-failures') {
+      const data = await mockApi.fetchTestFailures()
+      return { data: { data } }
+    }
     
+    return { data: { data: null } }
+  },
+  put: async (url: string, body?: any) => {
+    if (url.match(/\/users\/[^/]+$/)) {
+      const id = url.split('/').pop()!
+      const data = await mockApi.updateUser(id, body)
+      return { data: { data } }
+    }
     return { data: { data: null } }
   },
   patch: async (url: string, body?: any) => {

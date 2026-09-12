@@ -74,6 +74,7 @@ export const useUiStore = defineStore('ui', () => {
   function getBackendFilters() {
     return {
       status: filters.value.status.length > 0 ? filters.value.status.join(',') : undefined,
+      priority: filters.value.priority.length > 0 ? filters.value.priority.join(',') : undefined,
       component: filters.value.component || undefined,
       project: filters.value.project || undefined,
     }

@@ -22,3 +22,7 @@ export async function createPolicy(policy: PolicyCreateRequest): Promise<Policy>
   const { data } = await client.post<APIResponse<Policy>>('/policies', policy)
   return data.data!
 }
+
+export async function deletePolicy(id: string): Promise<void> {
+  await client.delete(`/policies/${id}`)
+}

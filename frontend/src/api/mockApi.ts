@@ -24,9 +24,11 @@ export async function fetchIssues(
   status?: string,
   _component?: string,
   _project?: string,
+  priority?: string,
 ): Promise<Issue[]> {
   let url = `/mock/issues?page=${page}&limit=${limit}`
   if (status) url += `&status=${status}`
+  if (priority) url += `&priority=${priority}`
   return apiCall<Issue[]>(url)
 }
 

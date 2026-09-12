@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { analyzeImpact as apiAnalyzeImpact, analyzeRootCause as apiAnalyzeRootCause, fetchTestFailures as apiFetchTestFailures } from '@/api/mockApi'
+import * as api from '@/api/analysisApi'
 import type { ImpactAnalysis, CausalLink, TestFailure } from '@/types'
 
 export const useAnalysisStore = defineStore('analysis', () => {
@@ -16,7 +16,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     error.value = null
     impactResult.value = null
     try {
-      impactResult.value = await apiAnalyzeImpact(issueId)
+      impactResult.value = await api.analyzeImpact(issueId)
       return impactResult.value
     } catch (e) {
       error.value = (e as Error).message
@@ -36,7 +36,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     error.value = null
     rootCauseResults.value = []
     try {
-      rootCauseResults.value = await apiAnalyzeRootCause(params)
+      rootCauseResults.value = await api.analyzeRootCause(params)
       return rootCauseResults.value
     } catch (e) {
       error.value = (e as Error).message
@@ -48,7 +48,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
   async function fetchTestFailures(): Promise<TestFailure[]> {
     try {
-      testFailures.value = await apiFetchTestFailures()
+      testFailures.value = await api.fetchTestFailures()
       return testFailures.value
     } catch (e) {
       error.value = (e as Error).message
