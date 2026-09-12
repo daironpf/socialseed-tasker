@@ -8,53 +8,53 @@
         @change="analyze"
       >
         <option value="">Select an issue...</option>
-        <option v-for="issue in issues" :key="issue.id" :value="issue.id">
+        <option v-for="issue in issuesStore.issues" :key="issue.id" :value="issue.id">
           {{ issue.id }} - {{ issue.title }}
         </option>
       </select>
       <button
         v-if="selectedIssueId"
-        :disabled="loading"
+        :disabled="analysisStore.loadingImpact"
         class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         @click="analyze"
       >
-        {{ loading ? 'Analyzing...' : 'Analyze' }}
+        {{ analysisStore.loadingImpact ? 'Analyzing...' : 'Analyze' }}
       </button>
     </div>
 
-    <div v-if="loading" class="flex items-center justify-center py-12">
+    <div v-if="analysisStore.loadingImpact" class="flex items-center justify-center py-12">
       <div class="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
       <span class="ml-3 text-sm text-gray-500">Running BFS traversal...</span>
     </div>
 
-    <div v-else-if="result" class="space-y-6">
+    <div v-else-if="analysisStore.impactResult" class="space-y-6">
       <div class="flex items-center gap-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ result.issue_id }} — {{ result.issue_title }}
+          {{ analysisStore.impactResult.issue_id }} — {{ analysisStore.impactResult.issue_title }}
         </h3>
         <span
           class="rounded-full px-3 py-1 text-xs font-bold"
-          :class="riskBadgeClass(result.risk_level)"
+          :class="riskBadgeClass(analysisStore.impactResult.risk_level)"
         >
-          {{ result.risk_level }}
+          {{ analysisStore.impactResult.risk_level }}
         </span>
       </div>
 
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
-          <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ result.total_affected }}</div>
+          <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ analysisStore.impactResult.total_affected }}</div>
           <div class="text-xs text-gray-500">Total Affected</div>
         </div>
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
-          <div class="text-2xl font-bold text-blue-600">{{ result.directly_affected.length }}</div>
+          <div class="text-2xl font-bold text-blue-600">{{ analysisStore.impactResult.directly_affected.length }}</div>
           <div class="text-xs text-gray-500">Direct Dependencies</div>
         </div>
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
-          <div class="text-2xl font-bold text-amber-600">{{ result.transitively_affected.length }}</div>
+          <div class="text-2xl font-bold text-amber-600">{{ analysisStore.impactResult.transitively_affected.length }}</div>
           <div class="text-xs text-gray-500">Transitive</div>
         </div>
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
-          <div class="text-2xl font-bold text-red-600">{{ result.blocked_issues.length }}</div>
+          <div class="text-2xl font-bold text-red-600">{{ analysisStore.impactResult.blocked_issues.length }}</div>
           <div class="text-xs text-gray-500">Cascade Blocked</div>
         </div>
       </div>
@@ -62,22 +62,22 @@
       <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
         <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Dependency Graph (BFS Traversal)</h4>
         <ImpactSvgTree
-          :root-id="result.issue_id"
-          :root-title="result.issue_title"
-          :root-status="result.issue_status"
-          :direct-deps="result.directly_affected.map(d => ({ id: d.id, title: d.title, status: d.status, level: 1 }))"
-          :transitive-deps="result.transitively_affected.map(t => ({ id: t.id, title: t.title, status: t.status, level: t.level || 2 }))"
+          :root-id="analysisStore.impactResult.issue_id"
+          :root-title="analysisStore.impactResult.issue_title"
+          :root-status="analysisStore.impactResult.issue_status"
+          :direct-deps="analysisStore.impactResult.directly_affected.map(d => ({ id: d.id, title: d.title, status: d.status, level: 1 }))"
+          :transitive-deps="analysisStore.impactResult.transitively_affected.map(t => ({ id: t.id, title: t.title, status: t.status, level: t.level || 2 }))"
           @select-issue="onSelectIssue"
         />
       </div>
 
-      <div v-if="result.directly_affected.length" class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <div v-if="analysisStore.impactResult.directly_affected.length" class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
         <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
           Direct Dependencies (Distance 1)
         </h4>
         <div class="space-y-2">
           <div
-            v-for="dep in result.directly_affected"
+            v-for="dep in analysisStore.impactResult.directly_affected"
             :key="dep.id"
             class="flex items-center justify-between rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-3 py-2"
           >
@@ -95,13 +95,13 @@
         </div>
       </div>
 
-      <div v-if="result.transitively_affected.length" class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <div v-if="analysisStore.impactResult.transitively_affected.length" class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
         <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
           Transitive Dependencies (Distance 2+)
         </h4>
         <div class="space-y-2">
           <div
-            v-for="dep in result.transitively_affected"
+            v-for="dep in analysisStore.impactResult.transitively_affected"
             :key="dep.id"
             class="flex items-center justify-between rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-3 py-2"
           >
@@ -122,13 +122,13 @@
         </div>
       </div>
 
-      <div v-if="result.blocked_issues.length" class="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10 p-4">
+      <div v-if="analysisStore.impactResult.blocked_issues.length" class="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10 p-4">
         <h4 class="mb-3 text-sm font-semibold text-red-700 dark:text-red-400">
           Cascade Blocked Issues
         </h4>
         <div class="space-y-2">
           <div
-            v-for="blocked in result.blocked_issues"
+            v-for="blocked in analysisStore.impactResult.blocked_issues"
             :key="blocked.id"
             class="flex items-center justify-between rounded-md border border-red-200 dark:border-red-800 bg-white dark:bg-gray-800 px-3 py-2"
           >
@@ -149,11 +149,11 @@
         </div>
       </div>
 
-      <div v-if="result.affected_components.length" class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <div v-if="analysisStore.impactResult.affected_components.length" class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
         <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Affected Components</h4>
         <div class="flex flex-wrap gap-2">
           <span
-            v-for="comp in result.affected_components"
+            v-for="comp in analysisStore.impactResult.affected_components"
             :key="comp"
             class="rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
           >
@@ -174,30 +174,22 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { fetchIssues, analyzeImpact } from '@/api/mockApi'
-import type { Issue, ImpactAnalysis } from '@/types'
+import { useAnalysisStore } from '@/stores/analysisStore'
+import { useIssuesStore } from '@/stores/issuesStore'
 import ImpactSvgTree from './ImpactSvgTree.vue'
 
-const issues = ref<Issue[]>([])
-const selectedIssueId = ref('')
-const loading = ref(false)
-const result = ref<ImpactAnalysis | null>(null)
+const analysisStore = useAnalysisStore()
+const issuesStore = useIssuesStore()
 
-onMounted(async () => {
-  issues.value = await fetchIssues(1, 200)
+const selectedIssueId = ref('')
+
+onMounted(() => {
+  issuesStore.fetchIssues(1, 200)
 })
 
 async function analyze() {
   if (!selectedIssueId.value) return
-  loading.value = true
-  result.value = null
-  try {
-    result.value = await analyzeImpact(selectedIssueId.value)
-  } catch (e) {
-    console.error('Impact analysis failed:', e)
-  } finally {
-    loading.value = false
-  }
+  await analysisStore.analyzeImpact(selectedIssueId.value)
 }
 
 function onSelectIssue(id: string) {

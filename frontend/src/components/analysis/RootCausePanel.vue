@@ -20,7 +20,7 @@
             class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           >
             <option value="">Any component</option>
-            <option v-for="comp in components" :key="comp.id" :value="comp.name">{{ comp.name }}</option>
+            <option v-for="comp in compStore.components" :key="comp.id" :value="comp.name">{{ comp.name }}</option>
           </select>
         </div>
       </div>
@@ -54,14 +54,14 @@
 
       <div class="mt-4 flex gap-3">
         <button
-          :disabled="!form.test_name || !form.error_message || analyzing"
+          :disabled="!form.test_name || !form.error_message || analysisStore.loadingRootCause"
           class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
           @click="analyze"
         >
-          {{ analyzing ? 'Analyzing...' : 'Find Root Cause' }}
+          {{ analysisStore.loadingRootCause ? 'Analyzing...' : 'Find Root Cause' }}
         </button>
         <button
-          v-if="results.length"
+          v-if="analysisStore.rootCauseResults.length"
           class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
           @click="loadPreset"
         >
@@ -70,18 +70,18 @@
       </div>
     </div>
 
-    <div v-if="analyzing" class="flex items-center justify-center py-12">
+    <div v-if="analysisStore.loadingRootCause" class="flex items-center justify-center py-12">
       <div class="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
       <span class="ml-3 text-sm text-gray-500">Searching for root causes...</span>
     </div>
 
-    <div v-else-if="results.length" class="space-y-4">
+    <div v-else-if="analysisStore.rootCauseResults.length" class="space-y-4">
       <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-        Candidate Root Causes ({{ results.length }})
+        Candidate Root Causes ({{ analysisStore.rootCauseResults.length }})
       </h4>
 
       <div
-        v-for="(link, idx) in results"
+        v-for="(link, idx) in analysisStore.rootCauseResults"
         :key="link.issue_id"
         class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4"
       >
@@ -140,7 +140,7 @@
       </div>
     </div>
 
-    <div v-else-if="!analyzing && searched" class="flex flex-col items-center justify-center py-12 text-gray-400">
+    <div v-else-if="!analysisStore.loadingRootCause && searched" class="flex flex-col items-center justify-center py-12 text-gray-400">
       <svg class="mb-3 h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
@@ -151,12 +151,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { fetchComponents, analyzeRootCause, fetchTestFailures } from '@/api/mockApi'
-import type { Component, CausalLink } from '@/types'
+import { useAnalysisStore } from '@/stores/analysisStore'
+import { useComponentsStore } from '@/stores/componentsStore'
 
-const components = ref<Component[]>([])
-const results = ref<CausalLink[]>([])
-const analyzing = ref(false)
+const analysisStore = useAnalysisStore()
+const compStore = useComponentsStore()
+
 const searched = ref(false)
 const presetIndex = ref(0)
 
@@ -172,8 +172,8 @@ const form = ref({
   labels: [] as string[],
 })
 
-onMounted(async () => {
-  components.value = await fetchComponents()
+onMounted(() => {
+  compStore.fetchComponents()
 })
 
 function toggleLabel(label: string) {
@@ -184,36 +184,24 @@ function toggleLabel(label: string) {
 
 async function analyze() {
   if (!form.value.test_name || !form.value.error_message) return
-  analyzing.value = true
   searched.value = true
-  results.value = []
-  try {
-    results.value = await analyzeRootCause({
-      test_name: form.value.test_name,
-      error_message: form.value.error_message,
-      component: form.value.component || undefined,
-      labels: form.value.labels.length ? form.value.labels : undefined,
-    })
-  } catch (e) {
-    console.error('Root cause analysis failed:', e)
-  } finally {
-    analyzing.value = false
-  }
+  await analysisStore.analyzeRootCause({
+    test_name: form.value.test_name,
+    error_message: form.value.error_message,
+    component: form.value.component || undefined,
+    labels: form.value.labels.length ? form.value.labels : undefined,
+  })
 }
 
 async function loadPreset() {
-  try {
-    const failures = await fetchTestFailures()
-    if (failures.length) {
-      const f = failures[presetIndex.value % failures.length]
-      form.value.test_name = f.test_name
-      form.value.error_message = f.error_message
-      form.value.component = f.component
-      form.value.labels = [...f.labels]
-      presetIndex.value++
-    }
-  } catch (e) {
-    console.error('Failed to load presets:', e)
+  const failures = await analysisStore.fetchTestFailures()
+  if (failures.length) {
+    const f = failures[presetIndex.value % failures.length]
+    form.value.test_name = f.test_name
+    form.value.error_message = f.error_message
+    form.value.component = f.component
+    form.value.labels = [...f.labels]
+    presetIndex.value++
   }
 }
 
