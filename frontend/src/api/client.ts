@@ -157,6 +157,11 @@ const mockClient = {
       const data = await mockApi.updateConstraint(id, body)
       return { data: { data } }
     }
+    if (url.match(/\/policies\/[^/]+$/)) {
+      const id = url.split('/').pop()!
+      const data = await mockApi.updatePolicy(id, body)
+      return { data: { data } }
+    }
     
     return { data: { data: null } }
   },

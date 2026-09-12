@@ -114,6 +114,13 @@ export async function deletePolicy(id: string): Promise<void> {
   await apiCall(`/mock/policies/${id}`, { method: 'DELETE' })
 }
 
+export async function updatePolicy(id: string, body: Partial<Policy>): Promise<Policy> {
+  return apiCall<Policy>(`/mock/policies/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
 // Users API
 export async function fetchUsers() {
   return apiCall<any[]>('/mock/users')

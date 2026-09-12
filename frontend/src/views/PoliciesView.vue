@@ -55,12 +55,23 @@
           <h3 class="font-medium text-gray-900 dark:text-white truncate pr-2" :title="policy.name">
             {{ policy.name }}
           </h3>
-          <span 
-            class="inline-flex flex-shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-            :class="policy.is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'"
-          >
-            {{ policy.is_active ? 'Active' : 'Inactive' }}
-          </span>
+          <div class="flex items-center gap-2">
+            <span 
+              class="inline-flex flex-shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+              :class="policy.is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'"
+            >
+              {{ policy.is_active ? 'Active' : 'Inactive' }}
+            </span>
+            <button
+              class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              @click="openEditModal(policy)"
+              title="Edit"
+            >
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+          </div>
         </div>
         
         <div class="p-5 flex-1 flex flex-col">
@@ -166,12 +177,106 @@
         </form>
       </div>
     </div>
+
+    <!-- Edit Policy Modal -->
+    <div
+      v-if="showEditModal"
+      class="fixed inset-0 z-40 bg-black/50 flex items-center justify-center"
+      @click.self="showEditModal = false"
+    >
+      <div class="w-full max-w-md rounded-lg bg-white shadow-xl p-6 dark:bg-gray-800">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Editar Policy
+        </h3>
+        <form @submit.prevent="submitEdit" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
+            <input 
+              v-model="editForm.name" 
+              required 
+              placeholder="ej: no-circular-deps"
+              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" 
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
+            <textarea 
+              v-model="editForm.description" 
+              rows="2"
+              placeholder="Descripción de la política..."
+              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            ></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Regla *</label>
+            <select 
+              v-model="editForm.rule" 
+              required
+              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            >
+              <option value="">Seleccionar regla</option>
+              <option value="no_circular_dependencies">No circular dependencies</option>
+              <option value="max_dependencies">Max dependencies limit</option>
+              <option value="required_labels">Required labels</option>
+              <option value="component_ownership">Component ownership</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nivel</label>
+            <select 
+              v-model="editForm.level" 
+              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            >
+              <option value="SOFT">Soft (advertencia)</option>
+              <option value="HARD">Hard (bloqueante)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Target Scope</label>
+            <input 
+              v-model="editForm.target_scope" 
+              placeholder="ej: project"
+              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" 
+            />
+          </div>
+          <div class="flex items-center gap-2">
+            <input
+              type="checkbox"
+              v-model="editForm.is_active"
+              id="edit-is-active"
+              class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+            />
+            <label for="edit-is-active" class="text-sm font-medium text-gray-700 dark:text-gray-300">Active</label>
+          </div>
+          <div v-if="editError" class="rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+            {{ editError }}
+          </div>
+          <div class="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+              @click="showEditModal = false"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              :disabled="saving"
+              class="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 dark:bg-brand-500 dark:hover:bg-brand-600"
+            >
+              {{ saving ? 'Guardando...' : 'Guardar Cambios' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </main>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { usePoliciesStore } from '@/stores/policiesStore'
+import type { Policy } from '@/types'
 
 const store = usePoliciesStore()
 
@@ -186,6 +291,52 @@ const form = ref({
   level: 'SOFT',
   target_scope: 'project',
 })
+
+const showEditModal = ref(false)
+const saving = ref(false)
+const editError = ref<string | null>(null)
+const editingPolicy = ref<Policy | null>(null)
+
+const editForm = ref({
+  name: '',
+  description: '',
+  rule: '',
+  level: 'SOFT',
+  target_scope: 'project',
+  is_active: true,
+})
+
+function openEditModal(policy: Policy) {
+  editingPolicy.value = policy
+  editForm.value = {
+    name: policy.name,
+    description: policy.description || '',
+    rule: policy.rules?.[0]?.type || '',
+    level: policy.rules?.[0]?.severity || 'SOFT',
+    target_scope: policy.target_scope || 'project',
+    is_active: policy.is_active,
+  }
+  showEditModal.value = true
+}
+
+async function submitEdit() {
+  if (!editingPolicy.value) return
+  saving.value = true
+  editError.value = null
+  const updated = await store.updatePolicy(editingPolicy.value.id, {
+    name: editForm.value.name,
+    description: editForm.value.description,
+    target_scope: editForm.value.target_scope,
+    is_active: editForm.value.is_active,
+  })
+  if (updated) {
+    showEditModal.value = false
+    editingPolicy.value = null
+  } else {
+    editError.value = store.error || 'Failed to update policy'
+  }
+  saving.value = false
+}
 
 async function submitPolicy() {
   creating.value = true

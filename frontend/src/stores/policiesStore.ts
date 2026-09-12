@@ -45,6 +45,18 @@ export const usePoliciesStore = defineStore('policies', () => {
     }
   }
 
+  async function updatePolicy(id: string, body: Partial<{ name: string; description: string; rule: string; level: string; target_scope: string; is_active: boolean }>): Promise<Policy | null> {
+    try {
+      const updated = await api.updatePolicy(id, body)
+      const idx = policies.value.findIndex(p => p.id === id)
+      if (idx !== -1) policies.value[idx] = updated
+      return updated
+    } catch (e) {
+      error.value = (e as Error).message
+      return null
+    }
+  }
+
   return {
     policies,
     loading,
@@ -54,5 +66,6 @@ export const usePoliciesStore = defineStore('policies', () => {
     fetchPolicies,
     createPolicy,
     deletePolicy,
+    updatePolicy,
   }
 })

@@ -304,6 +304,21 @@ def delete_policy(policy_id: str):
     return {"data": None}
 
 
+@app.patch("/mock/policies/{policy_id}")
+def update_policy(policy_id: str, body: dict = Body(...)):
+    data = read_json("policies.json")
+    policies = data.get("policies", [])
+    for p in policies:
+        if p["id"] == policy_id:
+            for key, value in body.items():
+                if key != "id":
+                    p[key] = value
+            p["updated_at"] = datetime.now(timezone.utc).isoformat()
+            write_json("policies.json", data)
+            return {"data": p}
+    raise HTTPException(status_code=404, detail="Policy not found")
+
+
 @app.get("/mock/constraints")
 def get_constraints():
     data = read_json("constraints.json")
