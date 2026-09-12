@@ -21,11 +21,15 @@ const route = useRoute()
 const pageTitle = computed(() => {
   const titles: Record<string, string> = {
     '/board': 'Dashboard',
+    '/system': 'System Dashboard',
     '/kanban': 'Kanban',
     '/list': 'Issues',
     '/graph': 'Grafo de Dependencias',
     '/components': 'Componentes',
     '/policies': 'Políticas',
+    '/constraints': 'Constraints',
+    '/users': 'Usuarios',
+    '/analysis': 'Análisis',
     '/settings': 'Configuración',
   }
   return titles[route.path] || 'Dashboard'
