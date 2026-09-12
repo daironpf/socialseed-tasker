@@ -75,7 +75,7 @@ import { useIssuesStore } from '@/stores/issuesStore'
 import { useComponentsStore } from '@/stores/componentsStore'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
-import type { Issue } from '@/types'
+import type { Issue, IssueUpdateRequest } from '@/types'
 
 const issuesStore = useIssuesStore()
 const componentsStore = useComponentsStore()
@@ -241,7 +241,7 @@ function setLayout(layout: string) {
   buildGraph()
 }
 
-async function onUpdateIssue(id: string, body: Record<string, unknown>) {
+async function onUpdateIssue(id: string, body: IssueUpdateRequest) {
   await issuesStore.updateIssue(id, body)
   await nextTick()
   buildGraph()

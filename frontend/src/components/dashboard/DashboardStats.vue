@@ -38,11 +38,14 @@
 import { computed } from 'vue'
 import StatsCard from './StatsCard.vue'
 import { useIssuesStore } from '@/stores/issuesStore'
+import type { Issue } from '@/types'
+
+const props = defineProps<{ issues?: Issue[] }>()
 
 const issuesStore = useIssuesStore()
 
 const stats = computed(() => {
-  const issues = issuesStore.issues
+  const issues = props.issues ?? issuesStore.issues
   const now = new Date()
   const thisMonth = now.getMonth()
   const thisYear = now.getFullYear()

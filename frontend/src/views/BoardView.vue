@@ -16,7 +16,7 @@
     <div v-else class="flex flex-col h-full">
       <!-- Dashboard Stats -->
       <div class="p-6">
-        <DashboardStats />
+        <DashboardStats :issues="allIssues" />
       </div>
 
       <!-- Project Info Bar -->
@@ -51,19 +51,19 @@
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <!-- Trend Chart -->
           <div class="lg:col-span-2">
-            <TrendChart :issues="issuesStore.issues" />
+            <TrendChart :issues="allIssues" />
           </div>
 
           <!-- Avg Resolution Time -->
           <div class="lg:col-span-1">
-            <AvgResolutionTime :issues="issuesStore.issues" />
+            <AvgResolutionTime :issues="allIssues" />
           </div>
         </div>
 
         <!-- Daily Activity & Status Distribution -->
         <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <DailyActivityChart :issues="issuesStore.issues" />
-          <StatusDistribution :issues="issuesStore.issues" />
+          <DailyActivityChart :issues="allIssues" />
+          <StatusDistribution :issues="allIssues" />
         </div>
       </div>
     </div>
@@ -72,7 +72,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import type { Policy } from '@/types'
+import type { Issue, Policy } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import client from '@/api/client'
 import { fetchPolicies } from '@/api/policiesApi'
@@ -91,6 +91,7 @@ const uiStore = useUiStore()
 
 const currentProject = ref<any>(null)
 const policies = ref<Policy[]>([])
+const allIssues = ref<Issue[]>([])
 
 async function fetchDashboardData() {
   try {
@@ -126,6 +127,8 @@ async function fetchWithFilters() {
 
 onMounted(async () => {
   await componentsStore.fetchComponents()
+  await issuesStore.fetchIssues(1, 500, {})
+  allIssues.value = issuesStore.issues.slice()
   await fetchWithFilters()
   await fetchDashboardData()
 })

@@ -76,8 +76,14 @@ const mockClient = {
       const data = await mockApi.fetchConstraints()
       return { data: { data } }
     }
-    if (url === '/analysis/root-cause' || url === '/test-failures' || url.match(/\/analysis\/impact\/[^/]+$/)) {
-      return { data: { data: null } }
+    if (url === '/test-failures') {
+      const data = await mockApi.fetchTestFailures()
+      return { data: { data } }
+    }
+    if (url.match(/\/analysis\/impact\/[^/]+$/)) {
+      const issueId = url.split('/').pop()!
+      const data = await mockApi.analyzeImpact(issueId)
+      return { data: { data } }
     }
     
     return { data: { data: null } }

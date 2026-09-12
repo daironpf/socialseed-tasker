@@ -270,7 +270,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import type { Issue, AgentLog } from '@/types'
+import type { Issue, IssueUpdateRequest, AgentLog } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { fetchAgentLogs } from '@/api/agentLogsApi'
 import { fetchUsers } from '@/api/usersApi'
@@ -279,7 +279,7 @@ import MarkdownRenderer from '@/components/analysis/MarkdownRenderer.vue'
 const props = defineProps<{ issue: Issue }>()
 const emit = defineEmits<{
   close: []
-  update: [id: string, body: Record<string, unknown>]
+  update: [id: string, body: IssueUpdateRequest]
   delete: [id: string]
   closeIssue: [id: string]
 }>()
@@ -353,13 +353,20 @@ function getIssueTitle(id: string): string {
 }
 
 async function save() {
-  emit('update', props.issue.id, {
+  const body: IssueUpdateRequest = {
     title: title.value,
     description: description.value,
     status: status.value,
     priority: priority.value,
     labels: labels.value,
-  })
+  }
+  if (status.value === 'CLOSED' && props.issue.status !== 'CLOSED') {
+    body.closed_at = new Date().toISOString()
+  }
+  if (status.value !== 'CLOSED' && props.issue.status === 'CLOSED') {
+    body.closed_at = undefined
+  }
+  emit('update', props.issue.id, body)
 }
 
 function confirmDelete() {
