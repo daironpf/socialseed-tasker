@@ -133,6 +133,17 @@ export async function updateUser(userId: string, data: any) {
   })
 }
 
+export async function createUser(data: any) {
+  return apiCall<any>('/mock/users', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteUser(userId: string): Promise<void> {
+  await apiCall(`/mock/users/${userId}`, { method: 'DELETE' })
+}
+
 // Dashboard Stats API
 export async function fetchDashboardStats() {
   return apiCall<any>('/mock/dashboard-stats')

@@ -38,10 +38,23 @@ def write_json(filename: str, data: dict):
 class UserUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[str] = None
+    role: Optional[str] = None
+    type: Optional[str] = None
     model: Optional[str] = None
     specialization: Optional[str] = None
     skills: Optional[list[str]] = None
     avatar: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class UserCreate(BaseModel):
+    username: str
+    email: str
+    role: str = "developer"
+    type: str = "human"
+    avatar: str = "👤"
+    skills: list[str] = []
+    specialization: Optional[str] = None
 
 
 class IssueCreate(BaseModel):
@@ -85,6 +98,41 @@ def update_user(user_id: str, body: UserUpdate):
     data["users"] = users
     write_json("users.json", data)
     return {"data": users[idx]}
+
+
+@app.post("/mock/users")
+def create_user(body: UserCreate):
+    data = read_json("users.json")
+    users = data.get("users", [])
+    new_user = {
+        "id": str(__import__("uuid").uuid4()),
+        "username": body.username,
+        "email": body.email,
+        "role": body.role,
+        "type": body.type,
+        "avatar": body.avatar,
+        "skills": body.skills,
+        "specialization": body.specialization,
+        "issues_assigned": 0,
+        "issues_created": 0,
+        "last_active": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "is_active": True,
+    }
+    users.append(new_user)
+    data["users"] = users
+    write_json("users.json", data)
+    return {"data": new_user}
+
+
+@app.delete("/mock/users/{user_id}")
+def delete_user(user_id: str):
+    data = read_json("users.json")
+    users = data.get("users", [])
+    users = [u for u in users if u["id"] != user_id]
+    data["users"] = users
+    write_json("users.json", data)
+    return {"data": None}
 
 
 @app.get("/mock/issues")

@@ -98,6 +98,10 @@ const mockClient = {
       const data = await mockApi.closeIssue(id)
       return { data: { data } }
     }
+    if (url === '/users') {
+      const data = await mockApi.createUser(body)
+      return { data: { data } }
+    }
     if (url === '/components') {
       const data = await mockApi.createComponent(body)
       return { data: { data } }
@@ -177,6 +181,10 @@ const mockClient = {
     if (url.match(/\/policies\/[^/]+$/)) {
       const id = url.split('/').pop()!
       await mockApi.deletePolicy(id)
+    }
+    if (url.match(/\/users\/[^/]+$/)) {
+      const id = url.split('/').pop()!
+      await mockApi.deleteUser(id)
     }
     
     return { data: {} }

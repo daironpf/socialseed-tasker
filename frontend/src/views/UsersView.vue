@@ -9,6 +9,12 @@
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Usuarios</h1>
           <p class="text-sm text-gray-500 dark:text-gray-400">Team members y agentes IA del proyecto</p>
         </div>
+        <button
+          class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
+          @click="showCreateModal = true"
+        >
+          + Nuevo Usuario
+        </button>
       </div>
 
       <!-- Stats -->
@@ -111,16 +117,38 @@
               </svg>
               Última vez: {{ formatDate(user.last_active) }}
             </div>
-            <button
-              v-if="user.type === 'agent'"
-              @click="openEditAgent(user)"
-              class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-purple-600 dark:hover:bg-gray-700 dark:hover:text-purple-400"
-              title="Editar agente"
-            >
-              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </button>
+            <div class="flex items-center gap-1">
+              <button
+                v-if="user.type === 'agent'"
+                @click="openEditAgent(user)"
+                class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-purple-600 dark:hover:bg-gray-700 dark:hover:text-purple-400"
+                title="Editar agente"
+              >
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button
+                v-if="user.type === 'human'"
+                @click="openEditUser(user)"
+                class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-700 dark:hover:text-blue-400"
+                title="Editar usuario"
+              >
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button
+                v-if="user.type === 'human'"
+                @click="deleteUser(user)"
+                class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
+                title="Eliminar usuario"
+              >
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -208,6 +236,21 @@
       @close="closeEditAgent"
       @save="saveAgent"
     />
+
+    <!-- Edit User Modal -->
+    <EditUserModal
+      :show="showEditUserModal"
+      :user="editingUser"
+      @close="closeEditUser"
+      @save="saveUser"
+    />
+
+    <!-- Create User Modal -->
+    <CreateUserModal
+      :show="showCreateModal"
+      @close="showCreateModal = false"
+      @save="createUser"
+    />
   </div>
 </template>
 
@@ -215,6 +258,8 @@
 import { ref, computed, onMounted } from 'vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import EditAgentModal from '@/components/users/EditAgentModal.vue'
+import EditUserModal from '@/components/users/EditUserModal.vue'
+import CreateUserModal from '@/components/users/CreateUserModal.vue'
 import { useUsersStore } from '@/stores/usersStore'
 import { useIssuesStore } from '@/stores/issuesStore'
 import type { User } from '@/types'
@@ -230,6 +275,11 @@ const modalType = ref<'assigned' | 'created' | 'completed'>('assigned')
 
 const showEditModal = ref(false)
 const editingAgent = ref<User | null>(null)
+
+const showEditUserModal = ref(false)
+const editingUser = ref<User | null>(null)
+
+const showCreateModal = ref(false)
 
 const humans = computed(() => usersStore.humans)
 const agents = computed(() => usersStore.agents)
@@ -342,6 +392,32 @@ function closeEditAgent() {
 async function saveAgent(updatedAgent: any) {
   await usersStore.updateUser(updatedAgent.id, updatedAgent)
   closeEditAgent()
+}
+
+function openEditUser(user: User) {
+  editingUser.value = { ...user }
+  showEditUserModal.value = true
+}
+
+function closeEditUser() {
+  showEditUserModal.value = false
+  editingUser.value = null
+}
+
+async function saveUser(updatedUser: User) {
+  await usersStore.updateUser(updatedUser.id, updatedUser)
+  closeEditUser()
+}
+
+async function deleteUser(user: User) {
+  if (confirm(`¿Eliminar al usuario "${user.username}"?`)) {
+    await usersStore.deleteUser(user.id)
+  }
+}
+
+async function createUser(data: { username: string; email: string; role: string; type: string; avatar: string; skills: string[] }) {
+  await usersStore.createUser(data)
+  showCreateModal.value = false
 }
 
 onMounted(async () => {

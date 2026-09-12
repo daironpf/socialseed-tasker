@@ -36,6 +36,28 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
+  async function createUser(body: api.UserCreateRequest): Promise<User | null> {
+    try {
+      const user = await api.createUser(body)
+      users.value.push(user)
+      return user
+    } catch (e) {
+      error.value = (e as Error).message
+      return null
+    }
+  }
+
+  async function deleteUser(id: string): Promise<boolean> {
+    try {
+      await api.deleteUser(id)
+      users.value = users.value.filter(u => u.id !== id)
+      return true
+    } catch (e) {
+      error.value = (e as Error).message
+      return false
+    }
+  }
+
   return {
     users,
     loading,
@@ -45,5 +67,7 @@ export const useUsersStore = defineStore('users', () => {
     activeAgents,
     fetchUsers,
     updateUser,
+    createUser,
+    deleteUser,
   }
 })
