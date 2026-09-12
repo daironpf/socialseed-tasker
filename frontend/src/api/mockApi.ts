@@ -102,7 +102,14 @@ export async function fetchPolicies(): Promise<Policy[]> {
 }
 
 export async function createPolicy(policy: any): Promise<Policy> {
-  return { id: crypto.randomUUID(), ...policy, is_active: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() } as Policy
+  return apiCall<Policy>('/mock/policies', {
+    method: 'POST',
+    body: JSON.stringify(policy),
+  })
+}
+
+export async function deletePolicy(id: string): Promise<void> {
+  await apiCall(`/mock/policies/${id}`, { method: 'DELETE' })
 }
 
 // Users API

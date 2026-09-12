@@ -15,11 +15,11 @@
       </button>
     </div>
 
-    <div v-if="loading" class="flex justify-center py-12">
+    <div v-if="store.loading" class="flex justify-center py-12">
       <div class="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent"></div>
     </div>
 
-    <div v-else-if="error" class="rounded-md bg-red-50 p-4 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+    <div v-else-if="store.error" class="rounded-md bg-red-50 p-4 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
       <div class="flex">
         <div class="flex-shrink-0">
           <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -28,12 +28,12 @@
         </div>
         <div class="ml-3">
           <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Error loading policies</h3>
-          <div class="mt-2 text-sm text-red-700 dark:text-red-300">{{ error }}</div>
+          <div class="mt-2 text-sm text-red-700 dark:text-red-300">{{ store.error }}</div>
         </div>
       </div>
     </div>
 
-    <div v-else-if="policies.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
+    <div v-else-if="store.policies.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
       <div class="rounded-full bg-gray-100 p-4 dark:bg-gray-800">
         <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -47,7 +47,7 @@
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       <div
-        v-for="policy in policies"
+        v-for="policy in store.policies"
         :key="policy.id"
         class="rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800 flex flex-col"
       >
@@ -171,17 +171,15 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { fetchPolicies, createPolicy, type PolicyCreateRequest } from '@/api/policiesApi'
-import type { Policy } from '@/types'
+import { usePoliciesStore } from '@/stores/policiesStore'
 
-const policies = ref<Policy[]>([])
-const loading = ref(true)
-const error = ref<string | null>(null)
+const store = usePoliciesStore()
+
 const showCreateModal = ref(false)
 const creating = ref(false)
 const createError = ref<string | null>(null)
 
-const form = ref<PolicyCreateRequest>({
+const form = ref({
   name: '',
   description: '',
   rule: '',
@@ -189,36 +187,18 @@ const form = ref<PolicyCreateRequest>({
   target_scope: 'project',
 })
 
-async function loadPolicies() {
-  loading.value = true
-  error.value = null
-  try {
-    policies.value = await fetchPolicies()
-  } catch (err: any) {
-    console.error('Failed to load policies:', err)
-    error.value = err.message || 'Failed to load policies'
-  } finally {
-    loading.value = false
-  }
-}
-
 async function submitPolicy() {
   creating.value = true
   createError.value = null
-  try {
-    await createPolicy(form.value)
+  const policy = await store.createPolicy(form.value)
+  if (policy) {
     showCreateModal.value = false
     form.value = { name: '', description: '', rule: '', level: 'SOFT', target_scope: 'project' }
-    await loadPolicies()
-  } catch (err: any) {
-    console.error('Failed to create policy:', err)
-    createError.value = err.message || 'Failed to create policy'
-  } finally {
-    creating.value = false
+  } else {
+    createError.value = store.error || 'Failed to create policy'
   }
+  creating.value = false
 }
 
-onMounted(() => {
-  loadPolicies()
-})
+onMounted(() => store.fetchPolicies())
 </script>

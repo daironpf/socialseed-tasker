@@ -247,6 +247,48 @@ def get_policies():
     return {"data": data.get("policies", [])}
 
 
+class PolicyCreate(BaseModel):
+    name: str
+    description: str = ""
+    rule: str = ""
+    level: str = "SOFT"
+    target_scope: str = "project"
+
+
+@app.post("/mock/policies")
+def create_policy(body: PolicyCreate):
+    data = read_json("policies.json")
+    policies = data.get("policies", [])
+    now = __import__("datetime").datetime.utcnow().isoformat() + "Z"
+    new_policy = {
+        "id": str(__import__("uuid").uuid4()),
+        "name": body.name,
+        "description": body.description,
+        "rules": [{"type": body.rule}] if body.rule else [],
+        "target_scope": body.target_scope,
+        "logic_definition": "",
+        "remediation_strategy": "",
+        "autofix_template": None,
+        "is_active": True,
+        "created_at": now,
+        "updated_at": now,
+    }
+    policies.append(new_policy)
+    data["policies"] = policies
+    write_json("policies.json", data)
+    return {"data": new_policy}
+
+
+@app.delete("/mock/policies/{policy_id}")
+def delete_policy(policy_id: str):
+    data = read_json("policies.json")
+    policies = data.get("policies", [])
+    policies = [p for p in policies if p["id"] != policy_id]
+    data["policies"] = policies
+    write_json("policies.json", data)
+    return {"data": None}
+
+
 @app.get("/mock/constraints")
 def get_constraints():
     data = read_json("constraints.json")

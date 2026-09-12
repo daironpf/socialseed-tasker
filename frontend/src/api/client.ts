@@ -106,6 +106,10 @@ const mockClient = {
       const id = url.split('/').pop()!
       await mockApi.deleteComponent(id)
     }
+    if (url.match(/\/policies\/[^/]+$/)) {
+      const id = url.split('/').pop()!
+      await mockApi.deletePolicy(id)
+    }
     
     return { data: {} }
   },
