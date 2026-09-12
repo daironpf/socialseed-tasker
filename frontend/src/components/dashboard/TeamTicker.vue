@@ -43,7 +43,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { fetchUsers } from '@/api/mockApi'
+import { fetchUsers } from '@/api/usersApi'
 
 interface User {
   id: string

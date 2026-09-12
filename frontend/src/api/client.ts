@@ -29,6 +29,19 @@ const mockClient = {
       const data = await mockApi.fetchIssues(params.page, params.limit, params.status, params.component, params.project, params.priority)
       return { data: { data, meta: { total: data.length } } }
     }
+    if (url.match(/\/issues\/[^/]+\/agent-logs$/)) {
+      const issueId = url.split('/')[2]
+      const data = await mockApi.fetchAgentLogs(issueId)
+      return { data: { data } }
+    }
+    if (url === '/health') {
+      const data = await mockApi.fetchSystemHealth()
+      return { data: { data } }
+    }
+    if (url === '/sync-queue') {
+      const data = await mockApi.fetchSyncQueue()
+      return { data: { data } }
+    }
     if (url.match(/\/issues\/[^/]+$/)) {
       const id = url.split('/').pop()!
       const data = await mockApi.fetchIssue(id)
@@ -89,6 +102,14 @@ const mockClient = {
     }
     if (url === '/constraints') {
       const data = await mockApi.createConstraint(body)
+      return { data: { data } }
+    }
+    if (url === '/admin/seed') {
+      const data = await mockApi.adminSeed(body?.seed_type, body?.reset_first)
+      return { data: { data } }
+    }
+    if (url === '/admin/reset') {
+      const data = await mockApi.adminReset()
       return { data: { data } }
     }
     if (url === '/constraints/validate') {

@@ -278,7 +278,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { fetchSystemHealth, fetchSyncQueue, adminSeed, adminReset } from '@/api/mockApi'
+import { fetchSystemHealth, fetchSyncQueue, adminSeed, adminReset } from '@/api/systemApi'
 import type { SystemHealth, SyncQueue } from '@/types'
 
 const health = ref<SystemHealth | null>(null)

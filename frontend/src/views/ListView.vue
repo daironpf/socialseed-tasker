@@ -248,7 +248,7 @@ onMounted(async () => {
 })
 
 watch(
-  () => uiStore.filters,
+  () => [uiStore.filters.status, uiStore.filters.priority, uiStore.filters.component, uiStore.filters.project],
   () => {
     fetchWithFilters()
   },

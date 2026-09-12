@@ -272,7 +272,8 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import type { Issue, AgentLog } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
-import { fetchAgentLogs, fetchUsers } from '@/api/mockApi'
+import { fetchAgentLogs } from '@/api/agentLogsApi'
+import { fetchUsers } from '@/api/usersApi'
 import MarkdownRenderer from '@/components/analysis/MarkdownRenderer.vue'
 
 const props = defineProps<{ issue: Issue }>()
