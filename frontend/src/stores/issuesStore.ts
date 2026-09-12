@@ -14,7 +14,7 @@ export const useIssuesStore = defineStore('issues', () => {
   )
 
   const blockedIssuesCount = computed(() =>
-    issues.value.filter((i) => i.status === 'BLOCKED' || i.status === 'OPEN').length,
+    issues.value.filter((i) => i.status === 'BLOCKED').length,
   )
 
   async function fetchIssues(page = 1, limit = 50, filters?: { status?: string; component?: string; project?: string; priority?: string }) {
