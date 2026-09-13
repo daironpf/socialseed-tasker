@@ -229,6 +229,14 @@
         <div v-if="!progressLogs.length && !fileLogs.length && !debtLogs.length" class="flex flex-col items-center justify-center py-12 text-gray-400">
           <p class="text-sm">{{ t('issues.noProgressData') }}</p>
         </div>
+
+        <TokenMetrics
+          v-if="agentLogs.length > 0"
+          model="claude-3.5-sonnet"
+          :prompt-tokens="estimatedPromptTokens"
+          :completion-tokens="estimatedCompletionTokens"
+          :budget="5.00"
+        />
       </template>
     </div>
 
@@ -272,6 +280,7 @@ import RichTextEditor from '@/components/ui/RichTextEditor.vue'
 import DiffViewer from '@/components/ui/DiffViewer.vue'
 import HITLApprovalBanner from '@/components/ui/HITLApprovalBanner.vue'
 import AgentLogStream from '@/components/ui/AgentLogStream.vue'
+import TokenMetrics from '@/components/ui/TokenMetrics.vue'
 import { useAgentStream } from '@/composables/useAgentStream'
 
 const { t } = useI18n()
@@ -327,6 +336,17 @@ const creatorUser = computed(() => {
 const progressLogs = computed(() => agentLogs.value.filter(l => l.type === 'progress'))
 const fileLogs = computed(() => agentLogs.value.filter(l => l.type === 'files'))
 const debtLogs = computed(() => agentLogs.value.filter(l => l.type === 'debt'))
+
+const estimatedPromptTokens = computed(() => {
+  return agentLogs.value.reduce((sum, log) => {
+    const text = log.content_markdown || ''
+    return sum + Math.ceil(text.length / 4)
+  }, 0)
+})
+
+const estimatedCompletionTokens = computed(() => {
+  return Math.ceil(estimatedPromptTokens.value * 0.35)
+})
 
 async function loadLogs() {
   logsLoading.value = true

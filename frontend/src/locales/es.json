@@ -443,5 +443,19 @@
     "noLogs": "Sin logs del agente",
     "connecting": "Estableciendo conexion...",
     "scrollToBottom": "Ir al final"
+  },
+  "tokens": {
+    "title": "Consumo de Tokens",
+    "prompt": "Prompt",
+    "completion": "Completion",
+    "cost": "Costo",
+    "model": "Modelo",
+    "provider": "Proveedor",
+    "budget": "Presupuesto",
+    "overBudget": "Excede Presupuesto",
+    "chartTitle": "Consumo de Tokens por Dia",
+    "totalCost": "Costo Total",
+    "totalTokens": "Tokens Totales",
+    "noData": "Sin datos de uso de tokens"
   }
 }

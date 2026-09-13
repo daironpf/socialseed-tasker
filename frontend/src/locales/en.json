@@ -443,5 +443,19 @@
     "noLogs": "No agent logs yet",
     "connecting": "Establishing connection...",
     "scrollToBottom": "Scroll to latest"
+  },
+  "tokens": {
+    "title": "Token Consumption",
+    "prompt": "Prompt",
+    "completion": "Completion",
+    "cost": "Cost",
+    "model": "Model",
+    "provider": "Provider",
+    "budget": "Budget",
+    "overBudget": "Over Budget",
+    "chartTitle": "Token Consumption by Day",
+    "totalCost": "Total Cost",
+    "totalTokens": "Total Tokens",
+    "noData": "No token usage data"
   }
 }

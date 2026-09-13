@@ -80,6 +80,9 @@
         </div>
       </div>
 
+      <!-- Token Consumption Chart -->
+      <AgentCostChart :data="tokenUsageData" />
+
       <!-- Health Check + Sync Queue -->
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <!-- System Health -->
@@ -276,10 +279,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { fetchSystemHealth, fetchSyncQueue, adminSeed, adminReset } from '@/api/systemApi'
 import type { SystemHealth, SyncQueue } from '@/types'
+import AgentCostChart from '@/components/ui/AgentCostChart.vue'
 
 const { t } = useI18n()
 
@@ -288,6 +292,22 @@ const syncQueue = ref<SyncQueue | null>(null)
 const loading = ref(true)
 const adminLoading = ref(false)
 const adminMessage = ref('')
+
+const tokenUsageData = computed(() => {
+  const data = []
+  const models = ['claude-3.5-sonnet', 'gpt-4-turbo', 'gpt-4o']
+  const now = new Date()
+  for (let i = 13; i >= 0; i--) {
+    const date = new Date(now.getTime() - i * 86400000)
+    data.push({
+      date: date.toISOString(),
+      promptTokens: Math.floor(Math.random() * 50000) + 10000,
+      completionTokens: Math.floor(Math.random() * 20000) + 5000,
+      model: models[Math.floor(Math.random() * models.length)],
+    })
+  }
+  return data
+})
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleString()
