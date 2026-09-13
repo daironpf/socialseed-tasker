@@ -246,6 +246,11 @@
       </template>
     </div>
 
+    <!-- AUDIT TAB -->
+    <div v-if="activeTab === 'audit'" class="p-6">
+      <AuditTrail :entries="auditEntries" />
+    </div>
+
     <!-- ACTIONS -->
     <div class="sticky bottom-0 border-t border-gray-200 bg-white px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
       <div class="flex gap-2">
@@ -290,8 +295,10 @@ import TokenMetrics from '@/components/ui/TokenMetrics.vue'
 import PresenceAvatars from '@/components/ui/PresenceAvatars.vue'
 import TypingIndicator from '@/components/ui/TypingIndicator.vue'
 import ConflictWarning from '@/components/ui/ConflictWarning.vue'
+import AuditTrail from '@/components/ui/AuditTrail.vue'
 import { useAgentStream } from '@/composables/useAgentStream'
 import { usePresence } from '@/composables/usePresence'
+import type { AuditEntry } from '@/types/audit'
 
 const { t } = useI18n()
 
@@ -309,6 +316,7 @@ const tabs = computed(() => [
   { key: 'details', label: t('issues.details') },
   { key: 'reasoning', label: t('issues.aiReasoning') },
   { key: 'progress', label: t('issues.progress') },
+  { key: 'audit', label: t('audit.tab') },
 ])
 const activeTab = ref('details')
 
@@ -333,6 +341,22 @@ const users = ref<any[]>([])
 
 const { status: streamStatus, connect: connectStream, disconnect: disconnectStream } = useAgentStream()
 const { viewers, typingAgents, hasConflict } = usePresence(props.issue.id)
+
+const auditEntries = computed<AuditEntry[]>(() => {
+  const now = Date.now()
+  const h = (hours: number) => new Date(now - hours * 3600000).toISOString()
+  return [
+    { id: 'a1', issueId: props.issue.id, action: 'status', actor: 'alice', actorAvatar: '👩‍💻', actorType: 'human', description: 'Changed status', details: { from: 'OPEN', to: 'IN_PROGRESS' }, timestamp: h(0.5) },
+    { id: 'a2', issueId: props.issue.id, action: 'agent', actor: 'Arch-Bot', actorAvatar: '🏗️', actorType: 'agent', description: 'Started impact analysis', timestamp: h(1) },
+    { id: 'a3', issueId: props.issue.id, action: 'assignment', actor: 'bob', actorAvatar: '👨‍💻', actorType: 'human', description: 'Assigned to alice', details: { from: 'unassigned', to: 'alice' }, timestamp: h(2) },
+    { id: 'a4', issueId: props.issue.id, action: 'priority', actor: 'alice', actorAvatar: '👩‍💻', actorType: 'human', description: 'Changed priority', details: { from: 'MEDIUM', to: 'HIGH' }, timestamp: h(3) },
+    { id: 'a5', issueId: props.issue.id, action: 'hitl', actor: 'alice', actorAvatar: '👩‍💻', actorType: 'human', description: 'Approved agent action: DELETE on users table', timestamp: h(5) },
+    { id: 'a6', issueId: props.issue.id, action: 'system', actor: 'System', actorAvatar: '', actorType: 'system', description: 'Constraint violation detected: rate limit exceeded', timestamp: h(8) },
+    { id: 'a7', issueId: props.issue.id, action: 'label', actor: 'bob', actorAvatar: '👨‍💻', actorType: 'human', description: 'Added labels', details: { to: 'backend, urgent' }, timestamp: h(12) },
+    { id: 'a8', issueId: props.issue.id, action: 'comment', actor: 'alice', actorAvatar: '👩‍💻', actorType: 'human', description: 'Added comment: "Looks good, let\'s ship it"', timestamp: h(24) },
+    { id: 'a9', issueId: props.issue.id, action: 'status', actor: 'System', actorAvatar: '', actorType: 'system', description: 'Auto-closed after merge to main', details: { from: 'IN_PROGRESS', to: 'CLOSED' }, timestamp: h(48) },
+  ]
+})
 
 const assigneeUser = computed(() => {
   if (!props.issue.assignee) return null

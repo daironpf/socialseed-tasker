@@ -512,5 +512,31 @@
     "isWorking": "esta trabajando en esto...",
     "agentsWorking": "agentes trabajando",
     "conflict": "Otro usuario esta editando el mismo campo"
+  },
+  "audit": {
+    "tab": "Historial",
+    "title": "Auditoria",
+    "noEntries": "Sin entradas de auditoria",
+    "loadMore": "Cargar {n} entradas mas",
+    "justNow": "ahora mismo",
+    "minutesAgo": "hace {n}m",
+    "hoursAgo": "hace {n}h",
+    "daysAgo": "hace {n}d",
+    "filterAll": "Todas",
+    "filterStatus": "Estado",
+    "filterPriority": "Prioridad",
+    "filterAssignment": "Asignacion",
+    "filterAgent": "Agente",
+    "filterSystem": "Sistema",
+    "actions": {
+      "status": "Estado",
+      "priority": "Prioridad",
+      "assignment": "Asignacion",
+      "agent": "Agente",
+      "system": "Sistema",
+      "hitl": "HITL",
+      "comment": "Comentario",
+      "label": "Etiqueta"
+    }
   }
 }

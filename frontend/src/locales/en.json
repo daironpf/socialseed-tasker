@@ -512,5 +512,31 @@
     "isWorking": "is working on this...",
     "agentsWorking": "agents working",
     "conflict": "Another user is editing the same field"
+  },
+  "audit": {
+    "tab": "History",
+    "title": "Audit Trail",
+    "noEntries": "No audit entries yet",
+    "loadMore": "Load {n} more entries",
+    "justNow": "just now",
+    "minutesAgo": "{n}m ago",
+    "hoursAgo": "{n}h ago",
+    "daysAgo": "{n}d ago",
+    "filterAll": "All",
+    "filterStatus": "Status",
+    "filterPriority": "Priority",
+    "filterAssignment": "Assignment",
+    "filterAgent": "Agent",
+    "filterSystem": "System",
+    "actions": {
+      "status": "Status",
+      "priority": "Priority",
+      "assignment": "Assignment",
+      "agent": "Agent",
+      "system": "System",
+      "hitl": "HITL",
+      "comment": "Comment",
+      "label": "Label"
+    }
   }
 }
