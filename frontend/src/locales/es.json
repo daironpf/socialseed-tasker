@@ -467,5 +467,29 @@
       "unread": "No leidas",
       "action": "Requiere Accion"
     }
+  },
+  "agents": {
+    "createAgent": "Crear Agente IA",
+    "editAgent": "Editar Agente IA",
+    "name": "Nombre",
+    "email": "Correo",
+    "model": "Modelo LLM",
+    "temperature": "Temperatura",
+    "tempPrecise": "Preciso",
+    "tempBalanced": "Balanceado",
+    "tempCreative": "Creativo",
+    "systemPrompt": "Prompt del Sistema",
+    "systemPromptPlaceholder": "Define el rol, objetivos y restricciones del agente...",
+    "specialization": "Especializacion",
+    "skills": "Habilidades",
+    "addSkill": "Agregar habilidad...",
+    "tools": "Herramientas Asignadas",
+    "writeAccess": "Carpetas con Acceso de Escritura",
+    "avatar": "Avatar",
+    "create": "Crear Agente",
+    "save": "Guardar Cambios",
+    "cancel": "Cancelar",
+    "delete": "Eliminar Agente",
+    "deleteConfirm": "Estas seguro de que quieres eliminar el agente"
   }
 }

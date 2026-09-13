@@ -467,5 +467,29 @@
       "unread": "Unread",
       "action": "Requires Action"
     }
+  },
+  "agents": {
+    "createAgent": "Create AI Agent",
+    "editAgent": "Edit AI Agent",
+    "name": "Name",
+    "email": "Email",
+    "model": "LLM Model",
+    "temperature": "Temperature",
+    "tempPrecise": "Precise",
+    "tempBalanced": "Balanced",
+    "tempCreative": "Creative",
+    "systemPrompt": "System Prompt",
+    "systemPromptPlaceholder": "Define the agent's role, goals, and constraints...",
+    "specialization": "Specialization",
+    "skills": "Skills",
+    "addSkill": "Add skill...",
+    "tools": "Assigned Tools",
+    "writeAccess": "Write Access Folders",
+    "avatar": "Avatar",
+    "create": "Create Agent",
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "delete": "Delete Agent",
+    "deleteConfirm": "Are you sure you want to delete agent"
   }
 }
