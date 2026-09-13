@@ -457,5 +457,15 @@
     "totalCost": "Costo Total",
     "totalTokens": "Tokens Totales",
     "noData": "Sin datos de uso de tokens"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "markAllRead": "Marcar todo leido",
+    "empty": "Sin notificaciones",
+    "tabs": {
+      "all": "Todas",
+      "unread": "No leidas",
+      "action": "Requiere Accion"
+    }
   }
 }
