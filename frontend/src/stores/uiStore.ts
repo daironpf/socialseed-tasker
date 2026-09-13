@@ -18,6 +18,7 @@ export const useUiStore = defineStore('ui', () => {
   const viewMode = ref<ViewMode>('board')
   const darkMode = ref(false)
   const locale = ref<Locale>((localStorage.getItem('locale') as Locale) || 'en')
+  const currentProject = ref(localStorage.getItem('currentProject') || 'socialseed-tasker')
   const filters = ref<Filters>({
     status: [],
     priority: [],
@@ -25,6 +26,13 @@ export const useUiStore = defineStore('ui', () => {
     project: null,
     search: '',
   })
+
+  const availableProjects = ref([
+    { id: 'socialseed-tasker', name: 'SocialSeed Tasker', description: 'Main task management platform' },
+    { id: 'auth-service', name: 'Auth Service', description: 'Authentication microservice' },
+    { id: 'api-gateway', name: 'API Gateway', description: 'Request routing and rate limiting' },
+    { id: 'data-pipeline', name: 'Data Pipeline', description: 'ETL and analytics pipeline' },
+  ])
 
   function setSelectedIssue(id: string | null) {
     selectedIssueId.value = id
@@ -78,6 +86,12 @@ export const useUiStore = defineStore('ui', () => {
     localStorage.setItem('locale', newLocale)
   }
 
+  function setProject(projectId: string) {
+    currentProject.value = projectId
+    localStorage.setItem('currentProject', projectId)
+    filters.value.project = projectId
+  }
+
   function getBackendFilters() {
     return {
       status: filters.value.status.length > 0 ? filters.value.status.join(',') : undefined,
@@ -93,6 +107,8 @@ export const useUiStore = defineStore('ui', () => {
     viewMode,
     darkMode,
     locale,
+    currentProject,
+    availableProjects,
     filters,
     setSelectedIssue,
     toggleSidebar,
@@ -102,6 +118,7 @@ export const useUiStore = defineStore('ui', () => {
     toggleDarkMode,
     initDarkMode,
     setLocale,
+    setProject,
     getBackendFilters,
   }
 })

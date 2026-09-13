@@ -538,5 +538,9 @@
       "comment": "Comment",
       "label": "Label"
     }
+  },
+  "projects": {
+    "title": "Switch Project",
+    "current": "Current"
   }
 }

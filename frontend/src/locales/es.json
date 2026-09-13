@@ -538,5 +538,9 @@
       "comment": "Comentario",
       "label": "Etiqueta"
     }
+  },
+  "projects": {
+    "title": "Cambiar Proyecto",
+    "current": "Actual"
   }
 }

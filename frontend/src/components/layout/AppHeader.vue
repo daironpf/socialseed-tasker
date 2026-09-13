@@ -7,6 +7,7 @@
         </h1>
       </div>
       <div class="flex items-center gap-3">
+        <ProjectSelector />
         <NotificationCenter />
         <UserMenu />
       </div>
@@ -20,6 +21,7 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UserMenu from './UserMenu.vue'
 import NotificationCenter from '@/components/ui/NotificationCenter.vue'
+import ProjectSelector from '@/components/ui/ProjectSelector.vue'
 
 const route = useRoute()
 const { t } = useI18n()
