@@ -326,6 +326,8 @@ async function submitEdit() {
   const updated = await store.updatePolicy(editingPolicy.value.id, {
     name: editForm.value.name,
     description: editForm.value.description,
+    rule: editForm.value.rule,
+    level: editForm.value.level,
     target_scope: editForm.value.target_scope,
     is_active: editForm.value.is_active,
   })
