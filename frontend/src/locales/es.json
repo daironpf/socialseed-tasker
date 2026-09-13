@@ -501,5 +501,16 @@
     "unauthorized": "No autorizado. Por favor inicia sesion de nuevo.",
     "notFound": "Recurso no encontrado",
     "validationError": "Error de validacion. Por favor verifica tu entrada."
+  },
+  "presence": {
+    "isViewing": "esta viendo",
+    "viewing": "estan viendo",
+    "editing": "Editando {field}",
+    "justNow": "ahora mismo",
+    "secondsAgo": "hace {n}s",
+    "minutesAgo": "hace {n}m",
+    "isWorking": "esta trabajando en esto...",
+    "agentsWorking": "agentes trabajando",
+    "conflict": "Otro usuario esta editando el mismo campo"
   }
 }

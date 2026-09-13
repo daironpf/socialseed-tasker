@@ -16,11 +16,14 @@
             {{ t('issues.aiAgentActive') }}
           </span>
         </div>
-        <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="$emit('close')">
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div class="flex items-center gap-3">
+          <PresenceAvatars :viewers="viewers" />
+          <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="$emit('close')">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div class="flex gap-0 border-b border-gray-200 dark:border-gray-700 px-6">
@@ -52,6 +55,9 @@
         @reject="onReject"
         @modify="onModify"
       />
+
+      <TypingIndicator :agents="typingAgents" />
+      <ConflictWarning :show="hasConflict" />
     </div>
 
     <!-- DETAILS TAB -->
@@ -281,7 +287,11 @@ import DiffViewer from '@/components/ui/DiffViewer.vue'
 import HITLApprovalBanner from '@/components/ui/HITLApprovalBanner.vue'
 import AgentLogStream from '@/components/ui/AgentLogStream.vue'
 import TokenMetrics from '@/components/ui/TokenMetrics.vue'
+import PresenceAvatars from '@/components/ui/PresenceAvatars.vue'
+import TypingIndicator from '@/components/ui/TypingIndicator.vue'
+import ConflictWarning from '@/components/ui/ConflictWarning.vue'
 import { useAgentStream } from '@/composables/useAgentStream'
+import { usePresence } from '@/composables/usePresence'
 
 const { t } = useI18n()
 
@@ -322,6 +332,7 @@ const logsLoading = ref(false)
 const users = ref<any[]>([])
 
 const { status: streamStatus, connect: connectStream, disconnect: disconnectStream } = useAgentStream()
+const { viewers, typingAgents, hasConflict } = usePresence(props.issue.id)
 
 const assigneeUser = computed(() => {
   if (!props.issue.assignee) return null

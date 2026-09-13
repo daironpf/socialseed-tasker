@@ -501,5 +501,16 @@
     "unauthorized": "Unauthorized. Please log in again.",
     "notFound": "Resource not found",
     "validationError": "Validation error. Please check your input."
+  },
+  "presence": {
+    "isViewing": "is viewing",
+    "viewing": "are viewing",
+    "editing": "Editing {field}",
+    "justNow": "just now",
+    "secondsAgo": "{n}s ago",
+    "minutesAgo": "{n}m ago",
+    "isWorking": "is working on this...",
+    "agentsWorking": "agents working",
+    "conflict": "Another user is editing the same field"
   }
 }
