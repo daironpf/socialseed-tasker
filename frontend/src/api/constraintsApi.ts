@@ -23,3 +23,7 @@ export async function validateConstraints(entityType: string = 'project', entity
   if (!data.data) throw new Error('Failed to validate constraints')
   return data.data
 }
+
+export async function deleteConstraint(id: string): Promise<void> {
+  await client.delete(`/constraints/${id}`)
+}

@@ -66,6 +66,17 @@ export const useConstraintsStore = defineStore('constraints', () => {
     }
   }
 
+  async function deleteConstraint(id: string): Promise<boolean> {
+    try {
+      await api.deleteConstraint(id)
+      constraints.value = constraints.value.filter(c => c.id !== id)
+      return true
+    } catch (e) {
+      error.value = (e as Error).message
+      return false
+    }
+  }
+
   return {
     constraints,
     loading,
@@ -80,5 +91,6 @@ export const useConstraintsStore = defineStore('constraints', () => {
     createConstraint,
     updateConstraint,
     validateConstraints,
+    deleteConstraint,
   }
 })

@@ -225,6 +225,10 @@ export async function updateConstraint(id: string, body: Partial<ConstraintCreat
   })
 }
 
+export async function deleteConstraint(id: string): Promise<void> {
+  await apiCall(`/mock/constraints/${id}`, { method: 'DELETE' })
+}
+
 export async function validateConstraints(entityType: string = 'project', entityData: Record<string, unknown> = {}): Promise<ValidationResult> {
   return apiCall<ValidationResult>('/mock/constraints/validate', {
     method: 'POST',

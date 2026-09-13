@@ -115,6 +115,8 @@ async function onDropIssue(issue: Issue, newStatus: IssueStatus) {
   const update: IssueUpdateRequest = { status: newStatus }
   if (newStatus === 'CLOSED') {
     update.closed_at = new Date().toISOString()
+  } else if (issue.status === 'CLOSED') {
+    update.closed_at = null
   }
   await issuesStore.updateIssue(issue.id, update)
 }

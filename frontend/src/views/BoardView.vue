@@ -127,9 +127,8 @@ async function fetchWithFilters() {
 
 onMounted(async () => {
   await componentsStore.fetchComponents()
-  await issuesStore.fetchIssues(1, 500, {})
-  allIssues.value = issuesStore.issues.slice()
   await fetchWithFilters()
+  allIssues.value = issuesStore.issues.slice()
   await fetchDashboardData()
 })
 

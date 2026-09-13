@@ -264,7 +264,7 @@ async function onCloseIssue(id: string) {
 
 onMounted(async () => {
   await Promise.all([
-    issuesStore.fetchIssues(),
+    issuesStore.fetchIssues(1, 500),
     componentsStore.fetchComponents(),
   ])
   await nextTick()

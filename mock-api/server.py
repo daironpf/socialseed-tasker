@@ -440,6 +440,16 @@ def update_constraint(constraint_id: str, body: ConstraintCreate):
     raise HTTPException(status_code=404, detail="Constraint not found")
 
 
+@app.delete("/mock/constraints/{constraint_id}")
+def delete_constraint(constraint_id: str):
+    data = read_json("constraints.json")
+    constraints = data.get("constraints", [])
+    constraints = [c for c in constraints if c["id"] != constraint_id]
+    data["constraints"] = constraints
+    write_json("constraints.json", data)
+    return {"data": None}
+
+
 class ValidateRequest(BaseModel):
     entity_type: str = "issue"
     entity_data: dict = {}

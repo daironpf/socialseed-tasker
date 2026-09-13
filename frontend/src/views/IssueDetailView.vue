@@ -364,7 +364,7 @@ async function save() {
     body.closed_at = new Date().toISOString()
   }
   if (status.value !== 'CLOSED' && props.issue.status === 'CLOSED') {
-    body.closed_at = undefined
+    body.closed_at = null
   }
   emit('update', props.issue.id, body)
 }

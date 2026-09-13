@@ -186,6 +186,10 @@ const mockClient = {
       const id = url.split('/').pop()!
       await mockApi.deleteUser(id)
     }
+    if (url.match(/\/constraints\/[^/]+$/)) {
+      const id = url.split('/').pop()!
+      await mockApi.deleteConstraint(id)
+    }
     
     return { data: {} }
   },
