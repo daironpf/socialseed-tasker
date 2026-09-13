@@ -352,5 +352,17 @@
   },
   "statsCard": {
     "vsLastMonth": "vs last month"
+  },
+  "palette": {
+    "placeholder": "Search pages, issues, components...",
+    "recent": "Recent",
+    "noResults": "No results found",
+    "navigate": "Navigate",
+    "select": "Select",
+    "close": "Close",
+    "groupPages": "Pages",
+    "groupActions": "Quick Actions",
+    "groupIssues": "Issues",
+    "groupComponents": "Components"
   }
 }

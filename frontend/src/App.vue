@@ -8,6 +8,7 @@
       </main>
     </div>
     <TeamTicker />
+    <CommandPalette />
 
     <LoginScreen v-if="showLogin" @logged-in="onLoggedIn" />
   </div>
@@ -20,6 +21,7 @@ import AppHeader from '@/components/layout/AppHeader.vue'
 import Sidebar from '@/components/layout/Sidebar.vue'
 import LoginScreen from '@/components/auth/LoginScreen.vue'
 import TeamTicker from '@/components/dashboard/TeamTicker.vue'
+import CommandPalette from '@/components/ui/CommandPalette.vue'
 import { useUiStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
 
