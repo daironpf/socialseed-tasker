@@ -412,5 +412,21 @@
     "copied": "Copiado!",
     "original": "Original",
     "modified": "Modificado"
+  },
+  "hitl": {
+    "title": "Aprobacion Humana Requerida",
+    "description": "Esta accion del agente requiere autorizacion humana antes de ejecutarse.",
+    "command": "Comando / Payload",
+    "target": "Objetivo",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "modify": "Modificar",
+    "feedbackLabel": "Retroalimentacion de Rechazo",
+    "feedbackPlaceholder": "Explica por que se rechaza esta accion...",
+    "modifyLabel": "Parametros Modificados",
+    "modifyPlaceholder": "Ingresa los parametros modificados...",
+    "submitModification": "Enviar",
+    "actionDescription": "Un agente de IA esta solicitando ejecutar una accion critica que requiere tu aprobacion.",
+    "defaultCommand": "El agento solicito ejecutar una accion"
   }
 }

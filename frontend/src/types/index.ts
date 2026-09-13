@@ -3,6 +3,7 @@ export enum IssueStatus {
   IN_PROGRESS = 'IN_PROGRESS',
   CLOSED = 'CLOSED',
   BLOCKED = 'BLOCKED',
+  WAITING_HUMAN_APPROVAL = 'WAITING_HUMAN_APPROVAL',
 }
 
 export enum IssuePriority {

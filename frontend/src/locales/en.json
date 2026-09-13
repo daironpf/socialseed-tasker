@@ -412,5 +412,21 @@
     "copied": "Copied!",
     "original": "Original",
     "modified": "Modified"
+  },
+  "hitl": {
+    "title": "Human Approval Required",
+    "description": "This agent action requires human authorization before execution.",
+    "command": "Command / Payload",
+    "target": "Target",
+    "approve": "Approve",
+    "reject": "Reject",
+    "modify": "Modify",
+    "feedbackLabel": "Rejection Feedback",
+    "feedbackPlaceholder": "Explain why this action is rejected...",
+    "modifyLabel": "Modified Parameters",
+    "modifyPlaceholder": "Enter modified parameters...",
+    "submitModification": "Submit",
+    "actionDescription": "An AI agent is requesting to execute a critical action that requires your approval.",
+    "defaultCommand": "Agent requested action execution"
   }
 }

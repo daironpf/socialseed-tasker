@@ -44,6 +44,16 @@
       </div>
     </div>
 
+    <!-- HITL APPROVAL BANNER -->
+    <div v-if="issue.status === 'WAITING_HUMAN_APPROVAL'" class="px-6 pt-4">
+      <HITLApprovalBanner
+        :action-details="pendingAction"
+        @approve="onApprove"
+        @reject="onReject"
+        @modify="onModify"
+      />
+    </div>
+
     <!-- DETAILS TAB -->
     <div v-if="activeTab === 'details'" class="p-6 space-y-6">
       <div>
@@ -96,6 +106,7 @@
             <option value="OPEN">{{ t('issues.open') }}</option>
             <option value="IN_PROGRESS">{{ t('issues.inProgress') }}</option>
             <option value="BLOCKED">{{ t('issues.blocked') }}</option>
+            <option value="WAITING_HUMAN_APPROVAL">{{ t('hitl.title') }}</option>
             <option value="CLOSED">{{ t('issues.closed') }}</option>
           </select>
         </div>
@@ -272,12 +283,14 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Issue, IssueUpdateRequest, AgentLog } from '@/types'
+import { IssueStatus } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { fetchAgentLogs } from '@/api/agentLogsApi'
 import { fetchUsers } from '@/api/usersApi'
 import MarkdownRenderer from '@/components/analysis/MarkdownRenderer.vue'
 import RichTextEditor from '@/components/ui/RichTextEditor.vue'
 import DiffViewer from '@/components/ui/DiffViewer.vue'
+import HITLApprovalBanner from '@/components/ui/HITLApprovalBanner.vue'
 
 const { t } = useI18n()
 
@@ -378,6 +391,42 @@ function confirmDelete() {
   if (confirm(t('issues.deleteConfirm'))) {
     emit('delete', props.issue.id)
   }
+}
+
+const pendingAction = computed(() => {
+  if (props.issue.status !== 'WAITING_HUMAN_APPROVAL') return null
+  const lastFileLog = fileLogs.value[fileLogs.value.length - 1]
+  if (lastFileLog) {
+    return {
+      type: 'Code Change',
+      command: lastFileLog.content_markdown.substring(0, 500),
+      severity: 'HIGH',
+      description: t('hitl.actionDescription'),
+    }
+  }
+  return {
+    type: 'Agent Action',
+    command: t('hitl.defaultCommand'),
+    severity: 'HIGH',
+    description: t('hitl.actionDescription'),
+  }
+})
+
+function onApprove() {
+  status.value = IssueStatus.IN_PROGRESS
+  save()
+}
+
+function onReject(feedback: string) {
+  description.value = description.value + '\n\n---\n**HITL Rejection:** ' + feedback
+  status.value = IssueStatus.BLOCKED
+  save()
+}
+
+function onModify(params: string) {
+  description.value = description.value + '\n\n---\n**HITL Modified Parameters:**\n```\n' + params + '\n```'
+  status.value = IssueStatus.IN_PROGRESS
+  save()
 }
 
 watch(activeTab, (tab) => {
