@@ -491,5 +491,15 @@
     "cancel": "Cancel",
     "delete": "Delete Agent",
     "deleteConfirm": "Are you sure you want to delete agent"
+  },
+  "toast": {
+    "saved": "Changes saved successfully",
+    "created": "Created successfully",
+    "deleted": "Deleted successfully",
+    "error": "An error occurred",
+    "networkError": "Network error. Please check your connection.",
+    "unauthorized": "Unauthorized. Please log in again.",
+    "notFound": "Resource not found",
+    "validationError": "Validation error. Please check your input."
   }
 }

@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios'
 import * as mockApi from './mockApi'
+import { useToast } from '@/composables/useToast'
 
 // Mock mode flag - set to true to use mock data
 const USE_MOCK = true
@@ -211,8 +212,16 @@ if (API_KEY) {
 realClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    const toast = useToast()
     if (error.response?.status === 401) {
       window.dispatchEvent(new CustomEvent('auth:unauthorized'))
+    } else if (error.response?.status >= 400) {
+      const message =
+        error.response?.data?.error?.message ||
+        error.response?.data?.detail ||
+        error.message ||
+        'Unknown error occurred'
+      toast.error(message)
     }
     const message =
       error.response?.data?.error?.message ||

@@ -491,5 +491,15 @@
     "cancel": "Cancelar",
     "delete": "Eliminar Agente",
     "deleteConfirm": "Estas seguro de que quieres eliminar el agente"
+  },
+  "toast": {
+    "saved": "Cambios guardados exitosamente",
+    "created": "Creado exitosamente",
+    "deleted": "Eliminado exitosamente",
+    "error": "Ocurrio un error",
+    "networkError": "Error de red. Por favor verifica tu conexion.",
+    "unauthorized": "No autorizado. Por favor inicia sesion de nuevo.",
+    "notFound": "Recurso no encontrado",
+    "validationError": "Error de validacion. Por favor verifica tu entrada."
   }
 }
