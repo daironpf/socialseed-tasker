@@ -386,5 +386,22 @@
     "groupActions": "Acciones Rapidas",
     "groupIssues": "Issues",
     "groupComponents": "Componentes"
+  },
+  "editor": {
+    "preview": "Vista Previa",
+    "commands": "Comandos",
+    "bold": "Negrita",
+    "italic": "Cursiva",
+    "code": "Codigo",
+    "heading1": "Encabezado 1",
+    "heading2": "Encabezado 2",
+    "heading3": "Encabezado 3",
+    "divider": "Divisor",
+    "bulletList": "Lista",
+    "checklist": "Lista de Tareas",
+    "table": "Tabla",
+    "quote": "Cita",
+    "codeBlock": "Bloque de Codigo",
+    "mermaid": "Diagrama Mermaid"
   }
 }

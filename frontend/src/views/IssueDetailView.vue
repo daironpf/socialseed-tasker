@@ -79,10 +79,10 @@
 
       <div>
         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t('issues.description') }}</label>
-        <textarea
+        <RichTextEditor
           v-model="description"
-          rows="4"
-          class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+          :rows="6"
+          :placeholder="t('issues.description')"
         />
       </div>
 
@@ -276,6 +276,7 @@ import { useIssuesStore } from '@/stores/issuesStore'
 import { fetchAgentLogs } from '@/api/agentLogsApi'
 import { fetchUsers } from '@/api/usersApi'
 import MarkdownRenderer from '@/components/analysis/MarkdownRenderer.vue'
+import RichTextEditor from '@/components/ui/RichTextEditor.vue'
 
 const { t } = useI18n()
 
