@@ -428,5 +428,20 @@
     "submitModification": "Enviar",
     "actionDescription": "Un agente de IA esta solicitando ejecutar una accion critica que requiere tu aprobacion.",
     "defaultCommand": "El agento solicito ejecutar una accion"
+  },
+  "stream": {
+    "status": {
+      "connecting": "Conectando...",
+      "connected": "En vivo",
+      "disconnected": "Desconectado",
+      "reconnecting": "Reconectando..."
+    },
+    "entries": "entradas",
+    "autoScroll": "Auto-scroll",
+    "killSwitch": "Detener Agente",
+    "killConfirm": "Cancelar ejecucion del agente? Esta accion no se puede deshacer.",
+    "noLogs": "Sin logs del agente",
+    "connecting": "Estableciendo conexion...",
+    "scrollToBottom": "Ir al final"
   }
 }

@@ -168,31 +168,11 @@
 
     <!-- AI REASONING TAB -->
     <div v-else-if="activeTab === 'reasoning'" class="p-6">
-      <div v-if="logsLoading" class="flex items-center justify-center py-12">
-        <div class="h-6 w-6 animate-spin rounded-full border-4 border-cyan-500 border-t-transparent"></div>
-        <span class="ml-3 text-sm text-gray-500">{{ t('issues.loadingAgentLogs') }}</span>
-      </div>
-      <div v-else-if="reasoningLogs.length === 0" class="flex flex-col items-center justify-center py-12 text-gray-400">
-        <svg class="mb-3 h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-        </svg>
-        <p class="text-sm">{{ t('issues.noReasoningLogs') }}</p>
-      </div>
-      <div v-else class="space-y-4">
-        <div
-          v-for="(log, idx) in reasoningLogs"
-          :key="idx"
-          class="rounded-lg border border-gray-200 dark:border-gray-700 p-4"
-        >
-          <div class="mb-2 flex items-center gap-2">
-            <span class="rounded bg-cyan-100 px-2 py-0.5 text-[10px] font-bold text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300">
-              REASONING
-            </span>
-            <span class="text-[10px] text-gray-400">{{ new Date(log.timestamp).toLocaleString() }}</span>
-          </div>
-          <MarkdownRenderer :content="log.content_markdown" />
-        </div>
-      </div>
+      <AgentLogStream
+        :logs="agentLogs"
+        :status="streamStatus"
+        @kill-switch="onKillSwitch"
+      />
     </div>
 
     <!-- PROGRESS TAB -->
@@ -280,7 +260,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Issue, IssueUpdateRequest, AgentLog } from '@/types'
 import { IssueStatus } from '@/types'
@@ -291,6 +271,8 @@ import MarkdownRenderer from '@/components/analysis/MarkdownRenderer.vue'
 import RichTextEditor from '@/components/ui/RichTextEditor.vue'
 import DiffViewer from '@/components/ui/DiffViewer.vue'
 import HITLApprovalBanner from '@/components/ui/HITLApprovalBanner.vue'
+import AgentLogStream from '@/components/ui/AgentLogStream.vue'
+import { useAgentStream } from '@/composables/useAgentStream'
 
 const { t } = useI18n()
 
@@ -330,6 +312,8 @@ const agentLogs = ref<AgentLog[]>([])
 const logsLoading = ref(false)
 const users = ref<any[]>([])
 
+const { status: streamStatus, connect: connectStream, disconnect: disconnectStream } = useAgentStream()
+
 const assigneeUser = computed(() => {
   if (!props.issue.assignee) return null
   return users.value.find(u => u.id === props.issue.assignee) || null
@@ -340,7 +324,6 @@ const creatorUser = computed(() => {
   return users.value.find(u => u.id === props.issue.created_by) || null
 })
 
-const reasoningLogs = computed(() => agentLogs.value.filter(l => l.type === 'reasoning'))
 const progressLogs = computed(() => agentLogs.value.filter(l => l.type === 'progress'))
 const fileLogs = computed(() => agentLogs.value.filter(l => l.type === 'files'))
 const debtLogs = computed(() => agentLogs.value.filter(l => l.type === 'debt'))
@@ -355,6 +338,15 @@ async function loadLogs() {
   } finally {
     logsLoading.value = false
   }
+}
+
+function onKillSwitch() {
+  disconnectStream()
+  agentLogs.value.push({
+    timestamp: new Date().toISOString(),
+    type: 'debt',
+    content_markdown: '**AGENT EXECUTION CANCELLED** by human operator.',
+  })
 }
 
 function addLabel() {
@@ -432,6 +424,9 @@ function onModify(params: string) {
 watch(activeTab, (tab) => {
   if (tab === 'reasoning' || tab === 'progress') {
     loadLogs()
+    if (props.issue.agent_working) {
+      connectStream(props.issue.id)
+    }
   }
 })
 
@@ -441,5 +436,12 @@ onMounted(async () => {
   } catch {
     users.value = []
   }
+  if (props.issue.agent_working && activeTab.value === 'reasoning') {
+    connectStream(props.issue.id)
+  }
+})
+
+onUnmounted(() => {
+  disconnectStream()
 })
 </script>

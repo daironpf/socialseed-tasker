@@ -428,5 +428,20 @@
     "submitModification": "Submit",
     "actionDescription": "An AI agent is requesting to execute a critical action that requires your approval.",
     "defaultCommand": "Agent requested action execution"
+  },
+  "stream": {
+    "status": {
+      "connecting": "Connecting...",
+      "connected": "Live",
+      "disconnected": "Disconnected",
+      "reconnecting": "Reconnecting..."
+    },
+    "entries": "entries",
+    "autoScroll": "Auto-scroll",
+    "killSwitch": "Kill Switch",
+    "killConfirm": "Cancel agent execution? This cannot be undone.",
+    "noLogs": "No agent logs yet",
+    "connecting": "Establishing connection...",
+    "scrollToBottom": "Scroll to latest"
   }
 }
