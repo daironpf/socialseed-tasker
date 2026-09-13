@@ -403,5 +403,14 @@
     "quote": "Cita",
     "codeBlock": "Bloque de Codigo",
     "mermaid": "Diagrama Mermaid"
+  },
+  "diff": {
+    "unified": "Unificado",
+    "split": "Lado a lado",
+    "copy": "Copiar diff",
+    "download": "Descargar parche",
+    "copied": "Copiado!",
+    "original": "Original",
+    "modified": "Modificado"
   }
 }

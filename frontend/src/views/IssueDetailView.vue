@@ -210,13 +210,13 @@
           <div
             v-for="(log, idx) in fileLogs"
             :key="idx"
-            class="rounded-lg border border-gray-200 dark:border-gray-700 p-4"
+            class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
           >
-            <div class="mb-2 flex items-center gap-2">
+            <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
               <span class="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">FILES</span>
               <span class="text-[10px] text-gray-400">{{ new Date(log.timestamp).toLocaleString() }}</span>
             </div>
-            <MarkdownRenderer :content="log.content_markdown" />
+            <DiffViewer :content="log.content_markdown" />
           </div>
         </div>
 
@@ -277,6 +277,7 @@ import { fetchAgentLogs } from '@/api/agentLogsApi'
 import { fetchUsers } from '@/api/usersApi'
 import MarkdownRenderer from '@/components/analysis/MarkdownRenderer.vue'
 import RichTextEditor from '@/components/ui/RichTextEditor.vue'
+import DiffViewer from '@/components/ui/DiffViewer.vue'
 
 const { t } = useI18n()
 
