@@ -4,31 +4,30 @@
       <LoadingSpinner />
     </div>
     <div v-else-if="issuesStore.error" class="flex flex-col items-center justify-center h-64 text-center">
-      <div class="text-red-500 text-lg font-semibold mb-2">Error al cargar datos</div>
+      <div class="text-red-500 text-lg font-semibold mb-2">{{ t('common.error') }}</div>
       <div class="text-gray-600 dark:text-gray-400 mb-4">{{ issuesStore.error }}</div>
       <button 
         @click="fetchWithFilters" 
         class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-md transition-colors"
       >
-        Reintentar
+        {{ t('system.refresh') }}
       </button>
     </div>
     <div v-else class="flex flex-col h-full p-6">
       <!-- Header -->
       <div class="mb-6 flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Kanban Board</h1>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Arrastra las tarjetas para cambiar su estado</p>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('header.kanban') }}</h1>
         </div>
         <div class="flex items-center gap-3">
           <span class="text-sm text-gray-500 dark:text-gray-400">
-            {{ issuesStore.issues.length }} issues
+            {{ issuesStore.issues.length }} {{ t('issues.title').toLowerCase() }}
           </span>
           <button
             class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
             @click="showCreateModal = true"
           >
-            + Nuevo Issue
+            {{ t('issues.newIssue') }}
           </button>
         </div>
       </div>
@@ -76,6 +75,7 @@
 
 <script setup lang="ts">
 import { onMounted, computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Issue, IssueStatus, IssueUpdateRequest } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useComponentsStore } from '@/stores/componentsStore'
@@ -85,18 +85,20 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
 import CreateIssueModal from '@/components/issue/CreateIssueModal.vue'
 
+const { t } = useI18n()
+
 const issuesStore = useIssuesStore()
 const componentsStore = useComponentsStore()
 const uiStore = useUiStore()
 
 const showCreateModal = ref(false)
 
-const columns = [
-  { title: 'Open', status: 'OPEN' as IssueStatus },
-  { title: 'In Progress', status: 'IN_PROGRESS' as IssueStatus },
-  { title: 'Blocked', status: 'BLOCKED' as IssueStatus },
-  { title: 'Closed', status: 'CLOSED' as IssueStatus },
-]
+const columns = computed(() => [
+  { title: t('issues.open'), status: 'OPEN' as IssueStatus },
+  { title: t('issues.inProgress'), status: 'IN_PROGRESS' as IssueStatus },
+  { title: t('issues.blocked'), status: 'BLOCKED' as IssueStatus },
+  { title: t('issues.closed'), status: 'CLOSED' as IssueStatus },
+])
 
 function issuesByStatus(status: IssueStatus) {
   return issuesStore.issues.filter((i) => i.status === status)

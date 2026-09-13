@@ -4,13 +4,13 @@
       <LoadingSpinner />
     </div>
     <div v-else-if="issuesStore.error" class="flex flex-col items-center justify-center h-64 text-center">
-      <div class="text-red-500 text-lg font-semibold mb-2">Error al cargar datos</div>
+      <div class="text-red-500 text-lg font-semibold mb-2">{{ t('common.error') }}</div>
       <div class="text-gray-600 dark:text-gray-400 mb-4">{{ issuesStore.error }}</div>
       <button 
         @click="fetchWithFilters" 
         class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-md transition-colors"
       >
-        Reintentar
+        {{ t('system.refresh') }}
       </button>
     </div>
     <div v-else class="flex flex-col h-full">
@@ -38,7 +38,7 @@
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-sm text-gray-500 dark:text-gray-400">Políticas activas:</span>
+            <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('policies.active') }}:</span>
             <span class="rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
               {{ policies.length }}
             </span>
@@ -72,6 +72,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Issue, Policy } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import client from '@/api/client'
@@ -80,6 +81,8 @@ import { useComponentsStore } from '@/stores/componentsStore'
 import { useUiStore } from '@/stores/uiStore'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import DashboardStats from '@/components/dashboard/DashboardStats.vue'
+
+const { t } = useI18n()
 import TrendChart from '@/components/dashboard/TrendChart.vue'
 import AvgResolutionTime from '@/components/dashboard/AvgResolutionTime.vue'
 import DailyActivityChart from '@/components/dashboard/DailyActivityChart.vue'

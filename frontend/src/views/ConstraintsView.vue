@@ -3,21 +3,20 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Constraints</h1>
-        <p class="text-sm text-gray-500">Architectural rules and validation engine</p>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('constraints.title') }}</h1>
       </div>
       <div class="flex items-center gap-3">
         <button
           class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
           @click="runValidation"
         >
-          Validate All
+          {{ t('analysis.analyze') }}
         </button>
         <button
           class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           @click="openCreateModal"
         >
-          + New Constraint
+          {{ t('constraints.newConstraint') }}
         </button>
       </div>
     </div>
@@ -26,19 +25,19 @@
     <div class="grid grid-cols-4 gap-4">
       <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ store.constraints.length }}</div>
-        <div class="text-xs text-gray-500">Total Rules</div>
+        <div class="text-xs text-gray-500">{{ t('constraints.hard') }} / {{ t('constraints.soft') }}</div>
       </div>
       <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ store.hardCount }}</div>
-        <div class="text-xs text-gray-500">HARD (blocking)</div>
+        <div class="text-xs text-gray-500">{{ t('constraints.hard') }}</div>
       </div>
       <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ store.softCount }}</div>
-        <div class="text-xs text-gray-500">SOFT (warning)</div>
+        <div class="text-xs text-gray-500">{{ t('constraints.soft') }}</div>
       </div>
       <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ store.activeCount }}</div>
-        <div class="text-xs text-gray-500">Active</div>
+        <div class="text-xs text-gray-500">{{ t('constraints.active') }}</div>
       </div>
     </div>
 
@@ -51,7 +50,7 @@
         <input
           v-model="search"
           type="text"
-          placeholder="Search constraints..."
+          :placeholder="t('constraints.search')"
           class="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800"
         />
       </div>
@@ -60,14 +59,14 @@
           v-model="filterCategory"
           class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
         >
-          <option value="">All Categories</option>
+          <option value="">{{ t('constraints.allCategories') }}</option>
           <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
         </select>
         <select
           v-model="filterSeverity"
           class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
         >
-          <option value="">All Severities</option>
+          <option value="">{{ t('constraints.allSeverities') }}</option>
           <option value="HARD">HARD</option>
           <option value="SOFT">SOFT</option>
         </select>
@@ -88,7 +87,7 @@
           </svg>
         </div>
         <div class="ml-3">
-          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Error loading constraints</h3>
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">{{ t('constraints.errorLoading') }}</h3>
           <div class="mt-2 text-sm text-red-700 dark:text-red-300">{{ store.error }}</div>
         </div>
       </div>
@@ -117,7 +116,7 @@
           </div>
           <div>
             <h3 class="font-semibold" :class="store.validationResult.valid ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'">
-              {{ store.validationResult.valid ? 'All constraints passed' : 'Constraint violations detected' }}
+              {{ store.validationResult.valid ? t('constraints.allPassed') : t('constraints.violationsDetected') }}
             </h3>
             <p class="text-sm" :class="store.validationResult.valid ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
               Checked {{ store.validationResult.checked_constraints }} active constraints
@@ -163,13 +162,13 @@
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Severity</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Scope</th>
-            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Active</th>
-            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Auto-fix</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('constraints.name') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('constraints.category') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('constraints.severity') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('constraints.scope') }}</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('constraints.active') }}</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('constraints.autoFix') }}</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('constraints.actions') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -214,7 +213,7 @@
             </td>
           </tr>
           <tr v-if="filteredConstraints.length === 0">
-            <td colspan="8" class="px-4 py-12 text-center text-sm text-gray-400">No constraints found</td>
+            <td colspan="8" class="px-4 py-12 text-center text-sm text-gray-400">{{ t('common.noData') }}</td>
           </tr>
         </tbody>
       </table>
@@ -247,7 +246,7 @@
         <div class="p-6 space-y-6">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Category</label>
+              <div class="text-xs text-gray-500">{{ t('constraints.category') }}</div>
               <div class="mt-1">
                 <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium" :class="categoryClass(selectedConstraint.category)">
                   {{ selectedConstraint.category }}
@@ -255,58 +254,58 @@
               </div>
             </div>
             <div>
-              <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Scope</label>
+              <div class="text-xs text-gray-500">{{ t('constraints.scope') }}</div>
               <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ selectedConstraint.scope }}</p>
             </div>
           </div>
 
           <div>
-            <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Description</label>
+            <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('constraints.description') }}</label>
             <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ selectedConstraint.description }}</p>
           </div>
 
           <div>
-            <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Logic</label>
+            <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('constraints.logic') }}</label>
             <div class="mt-1 rounded-lg bg-gray-50 p-3 font-mono text-sm text-gray-800 dark:bg-gray-700/50 dark:text-gray-200">
               {{ selectedConstraint.logic }}
             </div>
           </div>
 
           <div>
-            <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Rule Definition</label>
+            <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('constraints.ruleDefinition') }}</label>
             <pre class="mt-1 rounded-lg bg-gray-50 p-3 font-mono text-xs text-gray-800 dark:bg-gray-700/50 dark:text-gray-200 overflow-x-auto">{{ JSON.stringify(selectedConstraint.rule, null, 2) }}</pre>
           </div>
 
           <div>
-            <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Remediation</label>
+            <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('constraints.remediation') }}</label>
             <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ selectedConstraint.remediation }}</p>
           </div>
 
           <div class="grid grid-cols-3 gap-4">
             <div>
-              <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Active</label>
+              <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('constraints.active') }}</label>
               <div class="mt-1">
                 <span
                   class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
                   :class="selectedConstraint.is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'"
                 >
-                  {{ selectedConstraint.is_active ? 'Active' : 'Inactive' }}
+                  {{ selectedConstraint.is_active ? t('constraints.active') : t('constraints.inactive') }}
                 </span>
               </div>
             </div>
             <div>
-              <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Auto-fix</label>
+              <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('constraints.autoFix') }}</label>
               <div class="mt-1">
                 <span
                   class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
                   :class="selectedConstraint.auto_fix ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'"
                 >
-                  {{ selectedConstraint.auto_fix ? 'Enabled' : 'Disabled' }}
+                  {{ selectedConstraint.auto_fix ? t('constraints.autoFixEnabled') : t('constraints.autoFixDisabled') }}
                 </span>
               </div>
             </div>
             <div>
-              <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Updated</label>
+              <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('constraints.updated') }}</label>
               <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ new Date(selectedConstraint.updated_at).toLocaleDateString() }}</p>
             </div>
           </div>
@@ -318,7 +317,7 @@
     <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeModal">
       <div class="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800">
         <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-          {{ editingConstraint ? 'Edit Constraint' : 'New Constraint' }}
+          {{ editingConstraint ? t('issues.edit') : t('constraints.newConstraint') }}
         </h2>
         <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           <div>
@@ -371,13 +370,13 @@
           </div>
         </div>
         <div class="mt-6 flex justify-end gap-2">
-          <button class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700" @click="closeModal">Cancel</button>
+          <button class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700" @click="closeModal">{{ t('issues.cancel') }}</button>
           <button
             :disabled="!form.name"
             class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             @click="saveConstraint"
           >
-            {{ editingConstraint ? 'Save' : 'Create' }}
+            {{ editingConstraint ? t('issues.save') : t('issues.create') }}
           </button>
         </div>
       </div>
@@ -387,8 +386,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useConstraintsStore } from '@/stores/constraintsStore'
 import type { Constraint, ConstraintCategory, ConstraintSeverity } from '@/types'
+
+const { t } = useI18n()
 
 const store = useConstraintsStore()
 
@@ -449,7 +451,7 @@ function openCreateModal() {
 }
 
 async function deleteConstraint(c: Constraint) {
-  if (confirm(`¿Eliminar la constraint "${c.name}"?`)) {
+  if (confirm(`${t('issues.deleteConfirm')} "${c.name}"?`)) {
     await store.deleteConstraint(c.id)
   }
 }

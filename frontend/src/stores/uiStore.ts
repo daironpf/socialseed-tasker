@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export type ViewMode = 'board' | 'list'
+export type Locale = 'en' | 'es'
 
 export interface Filters {
   status: string[]
@@ -16,6 +17,7 @@ export const useUiStore = defineStore('ui', () => {
   const sidebarOpen = ref(true)
   const viewMode = ref<ViewMode>('board')
   const darkMode = ref(false)
+  const locale = ref<Locale>((localStorage.getItem('locale') as Locale) || 'en')
   const filters = ref<Filters>({
     status: [],
     priority: [],
@@ -71,6 +73,11 @@ export const useUiStore = defineStore('ui', () => {
     }
   }
 
+  function setLocale(newLocale: Locale) {
+    locale.value = newLocale
+    localStorage.setItem('locale', newLocale)
+  }
+
   function getBackendFilters() {
     return {
       status: filters.value.status.length > 0 ? filters.value.status.join(',') : undefined,
@@ -85,6 +92,7 @@ export const useUiStore = defineStore('ui', () => {
     sidebarOpen,
     viewMode,
     darkMode,
+    locale,
     filters,
     setSelectedIssue,
     toggleSidebar,
@@ -93,6 +101,7 @@ export const useUiStore = defineStore('ui', () => {
     clearFilters,
     toggleDarkMode,
     initDarkMode,
+    setLocale,
     getBackendFilters,
   }
 })

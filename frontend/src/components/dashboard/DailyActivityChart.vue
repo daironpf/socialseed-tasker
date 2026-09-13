@@ -1,7 +1,7 @@
 <template>
   <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
     <div class="mb-4 flex items-center justify-between">
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Actividad Diaria</h3>
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('dailyActivity.title') }}</h3>
       <div class="flex items-center gap-3">
         <!-- Month selector -->
         <select
@@ -14,11 +14,11 @@
         <div class="flex gap-4 text-sm">
           <div class="flex items-center gap-2">
             <span class="h-3 w-3 rounded-full bg-blue-500"></span>
-            <span class="text-gray-500 dark:text-gray-400">Creadas</span>
+            <span class="text-gray-500 dark:text-gray-400">{{ t('dailyActivity.created') }}</span>
           </div>
           <div class="flex items-center gap-2">
             <span class="h-3 w-3 rounded-full bg-green-500"></span>
-            <span class="text-gray-500 dark:text-gray-400">Solucionadas</span>
+            <span class="text-gray-500 dark:text-gray-400">{{ t('dailyActivity.resolved') }}</span>
           </div>
         </div>
       </div>
@@ -27,13 +27,13 @@
     <!-- Stats summary -->
     <div class="mb-4 flex gap-6 text-sm">
       <div class="text-gray-600 dark:text-gray-400">
-        <span class="font-medium text-blue-600 dark:text-blue-400">{{ totalCreated }}</span> creadas
+        <span class="font-medium text-blue-600 dark:text-blue-400">{{ totalCreated }}</span> {{ t('dailyActivity.createdLabel') }}
       </div>
       <div class="text-gray-600 dark:text-gray-400">
-        <span class="font-medium text-green-600 dark:text-green-400">{{ totalClosed }}</span> solucionadas
+        <span class="font-medium text-green-600 dark:text-green-400">{{ totalClosed }}</span> {{ t('dailyActivity.resolvedLabel') }}
       </div>
       <div class="text-gray-600 dark:text-gray-400">
-        Balance: <span :class="balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">{{ balance >= 0 ? '+' : '' }}{{ balance }}</span>
+        {{ t('dailyActivity.balance') }}: <span :class="balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">{{ balance >= 0 ? '+' : '' }}{{ balance }}</span>
       </div>
     </div>
 
@@ -133,7 +133,10 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Issue } from '@/types'
+
+const { t } = useI18n()
 
 interface Props {
   issues: Issue[]

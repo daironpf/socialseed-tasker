@@ -22,7 +22,7 @@
         @dragstart="onDragStart($event, issue)"
       />
       <div v-if="sortedIssues.length === 0" class="text-center py-8 text-sm text-gray-400">
-        No issues
+        {{ t('common.noData') }}
       </div>
     </div>
   </div>
@@ -30,9 +30,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Issue, IssueStatus } from '@/types'
 import IssueCard from './IssueCard.vue'
 import { useComponentsStore } from '@/stores/componentsStore'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   title: string

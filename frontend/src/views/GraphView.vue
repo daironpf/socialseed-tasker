@@ -1,23 +1,23 @@
 <template>
   <div class="flex-1 overflow-auto p-4">
     <div class="mb-4 flex items-center justify-between">
-      <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Dependency Graph</h2>
+      <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">{{ t('graph.title') }}</h2>
       <div class="flex items-center gap-4">
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search issues..."
+          :placeholder="t('issues.search')"
           class="px-3 py-1.5 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600"
         />
         <select
           v-model="statusFilter"
           class="px-3 py-1.5 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600"
         >
-          <option value="">All Status</option>
-          <option value="OPEN">Open</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="BLOCKED">Blocked</option>
-          <option value="CLOSED">Closed</option>
+          <option value="">{{ t('issues.allStatus') }}</option>
+          <option value="OPEN">{{ t('issues.open') }}</option>
+          <option value="IN_PROGRESS">{{ t('issues.inProgress') }}</option>
+          <option value="BLOCKED">{{ t('issues.blocked') }}</option>
+          <option value="CLOSED">{{ t('issues.closed') }}</option>
         </select>
         <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
           <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-purple-500"></span> Component</span>
@@ -70,12 +70,15 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Network, DataSet } from 'vis-network/standalone'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useComponentsStore } from '@/stores/componentsStore'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
 import type { Issue, IssueUpdateRequest } from '@/types'
+
+const { t } = useI18n()
 
 const issuesStore = useIssuesStore()
 const componentsStore = useComponentsStore()

@@ -1,42 +1,42 @@
 <template>
   <div class="space-y-6">
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4">
-      <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Test Failure Details</h4>
+      <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">{{ t('analysis.testFailureDetails') }}</h4>
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Test Name</label>
+          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('analysis.testName') }}</label>
           <input
             v-model="form.test_name"
             type="text"
-            placeholder="e.g. test_login_validation"
+            :placeholder="t('analysis.testNamePlaceholder')"
             class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Component</label>
+          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('issues.component') }}</label>
           <select
             v-model="form.component"
             class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           >
-            <option value="">Any component</option>
+            <option value="">{{ t('analysis.anyComponent') }}</option>
             <option v-for="comp in compStore.components" :key="comp.id" :value="comp.name">{{ comp.name }}</option>
           </select>
         </div>
       </div>
 
       <div class="mt-4">
-        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Error Message</label>
+        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('analysis.errorMessage') }}</label>
         <textarea
           v-model="form.error_message"
           rows="3"
-          placeholder="Paste the error message or stack trace..."
+          :placeholder="t('analysis.errorPlaceholder')"
           class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
         ></textarea>
       </div>
 
       <div class="mt-4">
-        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Labels</label>
+        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('issues.labels') }}</label>
         <div class="flex flex-wrap gap-2">
           <button
             v-for="label in availableLabels"
@@ -58,26 +58,26 @@
           class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
           @click="analyze"
         >
-          {{ analysisStore.loadingRootCause ? 'Analyzing...' : 'Find Root Cause' }}
+          {{ analysisStore.loadingRootCause ? t('analysis.loading') : t('analysis.findRootCause') }}
         </button>
         <button
           v-if="analysisStore.rootCauseResults.length"
           class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
           @click="loadPreset"
         >
-          Load Sample Failure
+          {{ t('analysis.loadSampleFailure') }}
         </button>
       </div>
     </div>
 
     <div v-if="analysisStore.loadingRootCause" class="flex items-center justify-center py-12">
       <div class="h-8 w-8 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
-      <span class="ml-3 text-sm text-gray-500">Searching for root causes...</span>
+      <span class="ml-3 text-sm text-gray-500">{{ t('analysis.searchingRootCauses') }}</span>
     </div>
 
     <div v-else-if="analysisStore.rootCauseResults.length" class="space-y-4">
       <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-        Candidate Root Causes ({{ analysisStore.rootCauseResults.length }})
+        {{ t('analysis.candidateRootCauses') }} ({{ analysisStore.rootCauseResults.length }})
       </h4>
 
       <div
@@ -106,7 +106,7 @@
                   {{ link.issue_status }}
                 </span>
                 <span v-if="link.graph_distance < 999" class="text-xs text-gray-500">
-                  Graph distance: {{ link.graph_distance }}
+                  {{ t('analysis.graphDistance') }} {{ link.graph_distance }}
                 </span>
               </div>
             </div>
@@ -116,7 +116,7 @@
             <div class="text-lg font-bold" :class="confidenceColor(link.confidence)">
               {{ Math.round(link.confidence) }}%
             </div>
-            <div class="text-[10px] text-gray-500">confidence</div>
+            <div class="text-[10px] text-gray-500">{{ t('analysis.confidence') }}</div>
           </div>
         </div>
 
@@ -144,15 +144,18 @@
       <svg class="mb-3 h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
-      <p class="text-sm">No matching root causes found. Try different keywords.</p>
+      <p class="text-sm">{{ t('analysis.noMatchingRootCauses') }}</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAnalysisStore } from '@/stores/analysisStore'
 import { useComponentsStore } from '@/stores/componentsStore'
+
+const { t } = useI18n()
 
 const analysisStore = useAnalysisStore()
 const compStore = useComponentsStore()

@@ -12,10 +12,10 @@
           </div>
           <div>
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-              Nuevo Usuario
+              {{ t('users.newUserTitle') }}
             </h2>
             <p class="text-sm text-gray-500 dark:text-gray-400">
-              Crear un nuevo perfil de usuario
+              {{ t('users.newUserSubtitle') }}
             </p>
           </div>
         </div>
@@ -32,7 +32,7 @@
       <div class="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Nombre de usuario *
+            {{ t('users.username') }} *
           </label>
           <input
             v-model="form.username"
@@ -44,7 +44,7 @@
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Email *
+            {{ t('users.email') }} *
           </label>
           <input
             v-model="form.email"
@@ -56,23 +56,23 @@
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Rol
+            {{ t('users.role') }}
           </label>
           <select
             v-model="form.role"
             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           >
-            <option value="lead-developer">Lead Developer</option>
-            <option value="developer">Developer</option>
-            <option value="designer">Designer</option>
-            <option value="manager">Manager</option>
-            <option value="qa">QA</option>
+            <option value="lead-developer">{{ t('users.leadDeveloper') }}</option>
+            <option value="developer">{{ t('users.developer') }}</option>
+            <option value="designer">{{ t('users.designer') }}</option>
+            <option value="manager">{{ t('users.manager') }}</option>
+            <option value="qa">{{ t('users.qa') }}</option>
           </select>
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Habilidades
+            {{ t('users.skills') }}
           </label>
           <div class="flex flex-wrap gap-2 mb-2">
             <span
@@ -94,7 +94,7 @@
               v-model="newSkill"
               @keyup.enter="addSkill"
               type="text"
-              placeholder="Agregar habilidad..."
+              :placeholder="t('users.addSkill')"
               class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
             <button
@@ -108,7 +108,7 @@
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Avatar
+            {{ t('users.avatar') }}
           </label>
           <div class="flex gap-2">
             <button
@@ -129,14 +129,14 @@
           @click="close"
           class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
         >
-          Cancelar
+          {{ t('users.cancel') }}
         </button>
         <button
           @click="save"
           :disabled="!form.username || !form.email"
           class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
-          Crear Usuario
+          {{ t('users.createUser') }}
         </button>
       </div>
     </div>
@@ -145,6 +145,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface Props {
   show: boolean

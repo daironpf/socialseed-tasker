@@ -1,6 +1,6 @@
 <template>
   <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
-    <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Tiempo Promedio de Resolución</h3>
+    <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ t('avgResolution.title') }}</h3>
     
     <div class="flex items-center justify-center">
       <div class="relative">
@@ -35,7 +35,7 @@
         <!-- Center text -->
         <div class="absolute inset-0 flex flex-col items-center justify-center">
           <span class="text-3xl font-bold text-gray-900 dark:text-white">{{ avgDays }}</span>
-          <span class="text-sm text-gray-500 dark:text-gray-400">días</span>
+          <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('avgResolution.days') }}</span>
         </div>
       </div>
     </div>
@@ -44,11 +44,11 @@
     <div class="mt-6 grid grid-cols-2 gap-4">
       <div class="rounded-lg bg-gray-50 p-3 text-center dark:bg-gray-700/50">
         <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ fastest }}</p>
-        <p class="text-xs text-gray-500 dark:text-gray-400">Más rápido</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('avgResolution.fastest') }}</p>
       </div>
       <div class="rounded-lg bg-gray-50 p-3 text-center dark:bg-gray-700/50">
         <p class="text-2xl font-bold text-orange-500 dark:text-orange-400">{{ slowest }}</p>
-        <p class="text-xs text-gray-500 dark:text-gray-400">Más lento</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('avgResolution.slowest') }}</p>
       </div>
     </div>
 
@@ -59,7 +59,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <p class="text-xs text-blue-700 dark:text-blue-300">
-          Basado en {{ resolvedCount }} issues resueltas de un total de {{ totalIssues }}
+          {{ t('avgResolution.basedOn', { resolved: resolvedCount, total: totalIssues }) }}
         </p>
       </div>
     </div>
@@ -68,7 +68,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Issue } from '@/types'
+
+const { t } = useI18n()
 
 interface Props {
   issues: Issue[]

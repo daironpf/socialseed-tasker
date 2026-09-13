@@ -2,8 +2,7 @@
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Componentes</h1>
-        <p class="text-sm text-gray-500">Gestión de módulos del sistema</p>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('components.title') }}</h1>
       </div>
       <div class="flex items-center gap-3">
         <div class="flex rounded-lg border border-gray-300 dark:border-gray-600">
@@ -22,7 +21,7 @@
           class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           @click="openCreateModal"
         >
-          + Nuevo Componente
+          {{ t('components.newComponent') }}
         </button>
       </div>
     </div>
@@ -35,7 +34,7 @@
       <input
         v-model="search"
         type="text"
-        placeholder="Search by name, alias, or UUID..."
+        :placeholder="t('components.search')"
         class="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800"
       />
     </div>
@@ -66,11 +65,11 @@
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Alias</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('components.name') }}</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('components.description') }}</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Project</th>
-            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Issues</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('components.issues') }}</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('components.actions') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -105,7 +104,7 @@
             </td>
           </tr>
           <tr v-if="filteredComponents.length === 0">
-            <td colspan="6" class="px-4 py-12 text-center text-sm text-gray-400">No components found</td>
+            <td colspan="6" class="px-4 py-12 text-center text-sm text-gray-400">{{ t('common.noData') }}</td>
           </tr>
         </tbody>
       </table>
@@ -131,7 +130,7 @@
             {{ getIssueCount(comp.id) }} issues
           </span>
         </div>
-        <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{{ comp.description || 'No description' }}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{{ comp.description || t('policies.noDescription') }}</p>
         <div class="mt-3 flex items-center justify-between text-xs text-gray-400">
           <span>UUID: {{ comp.id.slice(0, 8) }}...</span>
           <span>{{ new Date(comp.updated_at).toLocaleDateString() }}</span>
@@ -165,8 +164,8 @@
 
         <div class="p-6 space-y-6">
           <div>
-            <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Description</label>
-            <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ selectedComponent.description || 'No description' }}</p>
+            <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('components.description') }}</label>
+            <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ selectedComponent.description || t('policies.noDescription') }}</p>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -182,7 +181,7 @@
 
           <!-- Status breakdown -->
           <div>
-            <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 block">Issues by Status</label>
+            <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 block">{{ t('components.issues') }} by Status</label>
             <div class="grid grid-cols-4 gap-3">
               <div v-for="stat in componentStats" :key="stat.status" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
                 <div class="text-xl font-bold" :class="stat.color">{{ stat.count }}</div>
@@ -197,7 +196,7 @@
               Associated Issues ({{ componentIssues.length }})
             </label>
             <div v-if="componentIssues.length === 0" class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 p-8 text-center text-sm text-gray-400">
-              No issues associated with this component
+              {{ t('common.noData') }}
             </div>
             <div v-else class="space-y-2">
               <div
@@ -219,10 +218,10 @@
 
           <div class="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button class="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700" @click="openEditModal(selectedComponent); selectedComponent = null">
-              Edit Component
+              {{ t('issues.edit') }}
             </button>
             <button class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700" @click="confirmDelete(selectedComponent); selectedComponent = null">
-              Delete
+              {{ t('issues.delete') }}
             </button>
           </div>
         </div>
@@ -233,7 +232,7 @@
     <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeModal">
       <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800">
         <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-          {{ editingComponent ? 'Edit Component' : 'New Component' }}
+          {{ editingComponent ? t('issues.edit') : t('components.newComponent') }}
         </h2>
         <div class="space-y-4">
           <div class="grid grid-cols-3 gap-3">
@@ -256,13 +255,13 @@
           </div>
         </div>
         <div class="mt-6 flex justify-end gap-2">
-          <button class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700" @click="closeModal">Cancel</button>
+          <button class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700" @click="closeModal">{{ t('issues.cancel') }}</button>
           <button
             :disabled="!form.name"
             class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             @click="saveComponent"
           >
-            {{ editingComponent ? 'Save' : 'Create' }}
+            {{ editingComponent ? t('issues.save') : t('issues.create') }}
           </button>
         </div>
       </div>
@@ -272,9 +271,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useComponentsStore } from '@/stores/componentsStore'
 import { useIssuesStore } from '@/stores/issuesStore'
 import type { Component } from '@/types'
+
+const { t } = useI18n()
 
 const compStore = useComponentsStore()
 const issuesStore = useIssuesStore()

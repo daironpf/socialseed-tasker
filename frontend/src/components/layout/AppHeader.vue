@@ -7,6 +7,7 @@
         </h1>
       </div>
       <div class="flex items-center gap-3">
+        <UserMenu />
       </div>
     </div>
   </header>
@@ -15,23 +16,25 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import UserMenu from './UserMenu.vue'
 
 const route = useRoute()
+const { t } = useI18n()
 
 const pageTitle = computed(() => {
   const titles: Record<string, string> = {
-    '/board': 'Dashboard',
-    '/system': 'System Dashboard',
-    '/kanban': 'Kanban',
-    '/list': 'Issues',
-    '/graph': 'Grafo de Dependencias',
-    '/components': 'Componentes',
-    '/policies': 'Políticas',
-    '/constraints': 'Constraints',
-    '/users': 'Usuarios',
-    '/analysis': 'Análisis',
-    '/settings': 'Configuración',
+    '/board': t('header.dashboard'),
+    '/system': t('header.system'),
+    '/kanban': t('header.kanban'),
+    '/list': t('header.issues'),
+    '/graph': t('header.graph'),
+    '/components': t('header.components'),
+    '/policies': t('header.policies'),
+    '/constraints': t('header.constraints'),
+    '/users': t('header.users'),
+    '/analysis': t('header.analysis'),
   }
-  return titles[route.path] || 'Dashboard'
+  return titles[route.path] || t('header.dashboard')
 })
 </script>

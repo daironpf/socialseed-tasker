@@ -6,52 +6,52 @@
     <div v-else>
       <!-- Header -->
       <div class="mb-4 flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Issues</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('issues.title') }}</h1>
         <button
           class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
           @click="showCreateModal = true"
         >
-          + Nuevo Issue
+          {{ t('issues.newIssue') }}
         </button>
       </div>
 
       <div class="mb-4 flex items-center gap-2">
         <input
           v-model="search"
-          placeholder="Search by title, ID, or description..."
+          :placeholder="t('issues.search')"
           class="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
         />
         <select
           v-model="statusFilter"
           class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
         >
-          <option value="">All Status</option>
-          <option value="OPEN">Open</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="BLOCKED">Blocked</option>
-          <option value="CLOSED">Closed</option>
+          <option value="">{{ t('issues.allStatus') }}</option>
+          <option value="OPEN">{{ t('issues.open') }}</option>
+          <option value="IN_PROGRESS">{{ t('issues.inProgress') }}</option>
+          <option value="BLOCKED">{{ t('issues.blocked') }}</option>
+          <option value="CLOSED">{{ t('issues.closed') }}</option>
         </select>
         <select
           v-model="priorityFilter"
           class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
         >
-          <option value="">All Priority</option>
-          <option value="CRITICAL">Critical</option>
-          <option value="HIGH">High</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="LOW">Low</option>
+          <option value="">{{ t('issues.allPriority') }}</option>
+          <option value="CRITICAL">{{ t('issues.critical') }}</option>
+          <option value="HIGH">{{ t('issues.high') }}</option>
+          <option value="MEDIUM">{{ t('issues.medium') }}</option>
+          <option value="LOW">{{ t('issues.low') }}</option>
         </select>
         <select
           v-model="componentFilter"
           class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
         >
-          <option value="">All Components</option>
+          <option value="">{{ t('issues.allComponents') }}</option>
           <option v-for="comp in componentsStore.components" :key="comp.id" :value="comp.id">{{ comp.name }}</option>
         </select>
       </div>
 
       <div class="mb-2 text-sm text-gray-500 dark:text-gray-400">
-        Showing {{ filteredList.length }} of {{ issuesStore.issues.length }} issues
+        {{ t('issues.showing') }} {{ filteredList.length }} {{ t('issues.of') }} {{ issuesStore.issues.length }} {{ t('issues.title').toLowerCase() }}
       </div>
 
       <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
@@ -103,7 +103,7 @@
           </tbody>
         </table>
         <div v-if="filteredList.length === 0" class="py-12 text-center text-gray-400">
-          No issues found
+          {{ t('common.noData') }}
         </div>
       </div>
     </div>
@@ -134,6 +134,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Issue, IssueUpdateRequest } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useComponentsStore } from '@/stores/componentsStore'
@@ -145,6 +146,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
 import CreateIssueModal from '@/components/issue/CreateIssueModal.vue'
 
+const { t } = useI18n()
 const issuesStore = useIssuesStore()
 const componentsStore = useComponentsStore()
 const uiStore = useUiStore()
@@ -227,7 +229,7 @@ async function closeIssue(id: string) {
 }
 
 async function deleteIssue(id: string) {
-  if (confirm('Delete this issue?')) {
+  if (confirm(t('issues.deleteConfirm'))) {
     await issuesStore.deleteIssue(id)
   }
 }

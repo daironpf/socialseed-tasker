@@ -1,13 +1,13 @@
 <template>
   <div class="space-y-6">
     <div class="flex items-center gap-4">
-      <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Issue to analyze:</label>
+      <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('analysis.issueToAnalyze') }}</label>
       <select
         v-model="selectedIssueId"
         class="flex-1 max-w-md rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
         @change="analyze"
       >
-        <option value="">Select an issue...</option>
+        <option value="">{{ t('analysis.selectIssuePlaceholder') }}</option>
         <option v-for="issue in issuesStore.issues" :key="issue.id" :value="issue.id">
           {{ issue.id }} - {{ issue.title }}
         </option>
@@ -18,13 +18,13 @@
         class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         @click="analyze"
       >
-        {{ analysisStore.loadingImpact ? 'Analyzing...' : 'Analyze' }}
+        {{ analysisStore.loadingImpact ? t('analysis.loading') : t('analysis.analyze') }}
       </button>
     </div>
 
     <div v-if="analysisStore.loadingImpact" class="flex items-center justify-center py-12">
       <div class="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
-      <span class="ml-3 text-sm text-gray-500">Running BFS traversal...</span>
+      <span class="ml-3 text-sm text-gray-500">{{ t('analysis.runningBFS') }}</span>
     </div>
 
     <div v-else-if="analysisStore.impactResult" class="space-y-6">
@@ -43,24 +43,24 @@
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
           <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ analysisStore.impactResult.total_affected }}</div>
-          <div class="text-xs text-gray-500">Total Affected</div>
+          <div class="text-xs text-gray-500">{{ t('analysis.totalAffected') }}</div>
         </div>
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
           <div class="text-2xl font-bold text-blue-600">{{ analysisStore.impactResult.directly_affected.length }}</div>
-          <div class="text-xs text-gray-500">Direct Dependencies</div>
+          <div class="text-xs text-gray-500">{{ t('analysis.directDependencies') }}</div>
         </div>
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
           <div class="text-2xl font-bold text-amber-600">{{ analysisStore.impactResult.transitively_affected.length }}</div>
-          <div class="text-xs text-gray-500">Transitive</div>
+          <div class="text-xs text-gray-500">{{ t('analysis.transitive') }}</div>
         </div>
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
           <div class="text-2xl font-bold text-red-600">{{ analysisStore.impactResult.blocked_issues.length }}</div>
-          <div class="text-xs text-gray-500">Cascade Blocked</div>
+          <div class="text-xs text-gray-500">{{ t('analysis.cascadeBlocked') }}</div>
         </div>
       </div>
 
       <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-        <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Dependency Graph (BFS Traversal)</h4>
+        <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">{{ t('analysis.dependencyGraphBFS') }}</h4>
         <ImpactSvgTree
           :root-id="analysisStore.impactResult.issue_id"
           :root-title="analysisStore.impactResult.issue_title"
@@ -73,7 +73,7 @@
 
       <div v-if="analysisStore.impactResult.directly_affected.length" class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
         <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-          Direct Dependencies (Distance 1)
+          {{ t('analysis.directDepsDistance1') }}
         </h4>
         <div class="space-y-2">
           <div
@@ -97,7 +97,7 @@
 
       <div v-if="analysisStore.impactResult.transitively_affected.length" class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
         <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-          Transitive Dependencies (Distance 2+)
+          {{ t('analysis.transitiveDepsDistance2') }}
         </h4>
         <div class="space-y-2">
           <div
@@ -124,7 +124,7 @@
 
       <div v-if="analysisStore.impactResult.blocked_issues.length" class="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10 p-4">
         <h4 class="mb-3 text-sm font-semibold text-red-700 dark:text-red-400">
-          Cascade Blocked Issues
+          {{ t('analysis.cascadeBlockedIssues') }}
         </h4>
         <div class="space-y-2">
           <div
@@ -150,7 +150,7 @@
       </div>
 
       <div v-if="analysisStore.impactResult.affected_components.length" class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-        <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Affected Components</h4>
+        <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">{{ t('analysis.affectedComponents') }}</h4>
         <div class="flex flex-wrap gap-2">
           <span
             v-for="comp in analysisStore.impactResult.affected_components"
@@ -167,16 +167,19 @@
       <svg class="mb-3 h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
       </svg>
-      <p class="text-sm">Select an issue to run impact analysis</p>
+      <p class="text-sm">{{ t('analysis.selectIssueToAnalyze') }}</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAnalysisStore } from '@/stores/analysisStore'
 import { useIssuesStore } from '@/stores/issuesStore'
 import ImpactSvgTree from './ImpactSvgTree.vue'
+
+const { t } = useI18n()
 
 const analysisStore = useAnalysisStore()
 const issuesStore = useIssuesStore()

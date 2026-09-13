@@ -1,6 +1,6 @@
 <template>
   <aside
-    class="fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-gray-200 bg-white transition-all duration-300 dark:border-gray-700 dark:bg-gray-900 pb-10"
+    class="fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-gray-200 bg-white transition-all duration-300 dark:border-gray-700 dark:bg-gray-900"
     :class="isExpanded ? 'w-64' : 'w-20'"
     @mouseenter="isExpanded = true"
     @mouseleave="isExpanded = false"
@@ -22,12 +22,12 @@
 
     <!-- Navigation -->
     <nav class="flex-1 overflow-y-auto px-3 py-4">
-      <div v-for="group in navGroups" :key="group.label" class="mb-6">
+      <div v-for="group in navGroups" :key="group.key" class="mb-6">
         <p
           v-if="isExpanded"
           class="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500"
         >
-          {{ group.label }}
+          {{ t(`nav.${group.key}`) }}
         </p>
         <div v-else class="mb-2 h-px bg-gray-200 dark:bg-gray-700" />
 
@@ -43,136 +43,52 @@
         </div>
       </div>
     </nav>
-
-    <!-- Bottom Actions -->
-    <div class="border-t border-gray-200 p-3 dark:border-gray-700">
-      <NavItem
-        :item="darkModeItem"
-        :is-expanded="isExpanded"
-        :is-active="false"
-        @click="uiStore.toggleDarkMode"
-      />
-      <NavItem
-        :item="logoutItem"
-        :is-expanded="isExpanded"
-        :is-active="false"
-        @click="handleLogout"
-      />
-    </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useUiStore } from '@/stores/uiStore'
-import { useAuthStore } from '@/stores/authStore'
+import { useI18n } from 'vue-i18n'
 import NavItem from './NavItem.vue'
-
-interface NavItem {
-  path: string
-  label: string
-  icon: string
-  badge?: number
-}
 
 const route = useRoute()
 const router = useRouter()
-const uiStore = useUiStore()
-const authStore = useAuthStore()
+const { t } = useI18n()
 
 const isExpanded = ref(false)
 
-const navGroups = [
+const navGroups = computed(() => [
   {
-    label: 'Principal',
+    key: 'principal',
     items: [
-      {
-        path: '/board',
-        label: 'Dashboard',
-        icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
-      },
-      {
-        path: '/system',
-        label: 'System',
-        icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
-      },
-      {
-        path: '/kanban',
-        label: 'Kanban',
-        icon: 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2',
-      },
-      {
-        path: '/list',
-        label: 'Issues',
-        icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
-      },
+      { path: '/board', label: t('nav.dashboard'), icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+      { path: '/system', label: t('nav.system'), icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+      { path: '/kanban', label: t('nav.kanban'), icon: 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2' },
+      { path: '/list', label: t('nav.issues'), icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
     ],
   },
   {
-    label: 'Gestión',
+    key: 'management',
     items: [
-      {
-        path: '/components',
-        label: 'Componentes',
-        icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
-      },
-      {
-        path: '/policies',
-        label: 'Políticas',
-        icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
-      },
-      {
-        path: '/constraints',
-        label: 'Constraints',
-        icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z',
-      },
-      {
-        path: '/users',
-        label: 'Usuarios',
-        icon: 'M12 4.354a4 4 0 110 7.292 4 4 0 010-7.292zM15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
-      },
+      { path: '/components', label: t('nav.components'), icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
+      { path: '/policies', label: t('nav.policies'), icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
+      { path: '/constraints', label: t('nav.constraints'), icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z' },
+      { path: '/users', label: t('nav.users'), icon: 'M12 4.354a4 4 0 110 7.292 4 4 0 010-7.292zM15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
     ],
   },
   {
-    label: 'Análisis',
+    key: 'analysis',
     items: [
-      {
-        path: '/graph',
-        label: 'Grafo',
-        icon: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1',
-      },
-      {
-        path: '/analysis',
-        label: 'Análisis',
-        icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
-      },
+      { path: '/graph', label: t('nav.graph'), icon: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1' },
+      { path: '/analysis', label: t('nav.analysisView'), icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
     ],
   },
-]
-
-const darkModeItem = {
-  path: '',
-  label: uiStore.darkMode ? 'Modo Claro' : 'Modo Oscuro',
-  icon: uiStore.darkMode
-    ? 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z'
-    : 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z',
-}
-
-const logoutItem = {
-  path: '',
-  label: 'Salir',
-  icon: 'M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1',
-}
+])
 
 function navigateTo(path: string) {
   if (path) {
     router.push(path)
   }
-}
-
-function handleLogout() {
-  authStore.clearApiKey()
-  window.location.reload()
 }
 </script>

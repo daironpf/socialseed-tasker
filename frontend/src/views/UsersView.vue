@@ -6,29 +6,29 @@
     <div v-else class="p-6">
       <div class="mb-6 flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Usuarios</h1>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Team members y agentes IA del proyecto</p>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('users.title') }}</h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('users.subtitle') }}</p>
         </div>
         <button
           class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
           @click="showCreateModal = true"
         >
-          + Nuevo Usuario
+          {{ t('users.newUser') }}
         </button>
       </div>
 
       <!-- Stats -->
       <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-          <div class="text-sm text-gray-500 dark:text-gray-400">Total Usuarios</div>
+          <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('users.totalUsers') }}</div>
           <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ usersStore.users.length }}</div>
         </div>
         <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-          <div class="text-sm text-gray-500 dark:text-gray-400">Humanos</div>
+          <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('users.humans') }}</div>
           <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ humans.length }}</div>
         </div>
         <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-          <div class="text-sm text-gray-500 dark:text-gray-400">Agentes IA</div>
+          <div class="text-sm text-gray-500 dark:text-gray-400">{{ t('users.aiAgents') }}</div>
           <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ agents.length }}</div>
         </div>
       </div>
@@ -56,23 +56,23 @@
               class="rounded-full px-2 py-0.5 text-xs font-medium"
               :class="user.type === 'human' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'"
             >
-              {{ user.type === 'human' ? 'Humano' : 'IA' }}
+              {{ user.type === 'human' ? 'Human' : 'AI' }}
             </span>
           </div>
 
           <!-- Role -->
           <div class="mb-3 text-sm text-gray-600 dark:text-gray-300">
-            <span class="font-medium">Rol:</span> {{ formatRole(user.role) }}
+            <span class="font-medium">{{ t('users.role') }}:</span> {{ formatRole(user.role) }}
           </div>
 
           <!-- Model (for agents) -->
           <div v-if="user.type === 'agent' && user.model" class="mb-3 text-sm text-gray-600 dark:text-gray-300">
-            <span class="font-medium">Modelo:</span> {{ user.model }}
+            <span class="font-medium">{{ t('users.model') }}:</span> {{ user.model }}
           </div>
 
           <!-- Skills -->
           <div class="mb-4">
-            <div class="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">Habilidades</div>
+            <div class="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('users.skills') }}</div>
             <div class="flex flex-wrap gap-1">
               <span
                 v-for="skill in user.skills"
@@ -91,21 +91,21 @@
               class="cursor-pointer text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg p-1 -m-1"
             >
               <div class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ getUserAssignedCount(user.id) }}</div>
-              <div class="text-[10px] text-gray-500 dark:text-gray-400">Asignados</div>
+              <div class="text-[10px] text-gray-500 dark:text-gray-400">{{ t('users.assigned') }}</div>
             </button>
             <button
               @click="openIssuesModal(user, 'created')"
               class="cursor-pointer text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg p-1 -m-1"
             >
               <div class="text-lg font-bold text-green-600 dark:text-green-400">{{ getUserCreatedCount(user.id) }}</div>
-              <div class="text-[10px] text-gray-500 dark:text-gray-400">Creados</div>
+              <div class="text-[10px] text-gray-500 dark:text-gray-400">{{ t('users.created') }}</div>
             </button>
             <button
               @click="openIssuesModal(user, 'completed')"
               class="cursor-pointer text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg p-1 -m-1"
             >
               <div class="text-lg font-bold text-purple-600 dark:text-purple-400">{{ getUserCompletedCount(user.id) }}</div>
-              <div class="text-[10px] text-gray-500 dark:text-gray-400">Terminados</div>
+              <div class="text-[10px] text-gray-500 dark:text-gray-400">{{ t('users.completed') }}</div>
             </button>
           </div>
 
@@ -115,14 +115,14 @@
               <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Última vez: {{ formatDate(user.last_active) }}
+              {{ t('users.lastActive') }} {{ formatDate(user.last_active) }}
             </div>
             <div class="flex items-center gap-1">
               <button
                 v-if="user.type === 'agent'"
                 @click="openEditAgent(user)"
                 class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-purple-600 dark:hover:bg-gray-700 dark:hover:text-purple-400"
-                title="Editar agente"
+                :title="t('users.editAgent')"
               >
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -132,7 +132,7 @@
                 v-if="user.type === 'human'"
                 @click="openEditUser(user)"
                 class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-700 dark:hover:text-blue-400"
-                title="Editar usuario"
+                :title="t('users.editUser')"
               >
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -142,7 +142,7 @@
                 v-if="user.type === 'human'"
                 @click="deleteUser(user)"
                 class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
-                title="Eliminar usuario"
+                :title="t('users.deleteUser')"
               >
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -195,7 +195,7 @@
             <LoadingSpinner />
           </div>
           <div v-else-if="modalIssues.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
-            No hay issues para mostrar
+            {{ t('common.noData') }}
           </div>
           <div v-else class="space-y-3">
             <div
@@ -256,16 +256,21 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import EditAgentModal from '@/components/users/EditAgentModal.vue'
 import EditUserModal from '@/components/users/EditUserModal.vue'
 import CreateUserModal from '@/components/users/CreateUserModal.vue'
 import { useUsersStore } from '@/stores/usersStore'
 import { useIssuesStore } from '@/stores/issuesStore'
+import { useUiStore } from '@/stores/uiStore'
 import type { User } from '@/types'
+
+const { t } = useI18n()
 
 const usersStore = useUsersStore()
 const issuesStore = useIssuesStore()
+const uiStore = useUiStore()
 
 const showIssuesModal = ref(false)
 const selectedUser = ref<User | null>(null)
@@ -298,10 +303,10 @@ function getUserCompletedCount(userId: string): number {
 }
 
 const modalTitle = computed(() => {
-  const map = {
-    assigned: 'Issues asignados a',
-    created: 'Issues creados por',
-    completed: 'Issues terminados por',
+  const map: Record<string, string> = {
+    assigned: t('users.assigned'),
+    created: t('users.created'),
+    completed: t('users.completed'),
   }
   return map[modalType.value] || ''
 })
@@ -321,10 +326,10 @@ function formatDate(dateStr: string): string {
   const diffMs = now.getTime() - date.getTime()
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
   
-  if (diffDays === 0) return 'Hoy'
-  if (diffDays === 1) return 'Ayer'
-  if (diffDays < 7) return `Hace ${diffDays} días`
-  return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+  if (diffDays === 0) return t('users.today')
+  if (diffDays === 1) return t('users.yesterday')
+  if (diffDays < 7) return `${diffDays} ${t('users.daysAgo')}`
+  return date.toLocaleDateString(uiStore.locale === 'es' ? 'es-ES' : 'en-US', { day: 'numeric', month: 'short' })
 }
 
 function getStatusClass(status: string): string {
@@ -410,7 +415,7 @@ async function saveUser(updatedUser: User) {
 }
 
 async function deleteUser(user: User) {
-  if (confirm(`¿Eliminar al usuario "${user.username}"?`)) {
+  if (confirm(`${t('users.deleteConfirm')} "${user.username}"?`)) {
     await usersStore.deleteUser(user.id)
   }
 }

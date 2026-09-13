@@ -61,7 +61,7 @@
         </svg>
         {{ Math.abs(trend) }}%
       </span>
-      <span class="text-sm text-gray-500 dark:text-gray-400">vs mes anterior</span>
+      <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('statsCard.vsLastMonth') }}</span>
     </div>
 
     <div
@@ -74,6 +74,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface Props {
   title: string

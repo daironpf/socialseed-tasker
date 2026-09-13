@@ -1,19 +1,19 @@
 <template>
   <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
     <div class="mb-4 flex items-center justify-between">
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Tendencia de Issues</h3>
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('trendChart.title') }}</h3>
       <div class="flex gap-4 text-sm">
         <div class="flex items-center gap-2">
           <span class="h-3 w-3 rounded-full bg-blue-500"></span>
-          <span class="text-gray-500 dark:text-gray-400">Abiertas</span>
+          <span class="text-gray-500 dark:text-gray-400">{{ t('trendChart.open') }}</span>
         </div>
         <div class="flex items-center gap-2">
           <span class="h-3 w-3 rounded-full bg-green-500"></span>
-          <span class="text-gray-500 dark:text-gray-400">Cerradas</span>
+          <span class="text-gray-500 dark:text-gray-400">{{ t('trendChart.closed') }}</span>
         </div>
         <div class="flex items-center gap-2">
           <span class="h-3 w-3 rounded-full bg-orange-500"></span>
-          <span class="text-gray-500 dark:text-gray-400">En Progreso</span>
+          <span class="text-gray-500 dark:text-gray-400">{{ t('trendChart.inProgress') }}</span>
         </div>
       </div>
     </div>
@@ -90,7 +90,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Issue } from '@/types'
+
+const { t } = useI18n()
 
 interface Props {
   issues: Issue[]

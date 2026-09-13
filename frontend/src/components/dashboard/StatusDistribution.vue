@@ -1,7 +1,7 @@
 <template>
   <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
     <div class="mb-4 flex items-center justify-between">
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Distribución por Estado</h3>
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('statusDistribution.title') }}</h3>
     </div>
 
     <div class="space-y-3">
@@ -29,7 +29,7 @@
     <!-- Summary -->
     <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
       <div class="flex items-center justify-between text-sm">
-        <span class="text-gray-500 dark:text-gray-400">Total issues</span>
+        <span class="text-gray-500 dark:text-gray-400">{{ t('statusDistribution.totalIssues') }}</span>
         <span class="font-semibold text-gray-900 dark:text-white">{{ total }}</span>
       </div>
     </div>
@@ -38,7 +38,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Issue } from '@/types'
+
+const { t } = useI18n()
 
 interface Props {
   issues: Issue[]
@@ -46,13 +49,13 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  OPEN: { label: 'Abierto', color: 'bg-blue-500' },
-  IN_PROGRESS: { label: 'En Progreso', color: 'bg-orange-500' },
-  BLOCKED: { label: 'Bloqueado', color: 'bg-red-500' },
-  CLOSED: { label: 'Cerrado', color: 'bg-green-500' },
-  REVIEW: { label: 'En Revisión', color: 'bg-purple-500' },
-}
+const statusConfig = computed(() => ({
+  OPEN: { label: t('statusDistribution.open'), color: 'bg-blue-500' },
+  IN_PROGRESS: { label: t('statusDistribution.inProgress'), color: 'bg-orange-500' },
+  BLOCKED: { label: t('statusDistribution.blocked'), color: 'bg-red-500' },
+  CLOSED: { label: t('statusDistribution.closed'), color: 'bg-green-500' },
+  REVIEW: { label: t('statusDistribution.review'), color: 'bg-purple-500' },
+}))
 
 const total = computed(() => props.issues.length)
 
@@ -62,7 +65,7 @@ const statusData = computed(() => {
     counts[issue.status] = (counts[issue.status] || 0) + 1
   })
 
-  return Object.entries(statusConfig)
+  return Object.entries(statusConfig.value)
     .map(([status, config]) => ({
       status,
       label: config.label,

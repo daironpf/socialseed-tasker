@@ -2,16 +2,16 @@
   <main class="flex-1 overflow-auto p-6">
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Project Policies</h2>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('policies.title') }}</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Governance constraints and architectural rules enforced on the project.
+          {{ t('policies.subtitle') }}
         </p>
       </div>
       <button
         class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
         @click="showCreateModal = true"
       >
-        + Nueva Policy
+        {{ t('policies.newPolicy') }}
       </button>
     </div>
 
@@ -39,9 +39,9 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       </div>
-      <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No policies configured</h3>
+      <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">{{ t('policies.noPolicies') }}</h3>
       <p class="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-md">
-        This project currently does not have any active policies. Use the CLI to initialize or create policies.
+        {{ t('policies.noPoliciesDesc') }}
       </p>
     </div>
 
@@ -60,7 +60,7 @@
               class="inline-flex flex-shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
               :class="policy.is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'"
             >
-              {{ policy.is_active ? 'Active' : 'Inactive' }}
+              {{ policy.is_active ? t('policies.active') : t('policies.inactive') }}
             </span>
             <button
               class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
@@ -76,17 +76,17 @@
         
         <div class="p-5 flex-1 flex flex-col">
           <div class="prose prose-sm dark:prose-invert max-w-none flex-1 text-gray-600 dark:text-gray-300 mb-4 whitespace-pre-line">
-            {{ policy.description || 'No description provided.' }}
+            {{ policy.description || t('policies.noDescription') }}
           </div>
           
           <div class="mt-auto space-y-2 text-sm">
             <div class="flex justify-between border-t border-gray-100 pt-3 dark:border-gray-700">
-              <span class="text-gray-500 dark:text-gray-400">Target Scope</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ t('policies.targetScope') }}</span>
               <span class="font-medium text-gray-700 dark:text-gray-300">{{ policy.target_scope }}</span>
             </div>
             
             <div v-if="policy.rules && policy.rules.length > 0" class="flex justify-between border-t border-gray-100 pt-2 dark:border-gray-700">
-              <span class="text-gray-500 dark:text-gray-400">Rules Count</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ t('policies.rulesCount') }}</span>
               <span class="font-medium text-gray-700 dark:text-gray-300">{{ policy.rules.length }}</span>
             </div>
           </div>
@@ -102,11 +102,11 @@
     >
       <div class="w-full max-w-md rounded-lg bg-white shadow-xl p-6 dark:bg-gray-800">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Nueva Policy
+          {{ t('policies.newPolicy') }}
         </h3>
         <form @submit.prevent="submitPolicy" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('policies.name') }} *</label>
             <input 
               v-model="form.name" 
               required 
@@ -115,40 +115,40 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('policies.description') }}</label>
             <textarea 
               v-model="form.description" 
               rows="2"
-              placeholder="Descripción de la política..."
+              placeholder="Policy description..."
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             ></textarea>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Regla *</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('policies.rule') }} *</label>
             <select 
               v-model="form.rule" 
               required
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
-              <option value="">Seleccionar regla</option>
-              <option value="no_circular_dependencies">No circular dependencies</option>
-              <option value="max_dependencies">Max dependencies limit</option>
-              <option value="required_labels">Required labels</option>
-              <option value="component_ownership">Component ownership</option>
+              <option value="">{{ t('policies.selectRule') }}</option>
+              <option value="no_circular_dependencies">{{ t('policies.noCircularDependencies') }}</option>
+              <option value="max_dependencies">{{ t('policies.maxDependencies') }}</option>
+              <option value="required_labels">{{ t('policies.requiredLabels') }}</option>
+              <option value="component_ownership">{{ t('policies.componentOwnership') }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nivel</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('policies.level') }}</label>
             <select 
               v-model="form.level" 
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
-              <option value="SOFT">Soft (advertencia)</option>
-              <option value="HARD">Hard (bloqueante)</option>
+              <option value="SOFT">{{ t('policies.soft') }}</option>
+              <option value="HARD">{{ t('policies.hard') }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Target Scope</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('policies.targetScope') }}</label>
             <input 
               v-model="form.target_scope" 
               placeholder="ej: project"
@@ -164,14 +164,14 @@
               class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
               @click="showCreateModal = false"
             >
-              Cancelar
+              {{ t('issues.cancel') }}
             </button>
             <button
               type="submit"
               :disabled="creating"
               class="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 dark:bg-brand-500 dark:hover:bg-brand-600"
             >
-              {{ creating ? 'Creando...' : 'Crear Policy' }}
+              {{ creating ? t('policies.creating') : t('policies.createPolicy') }}
             </button>
           </div>
         </form>
@@ -186,11 +186,11 @@
     >
       <div class="w-full max-w-md rounded-lg bg-white shadow-xl p-6 dark:bg-gray-800">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Editar Policy
+          {{ t('policies.editPolicy') }}
         </h3>
         <form @submit.prevent="submitEdit" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('policies.name') }} *</label>
             <input 
               v-model="editForm.name" 
               required 
@@ -199,40 +199,40 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('policies.description') }}</label>
             <textarea 
               v-model="editForm.description" 
               rows="2"
-              placeholder="Descripción de la política..."
+              placeholder="Policy description..."
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             ></textarea>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Regla *</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('policies.rule') }} *</label>
             <select 
               v-model="editForm.rule" 
               required
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
-              <option value="">Seleccionar regla</option>
-              <option value="no_circular_dependencies">No circular dependencies</option>
-              <option value="max_dependencies">Max dependencies limit</option>
-              <option value="required_labels">Required labels</option>
-              <option value="component_ownership">Component ownership</option>
+              <option value="">{{ t('policies.selectRule') }}</option>
+              <option value="no_circular_dependencies">{{ t('policies.noCircularDependencies') }}</option>
+              <option value="max_dependencies">{{ t('policies.maxDependencies') }}</option>
+              <option value="required_labels">{{ t('policies.requiredLabels') }}</option>
+              <option value="component_ownership">{{ t('policies.componentOwnership') }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nivel</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('policies.level') }}</label>
             <select 
               v-model="editForm.level" 
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
-              <option value="SOFT">Soft (advertencia)</option>
-              <option value="HARD">Hard (bloqueante)</option>
+              <option value="SOFT">{{ t('policies.soft') }}</option>
+              <option value="HARD">{{ t('policies.hard') }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Target Scope</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('policies.targetScope') }}</label>
             <input 
               v-model="editForm.target_scope" 
               placeholder="ej: project"
@@ -246,7 +246,7 @@
               id="edit-is-active"
               class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
             />
-            <label for="edit-is-active" class="text-sm font-medium text-gray-700 dark:text-gray-300">Active</label>
+            <label for="edit-is-active" class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('policies.active') }}</label>
           </div>
           <div v-if="editError" class="rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
             {{ editError }}
@@ -257,14 +257,14 @@
               class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
               @click="showEditModal = false"
             >
-              Cancelar
+              {{ t('issues.cancel') }}
             </button>
             <button
               type="submit"
               :disabled="saving"
               class="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 dark:bg-brand-500 dark:hover:bg-brand-600"
             >
-              {{ saving ? 'Guardando...' : 'Guardar Cambios' }}
+              {{ saving ? t('policies.saving') : t('policies.saveChanges') }}
             </button>
           </div>
         </form>
@@ -275,8 +275,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePoliciesStore } from '@/stores/policiesStore'
 import type { Policy } from '@/types'
+
+const { t } = useI18n()
 
 const store = usePoliciesStore()
 

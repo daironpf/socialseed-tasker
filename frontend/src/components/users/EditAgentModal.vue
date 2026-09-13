@@ -13,7 +13,7 @@
           </div>
           <div>
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-              Editar Agente IA
+              {{ t('users.editAIAgent') }}
             </h2>
             <p class="text-sm text-gray-500 dark:text-gray-400">
               {{ form.username }}
@@ -35,7 +35,7 @@
         <!-- Username -->
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Nombre de usuario
+            {{ t('users.username') }}
           </label>
           <input
             v-model="form.username"
@@ -47,7 +47,7 @@
         <!-- Email -->
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Email
+            {{ t('users.email') }}
           </label>
           <input
             v-model="form.email"
@@ -59,7 +59,7 @@
         <!-- Model -->
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Modelo
+            {{ t('users.model') }}
           </label>
           <select
             v-model="form.model"
@@ -76,7 +76,7 @@
         <!-- Specialization -->
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Especialización
+            {{ t('users.specialization') }}
           </label>
           <input
             v-model="form.specialization"
@@ -88,7 +88,7 @@
         <!-- Skills -->
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Habilidades
+            {{ t('users.skills') }}
           </label>
           <div class="flex flex-wrap gap-2 mb-2">
             <span
@@ -110,7 +110,7 @@
               v-model="newSkill"
               @keyup.enter="addSkill"
               type="text"
-              placeholder="Agregar habilidad..."
+              :placeholder="t('users.addSkill')"
               class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
             <button
@@ -125,7 +125,7 @@
         <!-- Avatar -->
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Avatar
+            {{ t('users.avatar') }}
           </label>
           <div class="flex gap-2">
             <button
@@ -147,13 +147,13 @@
           @click="close"
           class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
         >
-          Cancelar
+          {{ t('users.cancel') }}
         </button>
         <button
           @click="save"
           class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
         >
-          Guardar cambios
+          {{ t('users.saveChanges') }}
         </button>
       </div>
     </div>
@@ -162,6 +162,9 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface AgentUser {
   id: string

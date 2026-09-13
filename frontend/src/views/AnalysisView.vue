@@ -1,10 +1,7 @@
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Impact & Root Cause Analysis</h1>
-      <p class="mt-1 text-sm text-gray-500">
-        Graph-based intelligence for diagnosing failures and assessing change risks.
-      </p>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('analysis.title') }}</h1>
     </div>
 
     <div class="border-b border-gray-200 dark:border-gray-700">
@@ -16,7 +13,7 @@
             : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
           @click="activeTab = 'impact'"
         >
-          Impact Analysis
+          {{ t('analysis.impactAnalysis') }}
         </button>
         <button
           class="border-b-2 px-1 py-3 text-sm font-medium transition-colors"
@@ -25,7 +22,7 @@
             : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
           @click="activeTab = 'rootcause'"
         >
-          Root Cause Analysis
+          {{ t('analysis.rootCause') }}
         </button>
       </nav>
     </div>
@@ -41,8 +38,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import ImpactAnalysisPanel from '@/components/analysis/ImpactAnalysisPanel.vue'
 import RootCausePanel from '@/components/analysis/RootCausePanel.vue'
+
+const { t } = useI18n()
 
 const activeTab = ref<'impact' | 'rootcause'>('impact')
 </script>
