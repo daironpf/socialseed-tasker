@@ -353,6 +353,28 @@
   "statsCard": {
     "vsLastMonth": "vs mes anterior"
   },
+  "shortcuts": {
+    "title": "Atajos de Teclado",
+    "hint": "Presiona ? en cualquier lugar para mostrar/ocultar esta ayuda",
+    "groupNavigation": "Navegacion",
+    "groupCommandPalette": "Paleta de Comandos",
+    "groupListKanban": "Lista / Kanban",
+    "groupGeneral": "General",
+    "createIssue": "Crear nuevo issue",
+    "goList": "Ir a Lista de Issues",
+    "goKanban": "Ir a Tablero Kanban",
+    "goGraph": "Ir a Grafo de Dependencias",
+    "goDashboard": "Ir al Dashboard",
+    "goUsers": "Ir a Usuarios",
+    "goComponents": "Ir a Componentes",
+    "openPalette": "Abrir paleta de comandos",
+    "nextItem": "Mover foco hacia abajo",
+    "prevItem": "Mover foco hacia arriba",
+    "openDetail": "Abrir elemento seleccionado",
+    "closePanel": "Cerrar panel / modal",
+    "showHelp": "Mostrar esta ayuda",
+    "toggleDark": "Cambiar modo oscuro"
+  },
   "palette": {
     "placeholder": "Buscar paginas, issues, componentes...",
     "recent": "Recientes",

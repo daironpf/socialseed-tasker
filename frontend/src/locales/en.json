@@ -353,6 +353,28 @@
   "statsCard": {
     "vsLastMonth": "vs last month"
   },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "hint": "Press ? anywhere to toggle this panel",
+    "groupNavigation": "Navigation",
+    "groupCommandPalette": "Command Palette",
+    "groupListKanban": "List / Kanban",
+    "groupGeneral": "General",
+    "createIssue": "Create new issue",
+    "goList": "Go to Issues List",
+    "goKanban": "Go to Kanban Board",
+    "goGraph": "Go to Dependency Graph",
+    "goDashboard": "Go to Dashboard",
+    "goUsers": "Go to Users",
+    "goComponents": "Go to Components",
+    "openPalette": "Open command palette",
+    "nextItem": "Move focus down",
+    "prevItem": "Move focus up",
+    "openDetail": "Open selected item",
+    "closePanel": "Close panel / modal",
+    "showHelp": "Show this help",
+    "toggleDark": "Toggle dark mode"
+  },
   "palette": {
     "placeholder": "Search pages, issues, components...",
     "recent": "Recent",
