@@ -56,7 +56,7 @@
               class="rounded-full px-2 py-0.5 text-xs font-medium"
               :class="user.type === 'human' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'"
             >
-              {{ user.type === 'human' ? 'Human' : 'AI' }}
+              {{ user.type === 'human' ? t('users.humanBadge') : t('users.aiBadge') }}
             </span>
           </div>
 
@@ -185,7 +185,7 @@
                 {{ modalTitle }} {{ selectedUser?.username }}
               </h2>
               <p class="text-sm text-gray-500 dark:text-gray-400">
-                {{ modalIssues.length }} issues
+                {{ modalIssues.length }} {{ t('issues.title').toLowerCase() }}
               </p>
             </div>
           </div>
@@ -324,9 +324,9 @@ const modalTitle = computed(() => {
 
 function formatRole(role: string): string {
   const roles: Record<string, string> = {
-    'lead-developer': 'Lead Developer',
-    'developer': 'Developer',
-    'ai-agent': 'AI Agent',
+    'lead-developer': t('users.leadDeveloper'),
+    'developer': t('users.developer'),
+    'ai-agent': t('users.aiAgentRole'),
   }
   return roles[role] || role
 }

@@ -246,12 +246,15 @@
     "developer": "Developer",
     "designer": "Designer",
     "manager": "Manager",
-    "qa": "QA"
+    "qa": "QA",
+    "humanBadge": "Humano",
+    "aiBadge": "IA",
+    "aiAgentRole": "Agente IA"
   },
   "graph": {
     "title": "Grafo de Dependencias",
     "subtitle": "Visualiza dependencias de issues y relaciones entre componentes",
-    "noData": "No hay datos de dependencias disponibles",
+    "noData": "No hay issues para mostrar. Crea algunos issues primero.",
     "directDeps": "Dependencias directas",
     "transitiveDeps": "Dependencias transitivas",
     "connectMode": "Conectar",
@@ -270,7 +273,9 @@
     "filterComponents": "Filtrar por Componente",
     "clearAll": "Limpiar todo",
     "maxHops": "Max saltos",
-    "reset": "Reiniciar"
+    "reset": "Reiniciar",
+    "hierarchical": "Jerarquico",
+    "forceDirected": "Fuerza Dirigida"
   },
   "analysis": {
     "title": "Analisis",
@@ -601,31 +606,6 @@
   "projects": {
     "title": "Cambiar Proyecto",
     "current": "Actual"
-  },
-  "graph": {
-    "title": "Grafo de Dependencias",
-    "connectMode": "Conectar",
-    "connectModeOn": "Conectando...",
-    "connectHint": "Haz clic en dos nodos para conectar",
-    "createRelationship": "Crear Relacion",
-    "blockedBy": "Bloquea A",
-    "blockedByDesc": "Este issue bloquea al objetivo",
-    "dependsOn": "Depende De",
-    "dependsOnDesc": "Este issue depende del objetivo",
-    "cancel": "Cancelar",
-    "create": "Crear",
-    "cycleDetected": "No se puede crear: dependencia circular detectada",
-    "allComponents": "Todos los Componentes",
-    "componentsSelected": "{n} seleccionados",
-    "filterComponents": "Filtrar por Componente",
-    "clearAll": "Limpiar todo",
-    "maxHops": "Max saltos",
-    "reset": "Reiniciar"
-  },
-  "analysis": {
-    "blastRadius": "Radio de Explosion",
-    "depth": "Profundidad:",
-    "systemAffected": "Sistema afectado"
   },
   "export": {
     "title": "Exportar",

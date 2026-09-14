@@ -34,13 +34,13 @@
         @click="setLayout('hierarchical')"
         class="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
       >
-        Hierarchical
+        {{ t('graph.hierarchical') }}
       </button>
       <button
         @click="setLayout('force')"
         class="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
       >
-        Force Directed
+        {{ t('graph.forceDirected') }}
       </button>
       <div class="border-l border-gray-300 dark:border-gray-600 mx-1"></div>
       <GraphFilters
@@ -80,9 +80,9 @@
     <div v-if="loading" class="flex items-center justify-center h-64">
       <LoadingSpinner />
     </div>
-    <div v-else-if="graphData.nodes.length === 0" class="text-center py-12 text-gray-400">
-      No issues to display. Create some issues first.
-    </div>
+      <div v-else-if="graphData.nodes.length === 0" class="text-center py-12 text-gray-400">
+        {{ t('graph.noData') }}
+      </div>
     <div ref="networkContainer" class="w-full h-[600px] rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800" />
 
     <div class="mt-2 flex justify-end">

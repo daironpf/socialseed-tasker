@@ -246,12 +246,15 @@
     "developer": "Developer",
     "designer": "Designer",
     "manager": "Manager",
-    "qa": "QA"
+    "qa": "QA",
+    "humanBadge": "Human",
+    "aiBadge": "AI",
+    "aiAgentRole": "AI Agent"
   },
   "graph": {
     "title": "Dependency Graph",
     "subtitle": "Visualize issue dependencies and component relationships",
-    "noData": "No dependency data available",
+    "noData": "No issues to display. Create some issues first.",
     "directDeps": "Direct dependencies",
     "transitiveDeps": "Transitive dependencies",
     "connectMode": "Connect",
@@ -270,7 +273,9 @@
     "filterComponents": "Filter by Component",
     "clearAll": "Clear all",
     "maxHops": "Max hops",
-    "reset": "Reset"
+    "reset": "Reset",
+    "hierarchical": "Hierarchical",
+    "forceDirected": "Force Directed"
   },
   "analysis": {
     "title": "Analysis",
@@ -601,31 +606,6 @@
   "projects": {
     "title": "Switch Project",
     "current": "Current"
-  },
-  "graph": {
-    "title": "Dependency Graph",
-    "connectMode": "Connect",
-    "connectModeOn": "Connecting...",
-    "connectHint": "Click two nodes to connect",
-    "createRelationship": "Create Relationship",
-    "blockedBy": "Blocked By",
-    "blockedByDesc": "This issue blocks the target",
-    "dependsOn": "Depends On",
-    "dependsOnDesc": "This issue depends on the target",
-    "cancel": "Cancel",
-    "create": "Create",
-    "cycleDetected": "Cannot create: circular dependency detected",
-    "allComponents": "All Components",
-    "componentsSelected": "{n} selected",
-    "filterComponents": "Filter by Component",
-    "clearAll": "Clear all",
-    "maxHops": "Max hops",
-    "reset": "Reset"
-  },
-  "analysis": {
-    "blastRadius": "Blast Radius",
-    "depth": "Depth:",
-    "systemAffected": "System affected"
   },
   "export": {
     "title": "Export",
