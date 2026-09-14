@@ -5,6 +5,15 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SocialSeed Tasker</title>
+    <script>
+      // Apply dark mode immediately to prevent flash
+      (function() {
+        var dark = localStorage.getItem('tasker-dark-mode');
+        if (dark === 'true' || (!dark && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>
