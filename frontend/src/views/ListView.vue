@@ -7,12 +7,50 @@
       <!-- Header -->
       <div class="mb-4 flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('issues.title') }}</h1>
-        <button
-          class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
-          @click="showCreateModal = true"
-        >
-          {{ t('issues.newIssue') }}
-        </button>
+        <div class="flex items-center gap-2">
+          <div class="relative" ref="exportDropdownRef">
+            <button
+              class="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              @click="showExportMenu = !showExportMenu"
+            >
+              <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              {{ t('export.title') }}
+            </button>
+            <Teleport to="body">
+              <Transition
+                enter-active-class="transition duration-100 ease-out"
+                enter-from-class="scale-95 opacity-0"
+                enter-to-class="scale-100 opacity-100"
+                leave-active-class="transition duration-75 ease-in"
+                leave-from-class="scale-100 opacity-100"
+                leave-to-class="scale-95 opacity-0"
+              >
+                <div
+                  v-if="showExportMenu"
+                  class="fixed z-50 w-44 rounded-xl border border-gray-200 bg-white py-1 shadow-xl dark:border-gray-700 dark:bg-gray-900"
+                  :style="{ top: '50px', right: '180px' }"
+                >
+                  <button class="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800" @click="downloadCSV">
+                    <span class="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-bold text-green-700 dark:bg-green-900/30 dark:text-green-300">CSV</span>
+                    {{ t('export.downloadCSV') }}
+                  </button>
+                  <button class="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800" @click="downloadJSON">
+                    <span class="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">JSON</span>
+                    {{ t('export.downloadJSON') }}
+                  </button>
+                </div>
+              </Transition>
+            </Teleport>
+          </div>
+          <button
+            class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
+            @click="showCreateModal = true"
+          >
+            {{ t('issues.newIssue') }}
+          </button>
+        </div>
       </div>
 
       <div class="mb-4 flex items-center gap-2">
@@ -145,12 +183,16 @@ import LabelTag from '@/components/ui/LabelTag.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
 import CreateIssueModal from '@/components/issue/CreateIssueModal.vue'
+import { useExport } from '@/composables/useExport'
 
 const { t } = useI18n()
 const issuesStore = useIssuesStore()
 const componentsStore = useComponentsStore()
 const uiStore = useUiStore()
+const { exportCSV, exportJSON } = useExport()
 const showCreateModal = ref(false)
+const showExportMenu = ref(false)
+const exportDropdownRef = ref<HTMLElement | null>(null)
 
 const search = computed({
   get: () => uiStore.filters.search,
@@ -242,6 +284,26 @@ async function fetchWithFilters() {
 function onIssueCreated() {
   showCreateModal.value = false
   fetchWithFilters()
+}
+
+async function downloadCSV() {
+  showExportMenu.value = false
+  const rows = filteredList.value.map(i => ({
+    id: i.id,
+    title: i.title,
+    status: i.status,
+    priority: i.priority,
+    component: getComponentName(i.component_id),
+    assignee: i.assignee || '',
+    labels: i.labels.join('; '),
+    created: i.created_at,
+  }))
+  await exportCSV(rows, 'issues-export')
+}
+
+async function downloadJSON() {
+  showExportMenu.value = false
+  await exportJSON(filteredList.value, 'issues-export')
 }
 
 onMounted(async () => {

@@ -567,5 +567,14 @@
     "blastRadius": "Blast Radius",
     "depth": "Depth:",
     "systemAffected": "System affected"
+  },
+  "export": {
+    "title": "Export",
+    "downloadCSV": "Download CSV",
+    "downloadJSON": "Download JSON",
+    "downloadSVG": "Download SVG",
+    "downloadPNG": "Download PNG",
+    "downloadMarkdown": "Download Markdown",
+    "generating": "Generating export..."
   }
 }

@@ -567,5 +567,14 @@
     "blastRadius": "Radio de Explosion",
     "depth": "Profundidad:",
     "systemAffected": "Sistema afectado"
+  },
+  "export": {
+    "title": "Exportar",
+    "downloadCSV": "Descargar CSV",
+    "downloadJSON": "Descargar JSON",
+    "downloadSVG": "Descargar SVG",
+    "downloadPNG": "Descargar PNG",
+    "downloadMarkdown": "Descargar Markdown",
+    "generating": "Generando exportacion..."
   }
 }

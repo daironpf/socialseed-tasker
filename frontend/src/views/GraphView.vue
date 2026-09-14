@@ -85,6 +85,18 @@
     </div>
     <div ref="networkContainer" class="w-full h-[600px] rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800" />
 
+    <div class="mt-2 flex justify-end">
+      <button
+        class="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+        @click="exportGraphPNG"
+      >
+        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        {{ t('export.downloadPNG') }}
+      </button>
+    </div>
+
     <div
       v-if="selectedIssue"
       class="fixed inset-0 z-40 bg-black/50 flex justify-end"
@@ -133,7 +145,10 @@ import IssueDetailView from '@/views/IssueDetailView.vue'
 import RelationshipModal from '@/components/ui/RelationshipModal.vue'
 import GraphFilters from '@/components/ui/GraphFilters.vue'
 import { wouldCreateCycle } from '@/utils/graphUtils'
+import { useExport } from '@/composables/useExport'
 import type { Issue, IssueUpdateRequest } from '@/types'
+
+const { exportPNG } = useExport()
 
 const { t } = useI18n()
 
@@ -413,6 +428,14 @@ async function onCloseIssue(id: string) {
 
 function onCreateRelationship(_type: string) {
   showRelModal.value = false
+}
+
+async function exportGraphPNG() {
+  if (!networkContainer.value) return
+  const svgEl = networkContainer.value.querySelector('svg')
+  if (svgEl) {
+    await exportPNG(svgEl as SVGSVGElement, 'dependency-graph')
+  }
 }
 
 onMounted(async () => {
