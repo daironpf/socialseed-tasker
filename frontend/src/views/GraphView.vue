@@ -7,10 +7,12 @@
           v-model="searchQuery"
           type="text"
           :placeholder="t('issues.search')"
+          :aria-label="t('issues.search')"
           class="px-3 py-1.5 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600"
         />
         <select
           v-model="statusFilter"
+          :aria-label="t('issues.status')"
           class="px-3 py-1.5 text-sm border rounded-lg dark:bg-gray-700 dark:border-gray-600"
         >
           <option value="">{{ t('issues.allStatus') }}</option>

@@ -75,13 +75,13 @@
 
         <!-- Data points -->
         <g v-for="(point, i) in openDataPoints" :key="'open-' + i">
-          <circle :cx="point.x" :cy="point.y" r="4" fill="#3B82F6" class="cursor-pointer" />
+          <circle :cx="point.x" :cy="point.y" r="4" fill="#3B82F6" />
         </g>
         <g v-for="(point, i) in closedDataPoints" :key="'closed-' + i">
-          <circle :cx="point.x" :cy="point.y" r="4" fill="#22C55E" class="cursor-pointer" />
+          <circle :cx="point.x" :cy="point.y" r="4" fill="#22C55E" />
         </g>
         <g v-for="(point, i) in inProgressDataPoints" :key="'progress-' + i">
-          <circle :cx="point.x" :cy="point.y" r="4" fill="#F97316" class="cursor-pointer" />
+          <circle :cx="point.x" :cy="point.y" r="4" fill="#F97316" />
         </g>
       </svg>
     </div>

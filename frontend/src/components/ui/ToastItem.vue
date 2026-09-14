@@ -24,6 +24,7 @@
     <button
       class="shrink-0 rounded p-0.5 opacity-60 hover:opacity-100 transition-opacity"
       @click="$emit('dismiss', toast.id)"
+      :aria-label="t('toast.dismiss')"
     >
       <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -42,7 +43,10 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Toast } from '@/composables/useToast'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   toast: Toast

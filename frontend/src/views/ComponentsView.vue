@@ -35,6 +35,7 @@
         v-model="search"
         type="text"
         :placeholder="t('components.search')"
+        :aria-label="t('components.search')"
         class="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800"
       />
     </div>

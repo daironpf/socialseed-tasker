@@ -2,8 +2,6 @@ import { ref } from 'vue'
 
 export type ExportFormat = 'csv' | 'json' | 'svg' | 'png' | 'markdown'
 
-const exporting = ref(false)
-
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -21,6 +19,7 @@ function downloadText(text: string, filename: string, mime: string) {
 }
 
 export function useExport() {
+  const exporting = ref(false)
   async function exportCSV(data: Record<string, any>[], filename: string) {
     exporting.value = true
     try {
