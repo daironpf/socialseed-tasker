@@ -590,5 +590,19 @@
     "deleted": "Policy deleted successfully",
     "failedDelete": "Failed to delete policy",
     "created": "Policy created successfully"
+  },
+  "bulkActions": {
+    "selected": "selected",
+    "selectedPlural": "selected",
+    "clearSelection": "Clear selection",
+    "changeStatus": "Change status",
+    "assign": "Assign",
+    "unassign": "Unassign",
+    "delete": "Delete",
+    "confirmDelete": "Delete Issues",
+    "deleteWarning": "Are you sure you want to delete {count} issues? This action cannot be undone.",
+    "statusUpdated": "{count} issues status updated",
+    "assigned": "{count} issues assigned",
+    "deleted": "{count} issues deleted"
   }
 }

@@ -96,6 +96,15 @@
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
+              <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 w-10">
+                <input
+                  type="checkbox"
+                  :checked="isAllSelected"
+                  :indeterminate="isPartialSelected"
+                  class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  @change="toggleSelectAll"
+                />
+              </th>
               <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Title</th>
               <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Status</th>
               <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Priority</th>
@@ -113,9 +122,18 @@
               :class="{
                 'border-l-4 border-l-red-500': issue.priority === 'CRITICAL',
                 'border-l-4 border-l-orange-400': issue.priority === 'HIGH' && issue.status !== 'CLOSED',
+                'bg-brand-50 dark:bg-brand-900/20': selectedIds.has(issue.id),
               }"
               @click="openIssue(issue)"
             >
+              <td class="px-4 py-3 w-10">
+                <input
+                  type="checkbox"
+                  :checked="selectedIds.has(issue.id)"
+                  class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  @click.stop="toggleSelect(issue.id)"
+                />
+              </td>
               <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 max-w-xs truncate">{{ issue.title }}</td>
               <td class="px-4 py-3 text-sm"><StatusBadge :status="issue.status" /></td>
               <td class="px-4 py-3 text-sm"><PriorityBadge :priority="issue.priority" /></td>
@@ -167,6 +185,15 @@
     >
       <CreateIssueModal @close="showCreateModal = false" @created="onIssueCreated" />
     </div>
+
+    <BulkActionsBar
+      v-if="selectedIds.size > 0"
+      :count="selectedIds.size"
+      @batch-status="batchStatusChange"
+      @batch-assign="batchAssign"
+      @batch-delete="batchDelete"
+      @clear="clearSelection"
+    />
   </div>
 </template>
 
@@ -177,22 +204,86 @@ import type { Issue, IssueUpdateRequest } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useComponentsStore } from '@/stores/componentsStore'
 import { useUiStore } from '@/stores/uiStore'
+import { useToast } from '@/composables/useToast'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import PriorityBadge from '@/components/ui/PriorityBadge.vue'
 import LabelTag from '@/components/ui/LabelTag.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
 import CreateIssueModal from '@/components/issue/CreateIssueModal.vue'
+import BulkActionsBar from '@/components/ui/BulkActionsBar.vue'
 import { useExport } from '@/composables/useExport'
 
 const { t } = useI18n()
 const issuesStore = useIssuesStore()
 const componentsStore = useComponentsStore()
 const uiStore = useUiStore()
+const toast = useToast()
 const { exportCSV, exportJSON } = useExport()
 const showCreateModal = ref(false)
 const showExportMenu = ref(false)
 const exportDropdownRef = ref<HTMLElement | null>(null)
+
+const selectedIds = ref(new Set<string>())
+
+const isAllSelected = computed(() => {
+  if (filteredList.value.length === 0) return false
+  return filteredList.value.every(i => selectedIds.value.has(i.id))
+})
+
+const isPartialSelected = computed(() => {
+  if (selectedIds.value.size === 0) return false
+  return !isAllSelected.value && filteredList.value.some(i => selectedIds.value.has(i.id))
+})
+
+function toggleSelect(id: string) {
+  const newSet = new Set(selectedIds.value)
+  if (newSet.has(id)) {
+    newSet.delete(id)
+  } else {
+    newSet.add(id)
+  }
+  selectedIds.value = newSet
+}
+
+function toggleSelectAll() {
+  if (isAllSelected.value) {
+    selectedIds.value = new Set()
+  } else {
+    selectedIds.value = new Set(filteredList.value.map(i => i.id))
+  }
+}
+
+function clearSelection() {
+  selectedIds.value = new Set()
+}
+
+async function batchStatusChange(status: string) {
+  const ids = Array.from(selectedIds.value)
+  for (const id of ids) {
+    await issuesStore.updateIssue(id, { status: status as any })
+  }
+  toast.success(t('bulkActions.statusUpdated', { count: ids.length }))
+  clearSelection()
+}
+
+async function batchAssign(userId: string) {
+  const ids = Array.from(selectedIds.value)
+  for (const id of ids) {
+    await issuesStore.updateIssue(id, { assignee: userId || undefined })
+  }
+  toast.success(t('bulkActions.assigned', { count: ids.length }))
+  clearSelection()
+}
+
+async function batchDelete() {
+  const ids = Array.from(selectedIds.value)
+  for (const id of ids) {
+    await issuesStore.deleteIssue(id)
+  }
+  toast.success(t('bulkActions.deleted', { count: ids.length }))
+  clearSelection()
+}
 
 const search = computed({
   get: () => uiStore.filters.search,

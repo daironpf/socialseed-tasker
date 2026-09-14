@@ -590,5 +590,19 @@
     "deleted": "Politica eliminada exitosamente",
     "failedDelete": "Error al eliminar politica",
     "created": "Politica creada exitosamente"
+  },
+  "bulkActions": {
+    "selected": "seleccionados",
+    "selectedPlural": "seleccionados",
+    "clearSelection": "Limpiar seleccion",
+    "changeStatus": "Cambiar estado",
+    "assign": "Asignar",
+    "unassign": "Desasignar",
+    "delete": "Eliminar",
+    "confirmDelete": "Eliminar Issues",
+    "deleteWarning": "Seguro que quieres eliminar {count} issues? Esta accion no se puede deshacer.",
+    "statusUpdated": "Estado de {count} issues actualizado",
+    "assigned": "{count} issues asignados",
+    "deleted": "{count} issues eliminados"
   }
 }
