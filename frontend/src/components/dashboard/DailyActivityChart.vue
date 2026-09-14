@@ -132,7 +132,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Issue } from '@/types'
 
@@ -164,6 +164,12 @@ const availableMonths = computed(() => {
 })
 
 const selectedMonth = ref(availableMonths.value[0]?.value || '')
+
+watch(availableMonths, (months) => {
+  if (!selectedMonth.value && months.length > 0) {
+    selectedMonth.value = months[0].value
+  }
+})
 
 const chartData = computed(() => {
   if (!selectedMonth.value) return []

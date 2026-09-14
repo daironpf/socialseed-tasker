@@ -353,7 +353,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { fetchSystemHealth, fetchSyncQueue, adminSeed, adminReset } from '@/api/systemApi'
 import type { SystemHealth, SyncQueue } from '@/types'
@@ -369,10 +369,12 @@ const adminMessage = ref('')
 const showSeedConfirm = ref(false)
 const showResetConfirm = ref(false)
 
-const tokenUsageData = computed(() => {
-  const data = []
+const tokenUsageData = ref<Array<{ date: string; promptTokens: number; completionTokens: number; model: string }>>([])
+
+onMounted(() => {
   const models = ['claude-3.5-sonnet', 'gpt-4-turbo', 'gpt-4o']
   const now = new Date()
+  const data = []
   for (let i = 13; i >= 0; i--) {
     const date = new Date(now.getTime() - i * 86400000)
     data.push({
@@ -382,7 +384,7 @@ const tokenUsageData = computed(() => {
       model: models[Math.floor(Math.random() * models.length)],
     })
   }
-  return data
+  tokenUsageData.value = data
 })
 
 function formatTime(iso: string) {

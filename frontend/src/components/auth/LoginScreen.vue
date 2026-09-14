@@ -10,6 +10,7 @@
           v-model="apiKey"
           type="password"
           :placeholder="t('auth.apiKey')"
+          :aria-label="t('auth.apiKey')"
           class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 mb-4"
         />
         <div class="flex gap-2">

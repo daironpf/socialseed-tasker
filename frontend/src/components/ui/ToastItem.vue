@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Toast } from '@/composables/useToast'
 
@@ -66,8 +66,9 @@ onMounted(() => {
     raf = requestAnimationFrame(tick)
   }
   raf = requestAnimationFrame(tick)
-  return () => cancelAnimationFrame(raf)
 })
+
+onUnmounted(() => cancelAnimationFrame(raf))
 
 const progressWidth = computed(() => {
   if (props.toast.persistent) return 100
