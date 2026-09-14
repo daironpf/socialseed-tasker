@@ -562,5 +562,10 @@
     "clearAll": "Limpiar todo",
     "maxHops": "Max saltos",
     "reset": "Reiniciar"
+  },
+  "analysis": {
+    "blastRadius": "Radio de Explosion",
+    "depth": "Profundidad:",
+    "systemAffected": "Sistema afectado"
   }
 }

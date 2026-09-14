@@ -40,6 +40,13 @@
         </span>
       </div>
 
+      <BlastRadiusSlider
+        v-model="blastDepth"
+        :total-components="componentsStore.components.length"
+        :affected-count="analysisStore.impactResult.total_affected"
+        :depth-counts="depthCounts"
+      />
+
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-center">
           <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ analysisStore.impactResult.total_affected }}</div>
@@ -173,21 +180,37 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAnalysisStore } from '@/stores/analysisStore'
 import { useIssuesStore } from '@/stores/issuesStore'
+import { useComponentsStore } from '@/stores/componentsStore'
 import ImpactSvgTree from './ImpactSvgTree.vue'
+import BlastRadiusSlider from './BlastRadiusSlider.vue'
 
 const { t } = useI18n()
 
 const analysisStore = useAnalysisStore()
 const issuesStore = useIssuesStore()
+const componentsStore = useComponentsStore()
 
 const selectedIssueId = ref('')
+const blastDepth = ref(3)
+
+const depthCounts = computed(() => {
+  if (!analysisStore.impactResult) return {}
+  const counts: Record<number, number> = {}
+  counts[1] = analysisStore.impactResult.directly_affected.length
+  for (const t of analysisStore.impactResult.transitively_affected) {
+    const lvl = t.level || 2
+    counts[lvl] = (counts[lvl] || 0) + 1
+  }
+  return counts
+})
 
 onMounted(() => {
   issuesStore.fetchIssues(1, 200)
+  componentsStore.fetchComponents()
 })
 
 async function analyze() {

@@ -562,5 +562,10 @@
     "clearAll": "Clear all",
     "maxHops": "Max hops",
     "reset": "Reset"
+  },
+  "analysis": {
+    "blastRadius": "Blast Radius",
+    "depth": "Depth:",
+    "systemAffected": "System affected"
   }
 }
