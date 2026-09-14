@@ -581,5 +581,14 @@
     "assignee": "Assignee",
     "unassigned": "Unassigned",
     "createdBy": "Created by"
+  },
+  "policies": {
+    "delete": "Delete",
+    "confirmDelete": "Delete Policy",
+    "deleteWarning": "Are you sure you want to delete '{name}'? This will affect all rules associated with this policy.",
+    "deleting": "Deleting...",
+    "deleted": "Policy deleted successfully",
+    "failedDelete": "Failed to delete policy",
+    "created": "Policy created successfully"
   }
 }

@@ -581,5 +581,14 @@
     "assignee": "Asignado a",
     "unassigned": "Sin asignar",
     "createdBy": "Creado por"
+  },
+  "policies": {
+    "delete": "Eliminar",
+    "confirmDelete": "Eliminar Politica",
+    "deleteWarning": "Seguro que quieres eliminar '{name}'? Esto afectara todas las reglas asociadas con esta politica.",
+    "deleting": "Eliminando...",
+    "deleted": "Politica eliminada exitosamente",
+    "failedDelete": "Error al eliminar politica",
+    "created": "Politica creada exitosamente"
   }
 }
