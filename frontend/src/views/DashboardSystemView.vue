@@ -275,6 +275,80 @@
         </div>
       </div>
     </template>
+
+    <!-- Seed Confirmation Modal -->
+    <div
+      v-if="showSeedConfirm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      @click.self="showSeedConfirm = false"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="w-full max-w-sm rounded-lg bg-white shadow-xl p-6 dark:bg-gray-800">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="flex-shrink-0 rounded-full bg-blue-100 p-2 dark:bg-blue-900/30">
+            <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c-4.418 0-8-1.79-8-4" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('system.seed') }}</h3>
+        </div>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">{{ t('system.seedConfirm') }}</p>
+        <div class="flex justify-end gap-3">
+          <button
+            type="button"
+            class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+            @click="showSeedConfirm = false"
+          >
+            {{ t('issues.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+            @click="executeSeed"
+          >
+            {{ t('system.seed') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reset Confirmation Modal -->
+    <div
+      v-if="showResetConfirm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      @click.self="showResetConfirm = false"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="w-full max-w-sm rounded-lg bg-white shadow-xl p-6 dark:bg-gray-800">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="flex-shrink-0 rounded-full bg-red-100 p-2 dark:bg-red-900/30">
+            <svg class="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('system.reset') }}</h3>
+        </div>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">{{ t('system.resetConfirm') }}</p>
+        <div class="flex justify-end gap-3">
+          <button
+            type="button"
+            class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+            @click="showResetConfirm = false"
+          >
+            {{ t('issues.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+            @click="executeReset"
+          >
+            {{ t('system.reset') }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -292,6 +366,8 @@ const syncQueue = ref<SyncQueue | null>(null)
 const loading = ref(true)
 const adminLoading = ref(false)
 const adminMessage = ref('')
+const showSeedConfirm = ref(false)
+const showResetConfirm = ref(false)
 
 const tokenUsageData = computed(() => {
   const data = []
@@ -327,7 +403,11 @@ async function refreshAll() {
 }
 
 async function handleSeed() {
-  if (!confirm(t('system.seedConfirm'))) return
+  showSeedConfirm.value = true
+}
+
+async function executeSeed() {
+  showSeedConfirm.value = false
   adminLoading.value = true
   adminMessage.value = ''
   try {
@@ -341,7 +421,11 @@ async function handleSeed() {
 }
 
 async function handleReset() {
-  if (!confirm(t('system.resetConfirm'))) return
+  showResetConfirm.value = true
+}
+
+async function executeReset() {
+  showResetConfirm.value = false
   adminLoading.value = true
   adminMessage.value = ''
   try {

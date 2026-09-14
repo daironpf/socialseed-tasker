@@ -18,7 +18,7 @@
         </div>
         <div class="flex items-center gap-3">
           <PresenceAvatars :viewers="viewers" />
-          <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="$emit('close')">
+          <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="$emit('close')" aria-label="Close">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -152,11 +152,12 @@
             class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-700"
           >
             {{ label }}
-            <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="labels.splice(idx, 1)">x</button>
+            <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" :aria-label="'Remove label ' + label" @click="labels.splice(idx, 1)">x</button>
           </span>
           <input
             v-model="newLabel"
             :placeholder="t('issues.addLabelPlaceholder')"
+            :aria-label="t('issues.addLabelPlaceholder')"
             class="rounded-md border border-gray-300 bg-transparent px-2 py-0.5 text-xs focus:border-blue-500 focus:outline-none dark:border-gray-600"
             @keydown.enter.prevent="addLabel"
           />
@@ -331,7 +332,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Issue, IssueUpdateRequest, AgentLog } from '@/types'
+import type { Issue, IssueUpdateRequest, AgentLog, User } from '@/types'
 import { IssueStatus } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { fetchAgentLogs } from '@/api/agentLogsApi'
@@ -389,7 +390,7 @@ watch(() => props.issue, (newIssue) => {
 
 const agentLogs = ref<AgentLog[]>([])
 const logsLoading = ref(false)
-const users = ref<any[]>([])
+const users = ref<User[]>([])
 
 const { status: streamStatus, connect: connectStream, disconnect: disconnectStream } = useAgentStream()
 const { viewers, typingAgents, hasConflict } = usePresence(props.issue.id)

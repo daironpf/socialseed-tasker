@@ -2,6 +2,7 @@
   <div class="relative" ref="menuRef">
     <button
       @click="isOpen = !isOpen"
+      aria-label="User menu"
       class="flex items-center gap-2 rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
     >
       <div class="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-sm font-medium text-brand-700 dark:bg-brand-900/30 dark:text-brand-400">

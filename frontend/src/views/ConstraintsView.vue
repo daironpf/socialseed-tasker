@@ -51,12 +51,14 @@
           v-model="search"
           type="text"
           :placeholder="t('constraints.search')"
+          :aria-label="t('constraints.search')"
           class="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800"
         />
       </div>
       <div class="flex gap-2">
         <select
           v-model="filterCategory"
+          :aria-label="t('constraints.allCategories')"
           class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
         >
           <option value="">{{ t('constraints.allCategories') }}</option>
@@ -64,6 +66,7 @@
         </select>
         <select
           v-model="filterSeverity"
+          :aria-label="t('constraints.allSeverities')"
           class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
         >
           <option value="">{{ t('constraints.allSeverities') }}</option>
@@ -523,12 +526,16 @@ function closeModal() { showModal.value = false; editingConstraint.value = null 
 
 async function saveConstraint() {
   if (!form.value.name) return
-  if (editingConstraint.value) {
-    await store.updateConstraint(editingConstraint.value.id, form.value)
-  } else {
-    await store.createConstraint(form.value)
+  try {
+    if (editingConstraint.value) {
+      await store.updateConstraint(editingConstraint.value.id, form.value)
+    } else {
+      await store.createConstraint(form.value)
+    }
+    closeModal()
+  } catch (e) {
+    console.error('Failed to save constraint:', e)
   }
-  closeModal()
 }
 
 async function runValidation() {

@@ -277,17 +277,19 @@ import CreateUserModal from '@/components/users/CreateUserModal.vue'
 import { useUsersStore } from '@/stores/usersStore'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useUiStore } from '@/stores/uiStore'
-import type { User } from '@/types'
+import { useToast } from '@/composables/useToast'
+import type { User, Issue } from '@/types'
 
 const { t } = useI18n()
 
 const usersStore = useUsersStore()
 const issuesStore = useIssuesStore()
 const uiStore = useUiStore()
+const toast = useToast()
 
 const showIssuesModal = ref(false)
 const selectedUser = ref<User | null>(null)
-const modalIssues = ref<any[]>([])
+const modalIssues = ref<Issue[]>([])
 const loadingIssues = ref(false)
 const modalType = ref<'assigned' | 'created' | 'completed'>('assigned')
 
@@ -407,9 +409,14 @@ function closeEditAgent() {
   editingAgent.value = null
 }
 
-async function saveAgent(updatedAgent: any) {
-  await usersStore.updateUser(updatedAgent.id, updatedAgent)
-  closeEditAgent()
+async function saveAgent(updatedAgent: Record<string, any>) {
+  try {
+    await usersStore.updateUser(updatedAgent.id, updatedAgent as User)
+    closeEditAgent()
+  } catch (e) {
+    console.error('Failed to save agent:', e)
+    toast.error(t('common.error'))
+  }
 }
 
 function openEditUser(user: User) {
@@ -423,26 +430,42 @@ function closeEditUser() {
 }
 
 async function saveUser(updatedUser: User) {
-  await usersStore.updateUser(updatedUser.id, updatedUser)
-  closeEditUser()
+  try {
+    await usersStore.updateUser(updatedUser.id, updatedUser)
+    closeEditUser()
+  } catch (e) {
+    console.error('Failed to save user:', e)
+    toast.error(t('common.error'))
+  }
 }
 
 async function deleteUser(user: User) {
-  if (confirm(`${t('users.deleteConfirm')} "${user.username}"?`)) {
+  try {
     await usersStore.deleteUser(user.id)
+  } catch (e) {
+    console.error('Failed to delete user:', e)
+    toast.error(t('common.error'))
   }
 }
 
 async function deleteAgent(user: User) {
-  if (confirm(`${t('agents.deleteConfirm')} "${user.username}"?`)) {
+  try {
     await usersStore.deleteUser(user.id)
     closeEditAgent()
+  } catch (e) {
+    console.error('Failed to delete agent:', e)
+    toast.error(t('common.error'))
   }
 }
 
 async function createUser(data: { username: string; email: string; role: string; type: string; avatar: string; skills: string[] }) {
-  await usersStore.createUser(data)
-  showCreateModal.value = false
+  try {
+    await usersStore.createUser(data)
+    showCreateModal.value = false
+  } catch (e) {
+    console.error('Failed to create user:', e)
+    toast.error(t('common.error'))
+  }
 }
 
 onMounted(async () => {

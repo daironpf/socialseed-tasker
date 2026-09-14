@@ -57,10 +57,12 @@
         <input
           v-model="search"
           :placeholder="t('issues.search')"
+          :aria-label="t('issues.search')"
           class="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
         />
         <select
           v-model="statusFilter"
+          :aria-label="t('issues.allStatus')"
           class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
         >
           <option value="">{{ t('issues.allStatus') }}</option>
@@ -71,6 +73,7 @@
         </select>
         <select
           v-model="priorityFilter"
+          :aria-label="t('issues.allPriority')"
           class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
         >
           <option value="">{{ t('issues.allPriority') }}</option>
@@ -81,6 +84,7 @@
         </select>
         <select
           v-model="componentFilter"
+          :aria-label="t('issues.allComponents')"
           class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
         >
           <option value="">{{ t('issues.allComponents') }}</option>
@@ -101,6 +105,7 @@
                   type="checkbox"
                   :checked="isAllSelected"
                   :indeterminate="isPartialSelected"
+                  aria-label="Select all issues"
                   class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                   @change="toggleSelectAll"
                 />
@@ -130,6 +135,7 @@
                 <input
                   type="checkbox"
                   :checked="selectedIds.has(issue.id)"
+                  :aria-label="'Select issue ' + issue.id"
                   class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                   @click.stop="toggleSelect(issue.id)"
                 />

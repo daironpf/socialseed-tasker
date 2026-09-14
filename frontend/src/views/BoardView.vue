@@ -71,9 +71,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Issue, Policy } from '@/types'
+import type { Policy } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import client from '@/api/client'
 import { fetchPolicies } from '@/api/policiesApi'
@@ -92,9 +92,9 @@ const issuesStore = useIssuesStore()
 const componentsStore = useComponentsStore()
 const uiStore = useUiStore()
 
-const currentProject = ref<any>(null)
+const currentProject = ref<{ name: string; description?: string; slug?: string } | null>(null)
 const policies = ref<Policy[]>([])
-const allIssues = ref<Issue[]>([])
+const allIssues = computed(() => issuesStore.issues)
 
 async function fetchDashboardData() {
   try {
@@ -113,7 +113,7 @@ async function fetchDashboardData() {
       try {
         const res = await client.get('/projects')
         const projects = res.data.data
-        currentProject.value = projects.find((p: any) => p.name === projectName) || { name: projectName }
+        currentProject.value = projects.find((p: { name: string }) => p.name === projectName) || { name: projectName }
       } catch (e2) {
         currentProject.value = { name: projectName }
       }
@@ -131,7 +131,6 @@ async function fetchWithFilters() {
 onMounted(async () => {
   await componentsStore.fetchComponents()
   await fetchWithFilters()
-  allIssues.value = issuesStore.issues.slice()
   await fetchDashboardData()
 })
 
@@ -139,15 +138,9 @@ watch(
   () => [uiStore.filters.status, uiStore.filters.priority, uiStore.filters.component, uiStore.filters.project],
   () => {
     fetchWithFilters()
+    fetchDashboardData()
   },
   { deep: true },
-)
-
-watch(
-  () => uiStore.filters.project,
-  () => {
-    fetchDashboardData()
-  }
 )
 
 watch(

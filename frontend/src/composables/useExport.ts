@@ -91,12 +91,17 @@ export function useExport() {
       ctx.fillRect(0, 0, canvas.width, canvas.height)
       ctx.drawImage(img, 0, 0)
 
-      canvas.toBlob((blob) => {
-        if (blob) downloadBlob(blob, `${filename}.png`)
-        URL.revokeObjectURL(url)
-      }, 'image/png')
-
-      await new Promise<void>((resolve) => setTimeout(resolve, 100))
+      await new Promise<void>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            downloadBlob(blob, `${filename}.png`)
+          } else {
+            reject(new Error('Failed to generate PNG blob'))
+          }
+          URL.revokeObjectURL(url)
+          resolve()
+        }, 'image/png')
+      })
     } finally {
       exporting.value = false
     }

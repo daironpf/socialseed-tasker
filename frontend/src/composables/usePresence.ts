@@ -13,11 +13,30 @@ export interface PresenceUser {
 
 const presenceMap = ref<Map<string, PresenceUser[]>>(new Map())
 const localPresenceId = ref(`user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
-let heartbeatInterval: ReturnType<typeof setInterval> | null = null
-let expireInterval: ReturnType<typeof setInterval> | null = null
 
 const HEARTBEAT_MS = 30000
 const EXPIRE_MS = 60000
+
+let globalExpireInterval: ReturnType<typeof setInterval> | null = null
+const issueIntervals = new Map<string, ReturnType<typeof setInterval>[]>()
+
+function startGlobalExpire() {
+  if (globalExpireInterval) return
+  globalExpireInterval = setInterval(() => {
+    const now = Date.now()
+    for (const [key, list] of presenceMap.value.entries()) {
+      const filtered = list.filter(u => now - u.lastSeen < EXPIRE_MS)
+      presenceMap.value.set(key, filtered)
+    }
+  }, 10000)
+}
+
+function stopGlobalExpire() {
+  if (globalExpireInterval) {
+    clearInterval(globalExpireInterval)
+    globalExpireInterval = null
+  }
+}
 
 function generateMockPresence(_issueId: string): PresenceUser[] {
   const roll = Math.random()
@@ -109,24 +128,21 @@ export function usePresence(issueId: string) {
     })))
   }
 
-  function expireStale() {
-    const now = Date.now()
-    for (const [key, list] of presenceMap.value.entries()) {
-      const filtered = list.filter(u => now - u.lastSeen < EXPIRE_MS)
-      presenceMap.value.set(key, filtered)
-    }
-  }
-
   onMounted(() => {
     joinPresence()
-    heartbeatInterval = setInterval(heartbeat, HEARTBEAT_MS)
-    expireInterval = setInterval(expireStale, 10000)
+    const hb = setInterval(heartbeat, HEARTBEAT_MS)
+    const intervals = issueIntervals.get(issueId) || []
+    intervals.push(hb)
+    issueIntervals.set(issueId, intervals)
+    startGlobalExpire()
   })
 
   onUnmounted(() => {
     leavePresence()
-    if (heartbeatInterval) clearInterval(heartbeatInterval)
-    if (expireInterval) clearInterval(expireInterval)
+    const intervals = issueIntervals.get(issueId) || []
+    intervals.forEach(id => clearInterval(id))
+    issueIntervals.delete(issueId)
+    if (issueIntervals.size === 0) stopGlobalExpire()
   })
 
   return {
