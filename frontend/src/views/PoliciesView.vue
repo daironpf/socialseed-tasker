@@ -119,7 +119,7 @@
             <input 
               v-model="form.name" 
               required 
-              placeholder="ej: no-circular-deps"
+              :placeholder="t('policies.namePlaceholder')"
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" 
             />
           </div>
@@ -128,7 +128,7 @@
             <textarea 
               v-model="form.description" 
               rows="2"
-              placeholder="Policy description..."
+              :placeholder="t('policies.descriptionPlaceholder')"
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             ></textarea>
           </div>
@@ -160,7 +160,7 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('policies.targetScope') }}</label>
             <input 
               v-model="form.target_scope" 
-              placeholder="ej: project"
+              :placeholder="t('policies.targetScopePlaceholder')"
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" 
             />
           </div>

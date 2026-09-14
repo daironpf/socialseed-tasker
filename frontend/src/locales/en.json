@@ -154,7 +154,10 @@
     "deleting": "Deleting...",
     "deleted": "Policy deleted successfully",
     "failedDelete": "Failed to delete policy",
-    "created": "Policy created successfully"
+    "created": "Policy created successfully",
+    "namePlaceholder": "e.g., no-circular-deps",
+    "descriptionPlaceholder": "Policy description...",
+    "targetScopePlaceholder": "e.g., project"
   },
   "constraints": {
     "title": "Constraints",
@@ -186,7 +189,12 @@
     "autoFixDisabled": "Disabled",
     "updated": "Updated",
     "hardBlocking": "HARD (blocking)",
-    "softWarning": "SOFT (warning)"
+    "softWarning": "SOFT (warning)",
+    "id": "ID",
+    "namePlaceholder": "e.g., no-circular-deps",
+    "logicPlaceholder": "e.g., IF issue.labels.length < 1 THEN WARN",
+    "remediationPlaceholder": "How to fix violations",
+    "deleteConfirm": "Are you sure you want to delete '{name}'?"
   },
   "users": {
     "title": "Users",

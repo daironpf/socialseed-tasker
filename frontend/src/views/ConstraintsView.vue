@@ -149,7 +149,7 @@
           <div class="flex-1">
             <div class="text-sm font-medium text-gray-900 dark:text-white">{{ v.constraint_name }}</div>
             <div class="text-xs text-gray-600 dark:text-gray-400">{{ v.message }}</div>
-            <div class="mt-1 text-xs text-gray-500 dark:text-gray-500">Remediation: {{ v.remediation }}</div>
+            <div class="mt-1 text-xs text-gray-500 dark:text-gray-500">{{ t('constraints.remediation') }} {{ v.remediation }}</div>
           </div>
           <span class="rounded px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ v.category }}</span>
         </div>
@@ -161,7 +161,7 @@
       <table class="w-full">
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('constraints.id') }}</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('constraints.name') }}</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('constraints.category') }}</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('constraints.severity') }}</th>
@@ -314,38 +314,38 @@
     </div>
 
     <!-- Create/Edit Modal -->
-    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeModal">
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeModal" role="dialog" aria-modal="true">
       <div class="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800">
         <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
           {{ editingConstraint ? t('issues.edit') : t('constraints.newConstraint') }}
         </h2>
         <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Name *</label>
-            <input v-model="form.name" placeholder="e.g., no-circular-deps" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" />
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('constraints.name') }} *</label>
+            <input v-model="form.name" :placeholder="t('constraints.namePlaceholder')" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" />
           </div>
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Description</label>
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('constraints.description') }}</label>
             <textarea v-model="form.description" rows="2" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" />
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Category</label>
+              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('constraints.category') }}</label>
               <select v-model="form.category" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700">
                 <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
               </select>
             </div>
             <div>
-              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Severity</label>
+              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('constraints.severity') }}</label>
               <select v-model="form.severity" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700">
-                <option value="HARD">HARD (blocking)</option>
-                <option value="SOFT">SOFT (warning)</option>
+                <option value="HARD">{{ t('constraints.hardBlocking') }}</option>
+                <option value="SOFT">{{ t('constraints.softWarning') }}</option>
               </select>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Scope</label>
+              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('constraints.scope') }}</label>
               <select v-model="form.scope" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700">
                 <option value="project">project</option>
                 <option value="component">component</option>
@@ -353,20 +353,20 @@
               </select>
             </div>
             <div>
-              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Auto-fix</label>
+              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('constraints.autoFix') }}</label>
               <select v-model="form.auto_fix" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700">
-                <option :value="true">Enabled</option>
-                <option :value="false">Disabled</option>
+                <option :value="true">{{ t('constraints.autoFixEnabled') }}</option>
+                <option :value="false">{{ t('constraints.autoFixDisabled') }}</option>
               </select>
             </div>
           </div>
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Logic</label>
-            <input v-model="form.logic" placeholder="e.g., IF issue.labels.length < 1 THEN WARN" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" />
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('constraints.logic') }}</label>
+            <input v-model="form.logic" :placeholder="t('constraints.logicPlaceholder')" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" />
           </div>
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Remediation</label>
-            <input v-model="form.remediation" placeholder="How to fix violations" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" />
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('constraints.remediation') }}</label>
+            <input v-model="form.remediation" :placeholder="t('constraints.remediationPlaceholder')" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" />
           </div>
         </div>
         <div class="mt-6 flex justify-end gap-2">
@@ -377,6 +377,45 @@
             @click="saveConstraint"
           >
             {{ editingConstraint ? t('issues.save') : t('issues.create') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div
+      v-if="showDeleteConfirm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      @click.self="showDeleteConfirm = false"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="w-full max-w-sm rounded-lg bg-white shadow-xl p-6 dark:bg-gray-800">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="flex-shrink-0 rounded-full bg-red-100 p-2 dark:bg-red-900/30">
+            <svg class="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('issues.delete') }}</h3>
+        </div>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          {{ t('constraints.deleteConfirm', { name: deleteTarget?.name }) }}
+        </p>
+        <div class="flex justify-end gap-3">
+          <button
+            type="button"
+            class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+            @click="showDeleteConfirm = false"
+          >
+            {{ t('issues.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+            @click="executeDelete"
+          >
+            {{ t('issues.delete') }}
           </button>
         </div>
       </div>
@@ -450,10 +489,19 @@ function openCreateModal() {
   showModal.value = true
 }
 
-async function deleteConstraint(c: Constraint) {
-  if (confirm(`${t('issues.deleteConfirm')} "${c.name}"?`)) {
-    await store.deleteConstraint(c.id)
-  }
+const showDeleteConfirm = ref(false)
+const deleteTarget = ref<Constraint | null>(null)
+
+function deleteConstraint(c: Constraint) {
+  deleteTarget.value = c
+  showDeleteConfirm.value = true
+}
+
+async function executeDelete() {
+  if (!deleteTarget.value) return
+  await store.deleteConstraint(deleteTarget.value.id)
+  showDeleteConfirm.value = false
+  deleteTarget.value = null
 }
 
 function openEditModal(c: Constraint) {

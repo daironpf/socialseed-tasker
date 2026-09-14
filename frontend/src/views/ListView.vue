@@ -295,27 +295,21 @@ function clearSelection() {
 
 async function batchStatusChange(status: string) {
   const ids = Array.from(selectedIds.value)
-  for (const id of ids) {
-    await issuesStore.updateIssue(id, { status: status as any })
-  }
+  await Promise.all(ids.map(id => issuesStore.updateIssue(id, { status: status as any })))
   toast.success(t('bulkActions.statusUpdated', { count: ids.length }))
   clearSelection()
 }
 
 async function batchAssign(userId: string) {
   const ids = Array.from(selectedIds.value)
-  for (const id of ids) {
-    await issuesStore.updateIssue(id, { assignee: userId || undefined })
-  }
+  await Promise.all(ids.map(id => issuesStore.updateIssue(id, { assignee: userId || undefined })))
   toast.success(t('bulkActions.assigned', { count: ids.length }))
   clearSelection()
 }
 
 async function batchDelete() {
   const ids = Array.from(selectedIds.value)
-  for (const id of ids) {
-    await issuesStore.deleteIssue(id)
-  }
+  await Promise.all(ids.map(id => issuesStore.deleteIssue(id)))
   toast.success(t('bulkActions.deleted', { count: ids.length }))
   clearSelection()
 }
