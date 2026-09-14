@@ -542,5 +542,19 @@
   "projects": {
     "title": "Switch Project",
     "current": "Current"
+  },
+  "graph": {
+    "title": "Dependency Graph",
+    "connectMode": "Connect",
+    "connectModeOn": "Connecting...",
+    "connectHint": "Click two nodes to connect",
+    "createRelationship": "Create Relationship",
+    "blockedBy": "Blocked By",
+    "blockedByDesc": "This issue blocks the target",
+    "dependsOn": "Depends On",
+    "dependsOnDesc": "This issue depends on the target",
+    "cancel": "Cancel",
+    "create": "Create",
+    "cycleDetected": "Cannot create: circular dependency detected"
   }
 }

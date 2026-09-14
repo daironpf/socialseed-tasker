@@ -42,6 +42,31 @@
       >
         Force Directed
       </button>
+      <div class="border-l border-gray-300 dark:border-gray-600 mx-1"></div>
+      <button
+        @click="toggleConnectMode"
+        class="px-3 py-1 text-xs rounded flex items-center gap-1.5 transition-colors"
+        :class="connectMode
+          ? 'bg-blue-600 text-white hover:bg-blue-700'
+          : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'"
+      >
+        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+        </svg>
+        {{ connectMode ? t('graph.connectModeOn') : t('graph.connectMode') }}
+      </button>
+      <Transition
+        enter-active-class="transition duration-150"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-100"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <span v-if="connectMode" class="text-xs text-blue-600 dark:text-blue-400 flex items-center">
+          {{ t('graph.connectHint') }}
+        </span>
+      </Transition>
     </div>
 
     <div v-if="loading" class="flex items-center justify-center h-64">
@@ -65,6 +90,27 @@
         @close-issue="onCloseIssue"
       />
     </div>
+
+    <RelationshipModal
+      :show="showRelModal"
+      :from-label="relFromLabel"
+      :to-label="relToLabel"
+      @close="showRelModal = false"
+      @create="onCreateRelationship"
+    />
+
+    <Transition
+      enter-active-class="transition duration-150"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-100"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="cycleError" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-lg bg-red-600 px-4 py-2 text-sm text-white shadow-lg">
+        {{ cycleError }}
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -76,6 +122,8 @@ import { useIssuesStore } from '@/stores/issuesStore'
 import { useComponentsStore } from '@/stores/componentsStore'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
+import RelationshipModal from '@/components/ui/RelationshipModal.vue'
+import { wouldCreateCycle } from '@/utils/graphUtils'
 import type { Issue, IssueUpdateRequest } from '@/types'
 
 const { t } = useI18n()
@@ -91,6 +139,13 @@ let network: Network | null = null
 let nodes: DataSet<any> | null = null
 let edges: DataSet<any> | null = null
 let currentLayout = 'force'
+
+const connectMode = ref(false)
+const connectFrom = ref<string | null>(null)
+const showRelModal = ref(false)
+const relFromLabel = ref('')
+const relToLabel = ref('')
+const cycleError = ref('')
 
 const statusColors: Record<string, string> = {
   OPEN: '#3b82f6',
@@ -229,10 +284,34 @@ function buildGraph() {
 
   network.on('click', (params) => {
     if (params.nodes.length > 0) {
-      const issue = issuesStore.issues.find(i => i.id === params.nodes[0])
-      if (issue) {
-        selectedIssue.value = issue
+      const nodeId = params.nodes[0]
+      if (connectMode.value) {
+        if (!connectFrom.value) {
+          connectFrom.value = nodeId
+        } else if (nodeId !== connectFrom.value) {
+          const fromIssue = issuesStore.issues.find(i => i.id === connectFrom.value)
+          const toIssue = issuesStore.issues.find(i => i.id === nodeId)
+          if (fromIssue && toIssue) {
+            const existingEdges = edges!.get().map(e => ({ from: e.from, to: e.to }))
+            if (wouldCreateCycle(existingEdges, connectFrom.value, nodeId)) {
+              cycleError.value = t('graph.cycleDetected')
+              setTimeout(() => cycleError.value = '', 3000)
+            } else {
+              relFromLabel.value = fromIssue.title
+              relToLabel.value = toIssue.title
+              showRelModal.value = true
+            }
+          }
+          connectFrom.value = null
+        }
+      } else {
+        const issue = issuesStore.issues.find(i => i.id === nodeId)
+        if (issue) {
+          selectedIssue.value = issue
+        }
       }
+    } else if (connectMode.value) {
+      connectFrom.value = null
     }
   })
 
@@ -242,6 +321,20 @@ function buildGraph() {
 function setLayout(layout: string) {
   currentLayout = layout
   buildGraph()
+}
+
+function toggleConnectMode() {
+  connectMode.value = !connectMode.value
+  connectFrom.value = null
+  cycleError.value = ''
+  if (network) {
+    network.setOptions({
+      interaction: {
+        dragNodes: !connectMode.value,
+        dragView: !connectMode.value,
+      },
+    })
+  }
 }
 
 async function onUpdateIssue(id: string, body: IssueUpdateRequest) {
@@ -263,6 +356,10 @@ async function onCloseIssue(id: string) {
   await issuesStore.closeIssue(id)
   await nextTick()
   buildGraph()
+}
+
+function onCreateRelationship(_type: string) {
+  showRelModal.value = false
 }
 
 onMounted(async () => {
