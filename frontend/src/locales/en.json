@@ -604,5 +604,21 @@
     "statusUpdated": "{count} issues status updated",
     "assigned": "{count} issues assigned",
     "deleted": "{count} issues deleted"
+  },
+  "users": {
+    "newAgentTitle": "Create AI Agent",
+    "newAgentSubtitle": "Configure a new AI agent",
+    "agentName": "Agent name",
+    "createAgent": "Create Agent",
+    "selectModel": "Select a model",
+    "specialization": "Specialization",
+    "selectSpecialization": "Select specialization",
+    "specCodeReview": "Code Review",
+    "specTesting": "Testing",
+    "specArchitecture": "Architecture",
+    "specDocumentation": "Documentation",
+    "specSecurity": "Security",
+    "systemPrompt": "System Prompt",
+    "systemPromptPlaceholder": "Instructions for the agent..."
   }
 }

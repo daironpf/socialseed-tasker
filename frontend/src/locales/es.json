@@ -604,5 +604,21 @@
     "statusUpdated": "Estado de {count} issues actualizado",
     "assigned": "{count} issues asignados",
     "deleted": "{count} issues eliminados"
+  },
+  "users": {
+    "newAgentTitle": "Crear Agente IA",
+    "newAgentSubtitle": "Configurar un nuevo agente IA",
+    "agentName": "Nombre del agente",
+    "createAgent": "Crear Agente",
+    "selectModel": "Seleccionar modelo",
+    "specialization": "Especializacion",
+    "selectSpecialization": "Seleccionar especializacion",
+    "specCodeReview": "Revision de Codigo",
+    "specTesting": "Testing",
+    "specArchitecture": "Arquitectura",
+    "specDocumentation": "Documentacion",
+    "specSecurity": "Seguridad",
+    "systemPrompt": "Prompt del Sistema",
+    "systemPromptPlaceholder": "Instrucciones para el agente..."
   }
 }
