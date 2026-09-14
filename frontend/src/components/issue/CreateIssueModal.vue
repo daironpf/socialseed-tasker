@@ -40,6 +40,15 @@
         </div>
       </div>
       <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('issues.assignee') }}</label>
+        <select v-model="form.assignee" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
+          <option value="">{{ t('issues.unassigned') }}</option>
+          <option v-for="u in usersStore.users" :key="u.id" :value="u.id">
+            {{ u.avatar }} {{ u.username }} ({{ u.type === 'agent' ? 'AI' : 'Human' }})
+          </option>
+        </select>
+      </div>
+      <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('issues.labels') }}</label>
         <div class="flex flex-wrap gap-1">
           <span v-for="(label, idx) in form.labels" :key="idx" class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-700">
@@ -59,10 +68,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useComponentsStore } from '@/stores/componentsStore'
 import { useIssuesStore } from '@/stores/issuesStore'
+import { useUsersStore } from '@/stores/usersStore'
 import { IssuePriority } from '@/types'
 
 const { t } = useI18n()
@@ -71,16 +81,22 @@ const emit = defineEmits<{ close: []; created: [] }>()
 
 const componentsStore = useComponentsStore()
 const issuesStore = useIssuesStore()
+const usersStore = useUsersStore()
 
 const form = ref({
   title: '',
   description: '',
   priority: IssuePriority.MEDIUM,
   component_id: '',
+  assignee: '',
   labels: [] as string[],
 })
 const newLabel = ref('')
 const error = ref('')
+
+onMounted(async () => {
+  await usersStore.fetchUsers()
+})
 
 function addLabel() {
   const l = newLabel.value.trim()
@@ -94,7 +110,10 @@ async function submit() {
     error.value = t('issues.titleRequired')
     return
   }
-  const result = await issuesStore.createIssue({ ...form.value })
+  const result = await issuesStore.createIssue({
+    ...form.value,
+    created_by: 'user-local',
+  })
   if (result) {
     emit('created')
   } else {

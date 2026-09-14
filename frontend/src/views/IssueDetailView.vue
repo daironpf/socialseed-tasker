@@ -131,6 +131,19 @@
       </div>
 
       <div>
+        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t('issues.assignee') }}</label>
+        <select
+          v-model="assignee"
+          class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+        >
+          <option value="">{{ t('issues.unassigned') }}</option>
+          <option v-for="u in users" :key="u.id" :value="u.id">
+            {{ u.avatar }} {{ u.username }}
+          </option>
+        </select>
+      </div>
+
+      <div>
         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t('issues.labels') }}</label>
         <div class="flex flex-wrap gap-1">
           <span
@@ -325,6 +338,7 @@ const description = ref(props.issue.description)
 const status = ref(props.issue.status)
 const priority = ref(props.issue.priority)
 const labels = ref([...props.issue.labels])
+const assignee = ref(props.issue.assignee || '')
 const newLabel = ref('')
 
 watch(() => props.issue, (newIssue) => {
@@ -333,6 +347,7 @@ watch(() => props.issue, (newIssue) => {
   status.value = newIssue.status
   priority.value = newIssue.priority
   labels.value = [...newIssue.labels]
+  assignee.value = newIssue.assignee || ''
 }, { deep: true })
 
 const agentLogs = ref<AgentLog[]>([])
@@ -424,6 +439,7 @@ async function save() {
     status: status.value,
     priority: priority.value,
     labels: labels.value,
+    assignee: assignee.value || undefined,
   }
   if (status.value === 'CLOSED' && props.issue.status !== 'CLOSED') {
     body.closed_at = new Date().toISOString()

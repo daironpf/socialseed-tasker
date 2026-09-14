@@ -576,5 +576,10 @@
     "downloadPNG": "Descargar PNG",
     "downloadMarkdown": "Descargar Markdown",
     "generating": "Generando exportacion..."
+  },
+  "issues": {
+    "assignee": "Asignado a",
+    "unassigned": "Sin asignar",
+    "createdBy": "Creado por"
   }
 }
