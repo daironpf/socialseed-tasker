@@ -194,6 +194,41 @@
       @batch-delete="batchDelete"
       @clear="clearSelection"
     />
+
+    <!-- Delete Confirmation Modal -->
+    <div
+      v-if="showDeleteConfirm"
+      class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+      @click.self="showDeleteConfirm = false"
+    >
+      <div class="w-full max-w-sm rounded-lg bg-white shadow-xl p-6 dark:bg-gray-800">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="flex-shrink-0 rounded-full bg-red-100 p-2 dark:bg-red-900/30">
+            <svg class="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('issues.delete') }}</h3>
+        </div>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">{{ t('issues.deleteConfirm') }}</p>
+        <div class="flex justify-end gap-3">
+          <button
+            type="button"
+            class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+            @click="showDeleteConfirm = false"
+          >
+            {{ t('issues.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+            @click="confirmDeleteIssue"
+          >
+            {{ t('issues.delete') }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -361,10 +396,18 @@ async function closeIssue(id: string) {
   await issuesStore.closeIssue(id)
 }
 
-async function deleteIssue(id: string) {
-  if (confirm(t('issues.deleteConfirm'))) {
-    await issuesStore.deleteIssue(id)
-  }
+const showDeleteConfirm = ref(false)
+const deleteTargetId = ref('')
+
+function deleteIssue(id: string) {
+  deleteTargetId.value = id
+  showDeleteConfirm.value = true
+}
+
+async function confirmDeleteIssue() {
+  await issuesStore.deleteIssue(deleteTargetId.value)
+  showDeleteConfirm.value = false
+  deleteTargetId.value = ''
 }
 
 async function fetchWithFilters() {
