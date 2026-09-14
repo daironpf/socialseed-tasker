@@ -29,7 +29,7 @@
       </div>
     </div>
 
-    <div class="mb-2 flex gap-2">
+    <div class="mb-2 flex gap-2 items-center flex-wrap">
       <button
         @click="setLayout('hierarchical')"
         class="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -42,6 +42,14 @@
       >
         Force Directed
       </button>
+      <div class="border-l border-gray-300 dark:border-gray-600 mx-1"></div>
+      <GraphFilters
+        :components="componentsStore.components"
+        :selected-components="selectedComponents"
+        :max-hops="maxHops"
+        @update:selected-components="selectedComponents = $event"
+        @update:max-hops="maxHops = $event"
+      />
       <div class="border-l border-gray-300 dark:border-gray-600 mx-1"></div>
       <button
         @click="toggleConnectMode"
@@ -123,6 +131,7 @@ import { useComponentsStore } from '@/stores/componentsStore'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
 import RelationshipModal from '@/components/ui/RelationshipModal.vue'
+import GraphFilters from '@/components/ui/GraphFilters.vue'
 import { wouldCreateCycle } from '@/utils/graphUtils'
 import type { Issue, IssueUpdateRequest } from '@/types'
 
@@ -146,6 +155,8 @@ const showRelModal = ref(false)
 const relFromLabel = ref('')
 const relToLabel = ref('')
 const cycleError = ref('')
+const selectedComponents = ref<string[]>([])
+const maxHops = ref(3)
 
 const statusColors: Record<string, string> = {
   OPEN: '#3b82f6',
@@ -169,11 +180,52 @@ const filteredIssues = computed(() => {
 const graphData = computed(() => {
   const issues = filteredIssues.value
   const components = componentsStore.components
-  const nodeData: Array<{ id: string; label: string; color: string; shape: string; title: string; group?: string }> =
-    []
+  const nodeData: Array<{ id: string; label: string; color: string; shape: string; title: string; group?: string }> = []
   const edgeData: Array<{ id: string; from: string; to: string; arrows: string }> = []
 
+  // Build adjacency list for hop calculation
+  const adj = new Map<string, Set<string>>()
+  for (const issue of issues) {
+    if (!adj.has(issue.id)) adj.set(issue.id, new Set())
+    for (const depId of issue.dependencies) {
+      adj.get(issue.id)!.add(depId)
+      if (!adj.has(depId)) adj.set(depId, new Set())
+      adj.get(depId)!.add(issue.id)
+    }
+  }
+
+  // Calculate reachable nodes within maxHops from selected components
+  let visibleNodeIds: Set<string> | null = null
+  if (selectedComponents.value.length > 0) {
+    visibleNodeIds = new Set()
+    const queue: Array<{ id: string; depth: number }> = []
+    for (const comp of components) {
+      if (selectedComponents.value.includes(comp.id)) {
+        visibleNodeIds.add(comp.id)
+        queue.push({ id: comp.id, depth: 0 })
+        // Also add issues belonging to this component
+        for (const issue of issues) {
+          if (issue.component_id === comp.id) {
+            visibleNodeIds.add(issue.id)
+            queue.push({ id: issue.id, depth: 0 })
+          }
+        }
+      }
+    }
+    while (queue.length > 0) {
+      const { id, depth } = queue.shift()!
+      if (depth >= maxHops.value) continue
+      for (const neighbor of (adj.get(id) || [])) {
+        if (!visibleNodeIds.has(neighbor)) {
+          visibleNodeIds.add(neighbor)
+          queue.push({ id: neighbor, depth: depth + 1 })
+        }
+      }
+    }
+  }
+
   for (const component of components) {
+    if (visibleNodeIds && !visibleNodeIds.has(component.id)) continue
     nodeData.push({
       id: component.id,
       label: component.name.length > 20 ? component.name.slice(0, 20) + '...' : component.name,
@@ -185,6 +237,7 @@ const graphData = computed(() => {
   }
 
   for (const issue of issues) {
+    if (visibleNodeIds && !visibleNodeIds.has(issue.id)) continue
     nodeData.push({
       id: issue.id,
       label: issue.title.length > 20 ? issue.title.slice(0, 20) + '...' : issue.title,
@@ -196,7 +249,7 @@ const graphData = computed(() => {
 
     if (issue.component_id) {
       const comp = components.find(c => c.id === issue.component_id)
-      if (comp) {
+      if (comp && (!visibleNodeIds || visibleNodeIds.has(comp.id))) {
         edgeData.push({
           id: `${issue.id}-${issue.component_id}`,
           from: issue.component_id,
@@ -207,7 +260,7 @@ const graphData = computed(() => {
     }
 
     for (const depId of issue.dependencies) {
-      if (issues.find((i) => i.id === depId)) {
+      if (issues.find((i) => i.id === depId) && (!visibleNodeIds || visibleNodeIds.has(depId))) {
         edgeData.push({
           id: `${issue.id}-${depId}`,
           from: issue.id,
@@ -377,7 +430,7 @@ onUnmounted(() => {
   }
 })
 
-watch([graphData, statusFilter, searchQuery], async () => {
+watch([graphData, statusFilter, searchQuery, selectedComponents, maxHops], async () => {
   await nextTick()
   buildGraph()
 }, { deep: true })

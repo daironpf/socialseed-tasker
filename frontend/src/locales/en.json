@@ -555,6 +555,12 @@
     "dependsOnDesc": "This issue depends on the target",
     "cancel": "Cancel",
     "create": "Create",
-    "cycleDetected": "Cannot create: circular dependency detected"
+    "cycleDetected": "Cannot create: circular dependency detected",
+    "allComponents": "All Components",
+    "componentsSelected": "{n} selected",
+    "filterComponents": "Filter by Component",
+    "clearAll": "Clear all",
+    "maxHops": "Max hops",
+    "reset": "Reset"
   }
 }

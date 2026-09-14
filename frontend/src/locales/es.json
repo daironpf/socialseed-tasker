@@ -555,6 +555,12 @@
     "dependsOnDesc": "Este issue depende del objetivo",
     "cancel": "Cancelar",
     "create": "Crear",
-    "cycleDetected": "No se puede crear: dependencia circular detectada"
+    "cycleDetected": "No se puede crear: dependencia circular detectada",
+    "allComponents": "Todos los Componentes",
+    "componentsSelected": "{n} seleccionados",
+    "filterComponents": "Filtrar por Componente",
+    "clearAll": "Limpiar todo",
+    "maxHops": "Max saltos",
+    "reset": "Reiniciar"
   }
 }
