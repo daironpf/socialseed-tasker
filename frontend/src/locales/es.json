@@ -109,7 +109,17 @@
     "description": "Descripcion",
     "type": "Tipo",
     "issues": "Issues",
-    "actions": "Acciones"
+    "actions": "Acciones",
+    "alias": "Alias",
+    "project": "Proyecto",
+    "lastUpdated": "Ultima Actualizacion",
+    "associatedIssues": "Issues Asociados",
+    "uuid": "UUID",
+    "tableView": "Tabla",
+    "gridView": "Cuadricula",
+    "errorLoading": "Error al cargar componentes",
+    "namePlaceholder": "Nombre del componente",
+    "deleteConfirm": "Seguro que quieres eliminar '{name}'?"
   },
   "policies": {
     "title": "Politicas del Proyecto",

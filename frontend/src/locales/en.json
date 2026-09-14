@@ -109,7 +109,17 @@
     "description": "Description",
     "type": "Type",
     "issues": "Issues",
-    "actions": "Actions"
+    "actions": "Actions",
+    "alias": "Alias",
+    "project": "Project",
+    "lastUpdated": "Last Updated",
+    "associatedIssues": "Associated Issues",
+    "uuid": "UUID",
+    "tableView": "Table",
+    "gridView": "Grid",
+    "errorLoading": "Error loading components",
+    "namePlaceholder": "Component name",
+    "deleteConfirm": "Are you sure you want to delete '{name}'?"
   },
   "policies": {
     "title": "Project Policies",

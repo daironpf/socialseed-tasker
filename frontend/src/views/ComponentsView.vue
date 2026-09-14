@@ -10,12 +10,12 @@
             class="px-3 py-1.5 text-sm"
             :class="viewMode === 'table' ? 'bg-gray-100 dark:bg-gray-700 font-medium' : ''"
             @click="viewMode = 'table'"
-          >Table</button>
+          >{{ t('components.tableView') }}</button>
           <button
             class="px-3 py-1.5 text-sm"
             :class="viewMode === 'grid' ? 'bg-gray-100 dark:bg-gray-700 font-medium' : ''"
             @click="viewMode = 'grid'"
-          >Grid</button>
+          >{{ t('components.gridView') }}</button>
         </div>
         <button
           class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
@@ -53,7 +53,7 @@
           </svg>
         </div>
         <div class="ml-3">
-          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Error loading components</h3>
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">{{ t('components.errorLoading') }}</h3>
           <div class="mt-2 text-sm text-red-700 dark:text-red-300">{{ compStore.error }}</div>
         </div>
       </div>
@@ -64,10 +64,10 @@
       <table class="w-full">
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Alias</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('components.alias') }}</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('components.name') }}</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('components.description') }}</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Project</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('components.project') }}</th>
             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('components.issues') }}</th>
             <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('components.actions') }}</th>
           </tr>
@@ -127,12 +127,12 @@
             <p class="text-xs text-gray-500">{{ comp.project }}</p>
           </div>
           <span class="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-            {{ getIssueCount(comp.id) }} issues
+            {{ getIssueCount(comp.id) }} {{ t('components.issues').toLowerCase() }}
           </span>
         </div>
         <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{{ comp.description || t('policies.noDescription') }}</p>
         <div class="mt-3 flex items-center justify-between text-xs text-gray-400">
-          <span>UUID: {{ comp.id.slice(0, 8) }}...</span>
+          <span>{{ t('components.uuid') }}: {{ comp.id.slice(0, 8) }}...</span>
           <span>{{ new Date(comp.updated_at).toLocaleDateString() }}</span>
         </div>
       </div>
@@ -170,11 +170,11 @@
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Project</label>
+              <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('components.project') }}</label>
               <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ selectedComponent.project }}</p>
             </div>
             <div>
-              <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Last Updated</label>
+              <label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('components.lastUpdated') }}</label>
               <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ new Date(selectedComponent.updated_at).toLocaleString() }}</p>
             </div>
           </div>
@@ -193,7 +193,7 @@
           <!-- Issues list -->
           <div>
             <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 block">
-              Associated Issues ({{ componentIssues.length }})
+              {{ t('components.associatedIssues') }} ({{ componentIssues.length }})
             </label>
             <div v-if="componentIssues.length === 0" class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 p-8 text-center text-sm text-gray-400">
               {{ t('common.noData') }}
@@ -229,7 +229,7 @@
     </div>
 
     <!-- Create/Edit Modal -->
-    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeModal">
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeModal" role="dialog" aria-modal="true">
       <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800">
         <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
           {{ editingComponent ? t('issues.edit') : t('components.newComponent') }}
@@ -237,20 +237,20 @@
         <div class="space-y-4">
           <div class="grid grid-cols-3 gap-3">
             <div>
-              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Alias</label>
+              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('components.alias') }}</label>
               <input v-model="form.alias" maxlength="4" placeholder="FE" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" />
             </div>
             <div class="col-span-2">
-              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Name *</label>
-              <input v-model="form.name" placeholder="Component name" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" />
+              <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('components.name') }} *</label>
+              <input v-model="form.name" :placeholder="t('components.namePlaceholder')" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" />
             </div>
           </div>
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Description</label>
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('components.description') }}</label>
             <textarea v-model="form.description" rows="3" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" />
           </div>
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">Project</label>
+            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('components.project') }}</label>
             <input v-model="form.project" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" />
           </div>
         </div>
@@ -262,6 +262,45 @@
             @click="saveComponent"
           >
             {{ editingComponent ? t('issues.save') : t('issues.create') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div
+      v-if="showDeleteConfirm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      @click.self="showDeleteConfirm = false"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="w-full max-w-sm rounded-lg bg-white shadow-xl p-6 dark:bg-gray-800">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="flex-shrink-0 rounded-full bg-red-100 p-2 dark:bg-red-900/30">
+            <svg class="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('issues.delete') }}</h3>
+        </div>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          {{ t('components.deleteConfirm', { name: deleteTarget?.name }) }}
+        </p>
+        <div class="flex justify-end gap-3">
+          <button
+            type="button"
+            class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+            @click="showDeleteConfirm = false"
+          >
+            {{ t('issues.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+            @click="executeDelete"
+          >
+            {{ t('issues.delete') }}
           </button>
         </div>
       </div>
@@ -361,9 +400,19 @@ async function saveComponent() {
   closeModal()
 }
 
-async function confirmDelete(comp: Component) {
-  if (!confirm(`Delete "${comp.name}"?`)) return
-  await compStore.deleteComponent(comp.id)
+const showDeleteConfirm = ref(false)
+const deleteTarget = ref<Component | null>(null)
+
+function confirmDelete(comp: Component) {
+  deleteTarget.value = comp
+  showDeleteConfirm.value = true
+}
+
+async function executeDelete() {
+  if (!deleteTarget.value) return
+  await compStore.deleteComponent(deleteTarget.value.id)
+  showDeleteConfirm.value = false
+  deleteTarget.value = null
 }
 
 onMounted(() => {
