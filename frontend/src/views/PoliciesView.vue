@@ -27,7 +27,7 @@
           </svg>
         </div>
         <div class="ml-3">
-          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Error loading policies</h3>
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">{{ t('policies.errorLoading') }}</h3>
           <div class="mt-2 text-sm text-red-700 dark:text-red-300">{{ store.error }}</div>
         </div>
       </div>
@@ -108,6 +108,8 @@
       v-if="showCreateModal"
       class="fixed inset-0 z-40 bg-black/50 flex items-center justify-center"
       @click.self="showCreateModal = false"
+      role="dialog"
+      aria-modal="true"
     >
       <div class="w-full max-w-md rounded-lg bg-white shadow-xl p-6 dark:bg-gray-800">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -192,6 +194,8 @@
       v-if="showEditModal"
       class="fixed inset-0 z-40 bg-black/50 flex items-center justify-center"
       @click.self="showEditModal = false"
+      role="dialog"
+      aria-modal="true"
     >
       <div class="w-full max-w-md rounded-lg bg-white shadow-xl p-6 dark:bg-gray-800">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -203,7 +207,7 @@
             <input 
               v-model="editForm.name" 
               required 
-              placeholder="ej: no-circular-deps"
+              :placeholder="t('policies.namePlaceholder')"
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" 
             />
           </div>
@@ -212,7 +216,7 @@
             <textarea 
               v-model="editForm.description" 
               rows="2"
-              placeholder="Policy description..."
+              :placeholder="t('policies.descriptionPlaceholder')"
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             ></textarea>
           </div>
@@ -244,7 +248,7 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ t('policies.targetScope') }}</label>
             <input 
               v-model="editForm.target_scope" 
-              placeholder="ej: project"
+              :placeholder="t('policies.targetScopePlaceholder')"
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100" 
             />
           </div>
@@ -285,6 +289,8 @@
       v-if="showDeleteModal"
       class="fixed inset-0 z-40 bg-black/50 flex items-center justify-center"
       @click.self="showDeleteModal = false"
+      role="dialog"
+      aria-modal="true"
     >
       <div class="w-full max-w-sm rounded-lg bg-white shadow-xl p-6 dark:bg-gray-800">
         <div class="flex items-center gap-3 mb-4">

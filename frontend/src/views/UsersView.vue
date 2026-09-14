@@ -167,8 +167,10 @@
     <!-- Issues Modal -->
     <div
       v-if="showIssuesModal"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      @click.self="closeIssuesModal"
+      class="fixed inset-0 z-40 bg-black/50 flex items-center justify-center"
+      @click.self="showIssuesModal = false"
+      role="dialog"
+      aria-modal="true"
     >
       <div class="w-full max-w-2xl max-h-[80vh] bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden">
         <!-- Modal Header -->

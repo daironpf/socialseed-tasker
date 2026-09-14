@@ -119,8 +119,8 @@
               {{ store.validationResult.valid ? t('constraints.allPassed') : t('constraints.violationsDetected') }}
             </h3>
             <p class="text-sm" :class="store.validationResult.valid ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
-              Checked {{ store.validationResult.checked_constraints }} active constraints
-              <span v-if="!store.validationResult.valid"> — {{ store.validationResult.hard_violations }} hard, {{ store.validationResult.soft_violations }} soft violations</span>
+              {{ t('constraints.checkedConstraints', { count: store.validationResult.checked_constraints }) }}
+              <span v-if="!store.validationResult.valid"> — {{ t('constraints.hardViolations', { count: store.validationResult.hard_violations }) }}, {{ t('constraints.softViolations', { count: store.validationResult.soft_violations }) }}</span>
             </p>
           </div>
         </div>

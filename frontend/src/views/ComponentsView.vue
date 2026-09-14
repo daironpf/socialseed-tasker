@@ -351,10 +351,10 @@ const componentStats = computed(() => {
   if (!selectedComponent.value) return []
   const ci = componentIssues.value
   return [
-    { status: 'OPEN', label: 'Open', count: ci.filter(i => i.status === 'OPEN').length, color: 'text-blue-600 dark:text-blue-400' },
-    { status: 'IN_PROGRESS', label: 'In Progress', count: ci.filter(i => i.status === 'IN_PROGRESS').length, color: 'text-amber-600 dark:text-amber-400' },
-    { status: 'BLOCKED', label: 'Blocked', count: ci.filter(i => i.status === 'BLOCKED').length, color: 'text-red-600 dark:text-red-400' },
-    { status: 'CLOSED', label: 'Closed', count: ci.filter(i => i.status === 'CLOSED').length, color: 'text-green-600 dark:text-green-400' },
+    { status: 'OPEN', label: t('issues.open'), count: ci.filter(i => i.status === 'OPEN').length, color: 'text-blue-600 dark:text-blue-400' },
+    { status: 'IN_PROGRESS', label: t('issues.inProgress'), count: ci.filter(i => i.status === 'IN_PROGRESS').length, color: 'text-amber-600 dark:text-amber-400' },
+    { status: 'BLOCKED', label: t('issues.blocked'), count: ci.filter(i => i.status === 'BLOCKED').length, color: 'text-red-600 dark:text-red-400' },
+    { status: 'CLOSED', label: t('issues.closed'), count: ci.filter(i => i.status === 'CLOSED').length, color: 'text-green-600 dark:text-green-400' },
   ]
 })
 

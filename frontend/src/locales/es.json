@@ -155,6 +155,7 @@
     "deleted": "Politica eliminada exitosamente",
     "failedDelete": "Error al eliminar politica",
     "created": "Politica creada exitosamente",
+    "errorLoading": "Error al cargar policies",
     "namePlaceholder": "ej., no-circular-deps",
     "descriptionPlaceholder": "Descripcion de la policy...",
     "targetScopePlaceholder": "ej., project"
