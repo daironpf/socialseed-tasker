@@ -86,6 +86,7 @@
     "titleRequired": "Title and Component are required",
     "failedCreate": "Failed to create issue",
     "assignee": "Assignee",
+    "unassigned": "Unassigned",
     "createdBy": "Created by",
     "noDependencies": "No dependencies",
     "created": "Created",
@@ -136,7 +137,14 @@
     "noCircularDependencies": "No circular dependencies",
     "maxDependencies": "Max dependencies limit",
     "requiredLabels": "Required labels",
-    "componentOwnership": "Component ownership"
+    "componentOwnership": "Component ownership",
+    "delete": "Delete",
+    "confirmDelete": "Delete Policy",
+    "deleteWarning": "Are you sure you want to delete '{name}'? This will affect all rules associated with this policy.",
+    "deleting": "Deleting...",
+    "deleted": "Policy deleted successfully",
+    "failedDelete": "Failed to delete policy",
+    "created": "Policy created successfully"
   },
   "constraints": {
     "title": "Constraints",
@@ -194,14 +202,27 @@
     "noSkills": "No skills",
     "newUserTitle": "New User",
     "newUserSubtitle": "Create a new user profile",
+    "newAgentTitle": "Create AI Agent",
+    "newAgentSubtitle": "Configure a new AI agent",
     "username": "Username",
     "email": "Email",
     "addSkill": "Add skill...",
     "avatar": "Avatar",
     "cancel": "Cancel",
     "createUser": "Create User",
+    "createAgent": "Create Agent",
+    "agentName": "Agent name",
     "editAIAgent": "Edit AI Agent",
     "specialization": "Specialization",
+    "selectModel": "Select a model",
+    "selectSpecialization": "Select specialization",
+    "specCodeReview": "Code Review",
+    "specTesting": "Testing",
+    "specArchitecture": "Architecture",
+    "specDocumentation": "Documentation",
+    "specSecurity": "Security",
+    "systemPrompt": "System Prompt",
+    "systemPromptPlaceholder": "Instructions for the agent...",
     "saveChanges": "Save changes",
     "leadDeveloper": "Lead Developer",
     "developer": "Developer",
@@ -214,7 +235,24 @@
     "subtitle": "Visualize issue dependencies and component relationships",
     "noData": "No dependency data available",
     "directDeps": "Direct dependencies",
-    "transitiveDeps": "Transitive dependencies"
+    "transitiveDeps": "Transitive dependencies",
+    "connectMode": "Connect",
+    "connectModeOn": "Connecting...",
+    "connectHint": "Click two nodes to connect",
+    "createRelationship": "Create Relationship",
+    "blockedBy": "Blocked By",
+    "blockedByDesc": "This issue blocks the target",
+    "dependsOn": "Depends On",
+    "dependsOnDesc": "This issue depends on the target",
+    "cancel": "Cancel",
+    "create": "Create",
+    "cycleDetected": "Cannot create: circular dependency detected",
+    "allComponents": "All Components",
+    "componentsSelected": "{n} selected",
+    "filterComponents": "Filter by Component",
+    "clearAll": "Clear all",
+    "maxHops": "Max hops",
+    "reset": "Reset"
   },
   "analysis": {
     "title": "Analysis",
@@ -250,7 +288,10 @@
     "candidateRootCauses": "Candidate Root Causes",
     "graphDistance": "Graph distance:",
     "confidence": "confidence",
-    "noMatchingRootCauses": "No matching root causes found. Try different keywords."
+    "noMatchingRootCauses": "No matching root causes found. Try different keywords.",
+    "blastRadius": "Blast Radius",
+    "depth": "Depth:",
+    "systemAffected": "System affected"
   },
   "system": {
     "title": "System Status",
@@ -577,20 +618,6 @@
     "downloadMarkdown": "Download Markdown",
     "generating": "Generating export..."
   },
-  "issues": {
-    "assignee": "Assignee",
-    "unassigned": "Unassigned",
-    "createdBy": "Created by"
-  },
-  "policies": {
-    "delete": "Delete",
-    "confirmDelete": "Delete Policy",
-    "deleteWarning": "Are you sure you want to delete '{name}'? This will affect all rules associated with this policy.",
-    "deleting": "Deleting...",
-    "deleted": "Policy deleted successfully",
-    "failedDelete": "Failed to delete policy",
-    "created": "Policy created successfully"
-  },
   "bulkActions": {
     "selected": "selected",
     "selectedPlural": "selected",
@@ -604,21 +631,5 @@
     "statusUpdated": "{count} issues status updated",
     "assigned": "{count} issues assigned",
     "deleted": "{count} issues deleted"
-  },
-  "users": {
-    "newAgentTitle": "Create AI Agent",
-    "newAgentSubtitle": "Configure a new AI agent",
-    "agentName": "Agent name",
-    "createAgent": "Create Agent",
-    "selectModel": "Select a model",
-    "specialization": "Specialization",
-    "selectSpecialization": "Select specialization",
-    "specCodeReview": "Code Review",
-    "specTesting": "Testing",
-    "specArchitecture": "Architecture",
-    "specDocumentation": "Documentation",
-    "specSecurity": "Security",
-    "systemPrompt": "System Prompt",
-    "systemPromptPlaceholder": "Instructions for the agent..."
   }
 }

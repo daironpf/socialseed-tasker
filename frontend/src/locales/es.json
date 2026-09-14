@@ -85,7 +85,8 @@
     "addLabel": "Agregar...",
     "titleRequired": "Titulo y Componente son requeridos",
     "failedCreate": "Error al crear issue",
-    "assignee": "Asignado",
+    "assignee": "Asignado a",
+    "unassigned": "Sin asignar",
     "createdBy": "Creado por",
     "noDependencies": "Sin dependencias",
     "created": "Creado",
@@ -136,7 +137,14 @@
     "noCircularDependencies": "Sin dependencias circulares",
     "maxDependencies": "Limite maximo de dependencias",
     "requiredLabels": "Labels requeridos",
-    "componentOwnership": "Propiedad de componente"
+    "componentOwnership": "Propiedad de componente",
+    "delete": "Eliminar",
+    "confirmDelete": "Eliminar Politica",
+    "deleteWarning": "Seguro que quieres eliminar '{name}'? Esto afectara todas las reglas asociadas con esta politica.",
+    "deleting": "Eliminando...",
+    "deleted": "Politica eliminada exitosamente",
+    "failedDelete": "Error al eliminar politica",
+    "created": "Politica creada exitosamente"
   },
   "constraints": {
     "title": "Constraints",
@@ -194,14 +202,27 @@
     "noSkills": "Sin habilidades",
     "newUserTitle": "Nuevo Usuario",
     "newUserSubtitle": "Crear un nuevo perfil de usuario",
+    "newAgentTitle": "Crear Agente IA",
+    "newAgentSubtitle": "Configurar un nuevo agente IA",
     "username": "Nombre de usuario",
     "email": "Email",
     "addSkill": "Agregar habilidad...",
     "avatar": "Avatar",
     "cancel": "Cancelar",
     "createUser": "Crear Usuario",
+    "createAgent": "Crear Agente",
+    "agentName": "Nombre del agente",
     "editAIAgent": "Editar Agente IA",
     "specialization": "Especializacion",
+    "selectModel": "Seleccionar modelo",
+    "selectSpecialization": "Seleccionar especializacion",
+    "specCodeReview": "Revision de Codigo",
+    "specTesting": "Testing",
+    "specArchitecture": "Arquitectura",
+    "specDocumentation": "Documentacion",
+    "specSecurity": "Seguridad",
+    "systemPrompt": "Prompt del Sistema",
+    "systemPromptPlaceholder": "Instrucciones para el agente...",
     "saveChanges": "Guardar cambios",
     "leadDeveloper": "Lead Developer",
     "developer": "Developer",
@@ -214,7 +235,24 @@
     "subtitle": "Visualiza dependencias de issues y relaciones entre componentes",
     "noData": "No hay datos de dependencias disponibles",
     "directDeps": "Dependencias directas",
-    "transitiveDeps": "Dependencias transitivas"
+    "transitiveDeps": "Dependencias transitivas",
+    "connectMode": "Conectar",
+    "connectModeOn": "Conectando...",
+    "connectHint": "Haz clic en dos nodos para conectar",
+    "createRelationship": "Crear Relacion",
+    "blockedBy": "Bloquea A",
+    "blockedByDesc": "Este issue bloquea al objetivo",
+    "dependsOn": "Depende De",
+    "dependsOnDesc": "Este issue depende del objetivo",
+    "cancel": "Cancelar",
+    "create": "Crear",
+    "cycleDetected": "No se puede crear: dependencia circular detectada",
+    "allComponents": "Todos los Componentes",
+    "componentsSelected": "{n} seleccionados",
+    "filterComponents": "Filtrar por Componente",
+    "clearAll": "Limpiar todo",
+    "maxHops": "Max saltos",
+    "reset": "Reiniciar"
   },
   "analysis": {
     "title": "Analisis",
@@ -250,7 +288,10 @@
     "candidateRootCauses": "Causas Raiz Candidatas",
     "graphDistance": "Distancia en grafo:",
     "confidence": "confianza",
-    "noMatchingRootCauses": "No se encontraron causas raiz coincidentes. Intenta con diferentes palabras clave."
+    "noMatchingRootCauses": "No se encontraron causas raiz coincidentes. Intenta con diferentes palabras clave.",
+    "blastRadius": "Radio de Explosion",
+    "depth": "Profundidad:",
+    "systemAffected": "Sistema afectado"
   },
   "system": {
     "title": "Estado del Sistema",
@@ -427,7 +468,7 @@
     "modifyPlaceholder": "Ingresa los parametros modificados...",
     "submitModification": "Enviar",
     "actionDescription": "Un agente de IA esta solicitando ejecutar una accion critica que requiere tu aprobacion.",
-    "defaultCommand": "El agento solicito ejecutar una accion"
+    "defaultCommand": "El agente solicito ejecutar una accion"
   },
   "stream": {
     "status": {
@@ -577,20 +618,6 @@
     "downloadMarkdown": "Descargar Markdown",
     "generating": "Generando exportacion..."
   },
-  "issues": {
-    "assignee": "Asignado a",
-    "unassigned": "Sin asignar",
-    "createdBy": "Creado por"
-  },
-  "policies": {
-    "delete": "Eliminar",
-    "confirmDelete": "Eliminar Politica",
-    "deleteWarning": "Seguro que quieres eliminar '{name}'? Esto afectara todas las reglas asociadas con esta politica.",
-    "deleting": "Eliminando...",
-    "deleted": "Politica eliminada exitosamente",
-    "failedDelete": "Error al eliminar politica",
-    "created": "Politica creada exitosamente"
-  },
   "bulkActions": {
     "selected": "seleccionados",
     "selectedPlural": "seleccionados",
@@ -604,21 +631,5 @@
     "statusUpdated": "Estado de {count} issues actualizado",
     "assigned": "{count} issues asignados",
     "deleted": "{count} issues eliminados"
-  },
-  "users": {
-    "newAgentTitle": "Crear Agente IA",
-    "newAgentSubtitle": "Configurar un nuevo agente IA",
-    "agentName": "Nombre del agente",
-    "createAgent": "Crear Agente",
-    "selectModel": "Seleccionar modelo",
-    "specialization": "Especializacion",
-    "selectSpecialization": "Seleccionar especializacion",
-    "specCodeReview": "Revision de Codigo",
-    "specTesting": "Testing",
-    "specArchitecture": "Arquitectura",
-    "specDocumentation": "Documentacion",
-    "specSecurity": "Seguridad",
-    "systemPrompt": "Prompt del Sistema",
-    "systemPromptPlaceholder": "Instrucciones para el agente..."
   }
 }

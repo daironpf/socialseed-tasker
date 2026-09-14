@@ -20,11 +20,11 @@
           <option value="CLOSED">{{ t('issues.closed') }}</option>
         </select>
         <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
-          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-purple-500"></span> Component</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500"></span> Open</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500"></span> In Progress</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500"></span> Blocked</span>
-          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500"></span> Closed</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-purple-500"></span> {{ t('issues.component') }}</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500"></span> {{ t('issues.open') }}</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500"></span> {{ t('issues.inProgress') }}</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500"></span> {{ t('issues.blocked') }}</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500"></span> {{ t('issues.closed') }}</span>
         </div>
       </div>
     </div>
