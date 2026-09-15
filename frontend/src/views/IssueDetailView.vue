@@ -394,6 +394,15 @@ const assignee = ref(props.issue.assignee || '')
 const newLabel = ref('')
 const assigneeHistory = ref<AssigneeHistoryEntry[]>(props.issue.assignee_history || [])
 const previousAssignee = ref(props.issue.assignee || '')
+const historyInitialized = ref(false)
+
+onMounted(() => {
+  if (!historyInitialized.value) {
+    assigneeHistory.value = props.issue.assignee_history || []
+    previousAssignee.value = props.issue.assignee || ''
+    historyInitialized.value = true
+  }
+})
 
 watch(() => props.issue, (newIssue) => {
   title.value = newIssue.title
@@ -402,8 +411,11 @@ watch(() => props.issue, (newIssue) => {
   priority.value = newIssue.priority
   labels.value = [...newIssue.labels]
   assignee.value = newIssue.assignee || ''
-  assigneeHistory.value = newIssue.assignee_history || []
-  previousAssignee.value = newIssue.assignee || ''
+  if (!historyInitialized.value) {
+    assigneeHistory.value = newIssue.assignee_history || []
+    previousAssignee.value = newIssue.assignee || ''
+    historyInitialized.value = true
+  }
 }, { deep: true })
 
 watch(assignee, (newVal) => {
