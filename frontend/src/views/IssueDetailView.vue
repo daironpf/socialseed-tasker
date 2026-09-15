@@ -406,21 +406,27 @@ watch(() => props.issue, (newIssue) => {
   previousAssignee.value = newIssue.assignee || ''
 }, { deep: true })
 
-watch(assignee, (newVal, oldVal) => {
+watch(assignee, (newVal) => {
+  const oldVal = previousAssignee.value
   if (newVal === oldVal) return
+  
   const now = new Date().toISOString()
+  
   if (oldVal) {
-    const lastEntry = assigneeHistory.value.find(h => h.userId === oldVal && !h.unassignedAt)
+    const lastEntry = [...assigneeHistory.value].reverse().find(h => h.userId === oldVal && !h.unassignedAt)
     if (lastEntry) {
       lastEntry.unassignedAt = now
     }
   }
+  
   if (newVal) {
     assigneeHistory.value.push({
       userId: newVal,
       assignedAt: now,
     })
   }
+  
+  previousAssignee.value = newVal
 })
 
 const agentLogs = ref<AgentLog[]>([])
