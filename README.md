@@ -38,7 +38,7 @@ The UI runs in **mock mode** (`USE_MOCK = true` in `client.ts`). All CRUD operat
 docker compose --profile api ps
 
 # Check mock API
-curl http://127.0.0.1:8001/api/issues
+curl http://127.0.0.1:8001/mock/issues
 
 # Check frontend build
 cd frontend && npm run build
