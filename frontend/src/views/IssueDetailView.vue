@@ -143,6 +143,31 @@
         </select>
       </div>
 
+      <!-- Assignee History -->
+      <div v-if="assigneeHistoryWithUsers.length > 0">
+        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">{{ t('profile.assigneeHistory') }}</label>
+        <div class="space-y-2">
+          <div
+            v-for="(entry, idx) in assigneeHistoryWithUsers"
+            :key="idx"
+            class="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-lg">{{ entry.user.avatar || '👤' }}</span>
+              <div>
+                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ entry.user.username }}</div>
+                <div class="text-[10px] text-gray-500">{{ entry.user.role || entry.user.type }}</div>
+              </div>
+            </div>
+            <div class="text-right text-[10px] text-gray-500 dark:text-gray-400">
+              <div>{{ t('profile.assigned') }}: {{ new Date(entry.assignedAt).toLocaleDateString() }}</div>
+              <div v-if="entry.unassignedAt">{{ t('profile.unassigned') }}: {{ new Date(entry.unassignedAt).toLocaleDateString() }}</div>
+              <div v-else class="text-green-600 dark:text-green-400 font-medium">{{ t('profile.currentAssignee') }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div>
         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t('issues.labels') }}</label>
         <div class="flex flex-wrap gap-1">
@@ -332,7 +357,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Issue, IssueUpdateRequest, AgentLog, User } from '@/types'
+import type { Issue, IssueUpdateRequest, AgentLog, User, AssigneeHistoryEntry } from '@/types'
 import { IssueStatus } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { fetchAgentLogs } from '@/api/agentLogsApi'
@@ -378,6 +403,8 @@ const priority = ref(props.issue.priority)
 const labels = ref([...props.issue.labels])
 const assignee = ref(props.issue.assignee || '')
 const newLabel = ref('')
+const assigneeHistory = ref<AssigneeHistoryEntry[]>(props.issue.assignee_history || [])
+const previousAssignee = ref(props.issue.assignee || '')
 
 watch(() => props.issue, (newIssue) => {
   title.value = newIssue.title
@@ -386,7 +413,26 @@ watch(() => props.issue, (newIssue) => {
   priority.value = newIssue.priority
   labels.value = [...newIssue.labels]
   assignee.value = newIssue.assignee || ''
+  assigneeHistory.value = newIssue.assignee_history || []
+  previousAssignee.value = newIssue.assignee || ''
 }, { deep: true })
+
+watch(assignee, (newVal, oldVal) => {
+  if (newVal === oldVal) return
+  const now = new Date().toISOString()
+  if (oldVal) {
+    const lastEntry = assigneeHistory.value.find(h => h.userId === oldVal && !h.unassignedAt)
+    if (lastEntry) {
+      lastEntry.unassignedAt = now
+    }
+  }
+  if (newVal) {
+    assigneeHistory.value.push({
+      userId: newVal,
+      assignedAt: now,
+    })
+  }
+})
 
 const agentLogs = ref<AgentLog[]>([])
 const logsLoading = ref(false)
@@ -419,6 +465,16 @@ const assigneeUser = computed(() => {
 const creatorUser = computed(() => {
   if (!props.issue.created_by) return null
   return users.value.find(u => u.id === props.issue.created_by) || null
+})
+
+const assigneeHistoryWithUsers = computed(() => {
+  return assigneeHistory.value.map(entry => {
+    const user = users.value.find(u => u.id === entry.userId)
+    return {
+      ...entry,
+      user: user || { username: entry.userId, avatar: '👤', role: 'unknown', type: 'human' as const },
+    }
+  }).sort((a, b) => new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime())
 })
 
 const progressLogs = computed(() => agentLogs.value.filter(l => l.type === 'progress'))
@@ -478,6 +534,7 @@ async function save() {
     priority: priority.value,
     labels: labels.value,
     assignee: assignee.value || undefined,
+    assignee_history: assigneeHistory.value,
   }
   if (status.value === 'CLOSED' && props.issue.status !== 'CLOSED') {
     body.closed_at = new Date().toISOString()

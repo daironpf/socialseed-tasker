@@ -31,6 +31,13 @@ export interface Issue {
   closed_at: string | null
   architectural_constraints: string[]
   agent_working?: boolean
+  assignee_history?: AssigneeHistoryEntry[]
+}
+
+export interface AssigneeHistoryEntry {
+  userId: string
+  assignedAt: string
+  unassignedAt?: string
 }
 
 export interface Component {
@@ -94,6 +101,7 @@ export interface IssueUpdateRequest {
   labels?: string[]
   architectural_constraints?: string[]
   closed_at?: string | null
+  assignee_history?: AssigneeHistoryEntry[]
 }
 
 export interface DependencyRequest {

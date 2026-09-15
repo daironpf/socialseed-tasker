@@ -660,6 +660,10 @@
     "pushNotifications": "Push Notifications",
     "pushNotificationsDesc": "Receive push notifications in your browser",
     "agentAlerts": "Agent Alerts",
-    "agentAlertsDesc": "Get notified when agents require approval or fail"
+    "agentAlertsDesc": "Get notified when agents require approval or fail",
+    "assigneeHistory": "Assignment History",
+    "assigned": "Assigned",
+    "unassigned": "Unassigned",
+    "currentAssignee": "Currently assigned"
   }
 }

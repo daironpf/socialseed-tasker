@@ -660,6 +660,10 @@
     "pushNotifications": "Notificaciones Push",
     "pushNotificationsDesc": "Recibir notificaciones push en tu navegador",
     "agentAlerts": "Alertas de Agentes",
-    "agentAlertsDesc": "Recibir alertas cuando los agentes requieren aprobacion o fallan"
+    "agentAlertsDesc": "Recibir alertas cuando los agentes requieren aprobacion o fallan",
+    "assigneeHistory": "Historial de Asignaciones",
+    "assigned": "Asignado",
+    "unassigned": "Desasignado",
+    "currentAssignee": "Asignado actualmente"
   }
 }
