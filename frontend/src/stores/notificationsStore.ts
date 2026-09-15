@@ -3,10 +3,17 @@ import { ref, computed } from 'vue'
 import type { AppNotification, NotificationCategory } from '@/types/notifications'
 
 const STORAGE_KEY = 'socialseed-notifications'
+const SEED_VERSION = 2
 
 function loadFromStorage(): AppNotification[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
+    const version = parseInt(localStorage.getItem(`${STORAGE_KEY}-version`) || '0', 10)
+    if (version < SEED_VERSION) {
+      localStorage.removeItem(STORAGE_KEY)
+      localStorage.setItem(`${STORAGE_KEY}-version`, String(SEED_VERSION))
+      return []
+    }
     return raw ? JSON.parse(raw) : []
   } catch {
     return []
@@ -85,13 +92,17 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   function seedMockNotifications() {
     if (notifications.value.length > 0) return
-    const mocks: Omit<AppNotification, 'id' | 'read' | 'createdAt'>[] = [
+    const now = Date.now()
+    const hour = 3600000
+    const mocks: (Omit<AppNotification, 'id' | 'read' | 'createdAt'> & { read: boolean; createdAt: string })[] = [
       {
         title: '@alice mentioned you',
         message: 'Can you review the auth flow before we merge?',
         category: 'mention',
         requiresAction: true,
         linkTo: { name: 'issues' },
+        read: false,
+        createdAt: new Date(now - hour * 0.5).toISOString(),
       },
       {
         title: 'HITL Approval Required',
@@ -99,6 +110,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
         category: 'hitl',
         requiresAction: true,
         linkTo: { name: 'issues', params: { id: 'ISS-042' } },
+        read: false,
+        createdAt: new Date(now - hour * 1).toISOString(),
       },
       {
         title: 'Constraint Violation',
@@ -106,6 +119,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
         category: 'constraint_violation',
         requiresAction: false,
         linkTo: { name: 'constraints' },
+        read: false,
+        createdAt: new Date(now - hour * 2).toISOString(),
       },
       {
         title: 'Agent Failed',
@@ -113,6 +128,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
         category: 'agent_failure',
         requiresAction: false,
         linkTo: { name: 'issues', params: { id: 'ISS-038' } },
+        read: true,
+        createdAt: new Date(now - hour * 3).toISOString(),
       },
       {
         title: '@bob mentioned you',
@@ -120,6 +137,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
         category: 'mention',
         requiresAction: false,
         linkTo: { name: 'graph' },
+        read: true,
+        createdAt: new Date(now - hour * 5).toISOString(),
       },
       {
         title: 'HITL Approval Required',
@@ -127,11 +146,79 @@ export const useNotificationsStore = defineStore('notifications', () => {
         category: 'hitl',
         requiresAction: true,
         linkTo: { name: 'issues', params: { id: 'ISS-051' } },
+        read: false,
+        createdAt: new Date(now - hour * 6).toISOString(),
+      },
+      {
+        title: 'Constraint Violation',
+        message: 'Circular dependency detected: ISS-015 -> ISS-034 -> ISS-015',
+        category: 'constraint_violation',
+        requiresAction: true,
+        linkTo: { name: 'constraints' },
+        read: false,
+        createdAt: new Date(now - hour * 8).toISOString(),
+      },
+      {
+        title: '@carol mentioned you',
+        message: 'PR #247 needs your review before release',
+        category: 'mention',
+        requiresAction: true,
+        linkTo: { name: 'issues', params: { id: 'ISS-100' } },
+        read: false,
+        createdAt: new Date(now - hour * 10).toISOString(),
+      },
+      {
+        title: 'Agent Completed',
+        message: 'Root cause analysis finished for ISS-061',
+        category: 'agent_failure',
+        requiresAction: false,
+        linkTo: { name: 'issues', params: { id: 'ISS-061' } },
+        read: true,
+        createdAt: new Date(now - hour * 12).toISOString(),
+      },
+      {
+        title: 'HITL Approval Required',
+        message: 'Agent requests schema migration on production DB',
+        category: 'hitl',
+        requiresAction: true,
+        linkTo: { name: 'issues', params: { id: 'ISS-081' } },
+        read: true,
+        createdAt: new Date(now - hour * 24).toISOString(),
+      },
+      {
+        title: 'Constraint Violation',
+        message: 'Max dependencies exceeded for component: API Gateway (12/10)',
+        category: 'constraint_violation',
+        requiresAction: false,
+        linkTo: { name: 'constraints' },
+        read: true,
+        createdAt: new Date(now - hour * 36).toISOString(),
+      },
+      {
+        title: '@dave mentioned you',
+        message: 'Can you check the blast radius for ISS-003?',
+        category: 'mention',
+        requiresAction: false,
+        linkTo: { name: 'graph' },
+        read: true,
+        createdAt: new Date(now - hour * 48).toISOString(),
       },
     ]
     for (const m of mocks) {
-      addNotification(m)
+      const notif: AppNotification = {
+        id: generateId(),
+        read: m.read,
+        createdAt: m.createdAt,
+        title: m.title,
+        message: m.message,
+        category: m.category,
+        requiresAction: m.requiresAction,
+        linkTo: m.linkTo,
+      }
+      notifications.value.push(notif)
     }
+    localStorage.setItem(`${STORAGE_KEY}-version`, String(SEED_VERSION))
+    persist()
   }
 
   return {
