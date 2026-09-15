@@ -630,5 +630,36 @@
     "statusUpdated": "Estado de {count} issues actualizado",
     "assigned": "{count} issues asignados",
     "deleted": "{count} issues eliminados"
+  },
+  "profile": {
+    "title": "Mi Perfil",
+    "personalInfo": "Informacion Personal",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "email": "Correo",
+    "role": "Rol",
+    "roles": {
+      "admin": "Administrador",
+      "developer": "Desarrollador",
+      "viewer": "Observador"
+    },
+    "timezone": "Zona Horaria",
+    "save": "Guardar Cambios",
+    "saved": "Perfil guardado exitosamente",
+    "changePassword": "Cambiar Contrasena",
+    "currentPassword": "Contrasena Actual",
+    "newPassword": "Nueva Contrasena",
+    "confirmPassword": "Confirmar Nueva Contrasena",
+    "updatePassword": "Actualizar Contrasena",
+    "passwordUpdated": "Contrasena actualizada exitosamente",
+    "passwordMismatch": "Las contrasenas no coinciden",
+    "passwordTooShort": "La contrasena debe tener al menos 8 caracteres",
+    "preferences": "Preferencias de Notificaciones",
+    "emailNotifications": "Notificaciones por Email",
+    "emailNotificationsDesc": "Recibir notificaciones por email para menciones y asignaciones",
+    "pushNotifications": "Notificaciones Push",
+    "pushNotificationsDesc": "Recibir notificaciones push en tu navegador",
+    "agentAlerts": "Alertas de Agentes",
+    "agentAlertsDesc": "Recibir alertas cuando los agentes requieren aprobacion o fallan"
   }
 }

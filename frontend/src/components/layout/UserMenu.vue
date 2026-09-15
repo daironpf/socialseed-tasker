@@ -25,8 +25,11 @@
         v-if="isOpen"
         class="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800"
       >
-        <!-- User Info -->
-        <div class="border-b border-gray-100 px-4 py-3 dark:border-gray-700">
+        <!-- User Info - Clickable -->
+        <button
+          @click="navigateToProfile"
+          class="w-full border-b border-gray-100 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50"
+        >
           <div class="flex items-center gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700 dark:bg-brand-900/30 dark:text-brand-400">
               {{ initials }}
@@ -35,8 +38,11 @@
               <div class="text-sm font-medium text-gray-900 dark:text-white">{{ username }}</div>
               <div class="text-xs text-gray-500 dark:text-gray-400">admin</div>
             </div>
+            <svg class="ml-auto h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
           </div>
-        </div>
+        </button>
 
         <!-- Theme Toggle -->
         <div class="border-b border-gray-100 px-2 py-2 dark:border-gray-700">
@@ -95,10 +101,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
 
 const { t, locale } = useI18n()
+const router = useRouter()
 const uiStore = useUiStore()
 const authStore = useAuthStore()
 
@@ -119,6 +127,11 @@ function switchLocale(newLocale: 'en' | 'es') {
 function handleLogout() {
   authStore.clearApiKey()
   window.location.reload()
+}
+
+function navigateToProfile() {
+  isOpen.value = false
+  router.push({ name: 'Profile' })
 }
 
 function handleClickOutside(event: MouseEvent) {

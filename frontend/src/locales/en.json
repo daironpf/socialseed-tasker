@@ -630,5 +630,36 @@
     "statusUpdated": "{count} issues status updated",
     "assigned": "{count} issues assigned",
     "deleted": "{count} issues deleted"
+  },
+  "profile": {
+    "title": "My Profile",
+    "personalInfo": "Personal Information",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "role": "Role",
+    "roles": {
+      "admin": "Administrator",
+      "developer": "Developer",
+      "viewer": "Viewer"
+    },
+    "timezone": "Timezone",
+    "save": "Save Changes",
+    "saved": "Profile saved successfully",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "updatePassword": "Update Password",
+    "passwordUpdated": "Password updated successfully",
+    "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "preferences": "Notification Preferences",
+    "emailNotifications": "Email Notifications",
+    "emailNotificationsDesc": "Receive email notifications for mentions and assignments",
+    "pushNotifications": "Push Notifications",
+    "pushNotificationsDesc": "Receive push notifications in your browser",
+    "agentAlerts": "Agent Alerts",
+    "agentAlertsDesc": "Get notified when agents require approval or fail"
   }
 }
