@@ -1,7 +1,9 @@
 <template>
   <div
-    class="group flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer"
-    :class="notification.read ? 'bg-white dark:bg-gray-800' : 'bg-blue-50/50 dark:bg-blue-900/10'"
+    class="group flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer border-l-3"
+    :class="notification.read
+      ? 'bg-gray-50/50 dark:bg-gray-800/50 border-l-transparent opacity-60'
+      : 'bg-blue-50 dark:bg-blue-900/20 border-l-blue-500'"
     @click="handleClick"
   >
     <div
@@ -14,17 +16,19 @@
     <div class="min-w-0 flex-1">
       <div class="flex items-center gap-2">
         <span
-          class="truncate text-sm font-medium"
-          :class="notification.read ? 'text-gray-600 dark:text-gray-400' : 'text-gray-900 dark:text-white'"
+          class="truncate text-sm"
+          :class="notification.read
+            ? 'font-normal text-gray-500 dark:text-gray-500'
+            : 'font-semibold text-gray-900 dark:text-white'"
         >{{ notification.title }}</span>
         <span v-if="notification.requiresAction" class="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
           ACTION
         </span>
       </div>
-      <p class="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">{{ notification.message }}</p>
+      <p class="mt-0.5 truncate text-xs" :class="notification.read ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-300'">{{ notification.message }}</p>
       <div class="mt-1 flex items-center gap-2">
         <span class="text-[10px] text-gray-400">{{ timeAgo }}</span>
-        <span v-if="!notification.read" class="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+        <span v-if="!notification.read" class="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
       </div>
     </div>
 
@@ -49,8 +53,9 @@ const props = defineProps<{
   notification: AppNotification
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   dismiss: [id: string]
+  markRead: [id: string]
 }>()
 
 const router = useRouter()
@@ -58,7 +63,9 @@ const router = useRouter()
 const config = computed(() => CATEGORY_CONFIG[props.notification.category])
 
 const categoryClasses = computed(() => {
-  const base = 'bg-gray-100 dark:bg-gray-700 '
+  const base = props.notification.read
+    ? 'bg-gray-100 dark:bg-gray-700 '
+    : 'bg-gray-200 dark:bg-gray-600 '
   return base + config.value.color
 })
 
@@ -75,7 +82,7 @@ const timeAgo = computed(() => {
 
 function handleClick() {
   if (!props.notification.read) {
-    props.notification.read = true
+    emit('markRead', props.notification.id)
   }
   if (props.notification.linkTo) {
     router.push(props.notification.linkTo)

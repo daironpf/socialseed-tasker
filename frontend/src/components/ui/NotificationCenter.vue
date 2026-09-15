@@ -69,6 +69,7 @@
               :key="notif.id"
               :notification="notif"
               @dismiss="store.dismiss"
+              @markRead="store.markAsRead"
             />
           </div>
         </div>
