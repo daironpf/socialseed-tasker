@@ -53,7 +53,7 @@ const componentsStore = useComponentsStore()
 const priorityOrder: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 }
 
 const sortedIssues = computed(() =>
-  [...props.issues].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]),
+  [...props.issues].sort((a, b) => (priorityOrder[a.priority] ?? 99) - (priorityOrder[b.priority] ?? 99)),
 )
 
 const headerColor: Record<string, string> = {

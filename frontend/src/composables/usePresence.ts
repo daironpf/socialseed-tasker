@@ -18,7 +18,8 @@ const HEARTBEAT_MS = 30000
 const EXPIRE_MS = 60000
 
 let globalExpireInterval: ReturnType<typeof setInterval> | null = null
-const issueIntervals = new Map<string, ReturnType<typeof setInterval>[]>()
+const instanceIntervals = new Map<string, ReturnType<typeof setInterval>>()
+let instanceCounter = 0
 
 function startGlobalExpire() {
   if (globalExpireInterval) return
@@ -26,7 +27,11 @@ function startGlobalExpire() {
     const now = Date.now()
     for (const [key, list] of presenceMap.value.entries()) {
       const filtered = list.filter(u => now - u.lastSeen < EXPIRE_MS)
-      presenceMap.value.set(key, filtered)
+      if (filtered.length === 0) {
+        presenceMap.value.delete(key)
+      } else {
+        presenceMap.value.set(key, filtered)
+      }
     }
   }, 10000)
 }
@@ -64,6 +69,7 @@ function generateMockPresence(_issueId: string): PresenceUser[] {
 }
 
 export function usePresence(issueId: string) {
+  const instanceId = `presence-${issueId}-${++instanceCounter}`
   const viewers = computed(() => {
     const list = presenceMap.value.get(issueId) || []
     const now = Date.now()
@@ -131,18 +137,16 @@ export function usePresence(issueId: string) {
   onMounted(() => {
     joinPresence()
     const hb = setInterval(heartbeat, HEARTBEAT_MS)
-    const intervals = issueIntervals.get(issueId) || []
-    intervals.push(hb)
-    issueIntervals.set(issueId, intervals)
+    instanceIntervals.set(instanceId, hb)
     startGlobalExpire()
   })
 
   onUnmounted(() => {
     leavePresence()
-    const intervals = issueIntervals.get(issueId) || []
-    intervals.forEach(id => clearInterval(id))
-    issueIntervals.delete(issueId)
-    if (issueIntervals.size === 0) stopGlobalExpire()
+    const hb = instanceIntervals.get(instanceId)
+    if (hb) clearInterval(hb)
+    instanceIntervals.delete(instanceId)
+    if (instanceIntervals.size === 0) stopGlobalExpire()
   })
 
   return {

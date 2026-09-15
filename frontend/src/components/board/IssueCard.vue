@@ -25,7 +25,7 @@
     </h4>
     <div class="mt-2 flex items-center gap-1.5 flex-wrap">
       <PriorityBadge :priority="issue.priority" />
-      <span v-for="label in issue.labels.slice(0, 3)" :key="label" class="text-xs">
+      <span v-for="(label, idx) in issue.labels.slice(0, 3)" :key="`${label}-${idx}`" class="text-xs">
         <LabelTag :label="label" />
       </span>
       <span v-if="issue.labels.length > 3" class="text-xs text-gray-400">+{{ issue.labels.length - 3 }}</span>
