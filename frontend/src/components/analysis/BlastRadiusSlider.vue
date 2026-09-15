@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -81,6 +81,10 @@ const emit = defineEmits<{
 }>()
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+onUnmounted(() => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+})
 
 function onInput(e: Event) {
   const val = Number((e.target as HTMLInputElement).value)

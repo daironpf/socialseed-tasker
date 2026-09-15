@@ -17,6 +17,7 @@
           <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('issues.component') }}</label>
           <select
             v-model="form.component"
+            :aria-label="t('issues.component')"
             class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           >
             <option value="">{{ t('analysis.anyComponent') }}</option>

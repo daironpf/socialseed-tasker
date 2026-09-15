@@ -18,7 +18,7 @@
         </div>
         <div class="flex items-center gap-3">
           <PresenceAvatars :viewers="viewers" />
-          <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="$emit('close')" aria-label="Close">
+          <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="$emit('close')" :aria-label="t('common.close')">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>

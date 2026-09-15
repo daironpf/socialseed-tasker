@@ -6,10 +6,10 @@
       class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900"
     >
       <defs>
-        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <marker :id="`arrowhead-${uid}`" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
           <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" />
         </marker>
-        <marker id="arrowhead-red" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <marker :id="`arrowhead-red-${uid}`" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
           <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
         </marker>
       </defs>
@@ -23,7 +23,7 @@
           :stroke="edge.color"
           :stroke-width="edge.width"
           :stroke-dasharray="edge.dashed ? '6,4' : undefined"
-          :marker-end="edge.dashed ? 'url(#arrowhead)' : 'url(#arrowhead-red)'"
+          :marker-end="edge.dashed ? `url(#arrowhead-${uid})` : `url(#arrowhead-red-${uid})`"
         />
       </g>
 
@@ -75,6 +75,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+
+const uid = Math.random().toString(36).slice(2, 8)
 
 interface TreeNode {
   id: string

@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import mermaid from 'mermaid'
 
 const props = defineProps<{ content: string }>()
@@ -11,11 +11,28 @@ const props = defineProps<{ content: string }>()
 const rendered = ref('')
 const mermaidIdCounter = ref(0)
 
+let isDark = document.documentElement.classList.contains('dark')
+
 mermaid.initialize({
   startOnLoad: false,
-  theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
-  securityLevel: 'loose',
+  theme: isDark ? 'dark' : 'default',
+  securityLevel: 'strict',
 })
+
+const darkObserver = new MutationObserver(() => {
+  const newDark = document.documentElement.classList.contains('dark')
+  if (newDark !== isDark) {
+    isDark = newDark
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: isDark ? 'dark' : 'default',
+      securityLevel: 'strict',
+    })
+  }
+})
+darkObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+
+onUnmounted(() => darkObserver.disconnect())
 
 function escapeHtml(str: string): string {
   return str
@@ -109,11 +126,6 @@ watch(
   },
   { immediate: true }
 )
-
-onMounted(async () => {
-  const html = renderMarkdown(props.content)
-  rendered.value = await renderMermaidDiagrams(html)
-})
 </script>
 
 <style scoped>
