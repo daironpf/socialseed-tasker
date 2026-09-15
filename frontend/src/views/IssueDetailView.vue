@@ -71,15 +71,17 @@
       </div>
 
       <div class="grid grid-cols-2 gap-4">
-        <div v-if="assigneeUser" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+        <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
           <label class="block text-[10px] font-medium text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wider">{{ t('issues.assignee') }}</label>
-          <div class="flex items-center gap-2">
-            <span class="text-lg">{{ assigneeUser.avatar || '👤' }}</span>
-            <div>
-              <div class="text-sm font-medium text-gray-900 dark:text-white">{{ assigneeUser.username }}</div>
-              <div class="text-[10px] text-gray-500">{{ assigneeUser.role || assigneeUser.type }}</div>
-            </div>
-          </div>
+          <select
+            v-model="assignee"
+            class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+          >
+            <option value="">{{ t('issues.unassigned') }}</option>
+            <option v-for="u in users" :key="u.id" :value="u.id">
+              {{ u.avatar }} {{ u.username }}
+            </option>
+          </select>
         </div>
         <div v-if="creatorUser" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
           <label class="block text-[10px] font-medium text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wider">{{ t('issues.createdBy') }}</label>
@@ -128,19 +130,6 @@
             <option value="CRITICAL">{{ t('issues.critical') }}</option>
           </select>
         </div>
-      </div>
-
-      <div>
-        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t('issues.assignee') }}</label>
-        <select
-          v-model="assignee"
-          class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-        >
-          <option value="">{{ t('issues.unassigned') }}</option>
-          <option v-for="u in users" :key="u.id" :value="u.id">
-            {{ u.avatar }} {{ u.username }}
-          </option>
-        </select>
       </div>
 
       <!-- Assignee History -->
@@ -455,11 +444,6 @@ const auditEntries = computed<AuditEntry[]>(() => {
     { id: 'a8', issueId: props.issue.id, action: 'comment', actor: 'alice', actorAvatar: '👩‍💻', actorType: 'human', description: 'Added comment: "Looks good, let\'s ship it"', timestamp: h(24) },
     { id: 'a9', issueId: props.issue.id, action: 'status', actor: 'System', actorAvatar: '', actorType: 'system', description: 'Auto-closed after merge to main', details: { from: 'IN_PROGRESS', to: 'CLOSED' }, timestamp: h(48) },
   ]
-})
-
-const assigneeUser = computed(() => {
-  if (!props.issue.assignee) return null
-  return users.value.find(u => u.id === props.issue.assignee) || null
 })
 
 const creatorUser = computed(() => {
