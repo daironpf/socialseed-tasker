@@ -27,6 +27,7 @@
       >
         <div
           v-if="open"
+          ref="panelRef"
           class="fixed top-14 right-4 z-50 w-[400px] max-h-[500px] rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900 flex flex-col"
         >
           <!-- Header -->
@@ -88,6 +89,7 @@ const store = useNotificationsStore()
 const open = ref(false)
 const activeTab = ref<'all' | 'unread' | 'action'>('all')
 const containerRef = ref<HTMLElement | null>(null)
+const panelRef = ref<HTMLElement | null>(null)
 
 const tabs = computed(() => [
   { key: 'all' as const, label: t('notifications.tabs.all'), count: store.notifications.length },
@@ -100,9 +102,10 @@ const filteredNotifications = computed(() => store.getFiltered(activeTab.value))
 const unreadCount = computed(() => store.unreadCount)
 
 function handleClickOutside(e: MouseEvent) {
-  if (containerRef.value && !containerRef.value.contains(e.target as Node)) {
-    open.value = false
-  }
+  const target = e.target as Node
+  if (containerRef.value?.contains(target)) return
+  if (panelRef.value?.contains(target)) return
+  open.value = false
 }
 
 onMounted(() => {
