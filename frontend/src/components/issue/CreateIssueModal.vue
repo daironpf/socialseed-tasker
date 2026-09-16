@@ -44,7 +44,7 @@
         <select v-model="form.assignee" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100">
           <option value="">{{ t('issues.unassigned') }}</option>
           <option v-for="u in usersStore.users" :key="u.id" :value="u.id">
-            {{ u.avatar }} {{ u.username }} ({{ u.type === 'agent' ? 'AI' : 'Human' }})
+            {{ u.avatar }} {{ u.username }} ({{ u.type === 'agent' ? t('users.aiAgent') : t('users.human') }})
           </option>
         </select>
       </div>

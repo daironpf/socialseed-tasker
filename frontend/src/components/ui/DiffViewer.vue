@@ -165,7 +165,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -177,6 +177,11 @@ const props = defineProps<{
 
 const viewMode = ref<'unified' | 'split'>('unified')
 const copied = ref(false)
+let copyTimeout: ReturnType<typeof setTimeout> | null = null
+
+onUnmounted(() => {
+  if (copyTimeout) clearTimeout(copyTimeout)
+})
 
 interface ParsedLine {
   type: 'add' | 'remove' | 'context' | 'empty'
@@ -257,7 +262,8 @@ async function copyDiff() {
   try {
     await navigator.clipboard.writeText(props.content)
     copied.value = true
-    setTimeout(() => { copied.value = false }, 2000)
+    if (copyTimeout) clearTimeout(copyTimeout)
+    copyTimeout = setTimeout(() => { copied.value = false }, 2000)
   } catch {
     // fallback
   }
