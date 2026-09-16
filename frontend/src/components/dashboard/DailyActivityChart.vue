@@ -81,7 +81,7 @@
             opacity="0.8"
             class="cursor-pointer"
           >
-            <title>Creadas {{ chartData[i]?.day }}: {{ chartData[i]?.created }}</title>
+            <title>{{ t('dailyActivity.createdTooltip', { day: chartData[i]?.day, count: chartData[i]?.created }) }}</title>
           </rect>
         </g>
 
@@ -99,7 +99,7 @@
             opacity="0.8"
             class="cursor-pointer"
           >
-            <title>Solucionadas {{ chartData[i]?.day }}: {{ chartData[i]?.closed }}</title>
+            <title>{{ t('dailyActivity.resolvedTooltip', { day: chartData[i]?.day, count: chartData[i]?.closed }) }}</title>
           </rect>
         </g>
 
@@ -158,7 +158,7 @@ const availableMonths = computed(() => {
     const date = new Date(parseInt(year), parseInt(month) - 1)
     return {
       value: m,
-      label: date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
+      label: date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
     }
   })
 })
