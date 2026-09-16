@@ -2,22 +2,18 @@
   "constraints": [
     {
       "id": "CONST-001",
-      "name": "No circular dependencies",
-      "description": "All component dependencies must form a directed acyclic graph (DAG). Circular dependencies cause infinite loops in build and analysis pipelines.",
-      "category": "DEPENDENCIES",
+      "name": "updated-constraint",
+      "description": "Updated via PATCH",
+      "category": "ARCHITECTURE",
       "severity": "HARD",
       "scope": "project",
-      "rule": {
-        "type": "no_cycles",
-        "target": "dependency_graph",
-        "check": "DAG validation"
-      },
-      "logic": "FOR EACH component IN project.components: IF component.forms_cycle THEN REJECT",
-      "remediation": "Break the cycle by removing one dependency edge or restructuring the components",
+      "rule": {},
+      "logic": "",
+      "remediation": "",
       "auto_fix": false,
       "is_active": true,
       "created_at": "2026-08-15T10:00:00Z",
-      "updated_at": "2026-08-15T10:00:00Z"
+      "updated_at": "2026-09-12T14:06:37.710499Z"
     },
     {
       "id": "CONST-002",
@@ -68,7 +64,9 @@
       "rule": {
         "type": "forbidden_tech",
         "target_field": "dependencies",
-        "blocked_values": ["jquery"],
+        "blocked_values": [
+          "jquery"
+        ],
         "message": "jQuery is prohibited"
       },
       "logic": "IF component.dependencies CONTAINS 'jquery' THEN REJECT",
@@ -88,7 +86,10 @@
       "rule": {
         "type": "forbidden_tech",
         "target_field": "build_tool",
-        "blocked_values": ["webpack@4", "webpack-4"],
+        "blocked_values": [
+          "webpack@4",
+          "webpack-4"
+        ],
         "message": "Webpack 4 is deprecated, use Vite or Webpack 5+"
       },
       "logic": "IF component.build_tool == 'webpack@4' THEN REJECT",
@@ -154,7 +155,9 @@
       "logic": "IF issue.labels.length < 1 THEN WARN",
       "remediation": "Add appropriate labels to the issue (e.g., bug, feature, refactor)",
       "auto_fix": true,
-      "auto_fix_default": ["unlabeled"],
+      "auto_fix_default": [
+        "unlabeled"
+      ],
       "is_active": true,
       "created_at": "2026-08-20T10:00:00Z",
       "updated_at": "2026-08-20T10:00:00Z"
@@ -256,7 +259,10 @@
       "rule": {
         "type": "forbidden_tech",
         "target_field": "dependencies",
-        "blocked_values": ["lodash", "lodash-es"],
+        "blocked_values": [
+          "lodash",
+          "lodash-es"
+        ],
         "message": "Lodash is prohibited, use native methods"
       },
       "logic": "IF component.dependencies CONTAINS 'lodash' THEN WARN",
@@ -338,7 +344,12 @@
       "rule": {
         "type": "forbidden_pattern",
         "target_field": "code_patterns",
-        "blocked_values": ["MATCH (n)", "CREATE (n)", "MERGE (n)", "DETACH DELETE"],
+        "blocked_values": [
+          "MATCH (n)",
+          "CREATE (n)",
+          "MERGE (n)",
+          "DETACH DELETE"
+        ],
         "message": "Raw Cypher queries detected, use repository pattern"
       },
       "logic": "IF backend.code CONTAINS 'MATCH (' THEN REJECT",
@@ -357,7 +368,11 @@
       "scope": "component",
       "rule": {
         "type": "response_format",
-        "required_fields": ["data", "error", "meta"],
+        "required_fields": [
+          "data",
+          "error",
+          "meta"
+        ],
         "message": "API response must follow standard envelope format"
       },
       "logic": "IF response NOT CONTAINS 'data' AND 'error' AND 'meta' THEN REJECT",
@@ -397,7 +412,10 @@
       "rule": {
         "type": "forbidden_tech",
         "target_field": "dependencies",
-        "blocked_values": ["moment", "moment-timezone"],
+        "blocked_values": [
+          "moment",
+          "moment-timezone"
+        ],
         "message": "moment.js is deprecated, use date-fns or dayjs"
       },
       "logic": "IF component.dependencies CONTAINS 'moment' THEN WARN",
@@ -437,7 +455,12 @@
       "rule": {
         "type": "enum_constraint",
         "target_field": "priority",
-        "allowed_values": ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+        "allowed_values": [
+          "CRITICAL",
+          "HIGH",
+          "MEDIUM",
+          "LOW"
+        ],
         "message": "Invalid priority value"
       },
       "logic": "IF issue.priority NOT IN ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] THEN REJECT",
@@ -458,9 +481,17 @@
         "type": "state_machine",
         "target_field": "status",
         "allowed_transitions": {
-          "OPEN": ["IN_PROGRESS", "BLOCKED"],
-          "IN_PROGRESS": ["BLOCKED", "CLOSED"],
-          "BLOCKED": ["OPEN"],
+          "OPEN": [
+            "IN_PROGRESS",
+            "BLOCKED"
+          ],
+          "IN_PROGRESS": [
+            "BLOCKED",
+            "CLOSED"
+          ],
+          "BLOCKED": [
+            "OPEN"
+          ],
           "CLOSED": []
         },
         "message": "Invalid status transition"

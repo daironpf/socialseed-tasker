@@ -166,7 +166,7 @@
             class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-700"
           >
             {{ label }}
-            <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" :aria-label="'Remove label ' + label" @click="labels.splice(idx, 1)">x</button>
+            <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" :aria-label="t('issues.removeLabel', { label })" @click="labels.splice(idx, 1)">x</button>
           </span>
           <input
             v-model="newLabel"
@@ -223,7 +223,7 @@
             class="rounded-lg border border-gray-200 dark:border-gray-700 p-4"
           >
             <div class="mb-2 flex items-center gap-2">
-              <span class="rounded bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700 dark:bg-green-900/30 dark:text-green-300">PROGRESS</span>
+              <span class="rounded bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700 dark:bg-green-900/30 dark:text-green-300">{{ t('issues.logTypeProgress') }}</span>
               <span class="text-[10px] text-gray-400">{{ new Date(log.timestamp).toLocaleString() }}</span>
             </div>
             <MarkdownRenderer :content="log.content_markdown" />
@@ -238,7 +238,7 @@
             class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
           >
             <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-              <span class="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">FILES</span>
+              <span class="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{{ t('issues.logTypeFiles') }}</span>
               <span class="text-[10px] text-gray-400">{{ new Date(log.timestamp).toLocaleString() }}</span>
             </div>
             <DiffViewer :content="log.content_markdown" />
@@ -253,7 +253,7 @@
             class="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10 p-4"
           >
             <div class="mb-2 flex items-center gap-2">
-              <span class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">DEBT</span>
+              <span class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">{{ t('issues.logTypeDebt') }}</span>
               <span class="text-[10px] text-gray-400">{{ new Date(log.timestamp).toLocaleString() }}</span>
             </div>
             <MarkdownRenderer :content="log.content_markdown" />

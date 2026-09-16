@@ -54,7 +54,7 @@
         ref="textareaRef"
         v-model="localValue"
         :rows="rows"
-        :aria-label="placeholder || 'Text editor'"
+        :aria-label="placeholder || t('common.textEditor')"
         class="w-full px-3 py-2 text-sm bg-transparent text-gray-900 dark:text-gray-100 resize-none focus:outline-none placeholder-gray-400"
         :placeholder="placeholder"
         @input="onInput"

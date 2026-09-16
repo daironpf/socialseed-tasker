@@ -105,7 +105,7 @@
                   type="checkbox"
                   :checked="isAllSelected"
                   :indeterminate="isPartialSelected"
-                  aria-label="Select all issues"
+                  :aria-label="t('bulkActions.selectAll')"
                   class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                   @change="toggleSelectAll"
                 />

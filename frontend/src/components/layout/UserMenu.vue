@@ -2,7 +2,7 @@
   <div class="relative" ref="menuRef">
     <button
       @click="isOpen = !isOpen"
-      aria-label="User menu"
+      :aria-label="t('menu.userMenu')"
       class="flex items-center gap-2 rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
     >
       <div class="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-sm font-medium text-brand-700 dark:bg-brand-900/30 dark:text-brand-400">
@@ -36,7 +36,7 @@
             </div>
             <div>
               <div class="text-sm font-medium text-gray-900 dark:text-white">{{ username }}</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">admin</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">{{ t('profile.roles.admin') }}</div>
             </div>
             <svg class="ml-auto h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />

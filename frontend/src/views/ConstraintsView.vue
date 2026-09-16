@@ -70,8 +70,8 @@
           class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800"
         >
           <option value="">{{ t('constraints.allSeverities') }}</option>
-          <option value="HARD">HARD</option>
-          <option value="SOFT">SOFT</option>
+          <option value="HARD">{{ t('constraints.hard') }}</option>
+          <option value="SOFT">{{ t('constraints.soft') }}</option>
         </select>
       </div>
     </div>
@@ -129,6 +129,7 @@
         </div>
         <button
           class="text-gray-400 hover:text-gray-600"
+          :aria-label="t('common.close')"
           @click="store.validationResult = null"
         >
           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>

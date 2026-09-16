@@ -35,7 +35,8 @@
     "lightMode": "Light Mode",
     "language": "Language",
     "logout": "Sign Out",
-    "profile": "Profile"
+    "profile": "Profile",
+    "userMenu": "User menu"
   },
   "dashboard": {
     "totalIssues": "Total Issues",
@@ -83,6 +84,10 @@
     "priority": "Priority",
     "selectComponent": "Select...",
     "addLabel": "Add...",
+    "removeLabel": "Remove label {label}",
+    "logTypeProgress": "PROGRESS",
+    "logTypeFiles": "FILES",
+    "logTypeDebt": "DEBT",
     "titleRequired": "Title and Component are required",
     "failedCreate": "Failed to create issue",
     "assignee": "Assignee",
@@ -287,6 +292,7 @@
     "loading": "Analyzing...",
     "noImpact": "No impact data available",
     "noRootCause": "No root cause data available",
+    "invalidMermaid": "Invalid Mermaid diagram",
     "issueToAnalyze": "Issue to analyze:",
     "selectIssuePlaceholder": "Select an issue...",
     "runningBFS": "Running BFS traversal...",
@@ -373,7 +379,8 @@
     "create": "Create",
     "close": "Close",
     "confirm": "Confirm",
-    "noData": "No data available"
+    "noData": "No data available",
+    "textEditor": "Text editor"
   },
   "dashboardStats": {
     "totalIssues": "Total Issues",
@@ -620,6 +627,7 @@
   "bulkActions": {
     "selected": "selected",
     "selectedPlural": "selected",
+    "selectAll": "Select all issues",
     "clearSelection": "Clear selection",
     "changeStatus": "Change status",
     "assign": "Assign",
@@ -638,6 +646,7 @@
     "lastName": "Last Name",
     "email": "Email",
     "role": "Role",
+    "changePhoto": "Change photo",
     "roles": {
       "admin": "Administrator",
       "developer": "Developer",

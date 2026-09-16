@@ -4,7 +4,10 @@
 
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import mermaid from 'mermaid'
+
+const { t } = useI18n()
 
 const props = defineProps<{ content: string }>()
 
@@ -65,7 +68,7 @@ async function renderMermaidDiagrams(html: string): Promise<string> {
     } catch {
       result = result.replace(
         `<div class="mermaid-container" id="${diagram.id}"></div>`,
-        `<div class="mermaid-error rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-sm text-red-700 dark:text-red-300 my-2">Invalid Mermaid diagram</div>`
+        `<div class="mermaid-error rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-sm text-red-700 dark:text-red-300 my-2">${t('analysis.invalidMermaid')}</div>`
       )
     }
   }

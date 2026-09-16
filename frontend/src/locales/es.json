@@ -35,7 +35,8 @@
     "lightMode": "Modo Claro",
     "language": "Idioma",
     "logout": "Salir",
-    "profile": "Perfil"
+    "profile": "Perfil",
+    "userMenu": "Menu de usuario"
   },
   "dashboard": {
     "totalIssues": "Total Issues",
@@ -83,6 +84,10 @@
     "priority": "Prioridad",
     "selectComponent": "Seleccionar...",
     "addLabel": "Agregar...",
+    "removeLabel": "Eliminar etiqueta {label}",
+    "logTypeProgress": "PROGRESO",
+    "logTypeFiles": "ARCHIVOS",
+    "logTypeDebt": "DEUDA",
     "titleRequired": "Titulo y Componente son requeridos",
     "failedCreate": "Error al crear issue",
     "assignee": "Asignado a",
@@ -287,6 +292,7 @@
     "loading": "Analizando...",
     "noImpact": "No hay datos de impacto disponibles",
     "noRootCause": "No hay datos de causa raiz disponibles",
+    "invalidMermaid": "Diagrama Mermaid invalido",
     "issueToAnalyze": "Issue a analizar:",
     "selectIssuePlaceholder": "Selecciona un issue...",
     "runningBFS": "Ejecutando recorrido BFS...",
@@ -373,7 +379,8 @@
     "create": "Crear",
     "close": "Cerrar",
     "confirm": "Confirmar",
-    "noData": "No hay datos disponibles"
+    "noData": "No hay datos disponibles",
+    "textEditor": "Editor de texto"
   },
   "dashboardStats": {
     "totalIssues": "Total Issues",
@@ -620,6 +627,7 @@
   "bulkActions": {
     "selected": "seleccionados",
     "selectedPlural": "seleccionados",
+    "selectAll": "Seleccionar todas las issues",
     "clearSelection": "Limpiar seleccion",
     "changeStatus": "Cambiar estado",
     "assign": "Asignar",
@@ -638,6 +646,7 @@
     "lastName": "Apellido",
     "email": "Correo",
     "role": "Rol",
+    "changePhoto": "Cambiar foto",
     "roles": {
       "admin": "Administrador",
       "developer": "Desarrollador",

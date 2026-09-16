@@ -16,14 +16,14 @@
         <div class="flex gap-2">
           <button
             type="submit"
-            class="flex-1 bg-cyan-600 text-white py-2 px-4 rounded-lg hover:bg-cyan-700"
+            class="flex-1 bg-cyan-600 text-white py-2 px-4 rounded-lg hover:bg-cyan-700 dark:bg-cyan-500 dark:hover:bg-cyan-600"
           >
             {{ t('auth.submit') }}
           </button>
           <button
             type="button"
             @click="clearAndRetry"
-            class="flex-1 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600"
+            class="flex-1 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-500"
           >
             {{ t('common.close') }}
           </button>
