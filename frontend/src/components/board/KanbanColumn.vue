@@ -69,7 +69,9 @@ function getComponentName(id: string): string {
 
 function onDragStart(event: DragEvent, issue: Issue) {
   event.dataTransfer?.setData('application/json', JSON.stringify(issue))
-  event.dataTransfer!.effectAllowed = 'move'
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+  }
 }
 
 function onDrop(event: DragEvent) {

@@ -88,7 +88,7 @@ export function useExport() {
       const ctx = canvas.getContext('2d')!
       ctx.scale(scale, scale)
       ctx.fillStyle = 'white'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.fillRect(0, 0, img.width, img.height)
       ctx.drawImage(img, 0, 0)
 
       await new Promise<void>((resolve, reject) => {

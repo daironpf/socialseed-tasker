@@ -122,23 +122,23 @@ interface PaletteItem {
 }
 
 const pages: PaletteItem[] = [
-  { id: 'page-board', label: 'Dashboard', icon: '📊', category: 'Page', group: 'pages', action: () => router.push('/board') },
-  { id: 'page-kanban', label: 'Kanban Board', icon: '📋', category: 'Page', group: 'pages', action: () => router.push('/kanban') },
-  { id: 'page-list', label: 'Issues List', icon: '📝', category: 'Page', group: 'pages', action: () => router.push('/list') },
-  { id: 'page-components', label: 'Components', icon: '🧩', category: 'Page', group: 'pages', action: () => router.push('/components') },
-  { id: 'page-policies', label: 'Policies', icon: '📜', category: 'Page', group: 'pages', action: () => router.push('/policies') },
-  { id: 'page-constraints', label: 'Constraints', icon: '🔒', category: 'Page', group: 'pages', action: () => router.push('/constraints') },
-  { id: 'page-users', label: 'Users', icon: '👥', category: 'Page', group: 'pages', action: () => router.push('/users') },
-  { id: 'page-graph', label: 'Dependency Graph', icon: '🕸️', category: 'Page', group: 'pages', action: () => router.push('/graph') },
-  { id: 'page-analysis', label: 'Analysis', icon: '🔍', category: 'Page', group: 'pages', action: () => router.push('/analysis') },
-  { id: 'page-system', label: 'System Status', icon: '⚙️', category: 'Page', group: 'pages', action: () => router.push('/system') },
+  { id: 'page-board', label: t('header.dashboard'), icon: '📊', category: 'Page', group: 'pages', action: () => router.push('/board') },
+  { id: 'page-kanban', label: t('header.kanban'), icon: '📋', category: 'Page', group: 'pages', action: () => router.push('/kanban') },
+  { id: 'page-list', label: t('header.issues'), icon: '📝', category: 'Page', group: 'pages', action: () => router.push('/list') },
+  { id: 'page-components', label: t('header.components'), icon: '🧩', category: 'Page', group: 'pages', action: () => router.push('/components') },
+  { id: 'page-policies', label: t('header.policies'), icon: '📜', category: 'Page', group: 'pages', action: () => router.push('/policies') },
+  { id: 'page-constraints', label: t('header.constraints'), icon: '🔒', category: 'Page', group: 'pages', action: () => router.push('/constraints') },
+  { id: 'page-users', label: t('header.users'), icon: '👥', category: 'Page', group: 'pages', action: () => router.push('/users') },
+  { id: 'page-graph', label: t('header.graph'), icon: '🕸️', category: 'Page', group: 'pages', action: () => router.push('/graph') },
+  { id: 'page-analysis', label: t('header.analysis'), icon: '🔍', category: 'Page', group: 'pages', action: () => router.push('/analysis') },
+  { id: 'page-system', label: t('header.system'), icon: '⚙️', category: 'Page', group: 'pages', action: () => router.push('/system') },
 ]
 
 const quickActions: PaletteItem[] = [
-  { id: 'action-create-issue', label: 'Create New Issue', icon: '➕', category: 'Action', group: 'actions', action: () => { close(); router.push('/list'); } },
-  { id: 'action-toggle-dark', label: 'Toggle Dark Mode', icon: '🌙', category: 'Action', group: 'actions', action: () => { uiStore.toggleDarkMode(); close(); } },
-  { id: 'action-toggle-sidebar', label: 'Toggle Sidebar', icon: '📌', category: 'Action', group: 'actions', action: () => { uiStore.toggleSidebar(); close(); } },
-  { id: 'action-clear-filters', label: 'Clear All Filters', icon: '🧹', category: 'Action', group: 'actions', action: () => { uiStore.clearFilters(); close(); } },
+  { id: 'action-create-issue', label: t('commandPalette.createIssue'), icon: '➕', category: 'Action', group: 'actions', action: () => { close(); router.push('/list'); } },
+  { id: 'action-toggle-dark', label: t('commandPalette.toggleDark'), icon: '🌙', category: 'Action', group: 'actions', action: () => { uiStore.toggleDarkMode(); close(); } },
+  { id: 'action-toggle-sidebar', label: t('commandPalette.toggleSidebar'), icon: '📌', category: 'Action', group: 'actions', action: () => { uiStore.toggleSidebar(); close(); } },
+  { id: 'action-clear-filters', label: t('commandPalette.clearFilters'), icon: '🧹', category: 'Action', group: 'actions', action: () => { uiStore.clearFilters(); close(); } },
 ]
 
 const allItems = computed<PaletteItem[]>(() => {

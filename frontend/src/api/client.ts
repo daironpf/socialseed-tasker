@@ -170,7 +170,7 @@ const mockClient = {
     
     return { data: { data: null } }
   },
-  delete: async (url: string) => {
+  delete: async (url: string, _config?: any) => {
     if (url.match(/\/issues\/[^/]+$/)) {
       const id = url.split('/').pop()!
       await mockApi.deleteIssue(id)

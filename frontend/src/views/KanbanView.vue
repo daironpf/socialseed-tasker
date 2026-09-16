@@ -47,6 +47,28 @@
       </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div
+      v-if="showDeleteConfirm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      @click.self="showDeleteConfirm = false"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="w-full max-w-sm rounded-lg bg-white shadow-xl p-6 dark:bg-gray-800">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('issues.delete') }}</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">{{ t('issues.deleteConfirm') }}</p>
+        <div class="flex justify-end gap-2">
+          <button @click="showDeleteConfirm = false" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+            {{ t('common.cancel') }}
+          </button>
+          <button @click="confirmDeleteIssue" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
+            {{ t('issues.delete') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Issue Detail Modal -->
     <div
       v-if="selectedIssue"
@@ -92,6 +114,20 @@ const componentsStore = useComponentsStore()
 const uiStore = useUiStore()
 
 const showCreateModal = ref(false)
+const showDeleteConfirm = ref(false)
+const deleteTargetId = ref('')
+
+function deleteIssue(id: string) {
+  deleteTargetId.value = id
+  showDeleteConfirm.value = true
+}
+
+async function confirmDeleteIssue() {
+  const ok = await issuesStore.deleteIssue(deleteTargetId.value)
+  if (ok) uiStore.setSelectedIssue(null)
+  showDeleteConfirm.value = false
+  deleteTargetId.value = ''
+}
 
 const columns = computed(() => [
   { title: t('issues.open'), status: 'OPEN' as IssueStatus },
@@ -127,9 +163,8 @@ async function onUpdateIssue(id: string, body: IssueUpdateRequest) {
   await issuesStore.updateIssue(id, body)
 }
 
-async function onDeleteIssue(id: string) {
-  const ok = await issuesStore.deleteIssue(id)
-  if (ok) uiStore.setSelectedIssue(null)
+function onDeleteIssue(id: string) {
+  deleteIssue(id)
 }
 
 async function onCloseIssue(id: string) {

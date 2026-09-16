@@ -119,5 +119,7 @@ export function initKeyboardShortcuts() {
 
 export function destroyKeyboardShortcuts() {
   document.removeEventListener('keydown', handleKeydown)
+  if (sequenceTimeout.value) clearTimeout(sequenceTimeout.value)
+  sequenceBuffer.value = []
   initialized = false
 }

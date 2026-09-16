@@ -266,7 +266,7 @@
             </button>
           </div>
           <div v-if="adminMessage" class="mt-3 rounded-lg border p-3 text-sm"
-            :class="adminMessage.includes('success')
+            :class="adminSuccess
               ? 'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400'
               : 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400'"
           >
@@ -366,26 +366,53 @@ const syncQueue = ref<SyncQueue | null>(null)
 const loading = ref(true)
 const adminLoading = ref(false)
 const adminMessage = ref('')
+const adminSuccess = ref(false)
 const showSeedConfirm = ref(false)
 const showResetConfirm = ref(false)
 
 const tokenUsageData = ref<Array<{ date: string; promptTokens: number; completionTokens: number; model: string }>>([])
 
-onMounted(() => {
-  const models = ['claude-3.5-sonnet', 'gpt-4-turbo', 'gpt-4o']
-  const now = new Date()
-  const data = []
-  for (let i = 13; i >= 0; i--) {
-    const date = new Date(now.getTime() - i * 86400000)
-    data.push({
-      date: date.toISOString(),
-      promptTokens: Math.floor(Math.random() * 50000) + 10000,
-      completionTokens: Math.floor(Math.random() * 20000) + 5000,
-      model: models[Math.floor(Math.random() * models.length)],
-    })
+function handleSeed() {
+  showSeedConfirm.value = true
+}
+
+async function executeSeed() {
+  showSeedConfirm.value = false
+  adminLoading.value = true
+  adminMessage.value = ''
+  adminSuccess.value = false
+  try {
+    const result = await adminSeed('full', false)
+    adminMessage.value = result?.message || t('system.seedSuccess')
+    adminSuccess.value = true
+  } catch (e) {
+    adminMessage.value = t('system.seedError')
+    adminSuccess.value = false
+  } finally {
+    adminLoading.value = false
   }
-  tokenUsageData.value = data
-})
+}
+
+function handleReset() {
+  showResetConfirm.value = true
+}
+
+async function executeReset() {
+  showResetConfirm.value = false
+  adminLoading.value = true
+  adminMessage.value = ''
+  adminSuccess.value = false
+  try {
+    const result = await adminReset()
+    adminMessage.value = result?.message || t('system.resetSuccess')
+    adminSuccess.value = true
+  } catch (e) {
+    adminMessage.value = t('system.resetError')
+    adminSuccess.value = false
+  } finally {
+    adminLoading.value = false
+  }
+}
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleString()
@@ -404,41 +431,20 @@ async function refreshAll() {
   }
 }
 
-async function handleSeed() {
-  showSeedConfirm.value = true
-}
-
-async function executeSeed() {
-  showSeedConfirm.value = false
-  adminLoading.value = true
-  adminMessage.value = ''
-  try {
-    const result = await adminSeed('full', false)
-    adminMessage.value = result?.message || t('system.seedSuccess')
-  } catch (e) {
-    adminMessage.value = t('system.seedError')
-  } finally {
-    adminLoading.value = false
+onMounted(() => {
+  const models = ['claude-3.5-sonnet', 'gpt-4-turbo', 'gpt-4o']
+  const now = new Date()
+  const data = []
+  for (let i = 13; i >= 0; i--) {
+    const date = new Date(now.getTime() - i * 86400000)
+    data.push({
+      date: date.toISOString(),
+      promptTokens: Math.floor(Math.random() * 50000) + 10000,
+      completionTokens: Math.floor(Math.random() * 20000) + 5000,
+      model: models[Math.floor(Math.random() * models.length)],
+    })
   }
-}
-
-async function handleReset() {
-  showResetConfirm.value = true
-}
-
-async function executeReset() {
-  showResetConfirm.value = false
-  adminLoading.value = true
-  adminMessage.value = ''
-  try {
-    const result = await adminReset()
-    adminMessage.value = result?.message || t('system.resetSuccess')
-  } catch (e) {
-    adminMessage.value = t('system.resetError')
-  } finally {
-    adminLoading.value = false
-  }
-}
-
-onMounted(refreshAll)
+  tokenUsageData.value = data
+  refreshAll()
+})
 </script>

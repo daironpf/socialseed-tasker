@@ -665,5 +665,11 @@
     "assigned": "Asignado",
     "unassigned": "Desasignado",
     "currentAssignee": "Asignado actualmente"
+  },
+  "commandPalette": {
+    "createIssue": "Crear Nueva Issue",
+    "toggleDark": "Cambiar Modo Oscuro",
+    "toggleSidebar": "Cambiar Barra Lateral",
+    "clearFilters": "Limpiar Todos los Filtros"
   }
 }

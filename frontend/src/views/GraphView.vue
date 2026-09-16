@@ -85,7 +85,7 @@
       <div v-else-if="graphData.nodes.length === 0" class="text-center py-12 text-gray-400">
         {{ t('graph.noData') }}
       </div>
-    <div ref="networkContainer" class="w-full h-[600px] rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800" />
+    <div ref="networkContainer" role="application" :aria-label="t('graph.title')" class="w-full h-[600px] rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800" />
 
     <div class="mt-2 flex justify-end">
       <button

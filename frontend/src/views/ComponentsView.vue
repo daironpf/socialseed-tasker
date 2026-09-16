@@ -361,18 +361,22 @@ const componentStats = computed(() => {
 
 function statusClass(status: string) {
   const m: Record<string, string> = {
-    OPEN: 'bg-blue-100 text-blue-700', IN_PROGRESS: 'bg-amber-100 text-amber-700',
-    BLOCKED: 'bg-red-100 text-red-700', CLOSED: 'bg-green-100 text-green-700',
+    OPEN: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    IN_PROGRESS: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    BLOCKED: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    CLOSED: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
   }
-  return m[status] || 'bg-gray-100 text-gray-700'
+  return m[status] || 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
 }
 
 function priorityClass(priority: string) {
   const m: Record<string, string> = {
-    CRITICAL: 'bg-red-100 text-red-700', HIGH: 'bg-orange-100 text-orange-700',
-    MEDIUM: 'bg-yellow-100 text-yellow-700', LOW: 'bg-gray-100 text-gray-700',
+    CRITICAL: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    HIGH: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+    MEDIUM: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+    LOW: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300',
   }
-  return m[priority] || 'bg-gray-100 text-gray-700'
+  return m[priority] || 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
 }
 
 function openDetail(comp: Component) { selectedComponent.value = comp }

@@ -19,7 +19,7 @@
           </div>
           <div>
             <div class="text-lg font-semibold text-gray-900 dark:text-white">{{ username }}</div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">admin</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">{{ t(`profile.roles.${form.role}`) }}</div>
           </div>
         </div>
       </div>
@@ -140,7 +140,11 @@
               <div class="text-xs text-gray-500 dark:text-gray-400">{{ t('profile.emailNotificationsDesc') }}</div>
             </div>
             <button
+              role="switch"
+              :aria-checked="preferences.emailNotifications"
               @click="preferences.emailNotifications = !preferences.emailNotifications"
+              @keydown.enter.prevent="preferences.emailNotifications = !preferences.emailNotifications"
+              @keydown.space.prevent="preferences.emailNotifications = !preferences.emailNotifications"
               class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
               :class="preferences.emailNotifications ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'"
             >
@@ -156,7 +160,11 @@
               <div class="text-xs text-gray-500 dark:text-gray-400">{{ t('profile.pushNotificationsDesc') }}</div>
             </div>
             <button
+              role="switch"
+              :aria-checked="preferences.pushNotifications"
               @click="preferences.pushNotifications = !preferences.pushNotifications"
+              @keydown.enter.prevent="preferences.pushNotifications = !preferences.pushNotifications"
+              @keydown.space.prevent="preferences.pushNotifications = !preferences.pushNotifications"
               class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
               :class="preferences.pushNotifications ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'"
             >
@@ -172,7 +180,11 @@
               <div class="text-xs text-gray-500 dark:text-gray-400">{{ t('profile.agentAlertsDesc') }}</div>
             </div>
             <button
+              role="switch"
+              :aria-checked="preferences.agentAlerts"
               @click="preferences.agentAlerts = !preferences.agentAlerts"
+              @keydown.enter.prevent="preferences.agentAlerts = !preferences.agentAlerts"
+              @keydown.space.prevent="preferences.agentAlerts = !preferences.agentAlerts"
               class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
               :class="preferences.agentAlerts ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'"
             >
