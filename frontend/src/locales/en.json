@@ -674,7 +674,13 @@
     "newConversation": "View all conversations",
     "placeholder": "Type a message...",
     "send": "Send",
-    "backToList": "Back to conversations"
+    "backToList": "Back to conversations",
+    "activeNow": "Active now",
+    "chats": "Chats",
+    "you": "You",
+    "like": "Like",
+    "emoji": "Emoji",
+    "openFullChat": "Open Messenger"
   },
   "presence": {
     "isViewing": "is viewing",
