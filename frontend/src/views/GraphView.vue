@@ -172,6 +172,7 @@ const showRelModal = ref(false)
 const relFromLabel = ref('')
 const relToLabel = ref('')
 const cycleError = ref('')
+let cycleErrorTimeout: ReturnType<typeof setTimeout> | null = null
 const selectedComponents = ref<string[]>([])
 const maxHops = ref(3)
 
@@ -365,7 +366,8 @@ function buildGraph() {
             const existingEdges = edges!.get().map(e => ({ from: e.from, to: e.to }))
             if (wouldCreateCycle(existingEdges, connectFrom.value, nodeId)) {
               cycleError.value = t('graph.cycleDetected')
-              setTimeout(() => cycleError.value = '', 3000)
+              if (cycleErrorTimeout) clearTimeout(cycleErrorTimeout)
+              cycleErrorTimeout = setTimeout(() => cycleError.value = '', 3000)
             } else {
               relFromLabel.value = fromIssue.title
               relToLabel.value = toIssue.title
@@ -450,6 +452,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  if (cycleErrorTimeout) clearTimeout(cycleErrorTimeout)
   if (network) {
     network.destroy()
   }

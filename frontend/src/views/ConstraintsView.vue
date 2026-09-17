@@ -534,8 +534,8 @@ async function saveConstraint() {
       await store.createConstraint(form.value)
     }
     closeModal()
-  } catch (e) {
-    console.error('Failed to save constraint:', e)
+  } catch {
+    // constraint save failed
   }
 }
 

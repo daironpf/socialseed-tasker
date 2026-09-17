@@ -76,8 +76,8 @@ async function loadUsers() {
         isActive,
       }
     })
-  } catch (e) {
-    console.error('Failed to load users for TeamTicker:', e)
+  } catch {
+    // users fetch failed
   }
 }
 

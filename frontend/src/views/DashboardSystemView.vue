@@ -424,8 +424,8 @@ async function refreshAll() {
     const [h, s] = await Promise.all([fetchSystemHealth(), fetchSyncQueue()])
     health.value = h
     syncQueue.value = s
-  } catch (e) {
-    console.error('Failed to load system data:', e)
+  } catch {
+    // system data fetch failed
   } finally {
     loading.value = false
   }

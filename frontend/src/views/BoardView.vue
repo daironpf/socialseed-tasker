@@ -99,8 +99,8 @@ const allIssues = computed(() => issuesStore.issues)
 async function fetchDashboardData() {
   try {
     policies.value = await fetchPolicies()
-  } catch (e) {
-    console.error('Failed to fetch policies:', e)
+  } catch {
+    // policies fetch failed
   }
 
   const projectName = uiStore.filters.project
@@ -108,8 +108,8 @@ async function fetchDashboardData() {
     try {
       const res = await client.get(`/projects/${projectName}/summary`)
       currentProject.value = res.data.data
-    } catch (e) {
-      console.error('Failed to fetch project summary:', e)
+    } catch {
+      // project summary fetch failed
       try {
         const res = await client.get('/projects')
         const projects = res.data.data

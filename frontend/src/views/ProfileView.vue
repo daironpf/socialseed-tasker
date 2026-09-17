@@ -218,7 +218,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToast } from '@/composables/useToast'
 
@@ -249,10 +249,16 @@ const preferences = ref({
 })
 
 const showSuccess = ref(false)
+let successTimeout: ReturnType<typeof setTimeout> | null = null
+
+onUnmounted(() => {
+  if (successTimeout) clearTimeout(successTimeout)
+})
 
 function showSavedMessage() {
   showSuccess.value = true
-  setTimeout(() => { showSuccess.value = false }, 2000)
+  if (successTimeout) clearTimeout(successTimeout)
+  successTimeout = setTimeout(() => { showSuccess.value = false }, 2000)
 }
 
 function saveProfile() {

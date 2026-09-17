@@ -452,15 +452,15 @@ const auditEntries = computed<AuditEntry[]>(() => {
   const now = Date.now()
   const h = (hours: number) => new Date(now - hours * 3600000).toISOString()
   return [
-    { id: 'a1', issueId: props.issue.id, action: 'status', actor: 'alice', actorAvatar: '👩‍💻', actorType: 'human', description: 'Changed status', details: { from: 'OPEN', to: 'IN_PROGRESS' }, timestamp: h(0.5) },
-    { id: 'a2', issueId: props.issue.id, action: 'agent', actor: 'Arch-Bot', actorAvatar: '🏗️', actorType: 'agent', description: 'Started impact analysis', timestamp: h(1) },
-    { id: 'a3', issueId: props.issue.id, action: 'assignment', actor: 'bob', actorAvatar: '👨‍💻', actorType: 'human', description: 'Assigned to alice', details: { from: 'unassigned', to: 'alice' }, timestamp: h(2) },
-    { id: 'a4', issueId: props.issue.id, action: 'priority', actor: 'alice', actorAvatar: '👩‍💻', actorType: 'human', description: 'Changed priority', details: { from: 'MEDIUM', to: 'HIGH' }, timestamp: h(3) },
-    { id: 'a5', issueId: props.issue.id, action: 'hitl', actor: 'alice', actorAvatar: '👩‍💻', actorType: 'human', description: 'Approved agent action: DELETE on users table', timestamp: h(5) },
-    { id: 'a6', issueId: props.issue.id, action: 'system', actor: 'System', actorAvatar: '', actorType: 'system', description: 'Constraint violation detected: rate limit exceeded', timestamp: h(8) },
-    { id: 'a7', issueId: props.issue.id, action: 'label', actor: 'bob', actorAvatar: '👨‍💻', actorType: 'human', description: 'Added labels', details: { to: 'backend, urgent' }, timestamp: h(12) },
-    { id: 'a8', issueId: props.issue.id, action: 'comment', actor: 'alice', actorAvatar: '👩‍💻', actorType: 'human', description: 'Added comment: "Looks good, let\'s ship it"', timestamp: h(24) },
-    { id: 'a9', issueId: props.issue.id, action: 'status', actor: 'System', actorAvatar: '', actorType: 'system', description: 'Auto-closed after merge to main', details: { from: 'IN_PROGRESS', to: 'CLOSED' }, timestamp: h(48) },
+    { id: 'a1', issueId: props.issue.id, action: 'status', actor: 'alice', actorAvatar: '👩‍💻', actorType: 'human', description: t('audit.changedStatus'), details: { from: 'OPEN', to: 'IN_PROGRESS' }, timestamp: h(0.5) },
+    { id: 'a2', issueId: props.issue.id, action: 'agent', actor: 'Arch-Bot', actorAvatar: '🏗️', actorType: 'agent', description: t('audit.startedImpactAnalysis'), timestamp: h(1) },
+    { id: 'a3', issueId: props.issue.id, action: 'assignment', actor: 'bob', actorAvatar: '👨‍💻', actorType: 'human', description: t('audit.assignedTo', { user: 'alice' }), details: { from: 'unassigned', to: 'alice' }, timestamp: h(2) },
+    { id: 'a4', issueId: props.issue.id, action: 'priority', actor: 'alice', actorAvatar: '👩‍💻', actorType: 'human', description: t('audit.changedPriority'), details: { from: 'MEDIUM', to: 'HIGH' }, timestamp: h(3) },
+    { id: 'a5', issueId: props.issue.id, action: 'hitl', actor: 'alice', actorAvatar: '👩‍💻', actorType: 'human', description: t('audit.approvedAgentAction', { action: 'DELETE on users table' }), timestamp: h(5) },
+    { id: 'a6', issueId: props.issue.id, action: 'system', actor: 'System', actorAvatar: '', actorType: 'system', description: t('audit.constraintViolation', { detail: 'rate limit exceeded' }), timestamp: h(8) },
+    { id: 'a7', issueId: props.issue.id, action: 'label', actor: 'bob', actorAvatar: '👨‍💻', actorType: 'human', description: t('audit.addedLabels'), details: { to: 'backend, urgent' }, timestamp: h(12) },
+    { id: 'a8', issueId: props.issue.id, action: 'comment', actor: 'alice', actorAvatar: '👩‍💻', actorType: 'human', description: t('audit.addedComment', { text: 'Looks good, let\'s ship it' }), timestamp: h(24) },
+    { id: 'a9', issueId: props.issue.id, action: 'status', actor: 'System', actorAvatar: '', actorType: 'system', description: t('audit.autoClosed'), details: { from: 'IN_PROGRESS', to: 'CLOSED' }, timestamp: h(48) },
   ]
 })
 
@@ -511,7 +511,7 @@ function onKillSwitch() {
   agentLogs.value.push({
     timestamp: new Date().toISOString(),
     type: 'debt',
-    content_markdown: '**AGENT EXECUTION CANCELLED** by human operator.',
+    content_markdown: '**' + t('audit.agentCancelled') + '**',
   })
 }
 
@@ -563,14 +563,14 @@ const pendingAction = computed(() => {
   const lastFileLog = fileLogs.value[fileLogs.value.length - 1]
   if (lastFileLog) {
     return {
-      type: 'Code Change',
+      type: t('hitl.codeChange'),
       command: lastFileLog.content_markdown.substring(0, 500),
       severity: 'HIGH',
       description: t('hitl.actionDescription'),
     }
   }
   return {
-    type: 'Agent Action',
+    type: t('hitl.agentAction'),
     command: t('hitl.defaultCommand'),
     severity: 'HIGH',
     description: t('hitl.actionDescription'),

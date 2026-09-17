@@ -124,26 +124,26 @@ interface SlashCommand {
   insert: string
 }
 
-const slashCommands: SlashCommand[] = [
-  { id: 'heading1', icon: 'H1', label: 'Heading 1', description: 'Large section heading', insert: '# ' },
-  { id: 'heading2', icon: 'H2', label: 'Heading 2', description: 'Medium section heading', insert: '## ' },
-  { id: 'heading3', icon: 'H3', label: 'Heading 3', description: 'Small section heading', insert: '### ' },
-  { id: 'bold', icon: 'B', label: 'Bold', description: 'Bold text', insert: '**text**' },
-  { id: 'italic', icon: 'I', label: 'Italic', description: 'Italic text', insert: '*text*' },
-  { id: 'code', icon: '<>', label: 'Code', description: 'Inline code', insert: '`code`' },
-  { id: 'codeblock', icon: '{ }', label: 'Code Block', description: 'Syntax highlighted code', insert: '```\ncode\n```' },
-  { id: 'mermaid', icon: '📊', label: 'Mermaid Diagram', description: 'Flowchart or diagram', insert: '```mermaid\ngraph TD\n    A-->B\n```' },
-  { id: 'list', icon: '•', label: 'Bullet List', description: 'Unordered list', insert: '- ' },
-  { id: 'checklist', icon: '☑', label: 'Checklist', description: 'Task checklist', insert: '- [ ] ' },
-  { id: 'table', icon: '▦', label: 'Table', description: 'Markdown table', insert: '| Column | Column |\n|--------|--------|\n| Cell   | Cell   |' },
-  { id: 'quote', icon: '"', label: 'Quote', description: 'Blockquote', insert: '> ' },
-  { id: 'divider', icon: '—', label: 'Divider', description: 'Horizontal rule', insert: '\n---\n' },
-]
+const slashCommands = computed<SlashCommand[]>(() => [
+  { id: 'heading1', icon: 'H1', label: t('editor.heading1'), description: t('editor.heading1Desc'), insert: '# ' },
+  { id: 'heading2', icon: 'H2', label: t('editor.heading2'), description: t('editor.heading2Desc'), insert: '## ' },
+  { id: 'heading3', icon: 'H3', label: t('editor.heading3'), description: t('editor.heading3Desc'), insert: '### ' },
+  { id: 'bold', icon: 'B', label: t('editor.bold'), description: t('editor.boldDesc'), insert: '**text**' },
+  { id: 'italic', icon: 'I', label: t('editor.italic'), description: t('editor.italicDesc'), insert: '*text*' },
+  { id: 'code', icon: '<>', label: t('editor.code'), description: t('editor.codeDesc'), insert: '`code`' },
+  { id: 'codeblock', icon: '{ }', label: t('editor.codeBlock'), description: t('editor.codeBlockDesc'), insert: '```\ncode\n```' },
+  { id: 'mermaid', icon: '📊', label: t('editor.mermaid'), description: t('editor.mermaidDesc'), insert: '```mermaid\ngraph TD\n    A-->B\n```' },
+  { id: 'list', icon: '•', label: t('editor.bulletList'), description: t('editor.bulletListDesc'), insert: '- ' },
+  { id: 'checklist', icon: '☑', label: t('editor.checklist'), description: t('editor.checklistDesc'), insert: '- [ ] ' },
+  { id: 'table', icon: '▦', label: t('editor.table'), description: t('editor.tableDesc'), insert: '| Column | Column |\n|--------|--------|\n| Cell   | Cell   |' },
+  { id: 'quote', icon: '"', label: t('editor.quote'), description: t('editor.quoteDesc'), insert: '> ' },
+  { id: 'divider', icon: '—', label: t('editor.divider'), description: t('editor.dividerDesc'), insert: '\n---\n' },
+])
 
 const filteredSlashCommands = computed(() => {
-  if (!slashQuery.value) return slashCommands
+  if (!slashQuery.value) return slashCommands.value
   const q = slashQuery.value.toLowerCase()
-  return slashCommands.filter(
+  return slashCommands.value.filter(
     (c) => c.label.toLowerCase().includes(q) || c.description.toLowerCase().includes(q)
   )
 })

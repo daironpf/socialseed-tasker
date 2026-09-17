@@ -82,8 +82,8 @@ function onDrop(event: DragEvent) {
     if (issue.status !== props.status) {
       emit('dropIssue', issue, props.status)
     }
-  } catch (e) {
-    console.error('Failed to parse drag data', e)
+  } catch {
+    // invalid drag data
   }
 }
 </script>

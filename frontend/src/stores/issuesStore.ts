@@ -25,7 +25,6 @@ export const useIssuesStore = defineStore('issues', () => {
       issues.value = result.items
       pagination.value = result.pagination
     } catch (e) {
-      console.error('[IssuesStore] Fetch failed:', e)
       error.value = (e as Error).message
       issues.value = []
     } finally {

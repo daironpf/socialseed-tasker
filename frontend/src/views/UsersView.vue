@@ -389,8 +389,7 @@ async function openIssuesModal(user: User, type: 'assigned' | 'created' | 'compl
     } else {
       modalIssues.value = issues.filter(issue => (issue.assignee === user.id || issue.created_by === user.id) && issue.status === 'CLOSED')
     }
-  } catch (e) {
-    console.error('Failed to fetch issues:', e)
+  } catch {
     modalIssues.value = []
   } finally {
     loadingIssues.value = false
@@ -417,8 +416,7 @@ async function saveAgent(updatedAgent: Record<string, any>) {
   try {
     await usersStore.updateUser(updatedAgent.id, updatedAgent as User)
     closeEditAgent()
-  } catch (e) {
-    console.error('Failed to save agent:', e)
+  } catch {
     toast.error(t('common.error'))
   }
 }
@@ -437,8 +435,7 @@ async function saveUser(updatedUser: User) {
   try {
     await usersStore.updateUser(updatedUser.id, updatedUser)
     closeEditUser()
-  } catch (e) {
-    console.error('Failed to save user:', e)
+  } catch {
     toast.error(t('common.error'))
   }
 }
@@ -446,8 +443,7 @@ async function saveUser(updatedUser: User) {
 async function deleteUser(user: User) {
   try {
     await usersStore.deleteUser(user.id)
-  } catch (e) {
-    console.error('Failed to delete user:', e)
+  } catch {
     toast.error(t('common.error'))
   }
 }
@@ -456,8 +452,7 @@ async function deleteAgent(user: User) {
   try {
     await usersStore.deleteUser(user.id)
     closeEditAgent()
-  } catch (e) {
-    console.error('Failed to delete agent:', e)
+  } catch {
     toast.error(t('common.error'))
   }
 }
@@ -466,8 +461,7 @@ async function createUser(data: { username: string; email: string; role: string;
   try {
     await usersStore.createUser(data)
     showCreateModal.value = false
-  } catch (e) {
-    console.error('Failed to create user:', e)
+  } catch {
     toast.error(t('common.error'))
   }
 }
