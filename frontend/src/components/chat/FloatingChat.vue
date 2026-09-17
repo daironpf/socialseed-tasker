@@ -29,7 +29,7 @@
     >
       <div
         v-if="isOpen"
-        class="fixed bottom-20 right-6 z-50 flex w-96 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900"
+        class="fixed bottom-20 right-6 z-50 flex w-[480px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900"
         :class="isMinimized ? 'h-14' : 'h-[500px]'"
         style="max-height: calc(100vh - 120px)"
       >
