@@ -259,7 +259,7 @@
               type="checkbox"
               v-model="editForm.is_active"
               id="edit-is-active"
-              class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+              class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700"
             />
             <label for="edit-is-active" class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('policies.active') }}</label>
           </div>

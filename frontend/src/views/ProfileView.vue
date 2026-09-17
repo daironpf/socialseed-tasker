@@ -71,13 +71,13 @@
               v-model="form.timezone"
               class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
             >
-              <option value="UTC">UTC</option>
-              <option value="America/New_York">Eastern Time</option>
-              <option value="America/Chicago">Central Time</option>
-              <option value="America/Denver">Mountain Time</option>
-              <option value="America/Los_Angeles">Pacific Time</option>
-              <option value="Europe/London">London</option>
-              <option value="Europe/Madrid">Madrid</option>
+              <option value="UTC">{{ t('profile.timezones.utc') }}</option>
+              <option value="America/New_York">{{ t('profile.timezones.eastern') }}</option>
+              <option value="America/Chicago">{{ t('profile.timezones.central') }}</option>
+              <option value="America/Denver">{{ t('profile.timezones.mountain') }}</option>
+              <option value="America/Los_Angeles">{{ t('profile.timezones.pacific') }}</option>
+              <option value="Europe/London">{{ t('profile.timezones.london') }}</option>
+              <option value="Europe/Madrid">{{ t('profile.timezones.madrid') }}</option>
             </select>
           </div>
           <div class="flex justify-end">

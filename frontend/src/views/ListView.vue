@@ -106,7 +106,7 @@
                   :checked="isAllSelected"
                   :indeterminate="isPartialSelected"
                   :aria-label="t('bulkActions.selectAll')"
-                  class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700"
                   @change="toggleSelectAll"
                 />
               </th>
@@ -136,7 +136,7 @@
                   type="checkbox"
                   :checked="selectedIds.has(issue.id)"
                   :aria-label="'Select issue ' + issue.id"
-                  class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700"
                   @click.stop="toggleSelect(issue.id)"
                 />
               </td>

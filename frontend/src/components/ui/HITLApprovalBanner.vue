@@ -16,7 +16,7 @@
       <div v-if="actionDetails" class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
         <div class="flex items-center gap-2 mb-3">
           <span class="rounded bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
-            {{ actionDetails.severity?.toUpperCase() || 'CRITICAL' }}
+            {{ actionDetails.severity?.toUpperCase() || t('hitl.critical') }}
           </span>
           <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ actionDetails.type }}</span>
         </div>

@@ -128,7 +128,7 @@
           </div>
         </div>
         <button
-          class="text-gray-400 hover:text-gray-600"
+class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
           :aria-label="t('common.close')"
           @click="store.validationResult = null"
         >

@@ -22,7 +22,7 @@
             : 'font-semibold text-gray-900 dark:text-white'"
         >{{ notification.title }}</span>
         <span v-if="notification.requiresAction" class="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-          ACTION
+          {{ t('notifications.action') }}
         </span>
       </div>
       <p class="mt-0.5 truncate text-xs" :class="notification.read ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-300'">{{ notification.message }}</p>
@@ -46,8 +46,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { CATEGORY_CONFIG } from '@/types/notifications'
 import type { AppNotification } from '@/types/notifications'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   notification: AppNotification
@@ -72,12 +75,12 @@ const categoryClasses = computed(() => {
 const timeAgo = computed(() => {
   const diff = Date.now() - new Date(props.notification.createdAt).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 1) return t('notifications.justNow')
+  if (mins < 60) return t('notifications.minutesAgo', { count: mins })
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
+  if (hours < 24) return t('notifications.hoursAgo', { count: hours })
   const days = Math.floor(hours / 24)
-  return `${days}d ago`
+  return t('notifications.daysAgo', { count: days })
 })
 
 function handleClick() {

@@ -48,7 +48,7 @@
                 <input
                   type="checkbox"
                   :checked="selectedComponents.includes(comp.id)"
-                  class="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  class="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
                   @change="toggleComponent(comp.id)"
                 />
                 <span class="text-gray-700 dark:text-gray-300">{{ comp.name }}</span>

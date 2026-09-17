@@ -56,7 +56,7 @@
             v-model="form.username"
             type="text"
             required
-            :placeholder="form.type === 'human' ? '' : 'e.g. CodeReviewer'"
+            :placeholder="form.type === 'human' ? '' : t('users.agentNamePlaceholder')"
             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           />
         </div>
@@ -69,7 +69,7 @@
             v-model="form.email"
             type="email"
             required
-            :placeholder="form.type === 'human' ? '' : 'agent@socialseed.ai'"
+            :placeholder="form.type === 'human' ? '' : t('users.agentEmailPlaceholder')"
             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           />
         </div>

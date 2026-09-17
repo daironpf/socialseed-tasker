@@ -123,7 +123,7 @@
                 </div>
                 <div>
                   <div class="font-medium text-gray-900 dark:text-white">{{ t('system.api') }}</div>
-                  <div class="text-xs text-gray-500">FastAPI v{{ health?.services.api.version }}</div>
+                  <div class="text-xs text-gray-500">{{ t('system.fastApiVersion', { version: health?.services.api.version }) }}</div>
                 </div>
               </div>
               <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
@@ -142,7 +142,7 @@
                 </div>
                 <div>
                   <div class="font-medium text-gray-900 dark:text-white">{{ t('system.workers') }}</div>
-                  <div class="text-xs text-gray-500">{{ health?.services.workers.active_count }} active, {{ health?.services.workers.queue_size }} queued</div>
+                  <div class="text-xs text-gray-500">{{ t('system.workerStats', { active: health?.services.workers.active_count, queued: health?.services.workers.queue_size }) }}</div>
                 </div>
               </div>
               <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
@@ -201,7 +201,7 @@
                     <span class="font-mono text-xs text-gray-400">{{ item.resource_id }}</span>
                   </div>
                   <div class="flex items-center gap-2">
-                    <span v-if="item.retry_count > 0" class="text-xs text-amber-500">Retry {{ item.retry_count }}</span>
+                    <span v-if="item.retry_count > 0" class="text-xs text-amber-500">{{ t('system.retryCount', { count: item.retry_count }) }}</span>
                     <span
                       class="inline-flex h-2 w-2 rounded-full"
                       :class="item.status === 'pending' ? 'bg-amber-500' : 'bg-red-500'"
