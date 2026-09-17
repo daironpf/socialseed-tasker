@@ -11,6 +11,7 @@
     <CommandPalette ref="paletteRef" />
     <KeyboardShortcutsHelp ref="shortcutsHelpRef" />
     <ToastContainer />
+    <FloatingChat @openFullChat="router.push('/chat')" />
 
     <LoginScreen v-if="showLogin" @logged-in="onLoggedIn" />
   </div>
@@ -27,6 +28,7 @@ import TeamTicker from '@/components/dashboard/TeamTicker.vue'
 import CommandPalette from '@/components/ui/CommandPalette.vue'
 import KeyboardShortcutsHelp from '@/components/ui/KeyboardShortcutsHelp.vue'
 import ToastContainer from '@/components/ui/ToastContainer.vue'
+import FloatingChat from '@/components/chat/FloatingChat.vue'
 import { useUiStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useKeyboardShortcuts, initKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'

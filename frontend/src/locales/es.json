@@ -663,6 +663,19 @@
     "yesterday": "Ayer",
     "issue": "Issue"
   },
+  "floatingChat": {
+    "open": "Abrir chat",
+    "close": "Cerrar chat",
+    "minimize": "Minimizar",
+    "expand": "Expandir",
+    "title": "Chat",
+    "search": "Buscar...",
+    "noMessages": "Sin mensajes",
+    "newConversation": "Ver todas las conversaciones",
+    "placeholder": "Escribe un mensaje...",
+    "send": "Enviar",
+    "backToList": "Volver a conversaciones"
+  },
   "presence": {
     "isViewing": "esta viendo",
     "viewing": "estan viendo",
