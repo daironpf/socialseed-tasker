@@ -35,6 +35,8 @@
 26. [Interactions Matrix](#26-interactions-matrix)
 27. [i18n Coverage](#27-i18n-coverage)
 28. [Known Gaps & Missing Features](#28-known-gaps--missing-features)
+29. [Chat System (ChatView)](#29-chat-system-chatview)
+30. [Floating Chat Widget (FloatingChat)](#30-floating-chat-widget-floatingchat)
 
 ---
 
@@ -45,8 +47,8 @@
 | Vue 3.5 + TypeScript | Implemented | Composition API, `<script setup>` |
 | Vite 6 build tool | Implemented | HMR, optimized production builds |
 | Tailwind CSS 3 | Implemented | Dark mode via `class` strategy |
-| Pinia state management | Implemented | 9 stores (auth, issues, components, policies, constraints, users, analysis, ui, notifications) |
-| Vue Router | Implemented | 12 routes, lazy-loaded, scroll-to-top |
+| Pinia state management | Implemented | 10 stores (auth, issues, components, policies, constraints, users, analysis, ui, notifications, chat) |
+| Vue Router | Implemented | 13 routes, lazy-loaded, scroll-to-top |
 | i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 400+ keys per language, localStorage persistence |
 | Dark mode | Implemented | Toggle via UserMenu, localStorage persistence, system preference detection, all components dark-mode compatible |
 | Mock API mode | Implemented | `USE_MOCK = true` in client.ts, full in-memory routing via mockApi.ts + mock-api server |
@@ -81,6 +83,7 @@
 | Active route highlighting | Implemented | Color change on current route |
 | Nav icons | Implemented | SVG icons per nav item |
 | i18n labels | Implemented | All nav labels use `t()` |
+| Chat nav item | Implemented | Chat in Management group with `/chat` route |
 
 ### Header (AppHeader)
 | Feature | Status | Details |
@@ -436,6 +439,15 @@
 | `EditUserModal` | User editing | Same fields, pre-filled |
 | `EditAgentModal` | Agent editing | Same agent-specific fields |
 
+### Chat Components
+| Component | Purpose | Details |
+|---|---|---|
+| `ChatView` | Full-page chat | Sidebar + message area, new conversation modal |
+| `ChatSidebar` | Conversation list | Search, avatars, online status, unread badges, pin support |
+| `ChatMessage` | Message display | Text (markdown), code blocks, agent actions, system pills |
+| `ChatInput` | Message input | Textarea with code block insertion, typing indicators |
+| `FloatingChat` | Global chat widget | Messenger-style bubble, compact window, all views |
+
 ---
 
 ## 18. Real-Time & Presence Features
@@ -545,6 +557,7 @@
 | `analysisStore` | impactResult, rootCauseResults[], testFailures[], loadingImpact, loadingRootCause, error | — | analyzeImpact, analyzeRootCause, fetchTestFailures, clearResults |
 | `uiStore` | selectedIssueId, sidebarOpen, viewMode, darkMode, locale, currentProject, filters, availableProjects | — | setSelectedIssue, toggleSidebar, setViewMode, setFilter, clearFilters, toggleDarkMode, initDarkMode, setLocale, setProject, getBackendFilters |
 | `notificationsStore` | notifications[] | unreadCount, unreadByCategory | addNotification, markAsRead, markAllAsRead, dismiss, getFiltered, seedMockNotifications |
+| `chatStore` | conversations[], activeConversationId, searchQuery, typingUsers[] | activeConversation, activeMessages, filteredConversations, totalUnread | selectConversation, sendMessage, togglePin, markAsRead, createConversation, simulateAgentResponse |
 
 ---
 
@@ -588,6 +601,7 @@ All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api s
 - `PaginatedResponse<T>`, `PaginationMeta`, `APIResponse<T>`
 - `IssueCreateRequest`, `IssueUpdateRequest`, `DependencyRequest`
 - `ComponentCreateRequest`, `PolicyCreateRequest`, `UserCreateRequest`
+- `ChatMessage`, `Conversation`, `ChatParticipant`, `TypingUser`
 
 ---
 
@@ -603,6 +617,8 @@ All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api s
 | Users (agent) | Modal | Card Grid | Modal | Confirm | — | — | — |
 | System | — | Dashboard | — | — | — | Seed/Reset | — |
 | Notifications | — | Panel | Mark read | Dismiss | — | — | — |
+| Conversations | Modal | ChatView / FloatingChat | — | — | — | — | — |
+| Messages | Input | Chat bubbles | — | — | — | — | — |
 
 ---
 
@@ -638,17 +654,23 @@ All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api s
 | Presence tracking | Per-issue viewer tracking, field-level presence |
 | Conflict detection | Multi-user edit detection |
 | Relationship creation | GraphView connect mode with cycle detection |
+| Real-time chat | ChatView message exchange, agent auto-responses, typing indicators |
+| Floating chat | Persistent Messenger-style widget, expand/collapse, conversation switching |
+| Chat search | Filter conversations by name/participant |
+| Chat pin/unpin | Pin conversations to top of list |
+| Code sharing | Triple-backtick code blocks in chat messages |
+| Agent messaging | Direct communication with AI agents via chat |
 
 ---
 
 ## 27. i18n Coverage
 
 ### Locale Files
-- `en.json`: 700+ lines, 35 top-level sections
+- `en.json`: 700+ lines, 37 top-level sections
 - `es.json`: 700+ lines, matching structure
 
 ### Sections
-`kanban`, `nav`, `header`, `menu`, `dashboard`, `issues`, `components`, `policies`, `constraints`, `users`, `graph`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `presence`, `projects`, `export`, `bulkActions`, `profile`, `commandPalette`
+`kanban`, `nav`, `header`, `menu`, `dashboard`, `issues`, `components`, `policies`, `constraints`, `users`, `graph`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `presence`, `projects`, `export`, `bulkActions`, `profile`, `commandPalette`, `chat`, `floatingChat`
 
 ### Coverage
 - All user-visible text uses `t()` function
@@ -659,19 +681,25 @@ All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api s
 - Audit trail descriptions use parameterized i18n
 - Slash command labels translated
 - Toast messages translated
+- Chat labels translated (conversation names, placeholders, typing indicators, time-ago)
+- Floating chat labels translated (active status, search, send, like, emoji)
 
 ---
 
 ## 28. Known Gaps & Missing Features
 
 ### Missing Features
-- [ ] **Real-time updates** — No WebSocket/SSE for live updates beyond agent logs (TeamTicker polls but no push)
+- [ ] **Real-time updates** — No WebSocket/SSE for live updates beyond agent logs and chat (TeamTicker polls but no push)
 - [ ] **URL-based filters** — Filter state not synced to URL query params
 - [ ] **Responsive mobile layout** — Sidebar hover may not work well on touch devices
 - [ ] **Issue attachments** — No file upload capability
 - [ ] **Advanced search** — No date range, label-based, or regex search
 - [ ] **Dashboard date range selector** — Charts show fixed time windows, no custom range
 - [ ] **Constraint templates** — No pre-built constraint templates for common rules
+- [ ] **Chat persistence** — Chat messages are mock-only, not persisted to backend
+- [ ] **Chat file sharing** — No image/file upload in chat messages
+- [ ] **Chat emoji picker** — Emoji button present but no picker implemented
+- [ ] **Chat message reactions** — Reaction data supported in types but not rendered in FloatingChat
 
 ### Technical Debt
 - [ ] **3 `window as any` assertions** — client.ts and useAgentStream.ts use `window.__API_URL__` / `window.__API_KEY__` without type augmentation
@@ -679,3 +707,62 @@ All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api s
 - [ ] **4 minor `setTimeout` without cleanup** — ProfileView, GraphView (fixed), DiffViewer (fixed), RichTextEditor onBlur (200ms, acceptable)
 - [ ] **Dashboard chart overlap** — `dashboard` and `dashboardStats` i18n sections have duplicated keys
 - [ ] **Duplicate i18n sections** — `audit` appears twice in en.json/es.json (audit trail + audit descriptions)
+
+---
+
+## 29. Chat System (ChatView)
+
+Full-featured messaging interface for direct communication between users and AI agents.
+
+| Feature | Status | Details |
+|---|---|---|
+| **Full-page layout** | Implemented | Sidebar (conversation list) + main area (messages + input), routed at `/chat` |
+| **3 conversation types** | Implemented | Direct (1:1), Group (multi-user), Agent (user-to-AI) |
+| **Mock conversations** | Implemented | 7 conversations with 40+ messages seeded in chatStore |
+| **Search** | Implemented | Filter conversations by name, description, or participant |
+| **Pin/unpin** | Implemented | Pin conversations to top of list |
+| **Unread badges** | Implemented | Per-conversation unread count, total unread in header |
+| **Online status** | Implemented | Green dot on avatars for online users |
+| **New conversation modal** | Implemented | Select type, name, participants from user list |
+| **Message types** | Implemented | Text (with markdown), code blocks, agent actions, system notifications |
+| **Date separators** | Implemented | Grouped by day between messages |
+| **Typing indicators** | Implemented | Animated bouncing dots when agent is typing |
+| **Agent auto-responses** | Implemented | Arch-Bot, CodeReviewer, SecurityAuditor respond with 1.5-3.5s delay |
+| **Markdown rendering** | Implemented | Bold, italic, inline code in message bubbles |
+| **Code block insertion** | Implemented | Triple-backtick syntax via toolbar button |
+| **Dark mode** | Implemented | All components fully dark-mode compatible |
+| **i18n** | Implemented | 35 keys in EN/ES (chat.* namespace) |
+| **Navigation** | Implemented | Sidebar item (Management group), AppHeader title mapping |
+
+---
+
+## 30. Floating Chat Widget (FloatingChat)
+
+Persistent Messenger-style chat bubble available on all views, enabling messaging without leaving current context.
+
+| Feature | Status | Details |
+|---|---|---|
+| **Global presence** | Implemented | Mounted in `App.vue`, visible on every route |
+| **Messenger-style bubble** | Implemented | 56px blue circle with Messenger lightning bolt icon |
+| **Unread badge** | Implemented | Red badge on bubble showing total unread count |
+| **330px compact window** | Implemented | Messenger-proportioned popup with rounded corners |
+| **Smooth animations** | Implemented | Scale + fade open/close transitions |
+| **Messenger header** | Implemented | Avatar (with online dot), name, "Active now", back/minimize/close buttons |
+| **Conversation list** | Implemented | Large avatars (48px), name, last message preview, timestamp, unread badge |
+| **Pill search** | Implemented | Rounded search input with gray background |
+| **Bubble messages** | Implemented | Own messages right (blue bg, rounded-br), others left (gray bg, rounded-bl) |
+| **Avatar grouping** | Implemented | Avatar shown only on first message in a group (Messenger pattern) |
+| **Message timestamps** | Implemented | Time shown under message groups |
+| **Code blocks** | Implemented | Dark background code blocks inside bubbles with language label |
+| **System messages** | Implemented | Centered pill-style notifications |
+| **Agent actions** | Implemented | Centered purple pill with lightning icon |
+| **Typing indicator** | Implemented | Animated bouncing dots in conversation view |
+| **Input bar** | Implemented | Emoji icon + rounded pill textarea + send arrow / like thumbs-up |
+| **Auto-resize input** | Implemented | Textarea grows up to 60px as user types |
+| **Code block insertion** | Implemented | Triple-backtick syntax support |
+| **Online status** | Implemented | Green dots on avatars in list and header |
+| **Minimize** | Implemented | Collapses to header-only (48px) |
+| **Full chat link** | Implemented | "Open Messenger" link navigates to `/chat` |
+| **Back navigation** | Implemented | Arrow button returns to conversation list |
+| **Dark mode** | Implemented | Full dark mode on all elements |
+| **i18n** | Implemented | 17 keys in EN/ES (floatingChat.* namespace) |
