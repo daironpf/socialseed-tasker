@@ -48,28 +48,84 @@ cd frontend && npm run build
 
 ## Local Frontend Development (without Docker)
 
+You can run the full UI locally without Docker. This is faster for development since it uses Vite's hot reload.
+
+### Prerequisites
+
+- Python 3.10+ (for mock-api)
+- Node.js 18+ (for frontend)
+
+### 1. Start the Mock API
+
 ```bash
-cd frontend
+cd mock-api
 
-# Install dependencies
-npm install
+# Set the data directory path (Windows PowerShell)
+$env:DATA_DIR="..\frontend\dataset-de-pruebas"
 
-# Start Vite dev server (hot reload)
-npm run dev
-# → http://localhost:5173
+# Or on Linux/Mac
+export DATA_DIR="../frontend/dataset-de-pruebas"
 
-# Build for production
-npm run build
-
-# Type check
-vue-tsc -b
+# Start the server
+python -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
 ```
 
-The dev server proxies `/mock-api/` to `http://127.0.0.1:8001` (mock-api container).
+The mock API will be available at `http://localhost:8001`.
+
+### 2. Start the Frontend Dev Server
+
+In a new terminal:
+
+```bash
+cd frontend
+npm run dev
+```
+
+The frontend will be available at `http://localhost:5173` with hot reload.
+
+### How It Works
+
+The Vite dev server proxies API requests:
+- `/mock-api/*` → `http://localhost:8001/*` (mock-api server)
+- `/api/*` → `http://localhost:8000` (real API, optional)
+
+All CRUD operations persist to JSON files in `frontend/dataset-de-pruebas/`.
+
+### Quick Commands (Windows)
+
+```powershell
+# Terminal 1: Mock API
+cd mock-api
+$env:DATA_DIR="..\frontend\dataset-de-pruebas"; python -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+
+# Terminal 2: Frontend
+cd frontend; npm run dev
+```
+
+### Quick Commands (Linux/Mac)
+
+```bash
+# Terminal 1: Mock API
+cd mock-api
+DATA_DIR="../frontend/dataset-de-pruebas" python -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+
+# Terminal 2: Frontend
+cd frontend && npm run dev
+```
 
 ---
 
-## Rebuild After Frontend Changes
+## Docker Alternative
+
+If you prefer Docker or need the full stack (including Neo4j and real API):
+
+### Start All Services
+
+```bash
+docker compose --profile api up -d
+```
+
+### Rebuild After Frontend Changes
 
 ```bash
 # 1. Build frontend
@@ -144,11 +200,15 @@ The UI supports English (EN) and Spanish (ES). Switch languages via the user men
 - **Constraints**: System constraint validation
 - **Users & Agents**: Human/AI agent management
 - **Dashboard**: System health, token usage, activity charts
+- **MCP Inspector**: Real-time monitoring of Model Context Protocol connections
+- **HITL Command Center**: Unified inbox for agent approval requests with diff/impact view
+- **Chat**: Full messaging system between users and AI agents
+- **Floating Chat**: Messenger-style widget available on all views
 - **Command Palette**: `Cmd+K` / `Ctrl+K` for quick navigation
 - **Dark Mode**: Toggle in user menu (persists in localStorage)
 - **Toasts**: Global notification system
 - **Export**: CSV, JSON, SVG, PNG, Markdown export
-- **HITL**: Human-in-the-loop approval gateways
+- **i18n**: English and Spanish support
 
 ---
 
@@ -183,7 +243,10 @@ docker compose --profile api ps
 | Build fails | Run `cd frontend && npm install` then `npm run build` |
 | Blank page | Check browser console for errors; ensure mock-api is running |
 | i18n not working | Verify `vue-i18n` is installed: `cd frontend && npm ls vue-i18n` |
+| `Unexpected token '<'` error | Mock API not running. Start it: `cd mock-api && python -m uvicorn server:app --port 8001` |
+| Local dev: API calls fail | Ensure mock-api is running on port 8001 before starting frontend |
+| Local dev: data not saving | Check `DATA_DIR` env var points to `frontend/dataset-de-pruebas` |
 
 ---
 
-*SocialSeed Tasker v1.0.0 — 487 issues resolved*
+*SocialSeed Tasker v1.0.0 — 489 issues resolved*
