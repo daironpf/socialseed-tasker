@@ -9,7 +9,7 @@ Autonomous agents request architectural changes or code refactors that require h
 - One-click action buttons: "Approve", "Reject", and "Request Modifications" with feedback input
 - Filter pending requests by severity, component, or agent ID
 
-## Status: PENDING
+## Status: DONE
 
 ## Priority: HIGH
 
@@ -27,13 +27,13 @@ Frontend / HITL / Command Center
 8. Add i18n keys and navigation route
 
 ## Acceptance Criteria
-- [ ] Unified inbox with pending approval requests
-- [ ] Split view: code diffs + blast radius
-- [ ] Approve button with confirmation
-- [ ] Reject button with feedback input
-- [ ] Request Modifications with detailed feedback
-- [ ] Filter by severity, component, agent ID
-- [ ] i18n support
+- [x] Unified inbox with pending approval requests
+- [x] Split view: code diffs + blast radius
+- [x] Approve button with confirmation
+- [x] Reject button with feedback input
+- [x] Request Modifications with detailed feedback
+- [x] Filter by severity, component, agent ID
+- [x] i18n support
 
 ## Verification
 - Navigate to HITL Command Center
