@@ -9,7 +9,7 @@ Tasker connects with IDEs and autonomous agents (Cursor, Claude Desktop, Windsur
 - "Revoke/Pause Session" action button that immediately terminates or pauses an active MCP session
 - SSE or WebSocket updates for live status changes
 
-## Status: PENDING
+## Status: DONE
 
 ## Priority: HIGH
 
@@ -27,12 +27,12 @@ Frontend / MCP / Inspector
 8. Add navigation route and sidebar entry
 
 ## Acceptance Criteria
-- [ ] Real-time matrix with client name, status, uptime
-- [ ] Live context consumption metrics (KB/MB)
-- [ ] Live Cypher query rate display (queries/min)
-- [ ] Revoke/Pause session buttons
-- [ ] SSE/WebSocket live updates
-- [ ] i18n support
+- [x] Real-time matrix with client name, status, uptime
+- [x] Live context consumption metrics (KB/MB)
+- [x] Live Cypher query rate display (queries/min)
+- [x] Revoke/Pause session buttons
+- [x] SSE/WebSocket live updates
+- [x] i18n support
 
 ## Verification
 - Navigate to MCP Inspector view
