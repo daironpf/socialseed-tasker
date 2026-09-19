@@ -39,6 +39,7 @@ const pageTitle = computed(() => {
     '/users': t('header.users'),
     '/chat': t('header.chat'),
     '/mcp': t('header.mcp'),
+    '/hitl': t('header.hitl'),
     '/analysis': t('header.analysis'),
   }
   return titles[route.path] || t('header.dashboard')

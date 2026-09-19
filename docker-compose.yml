@@ -61,7 +61,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "127.0.0.1:8889:80"
+      - "127.0.0.1:19001:80"
     depends_on:
       - tasker-api
       - mock-api

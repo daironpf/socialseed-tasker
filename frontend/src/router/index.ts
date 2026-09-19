@@ -17,6 +17,7 @@ const router = createRouter({
     { path: '/profile', name: 'Profile', component: () => import('@/views/ProfileView.vue') },
     { path: '/analysis', name: 'Analysis', component: () => import('@/views/AnalysisView.vue') },
     { path: '/mcp', name: 'MCPInspector', component: () => import('@/views/MCPInspectorView.vue') },
+    { path: '/hitl', name: 'HITLCommandCenter', component: () => import('@/views/HITLCommandCenter.vue') },
     { path: '/:pathMatch(.*)*', name: 'NotFound', component: () => import('@/views/NotFoundView.vue') },
   ],
 })
