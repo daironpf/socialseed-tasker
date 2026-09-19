@@ -16,6 +16,7 @@ const router = createRouter({
     { path: '/chat', name: 'Chat', component: () => import('@/views/ChatView.vue') },
     { path: '/profile', name: 'Profile', component: () => import('@/views/ProfileView.vue') },
     { path: '/analysis', name: 'Analysis', component: () => import('@/views/AnalysisView.vue') },
+    { path: '/mcp', name: 'MCPInspector', component: () => import('@/views/MCPInspectorView.vue') },
     { path: '/:pathMatch(.*)*', name: 'NotFound', component: () => import('@/views/NotFoundView.vue') },
   ],
 })
