@@ -293,7 +293,22 @@
     "maxHops": "Max hops",
     "reset": "Reset",
     "hierarchical": "Hierarchical",
-    "forceDirected": "Force Directed"
+    "forceDirected": "Force Directed",
+    "codeOverlay": "Code Overlay",
+    "codeOverlayOn": "Code Overlay: ON"
+  },
+  "codeOverlay": {
+    "file": "File",
+    "class": "Class",
+    "function": "Function",
+    "affects": "AFFECTS",
+    "filePath": "File Path",
+    "language": "Language",
+    "lines": "Lines",
+    "nodeType": "Node Type",
+    "contains": "CONTAINS",
+    "calls": "CALLS",
+    "imports": "IMPORTS"
   },
   "analysis": {
     "title": "Analysis",

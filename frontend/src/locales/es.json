@@ -293,7 +293,22 @@
     "maxHops": "Max saltos",
     "reset": "Reiniciar",
     "hierarchical": "Jerarquico",
-    "forceDirected": "Fuerza Dirigida"
+    "forceDirected": "Fuerza Dirigida",
+    "codeOverlay": "Overlay de Codigo",
+    "codeOverlayOn": "Overlay de Codigo: ACTIVO"
+  },
+  "codeOverlay": {
+    "file": "Archivo",
+    "class": "Clase",
+    "function": "Funcion",
+    "affects": "AFECTA",
+    "filePath": "Ruta del Archivo",
+    "language": "Lenguaje",
+    "lines": "Lineas",
+    "nodeType": "Tipo de Nodo",
+    "contains": "CONTIENE",
+    "calls": "LLAMA",
+    "imports": "IMPORTA"
   },
   "analysis": {
     "title": "Analisis",

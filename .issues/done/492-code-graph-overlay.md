@@ -8,7 +8,7 @@ Linking code structure (Files, Classes, Functions) with task issues in Neo4j giv
 - Distinct visual styling for code nodes vs task nodes
 - Highlighted edges showing real-time agent access: `(Issue)-[:AFFECTS]->(Function)`
 
-## Status: PENDING
+## Status: DONE
 
 ## Priority: HIGH
 
@@ -26,13 +26,13 @@ Frontend / Graph / Code Overlay
 8. Integrate with existing graph filters
 
 ## Acceptance Criteria
-- [ ] Toggle to show/hide code nodes
-- [ ] Distinct styling: code nodes vs task nodes
-- [ ] File, Class, Function node types
-- [ ] Highlighted AFFECTS edges
-- [ ] Click code node shows details
-- [ ] Integrates with existing graph filters
-- [ ] i18n support
+- [x] Toggle to show/hide code nodes
+- [x] Distinct styling: code nodes vs task nodes
+- [x] File, Class, Function node types
+- [x] Highlighted AFFECTS edges
+- [x] Click code node shows details
+- [x] Integrates with existing graph filters
+- [x] i18n support (EN + ES)
 
 ## Verification
 - Navigate to Graph View
@@ -42,6 +42,15 @@ Frontend / Graph / Code Overlay
 - AFFECTS edges highlighted
 - Click code node shows details
 - Toggle off hides code nodes
+
+## Files Created
+- `frontend/src/types/codeGraph.ts` — CodeNode, CodeEdge, CodeStructureData
+- `frontend/src/stores/codeGraphStore.ts` — Pinia store with 13 mock code nodes, 17 edges
+
+## Files Modified
+- `frontend/src/views/GraphView.vue` — Code overlay toggle, AST node rendering, code node detail panel
+- `frontend/src/locales/en.json` — Added graph.codeOverlay, graph.codeOverlayOn, codeOverlay section (12 keys)
+- `frontend/src/locales/es.json` — Added graph.codeOverlay, graph.codeOverlayOn, codeOverlay section (12 keys)
 
 ## Related Issues
 - #491 (Graph RAG Explorer), #493 (Agent FinOps)

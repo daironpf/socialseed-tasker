@@ -27,6 +27,13 @@
           <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500"></span> {{ t('issues.inProgress') }}</span>
           <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500"></span> {{ t('issues.blocked') }}</span>
           <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500"></span> {{ t('issues.closed') }}</span>
+          <template v-if="codeOverlayEnabled">
+            <span class="border-l border-gray-300 dark:border-gray-600 mx-1 h-3"></span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-cyan-500"></span> {{ t('codeOverlay.file') }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-teal-500"></span> {{ t('codeOverlay.class') }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-emerald-500"></span> {{ t('codeOverlay.function') }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-pink-500"></span> {{ t('codeOverlay.affects') }}</span>
+          </template>
         </div>
       </div>
     </div>
@@ -52,6 +59,19 @@
         @update:selected-components="selectedComponents = $event"
         @update:max-hops="maxHops = $event"
       />
+      <div class="border-l border-gray-300 dark:border-gray-600 mx-1"></div>
+      <button
+        @click="toggleCodeOverlay"
+        class="px-3 py-1 text-xs rounded flex items-center gap-1.5 transition-colors"
+        :class="codeOverlayEnabled
+          ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+          : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'"
+      >
+        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+        </svg>
+        {{ codeOverlayEnabled ? t('graph.codeOverlayOn') : t('graph.codeOverlay') }}
+      </button>
       <div class="border-l border-gray-300 dark:border-gray-600 mx-1"></div>
       <button
         @click="toggleConnectMode"
@@ -133,6 +153,35 @@
         {{ cycleError }}
       </div>
     </Transition>
+
+    <div v-if="selectedCodeNode" class="fixed inset-0 z-40 flex justify-end bg-black/50" @click.self="selectedCodeNode = null">
+      <div class="h-full w-full max-w-md overflow-y-auto bg-white shadow-2xl dark:bg-gray-800">
+        <div class="sticky top-0 z-10 border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-xs font-bold" :class="selectedCodeNode.type === 'File' ? 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300' : selectedCodeNode.type === 'Class' ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'">
+                {{ selectedCodeNode.type }}
+              </span>
+              <div>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ selectedCodeNode.name }}</h2>
+                <p class="text-xs text-gray-500 font-mono">{{ selectedCodeNode.id }}</p>
+              </div>
+            </div>
+            <button class="rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700" :aria-label="t('common.close')" @click="selectedCodeNode = null">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+        </div>
+        <div class="p-6 space-y-4">
+          <div><label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('codeOverlay.filePath') }}</label><p class="mt-1 text-sm font-mono text-gray-700 dark:text-gray-300">{{ selectedCodeNode.filePath }}</p></div>
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('codeOverlay.language') }}</label><p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ selectedCodeNode.language }}</p></div>
+            <div><label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('codeOverlay.lines') }}</label><p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ selectedCodeNode.startLine }} — {{ selectedCodeNode.endLine }}</p></div>
+          </div>
+          <div><label class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('codeOverlay.nodeType') }}</label><p class="mt-1 text-sm text-gray-700 dark:text-gray-300">{{ selectedCodeNode.type }}</p></div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -142,6 +191,7 @@ import { useI18n } from 'vue-i18n'
 import { Network, DataSet } from 'vis-network/standalone'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useComponentsStore } from '@/stores/componentsStore'
+import { useCodeGraphStore } from '@/stores/codeGraphStore'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
 import RelationshipModal from '@/components/ui/RelationshipModal.vue'
@@ -149,6 +199,7 @@ import GraphFilters from '@/components/ui/GraphFilters.vue'
 import { wouldCreateCycle } from '@/utils/graphUtils'
 import { useExport } from '@/composables/useExport'
 import type { Issue, IssueUpdateRequest } from '@/types'
+import type { CodeNode } from '@/types/codeGraph'
 
 const { exportPNG } = useExport()
 
@@ -156,6 +207,7 @@ const { t } = useI18n()
 
 const issuesStore = useIssuesStore()
 const componentsStore = useComponentsStore()
+const codeGraphStore = useCodeGraphStore()
 const networkContainer = ref<HTMLElement | null>(null)
 const searchQuery = ref('')
 const statusFilter = ref('')
@@ -175,6 +227,23 @@ const cycleError = ref('')
 let cycleErrorTimeout: ReturnType<typeof setTimeout> | null = null
 const selectedComponents = ref<string[]>([])
 const maxHops = ref(3)
+const codeOverlayEnabled = ref(false)
+const selectedCodeNode = ref<CodeNode | null>(null)
+
+const codeNodeColors: Record<string, string> = {
+  File: '#06b6d4',
+  Class: '#14b8a6',
+  Function: '#10b981',
+}
+
+async function toggleCodeOverlay() {
+  codeOverlayEnabled.value = !codeOverlayEnabled.value
+  if (codeOverlayEnabled.value && codeGraphStore.nodes.length === 0) {
+    await codeGraphStore.fetchCodeStructure()
+  }
+  await nextTick()
+  buildGraph()
+}
 
 const statusColors: Record<string, string> = {
   OPEN: '#3b82f6',
@@ -289,6 +358,41 @@ const graphData = computed(() => {
     }
   }
 
+  if (codeOverlayEnabled.value && codeGraphStore.nodes.length > 0) {
+    const codeNodes = codeGraphStore.nodes
+    const codeEdgesList = codeGraphStore.codeEdges
+
+    for (const cn of codeNodes) {
+      const shapeMap: Record<string, string> = { File: 'database', Class: 'diamond', Function: 'triangle' }
+      nodeData.push({
+        id: cn.id,
+        label: cn.name.length > 18 ? cn.name.slice(0, 18) + '...' : cn.name,
+        color: codeNodeColors[cn.type] || '#6b7280',
+        shape: shapeMap[cn.type] || 'dot',
+        title: `${cn.type}: ${cn.name}\n${cn.filePath}:${cn.startLine}-${cn.endLine}\n${cn.language}`,
+        group: 'code',
+      })
+    }
+
+    for (const ce of codeEdgesList) {
+      if (ce.type === 'AFFECTS') {
+        edgeData.push({
+          id: `code-${ce.from}-${ce.to}`,
+          from: ce.from,
+          to: ce.to,
+          arrows: 'to',
+        })
+      } else {
+        edgeData.push({
+          id: `code-${ce.from}-${ce.to}`,
+          from: ce.from,
+          to: ce.to,
+          arrows: 'to',
+        })
+      }
+    }
+  }
+
   return { nodes: nodeData, edges: edgeData }
 })
 
@@ -380,6 +484,11 @@ function buildGraph() {
         const issue = issuesStore.issues.find(i => i.id === nodeId)
         if (issue) {
           selectedIssue.value = issue
+        } else if (codeOverlayEnabled.value) {
+          const codeNode = codeGraphStore.nodes.find(n => n.id === nodeId)
+          if (codeNode) {
+            selectedCodeNode.value = codeNode
+          }
         }
       }
     } else if (connectMode.value) {
