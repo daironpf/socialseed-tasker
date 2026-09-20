@@ -38,6 +38,7 @@
     "finops": "Agent FinOps",
     "autoHealing": "Auto-Healing Monitor",
     "replay": "Agent Replay",
+    "executive": "Executive Dashboard",
     "analysis": "Impact Analysis",
     "notFound": "Not Found"
   },
@@ -1068,5 +1069,19 @@
     "cancel": "Cancel",
     "maskAndSend": "Mask & Send",
     "sendAnyway": "Send Anyway"
+  },
+  "executive": {
+    "title": "Executive Dashboard",
+    "subtitle": "High-level metrics for engineering leadership",
+    "cycleTimeComparison": "Cycle Time: Human vs Agent",
+    "avgSpeedup": "Agent is {x}x faster on average",
+    "human": "Human",
+    "agent": "Agent",
+    "debtReduction": "Technical Debt Reduction",
+    "totalReduced": "{n} issues net reduced over 6 months",
+    "resolved": "Resolved",
+    "created": "Created",
+    "archCompliance": "Architecture Compliance",
+    "overallScore": "Overall score: {score}/100"
   }
 }

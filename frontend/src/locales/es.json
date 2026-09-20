@@ -38,6 +38,7 @@
     "finops": "FinOps de Agentes",
     "autoHealing": "Monitor Auto-Healing",
     "replay": "Replay de Agente",
+    "executive": "Dashboard Ejecutivo",
     "graph": "Grafo de Dependencias",
     "analysis": "Analisis de Impacto",
     "notFound": "No Encontrado"
@@ -1069,5 +1070,19 @@
     "cancel": "Cancelar",
     "maskAndSend": "Enmascarar y Enviar",
     "sendAnyway": "Enviar de Todas Formas"
+  },
+  "executive": {
+    "title": "Dashboard Ejecutivo",
+    "subtitle": "Metricas de alto nivel para liderazgo de ingenieria",
+    "cycleTimeComparison": "Ciclo de Tiempo: Humano vs Agente",
+    "avgSpeedup": "El agente es {x}x mas rapido en promedio",
+    "human": "Humano",
+    "agent": "Agente",
+    "debtReduction": "Reduccion de Deuda Tecnica",
+    "totalReduced": "{n} issues reducidos netos en 6 meses",
+    "resolved": "Resueltos",
+    "created": "Creados",
+    "archCompliance": "Cumplimiento de Arquitectura",
+    "overallScore": "Puntuacion general: {score}/100"
   }
 }
