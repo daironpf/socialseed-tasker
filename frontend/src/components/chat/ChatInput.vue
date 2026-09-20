@@ -9,6 +9,8 @@
       {{ t('chat.typing') }}
     </div>
 
+    <PIIDetectionBanner :detections="piiDetections" />
+
     <div class="flex items-end gap-2">
       <div class="flex gap-1">
         <button
@@ -28,10 +30,13 @@
           v-model="message"
           :placeholder="t('chat.placeholder')"
           rows="1"
-          class="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+          class="w-full resize-none rounded-lg border bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1"
+          :class="piiDetections.length > 0
+            ? 'border-amber-300 focus:border-amber-500 focus:ring-amber-500 dark:border-amber-700'
+            : 'border-gray-200 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500'"
           :aria-label="t('chat.messageInput')"
           @keydown.enter.exact.prevent="handleSend"
-          @input="autoResize"
+          @input="onInput"
         ></textarea>
       </div>
 
@@ -46,6 +51,15 @@
         </svg>
       </button>
     </div>
+
+    <PIIWarningModal
+      :visible="showWarningModal"
+      :detections="piiDetections"
+      :allow-confirm="true"
+      @cancel="showWarningModal = false"
+      @mask="sendMasked"
+      @confirm="sendConfirmed"
+    />
   </div>
 </template>
 
@@ -53,20 +67,53 @@
 import { ref, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chatStore'
+import { detectPII, hasCriticalPII, redactText } from '@/utils/piiDetector'
+import type { PIIDetection } from '@/utils/piiDetector'
+import PIIDetectionBanner from './PIIDetectionBanner.vue'
+import PIIWarningModal from './PIIWarningModal.vue'
 
 const { t } = useI18n()
 const chatStore = useChatStore()
 
 const message = ref('')
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const piiDetections = ref<PIIDetection[]>([])
+const showWarningModal = ref(false)
 
 const emit = defineEmits<{
   sent: []
 }>()
 
+function onInput() {
+  piiDetections.value = detectPII(message.value)
+  autoResize()
+}
+
 function handleSend() {
   const text = message.value.trim()
   if (!text || !chatStore.activeConversationId) return
+
+  if (hasCriticalPII(text)) {
+    showWarningModal.value = true
+    return
+  }
+
+  sendMessage(text)
+}
+
+function sendMasked() {
+  showWarningModal.value = false
+  const masked = redactText(message.value)
+  sendMessage(masked)
+}
+
+function sendConfirmed() {
+  showWarningModal.value = false
+  sendMessage(message.value)
+}
+
+function sendMessage(text: string) {
+  if (!chatStore.activeConversationId) return
 
   if (text.startsWith('```')) {
     const codeContent = text.replace(/^```\w*\n?/, '').replace(/\n?```$/, '')
@@ -77,6 +124,7 @@ function handleSend() {
   }
 
   message.value = ''
+  piiDetections.value = []
   nextTick(() => {
     if (textareaRef.value) {
       textareaRef.value.style.height = 'auto'

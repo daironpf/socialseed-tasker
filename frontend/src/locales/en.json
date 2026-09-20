@@ -1060,5 +1060,13 @@
     "noFilesYet": "No files affected yet",
     "cypherQueries": "Cypher Queries",
     "noQueriesYet": "No Cypher queries yet"
+  },
+  "pii": {
+    "detected": "detected in your message",
+    "warningTitle": "Sensitive Data Detected",
+    "warningSubtitle": "Your message contains sensitive information that may be exposed",
+    "cancel": "Cancel",
+    "maskAndSend": "Mask & Send",
+    "sendAnyway": "Send Anyway"
   }
 }
