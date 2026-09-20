@@ -9,7 +9,7 @@ Users need a way to test Cypher-based architectural constraints before enforcing
 - Visual impact report detailing which existing or proposed graph edges violate the rule
 - One-click option to promote a simulated rule into active enforcement
 
-## Status: PENDING
+## Status: DONE
 
 ## Priority: HIGH
 
@@ -27,12 +27,12 @@ Frontend / Constraints / Policy Sandbox
 8. Add navigation to Constraints section
 
 ## Acceptance Criteria
-- [ ] Code/YAML editor for constraint rules
-- [ ] Simulate Policy button with dry-run
-- [ ] Visual impact report of violating edges
-- [ ] Promote to Active button
-- [ ] Error handling for invalid rules
-- [ ] i18n support
+- [x] Code/YAML editor for constraint rules
+- [x] Simulate Policy button with dry-run
+- [x] Visual impact report of violating edges
+- [x] Promote to Active button
+- [x] Error handling for invalid rules
+- [x] i18n support (EN + ES)
 
 ## Verification
 - Navigate to Policy Sandbox
@@ -41,6 +41,19 @@ Frontend / Constraints / Policy Sandbox
 - Review violating edges in visual display
 - Click Promote - rule becomes active
 - Invalid rules show error messages
+
+## Files Created
+- `frontend/src/types/sandbox.ts` — SandboxRule, SimulationResult, SandboxMetrics types
+- `frontend/src/stores/sandboxStore.ts` — Pinia store with 4 mock rules, 2 mock simulations, CRUD + simulate + promote
+- `frontend/src/views/PolicySandboxView.vue` — Main view with metrics, rule list, code editor, impact report
+- `frontend/src/components/sandbox/ImpactReport.vue` — Visual impact report with violations list
+
+## Files Modified
+- `frontend/src/router/index.ts` — Added `/sandbox` route
+- `frontend/src/components/layout/Sidebar.vue` — Added "Policy Sandbox" nav item
+- `frontend/src/components/layout/AppHeader.vue` — Added header title mapping
+- `frontend/src/locales/en.json` — Added 45 sandbox i18n keys
+- `frontend/src/locales/es.json` — Added 45 sandbox i18n keys (Spanish)
 
 ## Related Issues
 - #489 (HITL Command Center), #491 (Graph RAG Explorer)

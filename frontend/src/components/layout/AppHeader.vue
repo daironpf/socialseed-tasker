@@ -36,6 +36,7 @@ const pageTitle = computed(() => {
     '/components': t('header.components'),
     '/policies': t('header.policies'),
     '/constraints': t('header.constraints'),
+    '/sandbox': t('header.sandbox'),
     '/users': t('header.users'),
     '/chat': t('header.chat'),
     '/mcp': t('header.mcp'),
