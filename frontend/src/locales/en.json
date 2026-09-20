@@ -37,6 +37,7 @@
     "rag": "Graph RAG Explorer",
     "finops": "Agent FinOps",
     "autoHealing": "Auto-Healing Monitor",
+    "replay": "Agent Replay",
     "analysis": "Impact Analysis",
     "notFound": "Not Found"
   },
@@ -1040,5 +1041,24 @@
       "agent_fix": "Agent Fix",
       "pr_created": "PR Created"
     }
+  },
+  "replay": {
+    "title": "Agent Replay Player",
+    "subtitle": "Time-travel through agent execution history",
+    "selectSession": "Select Agent Session",
+    "toolCalls": "tool calls",
+    "tokens": "tokens",
+    "stepBack": "Step Backward",
+    "stepForward": "Step Forward",
+    "play": "Play",
+    "pause": "Pause",
+    "eventStream": "Event Stream",
+    "noEvents": "No events yet. Press play to begin.",
+    "currentEvent": "Current Event",
+    "waitingForEvents": "Waiting for playback to start...",
+    "filesAffected": "Files Affected",
+    "noFilesYet": "No files affected yet",
+    "cypherQueries": "Cypher Queries",
+    "noQueriesYet": "No Cypher queries yet"
   }
 }

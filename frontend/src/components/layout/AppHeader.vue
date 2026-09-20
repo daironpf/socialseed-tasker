@@ -40,6 +40,7 @@ const pageTitle = computed(() => {
     '/rag': t('header.rag'),
     '/finops': t('header.finops'),
     '/auto-healing': t('header.autoHealing'),
+    '/replay': t('header.replay'),
     '/users': t('header.users'),
     '/chat': t('header.chat'),
     '/mcp': t('header.mcp'),

@@ -37,6 +37,7 @@
     "rag": "Explorador Graph RAG",
     "finops": "FinOps de Agentes",
     "autoHealing": "Monitor Auto-Healing",
+    "replay": "Replay de Agente",
     "graph": "Grafo de Dependencias",
     "analysis": "Analisis de Impacto",
     "notFound": "No Encontrado"
@@ -1041,5 +1042,24 @@
       "agent_fix": "Correccion del Agente",
       "pr_created": "PR Creado"
     }
+  },
+  "replay": {
+    "title": "Reproductor de Replay de Agente",
+    "subtitle": "Viaje en el tiempo a traves del historial de ejecucion del agente",
+    "selectSession": "Seleccionar Sesion del Agente",
+    "toolCalls": "llamadas a herramientas",
+    "tokens": "tokens",
+    "stepBack": "Retroceder Paso",
+    "stepForward": "Avanzar Paso",
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "eventStream": "Flujo de Eventos",
+    "noEvents": "Sin eventos aun. Presiona reproducir para comenzar.",
+    "currentEvent": "Evento Actual",
+    "waitingForEvents": "Esperando que inicie la reproduccion...",
+    "filesAffected": "Archivos Afectados",
+    "noFilesYet": "Sin archivos afectados aun",
+    "cypherQueries": "Consultas Cypher",
+    "noQueriesYet": "Sin consultas Cypher aun"
   }
 }
