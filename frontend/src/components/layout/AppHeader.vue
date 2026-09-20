@@ -38,6 +38,7 @@ const pageTitle = computed(() => {
     '/constraints': t('header.constraints'),
     '/sandbox': t('header.sandbox'),
     '/rag': t('header.rag'),
+    '/finops': t('header.finops'),
     '/users': t('header.users'),
     '/chat': t('header.chat'),
     '/mcp': t('header.mcp'),
