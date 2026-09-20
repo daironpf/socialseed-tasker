@@ -15,6 +15,7 @@ const router = createRouter({
     { path: '/sandbox', name: 'PolicySandbox', component: () => import('@/views/PolicySandboxView.vue') },
     { path: '/rag', name: 'GraphRAGExplorer', component: () => import('@/views/GraphRAGExplorerView.vue') },
     { path: '/finops', name: 'AgentFinOps', component: () => import('@/views/AgentFinOpsView.vue') },
+    { path: '/auto-healing', name: 'AutoHealing', component: () => import('@/views/AutoHealingMonitorView.vue') },
     { path: '/users', name: 'Users', component: () => import('@/views/UsersView.vue') },
     { path: '/chat', name: 'Chat', component: () => import('@/views/ChatView.vue') },
     { path: '/profile', name: 'Profile', component: () => import('@/views/ProfileView.vue') },

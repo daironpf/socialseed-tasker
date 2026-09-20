@@ -36,6 +36,7 @@
     "sandbox": "Policy Sandbox",
     "rag": "Graph RAG Explorer",
     "finops": "Agent FinOps",
+    "autoHealing": "Auto-Healing Monitor",
     "analysis": "Impact Analysis",
     "notFound": "Not Found"
   },
@@ -1015,5 +1016,29 @@
     "disabled": "Disabled",
     "enable": "Enable",
     "disable": "Disable"
+  },
+  "autoHealing": {
+    "title": "Auto-Healing Pipeline Monitor",
+    "subtitle": "Real-time CI/CD test failure detection and automated repair",
+    "active": "Active",
+    "completed": "Completed",
+    "failed": "Failed",
+    "selectRun": "Select Pipeline Run",
+    "pipelineProgress": "Pipeline Progress",
+    "liveLogs": "Live Test Output",
+    "entries": "entries",
+    "fixAttempts": "Fix Attempts",
+    "noFixes": "No fix attempts yet",
+    "attempting": "Attempting",
+    "success": "Success",
+    "viewPR": "View Pull Request",
+    "viewNeo4j": "View in Neo4j",
+    "stages": {
+      "test_failure": "Test Failure",
+      "neo4j_root_cause": "Root Cause",
+      "task_generation": "Task Generation",
+      "agent_fix": "Agent Fix",
+      "pr_created": "PR Created"
+    }
   }
 }

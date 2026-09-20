@@ -36,6 +36,7 @@
     "sandbox": "Sandbox de Politicas",
     "rag": "Explorador Graph RAG",
     "finops": "FinOps de Agentes",
+    "autoHealing": "Monitor Auto-Healing",
     "graph": "Grafo de Dependencias",
     "analysis": "Analisis de Impacto",
     "notFound": "No Encontrado"
@@ -1016,5 +1017,29 @@
     "disabled": "Deshabilitado",
     "enable": "Habilitar",
     "disable": "Deshabilitar"
+  },
+  "autoHealing": {
+    "title": "Monitor de Pipeline Auto-Healing",
+    "subtitle": "Deteccion en tiempo real de fallos en CI/CD y reparacion automatizada",
+    "active": "Activos",
+    "completed": "Completados",
+    "failed": "Fallidos",
+    "selectRun": "Seleccionar Ejecucion",
+    "pipelineProgress": "Progreso del Pipeline",
+    "liveLogs": "Salida de Tests en Vivo",
+    "entries": "entradas",
+    "fixAttempts": "Intentos de Correccion",
+    "noFixes": "Sin intentos de correccion",
+    "attempting": "Intentando",
+    "success": "Exito",
+    "viewPR": "Ver Pull Request",
+    "viewNeo4j": "Ver en Neo4j",
+    "stages": {
+      "test_failure": "Fallo de Test",
+      "neo4j_root_cause": "Causa Raiz",
+      "task_generation": "Generacion de Tarea",
+      "agent_fix": "Correccion del Agente",
+      "pr_created": "PR Creado"
+    }
   }
 }
