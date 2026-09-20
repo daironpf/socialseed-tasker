@@ -18,7 +18,7 @@
     "mcp": "Inspector MCP",
     "hitl": "Centro HITL",
     "sandbox": "Sandbox de Politicas",
-    "graph": "Grafo",
+    "rag": "Explorador Graph RAG",
     "analysisView": "Analisis"
   },
   "header": {
@@ -34,6 +34,7 @@
     "mcp": "Inspector MCP",
     "hitl": "Centro HITL",
     "sandbox": "Sandbox de Politicas",
+    "rag": "Explorador Graph RAG",
     "graph": "Grafo de Dependencias",
     "analysis": "Analisis de Impacto",
     "notFound": "No Encontrado"
@@ -935,5 +936,33 @@
     "save": "Guardar",
     "create": "Crear",
     "deleteConfirm": "Estas seguro de que deseas eliminar '{name}'?"
+  },
+  "rag": {
+    "title": "Explorador Graph RAG",
+    "subtitle": "Buscar soluciones pasadas usando lenguaje natural con embeddings semanticos",
+    "searchPlaceholder": "Describe tu problema en lenguaje natural...",
+    "search": "Buscar",
+    "searching": "Buscando...",
+    "similarityThreshold": "Umbral de Similitud",
+    "maxResults": "Maximos Resultados",
+    "totalMatches": "{count} coincidencias encontradas en {time}ms",
+    "noResults": "No se encontraron soluciones coincidentes",
+    "noResultsHint": "Intenta ampliar tu busqueda o reducir el umbral",
+    "noResultsDescription": "Ingresa una consulta para buscar en el grafo de conocimiento",
+    "solutionSummary": "Resumen de Solucion",
+    "similarity": "Similitud",
+    "solutionDate": "Fecha de Solucion",
+    "component": "Componente",
+    "keywords": "Palabras Clave",
+    "viewGraph": "Ver Grafo de Contexto",
+    "subGraph": "Sub-Grafo de Contexto",
+    "nodes": "nodos",
+    "edges": "aristas",
+    "contextFor": "Contexto para",
+    "embeddingModel": "Modelo de Embedding",
+    "totalEmbeddings": "Total Embeddings",
+    "lastIndexed": "Ultima Indexacion",
+    "topComponents": "Componentes Principales",
+    "clickResult": "Haz clic en un resultado para ver su grafo de contexto"
   }
 }

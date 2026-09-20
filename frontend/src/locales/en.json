@@ -18,7 +18,7 @@
     "mcp": "MCP Inspector",
     "hitl": "HITL Center",
     "sandbox": "Policy Sandbox",
-    "graph": "Graph",
+    "rag": "Graph RAG Explorer",
     "analysisView": "Analysis"
   },
   "header": {
@@ -34,6 +34,7 @@
     "mcp": "MCP Inspector",
     "hitl": "HITL Center",
     "sandbox": "Policy Sandbox",
+    "rag": "Graph RAG Explorer",
     "graph": "Dependency Graph",
     "analysis": "Impact Analysis",
     "notFound": "Not Found"
@@ -935,5 +936,33 @@
     "save": "Save",
     "create": "Create",
     "deleteConfirm": "Are you sure you want to delete '{name}'?"
+  },
+  "rag": {
+    "title": "Graph RAG Explorer",
+    "subtitle": "Search past solutions using natural language with semantic embeddings",
+    "searchPlaceholder": "Describe your problem in natural language...",
+    "search": "Search",
+    "searching": "Searching...",
+    "similarityThreshold": "Similarity Threshold",
+    "maxResults": "Max Results",
+    "totalMatches": "{count} matches found in {time}ms",
+    "noResults": "No matching solutions found",
+    "noResultsHint": "Try broadening your search or lowering the threshold",
+    "noResultsDescription": "Enter a query to search the knowledge graph",
+    "solutionSummary": "Solution Summary",
+    "similarity": "Similarity",
+    "solutionDate": "Solution Date",
+    "component": "Component",
+    "keywords": "Keywords",
+    "viewGraph": "View Context Graph",
+    "subGraph": "Context Sub-Graph",
+    "nodes": "nodes",
+    "edges": "edges",
+    "contextFor": "Context for",
+    "embeddingModel": "Embedding Model",
+    "totalEmbeddings": "Total Embeddings",
+    "lastIndexed": "Last Indexed",
+    "topComponents": "Top Components",
+    "clickResult": "Click a result to view its context graph"
   }
 }

@@ -8,7 +8,7 @@ Resolved issues store solution embeddings in Neo4j to enable long-term memory an
 - Ranked results displaying past issues, embedding similarity score %, and solution summaries
 - Sub-graph preview visualizing the context nodes (Functions, Components, Issues) used to build the answer
 
-## Status: PENDING
+## Status: DONE
 
 ## Priority: HIGH
 
@@ -16,7 +16,7 @@ Resolved issues store solution embeddings in Neo4j to enable long-term memory an
 Frontend / Graph / RAG Explorer
 
 ## Implementation Plan
-1. Create `GraphRAGExplorer.vue` view
+1. Create `GraphRAGExplorerView.vue` view
 2. Build natural language search input with threshold slider
 3. Implement ranked results display with similarity scores
 4. Add solution summaries for each result
@@ -26,12 +26,12 @@ Frontend / Graph / RAG Explorer
 8. Add navigation route
 
 ## Acceptance Criteria
-- [ ] Natural language search input
-- [ ] Vector similarity threshold controls
-- [ ] Ranked results with similarity score %
-- [ ] Solution summaries per result
-- [ ] Sub-graph context preview
-- [ ] i18n support
+- [x] Natural language search input
+- [x] Vector similarity threshold controls
+- [x] Ranked results with similarity score %
+- [x] Solution summaries per result
+- [x] Sub-graph context preview
+- [x] i18n support (EN + ES)
 
 ## Verification
 - Navigate to Graph RAG Explorer
@@ -40,6 +40,18 @@ Frontend / Graph / RAG Explorer
 - See ranked results with scores
 - Click result to see sub-graph preview
 - Context nodes visualized correctly
+
+## Files Created
+- `frontend/src/types/rag.ts` — RAGResult, RAGContextNode, RAGSearchResponse, RAGMetrics
+- `frontend/src/stores/ragStore.ts` — Pinia store with 6 mock solutions, search, metrics
+- `frontend/src/views/GraphRAGExplorerView.vue` — Search input, threshold slider, ranked results, sub-graph SVG
+
+## Files Modified
+- `frontend/src/router/index.ts` — Added `/rag` route
+- `frontend/src/components/layout/Sidebar.vue` — Added "Graph RAG Explorer" nav item
+- `frontend/src/components/layout/AppHeader.vue` — Added header title mapping
+- `frontend/src/locales/en.json` — Added 23 rag i18n keys
+- `frontend/src/locales/es.json` — Added 23 rag i18n keys (Spanish)
 
 ## Related Issues
 - #490 (Policy Sandbox), #492 (Code-as-Graph Overlay)
