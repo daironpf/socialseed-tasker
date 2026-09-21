@@ -13,6 +13,13 @@
         {{ t('system.refresh') }}
       </button>
     </div>
+    <div v-else-if="issuesStore.filteredIssues.length === 0" class="flex flex-col items-center justify-center h-64 text-center">
+      <svg class="h-16 w-16 text-gray-300 dark:text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-1">{{ t('issues.noProjectIssues') }}</h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('issues.noProjectIssuesHint') }}</p>
+    </div>
     <div v-else class="flex flex-col h-full p-6">
       <!-- Header -->
       <div class="mb-6 flex items-center justify-between">
@@ -21,7 +28,7 @@
         </div>
         <div class="flex items-center gap-3">
           <span class="text-sm text-gray-500 dark:text-gray-400">
-            {{ issuesStore.issues.length }} {{ t('issues.title').toLowerCase() }}
+            {{ issuesStore.filteredIssues.length }} {{ t('issues.title').toLowerCase() }}
           </span>
           <button
             class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
@@ -137,12 +144,12 @@ const columns = computed(() => [
 ])
 
 function issuesByStatus(status: IssueStatus) {
-  return issuesStore.issues.filter((i) => i.status === status)
+  return issuesStore.filteredIssues.filter((i) => i.status === status)
 }
 
 const selectedIssue = computed(() => {
   if (!uiStore.selectedIssueId) return null
-  return issuesStore.issues.find((i) => i.id === uiStore.selectedIssueId) ?? null
+  return issuesStore.filteredIssues.find((i) => i.id === uiStore.selectedIssueId) ?? null
 })
 
 function openIssue(issue: Issue) {

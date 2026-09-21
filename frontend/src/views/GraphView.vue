@@ -253,7 +253,7 @@ const statusColors: Record<string, string> = {
 }
 
 const filteredIssues = computed(() => {
-  let issues = issuesStore.issues
+  let issues = issuesStore.filteredIssues
   if (statusFilter.value) {
     issues = issues.filter(i => i.status === statusFilter.value)
   }
@@ -464,8 +464,8 @@ function buildGraph() {
         if (!connectFrom.value) {
           connectFrom.value = nodeId
         } else if (nodeId !== connectFrom.value) {
-          const fromIssue = issuesStore.issues.find(i => i.id === connectFrom.value)
-          const toIssue = issuesStore.issues.find(i => i.id === nodeId)
+          const fromIssue = filteredIssues.value.find(i => i.id === connectFrom.value)
+          const toIssue = filteredIssues.value.find(i => i.id === nodeId)
           if (fromIssue && toIssue) {
             const existingEdges = edges!.get().map(e => ({ from: e.from, to: e.to }))
             if (wouldCreateCycle(existingEdges, connectFrom.value, nodeId)) {
@@ -481,7 +481,7 @@ function buildGraph() {
           connectFrom.value = null
         }
       } else {
-        const issue = issuesStore.issues.find(i => i.id === nodeId)
+        const issue = filteredIssues.value.find(i => i.id === nodeId)
         if (issue) {
           selectedIssue.value = issue
         } else if (codeOverlayEnabled.value) {

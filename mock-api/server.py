@@ -63,6 +63,7 @@ class IssueCreate(BaseModel):
     status: str = "OPEN"
     priority: str = "MEDIUM"
     component_id: str = ""
+    project_id: str = "socialseed-tasker"
     assignee: Optional[str] = None
     created_by: Optional[str] = None
     labels: list[str] = []
@@ -136,7 +137,7 @@ def delete_user(user_id: str):
 
 
 @app.get("/mock/issues")
-def get_issues(page: int = 1, limit: int = 200, status: str = None, priority: str = None):
+def get_issues(page: int = 1, limit: int = 200, status: str = None, priority: str = None, project: str = None):
     data = read_json("issues.json")
     issues = data.get("issues", [])
     if status:
@@ -145,6 +146,8 @@ def get_issues(page: int = 1, limit: int = 200, status: str = None, priority: st
     if priority:
         allowed = [p.strip() for p in priority.split(",")]
         issues = [i for i in issues if i.get("priority") in allowed]
+    if project:
+        issues = [i for i in issues if i.get("project_id") == project]
     return {"data": issues, "meta": {"total": len(issues)}}
 
 
@@ -163,6 +166,7 @@ def create_issue(body: IssueCreate):
         "status": body.status,
         "priority": body.priority,
         "component_id": body.component_id,
+        "project_id": body.project_id,
         "assignee": body.assignee,
         "created_by": body.created_by,
         "labels": body.labels,
@@ -188,6 +192,7 @@ class IssueUpdate(BaseModel):
     status: Optional[str] = None
     priority: Optional[str] = None
     component_id: Optional[str] = None
+    project_id: Optional[str] = None
     assignee: Optional[str] = None
     labels: Optional[list[str]] = None
     dependencies: Optional[list[str]] = None

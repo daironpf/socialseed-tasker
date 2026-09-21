@@ -20,6 +20,7 @@ export interface Issue {
   status: IssueStatus
   priority: IssuePriority
   component_id: string
+  project_id: string
   assignee?: string
   created_by?: string
   labels: string[]
@@ -85,6 +86,7 @@ export interface IssueCreateRequest {
   description?: string
   priority?: IssuePriority
   component_id: string
+  project_id?: string
   assignee?: string
   created_by?: string
   labels?: string[]
@@ -97,6 +99,7 @@ export interface IssueUpdateRequest {
   priority?: IssuePriority
   status?: IssueStatus
   component_id?: string
+  project_id?: string
   assignee?: string
   labels?: string[]
   architectural_constraints?: string[]

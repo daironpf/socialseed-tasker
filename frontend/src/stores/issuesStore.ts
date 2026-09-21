@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as api from '@/api/issuesApi'
 import type { Issue, IssueCreateRequest, IssueUpdateRequest, PaginationMeta } from '@/types'
+import { useUiStore } from './uiStore'
 
 export const useIssuesStore = defineStore('issues', () => {
   const issues = ref<Issue[]>([])
@@ -16,6 +17,13 @@ export const useIssuesStore = defineStore('issues', () => {
   const blockedIssuesCount = computed(() =>
     issues.value.filter((i) => i.status === 'BLOCKED').length,
   )
+
+  const filteredIssues = computed(() => {
+    const uiStore = useUiStore()
+    const project = uiStore.currentProject
+    if (!project) return issues.value
+    return issues.value.filter((i) => i.project_id === project)
+  })
 
   async function fetchIssues(page = 1, limit = 50, filters?: { status?: string; component?: string; project?: string; priority?: string }) {
     loading.value = true
@@ -114,6 +122,7 @@ export const useIssuesStore = defineStore('issues', () => {
     error,
     openIssuesCount,
     blockedIssuesCount,
+    filteredIssues,
     fetchIssues,
     fetchIssue,
     createIssue,

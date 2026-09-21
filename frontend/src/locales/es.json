@@ -117,7 +117,9 @@
     "technicalDebt": "Deuda Tecnica",
     "noProgressData": "No hay datos de progreso para este issue",
     "addLabelPlaceholder": "Agregar label...",
-    "dependencies": "Dependencias"
+    "dependencies": "Dependencias",
+    "noProjectIssues": "No hay issues en este proyecto",
+    "noProjectIssuesHint": "Cambia de proyecto o crea un nuevo issue para comenzar"
   },
   "components": {
     "title": "Componentes",

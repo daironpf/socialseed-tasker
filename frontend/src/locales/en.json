@@ -116,7 +116,9 @@
     "technicalDebt": "Technical Debt",
     "noProgressData": "No progress data for this issue",
     "addLabelPlaceholder": "Add label...",
-    "dependencies": "Dependencies"
+    "dependencies": "Dependencies",
+    "noProjectIssues": "No issues in this project",
+    "noProjectIssuesHint": "Switch projects or create a new issue to get started"
   },
   "components": {
     "title": "Components",

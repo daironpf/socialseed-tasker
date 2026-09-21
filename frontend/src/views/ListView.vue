@@ -4,8 +4,17 @@
       <LoadingSpinner />
     </div>
     <div v-else>
+      <!-- Empty state for project with no issues -->
+      <div v-if="issuesStore.filteredIssues.length === 0 && !issuesStore.loading" class="flex flex-col items-center justify-center py-16">
+        <svg class="h-16 w-16 text-gray-300 dark:text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-1">{{ t('issues.noProjectIssues') }}</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('issues.noProjectIssuesHint') }}</p>
+      </div>
+
       <!-- Header -->
-      <div class="mb-4 flex items-center justify-between">
+      <div v-else class="mb-4 flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('issues.title') }}</h1>
         <div class="flex items-center gap-2">
           <div class="relative" ref="exportDropdownRef">
@@ -93,7 +102,7 @@
       </div>
 
       <div class="mb-2 text-sm text-gray-500 dark:text-gray-400">
-        {{ t('issues.showing') }} {{ filteredList.length }} {{ t('issues.of') }} {{ issuesStore.issues.length }} {{ t('issues.title').toLowerCase() }}
+        {{ t('issues.showing') }} {{ filteredList.length }} {{ t('issues.of') }} {{ issuesStore.filteredIssues.length }} {{ t('issues.title').toLowerCase() }}
       </div>
 
       <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
@@ -343,7 +352,7 @@ const componentFilter = computed({
 })
 
 const filteredList = computed(() => {
-  let result = issuesStore.issues
+  let result = issuesStore.filteredIssues
   if (search.value) {
     const q = search.value.toLowerCase()
     result = result.filter(i =>
@@ -366,7 +375,7 @@ const filteredList = computed(() => {
 
 const selectedIssue = computed(() => {
   if (!uiStore.selectedIssueId) return null
-  return issuesStore.issues.find((i) => i.id === uiStore.selectedIssueId) ?? null
+  return issuesStore.filteredIssues.find((i) => i.id === uiStore.selectedIssueId) ?? null
 })
 
 function getComponentName(id: string): string {
