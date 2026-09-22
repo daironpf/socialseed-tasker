@@ -838,6 +838,11 @@
     "title": "Switch Project",
     "current": "Current"
   },
+  "sync": {
+    "synced": "Synced",
+    "offlineQueued": "Offline ({count} pending)",
+    "syncing": "Syncing..."
+  },
   "export": {
     "title": "Export",
     "downloadCSV": "Download CSV",

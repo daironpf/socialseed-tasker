@@ -392,6 +392,7 @@ function openIssue(issue: Issue) {
 
 async function onUpdateIssue(id: string, body: IssueUpdateRequest) {
   await issuesStore.updateIssue(id, body)
+  uiStore.simulateSync()
 }
 
 async function onDeleteIssue(id: string) {
@@ -401,10 +402,12 @@ async function onDeleteIssue(id: string) {
 
 async function onCloseIssue(id: string) {
   await issuesStore.closeIssue(id)
+  uiStore.simulateSync()
 }
 
 async function closeIssue(id: string) {
   await issuesStore.closeIssue(id)
+  uiStore.simulateSync()
 }
 
 const showDeleteConfirm = ref(false)
@@ -417,6 +420,7 @@ function deleteIssue(id: string) {
 
 async function confirmDeleteIssue() {
   await issuesStore.deleteIssue(deleteTargetId.value)
+  uiStore.simulateSync()
   showDeleteConfirm.value = false
   deleteTargetId.value = ''
 }
@@ -428,6 +432,7 @@ async function fetchWithFilters() {
 
 function onIssueCreated() {
   showCreateModal.value = false
+  uiStore.simulateSync()
   fetchWithFilters()
 }
 

@@ -3,6 +3,7 @@ import { ref } from 'vue'
 
 export type ViewMode = 'board' | 'list'
 export type Locale = 'en' | 'es'
+export type ConnectionState = 'SYNCED' | 'OFFLINE_QUEUED' | 'SYNCING'
 
 export interface Filters {
   status: string[]
@@ -19,6 +20,8 @@ export const useUiStore = defineStore('ui', () => {
   const darkMode = ref(false)
   const locale = ref<Locale>((localStorage.getItem('locale') as Locale) || 'en')
   const currentProject = ref(localStorage.getItem('currentProject') || 'socialseed-tasker')
+  const connectionState = ref<ConnectionState>('SYNCED')
+  const pendingSyncCount = ref(0)
   const filters = ref<Filters>({
     status: [],
     priority: [],
@@ -92,6 +95,23 @@ export const useUiStore = defineStore('ui', () => {
     filters.value.project = projectId
   }
 
+  let syncTimeout: ReturnType<typeof setTimeout> | null = null
+
+  function simulateSync() {
+    connectionState.value = 'OFFLINE_QUEUED'
+    pendingSyncCount.value += 1
+
+    if (syncTimeout) clearTimeout(syncTimeout)
+
+    syncTimeout = setTimeout(() => {
+      connectionState.value = 'SYNCING'
+      setTimeout(() => {
+        connectionState.value = 'SYNCED'
+        pendingSyncCount.value = 0
+      }, 800)
+    }, 2000)
+  }
+
   function getBackendFilters() {
     return {
       status: filters.value.status.length > 0 ? filters.value.status.join(',') : undefined,
@@ -110,6 +130,8 @@ export const useUiStore = defineStore('ui', () => {
     currentProject,
     availableProjects,
     filters,
+    connectionState,
+    pendingSyncCount,
     setSelectedIssue,
     toggleSidebar,
     setViewMode,
@@ -119,6 +141,7 @@ export const useUiStore = defineStore('ui', () => {
     initDarkMode,
     setLocale,
     setProject,
+    simulateSync,
     getBackendFilters,
   }
 })

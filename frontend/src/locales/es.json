@@ -839,6 +839,11 @@
     "title": "Cambiar Proyecto",
     "current": "Actual"
   },
+  "sync": {
+    "synced": "Sincronizado",
+    "offlineQueued": "Offline ({count} pendientes)",
+    "syncing": "Sincronizando..."
+  },
   "export": {
     "title": "Exportar",
     "downloadCSV": "Descargar CSV",

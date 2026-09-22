@@ -192,6 +192,7 @@ import { Network, DataSet } from 'vis-network/standalone'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useComponentsStore } from '@/stores/componentsStore'
 import { useCodeGraphStore } from '@/stores/codeGraphStore'
+import { useUiStore } from '@/stores/uiStore'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
 import RelationshipModal from '@/components/ui/RelationshipModal.vue'
@@ -208,6 +209,7 @@ const { t } = useI18n()
 const issuesStore = useIssuesStore()
 const componentsStore = useComponentsStore()
 const codeGraphStore = useCodeGraphStore()
+const uiStore = useUiStore()
 const networkContainer = ref<HTMLElement | null>(null)
 const searchQuery = ref('')
 const statusFilter = ref('')
@@ -520,6 +522,7 @@ function toggleConnectMode() {
 
 async function onUpdateIssue(id: string, body: IssueUpdateRequest) {
   await issuesStore.updateIssue(id, body)
+  uiStore.simulateSync()
   await nextTick()
   buildGraph()
 }
@@ -527,6 +530,7 @@ async function onUpdateIssue(id: string, body: IssueUpdateRequest) {
 async function onDeleteIssue(id: string) {
   const ok = await issuesStore.deleteIssue(id)
   if (ok) {
+    uiStore.simulateSync()
     selectedIssue.value = null
     await nextTick()
     buildGraph()
@@ -535,6 +539,7 @@ async function onDeleteIssue(id: string) {
 
 async function onCloseIssue(id: string) {
   await issuesStore.closeIssue(id)
+  uiStore.simulateSync()
   await nextTick()
   buildGraph()
 }

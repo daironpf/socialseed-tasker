@@ -132,6 +132,7 @@ function deleteIssue(id: string) {
 async function confirmDeleteIssue() {
   const ok = await issuesStore.deleteIssue(deleteTargetId.value)
   if (ok) uiStore.setSelectedIssue(null)
+  uiStore.simulateSync()
   showDeleteConfirm.value = false
   deleteTargetId.value = ''
 }
@@ -164,10 +165,12 @@ async function onDropIssue(issue: Issue, newStatus: IssueStatus) {
     update.closed_at = null
   }
   await issuesStore.updateIssue(issue.id, update)
+  uiStore.simulateSync()
 }
 
 async function onUpdateIssue(id: string, body: IssueUpdateRequest) {
   await issuesStore.updateIssue(id, body)
+  uiStore.simulateSync()
 }
 
 function onDeleteIssue(id: string) {
@@ -176,10 +179,12 @@ function onDeleteIssue(id: string) {
 
 async function onCloseIssue(id: string) {
   await issuesStore.closeIssue(id)
+  uiStore.simulateSync()
 }
 
 function onIssueCreated() {
   showCreateModal.value = false
+  uiStore.simulateSync()
   const filters = uiStore.getBackendFilters()
   issuesStore.fetchIssues(1, 100, filters)
 }
