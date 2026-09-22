@@ -37,7 +37,14 @@
                                            "issue_number":  401,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/401",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-002",
@@ -70,7 +77,14 @@
                                            "issue_number":  402,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/402",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-003",
@@ -126,7 +140,14 @@
                                            "issue_number":  403,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/403",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-004",
@@ -158,7 +179,14 @@
                                            "issue_number":  404,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/404",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-005",
@@ -200,7 +228,14 @@
                                            "issue_number":  405,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/405",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-006",
@@ -239,7 +274,14 @@
                                            "issue_number":  406,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/406",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-007",
@@ -271,7 +313,14 @@
                                            "issue_number":  407,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/407",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-008",
@@ -314,7 +363,14 @@
                                            "issue_number":  408,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/408",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-009",
@@ -347,7 +403,14 @@
                                            "issue_number":  409,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/409",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-010",
@@ -395,7 +458,14 @@
                                            "issue_number":  410,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/410",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-011",
@@ -427,7 +497,14 @@
                                            "issue_number":  411,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/411",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-012",
@@ -465,7 +542,15 @@
                                            "issue_number":  412,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/412",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary",
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-013",
@@ -499,7 +584,14 @@
                                            "issue_number":  413,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/413",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-014",
@@ -531,7 +623,14 @@
                                            "issue_number":  414,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/414",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-015",
@@ -563,7 +662,14 @@
                                            "issue_number":  415,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/415",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-016",
@@ -601,7 +707,14 @@
                                            "issue_number":  416,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/416",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-017",
@@ -633,7 +746,14 @@
                                            "issue_number":  417,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/417",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-018",
@@ -667,7 +787,14 @@
                                            "issue_number":  418,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/418",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-019",
@@ -700,7 +827,14 @@
                                            "issue_number":  419,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/419",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-020",
@@ -738,7 +872,14 @@
                                            "issue_number":  420,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/420",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-021",
@@ -771,7 +912,14 @@
                                            "issue_number":  421,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/421",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-022",
@@ -804,7 +952,14 @@
                                            "issue_number":  422,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/422",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-023",
@@ -852,7 +1007,14 @@
                                            "issue_number":  423,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/423",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-024",
@@ -889,7 +1051,15 @@
                                            "issue_number":  424,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/424",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary",
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-025",
@@ -927,7 +1097,14 @@
                                            "issue_number":  425,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/425",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-026",
@@ -964,7 +1141,14 @@
                                            "issue_number":  426,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/426",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-027",
@@ -1003,7 +1187,14 @@
                                            "issue_number":  427,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/427",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-028",
@@ -1041,7 +1232,14 @@
                                            "issue_number":  428,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/428",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-029",
@@ -1086,7 +1284,14 @@
                                            "issue_number":  429,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/429",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-030",
@@ -1120,7 +1325,14 @@
                                            "issue_number":  430,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/430",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-031",
@@ -1159,7 +1371,14 @@
                                            "issue_number":  431,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/431",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-032",
@@ -1191,7 +1410,14 @@
                                            "issue_number":  432,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/432",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-033",
@@ -1225,7 +1451,14 @@
                                            "issue_number":  433,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/433",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-034",
@@ -1258,7 +1491,14 @@
                                            "issue_number":  434,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/434",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-035",
@@ -1290,7 +1530,14 @@
                                            "issue_number":  435,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/435",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-036",
@@ -1328,7 +1575,15 @@
                                            "issue_number":  436,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/436",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary",
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-037",
@@ -1370,7 +1625,14 @@
                                            "issue_number":  437,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/437",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-038",
@@ -1408,7 +1670,14 @@
                                            "issue_number":  438,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/438",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-039",
@@ -1451,7 +1720,14 @@
                                            "issue_number":  439,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/439",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-040",
@@ -1484,7 +1760,14 @@
                                            "issue_number":  440,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/440",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-041",
@@ -1517,7 +1800,14 @@
                                            "issue_number":  441,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/441",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-042",
@@ -1550,7 +1840,14 @@
                                            "issue_number":  442,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/442",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-043",
@@ -1587,7 +1884,14 @@
                                            "issue_number":  443,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/443",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-044",
@@ -1621,7 +1925,14 @@
                                            "issue_number":  444,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/444",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-045",
@@ -1653,7 +1964,14 @@
                                            "issue_number":  445,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/445",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-046",
@@ -1690,7 +2008,14 @@
                                            "issue_number":  446,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/446",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-047",
@@ -1723,7 +2048,14 @@
                                            "issue_number":  447,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/447",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-048",
@@ -1761,7 +2093,15 @@
                                            "issue_number":  448,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/448",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary",
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-049",
@@ -1793,7 +2133,14 @@
                                            "issue_number":  449,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/449",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-050",
@@ -1831,7 +2178,14 @@
                                            "issue_number":  450,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/450",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-051",
@@ -1863,7 +2217,14 @@
                                            "issue_number":  451,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/451",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-052",
@@ -1897,7 +2258,14 @@
                                            "issue_number":  452,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/452",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-053",
@@ -1929,7 +2297,14 @@
                                            "issue_number":  453,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/453",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-054",
@@ -1961,7 +2336,14 @@
                                            "issue_number":  454,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/454",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-055",
@@ -1998,7 +2380,14 @@
                                            "issue_number":  455,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/455",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-056",
@@ -2036,7 +2425,14 @@
                                            "issue_number":  456,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/456",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-057",
@@ -2073,7 +2469,14 @@
                                            "issue_number":  457,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/457",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-058",
@@ -2106,7 +2509,14 @@
                                            "issue_number":  458,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/458",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-059",
@@ -2138,7 +2548,14 @@
                                            "issue_number":  459,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/459",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-060",
@@ -2171,7 +2588,15 @@
                                            "issue_number":  460,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/460",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary",
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-061",
@@ -2216,7 +2641,14 @@
                                            "issue_number":  461,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/461",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-062",
@@ -2248,7 +2680,14 @@
                                            "issue_number":  462,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/462",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-063",
@@ -2285,7 +2724,14 @@
                                            "issue_number":  463,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/463",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-064",
@@ -2317,7 +2763,14 @@
                                            "issue_number":  464,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/464",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-065",
@@ -2350,7 +2803,14 @@
                                            "issue_number":  465,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/465",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-066",
@@ -2383,7 +2843,14 @@
                                            "issue_number":  466,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/466",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-067",
@@ -2421,7 +2888,14 @@
                                            "issue_number":  467,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/467",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-068",
@@ -2459,7 +2933,14 @@
                                            "issue_number":  468,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/468",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-069",
@@ -2496,7 +2977,14 @@
                                            "issue_number":  469,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/469",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-070",
@@ -2533,7 +3021,14 @@
                                            "issue_number":  470,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/470",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-071",
@@ -2567,7 +3062,14 @@
                                            "issue_number":  471,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/471",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-072",
@@ -2604,7 +3106,15 @@
                                            "issue_number":  472,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/472",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary",
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-073",
@@ -2637,7 +3147,14 @@
                                            "issue_number":  473,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/473",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-074",
@@ -2670,7 +3187,14 @@
                                            "issue_number":  474,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/474",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-075",
@@ -2703,7 +3227,14 @@
                                            "issue_number":  475,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/475",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-076",
@@ -2740,7 +3271,14 @@
                                            "issue_number":  476,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/476",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-077",
@@ -2778,7 +3316,14 @@
                                            "issue_number":  477,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/477",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-078",
@@ -2815,7 +3360,14 @@
                                            "issue_number":  478,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/478",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-079",
@@ -2847,7 +3399,14 @@
                                            "issue_number":  479,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/479",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-080",
@@ -2880,7 +3439,14 @@
                                            "issue_number":  480,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/480",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-081",
@@ -2925,7 +3491,14 @@
                                            "issue_number":  481,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/481",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-082",
@@ -2957,7 +3530,14 @@
                                            "issue_number":  482,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/482",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-083",
@@ -2989,7 +3569,14 @@
                                            "issue_number":  483,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/483",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-084",
@@ -3021,7 +3608,15 @@
                                            "issue_number":  484,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/484",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary",
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-085",
@@ -3058,7 +3653,14 @@
                                            "issue_number":  485,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/485",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-086",
@@ -3090,7 +3692,14 @@
                                            "issue_number":  486,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/486",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-087",
@@ -3128,7 +3737,14 @@
                                            "issue_number":  487,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/487",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-088",
@@ -3161,7 +3777,14 @@
                                            "issue_number":  488,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/488",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-089",
@@ -3194,7 +3817,14 @@
                                            "issue_number":  489,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/489",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-090",
@@ -3226,7 +3856,14 @@
                                            "issue_number":  490,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/490",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-091",
@@ -3264,7 +3901,14 @@
                                            "issue_number":  491,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/491",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-092",
@@ -3297,7 +3941,14 @@
                                            "issue_number":  492,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/492",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-093",
@@ -3334,7 +3985,14 @@
                                            "issue_number":  493,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/493",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-094",
@@ -3366,7 +4024,14 @@
                                            "issue_number":  494,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/494",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-095",
@@ -3399,7 +4064,14 @@
                                            "issue_number":  495,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/495",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-096",
@@ -3432,7 +4104,15 @@
                                            "issue_number":  496,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/496",
                                            "sync_status":  "SYNCED"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "Missing Solution Summary",
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  false
+                                      }
                    },
                    {
                        "id":  "ISS-097",
@@ -3464,7 +4144,14 @@
                                            "issue_number":  497,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/497",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-098",
@@ -3496,7 +4183,14 @@
                                            "issue_number":  498,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/498",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-100",
@@ -3545,7 +4239,14 @@
                                            "issue_number":  500,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/500",
                                            "sync_status":  "PENDING_PUSH"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  false,
+                                          "policy_violations":  [
+                                                                    "No affected files linked"
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    },
                    {
                        "id":  "ISS-101",
@@ -3584,7 +4285,14 @@
                                            "issue_number":  501,
                                            "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/501",
                                            "sync_status":  "ERROR"
-                                       }
+                                       },
+                       "governance":  {
+                                          "has_file_impact":  true,
+                                          "policy_violations":  [
+
+                                                                ],
+                                          "has_solution_summary":  true
+                                      }
                    }
                ]
 }

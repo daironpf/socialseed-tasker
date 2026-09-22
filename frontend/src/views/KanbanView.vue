@@ -99,13 +99,23 @@
     >
       <CreateIssueModal @close="showCreateModal = false" @created="onIssueCreated" />
     </div>
+
+    <!-- Governance Validation Modal -->
+    <GovernanceValidationModal
+      v-if="showGovernanceModal && governanceTargetIssue"
+      :issue-title="`${governanceTargetIssue.id} — ${governanceTargetIssue.title}`"
+      :governance="governanceTargetIssue.governance!"
+      @close="onGovernanceClose"
+      @override="onGovernanceOverride"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Issue, IssueStatus, IssueUpdateRequest } from '@/types'
+import type { Issue, IssueUpdateRequest } from '@/types'
+import { IssueStatus } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useComponentsStore } from '@/stores/componentsStore'
 import { useUiStore } from '@/stores/uiStore'
@@ -113,6 +123,7 @@ import KanbanColumn from '@/components/board/KanbanColumn.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
 import CreateIssueModal from '@/components/issue/CreateIssueModal.vue'
+import GovernanceValidationModal from '@/components/issue/GovernanceValidationModal.vue'
 
 const { t } = useI18n()
 
@@ -123,6 +134,8 @@ const uiStore = useUiStore()
 const showCreateModal = ref(false)
 const showDeleteConfirm = ref(false)
 const deleteTargetId = ref('')
+const showGovernanceModal = ref(false)
+const governanceTargetIssue = ref<Issue | null>(null)
 
 function deleteIssue(id: string) {
   deleteTargetId.value = id
@@ -158,6 +171,14 @@ function openIssue(issue: Issue) {
 }
 
 async function onDropIssue(issue: Issue, newStatus: IssueStatus) {
+  if (newStatus === 'CLOSED' && issue.governance) {
+    const g = issue.governance
+    if (!g.has_solution_summary || !g.has_file_impact || g.policy_violations.length > 0) {
+      governanceTargetIssue.value = issue
+      showGovernanceModal.value = true
+      return
+    }
+  }
   const update: IssueUpdateRequest = { status: newStatus }
   if (newStatus === 'CLOSED') {
     update.closed_at = new Date().toISOString()
@@ -175,6 +196,21 @@ async function onUpdateIssue(id: string, body: IssueUpdateRequest) {
 
 function onDeleteIssue(id: string) {
   deleteIssue(id)
+}
+
+function onGovernanceClose() {
+  showGovernanceModal.value = false
+  governanceTargetIssue.value = null
+}
+
+function onGovernanceOverride() {
+  if (!governanceTargetIssue.value) return
+  const issue = governanceTargetIssue.value
+  const update: IssueUpdateRequest = { status: IssueStatus.CLOSED, closed_at: new Date().toISOString() }
+  issuesStore.updateIssue(issue.id, update)
+  uiStore.simulateSync()
+  showGovernanceModal.value = false
+  governanceTargetIssue.value = null
 }
 
 async function onCloseIssue(id: string) {

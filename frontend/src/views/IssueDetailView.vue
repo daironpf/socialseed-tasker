@@ -346,6 +346,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Governance Validation Modal -->
+    <GovernanceValidationModal
+      v-if="showGovernanceModal"
+      :issue-title="`${issue.id} — ${issue.title}`"
+      :governance="issue.governance!"
+      @close="onGovernanceClose"
+      @override="onGovernanceOverride"
+    />
   </div>
 </template>
 
@@ -368,6 +377,7 @@ import TypingIndicator from '@/components/ui/TypingIndicator.vue'
 import ConflictWarning from '@/components/ui/ConflictWarning.vue'
 import AuditTrail from '@/components/ui/AuditTrail.vue'
 import GitHubSyncCard from '@/components/issue/GitHubSyncCard.vue'
+import GovernanceValidationModal from '@/components/issue/GovernanceValidationModal.vue'
 import { useAgentStream } from '@/composables/useAgentStream'
 import { usePresence } from '@/composables/usePresence'
 import type { AuditEntry } from '@/types/audit'
@@ -545,6 +555,14 @@ function getIssueTitle(id: string): string {
 }
 
 async function save() {
+  if (status.value === 'CLOSED' && props.issue.status !== 'CLOSED' && props.issue.governance) {
+    const g = props.issue.governance
+    if (!g.has_solution_summary || !g.has_file_impact || g.policy_violations.length > 0) {
+      previousStatus.value = props.issue.status
+      showGovernanceModal.value = true
+      return
+    }
+  }
   const body: IssueUpdateRequest = {
     title: title.value,
     description: description.value,
@@ -563,7 +581,29 @@ async function save() {
   emit('update', props.issue.id, body)
 }
 
+function onGovernanceClose() {
+  showGovernanceModal.value = false
+  status.value = previousStatus.value || IssueStatus.OPEN
+}
+
+function onGovernanceOverride() {
+  showGovernanceModal.value = false
+  const body: IssueUpdateRequest = {
+    title: title.value,
+    description: description.value,
+    status: IssueStatus.CLOSED,
+    priority: priority.value,
+    labels: labels.value,
+    assignee: assignee.value || undefined,
+    assignee_history: assigneeHistory.value,
+    closed_at: new Date().toISOString(),
+  }
+  emit('update', props.issue.id, body)
+}
+
 const showDeleteConfirm = ref(false)
+const showGovernanceModal = ref(false)
+const previousStatus = ref<IssueStatus | null>(null)
 
 function confirmDelete() {
   showDeleteConfirm.value = true

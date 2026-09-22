@@ -132,6 +132,15 @@
     "forceResync": "Forzar Re-sincronización",
     "syncing": "Sincronizando..."
   },
+  "governance": {
+    "title": "Validación de Gobernanza Requerida",
+    "violatedPolicies": "Políticas Violadas",
+    "missingRequirements": "Requisitos Faltantes",
+    "solutionSummary": "Resumen de Solución",
+    "fileImpact": "Archivos Afectados",
+    "fixIssues": "Corregir Problemas",
+    "override": "Anular"
+  },
   "components": {
     "title": "Componentes",
     "newComponent": "+ Nuevo Componente",

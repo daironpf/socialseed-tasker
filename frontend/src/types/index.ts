@@ -34,6 +34,7 @@ export interface Issue {
   agent_working?: boolean
   assignee_history?: AssigneeHistoryEntry[]
   github_sync?: GitHubSync
+  governance?: GovernanceValidation
 }
 
 export interface AssigneeHistoryEntry {
@@ -47,6 +48,12 @@ export interface GitHubSync {
   github_url: string
   sync_status: 'SYNCED' | 'PENDING_PUSH' | 'ERROR'
   last_synced_at: string
+}
+
+export interface GovernanceValidation {
+  has_solution_summary: boolean
+  has_file_impact: boolean
+  policy_violations: string[]
 }
 
 export interface Component {
