@@ -33,12 +33,20 @@ export interface Issue {
   architectural_constraints: string[]
   agent_working?: boolean
   assignee_history?: AssigneeHistoryEntry[]
+  github_sync?: GitHubSync
 }
 
 export interface AssigneeHistoryEntry {
   userId: string
   assignedAt: string
   unassignedAt?: string
+}
+
+export interface GitHubSync {
+  issue_number: number
+  github_url: string
+  sync_status: 'SYNCED' | 'PENDING_PUSH' | 'ERROR'
+  last_synced_at: string
 }
 
 export interface Component {

@@ -194,6 +194,12 @@
         <div v-else class="text-sm text-gray-400">{{ t('issues.noDependencies') }}</div>
       </div>
 
+      <GitHubSyncCard
+        v-if="issue.github_sync"
+        :github="issue.github_sync"
+        @update:sync-status="onGithubSyncStatusUpdate"
+      />
+
       <div class="text-xs text-gray-400 space-y-1">
         <p>{{ t('issues.created') }}: {{ new Date(issue.created_at).toLocaleString() }}</p>
         <p>{{ t('issues.updated') }}: {{ new Date(issue.updated_at).toLocaleString() }}</p>
@@ -361,6 +367,7 @@ import PresenceAvatars from '@/components/ui/PresenceAvatars.vue'
 import TypingIndicator from '@/components/ui/TypingIndicator.vue'
 import ConflictWarning from '@/components/ui/ConflictWarning.vue'
 import AuditTrail from '@/components/ui/AuditTrail.vue'
+import GitHubSyncCard from '@/components/issue/GitHubSyncCard.vue'
 import { useAgentStream } from '@/composables/useAgentStream'
 import { usePresence } from '@/composables/usePresence'
 import type { AuditEntry } from '@/types/audit'
@@ -478,6 +485,15 @@ const assigneeHistoryWithUsers = computed(() => {
     }
   }).sort((a, b) => new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime())
 })
+
+function onGithubSyncStatusUpdate(status: 'SYNCED' | 'PENDING_PUSH' | 'ERROR') {
+  if (props.issue.github_sync) {
+    props.issue.github_sync.sync_status = status
+    if (status === 'SYNCED') {
+      props.issue.github_sync.last_synced_at = new Date().toISOString()
+    }
+  }
+}
 
 const progressLogs = computed(() => agentLogs.value.filter(l => l.type === 'progress'))
 const fileLogs = computed(() => agentLogs.value.filter(l => l.type === 'files'))

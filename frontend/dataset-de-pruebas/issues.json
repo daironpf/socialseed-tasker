@@ -1,4 +1,4 @@
-﻿{
+{
     "issues":  [
                    {
                        "id":  "ISS-001",
@@ -31,7 +31,13 @@
                                                     "unassignedAt":  "2026-08-03T14:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-16T02:24:48Z",
+                                           "issue_number":  401,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/401",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-002",
@@ -58,7 +64,13 @@
                                                     "unassignedAt":  "2026-08-05T16:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-17T02:24:48Z",
+                                           "issue_number":  402,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/402",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-003",
@@ -108,7 +120,13 @@
                                                     "assignedAt":  "2026-08-24T08:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-18T02:24:48Z",
+                                           "issue_number":  403,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/403",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-004",
@@ -134,7 +152,13 @@
                                                     "unassignedAt":  "2026-08-06T12:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-19T02:24:48Z",
+                                           "issue_number":  404,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/404",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-005",
@@ -170,7 +194,13 @@
                                                     "assignedAt":  "2026-08-24T13:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-20T02:24:48Z",
+                                           "issue_number":  405,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/405",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-006",
@@ -203,7 +233,13 @@
                                                     "unassignedAt":  "2026-08-07T10:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-21T02:24:48Z",
+                                           "issue_number":  406,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/406",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-007",
@@ -229,7 +265,13 @@
                                                     "assignedAt":  "2026-08-06T10:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-15T02:24:48Z",
+                                           "issue_number":  407,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/407",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-008",
@@ -266,7 +308,13 @@
                                                     "assignedAt":  "2026-08-20T10:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-16T02:24:48Z",
+                                           "issue_number":  408,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/408",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-009",
@@ -293,7 +341,13 @@
                                                     "unassignedAt":  "2026-08-10T16:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-17T02:24:48Z",
+                                           "issue_number":  409,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/409",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-010",
@@ -335,7 +389,13 @@
                                                     "assignedAt":  "2026-09-09T00:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-18T02:24:48Z",
+                                           "issue_number":  410,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/410",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-011",
@@ -361,7 +421,13 @@
                                                     "assignedAt":  "2026-08-09T11:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-19T02:24:48Z",
+                                           "issue_number":  411,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/411",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-012",
@@ -393,7 +459,13 @@
                                                     "unassignedAt":  "2026-08-12T09:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-20T02:24:48Z",
+                                           "issue_number":  412,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/412",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-013",
@@ -421,7 +493,13 @@
                                                     "unassignedAt":  "2026-08-13T14:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-21T02:24:48Z",
+                                           "issue_number":  413,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/413",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-014",
@@ -447,7 +525,13 @@
                                                     "assignedAt":  "2026-08-11T10:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-15T02:24:48Z",
+                                           "issue_number":  414,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/414",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-015",
@@ -473,7 +557,13 @@
                                                     "assignedAt":  "2026-08-12T11:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-16T02:24:48Z",
+                                           "issue_number":  415,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/415",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-016",
@@ -505,7 +595,13 @@
                                                     "unassignedAt":  "2026-08-18T16:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-17T02:24:48Z",
+                                           "issue_number":  416,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/416",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-017",
@@ -531,7 +627,13 @@
                                                     "assignedAt":  "2026-08-13T09:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-18T02:24:48Z",
+                                           "issue_number":  417,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/417",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-018",
@@ -559,7 +661,13 @@
                                                     "unassignedAt":  "2026-08-16T09:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-19T02:24:48Z",
+                                           "issue_number":  418,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/418",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-019",
@@ -586,7 +694,13 @@
                                                     "assignedAt":  "2026-08-15T11:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-20T02:24:48Z",
+                                           "issue_number":  419,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/419",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-020",
@@ -618,7 +732,13 @@
                                                     "assignedAt":  "2026-08-26T03:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-21T02:24:48Z",
+                                           "issue_number":  420,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/420",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-021",
@@ -645,7 +765,13 @@
                                                     "unassignedAt":  "2026-08-19T14:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-15T02:24:48Z",
+                                           "issue_number":  421,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/421",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-022",
@@ -672,7 +798,13 @@
                                                     "unassignedAt":  "2026-08-20T11:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-16T02:24:48Z",
+                                           "issue_number":  422,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/422",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-023",
@@ -714,7 +846,13 @@
                                                     "assignedAt":  "2026-09-10T14:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-17T02:24:48Z",
+                                           "issue_number":  423,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/423",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-024",
@@ -745,7 +883,13 @@
                                                     "assignedAt":  "2026-08-30T16:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-18T02:24:48Z",
+                                           "issue_number":  424,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/424",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-025",
@@ -777,7 +921,13 @@
                                                     "assignedAt":  "2026-08-25T16:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-19T02:24:48Z",
+                                           "issue_number":  425,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/425",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-026",
@@ -808,7 +958,13 @@
                                                     "assignedAt":  "2026-09-06T05:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-20T02:24:48Z",
+                                           "issue_number":  426,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/426",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-027",
@@ -841,7 +997,13 @@
                                                     "unassignedAt":  "2026-08-27T14:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-21T02:24:48Z",
+                                           "issue_number":  427,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/427",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-028",
@@ -873,7 +1035,13 @@
                                                     "assignedAt":  "2026-09-01T14:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-15T02:24:48Z",
+                                           "issue_number":  428,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/428",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-029",
@@ -912,7 +1080,13 @@
                                                     "assignedAt":  "2026-09-03T01:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-16T02:24:48Z",
+                                           "issue_number":  429,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/429",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-030",
@@ -940,7 +1114,13 @@
                                                     "unassignedAt":  "2026-08-30T16:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-17T02:24:48Z",
+                                           "issue_number":  430,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/430",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-031",
@@ -973,7 +1153,13 @@
                                                     "unassignedAt":  "2026-08-29T14:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-18T02:24:48Z",
+                                           "issue_number":  431,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/431",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-032",
@@ -999,7 +1185,13 @@
                                                     "assignedAt":  "2026-08-28T10:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-19T02:24:48Z",
+                                           "issue_number":  432,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/432",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-033",
@@ -1027,7 +1219,13 @@
                                                     "unassignedAt":  "2026-08-31T09:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-20T02:24:48Z",
+                                           "issue_number":  433,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/433",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-034",
@@ -1054,7 +1252,13 @@
                                                     "assignedAt":  "2026-08-30T14:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-21T02:24:48Z",
+                                           "issue_number":  434,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/434",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-035",
@@ -1080,7 +1284,13 @@
                                                     "assignedAt":  "2026-08-31T10:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-15T02:24:48Z",
+                                           "issue_number":  435,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/435",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-036",
@@ -1112,7 +1322,13 @@
                                                     "assignedAt":  "2026-09-02T13:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-16T02:24:48Z",
+                                           "issue_number":  436,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/436",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-037",
@@ -1148,7 +1364,13 @@
                                                     "assignedAt":  "2026-09-17T14:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-17T02:24:48Z",
+                                           "issue_number":  437,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/437",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-038",
@@ -1180,7 +1402,13 @@
                                                     "assignedAt":  "2026-09-13T06:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-18T02:24:48Z",
+                                           "issue_number":  438,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/438",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-039",
@@ -1217,7 +1445,13 @@
                                                     "assignedAt":  "2026-09-20T06:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-19T02:24:48Z",
+                                           "issue_number":  439,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/439",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-040",
@@ -1244,7 +1478,13 @@
                                                     "assignedAt":  "2026-09-03T09:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-20T02:24:48Z",
+                                           "issue_number":  440,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/440",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-041",
@@ -1271,7 +1511,13 @@
                                                     "unassignedAt":  "2026-09-05T16:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-21T02:24:48Z",
+                                           "issue_number":  441,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/441",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-042",
@@ -1298,7 +1544,13 @@
                                                     "assignedAt":  "2026-09-04T10:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-15T02:24:48Z",
+                                           "issue_number":  442,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/442",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-043",
@@ -1329,7 +1581,13 @@
                                                     "assignedAt":  "2026-09-10T17:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-16T02:24:48Z",
+                                           "issue_number":  443,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/443",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-044",
@@ -1357,7 +1615,13 @@
                                                     "unassignedAt":  "2026-09-07T11:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-17T02:24:48Z",
+                                           "issue_number":  444,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/444",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-045",
@@ -1383,7 +1647,13 @@
                                                     "assignedAt":  "2026-09-05T11:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-18T02:24:48Z",
+                                           "issue_number":  445,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/445",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-046",
@@ -1414,7 +1684,13 @@
                                                     "assignedAt":  "2026-09-16T14:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-19T02:24:48Z",
+                                           "issue_number":  446,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/446",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-047",
@@ -1441,7 +1717,13 @@
                                                     "assignedAt":  "2026-09-06T14:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-20T02:24:48Z",
+                                           "issue_number":  447,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/447",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-048",
@@ -1473,7 +1755,13 @@
                                                     "assignedAt":  "2026-09-14T09:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-21T02:24:48Z",
+                                           "issue_number":  448,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/448",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-049",
@@ -1499,7 +1787,13 @@
                                                     "assignedAt":  "2026-09-07T11:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-15T02:24:48Z",
+                                           "issue_number":  449,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/449",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-050",
@@ -1531,7 +1825,13 @@
                                                     "assignedAt":  "2026-09-21T20:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-16T02:24:48Z",
+                                           "issue_number":  450,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/450",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-051",
@@ -1557,7 +1857,13 @@
                                                     "assignedAt":  "2026-09-08T14:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-17T02:24:48Z",
+                                           "issue_number":  451,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/451",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-052",
@@ -1585,7 +1891,13 @@
                                                     "unassignedAt":  "2026-09-09T10:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-18T02:24:48Z",
+                                           "issue_number":  452,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/452",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-053",
@@ -1611,7 +1923,13 @@
                                                     "assignedAt":  "2026-09-09T09:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-19T02:24:48Z",
+                                           "issue_number":  453,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/453",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-054",
@@ -1637,7 +1955,13 @@
                                                     "assignedAt":  "2026-09-09T10:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-20T02:24:48Z",
+                                           "issue_number":  454,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/454",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-055",
@@ -1668,7 +1992,13 @@
                                                     "assignedAt":  "2026-09-11T02:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-21T02:24:48Z",
+                                           "issue_number":  455,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/455",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-056",
@@ -1700,7 +2030,13 @@
                                                     "assignedAt":  "2026-09-19T08:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-15T02:24:48Z",
+                                           "issue_number":  456,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/456",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-057",
@@ -1731,7 +2067,13 @@
                                                     "assignedAt":  "2026-09-11T04:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-16T02:24:48Z",
+                                           "issue_number":  457,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/457",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-058",
@@ -1758,7 +2100,13 @@
                                                     "unassignedAt":  "2026-09-09T18:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-17T02:24:48Z",
+                                           "issue_number":  458,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/458",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-059",
@@ -1784,7 +2132,13 @@
                                                     "assignedAt":  "2026-09-09T17:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-18T02:24:48Z",
+                                           "issue_number":  459,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/459",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-060",
@@ -1811,7 +2165,13 @@
                                                     "unassignedAt":  "2026-09-09T20:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-19T02:24:48Z",
+                                           "issue_number":  460,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/460",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-061",
@@ -1850,7 +2210,13 @@
                                                     "assignedAt":  "2026-09-12T13:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-20T02:24:48Z",
+                                           "issue_number":  461,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/461",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-062",
@@ -1876,7 +2242,13 @@
                                                     "assignedAt":  "2026-09-09T20:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-21T02:24:48Z",
+                                           "issue_number":  462,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/462",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-063",
@@ -1907,7 +2279,13 @@
                                                     "assignedAt":  "2026-09-19T10:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-15T02:24:48Z",
+                                           "issue_number":  463,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/463",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-064",
@@ -1933,7 +2311,13 @@
                                                     "assignedAt":  "2026-09-09T22:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-16T02:24:48Z",
+                                           "issue_number":  464,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/464",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-065",
@@ -1960,7 +2344,13 @@
                                                     "assignedAt":  "2026-09-09T23:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-17T02:24:48Z",
+                                           "issue_number":  465,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/465",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-066",
@@ -1987,7 +2377,13 @@
                                                     "unassignedAt":  "2026-09-10T14:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-18T02:24:48Z",
+                                           "issue_number":  466,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/466",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-067",
@@ -2019,7 +2415,13 @@
                                                     "assignedAt":  "2026-09-20T19:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-19T02:24:48Z",
+                                           "issue_number":  467,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/467",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-068",
@@ -2051,7 +2453,13 @@
                                                     "assignedAt":  "2026-09-22T11:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-20T02:24:48Z",
+                                           "issue_number":  468,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/468",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-069",
@@ -2082,7 +2490,13 @@
                                                     "assignedAt":  "2026-09-12T22:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-21T02:24:48Z",
+                                           "issue_number":  469,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/469",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-070",
@@ -2113,7 +2527,13 @@
                                                     "assignedAt":  "2026-09-19T05:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "socialseed-tasker"
+                       "project_id":  "socialseed-tasker",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-15T02:24:48Z",
+                                           "issue_number":  470,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/470",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-071",
@@ -2141,7 +2561,13 @@
                                                     "unassignedAt":  "2026-09-10T16:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "auth-service"
+                       "project_id":  "auth-service",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-16T02:24:48Z",
+                                           "issue_number":  471,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/471",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-072",
@@ -2172,7 +2598,13 @@
                                                     "assignedAt":  "2026-09-19T23:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "auth-service"
+                       "project_id":  "auth-service",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-17T02:24:48Z",
+                                           "issue_number":  472,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/472",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-073",
@@ -2199,7 +2631,13 @@
                                                     "assignedAt":  "2026-09-10T16:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "auth-service"
+                       "project_id":  "auth-service",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-18T02:24:48Z",
+                                           "issue_number":  473,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/473",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-074",
@@ -2226,7 +2664,13 @@
                                                     "unassignedAt":  "2026-09-10T19:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "auth-service"
+                       "project_id":  "auth-service",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-19T02:24:48Z",
+                                           "issue_number":  474,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/474",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-075",
@@ -2253,7 +2697,13 @@
                                                     "assignedAt":  "2026-09-10T18:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "auth-service"
+                       "project_id":  "auth-service",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-20T02:24:48Z",
+                                           "issue_number":  475,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/475",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-076",
@@ -2284,7 +2734,13 @@
                                                     "assignedAt":  "2026-09-23T17:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "auth-service"
+                       "project_id":  "auth-service",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-21T02:24:48Z",
+                                           "issue_number":  476,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/476",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-077",
@@ -2316,7 +2772,13 @@
                                                     "assignedAt":  "2026-09-25T13:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "auth-service"
+                       "project_id":  "auth-service",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-15T02:24:48Z",
+                                           "issue_number":  477,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/477",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-078",
@@ -2347,7 +2809,13 @@
                                                     "assignedAt":  "2026-09-15T20:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "auth-service"
+                       "project_id":  "auth-service",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-16T02:24:48Z",
+                                           "issue_number":  478,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/478",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-079",
@@ -2373,7 +2841,13 @@
                                                     "assignedAt":  "2026-09-10T22:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "auth-service"
+                       "project_id":  "auth-service",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-17T02:24:48Z",
+                                           "issue_number":  479,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/479",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-080",
@@ -2400,7 +2874,13 @@
                                                     "unassignedAt":  "2026-09-11T01:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "auth-service"
+                       "project_id":  "auth-service",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-18T02:24:48Z",
+                                           "issue_number":  480,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/480",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-081",
@@ -2439,7 +2919,13 @@
                                                     "assignedAt":  "2026-09-25T05:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "auth-service"
+                       "project_id":  "auth-service",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-19T02:24:48Z",
+                                           "issue_number":  481,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/481",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-082",
@@ -2465,7 +2951,13 @@
                                                     "assignedAt":  "2026-09-11T10:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "auth-service"
+                       "project_id":  "auth-service",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-20T02:24:48Z",
+                                           "issue_number":  482,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/482",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-083",
@@ -2491,7 +2983,13 @@
                                                     "assignedAt":  "2026-09-11T11:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "auth-service"
+                       "project_id":  "auth-service",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-21T02:24:48Z",
+                                           "issue_number":  483,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/483",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-084",
@@ -2517,7 +3015,13 @@
                                                     "assignedAt":  "2026-09-11T12:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "auth-service"
+                       "project_id":  "auth-service",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-15T02:24:48Z",
+                                           "issue_number":  484,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/484",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-085",
@@ -2548,7 +3052,13 @@
                                                     "assignedAt":  "2026-09-17T08:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "auth-service"
+                       "project_id":  "auth-service",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-16T02:24:48Z",
+                                           "issue_number":  485,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/485",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-086",
@@ -2574,7 +3084,13 @@
                                                     "assignedAt":  "2026-09-11T14:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "api-gateway"
+                       "project_id":  "api-gateway",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-17T02:24:48Z",
+                                           "issue_number":  486,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/486",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-087",
@@ -2606,7 +3122,13 @@
                                                     "assignedAt":  "2026-09-21T02:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "api-gateway"
+                       "project_id":  "api-gateway",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-18T02:24:48Z",
+                                           "issue_number":  487,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/487",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-088",
@@ -2633,7 +3155,13 @@
                                                     "assignedAt":  "2026-09-11T16:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "api-gateway"
+                       "project_id":  "api-gateway",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-19T02:24:48Z",
+                                           "issue_number":  488,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/488",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-089",
@@ -2660,7 +3188,13 @@
                                                     "assignedAt":  "2026-09-11T17:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "api-gateway"
+                       "project_id":  "api-gateway",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-20T02:24:48Z",
+                                           "issue_number":  489,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/489",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-090",
@@ -2686,7 +3220,13 @@
                                                     "assignedAt":  "2026-09-11T18:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "api-gateway"
+                       "project_id":  "api-gateway",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-21T02:24:48Z",
+                                           "issue_number":  490,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/490",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-091",
@@ -2718,7 +3258,13 @@
                                                     "assignedAt":  "2026-09-21T20:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "api-gateway"
+                       "project_id":  "api-gateway",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-15T02:24:48Z",
+                                           "issue_number":  491,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/491",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-092",
@@ -2745,7 +3291,13 @@
                                                     "assignedAt":  "2026-09-11T20:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "api-gateway"
+                       "project_id":  "api-gateway",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-16T02:24:48Z",
+                                           "issue_number":  492,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/492",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-093",
@@ -2776,7 +3328,13 @@
                                                     "assignedAt":  "2026-09-17T01:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "api-gateway"
+                       "project_id":  "api-gateway",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-17T02:24:48Z",
+                                           "issue_number":  493,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/493",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-094",
@@ -2802,7 +3360,13 @@
                                                     "assignedAt":  "2026-09-11T22:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "api-gateway"
+                       "project_id":  "api-gateway",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-18T02:24:48Z",
+                                           "issue_number":  494,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/494",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-095",
@@ -2829,7 +3393,13 @@
                                                     "assignedAt":  "2026-09-11T23:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "api-gateway"
+                       "project_id":  "api-gateway",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-19T02:24:48Z",
+                                           "issue_number":  495,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/495",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-096",
@@ -2856,7 +3426,13 @@
                                                     "assignedAt":  "2026-09-12T09:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "api-gateway"
+                       "project_id":  "api-gateway",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-20T02:24:48Z",
+                                           "issue_number":  496,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/496",
+                                           "sync_status":  "SYNCED"
+                                       }
                    },
                    {
                        "id":  "ISS-097",
@@ -2882,7 +3458,13 @@
                                                     "assignedAt":  "2026-09-12T10:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "api-gateway"
+                       "project_id":  "api-gateway",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-21T02:24:48Z",
+                                           "issue_number":  497,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/497",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-098",
@@ -2908,7 +3490,13 @@
                                                     "assignedAt":  "2026-09-12T11:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "api-gateway"
+                       "project_id":  "api-gateway",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-15T02:24:48Z",
+                                           "issue_number":  498,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/498",
+                                           "sync_status":  "ERROR"
+                                       }
                    },
                    {
                        "id":  "ISS-100",
@@ -2951,7 +3539,13 @@
                                                     "assignedAt":  "2026-09-12T13:00:00.000Z"
                                                 }
                                             ],
-                       "project_id":  "api-gateway"
+                       "project_id":  "api-gateway",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-17T02:24:48Z",
+                                           "issue_number":  500,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/500",
+                                           "sync_status":  "PENDING_PUSH"
+                                       }
                    },
                    {
                        "id":  "ISS-101",
@@ -2984,7 +3578,13 @@
                        "assignee_history":  [
 
                                             ],
-                       "project_id":  "api-gateway"
+                       "project_id":  "api-gateway",
+                       "github_sync":  {
+                                           "last_synced_at":  "2026-09-18T02:24:48Z",
+                                           "issue_number":  501,
+                                           "github_url":  "https://github.com/daironpf/socialseed-tasker/issues/501",
+                                           "sync_status":  "ERROR"
+                                       }
                    }
                ]
 }

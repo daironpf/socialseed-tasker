@@ -121,6 +121,17 @@
     "noProjectIssues": "No hay issues en este proyecto",
     "noProjectIssuesHint": "Cambia de proyecto o crea un nuevo issue para comenzar"
   },
+  "githubSync": {
+    "title": "Sincronización con GitHub",
+    "status": {
+      "SYNCED": "Sincronizado",
+      "PENDING_PUSH": "Pendiente",
+      "ERROR": "Error"
+    },
+    "lastSynced": "Última sincronización",
+    "forceResync": "Forzar Re-sincronización",
+    "syncing": "Sincronizando..."
+  },
   "components": {
     "title": "Componentes",
     "newComponent": "+ Nuevo Componente",

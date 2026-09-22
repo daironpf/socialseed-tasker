@@ -120,6 +120,17 @@
     "noProjectIssues": "No issues in this project",
     "noProjectIssuesHint": "Switch projects or create a new issue to get started"
   },
+  "githubSync": {
+    "title": "GitHub Sync",
+    "status": {
+      "SYNCED": "Synced",
+      "PENDING_PUSH": "Pending",
+      "ERROR": "Error"
+    },
+    "lastSynced": "Last synced",
+    "forceResync": "Force Re-sync",
+    "syncing": "Syncing..."
+  },
   "components": {
     "title": "Components",
     "newComponent": "+ New Component",
