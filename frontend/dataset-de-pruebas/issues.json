@@ -44,7 +44,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-002",
@@ -84,7 +95,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-003",
@@ -147,7 +173,26 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification."
                    },
                    {
                        "id":  "ISS-004",
@@ -186,7 +231,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-005",
@@ -235,7 +287,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-006",
@@ -281,7 +344,22 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/models/issue.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading."
                    },
                    {
                        "id":  "ISS-007",
@@ -320,7 +398,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-008",
@@ -370,7 +467,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-009",
@@ -410,7 +514,18 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable."
                    },
                    {
                        "id":  "ISS-010",
@@ -465,7 +580,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-011",
@@ -504,7 +634,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-012",
@@ -550,7 +699,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility."
                    },
                    {
                        "id":  "ISS-013",
@@ -591,7 +747,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-014",
@@ -630,7 +797,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-015",
@@ -669,7 +851,26 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "backend/models/issue.py"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently."
                    },
                    {
                        "id":  "ISS-016",
@@ -714,7 +915,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-017",
@@ -753,7 +961,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-018",
@@ -794,7 +1013,22 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification."
                    },
                    {
                        "id":  "ISS-019",
@@ -834,7 +1068,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-020",
@@ -879,7 +1132,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-021",
@@ -919,7 +1179,18 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading."
                    },
                    {
                        "id":  "ISS-022",
@@ -959,7 +1230,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-023",
@@ -1014,7 +1300,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-024",
@@ -1059,7 +1364,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable."
                    },
                    {
                        "id":  "ISS-025",
@@ -1104,7 +1416,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-026",
@@ -1148,7 +1471,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/models/issue.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-027",
@@ -1194,7 +1532,26 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility."
                    },
                    {
                        "id":  "ISS-028",
@@ -1239,7 +1596,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-029",
@@ -1291,7 +1655,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-030",
@@ -1332,7 +1707,22 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently."
                    },
                    {
                        "id":  "ISS-031",
@@ -1378,7 +1768,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-032",
@@ -1417,7 +1826,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-033",
@@ -1458,7 +1874,18 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification."
                    },
                    {
                        "id":  "ISS-034",
@@ -1498,7 +1925,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-035",
@@ -1537,7 +1979,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "backend/models/issue.py"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-036",
@@ -1583,7 +2044,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading."
                    },
                    {
                        "id":  "ISS-037",
@@ -1632,7 +2100,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-038",
@@ -1677,7 +2156,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-039",
@@ -1727,7 +2221,26 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable."
                    },
                    {
                        "id":  "ISS-040",
@@ -1767,7 +2280,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-041",
@@ -1807,7 +2327,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-042",
@@ -1847,7 +2378,22 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility."
                    },
                    {
                        "id":  "ISS-043",
@@ -1891,7 +2437,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-044",
@@ -1932,7 +2497,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-045",
@@ -1971,7 +2543,18 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently."
                    },
                    {
                        "id":  "ISS-046",
@@ -2015,7 +2598,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/models/issue.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-047",
@@ -2055,7 +2653,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-048",
@@ -2101,7 +2718,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification."
                    },
                    {
                        "id":  "ISS-049",
@@ -2140,7 +2764,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-050",
@@ -2185,7 +2820,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-051",
@@ -2224,7 +2874,26 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading."
                    },
                    {
                        "id":  "ISS-052",
@@ -2265,7 +2934,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-053",
@@ -2304,7 +2980,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-054",
@@ -2343,7 +3030,22 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable."
                    },
                    {
                        "id":  "ISS-055",
@@ -2387,7 +3089,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "backend/models/issue.py"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-056",
@@ -2432,7 +3153,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-057",
@@ -2476,7 +3204,18 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility."
                    },
                    {
                        "id":  "ISS-058",
@@ -2516,7 +3255,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-059",
@@ -2555,7 +3309,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-060",
@@ -2596,7 +3369,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently."
                    },
                    {
                        "id":  "ISS-061",
@@ -2648,7 +3428,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-062",
@@ -2687,7 +3478,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-063",
@@ -2731,7 +3537,26 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification."
                    },
                    {
                        "id":  "ISS-064",
@@ -2770,7 +3595,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-065",
@@ -2810,7 +3642,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-066",
@@ -2850,7 +3693,22 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/models/issue.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading."
                    },
                    {
                        "id":  "ISS-067",
@@ -2895,7 +3753,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-068",
@@ -2940,7 +3817,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-069",
@@ -2984,7 +3868,18 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable."
                    },
                    {
                        "id":  "ISS-070",
@@ -3028,7 +3923,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-071",
@@ -3069,7 +3979,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-072",
@@ -3114,7 +4043,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility."
                    },
                    {
                        "id":  "ISS-073",
@@ -3154,7 +4090,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-074",
@@ -3194,7 +4141,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-075",
@@ -3234,7 +4196,26 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "backend/models/issue.py"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently."
                    },
                    {
                        "id":  "ISS-076",
@@ -3278,7 +4259,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-077",
@@ -3323,7 +4311,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-078",
@@ -3367,7 +4366,22 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification."
                    },
                    {
                        "id":  "ISS-079",
@@ -3406,7 +4420,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-080",
@@ -3446,7 +4479,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-081",
@@ -3498,7 +4538,18 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading."
                    },
                    {
                        "id":  "ISS-082",
@@ -3537,7 +4588,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-083",
@@ -3576,7 +4642,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-084",
@@ -3616,7 +4701,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable."
                    },
                    {
                        "id":  "ISS-085",
@@ -3660,7 +4752,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-086",
@@ -3699,7 +4802,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/models/issue.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-087",
@@ -3744,7 +4862,26 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility."
                    },
                    {
                        "id":  "ISS-088",
@@ -3784,7 +4921,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-089",
@@ -3824,7 +4968,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-090",
@@ -3863,7 +5018,22 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently."
                    },
                    {
                        "id":  "ISS-091",
@@ -3908,7 +5078,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-092",
@@ -3948,7 +5137,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-093",
@@ -3992,7 +5188,18 @@
                                                                     "Missing Solution Summary"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/components/ui/MarkdownRenderer.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification."
                    },
                    {
                        "id":  "ISS-094",
@@ -4031,7 +5238,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/types/index.ts"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-095",
@@ -4071,7 +5293,26 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/api/views.py"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "backend/models/issue.py"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-096",
@@ -4112,7 +5353,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  false
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "backend/models/issue.py"
+                                              }
+                                          ],
+                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading."
                    },
                    {
                        "id":  "ISS-097",
@@ -4151,7 +5399,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/KanbanView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-098",
@@ -4190,7 +5449,22 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/locales/en.json"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "mock-api/server.py"
+                                              },
+                                              {
+                                                  "change_type":  "DELETED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-100",
@@ -4246,7 +5520,14 @@
                                                                     "No affected files linked"
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/stores/issuesStore.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    },
                    {
                        "id":  "ISS-101",
@@ -4292,7 +5573,18 @@
 
                                                                 ],
                                           "has_solution_summary":  true
-                                      }
+                                      },
+                       "affected_files":  [
+                                              {
+                                                  "change_type":  "CREATED",
+                                                  "path":  "frontend/src/views/IssueDetailView.vue"
+                                              },
+                                              {
+                                                  "change_type":  "EDITED",
+                                                  "path":  "frontend/src/api/client.ts"
+                                              }
+                                          ],
+                       "technical_debt_notes":  null
                    }
                ]
 }

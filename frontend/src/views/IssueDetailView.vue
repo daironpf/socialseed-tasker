@@ -221,6 +221,39 @@
         <div class="h-6 w-6 animate-spin rounded-full border-4 border-cyan-500 border-t-transparent"></div>
       </div>
       <template v-else>
+        <!-- Affected Files Section -->
+        <div v-if="issue.affected_files && issue.affected_files.length > 0">
+          <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">{{ t('issues.affectedFiles') }}</h4>
+          <div class="space-y-2">
+            <div
+              v-for="(file, idx) in issue.affected_files"
+              :key="idx"
+              class="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2"
+            >
+              <span
+                class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold"
+                :class="{
+                  'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300': file.change_type === 'CREATED',
+                  'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300': file.change_type === 'EDITED',
+                  'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300': file.change_type === 'DELETED'
+                }"
+              >
+                {{ t(`issues.changeType.${file.change_type}`) }}
+              </span>
+              <code class="text-xs text-gray-600 dark:text-gray-400 font-mono">{{ file.path }}</code>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="issue.affected_files !== undefined" class="text-sm text-gray-400">{{ t('issues.noAffectedFiles') }}</div>
+
+        <!-- Technical Debt Notes Section -->
+        <div v-if="issue.technical_debt_notes">
+          <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">{{ t('issues.techDebtNotes') }}</h4>
+          <div class="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10 p-4">
+            <MarkdownRenderer :content="issue.technical_debt_notes" />
+          </div>
+        </div>
+
         <div v-if="progressLogs.length > 0">
           <h4 class="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">{{ t('issues.taskChecklist') }}</h4>
           <div

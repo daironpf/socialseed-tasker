@@ -116,6 +116,14 @@
     "filesChanged": "Archivos Modificados",
     "technicalDebt": "Deuda Tecnica",
     "noProgressData": "No hay datos de progreso para este issue",
+    "affectedFiles": "Archivos Afectados",
+    "noAffectedFiles": "No hay archivos afectados por este issue",
+    "techDebtNotes": "Notas de Deuda Técnica",
+    "changeType": {
+      "CREATED": "NUEVO",
+      "EDITED": "EDITADO",
+      "DELETED": "ELIMINADO"
+    },
     "addLabelPlaceholder": "Agregar label...",
     "dependencies": "Dependencias",
     "noProjectIssues": "No hay issues en este proyecto",

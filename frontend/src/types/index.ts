@@ -35,6 +35,8 @@ export interface Issue {
   assignee_history?: AssigneeHistoryEntry[]
   github_sync?: GitHubSync
   governance?: GovernanceValidation
+  affected_files?: AffectedFile[]
+  technical_debt_notes?: string
 }
 
 export interface AssigneeHistoryEntry {
@@ -54,6 +56,11 @@ export interface GovernanceValidation {
   has_solution_summary: boolean
   has_file_impact: boolean
   policy_violations: string[]
+}
+
+export interface AffectedFile {
+  path: string
+  change_type: 'CREATED' | 'EDITED' | 'DELETED'
 }
 
 export interface Component {
