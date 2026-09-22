@@ -148,6 +148,10 @@
     "fixIssues": "Fix Issues",
     "override": "Override"
   },
+  "agent": {
+    "killSwitch": "Stop Agent",
+    "agentStopped": "Agent stopped"
+  },
   "components": {
     "title": "Components",
     "newComponent": "+ New Component",

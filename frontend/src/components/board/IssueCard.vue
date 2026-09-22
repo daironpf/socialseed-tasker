@@ -1,6 +1,6 @@
 <template>
   <div
-    class="rounded-lg border bg-white p-3 shadow-sm transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700 relative"
+    class="rounded-lg border bg-white p-3 shadow-sm transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700 relative group"
     :class="{
       'border-l-4 border-l-red-500': issue.priority === 'CRITICAL',
       'border-l-4 border-l-orange-400': issue.priority === 'HIGH',
@@ -10,15 +10,24 @@
     @dragstart="onDragStart"
     @click="onClick"
   >
-    <!-- Agent working indicator -->
+    <!-- Agent working indicator with timer -->
     <div
       v-if="issue.agent_working"
-      class="absolute -top-1.5 -right-1.5 bg-cyan-500 text-white rounded-full p-1 shadow-lg animate-pulse"
-      :title="t('issues.aiAgentActive')"
+      class="absolute -top-1.5 -right-1.5 flex items-center gap-1"
     >
-      <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2M7.5 13A2.5 2.5 0 005 15.5 2.5 2.5 0 007.5 18h9a2.5 2.5 0 002.5-2.5 2.5 2.5 0 00-2.5-2.5h-9z"/>
-      </svg>
+      <span class="text-[10px] font-medium text-cyan-600 dark:text-cyan-400 bg-white dark:bg-gray-800 rounded-full px-1.5 py-0.5 shadow">
+        {{ elapsed }}
+      </span>
+      <button
+        class="bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+        :title="t('agent.killSwitch')"
+        @click.stop="killAgent"
+      >
+        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+        </svg>
+      </button>
     </div>
     <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2">
       {{ issue.title }}
@@ -43,12 +52,17 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
 import type { Issue } from '@/types'
+import { useIssuesStore } from '@/stores/issuesStore'
+import { useUiStore } from '@/stores/uiStore'
 import PriorityBadge from '@/components/ui/PriorityBadge.vue'
 import LabelTag from '@/components/ui/LabelTag.vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
+const issuesStore = useIssuesStore()
+const uiStore = useUiStore()
 
 const props = defineProps<{
   issue: Issue
@@ -58,6 +72,50 @@ const props = defineProps<{
 const emit = defineEmits<{
   select: [issue: Issue]
 }>()
+
+const elapsed = ref('0m 0s')
+let timerInterval: ReturnType<typeof setInterval> | null = null
+
+function calculateElapsed() {
+  if (!props.issue.agent_working || !props.issue.agent_working_started_at) {
+    elapsed.value = '0m 0s'
+    return
+  }
+  const start = new Date(props.issue.agent_working_started_at).getTime()
+  const now = Date.now()
+  const diff = Math.max(0, now - start)
+  const totalSeconds = Math.floor(diff / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  if (hours > 0) {
+    elapsed.value = `${hours}h ${minutes}m ${seconds}s`
+  } else {
+    elapsed.value = `${minutes}m ${seconds}s`
+  }
+}
+
+onMounted(() => {
+  if (props.issue.agent_working) {
+    calculateElapsed()
+    timerInterval = setInterval(calculateElapsed, 1000)
+  }
+})
+
+onUnmounted(() => {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+})
+
+function killAgent() {
+  issuesStore.updateIssue(props.issue.id, {
+    agent_working: false,
+    agent_working_started_at: null
+  })
+  uiStore.simulateSync()
+}
 
 function onDragStart(event: DragEvent) {
   event.dataTransfer?.setData('application/json', JSON.stringify(props.issue))

@@ -55,7 +55,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-002",
@@ -110,7 +111,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-003",
@@ -192,7 +194,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification."
+                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification.",
+                       "agent_working_started_at":  "2026-09-22T02:29:28Z"
                    },
                    {
                        "id":  "ISS-004",
@@ -238,7 +241,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-005",
@@ -298,7 +302,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-006",
@@ -359,7 +364,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading."
+                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-007",
@@ -417,7 +423,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-008",
@@ -474,7 +481,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-009",
@@ -525,7 +533,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable."
+                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-010",
@@ -595,7 +604,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-011",
@@ -653,7 +663,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-012",
@@ -706,7 +717,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility."
+                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-013",
@@ -758,7 +770,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-014",
@@ -812,7 +825,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-015",
@@ -870,7 +884,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently."
+                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-016",
@@ -922,7 +937,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-017",
@@ -972,7 +988,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-018",
@@ -1028,7 +1045,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification."
+                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-019",
@@ -1087,7 +1105,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-020",
@@ -1139,7 +1158,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-021",
@@ -1190,7 +1210,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading."
+                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-022",
@@ -1245,7 +1266,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-023",
@@ -1319,7 +1341,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-024",
@@ -1371,7 +1394,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable."
+                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-025",
@@ -1427,7 +1451,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-026",
@@ -1486,7 +1511,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-027",
@@ -1551,7 +1577,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility."
+                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-028",
@@ -1603,7 +1630,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-029",
@@ -1666,7 +1694,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  "2026-09-22T01:31:28Z"
                    },
                    {
                        "id":  "ISS-030",
@@ -1722,7 +1751,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently."
+                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-031",
@@ -1787,7 +1817,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-032",
@@ -1833,7 +1864,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-033",
@@ -1885,7 +1917,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification."
+                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-034",
@@ -1940,7 +1973,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-035",
@@ -1998,7 +2032,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-036",
@@ -2051,7 +2086,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading."
+                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-037",
@@ -2111,7 +2147,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-038",
@@ -2171,7 +2208,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-039",
@@ -2240,7 +2278,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable."
+                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-040",
@@ -2287,7 +2326,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-041",
@@ -2338,7 +2378,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-042",
@@ -2393,7 +2434,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility."
+                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-043",
@@ -2456,7 +2498,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-044",
@@ -2504,7 +2547,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-045",
@@ -2554,7 +2598,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently."
+                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-046",
@@ -2613,7 +2658,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-047",
@@ -2672,7 +2718,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-048",
@@ -2725,7 +2772,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification."
+                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-049",
@@ -2775,7 +2823,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-050",
@@ -2835,7 +2884,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-051",
@@ -2893,7 +2943,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading."
+                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-052",
@@ -2941,7 +2992,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-053",
@@ -2991,7 +3043,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-054",
@@ -3045,7 +3098,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable."
+                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-055",
@@ -3108,7 +3162,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-056",
@@ -3160,7 +3215,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-057",
@@ -3215,7 +3271,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility."
+                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-058",
@@ -3270,7 +3327,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-059",
@@ -3328,7 +3386,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-060",
@@ -3376,7 +3435,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently."
+                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-061",
@@ -3439,7 +3499,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  "2026-09-22T02:10:28Z"
                    },
                    {
                        "id":  "ISS-062",
@@ -3493,7 +3554,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-063",
@@ -3556,7 +3618,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification."
+                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-064",
@@ -3602,7 +3665,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-065",
@@ -3653,7 +3717,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-066",
@@ -3708,7 +3773,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading."
+                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-067",
@@ -3772,7 +3838,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-068",
@@ -3824,7 +3891,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-069",
@@ -3879,7 +3947,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable."
+                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-070",
@@ -3938,7 +4007,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-071",
@@ -3998,7 +4068,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-072",
@@ -4050,7 +4121,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility."
+                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-073",
@@ -4101,7 +4173,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-074",
@@ -4156,7 +4229,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-075",
@@ -4215,7 +4289,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently."
+                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-076",
@@ -4266,7 +4341,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-077",
@@ -4322,7 +4398,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-078",
@@ -4381,7 +4458,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification."
+                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-079",
@@ -4439,7 +4517,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-080",
@@ -4486,7 +4565,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-081",
@@ -4549,7 +4629,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading."
+                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading.",
+                       "agent_working_started_at":  "2026-09-22T01:26:28Z"
                    },
                    {
                        "id":  "ISS-082",
@@ -4603,7 +4684,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-083",
@@ -4661,7 +4743,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-084",
@@ -4708,7 +4791,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable."
+                       "technical_debt_notes":  "**Code duplication**: Status change logic duplicated between KanbanView.vue and IssueDetailView.vue. Extract to composable.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-085",
@@ -4763,7 +4847,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-086",
@@ -4817,7 +4902,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-087",
@@ -4881,7 +4967,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility."
+                       "technical_debt_notes":  "**Magic numbers**: Token estimation uses length / 4 constant. Extract to shared utility.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-088",
@@ -4928,7 +5015,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-089",
@@ -4979,7 +5067,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-090",
@@ -5033,7 +5122,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently."
+                       "technical_debt_notes":  "**Deprecated API**: issue.status checked via string comparison instead of enum. Refactor to use IssueStatus enum consistently.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-091",
@@ -5097,7 +5187,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-092",
@@ -5144,7 +5235,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-093",
@@ -5199,7 +5291,8 @@
                                                   "path":  "frontend/src/types/index.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification."
+                       "technical_debt_notes":  "**Missing error handling**: save() function does not handle API errors gracefully. Add try/catch with user notification.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-094",
@@ -5253,7 +5346,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-095",
@@ -5312,7 +5406,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-096",
@@ -5360,7 +5455,8 @@
                                                   "path":  "backend/models/issue.py"
                                               }
                                           ],
-                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading."
+                       "technical_debt_notes":  "**Unused import**: \fetchAgentLogs imported in IssueDetailView.vue but only used in lifecycle hook. Consider lazy loading.",
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-097",
@@ -5410,7 +5506,8 @@
                                                   "path":  "frontend/src/locales/en.json"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-098",
@@ -5464,7 +5561,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    },
                    {
                        "id":  "ISS-100",
@@ -5527,7 +5625,8 @@
                                                   "path":  "frontend/src/stores/issuesStore.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  "2026-09-22T00:54:28Z"
                    },
                    {
                        "id":  "ISS-101",
@@ -5584,7 +5683,8 @@
                                                   "path":  "frontend/src/api/client.ts"
                                               }
                                           ],
-                       "technical_debt_notes":  null
+                       "technical_debt_notes":  null,
+                       "agent_working_started_at":  null
                    }
                ]
 }

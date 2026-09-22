@@ -149,6 +149,10 @@
     "fixIssues": "Corregir Problemas",
     "override": "Anular"
   },
+  "agent": {
+    "killSwitch": "Detener Agente",
+    "agentStopped": "Agente detenido"
+  },
   "components": {
     "title": "Componentes",
     "newComponent": "+ Nuevo Componente",

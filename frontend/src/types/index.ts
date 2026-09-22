@@ -32,6 +32,7 @@ export interface Issue {
   closed_at: string | null
   architectural_constraints: string[]
   agent_working?: boolean
+  agent_working_started_at?: string | null
   assignee_history?: AssigneeHistoryEntry[]
   github_sync?: GitHubSync
   governance?: GovernanceValidation
@@ -127,6 +128,8 @@ export interface IssueUpdateRequest {
   architectural_constraints?: string[]
   closed_at?: string | null
   assignee_history?: AssigneeHistoryEntry[]
+  agent_working?: boolean
+  agent_working_started_at?: string | null
 }
 
 export interface DependencyRequest {
