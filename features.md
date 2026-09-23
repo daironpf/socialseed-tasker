@@ -2,7 +2,7 @@
 
 > Complete catalog of all UI features, interactions, and capabilities currently implemented.
 > Use this document to identify gaps, plan new features, and track what is missing.
-> Last updated: 2026-09-20
+> Last updated: 2026-09-22
 
 ---
 
@@ -47,7 +47,13 @@
 37. [Executive Dashboard (ExecutiveDashboardView)](#37-executive-dashboard-executivedashboardview)
 38. [PII & Secrets Guardrail](#38-pii--secrets-guardrail)
 39. [Code Graph Overlay](#39-code-graph-overlay)
-40. [Known Gaps & Missing Features](#40-known-gaps--missing-features)
+40. [GitHub Sync Widget](#40-github-sync-widget)
+41. [Governance Validation Modal](#41-governance-validation-modal)
+42. [Network Status & Sync Indicator](#42-network-status--sync-indicator)
+43. [Agent Timer & Kill Switch](#43-agent-timer--kill-switch)
+44. [Tech Debt & Affected Files](#44-tech-debt--affected-files)
+45. [Project Filtering](#45-project-filtering)
+46. [Known Gaps & Missing Features](#46-known-gaps--missing-features)
 
 ---
 
@@ -55,12 +61,12 @@
 
 | Feature | Status | Details |
 |---|---|---|
-| Vue 3.5 + TypeScript | Implemented | Composition API, `<script setup>` |
-| Vite 6 build tool | Implemented | HMR, optimized production builds |
+| Vue 3.5 + TypeScript | Implemented | Composition API, `<script setup>`, vue-tsc type checking |
+| Vite 6 build tool | Implemented | HMR, optimized production builds, lazy-loaded routes |
 | Tailwind CSS 3 | Implemented | Dark mode via `class` strategy |
 | Pinia state management | Implemented | 19 stores |
 | Vue Router | Implemented | 22 routes + redirect + catch-all, lazy-loaded, scroll-to-top |
-| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 1000+ keys per language, localStorage persistence |
+| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 1120+ keys per language, localStorage persistence, 54 top-level sections |
 | Dark mode | Implemented | Toggle via UserMenu, localStorage persistence, system preference detection |
 | Mock API mode | Implemented | `USE_MOCK = true` in client.ts, full in-memory routing via mockApi.ts |
 | Real API mode | Implemented | Axios client, API key auth via `X-API-Key` header, 401 interceptor |
@@ -100,7 +106,8 @@
 | Feature | Status | Details |
 |---|---|---|
 | Dynamic page title | Implemented | Maps route path -> translated title (22 routes) |
-| Project selector | Implemented | `ProjectSelector` component, 4 hardcoded projects, localStorage persistence |
+| Project selector | Implemented | `ProjectSelector` component, 4 hardcoded projects, localStorage persistence, filters issues by project |
+| Sync status badge | Implemented | `SyncStatusBadge` component, shows SYNCED/OFFLINE_QUEUED/SYNCING states, animated ping dot, pending count |
 | Notification bell | Implemented | `NotificationCenter` component with unread badge |
 | UserMenu component | Implemented | Top-right corner |
 
@@ -151,9 +158,12 @@
 | **Status filter** | Implemented | Dropdown: All, OPEN, IN_PROGRESS, BLOCKED, CLOSED |
 | **Priority filter** | Implemented | Dropdown: All, CRITICAL, HIGH, MEDIUM, LOW |
 | **Component filter** | Implemented | Dynamic dropdown from store |
+| **Project filter** | Implemented | Filters issues by `project_id` matching current project selector |
 | **New Issue button** | Implemented | Opens CreateIssueModal |
 | **Export button** | Implemented | CSV/JSON export dropdown |
 | **Click row -> detail** | Implemented | Opens IssueDetailView slide-in panel |
+| **Empty state** | Implemented | "No issues in this project" with hint to switch projects |
+| **Sync simulation** | Implemented | Triggers `simulateSync()` on create/update/delete/close operations |
 | i18n | Implemented | All labels translated |
 
 ---
@@ -166,9 +176,15 @@
 | **Drag-and-drop** | Implemented | IssueCard draggable, KanbanColumn drop zones |
 | **Priority sorting** | Implemented | CRITICAL > HIGH > MEDIUM > LOW within columns |
 | **Status change on drop** | Implemented | Auto-sets `closed_at` when dropping to CLOSED |
+| **Governance check on drop** | Implemented | Blocks drop to CLOSED if governance requirements unmet, shows GovernanceValidationModal |
 | **New Issue button** | Implemented | Opens CreateIssueModal |
 | **Click card -> detail** | Implemented | Opens IssueDetailView slide-in panel |
 | **AI agent indicator** | Implemented | Pulsing cyan circle on agent_working issues |
+| **Agent timer** | Implemented | Live timer badge showing elapsed time on agent_working cards |
+| **Agent kill switch** | Implemented | Kill button on hover stops agent execution |
+| **Project filter** | Implemented | Filters issues by `project_id` matching current project selector |
+| **Empty state** | Implemented | "No issues in this project" with hint to switch projects |
+| **Sync simulation** | Implemented | Triggers `simulateSync()` on drop/update/delete/close/create operations |
 | i18n | Implemented | All labels translated |
 
 ---
@@ -178,13 +194,15 @@
 | Feature | Status | Details |
 |---|---|---|
 | **Slide-in panel** | Implemented | Right-side overlay, click-outside to close |
-| **4 tabs** | Implemented | Details, AI Reasoning, Progress, Files |
+| **4 tabs** | Implemented | Details, AI Reasoning, Progress, Audit |
 | **Details tab** | Implemented | Title, Assignee, Creator, Description (RichTextEditor), Status, Priority, Labels, Dependencies, Timestamps |
 | **Assignee management** | Implemented | Interactive select with all users, i18n "Unassigned" |
 | **Assignee history** | Implemented | Timeline with user avatars, dates, reassignment tracking |
 | **Dependency management** | Implemented | Add/remove via RelationshipModal |
+| **GitHub Sync card** | Implemented | `GitHubSyncCard` showing issue number (clickable link), sync status badge (SYNCED/PENDING_PUSH/ERROR), last synced timestamp, Force Re-sync button |
+| **Governance validation** | Implemented | Intercepts status change to CLOSED, checks `has_solution_summary` + `has_file_impact` + `policy_violations`, shows GovernanceValidationModal with Fix/Override options |
 | **AI Reasoning tab** | Implemented | Loading state, reasoning logs with MarkdownRenderer, timestamps |
-| **Progress tab** | Implemented | Task checklist, Files changed, Technical debt |
+| **Progress tab** | Implemented | Affected Files (color-coded change-type badges: NEW/EDITED/DELETED), Technical Debt Notes (amber container, Markdown rendering), Task Checklist, Files Changed, Technical Debt (agent logs) |
 | **Audit trail** | Implemented | 9 mock entries, action-type icons/colors, actor avatars |
 | **Agent log stream** | Implemented | Real-time SSE via `useAgentStream`, status indicators, auto-scroll, kill switch |
 | **HITL approval** | Implemented | HITLApprovalBanner when status is WAITING_HUMAN_APPROVAL |
@@ -266,6 +284,7 @@
 | **Code Overlay toggle** | Implemented | Show/hide AST code nodes (File/Class/Function) alongside issue nodes |
 | **Code node rendering** | Implemented | Files (cyan/database), Classes (teal/diamond), Functions (emerald/triangle) |
 | **Code node detail** | Implemented | Click code node shows file path, language, lines, type |
+| **Sync simulation** | Implemented | Triggers `simulateSync()` on update/delete/close operations |
 | i18n | Implemented | All labels translated |
 
 ---
@@ -336,16 +355,22 @@
 | Component | Purpose | Details |
 |---|---|---|
 | `Sidebar` | Main navigation | Collapsible, 3 groups, 19 nav items, i18n labels |
-| `AppHeader` | Top bar | Dynamic title (22 routes), project selector, notifications, user menu |
+| `AppHeader` | Top bar | Dynamic title (22 routes), project selector, sync status badge, notifications, user menu |
 | `UserMenu` | User dropdown | Avatar, dark mode, language, logout, profile link |
 | `NavItem` | Sidebar link | Icon + label, active state, badge |
 
 ### Board Components
 | Component | Purpose | Details |
 |---|---|---|
-| `IssueCard` | Kanban card | Draggable, status/priority badges, delete icon, AI indicator |
+| `IssueCard` | Kanban card | Draggable, status/priority badges, delete icon, AI indicator, live timer, kill switch |
 | `KanbanColumn` | Drop zone | Status-specific, drag events, empty state |
 | `CreateIssueModal` | Issue creation | Title, component, description (RichTextEditor), priority, labels |
+
+### Issue Components
+| Component | Purpose | Details |
+|---|---|---|
+| `GitHubSyncCard` | GitHub sync widget | Issue number link, sync status badge, last synced, Force Re-sync button |
+| `GovernanceValidationModal` | Closure blocker | Warning modal, violated policies, missing requirements, Fix/Override buttons |
 
 ### Dashboard Components
 | Component | Purpose | Details |
@@ -390,7 +415,8 @@
 | `KeyboardShortcutsHelp` | Shortcuts modal | Lists all registered shortcuts |
 | `CommandPalette` | Quick actions | Search-based navigation, issue/component jump |
 | `GraphFilters` | Graph filtering | Component checkboxes, status filter |
-| `ProjectSelector` | Project switcher | Dropdown with 4 projects |
+| `ProjectSelector` | Project switcher | Dropdown with 4 projects, localStorage persistence, filters all views |
+| `SyncStatusBadge` | Sync indicator | Color-coded (green/yellow/blue), animated ping dot, pending count |
 
 ### Chat Components
 | Component | Purpose | Details |
@@ -431,6 +457,7 @@
 | **Typing indicators** | Implemented | Shows when agents are typing |
 | **Conflict detection** | Implemented | Warns when multiple users edit the same field |
 | **Mock presence generation** | Implemented | Generates realistic mock presence data for demo |
+| **Sync status simulation** | Implemented | `simulateSync()` in uiStore transitions: OFFLINE_QUEUED -> SYNCING -> SYNCED |
 
 ---
 
@@ -515,8 +542,8 @@
 | Store | State | Key Actions |
 |---|---|---|
 | `authStore` | storedKey, isAuthenticated | setApiKey, clearApiKey |
-| `uiStore` | darkMode, locale, sidebarExpanded, selectedProject, filters | toggleDarkMode, setLocale, toggleSidebar, clearFilters |
-| `issuesStore` | issues[], pagination, loading, selectedIssue | fetchIssues, createIssue, updateIssue, deleteIssue, closeIssue |
+| `uiStore` | darkMode, locale, sidebarExpanded, selectedProject, filters, connectionState, pendingSyncCount | toggleDarkMode, setLocale, toggleSidebar, clearFilters, simulateSync |
+| `issuesStore` | issues[], filteredIssues, pagination, loading, selectedIssue | fetchIssues, createIssue, updateIssue, deleteIssue, closeIssue |
 | `componentsStore` | components[], loading | fetchComponents, createComponent, updateComponent, deleteComponent |
 | `usersStore` | users[], loading | fetchUsers, createUser, updateUser, deleteUser |
 | `policiesStore` | policies[], loading | fetchPolicies, createPolicy, updatePolicy, deletePolicy |
@@ -551,14 +578,14 @@
 | `useAgentStream` | `/issues/{id}/agent-logs/stream` | SSE |
 
 ### Mock API (`mockApi.ts`)
-All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api server with dataset-de-pruebas volume mount.
+All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api server with dataset-de-pruebas volume mount. Supports project filtering via `?project=` query parameter.
 
 ---
 
 ## 24. Type System
 
 ### Enums
-- `IssueStatus`: OPEN, IN_PROGRESS, BLOCKED, CLOSED
+- `IssueStatus`: OPEN, IN_PROGRESS, BLOCKED, CLOSED, WAITING_HUMAN_APPROVAL
 - `IssuePriority`: LOW, MEDIUM, HIGH, CRITICAL
 
 ### Type Aliases
@@ -575,6 +602,14 @@ All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api s
 - `SystemHealth`, `SyncQueue`, `ServiceStatus`, `SyncQueueItem`
 - `ImpactAnalysis`, `CausalLink`, `TestFailure`
 - `APIResponse<T>`, `PaginatedResponse<T>`, `PaginationMeta`
+
+### Extended Issue Fields
+- `assignee_history?: AssigneeHistoryEntry[]` — tracks reassignment history
+- `github_sync?: GitHubSync` — GitHub mirror status (issue_number, github_url, sync_status, last_synced_at)
+- `governance?: GovernanceValidation` — closure requirements (has_solution_summary, has_file_impact, policy_violations[])
+- `affected_files?: AffectedFile[]` — files changed (path, change_type: CREATED|EDITED|DELETED)
+- `technical_debt_notes?: string` — Markdown debt observations
+- `agent_working_started_at?: string | null` — agent execution start timestamp
 
 ### Specialized Types
 | File | Types |
@@ -628,11 +663,11 @@ All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api s
 | Language switch | UserMenu (EN/ES) |
 | Click-to-detail | List rows, Kanban cards, Graph nodes, Component cards, Constraint rows, Notification items |
 | Slide-in panels | IssueDetailView, Component detail, Constraint detail |
-| Modal overlays | Create/Edit forms, Issue detail, User issues modal, Relationship modal, Command palette, Keyboard shortcuts help |
+| Modal overlays | Create/Edit forms, Issue detail, User issues modal, Relationship modal, Command palette, Keyboard shortcuts help, GovernanceValidationModal |
 | Confirm dialogs | Delete actions, admin reset/seed, Kanban card delete |
 | SVG chart rendering | TrendChart, DailyActivity, AvgResolution, ImpactSvgTree, AgentCostChart |
 | Graph visualization | GraphView (vis-network) |
-| Markdown rendering | IssueDetailView (reasoning/progress), RichTextEditor preview, RootCausePanel, ChatMessage |
+| Markdown rendering | IssueDetailView (reasoning/progress/tech-debt), RichTextEditor preview, RootCausePanel, ChatMessage |
 | Mermaid diagrams | MarkdownRenderer renders Mermaid syntax |
 | Validation workflow | ConstraintsView -> results banner |
 | Admin operations | Seed/Reset with confirmation |
@@ -658,17 +693,25 @@ All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api s
 | Agent replay | Scrubber timeline with play/pause/step controls |
 | FinOps heatmap | Cost by component bar charts |
 | Executive export | PDF/PNG export via html2canvas + jspdf |
+| Governance validation | Block issue closure when requirements unmet, show violations |
+| GitHub sync | View sync status, Force Re-sync button in issue detail |
+| Agent timer | Live elapsed time display on agent_working Kanban cards |
+| Agent kill switch | Stop agent execution from Kanban card hover |
+| Sync status badge | Visual indicator in header for connection state |
+| Project filtering | Filter all views by selected project |
+| Affected files | View file change-type badges in ProgressTab |
+| Tech debt notes | View Markdown debt notes in ProgressTab |
 
 ---
 
 ## 27. i18n Coverage
 
 ### Locale Files
-- `en.json`: 1070+ lines, 48 top-level sections
-- `es.json`: 1070+ lines, matching structure
+- `en.json`: 1120+ lines, 54 top-level sections
+- `es.json`: 1120+ lines, matching structure
 
 ### Sections
-`kanban`, `nav`, `header`, `menu`, `dashboard`, `issues`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`
+`kanban`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`
 
 ### Coverage
 - All user-visible text uses `t()` function
@@ -686,6 +729,10 @@ All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api s
 - FinOps labels translated
 - Auto-healing pipeline labels translated
 - Agent replay labels translated
+- GitHub sync labels translated
+- Governance validation labels translated
+- Agent timer/kill switch labels translated
+- Sync status labels translated
 
 ---
 
@@ -872,7 +919,97 @@ All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api s
 
 ---
 
-## 40. Known Gaps and Missing Features
+## 40. GitHub Sync Widget
+
+| Feature | Status | Details |
+|---|---|---|
+| **Sync data** | Implemented | All 100 mock issues have `github_sync` field (alternating SYNCED/PENDING_PUSH/ERROR) |
+| **Issue link** | Implemented | Clickable `#issue_number` linking to GitHub URL |
+| **Status badge** | Implemented | Color-coded: green (SYNCED), yellow (PENDING_PUSH), red (ERROR) |
+| **Last synced** | Implemented | Shows timestamp of last sync |
+| **Force Re-sync** | Implemented | Button with spinner animation, simulates sync cycle |
+| **Component** | Implemented | `GitHubSyncCard.vue` in `components/issue/` |
+| **Integration** | Implemented | Embedded in IssueDetailView Details tab (conditional on `issue.github_sync`) |
+| i18n | Implemented | `githubSync` section: title, status labels, lastSynced, forceResync, syncing |
+
+---
+
+## 41. Governance Validation Modal
+
+| Feature | Status | Details |
+|---|---|---|
+| **Governance data** | Implemented | All 100 mock issues have `governance` field (alternating valid/invalid based on issue number) |
+| **Violation detection** | Implemented | Checks `has_solution_summary`, `has_file_impact`, `policy_violations[]` |
+| **Modal display** | Implemented | Warning icon, issue title, violated policies list, missing requirements checklist |
+| **Fix Issues button** | Implemented | Closes modal, reverts status change |
+| **Override button** | Implemented | Forces closure despite violations |
+| **Kanban intercept** | Implemented | Blocks drop to CLOSED column, shows modal if governance fails |
+| **Detail intercept** | Implemented | Blocks status change to CLOSED in `save()`, shows modal if governance fails |
+| **Component** | Implemented | `GovernanceValidationModal.vue` in `components/issue/` |
+| i18n | Implemented | `governance` section: title, violatedPolicies, missingRequirements, solutionSummary, fileImpact, fixIssues, override |
+
+---
+
+## 42. Network Status & Sync Indicator
+
+| Feature | Status | Details |
+|---|---|---|
+| **Connection state** | Implemented | `uiStore.connectionState`: SYNCED, OFFLINE_QUEUED, SYNCING |
+| **Pending count** | Implemented | `uiStore.pendingSyncCount` tracks queued operations |
+| **Sync simulation** | Implemented | `simulateSync()` transitions: OFFLINE_QUEUED -> 2s -> SYNCING -> 0.8s -> SYNCED |
+| **Visual indicator** | Implemented | `SyncStatusBadge.vue` with color-coded badge and animated ping dot |
+| **Colors** | Implemented | Green (SYNCED), Yellow (OFFLINE_QUEUED), Blue (SYNCING) |
+| **Integration** | Implemented | Placed in AppHeader between ProjectSelector and NotificationCenter |
+| **Trigger points** | Implemented | ListView, KanbanView, GraphView trigger `simulateSync()` after CRUD operations |
+| i18n | Implemented | `sync` section: synced, offlineQueued, syncing |
+
+---
+
+## 43. Agent Timer & Kill Switch
+
+| Feature | Status | Details |
+|---|---|---|
+| **Timer data** | Implemented | `agent_working_started_at` field on Issue, populated for agent_working issues |
+| **Live timer** | Implemented | Updates every second, shows "Xh Ym Zs" or "Ym Zs" format |
+| **Kill button** | Implemented | Red stop icon, visible on hover, sets `agent_working=false` |
+| **Timer cleanup** | Implemented | Interval cleared on component unmount |
+| **Store update** | Implemented | `updateIssue()` with `agent_working: false, agent_working_started_at: null` |
+| **Component** | Implemented | `IssueCard.vue` in `components/board/` |
+| i18n | Implemented | `agent` section: killSwitch, agentStopped |
+
+---
+
+## 44. Tech Debt & Affected Files
+
+| Feature | Status | Details |
+|---|---|---|
+| **Affected files data** | Implemented | All 100 mock issues have `affected_files[]` with realistic paths |
+| **Change type badges** | Implemented | Color-coded: green (CREATED/NEW), blue (EDITED), red (DELETED) |
+| **File paths** | Implemented | Mono-font paths to actual project files |
+| **Tech debt notes** | Implemented | Markdown strings with debt observations (every 3rd issue) |
+| **Debt styling** | Implemented | Amber container with MarkdownRenderer |
+| **Empty states** | Implemented | "No files affected" / "No tech debt recorded" messages |
+| **ProgressTab integration** | Implemented | Affected Files section + Tech Debt Notes section in IssueDetailView |
+| i18n | Implemented | `issues.affectedFiles`, `issues.noAffectedFiles`, `issues.techDebtNotes`, `issues.changeType.*` |
+
+---
+
+## 45. Project Filtering
+
+| Feature | Status | Details |
+|---|---|---|
+| **Project selector** | Implemented | `ProjectSelector.vue` with 4 projects: socialseed-tasker, auth-service, api-gateway, web-dashboard |
+| **localStorage persistence** | Implemented | Selected project persists across sessions |
+| **Issue filtering** | Implemented | `issuesStore.filteredIssues` computed filters by `project_id` |
+| **Mock data** | Implemented | 70 issues (socialseed-tasker), 15 (auth-service), 15 (api-gateway) |
+| **API filtering** | Implemented | Mock API supports `?project=` query parameter |
+| **View integration** | Implemented | ListView, KanbanView, GraphView all use `filteredIssues` |
+| **Empty state** | Implemented | "No issues in this project" message when no issues match |
+| i18n | Implemented | `issues.noProjectIssues`, `issues.noProjectIssuesHint` |
+
+---
+
+## 46. Known Gaps and Missing Features
 
 ### Not Implemented
 - No real backend integration (mock mode only)
@@ -899,3 +1036,6 @@ All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api s
 - No service worker / offline support
 - No internationalization for right-to-left languages
 - No mobile responsive layout (desktop only)
+- No real GitHub bidirectional sync
+- No real governance rule engine backend
+- No real sync queue persistence
