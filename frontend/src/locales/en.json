@@ -1122,5 +1122,16 @@
     "created": "Created",
     "archCompliance": "Architecture Compliance",
     "overallScore": "Overall score: {score}/100"
+  },
+  "mockStream": {
+    "live": "LIVE",
+    "paused": "PAUSED",
+    "pause": "Pause",
+    "resume": "Resume",
+    "speed": "Speed",
+    "tokens": "tokens",
+    "elapsed": "Elapsed",
+    "startSimulation": "Start Simulation",
+    "stopSimulation": "Stop Simulation"
   }
 }

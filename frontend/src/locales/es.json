@@ -1123,5 +1123,16 @@
     "created": "Creados",
     "archCompliance": "Cumplimiento de Arquitectura",
     "overallScore": "Puntuacion general: {score}/100"
+  },
+  "mockStream": {
+    "live": "EN VIVO",
+    "paused": "PAUSADO",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "speed": "Velocidad",
+    "tokens": "tokens",
+    "elapsed": "Tiempo",
+    "startSimulation": "Iniciar Simulacion",
+    "stopSimulation": "Detener Simulacion"
   }
 }

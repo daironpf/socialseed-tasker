@@ -14,8 +14,44 @@
         <span v-if="logs.length" class="text-[10px] text-gray-400 dark:text-gray-500">
           {{ logs.length }} {{ t('stream.entries') }}
         </span>
+        <span v-if="isMockActive" class="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+          :class="isMockPaused
+            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+            : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'"
+        >
+          <span class="h-1.5 w-1.5 rounded-full" :class="isMockPaused ? 'bg-amber-500' : 'bg-green-500 animate-pulse'" />
+          {{ isMockPaused ? t('mockStream.paused') : t('mockStream.live') }}
+        </span>
+        <span v-if="tokenCount && tokenCount > 0" class="text-[10px] text-purple-500 dark:text-purple-400 font-mono">
+          {{ tokenCount.toLocaleString() }} tokens
+        </span>
       </div>
       <div class="flex items-center gap-1">
+        <!-- Speed selector -->
+        <div v-if="isMockActive" class="flex items-center gap-0.5 mr-1">
+          <button
+            v-for="s in (['1x', '2x', '5x'] as const)"
+            :key="s"
+            class="rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors"
+            :class="mockSpeed === s
+              ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+              : 'text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
+            @click="$emit('setSpeed', s)"
+          >
+            {{ s }}
+          </button>
+        </div>
+        <!-- Pause/Resume -->
+        <button
+          v-if="isMockActive"
+          class="rounded px-2 py-1 text-[10px] font-medium transition-colors"
+          :class="isMockPaused
+            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'"
+          @click="$emit('togglePause')"
+        >
+          {{ isMockPaused ? t('mockStream.resume') : t('mockStream.pause') }}
+        </button>
         <button
           class="rounded px-2 py-1 text-[10px] font-medium transition-colors"
           :class="autoScroll ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
@@ -24,7 +60,7 @@
           {{ t('stream.autoScroll') }}
         </button>
         <button
-          v-if="status === 'connected'"
+          v-if="status === 'connected' || isMockActive"
           class="rounded px-2 py-1 text-[10px] font-medium text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30 transition-colors"
           @click="killSwitch"
         >
@@ -130,10 +166,16 @@ const { t } = useI18n()
 defineProps<{
   logs: AgentLog[]
   status: ConnectionStatus
+  isMockActive?: boolean
+  isMockPaused?: boolean
+  mockSpeed?: '1x' | '2x' | '5x'
+  tokenCount?: number
 }>()
 
 const emit = defineEmits<{
   killSwitch: []
+  togglePause: []
+  setSpeed: [speed: '1x' | '2x' | '5x']
 }>()
 
 const autoScroll = ref(true)

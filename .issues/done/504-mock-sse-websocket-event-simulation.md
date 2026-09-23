@@ -4,7 +4,7 @@
 
 El panel de logs del agente (`AgentLogStream`), los indicadores de typing (`TypingIndicator`) y las notificaciones en tiempo real dependen de eventos SSE. Actualmente son estáticos o dependen de triggers manuales. Debemos implementar un motor de simulación de presencia/eventos en tiempo real mediante un composable local (`useMockStream.ts`).
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: HIGH
 

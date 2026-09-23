@@ -211,7 +211,13 @@
       <AgentLogStream
         :logs="agentLogs"
         :status="streamStatus"
+        :is-mock-active="mockStream.isRunning.value"
+        :is-mock-paused="mockStream.isPaused.value"
+        :mock-speed="mockStream.speed.value"
+        :token-count="mockStream.tokenCount.value"
         @kill-switch="onKillSwitch"
+        @toggle-pause="mockStream.togglePause()"
+        @set-speed="(s) => mockStream.setSpeed(s)"
       />
     </div>
 
@@ -412,6 +418,7 @@ import AuditTrail from '@/components/ui/AuditTrail.vue'
 import GitHubSyncCard from '@/components/issue/GitHubSyncCard.vue'
 import GovernanceValidationModal from '@/components/issue/GovernanceValidationModal.vue'
 import { useAgentStream } from '@/composables/useAgentStream'
+import { useMockStream } from '@/composables/useMockStream'
 import { usePresence } from '@/composables/usePresence'
 import type { AuditEntry } from '@/types/audit'
 
@@ -495,7 +502,8 @@ const agentLogs = ref<AgentLog[]>([])
 const logsLoading = ref(false)
 const users = ref<User[]>([])
 
-const { status: streamStatus, connect: connectStream, disconnect: disconnectStream } = useAgentStream()
+const { status: streamStatus, disconnect: disconnectStream } = useAgentStream()
+const mockStream = useMockStream()
 const { viewers, typingAgents, hasConflict } = usePresence(props.issue.id)
 
 const auditEntries = computed<AuditEntry[]>(() => {
@@ -567,6 +575,7 @@ async function loadLogs() {
 
 function onKillSwitch() {
   disconnectStream()
+  mockStream.stop()
   agentLogs.value.push({
     timestamp: new Date().toISOString(),
     type: 'debt',
@@ -687,7 +696,7 @@ watch(activeTab, (tab) => {
   if (tab === 'reasoning' || tab === 'progress') {
     loadLogs()
     if (props.issue.agent_working) {
-      connectStream(props.issue.id)
+      mockStream.start()
     }
   }
 })
@@ -699,11 +708,12 @@ onMounted(async () => {
     users.value = []
   }
   if (props.issue.agent_working && activeTab.value === 'reasoning') {
-    connectStream(props.issue.id)
+    mockStream.start()
   }
 })
 
 onUnmounted(() => {
   disconnectStream()
+  mockStream.stop()
 })
 </script>
