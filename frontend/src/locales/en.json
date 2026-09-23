@@ -1133,5 +1133,25 @@
     "elapsed": "Elapsed",
     "startSimulation": "Start Simulation",
     "stopSimulation": "Stop Simulation"
+  },
+  "filterBuilder": {
+    "status": "Status",
+    "priority": "Priority",
+    "labels": "Labels",
+    "assignee": "Assignee",
+    "techDebt": "Tech Debt",
+    "files": "Affected Files",
+    "dateFrom": "From",
+    "dateTo": "To",
+    "clearAll": "Clear All",
+    "removeFilter": "Remove {label} filter",
+    "saved": "Saved",
+    "save": "Save",
+    "searchName": "Search name...",
+    "noSavedSearches": "No saved searches",
+    "noLabels": "No labels available",
+    "allStatus": "All Status",
+    "allPriority": "All Priority",
+    "allAssignees": "All Assignees"
   }
 }

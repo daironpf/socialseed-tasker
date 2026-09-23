@@ -62,43 +62,16 @@
         </div>
       </div>
 
-      <div class="mb-4 flex items-center gap-2">
-        <input
-          v-model="search"
-          :placeholder="t('issues.search')"
-          :aria-label="t('issues.search')"
-          class="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-        />
-        <select
-          v-model="statusFilter"
-          :aria-label="t('issues.allStatus')"
-          class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-        >
-          <option value="">{{ t('issues.allStatus') }}</option>
-          <option value="OPEN">{{ t('issues.open') }}</option>
-          <option value="IN_PROGRESS">{{ t('issues.inProgress') }}</option>
-          <option value="BLOCKED">{{ t('issues.blocked') }}</option>
-          <option value="CLOSED">{{ t('issues.closed') }}</option>
-        </select>
-        <select
-          v-model="priorityFilter"
-          :aria-label="t('issues.allPriority')"
-          class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-        >
-          <option value="">{{ t('issues.allPriority') }}</option>
-          <option value="CRITICAL">{{ t('issues.critical') }}</option>
-          <option value="HIGH">{{ t('issues.high') }}</option>
-          <option value="MEDIUM">{{ t('issues.medium') }}</option>
-          <option value="LOW">{{ t('issues.low') }}</option>
-        </select>
-        <select
-          v-model="componentFilter"
-          :aria-label="t('issues.allComponents')"
-          class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-        >
-          <option value="">{{ t('issues.allComponents') }}</option>
-          <option v-for="comp in componentsStore.components" :key="comp.id" :value="comp.id">{{ comp.name }}</option>
-        </select>
+      <div class="mb-4 space-y-3">
+        <div class="flex items-center gap-2">
+          <input
+            v-model="search"
+            :placeholder="t('issues.search')"
+            :aria-label="t('issues.search')"
+            class="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+          />
+        </div>
+        <FilterBuilder />
       </div>
 
       <div class="mb-2 text-sm text-gray-500 dark:text-gray-400">
@@ -261,6 +234,7 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import PriorityBadge from '@/components/ui/PriorityBadge.vue'
 import LabelTag from '@/components/ui/LabelTag.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import FilterBuilder from '@/components/ui/FilterBuilder.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
 import CreateIssueModal from '@/components/issue/CreateIssueModal.vue'
 import BulkActionsBar from '@/components/ui/BulkActionsBar.vue'
@@ -336,41 +310,8 @@ const search = computed({
   set: (val: string) => uiStore.setFilter('search', val),
 })
 
-const statusFilter = computed({
-  get: () => uiStore.filters.status[0] || '',
-  set: (val: string) => uiStore.setFilter('status', val ? [val] : []),
-})
-
-const priorityFilter = computed({
-  get: () => uiStore.filters.priority[0] || '',
-  set: (val: string) => uiStore.setFilter('priority', val ? [val] : []),
-})
-
-const componentFilter = computed({
-  get: () => uiStore.filters.component || '',
-  set: (val: string) => uiStore.setFilter('component', val || null),
-})
-
 const filteredList = computed(() => {
-  let result = issuesStore.filteredIssues
-  if (search.value) {
-    const q = search.value.toLowerCase()
-    result = result.filter(i =>
-      i.title.toLowerCase().includes(q) ||
-      i.id.toLowerCase().includes(q) ||
-      (i.description && i.description.toLowerCase().includes(q))
-    )
-  }
-  if (statusFilter.value) {
-    result = result.filter(i => i.status === statusFilter.value)
-  }
-  if (priorityFilter.value) {
-    result = result.filter(i => i.priority === priorityFilter.value)
-  }
-  if (componentFilter.value) {
-    result = result.filter(i => i.component_id === componentFilter.value)
-  }
-  return result
+  return issuesStore.filteredIssues
 })
 
 const selectedIssue = computed(() => {

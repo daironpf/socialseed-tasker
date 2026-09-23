@@ -20,9 +20,82 @@ export const useIssuesStore = defineStore('issues', () => {
 
   const filteredIssues = computed(() => {
     const uiStore = useUiStore()
-    const project = uiStore.currentProject
-    if (!project) return issues.value
-    return issues.value.filter((i) => i.project_id === project)
+    const f = uiStore.filters
+    const operator = f.operator
+    let result = issues.value
+
+    // Always filter by project first
+    if (uiStore.currentProject) {
+      result = result.filter(i => i.project_id === uiStore.currentProject)
+    }
+
+    // If no advanced filters are active, return project-filtered only
+    if (!uiStore.hasActiveFilters()) return result
+
+    function matchesIssue(issue: Issue): boolean {
+      const conditions: boolean[] = []
+
+      // Status filter
+      if (f.status.length > 0) {
+        conditions.push(f.status.includes(issue.status))
+      }
+
+      // Priority filter
+      if (f.priority.length > 0) {
+        conditions.push(f.priority.includes(issue.priority))
+      }
+
+      // Labels filter
+      if (f.labels.length > 0) {
+        conditions.push(f.labels.some(l => issue.labels.includes(l)))
+      }
+
+      // Has Tech Debt
+      if (f.hasTechDebt !== null) {
+        if (f.hasTechDebt) {
+          conditions.push(!!issue.technical_debt_notes && issue.technical_debt_notes.length > 0)
+        } else {
+          conditions.push(!issue.technical_debt_notes || issue.technical_debt_notes.length === 0)
+        }
+      }
+
+      // Has Affected Files
+      if (f.hasAffectedFiles !== null) {
+        if (f.hasAffectedFiles) {
+          conditions.push(!!issue.affected_files && issue.affected_files.length > 0)
+        } else {
+          conditions.push(!issue.affected_files || issue.affected_files.length === 0)
+        }
+      }
+
+      // Date From
+      if (f.dateFrom) {
+        const from = new Date(f.dateFrom).getTime()
+        conditions.push(new Date(issue.created_at).getTime() >= from)
+      }
+
+      // Date To
+      if (f.dateTo) {
+        const to = new Date(f.dateTo).getTime() + 86400000 // include end of day
+        conditions.push(new Date(issue.created_at).getTime() <= to)
+      }
+
+      // Search (already handled in ListView, but also support here)
+      if (f.search) {
+        const q = f.search.toLowerCase()
+        conditions.push(
+          issue.title.toLowerCase().includes(q) ||
+          issue.id.toLowerCase().includes(q) ||
+          Boolean(issue.description && issue.description.toLowerCase().includes(q))
+        )
+      }
+
+      if (conditions.length === 0) return true
+      if (operator === 'AND') return conditions.every(Boolean)
+      return conditions.some(Boolean)
+    }
+
+    return result.filter(matchesIssue)
   })
 
   async function fetchIssues(page = 1, limit = 50, filters?: { status?: string; component?: string; project?: string; priority?: string }) {

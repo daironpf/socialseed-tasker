@@ -39,6 +39,11 @@
         </div>
       </div>
 
+      <!-- Filter Bar -->
+      <div class="mb-4">
+        <FilterBuilder />
+      </div>
+
       <!-- Kanban Columns -->
       <div class="flex-1 flex gap-4 overflow-x-auto">
         <KanbanColumn
@@ -121,6 +126,7 @@ import { useComponentsStore } from '@/stores/componentsStore'
 import { useUiStore } from '@/stores/uiStore'
 import KanbanColumn from '@/components/board/KanbanColumn.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import FilterBuilder from '@/components/ui/FilterBuilder.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
 import CreateIssueModal from '@/components/issue/CreateIssueModal.vue'
 import GovernanceValidationModal from '@/components/issue/GovernanceValidationModal.vue'

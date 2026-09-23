@@ -11,6 +11,20 @@ export interface Filters {
   component: string | null
   project: string | null
   search: string
+  assignee: string[]
+  labels: string[]
+  hasTechDebt: boolean | null
+  hasAffectedFiles: boolean | null
+  dateFrom: string | null
+  dateTo: string | null
+  operator: 'AND' | 'OR'
+}
+
+export interface SavedSearch {
+  id: string
+  name: string
+  filters: Filters
+  createdAt: string
 }
 
 export const useUiStore = defineStore('ui', () => {
@@ -28,7 +42,16 @@ export const useUiStore = defineStore('ui', () => {
     component: null,
     project: null,
     search: '',
+    assignee: [],
+    labels: [],
+    hasTechDebt: null,
+    hasAffectedFiles: null,
+    dateFrom: null,
+    dateTo: null,
+    operator: 'AND',
   })
+
+  const savedSearches = ref<SavedSearch[]>(JSON.parse(localStorage.getItem('savedSearches') || '[]'))
 
   const availableProjects = ref([
     { id: 'socialseed-tasker', name: 'SocialSeed Tasker', description: 'Main task management platform' },
@@ -60,7 +83,49 @@ export const useUiStore = defineStore('ui', () => {
       component: null,
       project: null,
       search: '',
+      assignee: [],
+      labels: [],
+      hasTechDebt: null,
+      hasAffectedFiles: null,
+      dateFrom: null,
+      dateTo: null,
+      operator: 'AND',
     }
+  }
+
+  function hasActiveFilters(): boolean {
+    const f = filters.value
+    return f.status.length > 0 || f.priority.length > 0 || f.component !== null ||
+      f.search !== '' || f.assignee.length > 0 || f.labels.length > 0 ||
+      f.hasTechDebt !== null || f.hasAffectedFiles !== null ||
+      f.dateFrom !== null || f.dateTo !== null
+  }
+
+  function saveSearch(name: string) {
+    const search: SavedSearch = {
+      id: `search-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      name,
+      filters: JSON.parse(JSON.stringify(filters.value)),
+      createdAt: new Date().toISOString(),
+    }
+    savedSearches.value.unshift(search)
+    if (savedSearches.value.length > 10) {
+      savedSearches.value = savedSearches.value.slice(0, 10)
+    }
+    localStorage.setItem('savedSearches', JSON.stringify(savedSearches.value))
+    return search
+  }
+
+  function loadSearch(id: string) {
+    const search = savedSearches.value.find(s => s.id === id)
+    if (search) {
+      filters.value = JSON.parse(JSON.stringify(search.filters))
+    }
+  }
+
+  function deleteSearch(id: string) {
+    savedSearches.value = savedSearches.value.filter(s => s.id !== id)
+    localStorage.setItem('savedSearches', JSON.stringify(savedSearches.value))
   }
 
   function toggleDarkMode() {
@@ -130,6 +195,7 @@ export const useUiStore = defineStore('ui', () => {
     currentProject,
     availableProjects,
     filters,
+    savedSearches,
     connectionState,
     pendingSyncCount,
     setSelectedIssue,
@@ -137,6 +203,10 @@ export const useUiStore = defineStore('ui', () => {
     setViewMode,
     setFilter,
     clearFilters,
+    hasActiveFilters,
+    saveSearch,
+    loadSearch,
+    deleteSearch,
     toggleDarkMode,
     initDarkMode,
     setLocale,

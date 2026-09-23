@@ -4,7 +4,7 @@
 
 Aunque existen filtros individuales por estado, prioridad y proyecto, la UI carece de una barra de filtros combinados (multi-tag) que permita guardar búsquedas frecuentes o filtrar por rango de fechas, tags y asignados. Se requiere un componente `FilterBuilder` visual reutilizable.
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: HIGH
 

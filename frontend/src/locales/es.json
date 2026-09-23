@@ -1134,5 +1134,25 @@
     "elapsed": "Tiempo",
     "startSimulation": "Iniciar Simulacion",
     "stopSimulation": "Detener Simulacion"
+  },
+  "filterBuilder": {
+    "status": "Estado",
+    "priority": "Prioridad",
+    "labels": "Etiquetas",
+    "assignee": "Asignado",
+    "techDebt": "Deuda Tecnica",
+    "files": "Archivos Afectados",
+    "dateFrom": "Desde",
+    "dateTo": "Hasta",
+    "clearAll": "Limpiar Todo",
+    "removeFilter": "Quitar filtro de {label}",
+    "saved": "Guardadas",
+    "save": "Guardar",
+    "searchName": "Nombre de busqueda...",
+    "noSavedSearches": "Sin busquedas guardadas",
+    "noLabels": "Sin etiquetas disponibles",
+    "allStatus": "Todos los Estados",
+    "allPriority": "Todas las Prioridades",
+    "allAssignees": "Todos los Asignados"
   }
 }
