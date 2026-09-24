@@ -62,6 +62,8 @@ export interface GovernanceValidation {
 export interface AffectedFile {
   path: string
   change_type: 'CREATED' | 'EDITED' | 'DELETED'
+  diff_hunk?: string
+  language?: string
 }
 
 export interface Component {

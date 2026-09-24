@@ -1153,5 +1153,10 @@
     "allStatus": "All Status",
     "allPriority": "All Priority",
     "allAssignees": "All Assignees"
+  },
+  "diffPreview": {
+    "viewChanges": "View Changes",
+    "hideChanges": "Hide Changes",
+    "noDiff": "No diff available"
   }
 }

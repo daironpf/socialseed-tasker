@@ -234,19 +234,53 @@
             <div
               v-for="(file, idx) in issue.affected_files"
               :key="idx"
-              class="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2"
+              class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
             >
-              <span
-                class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold"
-                :class="{
-                  'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300': file.change_type === 'CREATED',
-                  'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300': file.change_type === 'EDITED',
-                  'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300': file.change_type === 'DELETED'
-                }"
+              <div
+                class="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                @click="toggleFileDiff(idx)"
               >
-                {{ t(`issues.changeType.${file.change_type}`) }}
-              </span>
-              <code class="text-xs text-gray-600 dark:text-gray-400 font-mono">{{ file.path }}</code>
+                <span
+                  class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold flex-shrink-0"
+                  :class="{
+                    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300': file.change_type === 'CREATED',
+                    'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300': file.change_type === 'EDITED',
+                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300': file.change_type === 'DELETED'
+                  }"
+                >
+                  {{ t(`issues.changeType.${file.change_type}`) }}
+                </span>
+                <code class="text-xs text-gray-600 dark:text-gray-400 font-mono flex-1 truncate">{{ file.path }}</code>
+                <span v-if="file.language" class="text-[10px] text-gray-400 dark:text-gray-500 flex-shrink-0">{{ file.language }}</span>
+                <button
+                  v-if="file.diff_hunk"
+                  class="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 transition-colors flex-shrink-0"
+                  @click.stop="toggleFileDiff(idx)"
+                >
+                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                  {{ expandedFiles.has(idx) ? t('diffPreview.hideChanges') : t('diffPreview.viewChanges') }}
+                </button>
+                <svg
+                  v-if="file.diff_hunk"
+                  class="h-4 w-4 text-gray-400 transition-transform"
+                  :class="{ 'rotate-180': expandedFiles.has(idx) }"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                ><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+              <Transition
+                enter-active-class="transition-all duration-200 ease-out"
+                enter-from-class="max-h-0 opacity-0"
+                enter-to-class="max-h-[600px] opacity-100"
+                leave-active-class="transition-all duration-150 ease-in"
+                leave-from-class="max-h-[600px] opacity-100"
+                leave-to-class="max-h-0 opacity-0"
+              >
+                <div v-if="expandedFiles.has(idx) && file.diff_hunk" class="overflow-hidden border-t border-gray-200 dark:border-gray-700">
+                  <div class="max-h-[400px] overflow-y-auto">
+                    <DiffViewer :content="file.diff_hunk" :filename="file.path" />
+                  </div>
+                </div>
+              </Transition>
             </div>
           </div>
         </div>
@@ -505,6 +539,17 @@ const users = ref<User[]>([])
 const { status: streamStatus, disconnect: disconnectStream } = useAgentStream()
 const mockStream = useMockStream()
 const { viewers, typingAgents, hasConflict } = usePresence(props.issue.id)
+
+const expandedFiles = ref(new Set<number>())
+
+function toggleFileDiff(idx: number) {
+  if (expandedFiles.value.has(idx)) {
+    expandedFiles.value.delete(idx)
+  } else {
+    expandedFiles.value.add(idx)
+  }
+  expandedFiles.value = new Set(expandedFiles.value)
+}
 
 const auditEntries = computed<AuditEntry[]>(() => {
   const now = Date.now()

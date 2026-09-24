@@ -4,7 +4,7 @@
 
 Actualmente, la pestaña ProgressTab en `IssueDetailView.vue` enumera los archivos afectados (`affected_files`). Sin embargo, la UI no permite previsualizar el código modificado o la propuesta de cambio del agente. Se debe integrar el componente `DiffViewer` existente para mostrar diffs de código mock.
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: MEDIUM
 

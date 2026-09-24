@@ -1154,5 +1154,10 @@
     "allStatus": "Todos los Estados",
     "allPriority": "Todas las Prioridades",
     "allAssignees": "Todos los Asignados"
+  },
+  "diffPreview": {
+    "viewChanges": "Ver Cambios",
+    "hideChanges": "Ocultar Cambios",
+    "noDiff": "Sin diff disponible"
   }
 }
