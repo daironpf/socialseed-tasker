@@ -1,0 +1,192 @@
+{
+  "organizations": [
+    {
+      "id": "org-socialseed",
+      "name": "SocialSeed Corp",
+      "industry": "Software / AI",
+      "plan": "ENTERPRISE",
+      "defaultRole": "ENTERPRISE_ADMIN",
+      "workspaces": [
+        {
+          "id": "ws-core",
+          "name": "Core Platform",
+          "department": "Engineering",
+          "description": "Main tasker platform and graph engine",
+          "projectIds": ["socialseed-tasker"],
+          "members": 24,
+          "activeIssues": 70
+        },
+        {
+          "id": "ws-platform",
+          "name": "Platform Services",
+          "department": "Engineering",
+          "description": "Auth, gateway and shared services",
+          "projectIds": ["auth-service", "api-gateway"],
+          "members": 12,
+          "activeIssues": 30
+        },
+        {
+          "id": "ws-data",
+          "name": "Data & Analytics",
+          "department": "Data",
+          "description": "ETL pipelines and reporting workspaces",
+          "projectIds": ["data-pipeline"],
+          "members": 8,
+          "activeIssues": 0
+        }
+      ],
+      "accounts": [
+        {
+          "id": "acc-admin-1",
+          "name": "Avery Chen",
+          "email": "avery.chen@socialseed.io",
+          "role": "ENTERPRISE_ADMIN",
+          "avatar": "🧑‍💼",
+          "isActive": true
+        },
+        {
+          "id": "acc-sec-1",
+          "name": "Morgan Reyes",
+          "email": "morgan.reyes@socialseed.io",
+          "role": "SECURITY_MANAGER",
+          "avatar": "🛡️",
+          "isActive": true
+        },
+        {
+          "id": "acc-dev-1",
+          "name": "Sam Okonkwo",
+          "email": "sam.okonkwo@socialseed.io",
+          "role": "DEVELOPER",
+          "avatar": "👩‍💻",
+          "isActive": true
+        },
+        {
+          "id": "acc-aud-1",
+          "name": "Jordan Blake",
+          "email": "jordan.blake@socialseed.io",
+          "role": "AUDITOR",
+          "avatar": "📋",
+          "isActive": true
+        }
+      ],
+      "quota": {
+        "computeLimit": 5000000,
+        "computeUsed": 3200000,
+        "storageLimitGb": 500,
+        "storageUsedGb": 187,
+        "tokenLimit": 100000000,
+        "tokenUsed": 64000000
+      },
+      "retention": {
+        "days": 365,
+        "autoDelete": true,
+        "exportBeforeDelete": true
+      },
+      "createdAt": "2026-01-15T10:00:00Z",
+      "updatedAt": "2026-09-20T12:00:00Z"
+    },
+    {
+      "id": "org-northwind",
+      "name": "Northwind Labs",
+      "industry": "Research",
+      "plan": "BUSINESS",
+      "defaultRole": "DEVELOPER",
+      "workspaces": [
+        {
+          "id": "ws-research",
+          "name": "Applied Research",
+          "department": "R&D",
+          "description": "Experimental agent research programs",
+          "projectIds": ["socialseed-tasker"],
+          "members": 6,
+          "activeIssues": 15
+        },
+        {
+          "id": "ws-ops",
+          "name": "Lab Operations",
+          "department": "Operations",
+          "description": "Internal tooling and lab infrastructure",
+          "projectIds": ["api-gateway"],
+          "members": 4,
+          "activeIssues": 5
+        }
+      ],
+      "accounts": [
+        {
+          "id": "acc-nw-admin",
+          "name": "Riley Park",
+          "email": "riley.park@northwind.lab",
+          "role": "ENTERPRISE_ADMIN",
+          "avatar": "🧑‍🔬",
+          "isActive": true
+        },
+        {
+          "id": "acc-nw-dev",
+          "name": "Casey Nguyen",
+          "email": "casey.nguyen@northwind.lab",
+          "role": "DEVELOPER",
+          "avatar": "👨‍💻",
+          "isActive": true
+        }
+      ],
+      "quota": {
+        "computeLimit": 1500000,
+        "computeUsed": 420000,
+        "storageLimitGb": 100,
+        "storageUsedGb": 22,
+        "tokenLimit": 25000000,
+        "tokenUsed": 8000000
+      },
+      "retention": {
+        "days": 180,
+        "autoDelete": false,
+        "exportBeforeDelete": true
+      },
+      "createdAt": "2026-04-02T09:00:00Z",
+      "updatedAt": "2026-09-10T08:30:00Z"
+    },
+    {
+      "id": "org-acme",
+      "name": "Acme Startup",
+      "industry": "SaaS",
+      "plan": "STARTUP",
+      "defaultRole": "DEVELOPER",
+      "workspaces": [
+        {
+          "id": "ws-product",
+          "name": "Product Squad",
+          "department": "Product",
+          "description": "MVP feature delivery",
+          "projectIds": ["auth-service"],
+          "members": 3,
+          "activeIssues": 8
+        }
+      ],
+      "accounts": [
+        {
+          "id": "acc-acme-1",
+          "name": "Taylor Brooks",
+          "email": "taylor@acme.dev",
+          "role": "ENTERPRISE_ADMIN",
+          "avatar": "🚀",
+          "isActive": true
+        }
+      ],
+      "quota": {
+        "computeLimit": 500000,
+        "computeUsed": 180000,
+        "storageLimitGb": 25,
+        "storageUsedGb": 6,
+        "tokenLimit": 5000000,
+        "tokenUsed": 1200000
+      },
+      "retention": {
+        "days": 90,
+        "autoDelete": false,
+        "exportBeforeDelete": false
+      },
+      "createdAt": "2026-07-20T14:00:00Z",
+      "updatedAt": "2026-09-01T16:45:00Z"
+    }
+  ]
+}

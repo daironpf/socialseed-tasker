@@ -24,7 +24,8 @@
     "hitl": "Centro HITL",
     "sandbox": "Sandbox de Politicas",
     "rag": "Explorador Graph RAG",
-    "analysisView": "Analisis"
+    "analysisView": "Analisis",
+    "organization": "Organizacion"
   },
   "header": {
     "dashboard": "Dashboard",
@@ -46,7 +47,8 @@
     "executive": "Dashboard Ejecutivo",
     "graph": "Grafo de Dependencias",
     "analysis": "Analisis de Impacto",
-    "notFound": "No Encontrado"
+    "notFound": "No Encontrado",
+    "organization": "Configuracion de Organizacion"
   },
   "menu": {
     "darkMode": "Modo Oscuro",
@@ -533,21 +535,32 @@
     "groupComponents": "Componentes"
   },
   "editor": {
-    "preview": "Vista Previa",
-    "commands": "Comandos",
-    "bold": "Negrita",
-    "italic": "Cursiva",
-    "code": "Codigo",
     "heading1": "Encabezado 1",
+    "heading1Desc": "Encabezado de seccion grande",
     "heading2": "Encabezado 2",
+    "heading2Desc": "Encabezado de seccion mediano",
     "heading3": "Encabezado 3",
-    "divider": "Divisor",
-    "bulletList": "Lista",
-    "checklist": "Lista de Tareas",
-    "table": "Tabla",
-    "quote": "Cita",
+    "heading3Desc": "Encabezado de seccion pequeno",
+    "bold": "Negrita",
+    "boldDesc": "Texto en negrita",
+    "italic": "Italica",
+    "italicDesc": "Texto en italica",
+    "code": "Codigo",
+    "codeDesc": "Codigo inline",
     "codeBlock": "Bloque de Codigo",
-    "mermaid": "Diagrama Mermaid"
+    "codeBlockDesc": "Codigo con resaltado de sintaxis",
+    "mermaid": "Diagrama Mermaid",
+    "mermaidDesc": "Diagrama de flujo o grafico",
+    "bulletList": "Lista con Viñetas",
+    "bulletListDesc": "Lista desordenada",
+    "checklist": "Lista de Verificacion",
+    "checklistDesc": "Lista de tareas",
+    "table": "Tabla",
+    "tableDesc": "Tabla Markdown",
+    "quote": "Cita",
+    "quoteDesc": "Cita en bloque",
+    "divider": "Divisor",
+    "dividerDesc": "Regla horizontal"
   },
   "diff": {
     "unified": "Unificado",
@@ -578,44 +591,30 @@
     "agentAction": "Accion del Agente"
   },
   "audit": {
-    "changedStatus": "Cambio de estado",
-    "startedImpactAnalysis": "Analisis de impacto iniciado",
-    "assignedTo": "Asignado a {user}",
-    "changedPriority": "Cambio de prioridad",
-    "approvedAgentAction": "Accion del agente aprobada: {action}",
-    "constraintViolation": "Violacion de constraint detectada: {detail}",
-    "addedLabels": "Etiquetas agregadas",
-    "addedComment": "Comentario agregado: \"{text}\"",
-    "autoClosed": "Cerrado automaticamente tras merge a main",
-    "agentCancelled": "EJECUCION DEL AGENTE CANCELADA"
-  },
-  "editor": {
-    "heading1": "Encabezado 1",
-    "heading1Desc": "Encabezado de seccion grande",
-    "heading2": "Encabezado 2",
-    "heading2Desc": "Encabezado de seccion mediano",
-    "heading3": "Encabezado 3",
-    "heading3Desc": "Encabezado de seccion pequeno",
-    "bold": "Negrita",
-    "boldDesc": "Texto en negrita",
-    "italic": "Italica",
-    "italicDesc": "Texto en italica",
-    "code": "Codigo",
-    "codeDesc": "Codigo inline",
-    "codeBlock": "Bloque de Codigo",
-    "codeBlockDesc": "Codigo con resaltado de sintaxis",
-    "mermaid": "Diagrama Mermaid",
-    "mermaidDesc": "Diagrama de flujo o grafico",
-    "bulletList": "Lista con Viñetas",
-    "bulletListDesc": "Lista desordenada",
-    "checklist": "Lista de Verificacion",
-    "checklistDesc": "Lista de tareas",
-    "table": "Tabla",
-    "tableDesc": "Tabla Markdown",
-    "quote": "Cita",
-    "quoteDesc": "Cita en bloque",
-    "divider": "Divisor",
-    "dividerDesc": "Regla horizontal"
+    "tab": "Historial",
+    "title": "Auditoria",
+    "noEntries": "Sin entradas de auditoria",
+    "loadMore": "Cargar {n} entradas mas",
+    "justNow": "ahora mismo",
+    "minutesAgo": "hace {n}m",
+    "hoursAgo": "hace {n}h",
+    "daysAgo": "hace {n}d",
+    "filterAll": "Todas",
+    "filterStatus": "Estado",
+    "filterPriority": "Prioridad",
+    "filterAssignment": "Asignacion",
+    "filterAgent": "Agente",
+    "filterSystem": "Sistema",
+    "actions": {
+      "status": "Estado",
+      "priority": "Prioridad",
+      "assignment": "Asignacion",
+      "agent": "Agente",
+      "system": "Sistema",
+      "hitl": "HITL",
+      "comment": "Comentario",
+      "label": "Etiqueta"
+    }
   },
   "stream": {
     "status": {
@@ -845,32 +844,6 @@
     "isWorking": "esta trabajando en esto...",
     "agentsWorking": "agentes trabajando",
     "conflict": "Otro usuario esta editando el mismo campo"
-  },
-  "audit": {
-    "tab": "Historial",
-    "title": "Auditoria",
-    "noEntries": "Sin entradas de auditoria",
-    "loadMore": "Cargar {n} entradas mas",
-    "justNow": "ahora mismo",
-    "minutesAgo": "hace {n}m",
-    "hoursAgo": "hace {n}h",
-    "daysAgo": "hace {n}d",
-    "filterAll": "Todas",
-    "filterStatus": "Estado",
-    "filterPriority": "Prioridad",
-    "filterAssignment": "Asignacion",
-    "filterAgent": "Agente",
-    "filterSystem": "Sistema",
-    "actions": {
-      "status": "Estado",
-      "priority": "Prioridad",
-      "assignment": "Asignacion",
-      "agent": "Agente",
-      "system": "Sistema",
-      "hitl": "HITL",
-      "comment": "Comentario",
-      "label": "Etiqueta"
-    }
   },
   "projects": {
     "title": "Cambiar Proyecto",
@@ -1194,5 +1167,47 @@
     "resolved_approve": "\"{title}\" fue aprobado",
     "resolved_reject": "\"{title}\" fue rechazado",
     "resolved_modify": "Modificacion solicitada para \"{title}\""
+  },
+  "organizations": {
+    "switcher": "Cambiar organizacion",
+    "hierarchyHint": "Jerarquia Organizacion / Espacio de trabajo",
+    "none": "Sin organizacion",
+    "empty": "No hay organizaciones disponibles",
+    "manage": "Gestionar configuracion de organizacion",
+    "settingsTitle": "Configuracion de Organizacion",
+    "settingsSubtitle": "Cuotas, retencion de datos, roles y espacios de trabajo",
+    "activeRole": "Rol activo",
+    "readOnlyHint": "Rol Auditor: acceso de solo lectura. Algunas acciones estan deshabilitadas.",
+    "workspaces": "espacios de trabajo",
+    "workspacesTitle": "Espacios de trabajo",
+    "members": "miembros",
+    "activeIssues": "issues activos",
+    "roles": {
+      "ENTERPRISE_ADMIN": "Administrador Empresa",
+      "SECURITY_MANAGER": "Responsable de Seguridad",
+      "DEVELOPER": "Desarrollador",
+      "AUDITOR": "Auditor"
+    },
+    "quota": {
+      "compute": "Cuota de computo",
+      "storage": "Cuota de almacenamiento",
+      "tokens": "Cuota de tokens"
+    },
+    "retention": {
+      "title": "Politica de retencion de datos",
+      "days": "Dias de retencion",
+      "autoDelete": "Auto-eliminar datos expirados",
+      "exportBeforeDelete": "Exportar antes de eliminar",
+      "saved": "Politica de retencion guardada"
+    },
+    "accounts": {
+      "title": "Cuentas de la organizacion",
+      "add": "Anadir miembro",
+      "added": "Miembro anadido",
+      "name": "Nombre",
+      "email": "Correo",
+      "role": "Rol",
+      "empty": "Aun no hay miembros"
+    }
   }
 }

@@ -58,6 +58,7 @@
 48. [Mobile Responsive Design](#48-mobile-responsive-design)
 49. [Route & View Inventory](#49-route--view-inventory)
 50. [Known Gaps & Missing Features](#50-known-gaps--missing-features)
+51. [Organization Multi-Tenancy & Enterprise Settings](#51-organization-multi-tenancy--enterprise-settings)
 
 ---
 
@@ -68,9 +69,9 @@
 | Vue 3.5 + TypeScript | Implemented | Composition API, `<script setup>`, vue-tsc type checking |
 | Vite 6 build tool | Implemented | HMR, optimized production builds, lazy-loaded routes |
 | Tailwind CSS 3 | Implemented | Dark mode via `class` strategy; Inter font |
-| Pinia state management | Implemented | 19 stores under `src/stores/` |
-| Vue Router | Implemented | 20 view routes + `/` redirect + catch-all NotFound; lazy-loaded; scroll-to-top on navigate |
-| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 60 top-level sections, ~1026 leaf keys per language, localStorage persistence |
+| Pinia state management | Implemented | 20 stores under `src/stores/` |
+| Vue Router | Implemented | 21 view routes + `/` redirect + catch-all NotFound; lazy-loaded; scroll-to-top on navigate |
+| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 61 top-level sections, ~1060 leaf keys per language, localStorage persistence |
 | Dark mode | Implemented | Toggle via UserMenu / `D` shortcut / CommandPalette; localStorage; system preference detection |
 | Mock API mode | Implemented | `USE_MOCK = true` in `client.ts`; axios instance swapped for mock client; `mockApi.ts` uses `fetch` against `/mock-api` |
 | Real API mode | Implemented | Axios client, base `window.__API_URL__ \|\| '/api/v1'`, API key auth via `X-API-Key`, 401 interceptor → `auth:unauthorized` |
@@ -85,7 +86,7 @@
 
 ### Mock dataset files (`frontend/dataset-de-pruebas/`)
 
-`issues.json` (100), `components.json`, `users.json`, `policies.json`, `constraints.json`, `agent-logs.json`, `dependencies.json`, `dashboard-stats.json`, `projects.json`, `root-cause.json`, `index.json`
+`issues.json` (100), `components.json`, `users.json`, `policies.json`, `constraints.json`, `agent-logs.json`, `dependencies.json`, `dashboard-stats.json`, `projects.json`, `root-cause.json`, `index.json`, `organizations.json` (3 orgs / 6 workspaces / 9 accounts)
 
 ### Container topology
 
@@ -121,7 +122,7 @@
 |---|---|---|
 | Collapsible sidebar | Implemented | 20px collapsed → 64px on hover (`w-20` → `w-64`), smooth transition |
 | Logo + branding | Implemented | "SocialSeed" text when expanded |
-| Navigation groups | Implemented | Principal (4), Management (13), Analysis (2) = **19 nav items** |
+| Navigation groups | Implemented | Principal (4), Management (14), Analysis (2) = **20 nav items** |
 | Active route highlighting | Implemented | Color change on current route |
 | Nav icons | Implemented | SVG icons per nav item |
 | i18n labels | Implemented | All nav labels use `t()` |
@@ -132,14 +133,15 @@
 | Group | Routes |
 |---|---|
 | Principal | `/board`, `/system`, `/kanban`, `/list` |
-| Management | `/components`, `/policies`, `/constraints`, `/sandbox`, `/rag`, `/finops`, `/auto-healing`, `/replay`, `/executive`, `/users`, `/chat`, `/mcp`, `/hitl` |
+| Management | `/components`, `/policies`, `/constraints`, `/sandbox`, `/rag`, `/finops`, `/auto-healing`, `/replay`, `/executive`, `/users`, `/chat`, `/mcp`, `/hitl`, `/organization` |
 | Analysis | `/graph`, `/analysis` |
 
 ### Header (AppHeader)
 
 | Feature | Status | Details |
 |---|---|---|
-| Dynamic page title | Implemented | Maps route path → translated title (19 paths; `/profile` falls back to dashboard title) |
+| Dynamic page title | Implemented | Maps route path → translated title (20 paths; `/profile` falls back to dashboard title) |
+| Organization switcher | Implemented | `OrganizationSwitcher` (`hidden lg:flex`, before ProjectSelector): hierarchical Organization → Workspace dropdown, localStorage, link to `/organization` settings |
 | Global HITL banner | Implemented | Shown when `urgentPendingCount > 0` (CRITICAL/HIGH pending); click → HITLCommandCenter; Review button → HITLQuickActionModal |
 | Hamburger menu | Implemented | 44×44 button (`md:hidden`), emits `open-mobile-menu` |
 | Project selector | Implemented | `ProjectSelector`, 4 projects, localStorage, filters issues |
@@ -154,7 +156,7 @@
 |---|---|---|
 | Overlay slide-in | Implemented | From left, 300ms transition, full-screen dark overlay |
 | Close gestures | Implemented | Tap overlay or swipe-left |
-| Navigation content | Implemented | Same 3 groups / 19 items as desktop Sidebar |
+| Navigation content | Implemented | Same 3 groups / 20 items as desktop Sidebar |
 | i18n | Implemented | `mobileNav.openMenu`, `mobileNav.menu`, `mobileNav.swipeHint` |
 
 ### UserMenu
@@ -420,9 +422,10 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 ### Layout Components
 | Component | Purpose | Details |
 |---|---|---|
-| `Sidebar` | Main navigation | Collapsible, 3 groups, 19 items, desktop-only |
-| `MobileDrawer` | Mobile navigation | Overlay drawer, swipe-to-close, same 19 items |
-| `AppHeader` | Top bar | Dynamic title, HITL banner, hamburger, project selector, sync badge, notifications, user menu |
+| `Sidebar` | Main navigation | Collapsible, 3 groups, 20 items, desktop-only |
+| `MobileDrawer` | Mobile navigation | Overlay drawer, swipe-to-close, same 20 items |
+| `AppHeader` | Top bar | Dynamic title, HITL banner, hamburger, org switcher (lg+), project selector, sync badge, notifications, user menu |
+| `OrganizationSwitcher` | Org/workspace selector | Hierarchical Organization → Workspace dropdown, localStorage persistence, link to `/organization` settings |
 | `UserMenu` | User dropdown | Avatar, dark mode, language, logout, profile link |
 | `NavItem` | Sidebar link | Icon + label, active state, badge, 44px touch target |
 
@@ -643,8 +646,9 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `autoHealingStore` | runs[], logs[], fixAttempts[], selectedRunId | selectRun, stageColor, formatDuration |
 | `agentReplayStore` | sessions[], currentTime, isPlaying, playSpeed | play, pause, stepForward, stepBackward, seekTo |
 | `codeGraphStore` | nodes[], codeEdges[], enabled | fetchCodeStructure, toggle |
+| `organizationsStore` | organizations[], currentOrgId, currentWorkspaceId, activeRole, quotaUsage, canEdit/canManage | fetchOrganizations, createOrganization, updateOrganization, setOrg, setWorkspace, setActiveRole, upsertAccount, removeAccount (persists `currentOrg`/`currentWorkspace`/`activeEnterpriseRole` in localStorage; syncs workspace → `uiStore.setProject`) |
 
-**19 Pinia stores total.**
+**20 Pinia stores total.**
 
 ---
 
@@ -664,11 +668,12 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `analysisApi` | `/analysis/impact/{id}`, `/analysis/root-cause`, `/test-failures` | GET, POST |
 | `systemApi` | `/health`, `/sync-queue`, `/admin/seed`, `/admin/reset` | GET, POST |
 | `agentLogsApi` | `/issues/{id}/agent-logs` | GET |
+| `organizationsApi` | `/organizations`, `/organizations/{id}` | GET, POST, PATCH, DELETE |
 | `useAgentStream` | `/issues/{id}/agent-logs/stream` | SSE |
 
 ### Mock API server (`mock-api/server.py`)
 
-FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, components CRUD, policies CRUD, constraints CRUD + validate, dashboard-stats, analysis impact/root-cause, test-failures, health, sync-queue, admin seed/reset. Serves JSON from `DATA_DIR` (`frontend/dataset-de-pruebas`). Supports `?project=` filtering on issues.
+FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, components CRUD, policies CRUD, constraints CRUD + validate, organizations CRUD, dashboard-stats, analysis impact/root-cause, test-failures, health, sync-queue, admin seed/reset. Serves JSON from `DATA_DIR` (`frontend/dataset-de-pruebas`). Supports `?project=` filtering on issues.
 
 ### nginx routing (frontend container)
 
@@ -706,7 +711,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 - `technical_debt_notes?: string` — Markdown debt observations
 - `agent_working_started_at?: string | null` — agent execution start
 
-### Specialized Types (13 files under `types/`)
+### Specialized Types (14 files under `types/`)
 | File | Types |
 |---|---|
 | `index.ts` | Core entities above |
@@ -722,6 +727,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | `autoHealing.ts` | `PipelineStage`, `PipelineRun`, `LogEntry`, `FixAttempt` (+ `diffPreview?`) |
 | `agentReplay.ts` | `AgentSession`, `ReplayEvent`, `EventType`, `EventSeverity` |
 | `audit.ts` | `AuditEntry`, `AuditAction`, `AuditMetadata` |
+| `organizations.ts` | `Organization`, `Workspace`, `EnterpriseAccount`, `OrganizationQuota`, `DataRetentionPolicy`, `EnterpriseRole`, `OrganizationPlan`, `OrganizationCreateRequest` |
 
 ---
 
@@ -805,11 +811,11 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 ## 27. i18n Coverage
 
 ### Locale Files
-- `en.json`: ~1026 leaf keys, **60** top-level sections
-- `es.json`: ~1027 leaf keys, matching structure
+- `en.json`: ~1060 leaf keys, **61** top-level sections
+- `es.json`: ~1061 leaf keys, matching structure
 
-### Sections (60)
-`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`
+### Sections (61)
+`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`
 
 ### Coverage
 - All user-visible text uses `t()`
@@ -1180,6 +1186,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | `/analysis` | Analysis | AnalysisView.vue |
 | `/mcp` | MCPInspector | MCPInspectorView.vue |
 | `/hitl` | **HITLCommandCenter** | HITLCommandCenter.vue |
+| `/organization` | **OrganizationSettings** | OrganizationSettingsView.vue |
 | `/:pathMatch(.*)*` | NotFound | NotFoundView.vue |
 
 ### Views without routes
@@ -1233,3 +1240,26 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 - Local list-nav shortcuts (`J`/`K`/`Enter`) shown in help modal but not registered
 - Header page title map omits `/profile` (falls back to dashboard title)
 - `data-pipeline` project selectable but has zero mock issues
+
+---
+
+## 51. Organization Multi-Tenancy & Enterprise Settings
+
+Issue #509 (`OrganizationSettingsView.vue`, `OrganizationSwitcher.vue`, `organizationsStore`, `organizationsApi`, `types/organizations.ts`).
+
+| Feature | Status | Details |
+|---|---|---|
+| **Organization switcher** | Implemented | `OrganizationSwitcher.vue` in AppHeader (`hidden lg:flex`, before ProjectSelector); hierarchical dropdown Organization → Workspace; active org/workspace highlighted; "Manage organization settings" link |
+| **Multilevel mock data** | Implemented | `dataset-de-pruebas/organizations.json`: SocialSeed Corp (ENTERPRISE, 3 workspaces, 4 accounts), Northwind Labs (BUSINESS, 2 workspaces), Acme Startup (STARTUP, 1 workspace); each workspace has department, description, members, activeIssues, projectIds |
+| **Enterprise roles** | Implemented | `ENTERPRISE_ADMIN`, `SECURITY_MANAGER`, `DEVELOPER`, `AUDITOR`; role selector in settings view; roles stored per org default + `activeEnterpriseRole` in localStorage |
+| **Role-based UI gating** | Implemented | `canEdit` false for AUDITOR (retention form disabled, read-only hint); `canManage` only for ENTERPRISE_ADMIN / SECURITY_MANAGER (add/remove member buttons disabled otherwise) |
+| **Account CRUD** | Implemented | Table of members with name/email/role chips; inline add form; delete; persisted via `upsertAccount`/`removeAccount` (mock) |
+| **Quota cards** | Implemented | Compute / Storage / Token usage vs limit with percentage and color-coded progress bar (green <70%, amber ≥70%, red ≥90%); `quotaUsage` computed in store |
+| **Data retention policy** | Implemented | Editable retention days (7–3650), auto-delete and export-before-delete toggles; PATCH to mock API; toast on save |
+| **Workspace grid** | Implemented | Selectable workspace cards showing department, members, active issues; active workspace highlighted |
+| **Persistence** | Implemented | `currentOrg`, `currentWorkspace`, `activeEnterpriseRole` in localStorage; survives reloads |
+| **Issue filtering integration** | Implemented | Workspace → `uiStore.setProject(workspace.projectIds[0])` when current project not in workspace, so `issuesStore.filteredIssues` follows org context |
+| **Mock API** | Implemented | `GET/POST /mock/organizations`, `GET/PATCH/DELETE /mock/organizations/{id}` in `mock-api/server.py`; dataset persisted to `organizations.json` |
+| **Nav integration** | Implemented | `/organization` in Sidebar + MobileDrawer (Management group); header title `header.organization` |
+| **Empty/loading states** | Implemented | Loading spinner, "No organizations available", switcher falls back to first org |
+| **i18n** | Implemented | `organizations.*` section + `nav.organization` + `header.organization` in EN/ES |

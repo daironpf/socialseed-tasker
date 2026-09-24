@@ -136,6 +136,104 @@ def delete_user(user_id: str):
     return {"data": None}
 
 
+class OrganizationCreate(BaseModel):
+    name: str
+    industry: str = "General"
+    plan: str = "STARTUP"
+    default_role: str = "DEVELOPER"
+
+
+class OrganizationUpdate(BaseModel):
+    name: Optional[str] = None
+    industry: Optional[str] = None
+    plan: Optional[str] = None
+    default_role: Optional[str] = None
+    quota: Optional[dict] = None
+    retention: Optional[dict] = None
+
+
+@app.get("/mock/organizations")
+def get_organizations():
+    data = read_json("organizations.json")
+    return {"data": data.get("organizations", [])}
+
+
+@app.get("/mock/organizations/{org_id}")
+def get_organization(org_id: str):
+    data = read_json("organizations.json")
+    org = next((o for o in data.get("organizations", []) if o["id"] == org_id), None)
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    return {"data": org}
+
+
+@app.post("/mock/organizations")
+def create_organization(body: OrganizationCreate):
+    data = read_json("organizations.json")
+    orgs = data.get("organizations", [])
+    now = datetime.now(timezone.utc).isoformat()
+    new_org = {
+        "id": "org-" + str(__import__("uuid").uuid4())[:8],
+        "name": body.name,
+        "industry": body.industry,
+        "plan": body.plan,
+        "default_role": body.default_role,
+        "workspaces": [
+            {
+                "id": "ws-default",
+                "name": "Default Workspace",
+                "department": "General",
+                "description": "Default workspace",
+                "projectIds": [],
+                "members": 1,
+                "activeIssues": 0,
+            }
+        ],
+        "accounts": [],
+        "quota": {
+            "computeLimit": 500000,
+            "computeUsed": 0,
+            "storageLimitGb": 25,
+            "storageUsedGb": 0,
+            "tokenLimit": 5000000,
+            "tokenUsed": 0,
+        },
+        "retention": {"days": 90, "autoDelete": False, "exportBeforeDelete": True},
+        "createdAt": now,
+        "updatedAt": now,
+    }
+    orgs.append(new_org)
+    data["organizations"] = orgs
+    write_json("organizations.json", data)
+    return {"data": new_org}
+
+
+@app.patch("/mock/organizations/{org_id}")
+def update_organization(org_id: str, body: OrganizationUpdate):
+    data = read_json("organizations.json")
+    orgs = data.get("organizations", [])
+    idx = next((i for i, o in enumerate(orgs) if o["id"] == org_id), None)
+    if idx is None:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    update_data = body.model_dump(exclude_unset=True)
+    if "default_role" in update_data:
+        update_data["defaultRole"] = update_data.pop("default_role")
+    orgs[idx].update(update_data)
+    orgs[idx]["updatedAt"] = datetime.now(timezone.utc).isoformat()
+    data["organizations"] = orgs
+    write_json("organizations.json", data)
+    return {"data": orgs[idx]}
+
+
+@app.delete("/mock/organizations/{org_id}")
+def delete_organization(org_id: str):
+    data = read_json("organizations.json")
+    orgs = [o for o in data.get("organizations", []) if o["id"] != org_id]
+    data["organizations"] = orgs
+    write_json("organizations.json", data)
+    return {"data": None}
+
+
 @app.get("/mock/issues")
 def get_issues(page: int = 1, limit: int = 200, status: str = None, priority: str = None, project: str = None):
     data = read_json("issues.json")

@@ -24,7 +24,8 @@
     "hitl": "HITL Center",
     "sandbox": "Policy Sandbox",
     "rag": "Graph RAG Explorer",
-    "analysisView": "Analysis"
+    "analysisView": "Analysis",
+    "organization": "Organization"
   },
   "header": {
     "dashboard": "Dashboard",
@@ -45,7 +46,8 @@
     "replay": "Agent Replay",
     "executive": "Executive Dashboard",
     "analysis": "Impact Analysis",
-    "notFound": "Not Found"
+    "notFound": "Not Found",
+    "organization": "Organization Settings"
   },
   "menu": {
     "darkMode": "Dark Mode",
@@ -532,21 +534,32 @@
     "groupComponents": "Components"
   },
   "editor": {
-    "preview": "Toggle Preview",
-    "commands": "Commands",
-    "bold": "Bold",
-    "italic": "Italic",
-    "code": "Code",
     "heading1": "Heading 1",
+    "heading1Desc": "Large section heading",
     "heading2": "Heading 2",
+    "heading2Desc": "Medium section heading",
     "heading3": "Heading 3",
-    "divider": "Divider",
-    "bulletList": "Bullet List",
-    "checklist": "Checklist",
-    "table": "Table",
-    "quote": "Quote",
+    "heading3Desc": "Small section heading",
+    "bold": "Bold",
+    "boldDesc": "Bold text",
+    "italic": "Italic",
+    "italicDesc": "Italic text",
+    "code": "Code",
+    "codeDesc": "Inline code",
     "codeBlock": "Code Block",
-    "mermaid": "Mermaid Diagram"
+    "codeBlockDesc": "Syntax highlighted code",
+    "mermaid": "Mermaid Diagram",
+    "mermaidDesc": "Flowchart or diagram",
+    "bulletList": "Bullet List",
+    "bulletListDesc": "Unordered list",
+    "checklist": "Checklist",
+    "checklistDesc": "Task checklist",
+    "table": "Table",
+    "tableDesc": "Markdown table",
+    "quote": "Quote",
+    "quoteDesc": "Blockquote",
+    "divider": "Divider",
+    "dividerDesc": "Horizontal rule"
   },
   "diff": {
     "unified": "Unified",
@@ -577,44 +590,30 @@
     "agentAction": "Agent Action"
   },
   "audit": {
-    "changedStatus": "Changed status",
-    "startedImpactAnalysis": "Started impact analysis",
-    "assignedTo": "Assigned to {user}",
-    "changedPriority": "Changed priority",
-    "approvedAgentAction": "Approved agent action: {action}",
-    "constraintViolation": "Constraint violation detected: {detail}",
-    "addedLabels": "Added labels",
-    "addedComment": "Added comment: \"{text}\"",
-    "autoClosed": "Auto-closed after merge to main",
-    "agentCancelled": "AGENT EXECUTION CANCELLED"
-  },
-  "editor": {
-    "heading1": "Heading 1",
-    "heading1Desc": "Large section heading",
-    "heading2": "Heading 2",
-    "heading2Desc": "Medium section heading",
-    "heading3": "Heading 3",
-    "heading3Desc": "Small section heading",
-    "bold": "Bold",
-    "boldDesc": "Bold text",
-    "italic": "Italic",
-    "italicDesc": "Italic text",
-    "code": "Code",
-    "codeDesc": "Inline code",
-    "codeBlock": "Code Block",
-    "codeBlockDesc": "Syntax highlighted code",
-    "mermaid": "Mermaid Diagram",
-    "mermaidDesc": "Flowchart or diagram",
-    "bulletList": "Bullet List",
-    "bulletListDesc": "Unordered list",
-    "checklist": "Checklist",
-    "checklistDesc": "Task checklist",
-    "table": "Table",
-    "tableDesc": "Markdown table",
-    "quote": "Quote",
-    "quoteDesc": "Blockquote",
-    "divider": "Divider",
-    "dividerDesc": "Horizontal rule"
+    "tab": "History",
+    "title": "Audit Trail",
+    "noEntries": "No audit entries yet",
+    "loadMore": "Load {n} more entries",
+    "justNow": "just now",
+    "minutesAgo": "{n}m ago",
+    "hoursAgo": "{n}h ago",
+    "daysAgo": "{n}d ago",
+    "filterAll": "All",
+    "filterStatus": "Status",
+    "filterPriority": "Priority",
+    "filterAssignment": "Assignment",
+    "filterAgent": "Agent",
+    "filterSystem": "System",
+    "actions": {
+      "status": "Status",
+      "priority": "Priority",
+      "assignment": "Assignment",
+      "agent": "Agent",
+      "system": "System",
+      "hitl": "HITL",
+      "comment": "Comment",
+      "label": "Label"
+    }
   },
   "stream": {
     "status": {
@@ -844,32 +843,6 @@
     "isWorking": "is working on this...",
     "agentsWorking": "agents working",
     "conflict": "Another user is editing the same field"
-  },
-  "audit": {
-    "tab": "History",
-    "title": "Audit Trail",
-    "noEntries": "No audit entries yet",
-    "loadMore": "Load {n} more entries",
-    "justNow": "just now",
-    "minutesAgo": "{n}m ago",
-    "hoursAgo": "{n}h ago",
-    "daysAgo": "{n}d ago",
-    "filterAll": "All",
-    "filterStatus": "Status",
-    "filterPriority": "Priority",
-    "filterAssignment": "Assignment",
-    "filterAgent": "Agent",
-    "filterSystem": "System",
-    "actions": {
-      "status": "Status",
-      "priority": "Priority",
-      "assignment": "Assignment",
-      "agent": "Agent",
-      "system": "System",
-      "hitl": "HITL",
-      "comment": "Comment",
-      "label": "Label"
-    }
   },
   "projects": {
     "title": "Switch Project",
@@ -1193,5 +1166,47 @@
     "resolved_approve": "\"{title}\" was approved",
     "resolved_reject": "\"{title}\" was rejected",
     "resolved_modify": "Modification requested for \"{title}\""
+  },
+  "organizations": {
+    "switcher": "Switch organization",
+    "hierarchyHint": "Organization / Workspace hierarchy",
+    "none": "No organization",
+    "empty": "No organizations available",
+    "manage": "Manage organization settings",
+    "settingsTitle": "Organization Settings",
+    "settingsSubtitle": "Quotas, data retention, roles and workspaces",
+    "activeRole": "Active role",
+    "readOnlyHint": "Auditor role: read-only access. Some actions are disabled.",
+    "workspaces": "workspaces",
+    "workspacesTitle": "Workspaces",
+    "members": "members",
+    "activeIssues": "active issues",
+    "roles": {
+      "ENTERPRISE_ADMIN": "Enterprise Admin",
+      "SECURITY_MANAGER": "Security Manager",
+      "DEVELOPER": "Developer",
+      "AUDITOR": "Auditor"
+    },
+    "quota": {
+      "compute": "Compute quota",
+      "storage": "Storage quota",
+      "tokens": "Token quota"
+    },
+    "retention": {
+      "title": "Data retention policy",
+      "days": "Retention days",
+      "autoDelete": "Auto-delete expired data",
+      "exportBeforeDelete": "Export before deletion",
+      "saved": "Retention policy saved"
+    },
+    "accounts": {
+      "title": "Organization accounts",
+      "add": "Add member",
+      "added": "Member added",
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "empty": "No members yet"
+    }
   }
 }

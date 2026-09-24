@@ -44,6 +44,7 @@
         </h1>
       </div>
       <div class="flex flex-shrink-0 items-center gap-1 sm:gap-3">
+        <OrganizationSwitcher class="hidden lg:flex" />
         <ProjectSelector />
         <SyncStatusBadge class="hidden sm:flex" />
         <NotificationCenter />
@@ -65,6 +66,7 @@ import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UserMenu from './UserMenu.vue'
+import OrganizationSwitcher from './OrganizationSwitcher.vue'
 import NotificationCenter from '@/components/ui/NotificationCenter.vue'
 import ProjectSelector from '@/components/ui/ProjectSelector.vue'
 import SyncStatusBadge from '@/components/ui/SyncStatusBadge.vue'
@@ -122,6 +124,7 @@ const pageTitle = computed(() => {
     '/mcp': t('header.mcp'),
     '/hitl': t('header.hitl'),
     '/analysis': t('header.analysis'),
+    '/organization': t('header.organization'),
   }
   return titles[route.path] || t('header.dashboard')
 })
