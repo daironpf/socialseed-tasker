@@ -1159,5 +1159,35 @@
     "viewChanges": "Ver Cambios",
     "hideChanges": "Ocultar Cambios",
     "noDiff": "Sin diff disponible"
+  },
+  "hitlBanner": {
+    "message": "{count} solicitud(es) HITL urgente(s) requieren tu revision",
+    "review": "Revisar",
+    "viewAll": "Ver todas"
+  },
+  "hitlQuickAction": {
+    "command": "Comando",
+    "affected": "Afectados",
+    "direct": "Directos",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "modify": "Modificar",
+    "confirmApprove": "Confirmar Aprobacion",
+    "confirmReject": "Confirmar Rechazo",
+    "confirmModify": "Enviar Modificaciones",
+    "rejectFeedback": "Razon de Rechazo",
+    "rejectPlaceholder": "Explica por que se rechaza esta solicitud...",
+    "modifyFeedback": "Notas de Modificacion",
+    "modifyPlaceholder": "Describe las modificaciones requeridas...",
+    "approveConfirm": "Al aprobar, el estado del issue relacionado cambiara a EN PROGRESO.",
+    "viewFullContext": "Ver Contexto Completo",
+    "approved": "\"{title}\" aprobado",
+    "rejected": "\"{title}\" rechazado",
+    "modified": "Modificacion solicitada para \"{title}\"",
+    "failed": "No se pudo resolver la solicitud HITL",
+    "resolvedTitle": "Solicitud HITL Resuelta",
+    "resolved_approve": "\"{title}\" fue aprobado",
+    "resolved_reject": "\"{title}\" fue rechazado",
+    "resolved_modify": "Modificacion solicitada para \"{title}\""
   }
 }

@@ -232,11 +232,18 @@ export const useHitlStore = defineStore('hitl', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
   const selectedRequestId = ref<string | null>(null)
+  const quickActionRequestId = ref<string | null>(null)
+  let loadedOnce = false
 
   const pendingRequests = computed(() => requests.value.filter(r => r.status === 'pending'))
   const approvedRequests = computed(() => requests.value.filter(r => r.status === 'approved'))
   const rejectedRequests = computed(() => requests.value.filter(r => r.status === 'rejected'))
   const modifiedRequests = computed(() => requests.value.filter(r => r.status === 'modified'))
+
+  const urgentPendingRequests = computed(() =>
+    pendingRequests.value.filter(r => r.severity === 'CRITICAL' || r.severity === 'HIGH')
+  )
+  const urgentPendingCount = computed(() => urgentPendingRequests.value.length)
 
   const selectedRequest = computed(() =>
     requests.value.find(r => r.id === selectedRequestId.value) || null
@@ -246,16 +253,34 @@ export const useHitlStore = defineStore('hitl', () => {
   const criticalCount = computed(() => pendingRequests.value.filter(r => r.severity === 'CRITICAL').length)
 
   async function fetchRequests() {
+    if (loadedOnce && requests.value.length > 0) return
     loading.value = true
     error.value = null
     try {
       await new Promise(resolve => setTimeout(resolve, 300))
       requests.value = [...MOCK_REQUESTS]
+      loadedOnce = true
     } catch (e) {
       error.value = (e as Error).message
     } finally {
       loading.value = false
     }
+  }
+
+  type ResolveAction = 'approve' | 'reject' | 'modify'
+
+  async function resolveAction(id: string, action: ResolveAction, feedback?: string): Promise<boolean> {
+    if (action === 'approve') return approveRequest(id)
+    if (action === 'reject') return rejectRequest(id, feedback || '')
+    return modifyRequest(id, feedback || '')
+  }
+
+  function openQuickAction(id: string) {
+    quickActionRequestId.value = id
+  }
+
+  function closeQuickAction() {
+    quickActionRequestId.value = null
   }
 
   async function approveRequest(id: string): Promise<boolean> {
@@ -340,10 +365,13 @@ export const useHitlStore = defineStore('hitl', () => {
     loading,
     error,
     selectedRequestId,
+    quickActionRequestId,
     pendingRequests,
     approvedRequests,
     rejectedRequests,
     modifiedRequests,
+    urgentPendingRequests,
+    urgentPendingCount,
     selectedRequest,
     pendingCount,
     criticalCount,
@@ -351,6 +379,9 @@ export const useHitlStore = defineStore('hitl', () => {
     approveRequest,
     rejectRequest,
     modifyRequest,
+    resolveAction,
+    openQuickAction,
+    closeQuickAction,
     selectRequest,
     getSeverityColor,
     getStatusColor,

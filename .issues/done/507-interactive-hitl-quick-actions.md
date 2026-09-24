@@ -4,7 +4,7 @@
 
 El `HITLCommandCenter` muestra solicitudes que requieren aprobación humana. Debemos conectar estas solicitudes con notificaciones flotantes (Toast/Banner) para tomar decisiones instantáneas desde cualquier parte de la aplicación, sin tener que navegar manualmente a la vista HITLCommandCenter.
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: HIGH
 
@@ -35,15 +35,15 @@ Frontend / HITL / Global Actions
    - Click-through abre modal de acción rápida
 
 ## Acceptance Criteria
-- [ ] Global HITL banner shows in AppHeader when critical/high requests pending
-- [ ] Banner shows count of pending requests
-- [ ] Click banner navigates to HITLCommandCenter
-- [ ] Quick action modal opens with approve/reject/modify
-- [ ] Modify action allows text input
-- [ ] Approve/Reject updates issue status dynamically
-- [ ] Toast notification confirms action
-- [ ] Notification created automatically for new HITL requests
-- [ ] i18n support (EN + ES)
+- [x] Global HITL banner shows in AppHeader when critical/high requests pending
+- [x] Banner shows count of pending requests
+- [x] Click banner navigates to HITLCommandCenter
+- [x] Quick action modal opens with approve/reject/modify
+- [x] Modify action allows text input
+- [x] Approve/Reject updates issue status dynamically
+- [x] Toast notification confirms action
+- [x] Notification created automatically for new HITL requests
+- [x] i18n support (EN + ES)
 
 ## Files to Create
 - `frontend/src/components/ui/HITLQuickActionModal.vue`

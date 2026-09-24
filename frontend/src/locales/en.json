@@ -1158,5 +1158,35 @@
     "viewChanges": "View Changes",
     "hideChanges": "Hide Changes",
     "noDiff": "No diff available"
+  },
+  "hitlBanner": {
+    "message": "{count} urgent HITL request(s) need your review",
+    "review": "Review",
+    "viewAll": "View all"
+  },
+  "hitlQuickAction": {
+    "command": "Command",
+    "affected": "Affected",
+    "direct": "Direct",
+    "approve": "Approve",
+    "reject": "Reject",
+    "modify": "Modify",
+    "confirmApprove": "Confirm Approval",
+    "confirmReject": "Confirm Rejection",
+    "confirmModify": "Submit Modifications",
+    "rejectFeedback": "Rejection Reason",
+    "rejectPlaceholder": "Explain why this request is rejected...",
+    "modifyFeedback": "Modification Notes",
+    "modifyPlaceholder": "Describe the required modifications...",
+    "approveConfirm": "Approving will update the related issue status to IN_PROGRESS.",
+    "viewFullContext": "View Full Context",
+    "approved": "\"{title}\" approved",
+    "rejected": "\"{title}\" rejected",
+    "modified": "\"{title}\" modification requested",
+    "failed": "Failed to resolve HITL request",
+    "resolvedTitle": "HITL Request Resolved",
+    "resolved_approve": "\"{title}\" was approved",
+    "resolved_reject": "\"{title}\" was rejected",
+    "resolved_modify": "Modification requested for \"{title}\""
   }
 }

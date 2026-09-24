@@ -8,6 +8,7 @@ export interface AppNotification {
   read: boolean
   requiresAction: boolean
   linkTo?: { name: string; params?: Record<string, string> }
+  hitlRequestId?: string
   createdAt: string
 }
 

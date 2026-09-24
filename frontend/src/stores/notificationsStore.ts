@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { AppNotification, NotificationCategory } from '@/types/notifications'
+import type { HITLRequest } from '@/types/hitl'
 
 const STORAGE_KEY = 'socialseed-notifications'
 const SEED_VERSION = 2
@@ -88,6 +89,27 @@ export const useNotificationsStore = defineStore('notifications', () => {
       if (filter === 'action' && !n.requiresAction) return false
       return true
     })
+  }
+
+  function ensureHitlNotifications(hitlRequests: HITLRequest[]) {
+    for (const req of hitlRequests) {
+      if (req.status !== 'pending') continue
+      const exists = notifications.value.some(n => n.hitlRequestId === req.id)
+      if (exists) continue
+      const notif: AppNotification = {
+        id: generateId(),
+        read: false,
+        createdAt: req.createdAt,
+        title: 'HITL Approval Required',
+        message: `${req.agentAvatar} ${req.agentName}: ${req.title}`,
+        category: 'hitl',
+        requiresAction: true,
+        hitlRequestId: req.id,
+        linkTo: { name: 'HITLCommandCenter' },
+      }
+      notifications.value.unshift(notif)
+    }
+    persist()
   }
 
   function seedMockNotifications() {
@@ -230,6 +252,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     markAllAsRead,
     dismiss,
     getFiltered,
+    ensureHitlNotifications,
     seedMockNotifications,
   }
 })

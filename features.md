@@ -2,7 +2,7 @@
 
 > Complete catalog of all UI features, interactions, and capabilities currently implemented.
 > Use this document to identify gaps, plan new features, and track what is missing.
-> Last updated: 2026-09-22
+> Last updated: 2026-09-24
 
 ---
 
@@ -206,6 +206,7 @@
 | **Audit trail** | Implemented | 9 mock entries, action-type icons/colors, actor avatars |
 | **Agent log stream** | Implemented | Real-time SSE via `useAgentStream`, status indicators, auto-scroll, kill switch |
 | **HITL approval** | Implemented | HITLApprovalBanner when status is WAITING_HUMAN_APPROVAL |
+| **Global HITL quick actions** | Implemented | AppHeader HITL banner + HITLQuickActionModal; resolve from any view |
 | **Presence indicators** | Implemented | PresenceAvatars, TypingIndicator, ConflictWarning |
 | **Token metrics** | Implemented | TokenMetrics showing consumption, cost, model info |
 | i18n | Implemented | All labels translated |
@@ -408,6 +409,7 @@
 | `TypingIndicator` | Typing status | Animated dots for active typers |
 | `ConflictWarning` | Field conflicts | Warning when multiple users edit same field |
 | `HITLApprovalBanner` | Approval UI | Severity badge, approve/reject/modify actions |
+| `HITLQuickActionModal` | Global HITL actions | Approve/reject/modify from anywhere; toast + issue status update |
 | `RelationshipModal` | Dependency creation | Issue search, relationship type, cycle detection |
 | `BulkActionsBar` | Multi-select actions | Status change, assign, delete |
 | `NotificationCenter` | Notification panel | Tabs (all/unread/action), mark all read |
@@ -549,12 +551,12 @@
 | `policiesStore` | policies[], loading | fetchPolicies, createPolicy, updatePolicy, deletePolicy |
 | `constraintsStore` | constraints[], loading, validationResult | fetchConstraints, createConstraint, updateConstraint, validateConstraints |
 | `analysisStore` | impactResult, rootCauseResults[], testFailures[] | analyzeImpact, analyzeRootCause, fetchTestFailures |
-| `notificationsStore` | notifications[], unreadCount | markAsRead, markAllAsRead, dismiss, getFiltered |
+| `notificationsStore` | notifications[], unreadCount | markAsRead, markAllAsRead, dismiss, getFiltered, ensureHitlNotifications |
 | `chatStore` | conversations[], activeConversationId, typingUsers[] | selectConversation, sendMessage, togglePin, createConversation |
 | `sandboxStore` | rules[], selectedRule, simulationResult | Mock CRUD + simulation |
 | `ragStore` | searchResults[], queryStats | Mock search, getContext |
 | `mcpStore` | sessions[], selectedSession, isStreaming | Mock MCP session management |
-| `hitlStore` | requests[], selectedRequest | Mock HITL approval workflow |
+| `hitlStore` | requests[], selectedRequest, urgentPendingCount, quickActionRequestId | resolveAction, openQuickAction, closeQuickAction |
 | `finopsStore` | models[], components[], tasks[], roi[], alerts[], caps[] | updateCap, toggleCap |
 | `executiveStore` | kpis[], cycleTime[], debt[], compliance[] | formatTrend, complianceColor |
 | `autoHealingStore` | runs[], logs[], fixAttempts[], selectedRunId | selectRun, stageColor, formatDuration |
@@ -790,7 +792,11 @@ All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api s
 | **Status tracking** | Implemented | PENDING to APPROVED/REJECTED/MODIFIED |
 | **Mock data** | Implemented | 3 requests across multiple statuses |
 | **Store** | Implemented | hitlStore.ts |
-| i18n | Implemented | All labels in hitlCenter section |
+| **Global HITL banner** | Implemented | Persistent AppHeader banner when CRITICAL/HIGH pending; count, click-through, Review button |
+| **Quick action modal** | Implemented | HITLQuickActionModal with approve/reject/modify + textarea, impact stats, View Full Context |
+| **Issue status sync** | Implemented | Approve → IN_PROGRESS, Reject → OPEN, Modify → IN_PROGRESS on related issue |
+| **Auto notifications** | Implemented | ensureHitlNotifications creates requiresAction notifications; click opens quick action modal |
+| i18n | Implemented | All labels in hitlCenter, hitlBanner, hitlQuickAction sections |
 
 ---
 

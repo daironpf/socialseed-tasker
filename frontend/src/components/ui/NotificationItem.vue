@@ -49,8 +49,10 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { CATEGORY_CONFIG } from '@/types/notifications'
 import type { AppNotification } from '@/types/notifications'
+import { useHitlStore } from '@/stores/hitlStore'
 
 const { t } = useI18n()
+const hitlStore = useHitlStore()
 
 const props = defineProps<{
   notification: AppNotification
@@ -86,6 +88,10 @@ const timeAgo = computed(() => {
 function handleClick() {
   if (!props.notification.read) {
     emit('markRead', props.notification.id)
+  }
+  if (props.notification.hitlRequestId) {
+    hitlStore.openQuickAction(props.notification.hitlRequestId)
+    return
   }
   if (props.notification.linkTo) {
     router.push(props.notification.linkTo)
