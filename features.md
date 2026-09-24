@@ -123,7 +123,7 @@
 |---|---|---|
 | Collapsible sidebar | Implemented | 20px collapsed → 64px on hover (`w-20` → `w-64`), smooth transition |
 | Logo + branding | Implemented | "SocialSeed" text when expanded |
-| Navigation groups | Implemented | Principal (4), Management (17), Analysis (2) = **23 nav items** |
+| Navigation groups | Implemented | Principal (4), Management (17), Analysis (3) = **24 nav items** |
 | Active route highlighting | Implemented | Color change on current route |
 | Nav icons | Implemented | SVG icons per nav item |
 | i18n labels | Implemented | All nav labels use `t()` |
@@ -135,13 +135,13 @@
 |---|---|
 | Principal | `/board`, `/system`, `/kanban`, `/list` |
 | Management | `/components`, `/policies`, `/constraints`, `/sandbox`, `/rag`, `/finops`, `/auto-healing`, `/replay`, `/executive`, `/users`, `/chat`, `/mcp`, `/hitl`, `/organization`, `/governance-matrix`, `/audit-log`, `/agents/studio` |
-| Analysis | `/graph`, `/analysis` |
+| Analysis | `/graph`, `/analysis`, `/analytics` |
 
 ### Header (AppHeader)
 
 | Feature | Status | Details |
 |---|---|---|
-| Dynamic page title | Implemented | Maps route path → translated title (22 paths; `/profile` falls back to dashboard title) |
+| Dynamic page title | Implemented | Maps route path → translated title (23 paths; `/profile` falls back to dashboard title) |
 | Organization switcher | Implemented | `OrganizationSwitcher` (`hidden lg:flex`, before ProjectSelector): hierarchical Organization → Workspace dropdown, localStorage, link to `/organization` settings |
 | Global HITL banner | Implemented | Shown when `urgentPendingCount > 0` (CRITICAL/HIGH pending); click → HITLCommandCenter; Review button → HITLQuickActionModal |
 | Hamburger menu | Implemented | 44×44 button (`md:hidden`), emits `open-mobile-menu` |
@@ -157,7 +157,7 @@
 |---|---|---|
 | Overlay slide-in | Implemented | From left, 300ms transition, full-screen dark overlay |
 | Close gestures | Implemented | Tap overlay or swipe-left |
-| Navigation content | Implemented | Same 3 groups / 23 items as desktop Sidebar |
+| Navigation content | Implemented | Same 3 groups / 24 items as desktop Sidebar |
 | i18n | Implemented | `mobileNav.openMenu`, `mobileNav.menu`, `mobileNav.swipeHint` |
 
 ### UserMenu
@@ -434,7 +434,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | Component | Purpose | Details |
 |---|---|---|
 | `Sidebar` | Main navigation | Collapsible, 3 groups, 21 items, desktop-only |
-| `MobileDrawer` | Mobile navigation | Overlay drawer, swipe-to-close, same 23 items |
+| `MobileDrawer` | Mobile navigation | Overlay drawer, swipe-to-close, same 24 items |
 | `AppHeader` | Top bar | Dynamic title, HITL banner, hamburger, org switcher (lg+), project selector, sync badge, notifications, user menu |
 | `OrganizationSwitcher` | Org/workspace selector | Hierarchical Organization → Workspace dropdown, localStorage persistence, link to `/organization` settings |
 | `UserMenu` | User dropdown | Avatar, dark mode, language, logout, profile link |
@@ -536,9 +536,9 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | Component | Purpose | Details |
 |---|---|---|
 | `LoginScreen` | API key gate | Full-screen overlay login |
-**Total view components:** 26 files in `src/views/` (25 routed incl. NotFound + `IssueDetailView` embedded)
+**Total view components:** 27 files in `src/views/` (26 routed incl. NotFound + `IssueDetailView` embedded)
 
-**Total shared components:** 70 `.vue` files under `src/components/`
+**Total shared components:** 75 `.vue` files under `src/components/`
 
 ---
 
@@ -670,8 +670,9 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `governanceStore` | matrix (agent x risk x action permission cells), alerts[], activeAlerts, pausedCount | toggleCell, setCell, getCell, resetMatrix, simulateRestrictedAction, resolveAlert (matrix persisted in localStorage `governance-matrix-v1`; approval-level alerts pause/resume issue `agent_working` |
 | `auditLogStore` | entries[] (84 deterministic seeded mock events), filters (dateFrom/dateTo/actor/agent/eventType/severity/search), filteredEntries, severityCounts, actors, agents, chain[] (mock hash blocks) | setFilter, clearFilters, exportRows (deterministic PRNG seed 20260924; no API — generated in store per issue spec) |
 | `agentStudioStore` | profiles[] (`AgentProfile` library), enabledCount | saveProfile (create/update), cloneProfile, toggleEnabled, removeProfile, markUsed, syncUsers, blankProfile (persists localStorage `agent-studio-v1`; merges studio agents into `usersStore.users` so they survive `fetchUsers` refetch) |
+| `analyticsReportStore` | dateRange (from/to), report (ExecutiveReport|null), slaNotified, rangeDays, mttrSeries, healingSeries, healingRate, budgetByProject, slaItems, slaCounts, slaCompliance, comparison (period-to-period), kpis | setPreset, setCustomRange, generateReport (weekly/monthly KPIs + exceptions), clearReport (derives MTTR/healing/budget/SLA from issuesStore + finopsStore + autoHealingStore with seeded FNV fallbacks) |
 
-**23 Pinia stores total.**
+**24 Pinia stores total.**
 
 ---
 
@@ -734,7 +735,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 - `technical_debt_notes?: string` — Markdown debt observations
 - `agent_working_started_at?: string | null` — agent execution start
 
-### Specialized Types (18 files under `types/`)
+### Specialized Types (19 files under `types/`)
 | File | Types |
 |---|---|
 | `index.ts` | Core entities above |
@@ -755,6 +756,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | `auditLog.ts` | `AuditLogEntry`, `AuditLogEventType`, `AuditLogSeverity`, `AuditLogFilters`, `AuditChainBlock`, `AUDIT_EVENT_TYPES`, `AUDIT_SEVERITIES` |
 | `graphExplorer.ts` | `ExplorerNodeType`, `EdgeRelation`, `InspectorPayload`, `InspectorField`, `InspectorLink`, `BlastRadiusStats`, `EdgeInspectorInfo`, `TraceSelectOption` |
 | `agentStudio.ts` | `AgentProfile`, `AgentLimits`, `AGENT_MODELS`, `AGENT_TOOLS`, `PROMPT_VARIABLES`, `DEFAULT_LIMITS` |
+| `analytics.ts` | `SLAStatus`, `SLA_HOURS`, `SLAIssueMetric`, `MTTRPoint`, `HealingPoint`, `ProjectBudget`, `PeriodComparison`, `ReportKPI`, `ReportException`, `ExecutiveReport` |
 
 ---
 
@@ -838,11 +840,11 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 ## 27. i18n Coverage
 
 ### Locale Files
-- `en.json`: ~1312 leaf keys, **66** top-level sections
-- `es.json`: ~1313 leaf keys, matching structure
+- `en.json`: ~1370 leaf keys, **68** top-level sections
+- `es.json`: ~1371 leaf keys, matching structure
 
-### Sections (66)
-`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`, `agentStudio`
+### Sections (68)
+`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`, `agentStudio`, `analytics`, `sla`
 
 ### Coverage
 - All user-visible text uses `t()`
@@ -1217,6 +1219,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | `/governance-matrix` | **GovernanceMatrix** | GovernanceMatrixView.vue |
 | `/audit-log` | **AuditLog** | AuditLogView.vue |
 | `/agents/studio` | **AgentStudio** | AgentStudioView.vue |
+| `/analytics` | **Analytics** | AnalyticsDashboardView.vue |
 | `/:pathMatch(.*)*` | NotFound | NotFoundView.vue |
 
 ### Views without routes
@@ -1354,3 +1357,25 @@ Issue #513 (`AgentStudioView.vue`, `AgentPromptEditor.vue`, `AgentSandboxTester.
 | **Nav & routing** | Implemented | Route `/agents/studio` (name `AgentStudio`); Sidebar + MobileDrawer Management entries; header title `agentStudio.title` |
 | **i18n** | Implemented | `agentStudio.*` section (builder, prompt, sandbox, library) + `nav.agentStudio` in EN/ES |
 | **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~42s) |
+
+---
+
+## 55. Custom Dashboards, Reporting Engine & SLA Metrics
+
+Issue #514 (`AnalyticsDashboardView.vue`, `MTTRComparisonChart.vue`, `HealingSuccessChart.vue`, `BudgetByProjectChart.vue`, `SLAMetricsCard.vue`, `ReportExporter.vue`, `analyticsReportStore`, `types/analytics.ts`).
+
+| Feature | Status | Details |
+|---|---|---|
+| **Analytics view** | Implemented | `/analytics` route (name `Analytics`), Sidebar + MobileDrawer Analysis group (3rd item), header title `analytics.title` |
+| **MTTR before vs after agents** | Implemented | `MTTRComparisonChart`: SVG grouped bars per week (gray = pre-agents baseline seeded per period, blue = actual MTTR from closed issues or seeded agent factor), legend, hover tooltips, avg improvement footer; 6 weekly buckets ending at range `to` |
+| **Auto-healing success rate** | Implemented | `HealingSuccessChart`: SVG line over 6 weeks with 85% target line; current data from `autoHealingStore.runs` (completed/failed), seeded improving history otherwise; overall badge uses real runs (1 completed / 1 failed = 50%) with seeded fallback |
+| **USD budget by project** | Implemented | `BudgetByProjectChart`: horizontal progress bars per project (SocialSeed Tasker $150, Auth Service $90, API Gateway $120, Data Pipeline $80 budgets); spend = seeded base + `finopsStore.tasks` costs joined via `issuesStore` `project_id`, scaled by range days; green/amber/red thresholds 70/90% |
+| **Date range + comparison** | Implemented | Presets 7d/30d/90d + custom from/to inputs; period-to-period strip: resolved count and MTTR current vs previous equal-length window with delta % |
+| **KPI tiles** | Implemented | MTTR (+ improvement % vs pre-agents), healing rate, budget spent/limit, SLA compliance; color tones good/warn/bad |
+| **SLA control panel** | Implemented | `SLAMetricsCard`: mock SLAs CRITICAL 4h / HIGH 24h / MEDIUM 72h / LOW 168h (`SLA_HOURS`); counters On track / At risk / Breached, per-issue time-gap bars (percentUsed), priority chips, hours-left/overdue labels, breach-risk banner |
+| **Breach-risk notifications** | Implemented | Auto `notificationsStore.addNotification` once per session (category `constraint_violation`, `requiresAction`, linkTo Analytics) when breaches/risks exist; manual "Notify team" button re-sends + toast |
+| **Report generator** | Implemented | `ReportExporter`: Weekly/Monthly buttons build `ExecutiveReport` (5 KPIs + exceptions: SLA breaches/risks, budget ≥85%, failed healing runs); interactive preview `#analytics-report` with KPI cards and exceptions table |
+| **Report download** | Implemented | PDF (html2canvas + jspdf dynamic import, portrait A4), PNG (html2canvas), JSON (`useExport().exportJSON`) over the preview panel |
+| **Store consistency** | Implemented | `analyticsReportStore` derives from `issuesStore` + `finopsStore` + `autoHealingStore` (no duplicated mock datasets); seeded FNV fallbacks only where source stores lack history; no backend calls |
+| **i18n** | Implemented | `analytics.*` (43 keys) + `sla.*` (16 keys) + `nav.analytics` in EN/ES |
+| **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~41s) |

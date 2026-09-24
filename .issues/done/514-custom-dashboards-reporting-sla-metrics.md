@@ -6,7 +6,9 @@ Los ejecutivos de ingeniería y líderes de equipo necesitan paneles analíticos
 
 Origen: `notas.md` → Issue #506 (renumerada a #514; #506 ya está en done como Diff Preview).
 
-## Status: TODO
+## Status: DONE
+
+**Resolución (2026-09-24):** Implementado. Vista `AnalyticsDashboardView` en `/analytics` con KPIs (MTTR con mejora vs pre-agentes, tasa de auto-sanación, presupuesto USD, cumplimiento SLA), rango de fechas 7/30/90d + inputs personalizados y comparación periodo-a-periodo (resueltas y MTTR con delta %). Gráficos SVG propios (sin librería, patrón TrendChart): `MTTRComparisonChart` (barras agrupadas antes/después), `HealingSuccessChart` (línea con objetivo 85%, datos reales de `autoHealingStore`), `BudgetByProjectChart` (barras por proyecto con join `finopsStore.tasks`→`issuesStore.project_id`, escala por días). `SLAMetricsCard` con SLAs CRITICAL 4h/HIGH 24h/MEDIUM 72h/LOW 168h, contadores on-track/at-risk/breached, barras de brecha y banner; notificación automática única vía `notificationsStore` (categoría `constraint_violation`) + botón "Notify team". `ReportExporter` genera informe semanal/mensual (`ExecutiveReport` con 5 KPIs y excepciones: incumplimientos SLA, presupuesto ≥85%, pipelines fallidos) con descarga PDF/PNG (html2canvas+jspdf, patrón Executive) y JSON. Store `analyticsReportStore` deriva todo de `issuesStore`+`finopsStore`+`autoHealingStore` con fallbacks sembrados FNV; sin backend. i18n `analytics`+`sla`+`nav.analytics` EN/ES. `npm run build` pasa (41s).
 
 ## Priority: MEDIUM
 
@@ -40,13 +42,13 @@ feat / analytics
    - No depende de backend real
 
 ## Acceptance Criteria
-- [ ] Interactive charts: MTTR before vs after agents, auto-healing success rate, USD budget by project
-- [ ] SLA control panel with time-gap indicators and breach-risk notifications
-- [ ] Weekly/Monthly executive report generator with interactive visual summary and download
-- [ ] Date range and period comparison work on mock data
-- [ ] Consistent with existing Executive / FinOps / Auto-Healing stores where data overlaps
-- [ ] i18n support (EN + ES)
-- [ ] `npm run build` passes
+- [x] Interactive charts: MTTR before vs after agents, auto-healing success rate, USD budget by project
+- [x] SLA control panel with time-gap indicators and breach-risk notifications
+- [x] Weekly/Monthly executive report generator with interactive visual summary and download
+- [x] Date range and period comparison work on mock data
+- [x] Consistent with existing Executive / FinOps / Auto-Healing stores where data overlaps
+- [x] i18n support (EN + ES)
+- [x] `npm run build` passes
 
 ## Files to Create
 - `frontend/src/views/AnalyticsDashboardView.vue`

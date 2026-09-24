@@ -28,6 +28,7 @@ const router = createRouter({
     { path: '/governance-matrix', name: 'GovernanceMatrix', component: () => import('@/views/GovernanceMatrixView.vue') },
     { path: '/audit-log', name: 'AuditLog', component: () => import('@/views/AuditLogView.vue') },
     { path: '/agents/studio', name: 'AgentStudio', component: () => import('@/views/AgentStudioView.vue') },
+    { path: '/analytics', name: 'Analytics', component: () => import('@/views/AnalyticsDashboardView.vue') },
     { path: '/:pathMatch(.*)*', name: 'NotFound', component: () => import('@/views/NotFoundView.vue') },
   ],
 })
