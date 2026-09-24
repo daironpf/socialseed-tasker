@@ -1,252 +1,264 @@
 # SocialSeed Tasker
 
-A graph-based task management framework with hexagonal architecture, AI agent orchestration, code-as-graph analysis, RAG-powered reasoning, deterministic contracts, secrets management, and hardened CI/CD.
+**Where tasks become a living graph — and AI agents have to ask before they act.**
+
+SocialSeed Tasker is a graph-native engineering management platform: issues, components and
+dependencies live in a Neo4j graph instead of flat tables, so you can *see* the consequences of
+every change before you make it. A FastAPI backend with a CLI exposes the graph; a Vue 3
+frontend turns it into a board you actually want to work in — with AI agents wired into the
+same governance rules as humans: they plan, you approve (HITL), policies veto, and an audit
+log remembers everything.
+
+**What's already built** is not a prototype sketch — it's the result of **514 resolved issues**:
+~28,500 lines of typed frontend (78 components, 27 views, 24 stores, full EN/ES i18n), a real
+backend with code-as-graph analysis (tree-sitter), RAG-style reasoning, secrets management and
+a CLI, plus a complete mock dataset so the whole UI runs standalone in one command.
+
+**Where it's headed** is documented in [Roadmap](#roadmap) — end-to-end wiring to the real
+backend, a frontend test suite, and turning the simulated agents into real LLM-backed ones.
 
 ---
 
-## Quick Start — UI Testing
+## Highlights
 
-### Prerequisites
-
-- Docker Desktop running
-- Node.js 18+ (for local frontend development)
-
-### 1. Start All Services
-
-```bash
-docker compose --profile api up -d
-```
-
-This starts:
-| Service | URL | Description |
-|---------|-----|-------------|
-| Frontend (UI) | http://127.0.0.1:8889 | Vue 3 board interface |
-| Mock API | http://127.0.0.1:8001 | Persistent mock backend (read/write JSON) |
-| Real API | http://127.0.0.1:8888 | FastAPI backend (optional) |
-| Neo4j | http://127.0.0.1:7474 | Graph database (user: `neo4j`, pass: `neoSocial`) |
-
-### 2. Open the UI
-
-Navigate to **http://127.0.0.1:8889** in your browser.
-
-The UI runs in **mock mode** (`USE_MOCK = true` in `client.ts`). All CRUD operations persist to JSON files in `frontend/dataset-de-pruebas/`.
-
-### 3. Verify Everything Works
-
-```bash
-# Check all containers are healthy
-docker compose --profile api ps
-
-# Check mock API
-curl http://127.0.0.1:8001/mock/issues
-
-# Check frontend build
-cd frontend && npm run build
-```
+- **Dependency graph as the source of truth** — Board, List and Kanban are just lenses on
+  the same graph; the Graph view traces impact paths and blast radius interactively.
+- **AI agents with guardrails** — Agent Studio to build custom agents (prompts, tools,
+  limits), a sandbox tester, HITL approval inbox with diff/impact review, and a kill switch
+  that actually stops the agent on the card.
+- **Governance that bites** — Policies (circular deps, max fan-out…), a constraint
+  validator, a risk-governance matrix, and a hash-chained audit log you can export.
+- **See the system** — Impact & root-cause analysis, code-graph overlay, GraphRAG
+  explorer, auto-healing pipeline monitor, token/FinOps dashboards, executive reports with
+  SLA metrics and PDF/PNG/JSON export.
+- **Polish** — Dark mode, EN/ES i18n, command palette (`Cmd/Ctrl+K`), toasts with 3
+  themes, sound effects, offline-first sync queue, presence & typing indicators, floating chat.
 
 ---
 
-## Local Frontend Development (without Docker)
+## Quick start
 
-You can run the full UI locally without Docker. This is faster for development since it uses Vite's hot reload.
+### Option A — Docker (the whole stack)
 
-### Prerequisites
-
-- Python 3.10+ (for mock-api)
-- Node.js 18+ (for frontend)
-
-### 1. Start the Mock API
+**Prerequisites:** Docker Desktop running. The frontend image serves a *pre-built* `dist/`,
+so build it once first:
 
 ```bash
-cd mock-api
-
-# Set the data directory path (Windows PowerShell)
-$env:DATA_DIR="..\frontend\dataset-de-pruebas"
-
-# Or on Linux/Mac
-export DATA_DIR="../frontend/dataset-de-pruebas"
-
-# Start the server
-python -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
-```
-
-The mock API will be available at `http://localhost:8001`.
-
-### 2. Start the Frontend Dev Server
-
-In a new terminal:
-
-```bash
+# 1. Build the UI (type-checks + bundles)
 cd frontend
+npm install
+npm run build
+cd ..
+
+# 2. Start everything
+docker compose up -d
+```
+
+Open **http://127.0.0.1:19001** and you're in.
+
+| Service | URL | Notes |
+|---------|-----|-------|
+| **Frontend (UI)** | http://127.0.0.1:19001 | nginx, proxies `/api/` and `/mock-api/` |
+| **Mock API** | http://127.0.0.1:8001 | FastAPI, persists JSON dataset |
+| **Real API** | http://127.0.0.1:8888 | FastAPI + Neo4j (optional for UI) |
+| **Neo4j Browser** | http://127.0.0.1:7474 | login `neo4j` / `neoSocial` |
+
+The UI runs in **mock mode** (`USE_MOCK = true` in `frontend/src/api/client.ts`): every CRUD
+operation round-trips through the mock API and persists to
+`frontend/dataset-de-pruebas/*.json` — no database needed to explore.
+
+**After changing frontend code:**
+
+```bash
+cd frontend && npm run build
+docker compose build tasker-board
+docker compose up -d tasker-board
+```
+
+### Option B — Local development (hot reload)
+
+**Prerequisites:** Python 3.10+, Node.js 18+, and one-time Python deps
+(`pip install -r requirements.txt`).
+
+```powershell
+# Terminal 1 — mock API (persists the JSON dataset)
+cd mock-api
+$env:DATA_DIR="..\frontend\dataset-de-pruebas"
+python -m uvicorn server:app --port 8001 --reload
+
+# Terminal 2 — frontend with Vite HMR
+cd frontend
+npm install
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:5173` with hot reload.
-
-### How It Works
-
-The Vite dev server proxies API requests:
-- `/mock-api/*` → `http://localhost:8001/*` (mock-api server)
-- `/api/*` → `http://localhost:8000` (real API, optional)
-
-All CRUD operations persist to JSON files in `frontend/dataset-de-pruebas/`.
-
-### Quick Commands (Windows)
-
-```powershell
-# Terminal 1: Mock API
+```bash
+# Linux / macOS
+# Terminal 1
 cd mock-api
-$env:DATA_DIR="..\frontend\dataset-de-pruebas"; python -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+DATA_DIR="../frontend/dataset-de-pruebas" python -m uvicorn server:app --port 8001 --reload
 
-# Terminal 2: Frontend
-cd frontend; npm run dev
+# Terminal 2
+cd frontend && npm install && npm run dev
 ```
 
-### Quick Commands (Linux/Mac)
+Open **http://localhost:5173**. Vite proxies `/mock-api/*` → `:8001` and `/api/*` → `:8000`,
+so edits hot-reload instantly.
+
+### Option C — Local development with the real backend
 
 ```bash
-# Terminal 1: Mock API
-cd mock-api
-DATA_DIR="../frontend/dataset-de-pruebas" python -m uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+# 1. Neo4j only, via Docker
+docker compose up -d tasker-db
 
-# Terminal 2: Frontend
-cd frontend && npm run dev
+# 2. Install + run the real API on port 8000 (matches the Vite proxy)
+pip install -e .
+TASKER_API_PORT=8000 python -m socialseed_tasker.infrastructure.web_api
+# PowerShell: $env:TASKER_API_PORT="8000"; python -m socialseed_tasker.infrastructure.web_api
+
+# 3. Point the UI at it: set USE_MOCK = false in frontend/src/api/client.ts
+#    then start the frontend (Option B)
 ```
+
+Bonus: `TASKER_DEMO_MODE=true` seeds the graph with demo components, issues and
+dependencies on first boot.
 
 ---
 
-## Docker Alternative
-
-If you prefer Docker or need the full stack (including Neo4j and real API):
-
-### Start All Services
-
-```bash
-docker compose --profile api up -d
-```
-
-### Rebuild After Frontend Changes
-
-```bash
-# 1. Build frontend
-cd frontend && npm run build
-
-# 2. Rebuild Docker image
-docker compose --profile api build --no-cache tasker-board
-
-# 3. Restart containers
-docker compose --profile api up -d
-```
-
----
-
-## Project Structure
+## Project structure
 
 ```
 socialseed-tasker/
-├── frontend/                    # Vue 3 + TypeScript + Vite
+├── frontend/                  # Vue 3 + TypeScript + Vite + Tailwind
 │   ├── src/
-│   │   ├── views/              # Page components (Board, List, Graph, etc.)
-│   │   ├── components/         # Reusable UI components
-│   │   ├── stores/             # Pinia state management
-│   │   ├── composables/        # Vue composables (useToast, useExport, etc.)
-│   │   ├── api/                # API client (client.ts, mockApi.ts)
-│   │   ├── locales/            # i18n translations (en.json, es.json)
-│   │   └── types/              # TypeScript types
-│   ├── dataset-de-pruebas/     # Mock data JSON files (persisted)
-│   └── Dockerfile
-├── mock-api/                    # FastAPI mock backend
-│   ├── server.py               # Reads/writes dataset-de-pruebas/*.json
-│   └── Dockerfile
-├── docker-compose.yml           # All services
-└── .agent/                      # AI agent configuration
+│   │   ├── views/             # 27 pages (Board, Graph, HITL, Studio…)
+│   │   ├── components/        # 78 reusable components
+│   │   ├── stores/            # 24 Pinia stores
+│   │   ├── composables/       # useToast, useSoundEffects, useExport…
+│   │   ├── api/               # client.ts (axios) + mockApi.ts (fetch)
+│   │   ├── locales/           # i18n: en.json / es.json (~1,415 keys)
+│   │   └── types/             # shared TypeScript contracts
+│   └── dataset-de-pruebas/    # mock dataset (live JSON persistence)
+├── src/socialseed_tasker/     # Python backend (FastAPI, hexagonal-ish)
+│   ├── cli/                   # `tasker` CLI (typer + rich)
+│   ├── infrastructure/        # web_api (FastAPI), repos (Neo4j)
+│   └── application/           # use cases, container/DI
+├── tests/                     # 146 pytest files (unit, integration, e2e, contracts)
+├── .github/workflows/         # CI: lint, mypy, pytest (3.10–3.12), release, security
+├── mock-api/server.py         # standalone mock backend for the UI
+├── docker-compose.yml         # 4 services: db, api, board, mock-api
+├── features.md                # living feature inventory (57 sections)
+└── .issues/                   # issue tracker: to-do/ + done/ (514 closed)
 ```
 
 ---
 
-## Mock Data
+## Feature tour
 
-Mock data lives in `frontend/dataset-de-pruebas/`:
+| Area | What's inside |
+|------|---------------|
+| **Planning** | Board (drag & drop), List (filters, bulk actions), Kanban, backlog, issue detail with dependency/blocking graph, GitHub sync card |
+| **Analysis** | Impact analysis, root-cause analysis, blast-radius slider, dependency chain, code-graph overlay, GraphRAG explorer |
+| **Governance** | Policies & sandboxed testing, constraint validation, governance matrix (agent × risk), audit log (hash-chained), SLA metrics |
+| **Human in the loop** | HITL command center, global approval banner, quick-action modal with diff & impact preview, notification click-through |
+| **AI agents** | Agent Studio (builder + prompt validation + sandbox + library), agent replay, MCP inspector, kill switch & live timer, FinOps (token costs, ROI, budgets, caps) |
+| **Resilience** | Auto-healing pipeline monitor, offline-first sync queue with conflict resolution, network mode simulator (online/degraded/offline) |
+| **Collaboration** | Chat with agents & users, floating chat widget, presence avatars, typing indicators, mentions |
+| **Reports** | Executive dashboard, analytics dashboard (MTTR, healing rate, budget), report exporter (PDF / PNG / JSON), CSV/JSON export everywhere |
+| **Platform** | Dark mode, EN/ES i18n, command palette, keyboard shortcuts, toasts (3 themes), sound effects, PII detection & redaction suite, mobile responsive drawer |
+
+---
+
+## Architecture in one paragraph
+
+The Vue app talks to two interchangeable backends selected by one flag in
+`frontend/src/api/client.ts`: the **mock API** (a FastAPI server that reads/writes plain JSON
+files — perfect for demos and UI work) and the **real API** (FastAPI → repository interface →
+Neo4j, with domain use cases, tree-sitter code analysis and a Typer CLI). In Docker, nginx
+inside the frontend container proxies `/api/` and `/mock-api/` to the sibling services, so the
+browser only ever talks to one origin. Both backends expose the same shapes, which is why
+flipping `USE_MOCK` is the only thing needed to move between them.
+
+---
+
+## Roadmap
+
+Where this is going next, roughly in order:
+
+1. **Real backend end-to-end** — finish wiring the UI against the real API as the default
+   (seeded Neo4j, parity gaps closed), keeping the mock as an instant-demo switch.
+2. **UI test suite** — the backend already ships 146 pytest files (unit, integration, e2e,
+   contracts) behind a GitHub Actions pipeline (ruff/black/mypy/pytest across Python
+   3.10–3.12); the frontend has none. Add Vitest component tests and a few Playwright smoke
+   flows for the board, graph and HITL journeys.
+3. **Performance pass** — split the heavy chunks (elk/cytoscape/GraphView are >500 kB each),
+   virtualize long lists, lazy-load diagram libraries per view.
+4. **Realtime everywhere** — promote the mocked SSE/event stream to actual WebSocket
+   channels for presence, audit tail and agent logs.
+5. **Real LLMs in Agent Studio** — swap the deterministic sandbox simulator for actual
+   model providers behind the same prompt/tool/limit contracts.
+6. **Offline v2** — upgrade the localStorage sync queue to IndexedDB with background retry
+   and background sync (PWA installable shell).
+7. **GitHub two-way sync** — push issues to GitHub and reconcile inbound webhooks.
+
+---
+
+## Tech stack
+
+| Layer | Stack |
+|-------|-------|
+| Frontend | Vue 3.5 · TypeScript · Vite 6 · Tailwind 3 · Pinia · vue-i18n · vis-network |
+| Backend | Python 3.10+ · FastAPI · Neo4j 5 · Typer CLI · tree-sitter · pydantic |
+| Mock | FastAPI + JSON dataset (drop-in replacement, read/write) |
+| Tooling | Frontend gate: `vue-tsc -b && vite build` · Backend CI: ruff, black, isort, mypy, pytest (GitHub Actions) |
+
+```bash
+cd frontend && npm run build   # type-check + production bundle (frontend's quality gate)
+```
+
+---
+
+## Mock data
+
+The dataset lives in `frontend/dataset-de-pruebas/` and is mounted into the mock container.
+Main files:
 
 | File | Content |
 |------|---------|
-| `issues.json` | All issues with status, priority, assignee |
+| `issues.json` | Issues with status, priority, assignee, dependencies |
 | `components.json` | System components |
 | `users.json` | Users and AI agents |
 | `policies.json` | Governance policies |
 | `constraints.json` | System constraints |
 
-Data persists across container restarts. To reset, delete the JSON files and restart mock-api.
+…plus `dependencies.json`, `projects.json`, `organizations.json`, `agent-logs.json`,
+`dashboard-stats.json`, `root-cause.json`, `index.json`.
 
----
-
-## i18n (Multilanguage)
-
-The UI supports English (EN) and Spanish (ES). Switch languages via the user menu in the header.
-
-- Translations: `frontend/src/locales/en.json`, `frontend/src/locales/es.json`
-- Usage: `const { t } = useI18n()` → `t('issues.createIssue')`
-
----
-
-## Key Features
-
-- **Board View**: Kanban-style issue management with drag & drop
-- **List View**: Table view with sorting, filtering, bulk actions
-- **Graph View**: Interactive dependency graph with connect mode
-- **Analysis**: Impact analysis, root cause analysis, blast radius simulation
-- **Components**: CRUD for system components with issue tracking
-- **Policies**: Governance rules (circular deps, max dependencies, etc.)
-- **Constraints**: System constraint validation
-- **Users & Agents**: Human/AI agent management
-- **Dashboard**: System health, token usage, activity charts
-- **MCP Inspector**: Real-time monitoring of Model Context Protocol connections
-- **HITL Command Center**: Unified inbox for agent approval requests with diff/impact view
-- **Chat**: Full messaging system between users and AI agents
-- **Floating Chat**: Messenger-style widget available on all views
-- **Command Palette**: `Cmd+K` / `Ctrl+K` for quick navigation
-- **Dark Mode**: Toggle in user menu (persists in localStorage)
-- **Toasts**: Global notification system
-- **Export**: CSV, JSON, SVG, PNG, Markdown export
-- **i18n**: English and Spanish support
-
----
-
-## Docker Commands
+Data persists across restarts. To factory-reset the dataset to its committed state:
 
 ```bash
-# Start all services
-docker compose --profile api up -d
-
-# Stop all services
-docker compose --profile api down
-
-# Rebuild everything
-docker compose --profile api build --no-cache
-
-# View logs
-docker compose logs -f tasker-board
-docker compose logs -f mock-api
-
-# Check status
-docker compose --profile api ps
+git checkout -- frontend/dataset-de-pruebas
 ```
+
+(Deleting a file makes the mock return empty results — there is no auto-reseed, so prefer
+the `git checkout` restore above.)
 
 ---
 
 ## Troubleshooting
 
-| Issue | Fix |
-|-------|-----|
-| Port 8889 not accessible | Ensure Docker Desktop is running |
-| Mock data not persisting | Check volume mount: `./frontend/dataset-de-pruebas:/app/dataset-de-pruebas` |
-| Build fails | Run `cd frontend && npm install` then `npm run build` |
-| Blank page | Check browser console for errors; ensure mock-api is running |
-| i18n not working | Verify `vue-i18n` is installed: `cd frontend && npm ls vue-i18n` |
-| `Unexpected token '<'` error | Mock API not running. Start it: `cd mock-api && python -m uvicorn server:app --port 8001` |
-| Local dev: API calls fail | Ensure mock-api is running on port 8001 before starting frontend |
-| Local dev: data not saving | Check `DATA_DIR` env var points to `frontend/dataset-de-pruebas` |
+| Symptom | Fix |
+|---------|-----|
+| UI shows old build | Rebuild: `cd frontend && npm run build && docker compose build tasker-board && docker compose up -d tasker-board` |
+| Blank page / `Unexpected token '<'` | Mock API down — start it (Option B, terminal 1) or `docker compose up -d mock-api` |
+| Port already in use | Ensure no stale containers: `docker compose ps`, `docker ps -a` |
+| Data not saving locally | `DATA_DIR` must point to `frontend/dataset-de-pruebas` |
+| Switching to real API | Set `USE_MOCK = false` in `frontend/src/api/client.ts` and rebuild; local dev needs the API on `:8000`, Docker routes `/api/` automatically via nginx |
+| i18n missing keys | `en.json` and `es.json` must stay structurally in sync |
 
 ---
 
-*SocialSeed Tasker v1.0.0 — 489 issues resolved*
+<p align="center">
+  <b>SocialSeed Tasker v1.0.5</b> · 514 issues resolved · Apache-2.0<br/>
+  Built by <a href="https://github.com/daironpf">Dairon Pérez Frías</a>
+</p>
