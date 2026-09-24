@@ -25,7 +25,8 @@
     "sandbox": "Sandbox de Politicas",
     "rag": "Explorador Graph RAG",
     "analysisView": "Analisis",
-    "organization": "Organizacion"
+    "organization": "Organizacion",
+    "governanceMatrix": "Matriz de Gobernanza"
   },
   "header": {
     "dashboard": "Dashboard",
@@ -48,7 +49,8 @@
     "graph": "Grafo de Dependencias",
     "analysis": "Analisis de Impacto",
     "notFound": "No Encontrado",
-    "organization": "Configuracion de Organizacion"
+    "organization": "Configuracion de Organizacion",
+    "governanceMatrix": "Matriz de Gobernanza"
   },
   "menu": {
     "darkMode": "Modo Oscuro",
@@ -1208,6 +1210,81 @@
       "email": "Correo",
       "role": "Rol",
       "empty": "Aun no hay miembros"
+    }
+  },
+  "governanceMatrix": {
+    "title": "Matriz de Gobernanza y RBAC",
+    "subtitle": "Configura que acciones de agente se ejecutan solas, requieren aprobacion humana o estan bloqueadas por nivel de riesgo",
+    "matrixTitle": "Reglas de permisos",
+    "cellHint": "Haz clic en una celda para ciclar: Auto → Requiere aprobacion → Bloqueado",
+    "persistedHint": "La matriz se guarda en localStorage y persiste al recargar",
+    "reset": "Restablecer",
+    "resetDone": "Matriz de gobernanza restablecida",
+    "simulate": "Simular accion restringida",
+    "simulatorTitle": "Simulador de accion restringida",
+    "simulatorHint": "Simula un intento del agente; las acciones a nivel aprobacion pausan la ejecucion y lanzan una alerta hasta que decidas.",
+    "runSimulation": "Ejecutar simulacion",
+    "persisted": "Guardado",
+    "states": {
+      "auto": "Automatico",
+      "approval": "Aprobacion",
+      "blocked": "Bloqueado"
+    },
+    "risk": {
+      "LOW": "Bajo",
+      "MEDIUM": "Medio",
+      "HIGH": "Alto",
+      "CRITICAL": "Critico"
+    },
+    "agents": {
+      "CODING": "Codificacion",
+      "DEPLOY": "Despliegue",
+      "DATA": "Datos",
+      "OPS": "Operaciones"
+    },
+    "actions": {
+      "write_code": "Escribir codigo",
+      "push_pr": "Push a PR",
+      "modify_db": "Modificar DB",
+      "delete_resource": "Eliminar recurso",
+      "deploy": "Desplegar",
+      "config_change": "Cambio de config",
+      "external_api": "API externa"
+    },
+    "fields": {
+      "agent": "Tipo de agente",
+      "risk": "Nivel de riesgo",
+      "action": "Accion",
+      "issue": "Issue relacionado",
+      "noIssue": "Sin issue vinculado"
+    },
+    "alert": {
+      "title": "Accion restringida detectada — agente pausado",
+      "pausedFlag": "ejecucion pausada",
+      "resume": "Aprobar y reanudar",
+      "halt": "Rechazar y mantener detenido",
+      "auto_approved": "Accion permitida por la matriz — no requiere aprobacion",
+      "auto_rejected": "Accion bloqueada por la matriz",
+      "pausedToast": "Agente pausado esperando tu aprobacion",
+      "resumedToast": "Accion aprobada — ejecucion del agente reanudada",
+      "haltedToast": "Accion rechazada — el agente permanece detenido"
+    },
+    "queue": {
+      "title": "Cola de Aprobaciones Pendientes",
+      "subtitle": "{count} solicitudes esperando revision humana",
+      "empty": "Sin aprobaciones pendientes — todo en orden",
+      "noDiffs": "Sin diffs adjuntos en esta solicitud",
+      "totalAffected": "Afectados",
+      "directDeps": "Deps directos",
+      "risk": "Riesgo",
+      "approve": "Aprobar",
+      "reject": "Rechazar",
+      "requestChanges": "Solicitar cambios",
+      "confirm": "Confirmar",
+      "rejectFeedback": "Razon de rechazo",
+      "rejectPlaceholder": "Explica por que se rechaza esta solicitud...",
+      "modifyFeedback": "Modificaciones requeridas",
+      "modifyPlaceholder": "Describe las modificaciones requeridas..."
     }
   }
 }

@@ -59,6 +59,7 @@
 49. [Route & View Inventory](#49-route--view-inventory)
 50. [Known Gaps & Missing Features](#50-known-gaps--missing-features)
 51. [Organization Multi-Tenancy & Enterprise Settings](#51-organization-multi-tenancy--enterprise-settings)
+52. [Governance Matrix, RBAC & Approval Queue](#52-governance-matrix-rbac--approval-queue)
 
 ---
 
@@ -69,9 +70,9 @@
 | Vue 3.5 + TypeScript | Implemented | Composition API, `<script setup>`, vue-tsc type checking |
 | Vite 6 build tool | Implemented | HMR, optimized production builds, lazy-loaded routes |
 | Tailwind CSS 3 | Implemented | Dark mode via `class` strategy; Inter font |
-| Pinia state management | Implemented | 20 stores under `src/stores/` |
-| Vue Router | Implemented | 21 view routes + `/` redirect + catch-all NotFound; lazy-loaded; scroll-to-top on navigate |
-| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 61 top-level sections, ~1060 leaf keys per language, localStorage persistence |
+| Pinia state management | Implemented | 21 stores under `src/stores/` |
+| Vue Router | Implemented | 22 view routes + `/` redirect + catch-all NotFound; lazy-loaded; scroll-to-top on navigate |
+| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 62 top-level sections, ~1121 leaf keys per language, localStorage persistence |
 | Dark mode | Implemented | Toggle via UserMenu / `D` shortcut / CommandPalette; localStorage; system preference detection |
 | Mock API mode | Implemented | `USE_MOCK = true` in `client.ts`; axios instance swapped for mock client; `mockApi.ts` uses `fetch` against `/mock-api` |
 | Real API mode | Implemented | Axios client, base `window.__API_URL__ \|\| '/api/v1'`, API key auth via `X-API-Key`, 401 interceptor → `auth:unauthorized` |
@@ -122,7 +123,7 @@
 |---|---|---|
 | Collapsible sidebar | Implemented | 20px collapsed → 64px on hover (`w-20` → `w-64`), smooth transition |
 | Logo + branding | Implemented | "SocialSeed" text when expanded |
-| Navigation groups | Implemented | Principal (4), Management (14), Analysis (2) = **20 nav items** |
+| Navigation groups | Implemented | Principal (4), Management (15), Analysis (2) = **21 nav items** |
 | Active route highlighting | Implemented | Color change on current route |
 | Nav icons | Implemented | SVG icons per nav item |
 | i18n labels | Implemented | All nav labels use `t()` |
@@ -133,14 +134,14 @@
 | Group | Routes |
 |---|---|
 | Principal | `/board`, `/system`, `/kanban`, `/list` |
-| Management | `/components`, `/policies`, `/constraints`, `/sandbox`, `/rag`, `/finops`, `/auto-healing`, `/replay`, `/executive`, `/users`, `/chat`, `/mcp`, `/hitl`, `/organization` |
+| Management | `/components`, `/policies`, `/constraints`, `/sandbox`, `/rag`, `/finops`, `/auto-healing`, `/replay`, `/executive`, `/users`, `/chat`, `/mcp`, `/hitl`, `/organization`, `/governance-matrix` |
 | Analysis | `/graph`, `/analysis` |
 
 ### Header (AppHeader)
 
 | Feature | Status | Details |
 |---|---|---|
-| Dynamic page title | Implemented | Maps route path → translated title (20 paths; `/profile` falls back to dashboard title) |
+| Dynamic page title | Implemented | Maps route path → translated title (21 paths; `/profile` falls back to dashboard title) |
 | Organization switcher | Implemented | `OrganizationSwitcher` (`hidden lg:flex`, before ProjectSelector): hierarchical Organization → Workspace dropdown, localStorage, link to `/organization` settings |
 | Global HITL banner | Implemented | Shown when `urgentPendingCount > 0` (CRITICAL/HIGH pending); click → HITLCommandCenter; Review button → HITLQuickActionModal |
 | Hamburger menu | Implemented | 44×44 button (`md:hidden`), emits `open-mobile-menu` |
@@ -156,7 +157,7 @@
 |---|---|---|
 | Overlay slide-in | Implemented | From left, 300ms transition, full-screen dark overlay |
 | Close gestures | Implemented | Tap overlay or swipe-left |
-| Navigation content | Implemented | Same 3 groups / 20 items as desktop Sidebar |
+| Navigation content | Implemented | Same 3 groups / 21 items as desktop Sidebar |
 | i18n | Implemented | `mobileNav.openMenu`, `mobileNav.menu`, `mobileNav.swipeHint` |
 
 ### UserMenu
@@ -422,8 +423,8 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 ### Layout Components
 | Component | Purpose | Details |
 |---|---|---|
-| `Sidebar` | Main navigation | Collapsible, 3 groups, 20 items, desktop-only |
-| `MobileDrawer` | Mobile navigation | Overlay drawer, swipe-to-close, same 20 items |
+| `Sidebar` | Main navigation | Collapsible, 3 groups, 21 items, desktop-only |
+| `MobileDrawer` | Mobile navigation | Overlay drawer, swipe-to-close, same 21 items |
 | `AppHeader` | Top bar | Dynamic title, HITL banner, hamburger, org switcher (lg+), project selector, sync badge, notifications, user menu |
 | `OrganizationSwitcher` | Org/workspace selector | Hierarchical Organization → Workspace dropdown, localStorage persistence, link to `/organization` settings |
 | `UserMenu` | User dropdown | Avatar, dark mode, language, logout, profile link |
@@ -517,8 +518,8 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 |---|---|---|
 | `LoginScreen` | API key gate | Full-screen overlay login |
 
-**Total view components:** 22 files in `src/views/` (20 routed + `IssueDetailView` embedded + `NotFound`)
-**Total shared components:** 61 `.vue` files under `src/components/`
+**Total view components:** 24 files in `src/views/` (22 routed + `IssueDetailView` embedded + `NotFound`)
+**Total shared components:** 63 `.vue` files under `src/components/`
 
 ---
 
@@ -647,8 +648,9 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `agentReplayStore` | sessions[], currentTime, isPlaying, playSpeed | play, pause, stepForward, stepBackward, seekTo |
 | `codeGraphStore` | nodes[], codeEdges[], enabled | fetchCodeStructure, toggle |
 | `organizationsStore` | organizations[], currentOrgId, currentWorkspaceId, activeRole, quotaUsage, canEdit/canManage | fetchOrganizations, createOrganization, updateOrganization, setOrg, setWorkspace, setActiveRole, upsertAccount, removeAccount (persists `currentOrg`/`currentWorkspace`/`activeEnterpriseRole` in localStorage; syncs workspace → `uiStore.setProject`) |
+| `governanceStore` | matrix (agent x risk x action permission cells), alerts[], activeAlerts, pausedCount | toggleCell, setCell, getCell, resetMatrix, simulateRestrictedAction, resolveAlert (matrix persisted in localStorage `governance-matrix-v1`; approval-level alerts pause/resume issue `agent_working` |
 
-**20 Pinia stores total.**
+**21 Pinia stores total.**
 
 ---
 
@@ -711,7 +713,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 - `technical_debt_notes?: string` — Markdown debt observations
 - `agent_working_started_at?: string | null` — agent execution start
 
-### Specialized Types (14 files under `types/`)
+### Specialized Types (15 files under `types/`)
 | File | Types |
 |---|---|
 | `index.ts` | Core entities above |
@@ -728,6 +730,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | `agentReplay.ts` | `AgentSession`, `ReplayEvent`, `EventType`, `EventSeverity` |
 | `audit.ts` | `AuditEntry`, `AuditAction`, `AuditMetadata` |
 | `organizations.ts` | `Organization`, `Workspace`, `EnterpriseAccount`, `OrganizationQuota`, `DataRetentionPolicy`, `EnterpriseRole`, `OrganizationPlan`, `OrganizationCreateRequest` |
+| `governance.ts` | `GovernanceAgentType`, `GovernanceRiskLevel`, `GovernanceActionId`, `PermissionState`, `PermissionMatrix`, `RestrictedActionAlert` |
 
 ---
 
@@ -811,11 +814,11 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 ## 27. i18n Coverage
 
 ### Locale Files
-- `en.json`: ~1060 leaf keys, **61** top-level sections
-- `es.json`: ~1061 leaf keys, matching structure
+- `en.json`: ~1121 leaf keys, **62** top-level sections
+- `es.json`: ~1122 leaf keys, matching structure
 
-### Sections (61)
-`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`
+### Sections (62)
+`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`
 
 ### Coverage
 - All user-visible text uses `t()`
@@ -1187,6 +1190,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | `/mcp` | MCPInspector | MCPInspectorView.vue |
 | `/hitl` | **HITLCommandCenter** | HITLCommandCenter.vue |
 | `/organization` | **OrganizationSettings** | OrganizationSettingsView.vue |
+| `/governance-matrix` | **GovernanceMatrix** | GovernanceMatrixView.vue |
 | `/:pathMatch(.*)*` | NotFound | NotFoundView.vue |
 
 ### Views without routes
@@ -1263,3 +1267,21 @@ Issue #509 (`OrganizationSettingsView.vue`, `OrganizationSwitcher.vue`, `organiz
 | **Nav integration** | Implemented | `/organization` in Sidebar + MobileDrawer (Management group); header title `header.organization` |
 | **Empty/loading states** | Implemented | Loading spinner, "No organizations available", switcher falls back to first org |
 | **i18n** | Implemented | `organizations.*` section + `nav.organization` + `header.organization` in EN/ES |
+
+---
+
+## 52. Governance Matrix, RBAC & Approval Queue
+
+Issue #510 (`GovernanceMatrixView.vue`, `PendingApprovalsQueue.vue`, `governanceStore`, `types/governance.ts`).
+
+| Feature | Status | Details |
+|---|---|---|
+| **Permission matrix** | Implemented | Actions (Write Code, Push to PR, Modify DB, Delete Resource, Deploy, Config Change, External API) x agent types (Coding, Deploy, Data, Ops) with risk-level tabs (Low/Medium/High/Critical); click cycles cell state Auto -> Approval -> Blocked; color-coded cells + legend |
+| **Persistence** | Implemented | Matrix serialized to localStorage (`governance-matrix-v1`), survives reloads; "Reset to defaults" restores seeded policy (e.g. Push to PR requires approval, Delete Resource blocked at High/Critical) |
+| **Restricted action simulator** | Implemented | Form (agent type, risk, action, optional linked issue); evaluates matrix: `approval` creates a live alert and pauses execution via `issuesStore.updateIssue({ agent_working:false })`; `blocked` auto-rejects; `auto` auto-approves |
+| **Live alerts** | Implemented | Amber banner on GovernanceMatrixView with Approve & resume / Reject & keep halted; resume sets `agent_working:true`; toast + notification (`category: hitl`, `requiresAction: true`) via `notificationsStore` |
+| **Pending Approvals Queue** | Implemented | `components/governance/PendingApprovalsQueue.vue`: `hitlStore.pendingRequests` list + detail (agent metadata, impact tiles totalAffected/directDeps/riskLevel, inline `DiffViewer` per diff) |
+| **Approval actions** | Implemented | Approve / Request Changes / Reject with required feedback; `hitlStore.resolveAction` + issue status update (approve/modify -> IN_PROGRESS, reject -> OPEN), same contract as #507 `HITLQuickActionModal`; toast + `requiresAction:false` notification |
+| **Nav & routing** | Implemented | `/governance-matrix` route (name `GovernanceMatrix`), Sidebar + MobileDrawer Management entries, header title `header.governanceMatrix` |
+| **i18n** | Implemented | `governanceMatrix.*` section (states, risk, agents, actions, alert, queue) + `nav`/`header` keys in EN/ES |
+| **GovernanceValidationModal** | Unchanged | Existing close-issue validation (#501) untouched; matrix is additive |

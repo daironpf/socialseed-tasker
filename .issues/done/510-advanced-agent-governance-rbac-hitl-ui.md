@@ -6,7 +6,20 @@ Las empresas requieren control estricto sobre lo que un agente IA puede ejecutar
 
 Origen: `notas.md` → Issue #502 (renumerada a #510; #502 ya está en done).
 
-## Status: TODO
+## Status: DONE
+
+### Resolution (2026-09-24)
+
+Implementado completo en frontend (mock, sin backend nuevo):
+
+- **Tipos**: `frontend/src/types/governance.ts` — `GovernanceAgentType` (CODING/DEPLOY/DATA/OPS), `GovernanceRiskLevel` (LOW/MEDIUM/HIGH/CRITICAL), `GovernanceActionId` (write_code, push_pr, modify_db, delete_resource, deploy, config_change, external_api), `PermissionState` (auto/approval/blocked), `PermissionMatrix`, `RestrictedActionAlert` + arrays de constantes.
+- **Store**: `frontend/src/stores/governanceStore.ts` — matriz con seeds por defecto (p.ej. push_pr requiere aprobación, delete_resource a HIGH/CRITICAL bloqueado), carga/persistencia en `localStorage` (`governance-matrix-v1`), `toggleCell` cicla estados, `resetMatrix`, `simulateRestrictedAction` (pausa el issue vía `issuesStore.updateIssue({ agent_working:false })` cuando el estado es `approval`) y `resolveAlert` (aprobar → reanuda `agent_working:true`).
+- **Vista**: `frontend/src/views/GovernanceMatrixView.vue` en `/governance-matrix` — tabs de nivel de riesgo, tabla acciones × tipo de agente con celdas editables (clic cicla Auto→Aprobación→Bloqueado), leyenda, reset a defaults, simulador de acción restringida (agente/riesgo/acción/issue) que crea alertas en vivo con botones "Aprobar y reanudar" / "Rechazar y mantener detenido", toast + notificación `requiresAction:true` (categoría hitl) por `notificationsStore`.
+- **Cola de aprobaciones**: `frontend/src/components/governance/PendingApprovalsQueue.vue` — lista de `hitlStore.pendingRequests`, detalle con metadatos de agente, 3 tiles de impacto (totalAffected/directDeps/riskLevel), `DiffViewer` inline por fichero, acciones Approve / Request Changes / Reject con feedback obligatorio; resolución vía `hitlStore.resolveAction` + `issuesStore.updateIssue` (approve/modify → IN_PROGRESS, reject → OPEN — consistente con #507/HITLQuickActionModal) + toast + notificación `requiresAction:false`.
+- **Integración**: ruta `GovernanceMatrix` en router, entradas Sidebar + MobileDrawer (Management), título de header, sección i18n `governanceMatrix.*` + `nav.governanceMatrix` + `header.governanceMatrix` EN/ES.
+- **Build**: `npm run build` (vue-tsc + vite) pasa sin errores.
+
+Acceptance Criteria todos cumplidos. `ApprovalDiffPanel` no fue necesario: se reutiliza `DiffViewer` inline (opción permitida por la issue). Endpoints mock nuevos no requeridos (matriz persistida en localStorage, HITL ya usa mock del store).
 
 ## Priority: HIGH
 

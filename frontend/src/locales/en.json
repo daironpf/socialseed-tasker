@@ -25,7 +25,8 @@
     "sandbox": "Policy Sandbox",
     "rag": "Graph RAG Explorer",
     "analysisView": "Analysis",
-    "organization": "Organization"
+    "organization": "Organization",
+    "governanceMatrix": "Governance Matrix"
   },
   "header": {
     "dashboard": "Dashboard",
@@ -47,7 +48,8 @@
     "executive": "Executive Dashboard",
     "analysis": "Impact Analysis",
     "notFound": "Not Found",
-    "organization": "Organization Settings"
+    "organization": "Organization Settings",
+    "governanceMatrix": "Governance Matrix"
   },
   "menu": {
     "darkMode": "Dark Mode",
@@ -1207,6 +1209,81 @@
       "email": "Email",
       "role": "Role",
       "empty": "No members yet"
+    }
+  },
+  "governanceMatrix": {
+    "title": "Governance Matrix & RBAC",
+    "subtitle": "Configure which agent actions run automatically, require human approval, or are blocked per risk level",
+    "matrixTitle": "Permission rules",
+    "cellHint": "Click a cell to cycle: Auto-allowed → Requires approval → Blocked",
+    "persistedHint": "Matrix persists in localStorage across reloads",
+    "reset": "Reset to defaults",
+    "resetDone": "Governance matrix reset to defaults",
+    "simulate": "Simulate restricted action",
+    "simulatorTitle": "Restricted action simulator",
+    "simulatorHint": "Simulates an agent attempt; approval-level actions pause execution and raise a live alert until you decide.",
+    "runSimulation": "Run simulation",
+    "persisted": "Saved",
+    "states": {
+      "auto": "Auto",
+      "approval": "Approval",
+      "blocked": "Blocked"
+    },
+    "risk": {
+      "LOW": "Low",
+      "MEDIUM": "Medium",
+      "HIGH": "High",
+      "CRITICAL": "Critical"
+    },
+    "agents": {
+      "CODING": "Coding",
+      "DEPLOY": "Deploy",
+      "DATA": "Data",
+      "OPS": "Ops"
+    },
+    "actions": {
+      "write_code": "Write Code",
+      "push_pr": "Push to PR",
+      "modify_db": "Modify DB",
+      "delete_resource": "Delete Resource",
+      "deploy": "Deploy",
+      "config_change": "Config Change",
+      "external_api": "External API"
+    },
+    "fields": {
+      "agent": "Agent type",
+      "risk": "Risk level",
+      "action": "Action",
+      "issue": "Related issue",
+      "noIssue": "No linked issue"
+    },
+    "alert": {
+      "title": "Restricted action detected — agent paused",
+      "pausedFlag": "execution paused",
+      "resume": "Approve & resume",
+      "halt": "Reject & keep halted",
+      "auto_approved": "Action allowed by matrix — no approval needed",
+      "auto_rejected": "Action blocked by matrix",
+      "pausedToast": "Agent paused awaiting your approval",
+      "resumedToast": "Action approved — agent execution resumed",
+      "haltedToast": "Action rejected — agent remains halted"
+    },
+    "queue": {
+      "title": "Pending Approvals Queue",
+      "subtitle": "{count} requests waiting for human review",
+      "empty": "No pending approvals — all clear",
+      "noDiffs": "No diffs attached to this request",
+      "totalAffected": "Affected",
+      "directDeps": "Direct deps",
+      "risk": "Risk",
+      "approve": "Approve",
+      "reject": "Reject",
+      "requestChanges": "Request Changes",
+      "confirm": "Confirm",
+      "rejectFeedback": "Rejection reason",
+      "rejectPlaceholder": "Explain why this request is rejected...",
+      "modifyFeedback": "Required modifications",
+      "modifyPlaceholder": "Describe the required modifications..."
     }
   }
 }
