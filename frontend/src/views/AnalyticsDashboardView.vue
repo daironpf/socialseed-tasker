@@ -133,7 +133,7 @@ function addRiskNotification(breached: number, atRisk: number) {
   notificationsStore.addNotification({
     title: t('sla.notificationTitle'),
     message: t('sla.notificationMessage', { breached, atRisk }),
-    category: 'constraint_violation',
+    category: 'sla',
     requiresAction: true,
     linkTo: { name: 'Analytics' },
   })

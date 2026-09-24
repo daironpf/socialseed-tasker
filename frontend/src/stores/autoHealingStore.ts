@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { PipelineRun, LogEntry, FixAttempt, PipelineStage } from '@/types/autoHealing'
+import { useSoundEffects } from '@/composables/useSoundEffects'
 
 const MOCK_STAGES: PipelineStage[] = [
   { id: 'test_failure', label: 'Test Failure Detected', status: 'completed', startedAt: '2026-09-20T10:00:00Z', completedAt: '2026-09-20T10:00:02Z', durationMs: 2000, details: '3 tests failed in auth module' },
@@ -96,6 +97,31 @@ export const useAutoHealingStore = defineStore('autoHealing', () => {
 
   function selectRun(id: string) { selectedRunId.value = id }
 
+  function simulateCompletion(id?: string): boolean {
+    const run =
+      runs.value.find(r => r.id === (id ?? selectedRunId.value)) ??
+      runs.value.find(r => r.status === 'running')
+    if (!run || run.status !== 'running') return false
+    const now = new Date().toISOString()
+    run.stages = run.stages.map(s =>
+      s.status === 'pending' || s.status === 'running'
+        ? { ...s, status: 'completed' as const, completedAt: now }
+        : s
+    )
+    run.currentStageIndex = run.stages.length - 1
+    run.status = 'completed'
+    run.completedAt = now
+    logs.value.push({
+      id: `log-${Date.now()}`,
+      runId: run.id,
+      timestamp: now,
+      source: 'system',
+      content: '[Auto-Healing] Pipeline completed successfully (simulated).',
+    })
+    useSoundEffects().playSuccess()
+    return true
+  }
+
   function formatDuration(ms?: number) {
     if (!ms) return '-'
     if (ms < 1000) return ms + 'ms'
@@ -109,6 +135,6 @@ export const useAutoHealingStore = defineStore('autoHealing', () => {
   return {
     runs, logs, fixAttempts, selectedRunId, loading, error,
     selectedRun, runLogs, runFixes, activeRuns, completedRuns, failedRuns,
-    stageColor, stageIcon, selectRun, formatDuration, formatTime,
+    stageColor, stageIcon, selectRun, simulateCompletion, formatDuration, formatTime,
   }
 })

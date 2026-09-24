@@ -6,7 +6,18 @@ Aumentar la calidad del producto (*delight factors*) con un centro de notificaci
 
 Origen: `notas.md` → Issue #508 (renumerada a #516; #508 ya está en done como Mobile Responsive).
 
-## Status: TODO
+## Status: DONE
+
+## Resolution
+- **NotificationCenter agrupado:** panel evolucionado con grupos de criticidad Emergency (constraint_violation, agent_failure, sla) / Warning (hitl) / Info (mention) con headers sticky, chips de filtro por canal (All/HITL/Governance/Agent/SLA/Mentions), bulk "Mark read" por grupo y "Clear all"; nuevos `markManyRead`/`dismissMany` en `notificationsStore`.
+- **Sonido configurable:** `composables/useSoundEffects.ts` con Web Audio API (osciladores, sin assets): `playAlert` (Kill Switch/fallos/SLA), `playSuccess` (auto-healing), `playPing` (HITL/mentions); on/off + volumen 0-100 persistidos en localStorage; sin autoplay hasta la primera interaccion (`gestured` en pointerdown/keydown).
+- **Preferencias por canal:** `notificationsStore.preferences` (`socialseed-alert-prefs`): sonido on/off por categoria (mention off por defecto); `addNotification` dispara `playForCategory` segun preferencias; seed/HITL directos no suenan.
+- **Nueva categoria `sla`:** `NotificationCategory` + `CATEGORY_CONFIG` + `SEVERITY_GROUPS` (emergency/warning/info); `AnalyticsDashboardView` notifica ahora con categoria `sla`.
+- **Toast theme system:** `uiStore.toastTheme` (minimal/rich/enterprise) persistido en `toast-theme`; `ToastItem` con variantes visuales (minimal = bordes grises planos, rich = actual, enterprise = barra superior de color + label mono + border-left); `ToastThemeSettings` con 3 previews mini.
+- **UserMenu:** seccion Alerts con toggle de sonido, slider volumen, boton de test (`playPing`) y selector de tema de toasts.
+- **Hooks de evento:** `IssueCard.killAgent` -> `playAlert`; `autoHealingStore.simulateCompletion` (run running -> completed + log + `playSuccess`) con boton "Simulate pipeline success" en `AutoHealingMonitorView`.
+- i18n: secciones nuevas `soundEffects` + `toastTheme` + `notifPanel` y `autoHealing.simulateSuccess` (EN/ES, 73 secciones totales). `npm run build` pasa (42.70s).
+
 
 ## Priority: LOW
 
@@ -40,14 +51,14 @@ feat / polish
    - Persistencia de tema en localStorage
 
 ## Acceptance Criteria
-- [ ] Floating NotificationCenter panel groups history by criticality (Info, Warning, Emergency)
-- [ ] Subtle, configurable sound effects for high-severity alerts and successful auto-healing
-- [ ] Mark notifications read, filter by channel, customize user alert preferences
-- [ ] Sound on/off + volume persist; no sound before user gesture
-- [ ] Toast theme system with selectable styles persisted
-- [ ] Integrates with existing notifications from #507 HITL and future SLA alerts
-- [ ] i18n support (EN + ES)
-- [ ] `npm run build` passes
+- [x] Floating NotificationCenter panel groups history by criticality (Info, Warning, Emergency)
+- [x] Subtle, configurable sound effects for high-severity alerts and successful auto-healing
+- [x] Mark notifications read, filter by channel, customize user alert preferences
+- [x] Sound on/off + volume persist; no sound before user gesture
+- [x] Toast theme system with selectable styles persisted
+- [x] Integrates with existing notifications from #507 HITL and future SLA alerts
+- [x] i18n support (EN + ES)
+- [x] `npm run build` passes
 
 ## Files to Create
 - `frontend/src/composables/useSoundEffects.ts`

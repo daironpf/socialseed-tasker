@@ -1064,7 +1064,8 @@
       "task_generation": "Generacion de Tarea",
       "agent_fix": "Correccion del Agente",
       "pr_created": "PR Creado"
-    }
+    },
+    "simulateSuccess": "Simular éxito del pipeline"
   },
   "replay": {
     "title": "Reproductor de Replay de Agente",
@@ -1604,5 +1605,40 @@
     "merge": "Fusionar",
     "applyMerge": "Aplicar fusión",
     "footerHint": "Las mutaciones encoladas en modo Sin conexión se envían automáticamente al volver En línea. Los conflictos requieren resolución manual."
+  },
+  "soundEffects": {
+    "title": "Efectos de sonido",
+    "volume": "Volumen",
+    "hint": "Se reproducen tras tu primera interacción",
+    "test": "Probar sonido"
+  },
+  "toastTheme": {
+    "title": "Tema de avisos",
+    "minimal": "Minimal",
+    "rich": "Enriquecido",
+    "enterprise": "Enterprise",
+    "types": {
+      "success": "Éxito",
+      "error": "Error",
+      "warning": "Aviso",
+      "info": "Info"
+    }
+  },
+  "notifPanel": {
+    "groups": {
+      "emergency": "Emergencia",
+      "warning": "Aviso",
+      "info": "Info"
+    },
+    "markGroupRead": "Marcar leídas",
+    "clearAll": "Limpiar todo",
+    "channel": {
+      "all": "Todas",
+      "hitl": "HITL",
+      "governance": "Gobernanza",
+      "agent": "Agente",
+      "sla": "SLA",
+      "mention": "Menciones"
+    }
   }
 }

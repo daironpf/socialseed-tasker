@@ -59,6 +59,7 @@ import { useUiStore } from '@/stores/uiStore'
 import PriorityBadge from '@/components/ui/PriorityBadge.vue'
 import LabelTag from '@/components/ui/LabelTag.vue'
 import { useI18n } from 'vue-i18n'
+import { useSoundEffects } from '@/composables/useSoundEffects'
 
 const { t } = useI18n()
 const issuesStore = useIssuesStore()
@@ -115,6 +116,7 @@ function killAgent() {
     agent_working_started_at: null
   })
   uiStore.simulateSync()
+  useSoundEffects().playAlert()
 }
 
 function onDragStart(event: DragEvent) {

@@ -2,9 +2,39 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { AppNotification, NotificationCategory } from '@/types/notifications'
 import type { HITLRequest } from '@/types/hitl'
+import { useSoundEffects } from '@/composables/useSoundEffects'
 
 const STORAGE_KEY = 'socialseed-notifications'
 const SEED_VERSION = 2
+const PREFS_KEY = 'socialseed-alert-prefs'
+
+export interface AlertPreferences {
+  channels: Record<NotificationCategory, boolean>
+}
+
+function loadPreferences(): AlertPreferences {
+  const defaults: AlertPreferences = {
+    channels: {
+      mention: false,
+      hitl: true,
+      constraint_violation: true,
+      agent_failure: true,
+      sla: true,
+    },
+  }
+  try {
+    const raw = localStorage.getItem(PREFS_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<AlertPreferences>
+      if (parsed && parsed.channels) {
+        return { channels: { ...defaults.channels, ...parsed.channels } }
+      }
+    }
+  } catch {
+    // corrupted prefs -> defaults
+  }
+  return defaults
+}
 
 function loadFromStorage(): AppNotification[] {
   try {
@@ -31,6 +61,7 @@ function generateId(): string {
 
 export const useNotificationsStore = defineStore('notifications', () => {
   const notifications = ref<AppNotification[]>(loadFromStorage())
+  const preferences = ref<AlertPreferences>(loadPreferences())
 
   const unreadCount = computed(() => notifications.value.filter(n => !n.read).length)
 
@@ -40,6 +71,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
       hitl: 0,
       constraint_violation: 0,
       agent_failure: 0,
+      sla: 0,
     }
     for (const n of notifications.value) {
       if (!n.read) counts[n.category]++
@@ -60,6 +92,14 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
     notifications.value.unshift(notif)
     persist()
+    if (preferences.value.channels[notif.category]) {
+      useSoundEffects().playForCategory(notif.category)
+    }
+  }
+
+  function setChannelSound(category: NotificationCategory, on: boolean) {
+    preferences.value.channels[category] = on
+    localStorage.setItem(PREFS_KEY, JSON.stringify(preferences.value))
   }
 
   function markAsRead(id: string) {
@@ -79,6 +119,20 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   function dismiss(id: string) {
     notifications.value = notifications.value.filter(n => n.id !== id)
+    persist()
+  }
+
+  function markManyRead(ids: string[]) {
+    const idSet = new Set(ids)
+    for (const n of notifications.value) {
+      if (idSet.has(n.id)) n.read = true
+    }
+    persist()
+  }
+
+  function dismissMany(ids: string[]) {
+    const idSet = new Set(ids)
+    notifications.value = notifications.value.filter(n => !idSet.has(n.id))
     persist()
   }
 
@@ -245,12 +299,16 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   return {
     notifications,
+    preferences,
     unreadCount,
     unreadByCategory,
     addNotification,
     markAsRead,
     markAllAsRead,
+    markManyRead,
     dismiss,
+    dismissMany,
+    setChannelSound,
     getFiltered,
     ensureHitlNotifications,
     seedMockNotifications,

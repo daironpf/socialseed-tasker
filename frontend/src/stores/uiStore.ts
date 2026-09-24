@@ -13,6 +13,7 @@ export type ViewMode = 'board' | 'list'
 export type Locale = 'en' | 'es'
 export type ConnectionState = 'SYNCED' | 'OFFLINE_QUEUED' | 'SYNCING' | 'DEGRADED'
 export type NetworkMode = 'online' | 'degraded' | 'offline'
+export type ToastTheme = 'minimal' | 'rich' | 'enterprise'
 
 export interface Filters {
   status: string[]
@@ -45,8 +46,20 @@ export const useUiStore = defineStore('ui', () => {
   const currentProject = ref(localStorage.getItem('currentProject') || 'socialseed-tasker')
   const connectionState = ref<ConnectionState>('SYNCED')
   const pendingSyncCount = ref(0)
-  const networkMode = ref<NetworkMode>((localStorage.getItem('networkMode') as NetworkMode) || 'online')
+  const storedNetworkMode = localStorage.getItem('networkMode')
+  const networkMode = ref<NetworkMode>(
+    storedNetworkMode === 'degraded' || storedNetworkMode === 'offline' ? storedNetworkMode : 'online'
+  )
   const syncQueue = ref<QueuedMutation[]>(loadQueue())
+  const storedToastTheme = localStorage.getItem('toast-theme')
+  const toastTheme = ref<ToastTheme>(
+    storedToastTheme === 'minimal' || storedToastTheme === 'enterprise' ? storedToastTheme : 'rich'
+  )
+
+  function setToastTheme(theme: ToastTheme) {
+    toastTheme.value = theme
+    localStorage.setItem('toast-theme', theme)
+  }
   const filters = ref<Filters>({
     status: [],
     priority: [],
@@ -313,6 +326,8 @@ export const useUiStore = defineStore('ui', () => {
     pendingSyncCount,
     networkMode,
     syncQueue,
+    toastTheme,
+    setToastTheme,
     setSelectedIssue,
     toggleSidebar,
     setViewMode,

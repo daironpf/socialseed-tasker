@@ -6,6 +6,13 @@
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('autoHealing.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-3">
+        <button
+          v-if="store.activeRuns.length"
+          class="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 dark:hover:bg-emerald-900/40"
+          @click="store.simulateCompletion(store.selectedRunId)"
+        >
+          {{ t('autoHealing.simulateSuccess') }}
+        </button>
         <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
           <span class="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse"></span>
           {{ store.activeRuns.length }} {{ t('autoHealing.active') }}

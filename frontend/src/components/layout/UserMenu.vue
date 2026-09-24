@@ -81,6 +81,54 @@
           </div>
         </div>
 
+        <!-- Sound & Alerts -->
+        <div class="border-b border-gray-100 px-4 py-3 dark:border-gray-700">
+          <div class="mb-2 flex items-center justify-between">
+            <span class="text-xs font-medium text-gray-400 dark:text-gray-500">{{ t('soundEffects.title') }}</span>
+            <div class="flex items-center gap-1.5">
+              <button
+                class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-700"
+                :title="t('soundEffects.test')"
+                @click="playTest"
+              >
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.921 3.663 12 4.109 12 5v14c0 .891-1.079 1.337-1.707.707L5.586 15z" />
+                </svg>
+              </button>
+              <button
+                class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors"
+                :class="sound.enabled.value ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'"
+                :aria-pressed="sound.enabled.value"
+                :aria-label="t('soundEffects.title')"
+                @click="sound.setEnabled(!sound.enabled.value)"
+              >
+                <span
+                  class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                  :class="sound.enabled.value ? 'translate-x-4' : 'translate-x-0.5'"
+                />
+              </button>
+            </div>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            step="5"
+            class="w-full accent-blue-600"
+            :value="sound.volume.value"
+            :disabled="!sound.enabled.value"
+            :aria-label="t('soundEffects.volume')"
+            @input="sound.setVolume(Number(($event.target as HTMLInputElement).value))"
+          />
+          <div class="mt-1 flex items-center justify-between text-[10px] text-gray-400">
+            <span>{{ t('soundEffects.hint') }}</span>
+            <span>{{ sound.volume.value }}%</span>
+          </div>
+
+          <div class="mt-3 mb-1.5 text-xs font-medium text-gray-400 dark:text-gray-500">{{ t('toastTheme.title') }}</div>
+          <ToastThemeSettings />
+        </div>
+
         <!-- Logout -->
         <div class="px-2 py-2">
           <button
@@ -104,11 +152,18 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useSoundEffects } from '@/composables/useSoundEffects'
+import ToastThemeSettings from '@/components/ui/ToastThemeSettings.vue'
 
 const { t, locale } = useI18n()
 const router = useRouter()
 const uiStore = useUiStore()
 const authStore = useAuthStore()
+const sound = useSoundEffects()
+
+function playTest() {
+  sound.playPing()
+}
 
 const isOpen = ref(false)
 const menuRef = ref<HTMLElement | null>(null)

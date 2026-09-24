@@ -28,16 +28,23 @@
         <div
           v-if="open"
           ref="panelRef"
-          class="fixed top-14 right-4 z-50 w-[400px] max-h-[500px] rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900 flex flex-col"
+          class="fixed top-14 right-4 z-50 w-[400px] max-h-[560px] rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900 flex flex-col"
         >
           <!-- Header -->
           <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('notifications.title') }}</h3>
-            <button
-              v-if="unreadCount > 0"
-              class="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
-              @click="store.markAllAsRead()"
-            >{{ t('notifications.markAllRead') }}</button>
+            <div class="flex items-center gap-3">
+              <button
+                v-if="unreadCount > 0"
+                class="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                @click="store.markAllAsRead()"
+              >{{ t('notifications.markAllRead') }}</button>
+              <button
+                v-if="filteredNotifications.length > 0"
+                class="text-xs text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                @click="clearAll"
+              >{{ t('notifPanel.clearAll') }}</button>
+            </div>
           </div>
 
           <!-- Filter tabs -->
@@ -56,7 +63,22 @@
             </button>
           </div>
 
-          <!-- Notifications list -->
+          <!-- Channel chips -->
+          <div class="flex gap-1.5 overflow-x-auto border-b border-gray-200 px-3 py-2 dark:border-gray-700">
+            <button
+              v-for="chip in channelChips"
+              :key="chip.key"
+              class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors"
+              :class="channelFilter === chip.key
+                ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
+                : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'"
+              @click="channelFilter = chip.key"
+            >
+              {{ t(`notifPanel.channel.${chip.key}`) }}
+            </button>
+          </div>
+
+          <!-- Grouped notifications -->
           <div class="flex-1 overflow-y-auto">
             <div v-if="filteredNotifications.length === 0" class="flex flex-col items-center justify-center py-12 text-gray-400">
               <svg class="h-10 w-10 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -64,13 +86,32 @@
               </svg>
               <p class="text-sm">{{ t('notifications.empty') }}</p>
             </div>
-            <NotificationItem
-              v-for="notif in filteredNotifications"
-              :key="notif.id"
-              :notification="notif"
-              @dismiss="store.dismiss"
-              @markRead="store.markAsRead"
-            />
+
+            <div v-for="group in groups" :key="group.key">
+              <div class="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-gray-50/90 px-4 py-1.5 backdrop-blur dark:border-gray-800 dark:bg-gray-900/90">
+                <div class="flex items-center gap-1.5">
+                  <span class="h-1.5 w-1.5 rounded-full" :class="groupDot[group.key]" />
+                  <span class="text-[10px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    {{ t(`notifPanel.groups.${group.key}`) }}
+                  </span>
+                  <span class="rounded-full bg-gray-200 px-1.5 text-[9px] font-bold text-gray-500 dark:bg-gray-700 dark:text-gray-300">{{ group.items.length }}</span>
+                </div>
+                <button
+                  v-if="group.items.some(n => !n.read)"
+                  class="text-[10px] text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                  @click="markGroupRead(group)"
+                >
+                  {{ t('notifPanel.markGroupRead') }}
+                </button>
+              </div>
+              <NotificationItem
+                v-for="notif in group.items"
+                :key="notif.id"
+                :notification="notif"
+                @dismiss="store.dismiss"
+                @markRead="store.markAsRead"
+              />
+            </div>
           </div>
         </div>
       </Transition>
@@ -82,6 +123,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useNotificationsStore } from '@/stores/notificationsStore'
+import { SEVERITY_GROUPS, type NotificationCategory, type SeverityGroup, type AppNotification } from '@/types/notifications'
 import NotificationItem from './NotificationItem.vue'
 
 const { t } = useI18n()
@@ -89,6 +131,7 @@ const store = useNotificationsStore()
 
 const open = ref(false)
 const activeTab = ref<'all' | 'unread' | 'action'>('all')
+const channelFilter = ref<'all' | NotificationCategory>('all')
 const containerRef = ref<HTMLElement | null>(null)
 const panelRef = ref<HTMLElement | null>(null)
 
@@ -98,9 +141,47 @@ const tabs = computed(() => [
   { key: 'action' as const, label: t('notifications.tabs.action'), count: store.notifications.filter(n => n.requiresAction && !n.read).length },
 ])
 
-const filteredNotifications = computed(() => store.getFiltered(activeTab.value))
+const channelChips: Array<{ key: 'all' | NotificationCategory }> = [
+  { key: 'all' },
+  { key: 'hitl' },
+  { key: 'constraint_violation' },
+  { key: 'agent_failure' },
+  { key: 'sla' },
+  { key: 'mention' },
+]
+
+const filteredNotifications = computed(() =>
+  store.getFiltered(activeTab.value).filter(
+    n => channelFilter.value === 'all' || n.category === channelFilter.value
+  )
+)
+
+const groupOrder: SeverityGroup[] = ['emergency', 'warning', 'info']
+
+const groups = computed(() =>
+  groupOrder
+    .map(key => ({
+      key,
+      items: filteredNotifications.value.filter(n => SEVERITY_GROUPS[key].includes(n.category)),
+    }))
+    .filter(g => g.items.length > 0)
+)
+
+const groupDot: Record<SeverityGroup, string> = {
+  emergency: 'bg-red-500',
+  warning: 'bg-amber-500',
+  info: 'bg-blue-500',
+}
 
 const unreadCount = computed(() => store.unreadCount)
+
+function markGroupRead(group: { items: AppNotification[] }) {
+  store.markManyRead(group.items.filter(n => !n.read).map(n => n.id))
+}
+
+function clearAll() {
+  store.dismissMany(filteredNotifications.value.map(n => n.id))
+}
 
 function handleClickOutside(e: MouseEvent) {
   const target = e.target as Node

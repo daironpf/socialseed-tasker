@@ -1063,7 +1063,8 @@
       "task_generation": "Task Generation",
       "agent_fix": "Agent Fix",
       "pr_created": "PR Created"
-    }
+    },
+    "simulateSuccess": "Simulate pipeline success"
   },
   "replay": {
     "title": "Agent Replay Player",
@@ -1603,5 +1604,40 @@
     "merge": "Merge",
     "applyMerge": "Apply merge",
     "footerHint": "Mutations queued while Offline are flushed automatically when you go back Online. Conflicts require manual resolution."
+  },
+  "soundEffects": {
+    "title": "Sound effects",
+    "volume": "Volume",
+    "hint": "Plays after your first interaction",
+    "test": "Test sound"
+  },
+  "toastTheme": {
+    "title": "Toast theme",
+    "minimal": "Minimal",
+    "rich": "Rich",
+    "enterprise": "Enterprise",
+    "types": {
+      "success": "Success",
+      "error": "Error",
+      "warning": "Warning",
+      "info": "Info"
+    }
+  },
+  "notifPanel": {
+    "groups": {
+      "emergency": "Emergency",
+      "warning": "Warning",
+      "info": "Info"
+    },
+    "markGroupRead": "Mark read",
+    "clearAll": "Clear all",
+    "channel": {
+      "all": "All",
+      "hitl": "HITL",
+      "governance": "Governance",
+      "agent": "Agent",
+      "sla": "SLA",
+      "mention": "Mentions"
+    }
   }
 }

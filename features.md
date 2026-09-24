@@ -493,8 +493,9 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `HITLQuickActionModal` | Global HITL actions | Approve/reject/modify + textarea, impact stats, View Full Context; syncs issue status |
 | `RelationshipModal` | Dependency creation | Issue search, relationship type, cycle detection |
 | `BulkActionsBar` | Multi-select actions | Status change, assign, delete |
-| `NotificationCenter` / `NotificationItem` | Notification panel | Tabs (all/unread/action), mark all read; HITL click → quick action modal |
-| `ToastContainer` / `ToastItem` | Toast display | Type-colored, auto-dismiss, animation |
+| `NotificationCenter` / `NotificationItem` | Notification panel | Tabs (all/unread/action), severity groups (Emergency/Warning/Info), channel chips, bulk mark-read/clear; HITL click → quick action modal |
+| `ToastContainer` / `ToastItem` | Toast display | Type-colored, auto-dismiss, animation; 3 visual themes: minimal/rich/enterprise (#516) |
+| `ToastThemeSettings` | Toast theme picker | 3 mini previews, persists `uiStore.toastTheme` (#516) |
 | `KeyboardShortcutsHelp` | Shortcuts modal | Grouped shortcut list, `?` to open |
 | `CommandPalette` | Quick actions | Fuzzy search: pages, actions, issues, components; recent actions; Ctrl/Cmd+K |
 | `GraphFilters` | Graph filtering | Component checkboxes, priority (CRITICAL/HIGH/MEDIUM/LOW) and node type pills, status filter, max hops |
@@ -544,7 +545,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `LoginScreen` | API key gate | Full-screen overlay login |
 **Total view components:** 27 files in `src/views/` (26 routed incl. NotFound + `IssueDetailView` embedded)
 
-**Total shared components:** 77 `.vue` files under `src/components/`
+**Total shared components:** 78 `.vue` files under `src/components/`
 
 ---
 
@@ -633,7 +634,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 |---|---|---|
 | **Notification store** | Implemented | `notificationsStore` with localStorage persistence |
 | **Mock data** | Implemented | 12 realistic notifications across 4 categories |
-| **Categories** | Implemented | Mention, HITL, Constraint Violation, Agent Failure |
+| **Categories** | Implemented | Mention, HITL, Constraint Violation, Agent Failure, SLA (`sla` category added in #516) |
 | **Read/unread state** | Implemented | Per-notification, visual distinction |
 | **Requires action** | Implemented | Amber ACTION badge on actionable notifications |
 | **Mark as read** | Implemented | Click notification |
@@ -645,6 +646,10 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **Click-through** | Implemented | Navigate to linked issue (`linkTo`) |
 | **HITL click-through** | Implemented | If `hitlRequestId` set, opens HITLQuickActionModal |
 | **Auto HITL notifications** | Implemented | `ensureHitlNotifications()` creates `requiresAction` notifications for pending HITL requests |
+| **Severity groups** | Implemented | Panel groups history by criticality: Emergency (violation/agent failure/SLA) → Warning (HITL) → Info (mentions), sticky group headers with counts (#516) |
+| **Channel filter** | Implemented | Chips: All / HITL / Governance / Agent / SLA / Mentions on top of tab filters (#516) |
+| **Bulk actions** | Implemented | Mark group read + Clear all (filtered) via `markManyRead`/`dismissMany` (#516) |
+| **Alert preferences** | Implemented | `notificationsStore.preferences`: per-channel sound on/off persisted (`socialseed-alert-prefs`), mention channel off by default (#516) |
 | **NotificationCenter** | Implemented | Teleported dropdown, click-outside close |
 
 ---
@@ -654,14 +659,14 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | Store | State | Key Actions |
 |---|---|---|
 | `authStore` | storedKey, isAuthenticated | setApiKey, clearApiKey, getApiKey |
-| `uiStore` | darkMode, locale, sidebarOpen, viewMode, currentProject, availableProjects, filters, savedSearches, connectionState (SYNCED/OFFLINE_QUEUED/SYNCING/DEGRADED), pendingSyncCount, networkMode (online/degraded/offline), syncQueue[] | setFilter, clearFilters, saveSearch, applySearch, toggleDarkMode, setLocale, simulateSync (guarded), setNetworkMode, enqueueMutation, flushQueue, removeQueued, retryQueued, resolveConflict |
+| `uiStore` | darkMode, locale, sidebarOpen, viewMode, currentProject, availableProjects, filters, savedSearches, connectionState (SYNCED/OFFLINE_QUEUED/SYNCING/DEGRADED), pendingSyncCount, networkMode (online/degraded/offline), syncQueue[], toastTheme (minimal/rich/enterprise) | setFilter, clearFilters, saveSearch, applySearch, toggleDarkMode, setLocale, simulateSync (guarded), setNetworkMode, enqueueMutation, flushQueue, removeQueued, retryQueued, resolveConflict, setToastTheme |
 | `issuesStore` | issues[], filteredIssues, pagination, loading, selectedIssue | fetchIssues, createIssue, updateIssue, deleteIssue, closeIssue (create/update enqueue + local-apply when offline, #515) |
 | `componentsStore` | components[], projects, loading | fetchComponents, createComponent, updateComponent, deleteComponent |
 | `usersStore` | users[], loading | fetchUsers, createUser, updateUser, deleteUser |
 | `policiesStore` | policies[], loading | fetchPolicies, createPolicy, updatePolicy, deletePolicy (create/update enqueue + local-apply when offline, #515) |
 | `constraintsStore` | constraints[], validationResult, hard/soft/active counts | fetchConstraints, createConstraint, updateConstraint, validateConstraints, deleteConstraint |
 | `analysisStore` | impactResult, rootCauseResults[], testFailures[] | analyzeImpact, analyzeRootCause, fetchTestFailures, clearResults |
-| `notificationsStore` | notifications[], unreadCount | markAsRead, markAllAsRead, dismiss, getFiltered, ensureHitlNotifications |
+| `notificationsStore` | notifications[], preferences (per-channel sound), unreadCount, unreadByCategory (5 categories) | markAsRead, markAllAsRead, markManyRead, dismiss, dismissMany, setChannelSound, getFiltered, ensureHitlNotifications (addNotification triggers configured sound via `useSoundEffects`, #516) |
 | `chatStore` | conversations[], messages, activeConversationId, typingUsers[], searchQuery | selectConversation, sendMessage, togglePin, createConversation, simulateTyping |
 | `sandboxStore` | rules[], selectedRule, simulationResult | Mock CRUD + simulation |
 | `ragStore` | searchResults[], queryStats | Mock search, getContext |
@@ -669,7 +674,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `hitlStore` | requests[], selectedRequest, urgentPendingCount/Requests, quickActionRequestId, loadedOnce | fetchRequests, resolveAction, openQuickAction, closeQuickAction |
 | `finopsStore` | models[], components[], tasks[], roi[], alerts[], caps[], metrics | updateCap, toggleCap |
 | `executiveStore` | kpis[], cycleTime[], debt[], compliance[] | formatTrend, complianceColor |
-| `autoHealingStore` | runs[], logs[], fixAttempts[], selectedRunId | selectRun, stageColor, formatDuration |
+| `autoHealingStore` | runs[], logs[], fixAttempts[], selectedRunId | selectRun, stageColor, formatDuration, simulateCompletion (running run → completed + success sound, #516) |
 | `agentReplayStore` | sessions[], currentTime, isPlaying, playSpeed | play, pause, stepForward, stepBackward, seekTo |
 | `codeGraphStore` | nodes[], codeEdges[], enabled | fetchCodeStructure, toggle |
 | `organizationsStore` | organizations[], currentOrgId, currentWorkspaceId, activeRole, quotaUsage, canEdit/canManage | fetchOrganizations, createOrganization, updateOrganization, setOrg, setWorkspace, setActiveRole, upsertAccount, removeAccount (persists `currentOrg`/`currentWorkspace`/`activeEnterpriseRole` in localStorage; syncs workspace → `uiStore.setProject`) |
@@ -846,11 +851,11 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 ## 27. i18n Coverage
 
 ### Locale Files
-- `en.json`: ~1391 leaf keys, **70** top-level sections
-- `es.json`: ~1392 leaf keys, matching structure
+- `en.json`: ~1415 leaf keys, **73** top-level sections
+- `es.json`: ~1416 leaf keys, matching structure
 
-### Sections (70)
-`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`, `agentStudio`, `analytics`, `sla`, `offline`, `syncQueue`
+### Sections (73)
+`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`, `agentStudio`, `analytics`, `sla`, `offline`, `syncQueue`, `soundEffects`, `toastTheme`, `notifPanel`
 
 ### Coverage
 - All user-visible text uses `t()`
@@ -1406,4 +1411,27 @@ Issue #515 (`utils/offlineQueue.ts`, `components/sync/NetworkModeToggle.vue`, `c
 | **simulateSync guard** | Implemented | `simulateSync()` no-ops when offline, queue non-empty, or already SYNCING so manual sync simulation never clobbers pending mutations |
 | **Reload survival** | Implemented | Queue + network mode restored from localStorage at store init; pending queue flips badge to OFFLINE_QUEUED on load |
 | **i18n** | Implemented | `offline.*` (7 keys) + `syncQueue.*` (20 keys) in EN/ES |
+| **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~43s) |
+
+
+---
+
+## 57. Sound Effects, Notification Center Groups & Toast Themes
+
+Issue #516 (`composables/useSoundEffects.ts`, `components/ui/ToastThemeSettings.vue`, `NotificationCenter.vue` evolucionado).
+
+| Feature | Status | Details |
+|---|---|---|
+| **Sound engine** | Implemented | `useSoundEffects`: Web Audio API oscillators (no binary assets), `playAlert` (descending square-wave buzzer), `playSuccess` (4-note ascending arpeggio), `playPing` (double sine chime); lazy `AudioContext` with resume-on-play |
+| **No autoplay** | Implemented | Sounds only after first user gesture (`pointerdown`/`keydown` listener, removed on first interaction); silent if disabled, volume 0, or no audio device |
+| **Sound preferences** | Implemented | On/off + volume 0-100 persisted (`sound-effects-enabled`, `sound-effects-volume`); toggle, slider, and test button in UserMenu → Alerts section |
+| **Event triggers** | Implemented | Kill Switch (`IssueCard.killAgent` → alert), auto-healing success (`autoHealingStore.simulateCompletion` → success arpeggio + completion log; "Simulate pipeline success" button in AutoHealingMonitorView), notifications via `playForCategory` (violation/agent-failure/SLA → alert, HITL/mention → ping) |
+| **Per-channel sound prefs** | Implemented | `notificationsStore.preferences.channels` persisted (`socialseed-alert-prefs`); `addNotification` plays sound only if channel enabled (mentions off by default); seeds/HITL bulk inserts bypass sound |
+| **Criticality groups** | Implemented | NotificationCenter groups filtered history: Emergency (constraint_violation, agent_failure, sla) → Warning (hitl) → Info (mention) with sticky colored headers and counts (`SEVERITY_GROUPS` in `types/notifications.ts`) |
+| **Channel filter** | Implemented | Chip row: All / HITL / Governance / Agent / SLA / Mentions stacked with existing all/unread/action tabs |
+| **Bulk group actions** | Implemented | "Mark read" per group, "Clear all" (respects active filters) via `markManyRead` / `dismissMany` |
+| **SLA category** | Implemented | New `NotificationCategory = 'sla'` + `CATEGORY_CONFIG` (rose timer icon) + `unreadByCategory`; AnalyticsDashboardView breach notification migrated from `constraint_violation` to `sla` |
+| **Toast themes** | Implemented | `uiStore.toastTheme` minimal / rich / enterprise persisted (`toast-theme`); ToastItem: minimal = flat gray border/icon, rich = current type-colored, enterprise = top color strip + left border + mono type label |
+| **Theme picker** | Implemented | `ToastThemeSettings` with 3 mini previews, mounted in UserMenu under Alerts |
+| **i18n** | Implemented | `soundEffects.*` (4 keys) + `toastTheme.*` (8 keys) + `notifPanel.*` (11 keys) + `autoHealing.simulateSuccess` in EN/ES |
 | **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~43s) |
