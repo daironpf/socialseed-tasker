@@ -123,7 +123,7 @@
 |---|---|---|
 | Collapsible sidebar | Implemented | 20px collapsed → 64px on hover (`w-20` → `w-64`), smooth transition |
 | Logo + branding | Implemented | "SocialSeed" text when expanded |
-| Navigation groups | Implemented | Principal (4), Management (16), Analysis (2) = **22 nav items** |
+| Navigation groups | Implemented | Principal (4), Management (17), Analysis (2) = **23 nav items** |
 | Active route highlighting | Implemented | Color change on current route |
 | Nav icons | Implemented | SVG icons per nav item |
 | i18n labels | Implemented | All nav labels use `t()` |
@@ -134,14 +134,14 @@
 | Group | Routes |
 |---|---|
 | Principal | `/board`, `/system`, `/kanban`, `/list` |
-| Management | `/components`, `/policies`, `/constraints`, `/sandbox`, `/rag`, `/finops`, `/auto-healing`, `/replay`, `/executive`, `/users`, `/chat`, `/mcp`, `/hitl`, `/organization`, `/governance-matrix` |
+| Management | `/components`, `/policies`, `/constraints`, `/sandbox`, `/rag`, `/finops`, `/auto-healing`, `/replay`, `/executive`, `/users`, `/chat`, `/mcp`, `/hitl`, `/organization`, `/governance-matrix`, `/audit-log`, `/agents/studio` |
 | Analysis | `/graph`, `/analysis` |
 
 ### Header (AppHeader)
 
 | Feature | Status | Details |
 |---|---|---|
-| Dynamic page title | Implemented | Maps route path → translated title (21 paths; `/profile` falls back to dashboard title) |
+| Dynamic page title | Implemented | Maps route path → translated title (22 paths; `/profile` falls back to dashboard title) |
 | Organization switcher | Implemented | `OrganizationSwitcher` (`hidden lg:flex`, before ProjectSelector): hierarchical Organization → Workspace dropdown, localStorage, link to `/organization` settings |
 | Global HITL banner | Implemented | Shown when `urgentPendingCount > 0` (CRITICAL/HIGH pending); click → HITLCommandCenter; Review button → HITLQuickActionModal |
 | Hamburger menu | Implemented | 44×44 button (`md:hidden`), emits `open-mobile-menu` |
@@ -157,7 +157,7 @@
 |---|---|---|
 | Overlay slide-in | Implemented | From left, 300ms transition, full-screen dark overlay |
 | Close gestures | Implemented | Tap overlay or swipe-left |
-| Navigation content | Implemented | Same 3 groups / 21 items as desktop Sidebar |
+| Navigation content | Implemented | Same 3 groups / 23 items as desktop Sidebar |
 | i18n | Implemented | `mobileNav.openMenu`, `mobileNav.menu`, `mobileNav.swipeHint` |
 
 ### UserMenu
@@ -434,7 +434,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | Component | Purpose | Details |
 |---|---|---|
 | `Sidebar` | Main navigation | Collapsible, 3 groups, 21 items, desktop-only |
-| `MobileDrawer` | Mobile navigation | Overlay drawer, swipe-to-close, same 21 items |
+| `MobileDrawer` | Mobile navigation | Overlay drawer, swipe-to-close, same 23 items |
 | `AppHeader` | Top bar | Dynamic title, HITL banner, hamburger, org switcher (lg+), project selector, sync badge, notifications, user menu |
 | `OrganizationSwitcher` | Org/workspace selector | Hierarchical Organization → Workspace dropdown, localStorage persistence, link to `/organization` settings |
 | `UserMenu` | User dropdown | Avatar, dark mode, language, logout, profile link |
@@ -536,9 +536,9 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | Component | Purpose | Details |
 |---|---|---|
 | `LoginScreen` | API key gate | Full-screen overlay login |
+**Total view components:** 26 files in `src/views/` (25 routed incl. NotFound + `IssueDetailView` embedded)
 
-**Total view components:** 25 files in `src/views/` (23 routed + `IssueDetailView` embedded + `NotFound`)
-**Total shared components:** 67 `.vue` files under `src/components/`
+**Total shared components:** 70 `.vue` files under `src/components/`
 
 ---
 
@@ -669,8 +669,9 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `organizationsStore` | organizations[], currentOrgId, currentWorkspaceId, activeRole, quotaUsage, canEdit/canManage | fetchOrganizations, createOrganization, updateOrganization, setOrg, setWorkspace, setActiveRole, upsertAccount, removeAccount (persists `currentOrg`/`currentWorkspace`/`activeEnterpriseRole` in localStorage; syncs workspace → `uiStore.setProject`) |
 | `governanceStore` | matrix (agent x risk x action permission cells), alerts[], activeAlerts, pausedCount | toggleCell, setCell, getCell, resetMatrix, simulateRestrictedAction, resolveAlert (matrix persisted in localStorage `governance-matrix-v1`; approval-level alerts pause/resume issue `agent_working` |
 | `auditLogStore` | entries[] (84 deterministic seeded mock events), filters (dateFrom/dateTo/actor/agent/eventType/severity/search), filteredEntries, severityCounts, actors, agents, chain[] (mock hash blocks) | setFilter, clearFilters, exportRows (deterministic PRNG seed 20260924; no API — generated in store per issue spec) |
+| `agentStudioStore` | profiles[] (`AgentProfile` library), enabledCount | saveProfile (create/update), cloneProfile, toggleEnabled, removeProfile, markUsed, syncUsers, blankProfile (persists localStorage `agent-studio-v1`; merges studio agents into `usersStore.users` so they survive `fetchUsers` refetch) |
 
-**22 Pinia stores total.**
+**23 Pinia stores total.**
 
 ---
 
@@ -733,7 +734,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 - `technical_debt_notes?: string` — Markdown debt observations
 - `agent_working_started_at?: string | null` — agent execution start
 
-### Specialized Types (17 files under `types/`)
+### Specialized Types (18 files under `types/`)
 | File | Types |
 |---|---|
 | `index.ts` | Core entities above |
@@ -753,6 +754,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | `governance.ts` | `GovernanceAgentType`, `GovernanceRiskLevel`, `GovernanceActionId`, `PermissionState`, `PermissionMatrix`, `RestrictedActionAlert` |
 | `auditLog.ts` | `AuditLogEntry`, `AuditLogEventType`, `AuditLogSeverity`, `AuditLogFilters`, `AuditChainBlock`, `AUDIT_EVENT_TYPES`, `AUDIT_SEVERITIES` |
 | `graphExplorer.ts` | `ExplorerNodeType`, `EdgeRelation`, `InspectorPayload`, `InspectorField`, `InspectorLink`, `BlastRadiusStats`, `EdgeInspectorInfo`, `TraceSelectOption` |
+| `agentStudio.ts` | `AgentProfile`, `AgentLimits`, `AGENT_MODELS`, `AGENT_TOOLS`, `PROMPT_VARIABLES`, `DEFAULT_LIMITS` |
 
 ---
 
@@ -836,11 +838,11 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 ## 27. i18n Coverage
 
 ### Locale Files
-- `en.json`: ~1255 leaf keys, **65** top-level sections
-- `es.json`: ~1256 leaf keys, matching structure
+- `en.json`: ~1312 leaf keys, **66** top-level sections
+- `es.json`: ~1313 leaf keys, matching structure
 
-### Sections (65)
-`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`
+### Sections (66)
+`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`, `agentStudio`
 
 ### Coverage
 - All user-visible text uses `t()`
@@ -1214,6 +1216,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | `/organization` | **OrganizationSettings** | OrganizationSettingsView.vue |
 | `/governance-matrix` | **GovernanceMatrix** | GovernanceMatrixView.vue |
 | `/audit-log` | **AuditLog** | AuditLogView.vue |
+| `/agents/studio` | **AgentStudio** | AgentStudioView.vue |
 | `/:pathMatch(.*)*` | NotFound | NotFoundView.vue |
 
 ### Views without routes
@@ -1330,3 +1333,24 @@ Issue #512 (`AuditLogView.vue`, `AuditLogTable.vue`, `PIIRedactionPreview.vue`, 
 | **Issue description integration** | Implemented | `RichTextEditor` shield toggle renders compact `PIIRedactionPreview` under the editor (live masking of the draft) |
 | **Nav & header** | Implemented | `nav.auditLog` (EN/ES) |
 | **i18n** | Implemented | `auditLog.*` + `piiSuite.*` sections in EN/ES |
+
+---
+
+## 54. Agent Studio (Mock Agent Simulator & Custom Agent Builder)
+
+Issue #513 (`AgentStudioView.vue`, `AgentPromptEditor.vue`, `AgentSandboxTester.vue`, `AgentLibrary.vue`, `agentStudioStore`, `types/agentStudio.ts`, `utils/studioAgents.ts`).
+
+| Feature | Status | Details |
+|---|---|---|
+| **Agent Builder** | Implemented | `AgentStudioView` at `/agents/studio` (name, role, avatar, base model chips GPT-4o / Claude 3.5 Sonnet / Llama 3 / Gemini 1.5 Pro / Mistral Large, system prompt, 9 tool checkboxes, operative limits) |
+| **Prompt editor** | Implemented | `AgentPromptEditor`: variable chips (`{{issue}}`, `{{component}}`, `{{project}}`, `{{constraints}}`), char counter, live validation (required, min 80 chars, >2000, tools not referenced, missing must/never/only rules) |
+| **Operative limits** | Implemented | `AgentLimits`: maxTokensPerRun (2k–32k), timeoutSeconds (30–300), maxRisk (LOW/MEDIUM/HIGH) stored on profile |
+| **Sandbox Tester** | Implemented | `AgentSandboxTester`: mock chat with deterministic replies seeded by message hash (analyze/plan/report variants), staggered action log (`plan` → `tool X() ok` → `reply via model`), guardrail: `maxRisk=LOW` refuses high-risk keywords (delete/deploy/drop/destroy/prod) |
+| **Prompt validation feedback** | Implemented | Editor issues block/warn/info under the textarea; Save disabled until name + prompt non-empty |
+| **Corporate library** | Implemented | `AgentLibrary`: cards with avatar, role, model, ACTIVE/INACTIVE badge + toggle switch, tool chips, tokens/timeout/risk tiles, last-used date, Edit / Clone / Delete; empty state |
+| **Persistence** | Implemented | localStorage `agent-studio-v1` via `agentStudioStore` (mock persistence per AC); seed library with 2 example agents on first load; `users.json` and `server.py` untouched |
+| **usersStore integration** | Implemented | `utils/studioAgents.ts` `mergeStudioAgents` injected in `usersApi.fetchUsers` so studio agents (id prefix `agent-studio-`) survive the full array replacement on refetch and appear in `UsersView` cards and issue assignee dropdowns; store also syncs on every persist |
+| **UsersView access** | Implemented | "Agent Studio" secondary button next to "New user" → `router.push('/agents/studio')` |
+| **Nav & routing** | Implemented | Route `/agents/studio` (name `AgentStudio`); Sidebar + MobileDrawer Management entries; header title `agentStudio.title` |
+| **i18n** | Implemented | `agentStudio.*` section (builder, prompt, sandbox, library) + `nav.agentStudio` in EN/ES |
+| **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~42s) |

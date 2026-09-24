@@ -27,7 +27,8 @@
     "analysisView": "Analysis",
     "organization": "Organization",
     "governanceMatrix": "Governance Matrix",
-    "auditLog": "Audit Log"
+    "auditLog": "Audit Log",
+    "agentStudio": "Agent Studio"
   },
   "header": {
     "dashboard": "Dashboard",
@@ -1448,6 +1449,72 @@
       "ip_address": "IP address",
       "jwt": "JWT",
       "private_key": "Private key"
+    }
+  },
+  "agentStudio": {
+    "title": "Agent Studio",
+    "subtitle": "Build, test and manage custom agents",
+    "activeCount": "{count} active",
+    "new": "New agent",
+    "builder": {
+      "title": "Agent Builder",
+      "editing": "Editing agent",
+      "discard": "Back to new agent",
+      "name": "Name",
+      "namePlaceholder": "e.g. release-guardian",
+      "role": "Role",
+      "rolePlaceholder": "e.g. code-reviewer",
+      "avatar": "Avatar",
+      "model": "Model",
+      "systemPrompt": "System prompt",
+      "tools": "Tools",
+      "maxTokens": "Max tokens / run",
+      "timeout": "Timeout",
+      "maxRisk": "Max risk",
+      "saveAgent": "Save agent",
+      "saveChanges": "Save changes",
+      "editHint": "Saved agents appear in Users and issue assignees"
+    },
+    "prompt": {
+      "variables": "Insert",
+      "placeholder": "Describe the agent's mission, rules and limits…",
+      "valid": "Prompt looks good",
+      "needPrompt": "A system prompt is required",
+      "tooShort": "Prompt is very short; add context and examples",
+      "tooLong": "Prompt exceeds 2000 characters",
+      "toolsNotMentioned": "Enabled tools not referenced in prompt: {tools}",
+      "addRules": "Add explicit rules (must / never / only) for safer behaviour"
+    },
+    "sandbox": {
+      "title": "Sandbox Tester",
+      "reset": "Reset",
+      "noAgent": "Create or select an agent to start testing",
+      "hint": "Send a message to run the agent against mock tools and watch the action log",
+      "you": "You",
+      "thinking": "Running…",
+      "actionLog": "Action log",
+      "placeholder": "Ask the agent to do something…",
+      "send": "Send",
+      "refused": "{name} refused: the request looks high-risk and maxRisk is {risk}. Raise the risk limit or rephrase the task.",
+      "replyAnalyze": "{name} analyzed the request \"{topic}…\" and produced a structured plan with mock findings.",
+      "replyPlan": "{name} would execute this with: {tools}. Steps: gather context, apply constraints, report results.",
+      "replyReport": "{name} completed the mock run using {model} and logged the output to the audit trail.",
+      "toolNote": "Mock tool call: {tool}() → OK"
+    },
+    "library": {
+      "title": "Agent Library",
+      "empty": "No agents yet. Build your first one above.",
+      "active": "ACTIVE",
+      "inactive": "INACTIVE",
+      "toggle": "Enable / disable agent",
+      "noTools": "no tools",
+      "tokens": "tokens",
+      "timeout": "timeout",
+      "risk": "risk",
+      "lastUsed": "Last used",
+      "never": "never",
+      "edit": "Edit",
+      "clone": "Clone"
     }
   }
 }

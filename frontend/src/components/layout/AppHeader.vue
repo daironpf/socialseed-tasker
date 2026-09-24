@@ -126,6 +126,7 @@ const pageTitle = computed(() => {
     '/analysis': t('header.analysis'),
     '/organization': t('header.organization'),
     '/governance-matrix': t('header.governanceMatrix'),
+    '/agents/studio': t('agentStudio.title'),
   }
   return titles[route.path] || t('header.dashboard')
 })

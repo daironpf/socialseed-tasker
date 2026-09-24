@@ -27,7 +27,8 @@
     "analysisView": "Analisis",
     "organization": "Organizacion",
     "governanceMatrix": "Matriz de Gobernanza",
-    "auditLog": "Auditoría"
+    "auditLog": "Auditoría",
+    "agentStudio": "Estudio de Agentes"
   },
   "header": {
     "dashboard": "Dashboard",
@@ -1449,6 +1450,72 @@
       "ip_address": "Dirección IP",
       "jwt": "JWT",
       "private_key": "Clave privada"
+    }
+  },
+  "agentStudio": {
+    "title": "Estudio de Agentes",
+    "subtitle": "Crea, prueba y gestiona agentes personalizados",
+    "activeCount": "{count} activos",
+    "new": "Nuevo agente",
+    "builder": {
+      "title": "Constructor de Agentes",
+      "editing": "Editando agente",
+      "discard": "Volver a agente nuevo",
+      "name": "Nombre",
+      "namePlaceholder": "ej. release-guardian",
+      "role": "Rol",
+      "rolePlaceholder": "ej. code-reviewer",
+      "avatar": "Avatar",
+      "model": "Modelo",
+      "systemPrompt": "Prompt del sistema",
+      "tools": "Herramientas",
+      "maxTokens": "Máx. tokens / ejecución",
+      "timeout": "Tiempo límite",
+      "maxRisk": "Riesgo máx.",
+      "saveAgent": "Guardar agente",
+      "saveChanges": "Guardar cambios",
+      "editHint": "Los agentes guardados aparecen en Usuarios y en los asignados de las tareas"
+    },
+    "prompt": {
+      "variables": "Insertar",
+      "placeholder": "Describe la misión, reglas y límites del agente…",
+      "valid": "El prompt es válido",
+      "needPrompt": "El prompt del sistema es obligatorio",
+      "tooShort": "El prompt es muy corto; añade contexto y ejemplos",
+      "tooLong": "El prompt supera los 2000 caracteres",
+      "toolsNotMentioned": "Herramientas activas no mencionadas en el prompt: {tools}",
+      "addRules": "Añade reglas explícitas (must / never / only) para un comportamiento más seguro"
+    },
+    "sandbox": {
+      "title": "Probador Sandbox",
+      "reset": "Reiniciar",
+      "noAgent": "Crea o selecciona un agente para empezar a probar",
+      "hint": "Envía un mensaje para ejecutar el agente con herramientas simuladas y ver el registro de acciones",
+      "you": "Tú",
+      "thinking": "Ejecutando…",
+      "actionLog": "Registro de acciones",
+      "placeholder": "Pídele al agente que haga algo…",
+      "send": "Enviar",
+      "refused": "{name} rechazó la petición: parece de alto riesgo y maxRisk es {risk}. Sube el límite de riesgo o reformula la tarea.",
+      "replyAnalyze": "{name} analizó la petición \"{topic}…\" y produjo un plan estructurado con hallazgos simulados.",
+      "replyPlan": "{name} lo ejecutaría con: {tools}. Pasos: reunir contexto, aplicar restricciones, informar resultados.",
+      "replyReport": "{name} completó la ejecución simulada con {model} y registró la salida en la auditoría.",
+      "toolNote": "Llamada simulada: {tool}() → OK"
+    },
+    "library": {
+      "title": "Biblioteca de Agentes",
+      "empty": "Aún no hay agentes. Crea el primero arriba.",
+      "active": "ACTIVO",
+      "inactive": "INACTIVO",
+      "toggle": "Activar / desactivar agente",
+      "noTools": "sin herramientas",
+      "tokens": "tokens",
+      "timeout": "límite",
+      "risk": "riesgo",
+      "lastUsed": "Último uso",
+      "never": "nunca",
+      "edit": "Editar",
+      "clone": "Clonar"
     }
   }
 }

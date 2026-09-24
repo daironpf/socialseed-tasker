@@ -1,9 +1,10 @@
 import client from './client'
 import type { APIResponse, User } from '@/types'
+import { mergeStudioAgents } from '@/utils/studioAgents'
 
 export async function fetchUsers(): Promise<User[]> {
   const { data } = await client.get<APIResponse<User[]>>('/users')
-  return data.data || []
+  return mergeStudioAgents(data.data || [])
 }
 
 export async function updateUser(userId: string, userData: Partial<User>): Promise<User> {

@@ -6,7 +6,9 @@ Para que las empresas puedan evaluar el potencial del sistema, deben poder simul
 
 Origen: `notas.md` → Issue #505 (renumerada a #513; #505 ya está en done como FilterBuilder).
 
-## Status: TODO
+## Status: DONE
+
+**Resolución (2026-09-24):** Implementado. `AgentStudioView` en `/agents/studio` con builder (nombre, rol, avatar, modelo, system prompt con `AgentPromptEditor` + validación y variables insertables, 9 tools en checkbox, límites tokens/timeout/maxRisk), Sandbox Tester (`AgentSandboxTester`: chat mock determinista por herramientas/rol, action log escalonado, guardrail `maxRisk=LOW` que rechaza peticiones de alto riesgo) y Library (`AgentLibrary`: cards con modelo, estado, herramientas, límites, último uso, Editar/Clonar/Activar/Eliminar). Store `agentStudioStore` persiste en localStorage `agent-studio-v1` y sincroniza con `usersStore`; `usersApi.fetchUsers` mergea los agentes studio vía `utils/studioAgents.ts` (sobreviven al refetch y aparecen en UsersView y en los asignados de issues). Botón de acceso en UsersView, nav en Sidebar/MobileDrawer (grupo Management), i18n `agentStudio` + `nav.agentStudio` EN/ES. `users.json` y `server.py` intactos (persistencia mock vía localStorage, válida según AC). `npm run build` pasa (42s).
 
 ## Priority: MEDIUM
 
@@ -38,13 +40,13 @@ feat / agents
    - Sincronizar con UsersView (agentes creados aparecen en asignación de issues)
 
 ## Acceptance Criteria
-- [ ] `AgentStudioView` builds agents with name, base model, system prompt, allowed tools/capabilities
-- [ ] Sandbox Tester lets user chat with the new agent on the simulated backend
-- [ ] Save, clone, enable/disable agents in corporate library (mock persistence)
-- [ ] New agents appear in UsersView and issue assignee dropdowns
-- [ ] Operative limits (tokens/run, risk) stored on agent profile
-- [ ] i18n support (EN + ES)
-- [ ] `npm run build` passes
+- [x] `AgentStudioView` builds agents with name, base model, system prompt, allowed tools/capabilities
+- [x] Sandbox Tester lets user chat with the new agent on the simulated backend
+- [x] Save, clone, enable/disable agents in corporate library (mock persistence)
+- [x] New agents appear in UsersView and issue assignee dropdowns
+- [x] Operative limits (tokens/run, risk) stored on agent profile
+- [x] i18n support (EN + ES)
+- [x] `npm run build` passes
 
 ## Files to Create
 - `frontend/src/views/AgentStudioView.vue`

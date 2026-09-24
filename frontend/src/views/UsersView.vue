@@ -9,12 +9,20 @@
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('users.title') }}</h1>
           <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('users.subtitle') }}</p>
         </div>
-        <button
-          class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
-          @click="showCreateModal = true"
-        >
-          {{ t('users.newUser') }}
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            @click="router.push('/agents/studio')"
+          >
+            {{ t('nav.agentStudio') }}
+          </button>
+          <button
+            class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
+            @click="showCreateModal = true"
+          >
+            {{ t('users.newUser') }}
+          </button>
+        </div>
       </div>
 
       <!-- Stats -->
@@ -273,6 +281,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import EditAgentModal from '@/components/users/EditAgentModal.vue'
@@ -285,6 +294,8 @@ import { useToast } from '@/composables/useToast'
 import type { User, Issue } from '@/types'
 
 const { t } = useI18n()
+
+const router = useRouter()
 
 const usersStore = useUsersStore()
 const issuesStore = useIssuesStore()
