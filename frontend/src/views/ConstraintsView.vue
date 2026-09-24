@@ -161,8 +161,8 @@ class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
     </div>
 
     <!-- Constraints Table -->
-    <div class="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-      <table class="w-full">
+    <div class="rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
+      <table class="w-full min-w-[720px]">
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('constraints.id') }}</th>

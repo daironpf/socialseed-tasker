@@ -1,12 +1,13 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col">
     <Sidebar />
-    <div class="ml-20 flex flex-1 flex-col transition-all duration-300 pb-8">
-      <AppHeader />
+    <div class="md:ml-20 flex flex-1 flex-col transition-all duration-300 pb-8">
+      <AppHeader @open-mobile-menu="mobileMenuOpen = true" />
       <main class="flex-1 overflow-hidden">
         <RouterView />
       </main>
     </div>
+    <MobileDrawer :open="mobileMenuOpen" @close="mobileMenuOpen = false" />
     <TeamTicker />
     <CommandPalette ref="paletteRef" />
     <KeyboardShortcutsHelp ref="shortcutsHelpRef" />
@@ -23,6 +24,7 @@ import { RouterView, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import Sidebar from '@/components/layout/Sidebar.vue'
+import MobileDrawer from '@/components/layout/MobileDrawer.vue'
 import LoginScreen from '@/components/auth/LoginScreen.vue'
 import TeamTicker from '@/components/dashboard/TeamTicker.vue'
 import CommandPalette from '@/components/ui/CommandPalette.vue'
@@ -41,6 +43,7 @@ const { register } = useKeyboardShortcuts()
 
 const paletteRef = ref<InstanceType<typeof CommandPalette> | null>(null)
 const shortcutsHelpRef = ref<InstanceType<typeof KeyboardShortcutsHelp> | null>(null)
+const mobileMenuOpen = ref(false)
 
 const showLogin = computed(() => !authStore.isAuthenticated)
 

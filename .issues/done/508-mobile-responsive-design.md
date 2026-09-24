@@ -4,7 +4,7 @@
 
 El archivo de features identifica que la interfaz actual está diseñada para pantallas de escritorio. Se requiere adaptar el layout principal (Sidebar, AppHeader y IssueDetailView) para pantallas tablets y móviles, incluyendo navegación táctil y scroll horizontal.
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: HIGH
 
@@ -42,15 +42,15 @@ Frontend / Layout / Responsive
    - Desktop: > 1024px (xl)
 
 ## Acceptance Criteria
-- [ ] Sidebar hidden on mobile, hamburger menu works
-- [ ] MobileDrawer opens/closes with overlay and swipe
-- [ ] IssueDetailView full-width on mobile
-- [ ] Kanban columns snap-scroll on tablet
-- [ ] Touch targets minimum 44x44px
-- [ ] No horizontal overflow on any view
-- [ ] Text readable without zoom
-- [ ] All CRUD operations work on mobile
-- [ ] i18n support (EN + ES)
+- [x] Sidebar hidden on mobile, hamburger menu works
+- [x] MobileDrawer opens/closes with overlay and swipe
+- [x] IssueDetailView full-width on mobile
+- [x] Kanban columns snap-scroll on tablet
+- [x] Touch targets minimum 44x44px
+- [x] No horizontal overflow on any view
+- [x] Text readable without zoom
+- [x] All CRUD operations work on mobile
+- [x] i18n support (EN + ES)
 
 ## Files to Create
 - `frontend/src/components/layout/MobileDrawer.vue`

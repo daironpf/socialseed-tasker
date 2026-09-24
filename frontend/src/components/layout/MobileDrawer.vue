@@ -1,62 +1,104 @@
 <template>
-  <aside
-    class="fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-gray-200 bg-white transition-all duration-300 dark:border-gray-700 dark:bg-gray-900 md:flex"
-    :class="isExpanded ? 'w-64' : 'w-20'"
-    @mouseenter="isExpanded = true"
-    @mouseleave="isExpanded = false"
-  >
-    <!-- Logo -->
-    <div class="flex h-16 items-center border-b border-gray-200 px-4 dark:border-gray-700">
-      <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-brand-600">
-        <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-        </svg>
-      </div>
-      <span
-        v-if="isExpanded"
-        class="ml-3 text-lg font-bold text-gray-900 transition-opacity dark:text-white"
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-300 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="open"
+        class="fixed inset-0 z-50 bg-black/50 md:hidden"
+        @click="$emit('close')"
+        @touchstart.passive="onTouchStart"
+        @touchend.passive="onTouchEnd"
+      ></div>
+    </Transition>
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="-translate-x-full"
+      enter-to-class="translate-x-0"
+      leave-active-class="transition duration-300 ease-in"
+      leave-from-class="translate-x-0"
+      leave-to-class="-translate-x-full"
+    >
+      <aside
+        v-if="open"
+        class="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 md:hidden"
+        @touchstart.passive="onTouchStart"
+        @touchend.passive="onTouchEnd"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="t('mobileNav.menu')"
       >
-        SocialSeed
-      </span>
-    </div>
-
-    <!-- Navigation -->
-    <nav class="flex-1 overflow-y-auto px-3 py-4">
-      <div v-for="group in navGroups" :key="group.key" class="mb-6">
-        <p
-          v-if="isExpanded"
-          class="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500"
-        >
-          {{ t(`nav.${group.key}`) }}
-        </p>
-        <div v-else class="mb-2 h-px bg-gray-200 dark:bg-gray-700" />
-
-        <div class="space-y-1">
-          <NavItem
-            v-for="item in group.items"
-            :key="item.path"
-            :item="item"
-            :is-expanded="isExpanded"
-            :is-active="route.path === item.path"
-            @click="navigateTo(item.path)"
-          />
+        <div class="flex h-16 items-center justify-between border-b border-gray-200 px-4 dark:border-gray-700">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-brand-600">
+              <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+            </div>
+            <span class="text-lg font-bold text-gray-900 dark:text-white">SocialSeed</span>
+          </div>
+          <button
+            class="flex h-11 w-11 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+            :aria-label="t('common.close')"
+            @click="$emit('close')"
+          >
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-      </div>
-    </nav>
-  </aside>
+
+        <nav class="flex-1 overflow-y-auto px-3 py-4">
+          <div v-for="group in navGroups" :key="group.key" class="mb-6">
+            <p class="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              {{ t(`nav.${group.key}`) }}
+            </p>
+            <div class="space-y-1">
+              <NavItem
+                v-for="item in group.items"
+                :key="item.path"
+                :item="item"
+                :is-expanded="true"
+                :is-active="route.path === item.path"
+                @click="navigateTo(item.path)"
+              />
+            </div>
+          </div>
+        </nav>
+      </aside>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import NavItem from './NavItem.vue'
+
+defineProps<{ open: boolean }>()
+const emit = defineEmits<{ close: [] }>()
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 
-const isExpanded = ref(false)
+const touchStartX = ref(0)
+
+function onTouchStart(e: TouchEvent) {
+  touchStartX.value = e.changedTouches[0]?.screenX ?? 0
+}
+
+function onTouchEnd(e: TouchEvent) {
+  const endX = e.changedTouches[0]?.screenX ?? 0
+  if (touchStartX.value - endX > 60) emit('close')
+  if (endX - touchStartX.value > 60 && touchStartX.value < 40) emit('close')
+}
 
 const navGroups = computed(() => [
   {
@@ -98,6 +140,7 @@ const navGroups = computed(() => [
 function navigateTo(path: string) {
   if (path) {
     router.push(path)
+    emit('close')
   }
 }
 </script>

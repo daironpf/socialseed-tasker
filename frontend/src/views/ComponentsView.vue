@@ -1,24 +1,24 @@
 <template>
   <div class="space-y-6">
-    <div class="flex items-center justify-between">
+    <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('components.title') }}</h1>
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">{{ t('components.title') }}</h1>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center gap-3">
         <div class="flex rounded-lg border border-gray-300 dark:border-gray-600">
           <button
-            class="px-3 py-1.5 text-sm"
+            class="min-h-[44px] px-3 py-1.5 text-sm"
             :class="viewMode === 'table' ? 'bg-gray-100 dark:bg-gray-700 font-medium' : ''"
             @click="viewMode = 'table'"
           >{{ t('components.tableView') }}</button>
           <button
-            class="px-3 py-1.5 text-sm"
+            class="min-h-[44px] px-3 py-1.5 text-sm"
             :class="viewMode === 'grid' ? 'bg-gray-100 dark:bg-gray-700 font-medium' : ''"
             @click="viewMode = 'grid'"
           >{{ t('components.gridView') }}</button>
         </div>
         <button
-          class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          class="min-h-[44px] rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           @click="openCreateModal"
         >
           {{ t('components.newComponent') }}
@@ -61,8 +61,8 @@
     </div>
 
     <!-- Table View -->
-    <div v-if="viewMode === 'table'" class="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-      <table class="w-full">
+    <div v-if="viewMode === 'table'" class="rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
+      <table class="w-full min-w-[640px]">
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('components.alias') }}</th>

@@ -1,6 +1,6 @@
 <template>
   <button
-    class="group flex w-full items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all"
+    class="group flex min-h-[44px] w-full items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all"
     :class="[
       isActive
         ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400'

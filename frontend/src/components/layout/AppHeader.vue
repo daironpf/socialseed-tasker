@@ -28,15 +28,24 @@
       </button>
     </div>
 
-    <div class="flex h-16 items-center justify-between px-6">
-      <div class="flex items-center gap-4">
-        <h1 class="text-lg font-bold text-gray-900 dark:text-white">
+    <div class="flex h-16 items-center justify-between px-3 sm:px-6">
+      <div class="flex min-w-0 items-center gap-3">
+        <button
+          class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 md:hidden"
+          :aria-label="t('mobileNav.openMenu')"
+          @click="$emit('open-mobile-menu')"
+        >
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <h1 class="truncate text-base font-bold text-gray-900 dark:text-white sm:text-lg">
           {{ pageTitle }}
         </h1>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex flex-shrink-0 items-center gap-1 sm:gap-3">
         <ProjectSelector />
-        <SyncStatusBadge />
+        <SyncStatusBadge class="hidden sm:flex" />
         <NotificationCenter />
         <UserMenu />
       </div>
@@ -62,6 +71,8 @@ import SyncStatusBadge from '@/components/ui/SyncStatusBadge.vue'
 import HITLQuickActionModal from '@/components/ui/HITLQuickActionModal.vue'
 import { useHitlStore } from '@/stores/hitlStore'
 import { useNotificationsStore } from '@/stores/notificationsStore'
+
+defineEmits<{ 'open-mobile-menu': [] }>()
 
 const route = useRoute()
 const router = useRouter()

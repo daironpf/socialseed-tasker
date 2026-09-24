@@ -1,7 +1,7 @@
 <template>
   <div class="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white shadow-xl dark:bg-gray-800 overflow-y-auto">
     <div class="sticky top-0 z-10 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-      <div class="flex items-center justify-between px-6 py-4">
+      <div class="flex items-center justify-between px-4 py-4 sm:px-6">
         <div class="flex items-center gap-3">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {{ issue.id }}
@@ -26,11 +26,11 @@
         </div>
       </div>
 
-      <div class="flex gap-0 border-b border-gray-200 dark:border-gray-700 px-6">
+      <div class="flex gap-0 overflow-x-auto border-b border-gray-200 px-4 sm:px-6 dark:border-gray-700">
         <button
           v-for="tab in tabs"
           :key="tab.key"
-          class="border-b-2 px-3 py-2.5 text-sm font-medium transition-colors"
+          class="min-h-[44px] flex-shrink-0 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors"
           :class="activeTab === tab.key
             ? 'border-blue-500 text-blue-600 dark:text-blue-400'
             : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'"
@@ -70,7 +70,7 @@
         />
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
           <label class="block text-[10px] font-medium text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wider">{{ t('issues.assignee') }}</label>
           <select
@@ -104,7 +104,7 @@
         />
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t('issues.status') }}</label>
           <select

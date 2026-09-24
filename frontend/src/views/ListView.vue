@@ -14,12 +14,12 @@
       </div>
 
       <!-- Header -->
-      <div v-else class="mb-4 flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('issues.title') }}</h1>
+      <div v-else class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">{{ t('issues.title') }}</h1>
         <div class="flex items-center gap-2">
           <div class="relative" ref="exportDropdownRef">
             <button
-              class="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              class="flex min-h-[44px] items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               @click="showExportMenu = !showExportMenu"
             >
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -54,7 +54,7 @@
             </Teleport>
           </div>
           <button
-            class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
+            class="min-h-[44px] rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
             @click="showCreateModal = true"
           >
             {{ t('issues.newIssue') }}
@@ -95,9 +95,9 @@
               <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ t('issues.titleField') }}</th>
               <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ t('issues.status') }}</th>
               <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ t('issues.priority') }}</th>
-              <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ t('issues.component') }}</th>
-              <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ t('issues.labels') }}</th>
-              <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ t('issues.created') }}</th>
+              <th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 md:table-cell">{{ t('issues.component') }}</th>
+              <th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 lg:table-cell">{{ t('issues.labels') }}</th>
+              <th class="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 lg:table-cell">{{ t('issues.created') }}</th>
               <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ t('components.actions') }}</th>
             </tr>
           </thead>
@@ -125,20 +125,20 @@
               <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 max-w-xs truncate">{{ issue.title }}</td>
               <td class="px-4 py-3 text-sm"><StatusBadge :status="issue.status" /></td>
               <td class="px-4 py-3 text-sm"><PriorityBadge :priority="issue.priority" /></td>
-              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{{ getComponentName(issue.component_id) }}</td>
-              <td class="px-4 py-3 text-sm">
+              <td class="hidden px-4 py-3 text-sm text-gray-600 dark:text-gray-300 md:table-cell">{{ getComponentName(issue.component_id) }}</td>
+              <td class="hidden px-4 py-3 text-sm lg:table-cell">
                 <div class="flex gap-1 flex-wrap">
                   <LabelTag v-for="label in issue.labels.slice(0, 2)" :key="label" :label="label" />
                   <span v-if="issue.labels.length > 2" class="text-xs text-gray-400">+{{ issue.labels.length - 2 }}</span>
                 </div>
               </td>
-              <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{{ formatDate(issue.created_at) }}</td>
+              <td class="hidden px-4 py-3 text-sm text-gray-500 dark:text-gray-400 lg:table-cell">{{ formatDate(issue.created_at) }}</td>
               <td class="px-4 py-3 text-sm">
                 <div class="flex gap-1">
-                  <button v-if="issue.status !== 'CLOSED'" class="text-amber-600 hover:text-amber-800 dark:text-amber-400" @click.stop="closeIssue(issue.id)" :title="t('issues.close')">
+                  <button v-if="issue.status !== 'CLOSED'" class="flex h-11 w-11 items-center justify-center rounded text-amber-600 hover:bg-amber-50 hover:text-amber-800 dark:text-amber-400 dark:hover:bg-amber-900/20" @click.stop="closeIssue(issue.id)" :title="t('issues.close')">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                   </button>
-                  <button class="text-red-600 hover:text-red-800 dark:text-red-400" @click.stop="deleteIssue(issue.id)" :title="t('issues.delete')">
+                  <button class="flex h-11 w-11 items-center justify-center rounded text-red-600 hover:bg-red-50 hover:text-red-800 dark:text-red-400 dark:hover:bg-red-900/20" @click.stop="deleteIssue(issue.id)" :title="t('issues.delete')">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   </button>
                 </div>

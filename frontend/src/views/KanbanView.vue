@@ -22,16 +22,16 @@
     </div>
     <div v-else class="flex flex-col h-full p-6">
       <!-- Header -->
-      <div class="mb-6 flex items-center justify-between">
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('header.kanban') }}</h1>
+          <h1 class="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">{{ t('header.kanban') }}</h1>
         </div>
         <div class="flex items-center gap-3">
           <span class="text-sm text-gray-500 dark:text-gray-400">
             {{ issuesStore.filteredIssues.length }} {{ t('issues.title').toLowerCase() }}
           </span>
           <button
-            class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
+            class="min-h-[44px] rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
             @click="showCreateModal = true"
           >
             {{ t('issues.newIssue') }}
@@ -45,17 +45,21 @@
       </div>
 
       <!-- Kanban Columns -->
-      <div class="flex-1 flex gap-4 overflow-x-auto">
-        <KanbanColumn
-          v-for="col in columns"
-          :key="col.status"
-          :title="col.title"
-          :status="col.status"
-          :issues="issuesByStatus(col.status)"
-          class="flex-1 min-w-[280px] max-w-[400px]"
-          @openIssue="openIssue"
-          @dropIssue="onDropIssue"
-        />
+      <div class="relative flex-1">
+        <div class="flex h-full gap-4 overflow-x-auto snap-x snap-mandatory md:snap-none scroll-smooth pb-2">
+          <KanbanColumn
+            v-for="col in columns"
+            :key="col.status"
+            :title="col.title"
+            :status="col.status"
+            :issues="issuesByStatus(col.status)"
+            class="flex-1 min-w-[85vw] max-w-[400px] sm:min-w-[280px] snap-start scroll-mt-4"
+            @openIssue="openIssue"
+            @dropIssue="onDropIssue"
+          />
+        </div>
+        <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-gray-50 to-transparent dark:from-gray-900 md:hidden"></div>
+        <div class="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-gray-50 to-transparent dark:from-gray-900 md:hidden"></div>
       </div>
     </div>
 

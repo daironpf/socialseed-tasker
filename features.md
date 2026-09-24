@@ -53,7 +53,8 @@
 43. [Agent Timer & Kill Switch](#43-agent-timer--kill-switch)
 44. [Tech Debt & Affected Files](#44-tech-debt--affected-files)
 45. [Project Filtering](#45-project-filtering)
-46. [Known Gaps & Missing Features](#46-known-gaps--missing-features)
+46. [Mobile Responsive Design](#46-mobile-responsive-design)
+47. [Known Gaps & Missing Features](#47-known-gaps--missing-features)
 
 ---
 
@@ -419,6 +420,7 @@
 | `GraphFilters` | Graph filtering | Component checkboxes, status filter |
 | `ProjectSelector` | Project switcher | Dropdown with 4 projects, localStorage persistence, filters all views |
 | `SyncStatusBadge` | Sync indicator | Color-coded (green/yellow/blue), animated ping dot, pending count |
+| `MobileDrawer` | Mobile nav | Overlay slide-in drawer, swipe-to-close, full navigation groups |
 
 ### Chat Components
 | Component | Purpose | Details |
@@ -1015,7 +1017,27 @@ All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api s
 
 ---
 
-## 46. Known Gaps and Missing Features
+## 46. Mobile Responsive Design
+
+| Feature | Status | Details |
+|---|---|---|
+| **Adaptive sidebar** | Implemented | Sidebar hidden below `md` (768px); desktop hover-expand unchanged |
+| **Hamburger menu** | Implemented | 44x44px button in AppHeader (md:hidden), emits `open-mobile-menu` |
+| **MobileDrawer** | Implemented | Overlay slide-in from left (300ms), tap overlay or swipe-left to close, full nav groups |
+| **App layout offset** | Implemented | `md:ml-20` content offset only on desktop; mobile uses full width |
+| **IssueDetailView** | Implemented | Already full-width (`w-full max-w-lg`); field grids collapse to 1 col on mobile; tab bar horizontal scroll |
+| **Kanban snap scroll** | Implemented | `snap-x snap-mandatory` on narrow screens, edge gradient fade indicators, `85vw` columns on mobile |
+| **ListView table** | Implemented | Component/Labels/Created columns hidden below md/lg; action buttons 44x44 touch targets |
+| **ComponentsView table** | Implemented | `overflow-x-auto` + `min-w-[640px]` (was clipped by overflow-hidden) |
+| **ConstraintsView table** | Implemented | `overflow-x-auto` + `min-w-[720px]` (was clipped by overflow-hidden) |
+| **Touch targets** | Implemented | Primary buttons, nav items, and row actions use min 44px height |
+| **Responsive headers** | Implemented | Wrap on narrow screens; title scales `text-xl sm:text-2xl` |
+| **SyncStatusBadge** | Implemented | Hidden below `sm` to prevent header overflow |
+| i18n | Implemented | `mobileNav.openMenu`, `mobileNav.menu`, `mobileNav.swipeHint` (EN/ES) |
+
+---
+
+## 47. Known Gaps and Missing Features
 
 ### Not Implemented
 - No real backend integration (mock mode only)
@@ -1041,7 +1063,7 @@ All endpoints routed through `/mock-api/mock/*` prefix, delegating to mock-api s
 - No performance monitoring / Lighthouse
 - No service worker / offline support
 - No internationalization for right-to-left languages
-- No mobile responsive layout (desktop only)
+- No mobile bottom navigation bar (hamburger drawer only)
 - No real GitHub bidirectional sync
 - No real governance rule engine backend
 - No real sync queue persistence

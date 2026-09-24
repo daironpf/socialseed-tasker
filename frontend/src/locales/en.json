@@ -2,6 +2,11 @@
   "kanban": {
     "noIssues": "No issues"
   },
+  "mobileNav": {
+    "openMenu": "Open menu",
+    "menu": "Navigation menu",
+    "swipeHint": "Swipe left to close"
+  },
   "nav": {
     "principal": "Main",
     "management": "Management",
