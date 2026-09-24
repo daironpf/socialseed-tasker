@@ -6,7 +6,9 @@ La visualización del grafo de dependencias y causa raíz es la ventaja competit
 
 Origen: `notas.md` → Issue #503 (renumerada a #511; #503 ya está en done).
 
-## Status: TODO
+## Status: DONE
+
+> Resuelto: toolbar de exploración (`GraphToolbar.vue`: zoom in/out/fit, toggle de clustering por componente con `network.cluster` + `openCluster` al clicar, trazado de ruta origen→destino con selects y resaltado ámbar + atenuado del resto). Filtros extendidos en `GraphFilters.vue` (prioridad CRITICAL/HIGH/MEDIUM/LOW y tipo de nodo Issue/Component/Agent/Policy/PR como pills). Nodos mock nuevos en `GraphView`: agentes desde `usersStore` (rombo naranja, aristas a issues asignados), políticas desde `policiesStore` (estrella rosa) y PRs de `issue.github_sync` (cuadrado gris, arista issue→PR); leyenda actualizada. Inspector lateral `NodeInspector.vue` al clicar nodo/arista: metadatos, blast-radius (total/directo/depth/críticos/high vía `graphUtils.blastRadius`), enlaces rápidos (abrir issue, rutas, URL de GitHub) y, para aristas, relación/dirección/peso/detección de ciclo vía `findPath`. `graphUtils.ts` ampliado con `findPath` (BFS dirigido + inverso) y `blastRadius`. Sección i18n `graphExplorer` (60 claves, EN+ES). Conect mode, cycle detection y code overlay intactos. `npm run build` OK.
 
 ## Priority: HIGH
 
@@ -38,14 +40,14 @@ feat / visualization
    - Mantener toggle de Code Overlay (#492) coherente con nuevos tipos
 
 ## Acceptance Criteria
-- [ ] Zoom, pan, auto-center controls work on GraphView
-- [ ] Cluster/module grouping toggle works
-- [ ] Impact path tracing highlights routes between selected nodes
-- [ ] Dynamic filters by criticality and node type (Issue, Component, Agent, Policy, Pull Request)
-- [ ] Side inspector shows full mock metadata, blast-radius metrics, and quick links on node/edge click
-- [ ] Existing connect mode, cycle detection, and code overlay still work
-- [ ] i18n support (EN + ES)
-- [ ] `npm run build` passes
+- [x] Zoom, pan, auto-center controls work on GraphView
+- [x] Cluster/module grouping toggle works
+- [x] Impact path tracing highlights routes between selected nodes
+- [x] Dynamic filters by criticality and node type (Issue, Component, Agent, Policy, Pull Request)
+- [x] Side inspector shows full mock metadata, blast-radius metrics, and quick links on node/edge click
+- [x] Existing connect mode, cycle detection, and code overlay still work
+- [x] i18n support (EN + ES)
+- [x] `npm run build` passes
 
 ## Files to Create
 - `frontend/src/components/graph/GraphToolbar.vue` (zoom/pan/fit/cluster controls)

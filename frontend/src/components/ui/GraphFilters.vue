@@ -59,6 +59,39 @@
       </Teleport>
     </div>
 
+    <!-- Criticality pills -->
+    <div v-if="criticalities && criticalities.length" class="flex items-center gap-1">
+      <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('graphExplorer.criticality') }}</span>
+      <button
+        v-for="c in criticalities"
+        :key="c"
+        class="rounded-full px-2 py-0.5 text-[10px] font-bold transition-colors"
+        :class="selectedCriticalities?.includes(c)
+          ? criticalityClass(c)
+          : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'"
+        @click="toggleCriticality(c)"
+      >
+        {{ t(`issues.${c.toLowerCase()}`) }}
+      </button>
+    </div>
+
+    <!-- Node type pills -->
+    <div v-if="nodeTypes && nodeTypes.length" class="flex items-center gap-1">
+      <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('graphExplorer.nodeTypes') }}</span>
+      <button
+        v-for="nt in nodeTypes"
+        :key="nt.id"
+        class="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition-colors"
+        :class="selectedNodeTypes?.includes(nt.id)
+          ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+          : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'"
+        @click="toggleNodeType(nt.id)"
+      >
+        <span class="h-2 w-2 rounded-full" :class="nt.dotClass"></span>
+        {{ nt.label }}
+      </button>
+    </div>
+
     <!-- Max Hops Slider -->
     <div class="flex items-center gap-2">
       <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('graph.maxHops') }}</label>
@@ -97,11 +130,17 @@ const props = defineProps<{
   components: Array<{ id: string; name: string }>
   selectedComponents: string[]
   maxHops: number
+  criticalities?: string[]
+  selectedCriticalities?: string[]
+  nodeTypes?: Array<{ id: string; label: string; dotClass: string }>
+  selectedNodeTypes?: string[]
 }>()
 
 const emit = defineEmits<{
   'update:selectedComponents': [value: string[]]
   'update:maxHops': [value: number]
+  'update:selectedCriticalities': [value: string[]]
+  'update:selectedNodeTypes': [value: string[]]
 }>()
 
 const open = ref(false)
@@ -120,6 +159,29 @@ function toggleComponent(id: string) {
   if (idx >= 0) current.splice(idx, 1)
   else current.push(id)
   emit('update:selectedComponents', current)
+}
+
+function toggleCriticality(value: string) {
+  const current = [...(props.selectedCriticalities || [])]
+  const idx = current.indexOf(value)
+  if (idx >= 0) current.splice(idx, 1)
+  else current.push(value)
+  emit('update:selectedCriticalities', current)
+}
+
+function toggleNodeType(id: string) {
+  const current = [...(props.selectedNodeTypes || [])]
+  const idx = current.indexOf(id)
+  if (idx >= 0) current.splice(idx, 1)
+  else current.push(id)
+  emit('update:selectedNodeTypes', current)
+}
+
+function criticalityClass(c: string): string {
+  if (c === 'CRITICAL') return 'bg-red-600 text-white'
+  if (c === 'HIGH') return 'bg-amber-500 text-white'
+  if (c === 'MEDIUM') return 'bg-yellow-500 text-white'
+  return 'bg-blue-500 text-white'
 }
 
 function handleClickOutside(e: MouseEvent) {

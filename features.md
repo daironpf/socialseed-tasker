@@ -72,7 +72,7 @@
 | Tailwind CSS 3 | Implemented | Dark mode via `class` strategy; Inter font |
 | Pinia state management | Implemented | 21 stores under `src/stores/` |
 | Vue Router | Implemented | 22 view routes + `/` redirect + catch-all NotFound; lazy-loaded; scroll-to-top on navigate |
-| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 62 top-level sections, ~1121 leaf keys per language, localStorage persistence |
+| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 63 top-level sections, ~1181 leaf keys per language, localStorage persistence |
 | Dark mode | Implemented | Toggle via UserMenu / `D` shortcut / CommandPalette; localStorage; system preference detection |
 | Mock API mode | Implemented | `USE_MOCK = true` in `client.ts`; axios instance swapped for mock client; `mockApi.ts` uses `fetch` against `/mock-api` |
 | Real API mode | Implemented | Axios client, base `window.__API_URL__ \|\| '/api/v1'`, API key auth via `X-API-Key`, 401 interceptor → `auth:unauthorized` |
@@ -352,7 +352,17 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **Code node detail** | Implemented | Click shows file path, language, lines, type |
 | **PNG export** | Implemented | Export graph as PNG via `useExport().exportSVG`/`exportPNG` |
 | **Sync simulation** | Implemented | `simulateSync()` on update/delete/close |
-| i18n | Implemented | All labels translated |
+| **Exploration toolbar** | Implemented | `GraphToolbar`: zoom in/out, fit to screen, clustering toggle, path tracing |
+| **Component clustering** | Implemented | `network.cluster()` groups issues by component (`cluster-<id>`); click cluster → `openCluster()` |
+| **Impact path tracing** | Implemented | BFS (`graphUtils.findPath`, directed + reverse fallback) between two issues; path highlighted amber, rest dimmed; no-path/selection feedback |
+| **Priority filter** | Implemented | CRITICAL/HIGH/MEDIUM/LOW pills in `GraphFilters` filter issue nodes |
+| **Node type filters** | Implemented | Issue / Component / Agent / Policy / PR toggle pills (with legend swatches) |
+| **Agent nodes** | Implemented | Orange diamonds from `usersStore` (type/role agent) with edges to assigned issues |
+| **Policy nodes** | Implemented | Pink stars from `policiesStore` (standalone governance nodes) |
+| **GitHub PR nodes** | Implemented | Gray squares `pr-<issueId>` from `issue.github_sync` with issue→PR edges (label `#<issue_number>`) |
+| **Node inspector** | Implemented | `NodeInspector` side panel: metadata, blast radius (total/direct/depth/critical/high via `graphUtils.blastRadius`), quick links (open issue, routes, GitHub URL) |
+| **Edge inspector** | Implemented | Relation type, direction, weight, cycle detection (reverse `findPath` on remaining edges) |
+| i18n | Implemented | All labels translated (`graphExplorer` section) |
 
 ---
 
@@ -487,9 +497,16 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `ToastContainer` / `ToastItem` | Toast display | Type-colored, auto-dismiss, animation |
 | `KeyboardShortcutsHelp` | Shortcuts modal | Grouped shortcut list, `?` to open |
 | `CommandPalette` | Quick actions | Fuzzy search: pages, actions, issues, components; recent actions; Ctrl/Cmd+K |
-| `GraphFilters` | Graph filtering | Component checkboxes, status filter |
+| `GraphFilters` | Graph filtering | Component checkboxes, priority (CRITICAL/HIGH/MEDIUM/LOW) and node type pills, status filter, max hops |
 | `ProjectSelector` | Project switcher | 4 projects, localStorage, filters all views |
 | `SyncStatusBadge` | Sync indicator | Green/yellow/blue, animated ping, pending count |
+
+### Graph Components
+| Component | Purpose | Details |
+|---|---|---|
+| `GraphToolbar` | Exploration toolbar | Zoom in/out, fit, cluster toggle, impact path tracing (source/target selects + feedback) |
+| `NodeInspector` | Node/edge inspector | Side panel: metadata, blast radius, quick links, relation/direction/weight/cycle |
+| `OrganizationSwitcher` | Org/workspace switcher | Enterprise header dropdown (org → workspace), role-aware actions |
 
 ### Chat Components
 | Component | Purpose | Details |
@@ -519,7 +536,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `LoginScreen` | API key gate | Full-screen overlay login |
 
 **Total view components:** 24 files in `src/views/` (22 routed + `IssueDetailView` embedded + `NotFound`)
-**Total shared components:** 63 `.vue` files under `src/components/`
+**Total shared components:** 65 `.vue` files under `src/components/`
 
 ---
 
@@ -713,7 +730,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 - `technical_debt_notes?: string` — Markdown debt observations
 - `agent_working_started_at?: string | null` — agent execution start
 
-### Specialized Types (15 files under `types/`)
+### Specialized Types (16 files under `types/`)
 | File | Types |
 |---|---|
 | `index.ts` | Core entities above |
@@ -731,6 +748,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | `audit.ts` | `AuditEntry`, `AuditAction`, `AuditMetadata` |
 | `organizations.ts` | `Organization`, `Workspace`, `EnterpriseAccount`, `OrganizationQuota`, `DataRetentionPolicy`, `EnterpriseRole`, `OrganizationPlan`, `OrganizationCreateRequest` |
 | `governance.ts` | `GovernanceAgentType`, `GovernanceRiskLevel`, `GovernanceActionId`, `PermissionState`, `PermissionMatrix`, `RestrictedActionAlert` |
+| `graphExplorer.ts` | `ExplorerNodeType`, `EdgeRelation`, `InspectorPayload`, `InspectorField`, `InspectorLink`, `BlastRadiusStats`, `EdgeInspectorInfo`, `TraceSelectOption` |
 
 ---
 
@@ -814,11 +832,11 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 ## 27. i18n Coverage
 
 ### Locale Files
-- `en.json`: ~1121 leaf keys, **62** top-level sections
-- `es.json`: ~1122 leaf keys, matching structure
+- `en.json`: ~1181 leaf keys, **63** top-level sections
+- `es.json`: ~1182 leaf keys, matching structure
 
-### Sections (62)
-`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`
+### Sections (63)
+`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`
 
 ### Coverage
 - All user-visible text uses `t()`

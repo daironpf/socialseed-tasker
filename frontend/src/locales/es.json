@@ -1286,5 +1286,77 @@
       "modifyFeedback": "Modificaciones requeridas",
       "modifyPlaceholder": "Describe las modificaciones requeridas..."
     }
+  },
+  "graphExplorer": {
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "fit": "Ajustar a pantalla",
+    "cluster": "Agrupar por componente",
+    "clusterOn": "Agrupación activa",
+    "criticality": "Prioridad",
+    "nodeTypes": "Nodos",
+    "traceSource": "Desde issue",
+    "traceTarget": "Hasta issue",
+    "trace": "Trazar ruta",
+    "clearTrace": "Limpiar",
+    "traceSelectBoth": "Selecciona ambos issues",
+    "traceNoPath": "No se encontró ruta",
+    "traceFound": "Ruta encontrada ({count} nodos)",
+    "yes": "Sí",
+    "no": "No",
+    "types": {
+      "issue": "Issue",
+      "component": "Componente",
+      "agent": "Agente",
+      "policy": "Política",
+      "pr": "PR de GitHub",
+      "edge": "Relación"
+    },
+    "relations": {
+      "component": "pertenece a componente",
+      "dependency": "depende de",
+      "code": "referencia de código",
+      "agent": "asignado a agente",
+      "pr": "vinculado a PR"
+    },
+    "inspector": {
+      "relationship": "Relación",
+      "relation": "Relación",
+      "direction": "Dirección",
+      "weight": "Peso",
+      "cycle": "Crea ciclo",
+      "cycleYes": "Sí (circular)",
+      "cycleNo": "No",
+      "metadata": "Detalles",
+      "blastRadius": "Radio de impacto",
+      "total": "Total",
+      "direct": "Directo",
+      "depth": "Profundidad",
+      "links": "Enlaces rápidos"
+    },
+    "fields": {
+      "assignee": "Asignado a",
+      "dependencies": "Dependencias",
+      "issues": "Issues",
+      "description": "Descripción",
+      "email": "Correo",
+      "model": "Modelo",
+      "skills": "Habilidades",
+      "assignedIssues": "Issues asignados",
+      "active": "Activo",
+      "scope": "Ámbito",
+      "rules": "Reglas",
+      "syncStatus": "Estado de sincronía",
+      "lastSync": "Última sincronía",
+      "linkedIssue": "Issue vinculado"
+    },
+    "links": {
+      "openIssue": "Abrir issue",
+      "viewList": "Lista de issues",
+      "viewComponents": "Componentes",
+      "viewAgents": "Agentes",
+      "viewPolicies": "Políticas",
+      "openPR": "Abrir en GitHub"
+    }
   }
 }

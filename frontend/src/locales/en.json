@@ -1285,5 +1285,77 @@
       "modifyFeedback": "Required modifications",
       "modifyPlaceholder": "Describe the required modifications..."
     }
+  },
+  "graphExplorer": {
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fit": "Fit to screen",
+    "cluster": "Cluster by component",
+    "clusterOn": "Clusters active",
+    "criticality": "Priority",
+    "nodeTypes": "Nodes",
+    "traceSource": "From issue",
+    "traceTarget": "To issue",
+    "trace": "Trace path",
+    "clearTrace": "Clear",
+    "traceSelectBoth": "Select both issues",
+    "traceNoPath": "No path found",
+    "traceFound": "Path found ({count} nodes)",
+    "yes": "Yes",
+    "no": "No",
+    "types": {
+      "issue": "Issue",
+      "component": "Component",
+      "agent": "Agent",
+      "policy": "Policy",
+      "pr": "GitHub PR",
+      "edge": "Relationship"
+    },
+    "relations": {
+      "component": "belongs to component",
+      "dependency": "depends on",
+      "code": "code reference",
+      "agent": "assigned to agent",
+      "pr": "linked to PR"
+    },
+    "inspector": {
+      "relationship": "Relationship",
+      "relation": "Relation",
+      "direction": "Direction",
+      "weight": "Weight",
+      "cycle": "Creates cycle",
+      "cycleYes": "Yes (circular)",
+      "cycleNo": "No",
+      "metadata": "Details",
+      "blastRadius": "Blast radius",
+      "total": "Total",
+      "direct": "Direct",
+      "depth": "Depth",
+      "links": "Quick links"
+    },
+    "fields": {
+      "assignee": "Assignee",
+      "dependencies": "Dependencies",
+      "issues": "Issues",
+      "description": "Description",
+      "email": "Email",
+      "model": "Model",
+      "skills": "Skills",
+      "assignedIssues": "Assigned issues",
+      "active": "Active",
+      "scope": "Scope",
+      "rules": "Rules",
+      "syncStatus": "Sync status",
+      "lastSync": "Last sync",
+      "linkedIssue": "Linked issue"
+    },
+    "links": {
+      "openIssue": "Open issue",
+      "viewList": "Issue list",
+      "viewComponents": "Components",
+      "viewAgents": "Agents",
+      "viewPolicies": "Policies",
+      "openPR": "Open on GitHub"
+    }
   }
 }
