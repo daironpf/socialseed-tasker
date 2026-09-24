@@ -1,9 +1,18 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import {
+  loadQueue,
+  saveQueue,
+  createQueueEntry,
+  type QueuedMutation,
+  type QueueEntity,
+  type QueueOperation,
+} from '@/utils/offlineQueue'
 
 export type ViewMode = 'board' | 'list'
 export type Locale = 'en' | 'es'
-export type ConnectionState = 'SYNCED' | 'OFFLINE_QUEUED' | 'SYNCING'
+export type ConnectionState = 'SYNCED' | 'OFFLINE_QUEUED' | 'SYNCING' | 'DEGRADED'
+export type NetworkMode = 'online' | 'degraded' | 'offline'
 
 export interface Filters {
   status: string[]
@@ -36,6 +45,8 @@ export const useUiStore = defineStore('ui', () => {
   const currentProject = ref(localStorage.getItem('currentProject') || 'socialseed-tasker')
   const connectionState = ref<ConnectionState>('SYNCED')
   const pendingSyncCount = ref(0)
+  const networkMode = ref<NetworkMode>((localStorage.getItem('networkMode') as NetworkMode) || 'online')
+  const syncQueue = ref<QueuedMutation[]>(loadQueue())
   const filters = ref<Filters>({
     status: [],
     priority: [],
@@ -161,8 +172,11 @@ export const useUiStore = defineStore('ui', () => {
   }
 
   let syncTimeout: ReturnType<typeof setTimeout> | null = null
+  let flushTimeout: ReturnType<typeof setTimeout> | null = null
+  let flushStepTimeout: ReturnType<typeof setTimeout> | null = null
 
   function simulateSync() {
+    if (networkMode.value === 'offline' || syncQueue.value.length > 0 || connectionState.value === 'SYNCING') return
     connectionState.value = 'OFFLINE_QUEUED'
     pendingSyncCount.value += 1
 
@@ -171,10 +185,109 @@ export const useUiStore = defineStore('ui', () => {
     syncTimeout = setTimeout(() => {
       connectionState.value = 'SYNCING'
       setTimeout(() => {
-        connectionState.value = 'SYNCED'
+        connectionState.value = networkMode.value === 'degraded' ? 'DEGRADED' : 'SYNCED'
         pendingSyncCount.value = 0
       }, 800)
     }, 2000)
+  }
+
+  function persistQueue() {
+    saveQueue(syncQueue.value)
+    pendingSyncCount.value = syncQueue.value.length
+  }
+
+  function setNetworkMode(mode: NetworkMode) {
+    networkMode.value = mode
+    localStorage.setItem('networkMode', mode)
+    if (flushTimeout) {
+      clearTimeout(flushTimeout)
+      flushTimeout = null
+    }
+    if (mode === 'online') {
+      if (syncQueue.value.length) {
+        flushQueue()
+      } else {
+        connectionState.value = 'SYNCED'
+        pendingSyncCount.value = 0
+      }
+    } else if (mode === 'degraded') {
+      connectionState.value = syncQueue.value.length ? 'OFFLINE_QUEUED' : 'DEGRADED'
+    } else {
+      connectionState.value = syncQueue.value.length ? 'OFFLINE_QUEUED' : 'SYNCED'
+    }
+  }
+
+  function enqueueMutation(input: {
+    entity: QueueEntity
+    operation: QueueOperation
+    entityId?: string | null
+    payload: Record<string, unknown>
+  }): QueuedMutation {
+    const conflict =
+      input.operation === 'update' &&
+      (networkMode.value === 'degraded' ||
+        syncQueue.value.some(e => e.operation === 'update' && e.entityId === input.entityId))
+    const entry = createQueueEntry({ ...input, conflict })
+    syncQueue.value.push(entry)
+    persistQueue()
+    connectionState.value = 'OFFLINE_QUEUED'
+    return entry
+  }
+
+  function removeQueued(id: string) {
+    syncQueue.value = syncQueue.value.filter(e => e.id !== id)
+    persistQueue()
+    if (!syncQueue.value.length && connectionState.value === 'OFFLINE_QUEUED') {
+      connectionState.value = networkMode.value === 'degraded' ? 'DEGRADED' : 'SYNCED'
+    }
+  }
+
+  function retryQueued(id: string) {
+    const entry = syncQueue.value.find(e => e.id === id)
+    if (entry) {
+      entry.retries += 1
+      persistQueue()
+    }
+  }
+
+  function resolveConflict(id: string) {
+    removeQueued(id)
+  }
+
+  function flushQueue() {
+    if (!syncQueue.value.length) {
+      connectionState.value = networkMode.value === 'degraded' ? 'DEGRADED' : 'SYNCED'
+      pendingSyncCount.value = 0
+      return
+    }
+    if (flushTimeout || flushStepTimeout) return
+    connectionState.value = 'OFFLINE_QUEUED'
+    flushTimeout = setTimeout(() => {
+      flushTimeout = null
+      connectionState.value = 'SYNCING'
+      flushStepTimeout = setTimeout(() => {
+        flushStepTimeout = null
+        syncQueue.value = syncQueue.value.filter(e => e.status === 'conflict')
+        persistQueue()
+        if (syncQueue.value.length) {
+          connectionState.value = 'OFFLINE_QUEUED'
+        } else {
+          connectionState.value = networkMode.value === 'degraded' ? 'DEGRADED' : 'SYNCED'
+        }
+      }, 900)
+    }, 400)
+  }
+
+  if (syncQueue.value.length) {
+    pendingSyncCount.value = syncQueue.value.length
+    connectionState.value = 'OFFLINE_QUEUED'
+    if (networkMode.value === 'online') {
+      setTimeout(() => flushQueue(), 600)
+    }
+  } else if (networkMode.value === 'degraded') {
+    connectionState.value = 'DEGRADED'
+  } else if (networkMode.value === 'offline') {
+    connectionState.value = 'SYNCED'
   }
 
   function getBackendFilters() {
@@ -198,6 +311,8 @@ export const useUiStore = defineStore('ui', () => {
     savedSearches,
     connectionState,
     pendingSyncCount,
+    networkMode,
+    syncQueue,
     setSelectedIssue,
     toggleSidebar,
     setViewMode,
@@ -212,6 +327,12 @@ export const useUiStore = defineStore('ui', () => {
     setLocale,
     setProject,
     simulateSync,
+    setNetworkMode,
+    enqueueMutation,
+    removeQueued,
+    retryQueued,
+    resolveConflict,
+    flushQueue,
     getBackendFilters,
   }
 })

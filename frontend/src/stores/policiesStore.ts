@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as api from '@/api/policiesApi'
 import type { Policy } from '@/types'
+import { useUiStore } from './uiStore'
 
 export const usePoliciesStore = defineStore('policies', () => {
   const policies = ref<Policy[]>([])
@@ -24,6 +25,24 @@ export const usePoliciesStore = defineStore('policies', () => {
   }
 
   async function createPolicy(body: { name: string; description?: string; rule: string; level?: string; target_scope?: string }): Promise<Policy | null> {
+    const uiStore = useUiStore()
+    if (uiStore.networkMode === 'offline') {
+      const now = new Date().toISOString()
+      const local: Policy = {
+        id: `local-policy-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+        name: body.name,
+        description: body.description ?? '',
+        rules: [],
+        target_scope: body.target_scope ?? 'global',
+        logic_definition: body.rule,
+        is_active: true,
+        created_at: now,
+        updated_at: now,
+      }
+      policies.value.push(local)
+      uiStore.enqueueMutation({ entity: 'policy', operation: 'create', entityId: local.id, payload: { ...body } as Record<string, unknown> })
+      return local
+    }
     try {
       const policy = await api.createPolicy(body)
       policies.value.push(policy)
@@ -45,7 +64,22 @@ export const usePoliciesStore = defineStore('policies', () => {
     }
   }
 
-  async function updatePolicy(id: string, body: Partial<{ name: string; description: string; rule: string; level: string; target_scope: string; is_active: boolean }>): Promise<Policy | null> {
+  async function updatePolicy(id: string, body: Partial<{ name: string; description: string; rule: string; level: string; target_scope: string; is_active: boolean }>, options?: { skipOfflineQueue?: boolean }): Promise<Policy | null> {
+    const uiStore = useUiStore()
+    if (uiStore.networkMode === 'offline' && !options?.skipOfflineQueue) {
+      const idx = policies.value.findIndex(p => p.id === id)
+      if (idx === -1) return null
+      const { rule, ...rest } = body
+      const merged: Policy = {
+        ...policies.value[idx],
+        ...rest,
+        ...(rule !== undefined ? { logic_definition: rule } : {}),
+        updated_at: new Date().toISOString(),
+      }
+      policies.value[idx] = merged
+      uiStore.enqueueMutation({ entity: 'policy', operation: 'update', entityId: id, payload: { ...body } as Record<string, unknown> })
+      return merged
+    }
     try {
       const updated = await api.updatePolicy(id, body)
       const idx = policies.value.findIndex(p => p.id === id)

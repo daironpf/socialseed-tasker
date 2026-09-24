@@ -146,7 +146,7 @@
 | Global HITL banner | Implemented | Shown when `urgentPendingCount > 0` (CRITICAL/HIGH pending); click → HITLCommandCenter; Review button → HITLQuickActionModal |
 | Hamburger menu | Implemented | 44×44 button (`md:hidden`), emits `open-mobile-menu` |
 | Project selector | Implemented | `ProjectSelector`, 4 projects, localStorage, filters issues |
-| Sync status badge | Implemented | `SyncStatusBadge` (`hidden sm:flex`): SYNCED / OFFLINE_QUEUED / SYNCING |
+| Sync status badge | Implemented | `SyncStatusBadge` (`hidden sm:flex`): SYNCED / OFFLINE_QUEUED / SYNCING / DEGRADED / Offline; clickable → `SyncQueueDrawer` (#515) |
 | Notification bell | Implemented | `NotificationCenter` with unread badge |
 | HITL quick action modal | Implemented | Mounted in header when `hitlStore.quickActionRequestId` set |
 | UserMenu | Implemented | Top-right corner |
@@ -435,7 +435,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 |---|---|---|
 | `Sidebar` | Main navigation | Collapsible, 3 groups, 21 items, desktop-only |
 | `MobileDrawer` | Mobile navigation | Overlay drawer, swipe-to-close, same 24 items |
-| `AppHeader` | Top bar | Dynamic title, HITL banner, hamburger, org switcher (lg+), project selector, sync badge, notifications, user menu |
+| `AppHeader` | Top bar | Dynamic title, HITL banner, hamburger, org switcher (lg+), project selector, network mode toggle (xl+), sync badge (opens queue drawer), notifications, user menu |
 | `OrganizationSwitcher` | Org/workspace selector | Hierarchical Organization → Workspace dropdown, localStorage persistence, link to `/organization` settings |
 | `UserMenu` | User dropdown | Avatar, dark mode, language, logout, profile link |
 | `NavItem` | Sidebar link | Icon + label, active state, badge, 44px touch target |
@@ -499,9 +499,15 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `CommandPalette` | Quick actions | Fuzzy search: pages, actions, issues, components; recent actions; Ctrl/Cmd+K |
 | `GraphFilters` | Graph filtering | Component checkboxes, priority (CRITICAL/HIGH/MEDIUM/LOW) and node type pills, status filter, max hops |
 | `ProjectSelector` | Project switcher | 4 projects, localStorage, filters all views |
-| `SyncStatusBadge` | Sync indicator | Green/yellow/blue, animated ping, pending count |
+| `SyncStatusBadge` | Sync indicator | Clickable button (opens `SyncQueueDrawer`), green/yellow/blue/amber, animated ping, pending count |
 | `AuditLogTable` | Audit table | Timestamp, actor avatar/type, event badge, severity pill, resource, action, IP |
 | `PIIRedactionPreview` | PII suite | Live `detectPII` list, Mask PII toggle, before/after preview, Mask/Reveal actions |
+
+### Sync / Offline Components
+| Component | Purpose | Details |
+|---|---|---|
+| `NetworkModeToggle` | Network simulator | Segmented Online / Degraded / Offline with status dots, `xl+` in AppHeader, persists `uiStore.networkMode` |
+| `SyncQueueDrawer` | Queue inspector | Right overlay panel: queued mutations list, retries, conflict resolution (Keep local / Keep remote / Merge textarea JSON), Force sync button (#515) |
 
 ### Graph Components
 | Component | Purpose | Details |
@@ -538,7 +544,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `LoginScreen` | API key gate | Full-screen overlay login |
 **Total view components:** 27 files in `src/views/` (26 routed incl. NotFound + `IssueDetailView` embedded)
 
-**Total shared components:** 75 `.vue` files under `src/components/`
+**Total shared components:** 77 `.vue` files under `src/components/`
 
 ---
 
@@ -648,11 +654,11 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | Store | State | Key Actions |
 |---|---|---|
 | `authStore` | storedKey, isAuthenticated | setApiKey, clearApiKey, getApiKey |
-| `uiStore` | darkMode, locale, sidebarOpen, viewMode, currentProject, availableProjects, filters, savedSearches, connectionState, pendingSyncCount | setFilter, clearFilters, saveSearch, applySearch, toggleDarkMode, setLocale, simulateSync |
-| `issuesStore` | issues[], filteredIssues, pagination, loading, selectedIssue | fetchIssues, createIssue, updateIssue, deleteIssue, closeIssue |
+| `uiStore` | darkMode, locale, sidebarOpen, viewMode, currentProject, availableProjects, filters, savedSearches, connectionState (SYNCED/OFFLINE_QUEUED/SYNCING/DEGRADED), pendingSyncCount, networkMode (online/degraded/offline), syncQueue[] | setFilter, clearFilters, saveSearch, applySearch, toggleDarkMode, setLocale, simulateSync (guarded), setNetworkMode, enqueueMutation, flushQueue, removeQueued, retryQueued, resolveConflict |
+| `issuesStore` | issues[], filteredIssues, pagination, loading, selectedIssue | fetchIssues, createIssue, updateIssue, deleteIssue, closeIssue (create/update enqueue + local-apply when offline, #515) |
 | `componentsStore` | components[], projects, loading | fetchComponents, createComponent, updateComponent, deleteComponent |
 | `usersStore` | users[], loading | fetchUsers, createUser, updateUser, deleteUser |
-| `policiesStore` | policies[], loading | fetchPolicies, createPolicy, updatePolicy, deletePolicy |
+| `policiesStore` | policies[], loading | fetchPolicies, createPolicy, updatePolicy, deletePolicy (create/update enqueue + local-apply when offline, #515) |
 | `constraintsStore` | constraints[], validationResult, hard/soft/active counts | fetchConstraints, createConstraint, updateConstraint, validateConstraints, deleteConstraint |
 | `analysisStore` | impactResult, rootCauseResults[], testFailures[] | analyzeImpact, analyzeRootCause, fetchTestFailures, clearResults |
 | `notificationsStore` | notifications[], unreadCount | markAsRead, markAllAsRead, dismiss, getFiltered, ensureHitlNotifications |
@@ -840,11 +846,11 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 ## 27. i18n Coverage
 
 ### Locale Files
-- `en.json`: ~1370 leaf keys, **68** top-level sections
-- `es.json`: ~1371 leaf keys, matching structure
+- `en.json`: ~1391 leaf keys, **70** top-level sections
+- `es.json`: ~1392 leaf keys, matching structure
 
-### Sections (68)
-`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`, `agentStudio`, `analytics`, `sla`
+### Sections (70)
+`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`, `agentStudio`, `analytics`, `sla`, `offline`, `syncQueue`
 
 ### Coverage
 - All user-visible text uses `t()`
@@ -1086,11 +1092,11 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 
 | Feature | Status | Details |
 |---|---|---|
-| **Connection state** | Implemented | `uiStore.connectionState`: SYNCED, OFFLINE_QUEUED, SYNCING |
-| **Pending count** | Implemented | `uiStore.pendingSyncCount` |
-| **Sync simulation** | Implemented | OFFLINE_QUEUED → 2s → SYNCING → 0.8s → SYNCED |
-| **Visual indicator** | Implemented | `SyncStatusBadge.vue`, color-coded, animated ping |
-| **Colors** | Implemented | Green SYNCED, Yellow OFFLINE_QUEUED, Blue SYNCING |
+| **Connection state** | Implemented | `uiStore.connectionState`: SYNCED, OFFLINE_QUEUED, SYNCING, DEGRADED |
+| **Pending count** | Implemented | `uiStore.pendingSyncCount` (mirrors offline queue length) |
+| **Sync simulation** | Implemented | OFFLINE_QUEUED → 2s → SYNCING → 0.8s → SYNCED; guarded to not clobber offline queue |
+| **Visual indicator** | Implemented | `SyncStatusBadge.vue` (clickable button → `SyncQueueDrawer`), color-coded, animated ping |
+| **Colors** | Implemented | Green SYNCED, Yellow OFFLINE_QUEUED, Blue SYNCING, Amber DEGRADED/Offline |
 | **Integration** | Implemented | AppHeader between ProjectSelector and NotificationCenter (hidden below `sm`) |
 | **Trigger points** | Implemented | ListView, KanbanView, GraphView call `simulateSync()` after CRUD |
 | i18n | Implemented | `sync` section |
@@ -1379,3 +1385,25 @@ Issue #514 (`AnalyticsDashboardView.vue`, `MTTRComparisonChart.vue`, `HealingSuc
 | **Store consistency** | Implemented | `analyticsReportStore` derives from `issuesStore` + `finopsStore` + `autoHealingStore` (no duplicated mock datasets); seeded FNV fallbacks only where source stores lack history; no backend calls |
 | **i18n** | Implemented | `analytics.*` (43 keys) + `sla.*` (16 keys) + `nav.analytics` in EN/ES |
 | **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~41s) |
+
+
+---
+
+## 56. Offline First & Mock Sync Queue
+
+Issue #515 (`utils/offlineQueue.ts`, `components/sync/NetworkModeToggle.vue`, `components/sync/SyncQueueDrawer.vue`).
+
+| Feature | Status | Details |
+|---|---|---|
+| **Network mode simulator** | Implemented | `NetworkModeToggle` segmented Online / Degraded / Offline in AppHeader (`xl+`), status dots (green/amber/red); `uiStore.networkMode` persisted in localStorage `networkMode` |
+| **Connection state** | Implemented | `ConnectionState` extended with `DEGRADED`; badge shows SYNCED / OFFLINE_QUEUED / SYNCING / DEGRADED / Offline with amber override when offline+empty |
+| **Offline CRUD** | Implemented | Offline mode: `issuesStore.createIssue`/`updateIssue` and `policiesStore.createPolicy`/`updatePolicy` apply changes locally (optimistic, `local-*` ids) and enqueue instead of calling the API; online path unchanged |
+| **Queue persistence** | Implemented | `utils/offlineQueue.ts`: `QueuedMutation` entries (entity, operation, entityId, payload, timestamp, retries, status) stored in localStorage `socialseed-offline-queue`; restored on reload, auto-flushed when mode is online |
+| **Conflict simulation** | Implemented | Update entries created in Degraded mode (or duplicate updates for the same entity) get `status=conflict` plus a deterministic `remotePayload` (`simulateRemoteVersion` drifts priority/status/is_active/title/name/level) |
+| **Reconnect flush** | Implemented | `setNetworkMode('online')` → `flushQueue()` drives badge OFFLINE_QUEUED → (400ms) → SYNCING → (900ms) → SYNCED, keeping conflicted entries queued; "Force sync" button runs the same flush |
+| **SyncQueueDrawer** | Implemented | Right overlay opened from `SyncStatusBadge`: queue count chip, per-entry entity/operation/summary/timestamp/retries chips, Retry + Delete on pending, Keep local / Keep remote / Merge (JSON textarea) on conflicts, force sync toolbar, empty state |
+| **Resolution application** | Implemented | Keep remote / Merge apply the payload through `updateIssue`/`updatePolicy` with `skipOfflineQueue` (no re-enqueue); Keep local just drops the entry |
+| **simulateSync guard** | Implemented | `simulateSync()` no-ops when offline, queue non-empty, or already SYNCING so manual sync simulation never clobbers pending mutations |
+| **Reload survival** | Implemented | Queue + network mode restored from localStorage at store init; pending queue flips badge to OFFLINE_QUEUED on load |
+| **i18n** | Implemented | `offline.*` (7 keys) + `syncQueue.*` (20 keys) in EN/ES |
+| **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~43s) |

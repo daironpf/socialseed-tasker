@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as api from '@/api/issuesApi'
-import type { Issue, IssueCreateRequest, IssueUpdateRequest, PaginationMeta } from '@/types'
+import type { Issue, IssueCreateRequest, IssueUpdateRequest, IssuePriority, IssueStatus, PaginationMeta } from '@/types'
 import { useUiStore } from './uiStore'
 
 export const useIssuesStore = defineStore('issues', () => {
@@ -123,6 +123,32 @@ export const useIssuesStore = defineStore('issues', () => {
   }
 
   async function createIssue(body: IssueCreateRequest): Promise<Issue | null> {
+    const uiStore = useUiStore()
+    if (uiStore.networkMode === 'offline') {
+      const now = new Date().toISOString()
+      const local: Issue = {
+        id: `local-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+        title: body.title,
+        description: body.description ?? '',
+        status: 'OPEN' as IssueStatus,
+        priority: (body.priority ?? 'MEDIUM') as IssuePriority,
+        component_id: body.component_id,
+        project_id: body.project_id ?? uiStore.currentProject,
+        assignee: body.assignee,
+        created_by: body.created_by,
+        labels: body.labels ?? [],
+        dependencies: [],
+        blocks: [],
+        affects: [],
+        created_at: now,
+        updated_at: now,
+        closed_at: null,
+        architectural_constraints: body.architectural_constraints ?? [],
+      }
+      issues.value.unshift(local)
+      uiStore.enqueueMutation({ entity: 'issue', operation: 'create', entityId: local.id, payload: { ...body } as Record<string, unknown> })
+      return local
+    }
     try {
       const issue = await api.createIssue(body)
       issues.value.unshift(issue)
@@ -133,7 +159,16 @@ export const useIssuesStore = defineStore('issues', () => {
     }
   }
 
-  async function updateIssue(id: string, body: IssueUpdateRequest): Promise<Issue | null> {
+  async function updateIssue(id: string, body: IssueUpdateRequest, options?: { skipOfflineQueue?: boolean }): Promise<Issue | null> {
+    const uiStore = useUiStore()
+    if (uiStore.networkMode === 'offline' && !options?.skipOfflineQueue) {
+      const idx = issues.value.findIndex((i) => i.id === id)
+      if (idx === -1) return null
+      const merged: Issue = { ...issues.value[idx], ...body, updated_at: new Date().toISOString() }
+      issues.value[idx] = merged
+      uiStore.enqueueMutation({ entity: 'issue', operation: 'update', entityId: id, payload: { ...body } as Record<string, unknown> })
+      return merged
+    }
     try {
       const updated = await api.updateIssue(id, body)
       const idx = issues.value.findIndex((i) => i.id === id)

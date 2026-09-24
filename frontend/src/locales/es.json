@@ -1579,5 +1579,30 @@
     "notifySent": "Notificación de riesgo SLA enviada",
     "notificationTitle": "Riesgo de incumplimiento SLA",
     "notificationMessage": "{breached} tarea(s) han incumplido el SLA y {atRisk} están en riesgo. Revisa el panel de analítica."
+  },
+  "offline": {
+    "networkLabel": "Red",
+    "online": "En línea",
+    "degraded": "Degradada",
+    "offline": "Sin conexión"
+  },
+  "syncQueue": {
+    "title": "Cola de sincronización",
+    "subtitle": "Mutaciones offline pendientes de sincronizar",
+    "count": "{n} en cola",
+    "empty": "La cola está vacía. Todo está sincronizado.",
+    "forceSync": "Forzar sincronización",
+    "syncing": "Sincronizando...",
+    "conflict": "Conflicto",
+    "retries": "{n} reintentos",
+    "pending": "Pendiente",
+    "retry": "Reintentar",
+    "local": "Local",
+    "remote": "Remoto",
+    "keepLocal": "Mantener local",
+    "keepRemote": "Mantener remoto",
+    "merge": "Fusionar",
+    "applyMerge": "Aplicar fusión",
+    "footerHint": "Las mutaciones encoladas en modo Sin conexión se envían automáticamente al volver En línea. Los conflictos requieren resolución manual."
   }
 }

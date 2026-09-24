@@ -46,6 +46,7 @@
       <div class="flex flex-shrink-0 items-center gap-1 sm:gap-3">
         <OrganizationSwitcher class="hidden lg:flex" />
         <ProjectSelector />
+        <NetworkModeToggle class="hidden xl:flex" />
         <SyncStatusBadge class="hidden sm:flex" />
         <NotificationCenter />
         <UserMenu />
@@ -70,6 +71,7 @@ import OrganizationSwitcher from './OrganizationSwitcher.vue'
 import NotificationCenter from '@/components/ui/NotificationCenter.vue'
 import ProjectSelector from '@/components/ui/ProjectSelector.vue'
 import SyncStatusBadge from '@/components/ui/SyncStatusBadge.vue'
+import NetworkModeToggle from '@/components/sync/NetworkModeToggle.vue'
 import HITLQuickActionModal from '@/components/ui/HITLQuickActionModal.vue'
 import { useHitlStore } from '@/stores/hitlStore'
 import { useNotificationsStore } from '@/stores/notificationsStore'

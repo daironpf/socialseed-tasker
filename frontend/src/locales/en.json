@@ -1578,5 +1578,30 @@
     "notifySent": "SLA risk notification sent",
     "notificationTitle": "SLA breach risk",
     "notificationMessage": "{breached} issue(s) breached SLA and {atRisk} are at risk. Review the analytics dashboard."
+  },
+  "offline": {
+    "networkLabel": "Network",
+    "online": "Online",
+    "degraded": "Degraded",
+    "offline": "Offline"
+  },
+  "syncQueue": {
+    "title": "Sync queue",
+    "subtitle": "Offline-first mutations waiting to sync",
+    "count": "{n} queued",
+    "empty": "Queue is empty. Everything is in sync.",
+    "forceSync": "Force sync",
+    "syncing": "Syncing...",
+    "conflict": "Conflict",
+    "retries": "{n} retries",
+    "pending": "Pending",
+    "retry": "Retry",
+    "local": "Local",
+    "remote": "Remote",
+    "keepLocal": "Keep local",
+    "keepRemote": "Keep remote",
+    "merge": "Merge",
+    "applyMerge": "Apply merge",
+    "footerHint": "Mutations queued while Offline are flushed automatically when you go back Online. Conflicts require manual resolution."
   }
 }

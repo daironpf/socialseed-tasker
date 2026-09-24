@@ -6,7 +6,15 @@ Garantizar que la interfaz sea rápida, tolerante a cortes de red y capaz de ope
 
 Origen: `notas.md` → Issue #507 (renumerada a #515; #507 ya está en done como HITL Quick Actions).
 
-## Status: TODO
+## Status: DONE
+
+## Resolution
+- **Simulador de red:** `NetworkModeToggle` segmentado (Online/Degraded/Offline) montado en `AppHeader`; `uiStore.networkMode` persistido en localStorage + `ConnectionState` ampliado con `DEGRADED`.
+- **Cola offline:** `utils/offlineQueue.ts` (tipos, persistencia localStorage `socialseed-offline-queue`, `simulateRemoteVersion` con drift determinista de priority/status/is_active/title) + `uiStore` con `enqueueMutation`/`flushQueue`/`setNetworkMode`/`removeQueued`/`retryQueued`/`resolveConflict`; flush: OFFLINE_QUEUED -> SYNCING (400+900 ms) -> SYNCED conservando conflictos; cola restaurada y auto-flusheada al recargar; `simulateSync()` guardado para no pisar la cola.
+- **Hooks:** `issuesStore.createIssue`/`updateIssue` y `policiesStore.createPolicy`/`updatePolicy` aplican localmente + encolan en modo offline (flag `skipOfflineQueue` para aplicar resoluciones); rama online intacta.
+- **Drawer:** `SyncQueueDrawer` (overlay + panel) con lista, resumen, reintentos, borrado, resolucion de conflictos Keep local / Keep remote / Merge (textarea JSON) y boton Force sync; `SyncStatusBadge` ahora es boton que abre el drawer, muestra contador y estados DEGRADED/Offline.
+- i18n: secciones `offline` + `syncQueue` (EN/ES, 70 secciones totales). `npm run build` pasa (42.74s).
+
 
 ## Priority: MEDIUM
 
@@ -39,14 +47,14 @@ feat / ux
    - No romper modo online actual ni mock API
 
 ## Acceptance Criteria
-- [ ] Network state simulator (Online / Degraded / Offline) in toolbar or footer
-- [ ] In Offline mode, create/edit issues and policies queue changes (LocalStorage + pendingSyncCount)
-- [ ] SyncQueueDrawer inspects queue, resolves simulated conflicts, and forces sync
-- [ ] Reconnect flushes queue and drives SyncStatusBadge through OFFLINE_QUEUED → SYNCING → SYNCED
-- [ ] Queue survives page reload
-- [ ] Online path unchanged for normal CRUD
-- [ ] i18n support (EN + ES)
-- [ ] `npm run build` passes
+- [x] Network state simulator (Online / Degraded / Offline) in toolbar or footer
+- [x] In Offline mode, create/edit issues and policies queue changes (LocalStorage + pendingSyncCount)
+- [x] SyncQueueDrawer inspects queue, resolves simulated conflicts, and forces sync
+- [x] Reconnect flushes queue and drives SyncStatusBadge through OFFLINE_QUEUED → SYNCING → SYNCED
+- [x] Queue survives page reload
+- [x] Online path unchanged for normal CRUD
+- [x] i18n support (EN + ES)
+- [x] `npm run build` passes
 
 ## Files to Create
 - `frontend/src/components/sync/SyncQueueDrawer.vue`
