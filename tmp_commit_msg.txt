@@ -1,0 +1,27 @@
+feat: audit log console, compliance exports and PII redaction suite (#512)
+
+- AuditLogView.vue: new /audit-log route (Sidebar + MobileDrawer nav) with
+  filterable audit table (date range, user, agent, event type, severity,
+  search), severity counter chips as quick filters, 15/page pagination,
+  CSV/JSON export via useExport and corporate PDF (html2canvas + jspdf,
+  same pattern as Executive Dashboard)
+- AuditLogTable.vue: timestamp, actor avatar/type, event badge, severity
+  pill, resource, action, IP columns
+- auditLogStore: 84 deterministic seeded mock events (LCG seed 20260924)
+  across 8 event types (status change, HITL, policy violation, agent run,
+  login, export, governance override, PII redaction), combinable filters,
+  severity counts, mock integrity hash-chain blocks (12 events/block,
+  FNV-style linked hashes, verified badge)
+- types/auditLog.ts: AuditLogEntry, AuditLogEventType, AuditLogSeverity,
+  AuditLogFilters, AuditChainBlock
+- PIIRedactionPreview.vue: real-time detectPII list (emails, credit cards,
+  tokens, API keys, phones, JWT, passwords), Mask PII toggle, before/after
+  preview, Mask/Reveal mock actions
+- AgentLogStream: Mask PII toggle with per-line detection count badge and
+  masked content rendering
+- RichTextEditor: shield toggle embedding compact PII preview under the
+  editor (live masking of the draft description)
+- i18n: auditLog + piiSuite sections and nav.auditLog (EN/ES); features.md
+  updated (section 53, inventories: 25 views, 67 components, 22 stores,
+  17 types, 65 i18n sections)
+- Issue #512 moved to .issues/done with DONE status and resolution note

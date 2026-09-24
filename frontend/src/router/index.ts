@@ -26,6 +26,7 @@ const router = createRouter({
     { path: '/hitl', name: 'HITLCommandCenter', component: () => import('@/views/HITLCommandCenter.vue') },
     { path: '/organization', name: 'OrganizationSettings', component: () => import('@/views/OrganizationSettingsView.vue') },
     { path: '/governance-matrix', name: 'GovernanceMatrix', component: () => import('@/views/GovernanceMatrixView.vue') },
+    { path: '/audit-log', name: 'AuditLog', component: () => import('@/views/AuditLogView.vue') },
     { path: '/:pathMatch(.*)*', name: 'NotFound', component: () => import('@/views/NotFoundView.vue') },
   ],
 })

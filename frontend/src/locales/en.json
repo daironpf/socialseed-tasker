@@ -26,7 +26,8 @@
     "rag": "Graph RAG Explorer",
     "analysisView": "Analysis",
     "organization": "Organization",
-    "governanceMatrix": "Governance Matrix"
+    "governanceMatrix": "Governance Matrix",
+    "auditLog": "Audit Log"
   },
   "header": {
     "dashboard": "Dashboard",
@@ -1356,6 +1357,97 @@
       "viewAgents": "Agents",
       "viewPolicies": "Policies",
       "openPR": "Open on GitHub"
+    }
+  },
+  "auditLog": {
+    "title": "Audit Log",
+    "subtitle": "Immutable audit trail of every action across the organization",
+    "exportPdf": "Export PDF",
+    "generatingPdf": "Generating PDF...",
+    "showing": "Showing {shown} of {total} events",
+    "page": "Page {page} of {total}",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "chain": {
+      "title": "Integrity chain",
+      "verified": "Verified",
+      "blocks": "{count} blocks",
+      "events": "events",
+      "blockTooltip": "Previous hash: {prev}"
+    },
+    "columns": {
+      "timestamp": "Timestamp",
+      "actor": "Actor",
+      "event": "Event",
+      "severity": "Severity",
+      "resource": "Resource",
+      "action": "Action",
+      "ip": "IP"
+    },
+    "actorTypes": {
+      "human": "Human",
+      "agent": "Agent",
+      "system": "System"
+    },
+    "eventTypes": {
+      "status_change": "Status change",
+      "hitl_decision": "HITL decision",
+      "policy_violation": "Policy violation",
+      "agent_run": "Agent run",
+      "login": "Login",
+      "export": "Export",
+      "governance_override": "Governance override",
+      "pii_redaction": "PII redaction"
+    },
+    "severities": {
+      "LOW": "Low",
+      "MEDIUM": "Medium",
+      "HIGH": "High",
+      "CRITICAL": "Critical"
+    },
+    "filters": {
+      "dateFrom": "From",
+      "dateTo": "To",
+      "actor": "User",
+      "allActors": "All users",
+      "agent": "Agent",
+      "allAgents": "All agents",
+      "eventType": "Event type",
+      "allEvents": "All events",
+      "severity": "Severity",
+      "allSeverities": "All severities",
+      "search": "Search",
+      "searchPlaceholder": "Actor, resource, action...",
+      "clear": "Clear filters"
+    }
+  },
+  "piiSuite": {
+    "title": "PII Redaction Suite",
+    "sectionTitle": "PII masking preview (tokens, API keys, emails, credit cards)",
+    "detections": "{count} detections",
+    "clean": "No PII detected",
+    "maskToggle": "Mask PII",
+    "maskAction": "Mask",
+    "revealAction": "Reveal",
+    "hideAction": "Hide",
+    "placeholder": "Paste text containing PII to preview masking...",
+    "detectedHeader": "Detected items",
+    "before": "Before",
+    "after": "After (masked)",
+    "revealNotice": "PII revealed for inspection (mock). Re-mask before sharing.",
+    "togglePreview": "PII preview",
+    "maskedBadge": "PII masked in this log entry",
+    "categories": {
+      "api_key": "API key",
+      "email": "Email",
+      "password": "Password",
+      "token": "Token",
+      "phone": "Phone",
+      "ssn": "SSN",
+      "credit_card": "Credit card",
+      "ip_address": "IP address",
+      "jwt": "JWT",
+      "private_key": "Private key"
     }
   }
 }

@@ -54,6 +54,13 @@
         </button>
         <button
           class="rounded px-2 py-1 text-[10px] font-medium transition-colors"
+          :class="maskPii ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
+          @click="maskPii = !maskPii"
+        >
+          {{ t('piiSuite.maskToggle') }}
+        </button>
+        <button
+          class="rounded px-2 py-1 text-[10px] font-medium transition-colors"
           :class="autoScroll ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
           @click="autoScroll = !autoScroll"
         >
@@ -95,9 +102,16 @@
             {{ logTypeLabel(log.type) }}
           </span>
           <span class="text-[10px] text-gray-400">{{ formatTime(log.timestamp) }}</span>
+          <span
+            v-if="maskPii && piiCount(log.content_markdown) > 0"
+            class="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+            :title="t('piiSuite.maskedBadge')"
+          >
+            {{ t('piiSuite.detections', { count: piiCount(log.content_markdown) }) }}
+          </span>
         </div>
         <div class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
-          {{ log.content_markdown }}
+          {{ maskPii ? maskLog(log.content_markdown) : log.content_markdown }}
         </div>
       </div>
 
@@ -160,6 +174,7 @@ import { ref, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { AgentLog } from '@/types'
 import type { ConnectionStatus } from '@/composables/useAgentStream'
+import { detectPII } from '@/utils/piiDetector'
 
 const { t } = useI18n()
 
@@ -179,8 +194,23 @@ const emit = defineEmits<{
 }>()
 
 const autoScroll = ref(true)
+const maskPii = ref(false)
 const scrollContainer = ref<HTMLDivElement | null>(null)
 const showKillConfirm = ref(false)
+
+function piiCount(content: string): number {
+  return detectPII(content).length
+}
+
+function maskLog(content: string): string {
+  const detections = detectPII(content)
+  if (!detections.length) return content
+  let result = content
+  for (const d of [...detections].sort((a, b) => b.start - a.start)) {
+    result = result.slice(0, d.start) + d.masked + result.slice(d.end)
+  }
+  return result
+}
 
 function logTypeStyles(type: string): string {
   switch (type) {

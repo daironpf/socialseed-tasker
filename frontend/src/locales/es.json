@@ -26,7 +26,8 @@
     "rag": "Explorador Graph RAG",
     "analysisView": "Analisis",
     "organization": "Organizacion",
-    "governanceMatrix": "Matriz de Gobernanza"
+    "governanceMatrix": "Matriz de Gobernanza",
+    "auditLog": "Auditoría"
   },
   "header": {
     "dashboard": "Dashboard",
@@ -1357,6 +1358,97 @@
       "viewAgents": "Agentes",
       "viewPolicies": "Políticas",
       "openPR": "Abrir en GitHub"
+    }
+  },
+  "auditLog": {
+    "title": "Registro de auditoría",
+    "subtitle": "Rastro de auditoría inmutable de cada acción en la organización",
+    "exportPdf": "Exportar PDF",
+    "generatingPdf": "Generando PDF...",
+    "showing": "Mostrando {shown} de {total} eventos",
+    "page": "Página {page} de {total}",
+    "prevPage": "Anterior",
+    "nextPage": "Siguiente",
+    "chain": {
+      "title": "Cadena de integridad",
+      "verified": "Verificada",
+      "blocks": "{count} bloques",
+      "events": "eventos",
+      "blockTooltip": "Hash anterior: {prev}"
+    },
+    "columns": {
+      "timestamp": "Fecha",
+      "actor": "Actor",
+      "event": "Evento",
+      "severity": "Severidad",
+      "resource": "Recurso",
+      "action": "Acción",
+      "ip": "IP"
+    },
+    "actorTypes": {
+      "human": "Humano",
+      "agent": "Agente",
+      "system": "Sistema"
+    },
+    "eventTypes": {
+      "status_change": "Cambio de estado",
+      "hitl_decision": "Decisión HITL",
+      "policy_violation": "Violación de política",
+      "agent_run": "Ejecución de agente",
+      "login": "Inicio de sesión",
+      "export": "Exportación",
+      "governance_override": "Anulación de gobernanza",
+      "pii_redaction": "Redacción de PII"
+    },
+    "severities": {
+      "LOW": "Baja",
+      "MEDIUM": "Media",
+      "HIGH": "Alta",
+      "CRITICAL": "Crítica"
+    },
+    "filters": {
+      "dateFrom": "Desde",
+      "dateTo": "Hasta",
+      "actor": "Usuario",
+      "allActors": "Todos los usuarios",
+      "agent": "Agente",
+      "allAgents": "Todos los agentes",
+      "eventType": "Tipo de evento",
+      "allEvents": "Todos los eventos",
+      "severity": "Severidad",
+      "allSeverities": "Todas las severidades",
+      "search": "Buscar",
+      "searchPlaceholder": "Actor, recurso, acción...",
+      "clear": "Limpiar filtros"
+    }
+  },
+  "piiSuite": {
+    "title": "Suite de redacción de PII",
+    "sectionTitle": "Vista previa de enmascaramiento de PII (tokens, API keys, correos, tarjetas)",
+    "detections": "{count} detecciones",
+    "clean": "Sin PII detectado",
+    "maskToggle": "Enmascarar PII",
+    "maskAction": "Enmascarar",
+    "revealAction": "Revelar",
+    "hideAction": "Ocultar",
+    "placeholder": "Pega texto con PII para previsualizar el enmascaramiento...",
+    "detectedHeader": "Elementos detectados",
+    "before": "Antes",
+    "after": "Después (enmascarado)",
+    "revealNotice": "PII revelada para inspección (mock). Vuelve a enmascarar antes de compartir.",
+    "togglePreview": "Vista previa de PII",
+    "maskedBadge": "PII enmascarada en este registro",
+    "categories": {
+      "api_key": "Clave API",
+      "email": "Correo",
+      "password": "Contraseña",
+      "token": "Token",
+      "phone": "Teléfono",
+      "ssn": "SSN",
+      "credit_card": "Tarjeta de crédito",
+      "ip_address": "Dirección IP",
+      "jwt": "JWT",
+      "private_key": "Clave privada"
     }
   }
 }

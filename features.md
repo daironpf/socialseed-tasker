@@ -72,7 +72,7 @@
 | Tailwind CSS 3 | Implemented | Dark mode via `class` strategy; Inter font |
 | Pinia state management | Implemented | 21 stores under `src/stores/` |
 | Vue Router | Implemented | 22 view routes + `/` redirect + catch-all NotFound; lazy-loaded; scroll-to-top on navigate |
-| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 63 top-level sections, ~1181 leaf keys per language, localStorage persistence |
+| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 65 top-level sections, ~1255 leaf keys per language, localStorage persistence |
 | Dark mode | Implemented | Toggle via UserMenu / `D` shortcut / CommandPalette; localStorage; system preference detection |
 | Mock API mode | Implemented | `USE_MOCK = true` in `client.ts`; axios instance swapped for mock client; `mockApi.ts` uses `fetch` against `/mock-api` |
 | Real API mode | Implemented | Axios client, base `window.__API_URL__ \|\| '/api/v1'`, API key auth via `X-API-Key`, 401 interceptor → `auth:unauthorized` |
@@ -123,7 +123,7 @@
 |---|---|---|
 | Collapsible sidebar | Implemented | 20px collapsed → 64px on hover (`w-20` → `w-64`), smooth transition |
 | Logo + branding | Implemented | "SocialSeed" text when expanded |
-| Navigation groups | Implemented | Principal (4), Management (15), Analysis (2) = **21 nav items** |
+| Navigation groups | Implemented | Principal (4), Management (16), Analysis (2) = **22 nav items** |
 | Active route highlighting | Implemented | Color change on current route |
 | Nav icons | Implemented | SVG icons per nav item |
 | i18n labels | Implemented | All nav labels use `t()` |
@@ -479,11 +479,11 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `PriorityBadge` | Priority pill | Color-coded |
 | `LabelTag` | Label pill | Gray rounded pill |
 | `LoadingSpinner` | Loading indicator | Animated spinning circle |
-| `RichTextEditor` | Text input | Slash commands (13 types), preview toggle |
+| `RichTextEditor` | Text input | Slash commands (13 types), preview toggle, PII preview toggle (inline `PIIRedactionPreview`) |
 | `DiffViewer` | Diff display | Unified/split view, copy, download `.patch` |
 | `FilterBuilder` | Advanced filters | Multi-select chips, AND/OR, dates, saved searches |
 | `AuditTrail` / `AuditEntry` | Activity log | Icons/colors, actor avatars, type filters |
-| `AgentLogStream` | Real-time logs | SSE, auto-scroll, kill switch |
+| `AgentLogStream` | Real-time logs | SSE, auto-scroll, kill switch, Mask PII toggle (per-line detection badge + masked content) |
 | `AgentCostChart` | Token costs | SVG chart of consumption by model (7D/30D/All) |
 | `TokenMetrics` | Token stats | Prompt/completion, cost, budget % |
 | `PresenceAvatars` | User presence | Who's viewing an issue |
@@ -500,6 +500,8 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `GraphFilters` | Graph filtering | Component checkboxes, priority (CRITICAL/HIGH/MEDIUM/LOW) and node type pills, status filter, max hops |
 | `ProjectSelector` | Project switcher | 4 projects, localStorage, filters all views |
 | `SyncStatusBadge` | Sync indicator | Green/yellow/blue, animated ping, pending count |
+| `AuditLogTable` | Audit table | Timestamp, actor avatar/type, event badge, severity pill, resource, action, IP |
+| `PIIRedactionPreview` | PII suite | Live `detectPII` list, Mask PII toggle, before/after preview, Mask/Reveal actions |
 
 ### Graph Components
 | Component | Purpose | Details |
@@ -535,8 +537,8 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 |---|---|---|
 | `LoginScreen` | API key gate | Full-screen overlay login |
 
-**Total view components:** 24 files in `src/views/` (22 routed + `IssueDetailView` embedded + `NotFound`)
-**Total shared components:** 65 `.vue` files under `src/components/`
+**Total view components:** 25 files in `src/views/` (23 routed + `IssueDetailView` embedded + `NotFound`)
+**Total shared components:** 67 `.vue` files under `src/components/`
 
 ---
 
@@ -666,8 +668,9 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `codeGraphStore` | nodes[], codeEdges[], enabled | fetchCodeStructure, toggle |
 | `organizationsStore` | organizations[], currentOrgId, currentWorkspaceId, activeRole, quotaUsage, canEdit/canManage | fetchOrganizations, createOrganization, updateOrganization, setOrg, setWorkspace, setActiveRole, upsertAccount, removeAccount (persists `currentOrg`/`currentWorkspace`/`activeEnterpriseRole` in localStorage; syncs workspace → `uiStore.setProject`) |
 | `governanceStore` | matrix (agent x risk x action permission cells), alerts[], activeAlerts, pausedCount | toggleCell, setCell, getCell, resetMatrix, simulateRestrictedAction, resolveAlert (matrix persisted in localStorage `governance-matrix-v1`; approval-level alerts pause/resume issue `agent_working` |
+| `auditLogStore` | entries[] (84 deterministic seeded mock events), filters (dateFrom/dateTo/actor/agent/eventType/severity/search), filteredEntries, severityCounts, actors, agents, chain[] (mock hash blocks) | setFilter, clearFilters, exportRows (deterministic PRNG seed 20260924; no API — generated in store per issue spec) |
 
-**21 Pinia stores total.**
+**22 Pinia stores total.**
 
 ---
 
@@ -730,7 +733,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 - `technical_debt_notes?: string` — Markdown debt observations
 - `agent_working_started_at?: string | null` — agent execution start
 
-### Specialized Types (16 files under `types/`)
+### Specialized Types (17 files under `types/`)
 | File | Types |
 |---|---|
 | `index.ts` | Core entities above |
@@ -748,6 +751,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | `audit.ts` | `AuditEntry`, `AuditAction`, `AuditMetadata` |
 | `organizations.ts` | `Organization`, `Workspace`, `EnterpriseAccount`, `OrganizationQuota`, `DataRetentionPolicy`, `EnterpriseRole`, `OrganizationPlan`, `OrganizationCreateRequest` |
 | `governance.ts` | `GovernanceAgentType`, `GovernanceRiskLevel`, `GovernanceActionId`, `PermissionState`, `PermissionMatrix`, `RestrictedActionAlert` |
+| `auditLog.ts` | `AuditLogEntry`, `AuditLogEventType`, `AuditLogSeverity`, `AuditLogFilters`, `AuditChainBlock`, `AUDIT_EVENT_TYPES`, `AUDIT_SEVERITIES` |
 | `graphExplorer.ts` | `ExplorerNodeType`, `EdgeRelation`, `InspectorPayload`, `InspectorField`, `InspectorLink`, `BlastRadiusStats`, `EdgeInspectorInfo`, `TraceSelectOption` |
 
 ---
@@ -832,11 +836,11 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 ## 27. i18n Coverage
 
 ### Locale Files
-- `en.json`: ~1181 leaf keys, **63** top-level sections
-- `es.json`: ~1182 leaf keys, matching structure
+- `en.json`: ~1255 leaf keys, **65** top-level sections
+- `es.json`: ~1256 leaf keys, matching structure
 
-### Sections (63)
-`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`
+### Sections (65)
+`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`
 
 ### Coverage
 - All user-visible text uses `t()`
@@ -1209,6 +1213,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | `/hitl` | **HITLCommandCenter** | HITLCommandCenter.vue |
 | `/organization` | **OrganizationSettings** | OrganizationSettingsView.vue |
 | `/governance-matrix` | **GovernanceMatrix** | GovernanceMatrixView.vue |
+| `/audit-log` | **AuditLog** | AuditLogView.vue |
 | `/:pathMatch(.*)*` | NotFound | NotFoundView.vue |
 
 ### Views without routes
@@ -1303,3 +1308,25 @@ Issue #510 (`GovernanceMatrixView.vue`, `PendingApprovalsQueue.vue`, `governance
 | **Nav & routing** | Implemented | `/governance-matrix` route (name `GovernanceMatrix`), Sidebar + MobileDrawer Management entries, header title `header.governanceMatrix` |
 | **i18n** | Implemented | `governanceMatrix.*` section (states, risk, agents, actions, alert, queue) + `nav`/`header` keys in EN/ES |
 | **GovernanceValidationModal** | Unchanged | Existing close-issue validation (#501) untouched; matrix is additive |
+
+---
+
+## 53. Audit Log, Compliance & PII Redaction Suite
+
+Issue #512 (`AuditLogView.vue`, `AuditLogTable.vue`, `PIIRedactionPreview.vue`, `auditLogStore`, `types/auditLog.ts`).
+
+| Feature | Status | Details |
+|---|---|---|
+| **Audit console** | Implemented | `/audit-log` route (name `AuditLog`), Sidebar + MobileDrawer Management entries; distinct from per-issue `AuditTrail` |
+| **Mock entries** | Implemented | 84 deterministic seeded events (seed 20260924) over last 30 days: status change, HITL decision, policy violation, agent run, login, export, governance override, PII redaction; human/agent/system actors, resources, IPs |
+| **Filters** | Implemented | Date range (from/to), user, agent, event type, severity + free-text search; combinable; severity counter chips double as quick filters |
+| **Pagination** | Implemented | 15 rows/page, prev/next, page indicator, "showing X of Y" |
+| **CSV / JSON export** | Implemented | `useExport().exportCSV/exportJSON` over filtered rows |
+| **Corporate PDF** | Implemented | html2canvas + jspdf (dynamic import, same pattern as Executive Dashboard) over `#audit-log-report` |
+| **Integrity chain** | Implemented | Mock hash-chain blocks (12 events/block) with FNV-style hashes, previous-hash links, "Verified" badge; last 6 blocks shown |
+| **Severity counters** | Implemented | LOW/MEDIUM/HIGH/CRITICAL tiles with counts, click to toggle severity filter |
+| **PII suite** | Implemented | `PIIRedactionPreview`: live `detectPII` detections (emails, credit cards, tokens, API keys, phones, JWT, passwords...), Mask PII toggle, before/after preview, Mask (applies masking) / Reveal (mock notice) actions |
+| **Agent log integration** | Implemented | `AgentLogStream` Mask PII toggle: masked content per line + per-line detection count badge |
+| **Issue description integration** | Implemented | `RichTextEditor` shield toggle renders compact `PIIRedactionPreview` under the editor (live masking of the draft) |
+| **Nav & header** | Implemented | `nav.auditLog` (EN/ES) |
+| **i18n** | Implemented | `auditLog.*` + `piiSuite.*` sections in EN/ES |

@@ -6,7 +6,9 @@ Las grandes organizaciones exigen auditoría completa de acciones y protección 
 
 Origen: `notas.md` → Issue #504 (renumerada a #512; #504 ya está en done como Mock SSE).
 
-## Status: TODO
+## Status: DONE
+
+> Resuelto: vista `AuditLogView` en `/audit-log` (nav Sidebar+MobileDrawer) con tabla `AuditLogTable` (actor/tipo/severidad/recurso/IP), filtros combinables (fecha, usuario, agente, tipo de evento, severidad, búsqueda), chips de contador por severidad como filtro rápido, paginación (15/pág) y exportación CSV/JSON vía `useExport` + PDF corporativo con html2canvas+jspdf sobre `#audit-log-report` (patrón Executive Dashboard). `auditLogStore` genera 84 entradas deterministas (PRNG sembrada 20260924) con 8 tipos de evento realistas; cadena de integridad mock por lotes de 12 (hash FNV enlazado + badge Verified). Suite PII: `PIIRedactionPreview` con detecciones en tiempo real (`detectPII`: tokens, API keys, correos, tarjetas, JWT...), toggle Mask PII, preview antes/después y acciones Mask/Reveal (mock); integrada en `AgentLogStream` (toggle + badge de detecciones por línea) y en `RichTextEditor` (botón escudo con preview compacta del borrador). i18n `auditLog`+`piiSuite`+`nav.auditLog` (EN/ES); `features.md` §53. `npm run build` OK.
 
 ## Priority: HIGH
 
@@ -37,13 +39,13 @@ feat / compliance
    - Filtros combinables + contador de eventos por severidad
 
 ## Acceptance Criteria
-- [ ] `AuditLogView` with table filterable by date, user, agent, event type, severity
-- [ ] Export audit log as CSV, JSON, and corporate-grade PDF
-- [ ] Expanded PII suite previews real-time masking of tokens, API keys, emails, credit cards
-- [ ] PII preview works in agent log console and issue comments/descriptions
-- [ ] Mock audit entries realistic and stable in mock mode
-- [ ] i18n support (EN + ES)
-- [ ] `npm run build` passes
+- [x] `AuditLogView` with table filterable by date, user, agent, event type, severity
+- [x] Export audit log as CSV, JSON, and corporate-grade PDF
+- [x] Expanded PII suite previews real-time masking of tokens, API keys, emails, credit cards
+- [x] PII preview works in agent log console and issue comments/descriptions
+- [x] Mock audit entries realistic and stable in mock mode
+- [x] i18n support (EN + ES)
+- [x] `npm run build` passes
 
 ## Files to Create
 - `frontend/src/views/AuditLogView.vue`
