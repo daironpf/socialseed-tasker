@@ -1451,3 +1451,18 @@ Visual indicator that a feature is awaiting development: every view still runnin
 | **Page header** | Implemented | `AppHeader.vue`: badge rendered right after `pageTitle` when `isPendingFeature(route.path)` |
 | **i18n** | Implemented | `common.pendingDev`: "Feature awaiting development" (EN) / "Funcionalidad pendiente de desarrollo" (ES) |
 | **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~80s) |
+
+---
+
+## 59. Agent-Working Indicator in Kanban & Issue List
+
+Shared `AgentWorkingIcon` showing which issues currently have an agent working on them.
+
+| Feature | Status | Details |
+|---|---|---|
+| **Shared component** | Implemented | `components/ui/AgentWorkingIcon.vue`: pulsing cyan robot icon (same glyph as IssueDetailView header) + `role="status"`, tooltip/aria `issues.aiAgentActive` + live elapsed ("Agente IA Activo · 12m 30s") |
+| **Live timer** | Implemented | Per-instance 1s interval started on mount and watched on `agent_working`/`agent_working_started_at` changes; cleared on unmount |
+| **IssueCard (Kanban + Board)** | Implemented | Indicator block now renders `AgentWorkingIcon show-timer` + existing kill-switch button; timer logic removed from IssueCard (single source in the component) |
+| **Issue List** | Implemented | `ListView` title cell: icon inline before the title (flex + truncate preserved), shown only when `issue.agent_working` |
+| **Data source** | Existing | `Issue.agent_working` / `agent_working_started_at` (5 of 100 mock issues seeded active); toggled by governance alerts and the kill switch |
+| **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~63s) |

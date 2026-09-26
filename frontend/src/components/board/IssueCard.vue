@@ -10,14 +10,12 @@
     @dragstart="onDragStart"
     @click="onClick"
   >
-    <!-- Agent working indicator with timer -->
+    <!-- Agent working indicator: icon + timer + kill switch -->
     <div
       v-if="issue.agent_working"
       class="absolute -top-1.5 -right-1.5 flex items-center gap-1"
     >
-      <span class="text-[10px] font-medium text-cyan-600 dark:text-cyan-400 bg-white dark:bg-gray-800 rounded-full px-1.5 py-0.5 shadow">
-        {{ elapsed }}
-      </span>
+      <AgentWorkingIcon :issue="issue" show-timer />
       <button
         class="bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
         :title="t('agent.killSwitch')"
@@ -52,12 +50,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
 import type { Issue } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useUiStore } from '@/stores/uiStore'
 import PriorityBadge from '@/components/ui/PriorityBadge.vue'
 import LabelTag from '@/components/ui/LabelTag.vue'
+import AgentWorkingIcon from '@/components/ui/AgentWorkingIcon.vue'
 import { useI18n } from 'vue-i18n'
 import { useSoundEffects } from '@/composables/useSoundEffects'
 
@@ -73,42 +71,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   select: [issue: Issue]
 }>()
-
-const elapsed = ref('0m 0s')
-let timerInterval: ReturnType<typeof setInterval> | null = null
-
-function calculateElapsed() {
-  if (!props.issue.agent_working || !props.issue.agent_working_started_at) {
-    elapsed.value = '0m 0s'
-    return
-  }
-  const start = new Date(props.issue.agent_working_started_at).getTime()
-  const now = Date.now()
-  const diff = Math.max(0, now - start)
-  const totalSeconds = Math.floor(diff / 1000)
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
-  if (hours > 0) {
-    elapsed.value = `${hours}h ${minutes}m ${seconds}s`
-  } else {
-    elapsed.value = `${minutes}m ${seconds}s`
-  }
-}
-
-onMounted(() => {
-  if (props.issue.agent_working) {
-    calculateElapsed()
-    timerInterval = setInterval(calculateElapsed, 1000)
-  }
-})
-
-onUnmounted(() => {
-  if (timerInterval) {
-    clearInterval(timerInterval)
-    timerInterval = null
-  }
-})
 
 function killAgent() {
   issuesStore.updateIssue(props.issue.id, {

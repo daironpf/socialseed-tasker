@@ -122,7 +122,12 @@
                   @click.stop="toggleSelect(issue.id)"
                 />
               </td>
-              <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 max-w-xs truncate">{{ issue.title }}</td>
+              <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 max-w-xs">
+                <div class="flex items-center gap-1.5">
+                  <AgentWorkingIcon :issue="issue" class="flex-shrink-0" />
+                  <span class="truncate">{{ issue.title }}</span>
+                </div>
+              </td>
               <td class="px-4 py-3 text-sm"><StatusBadge :status="issue.status" /></td>
               <td class="px-4 py-3 text-sm"><PriorityBadge :priority="issue.priority" /></td>
               <td class="hidden px-4 py-3 text-sm text-gray-600 dark:text-gray-300 md:table-cell">{{ getComponentName(issue.component_id) }}</td>
@@ -233,6 +238,7 @@ import { useToast } from '@/composables/useToast'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import PriorityBadge from '@/components/ui/PriorityBadge.vue'
 import LabelTag from '@/components/ui/LabelTag.vue'
+import AgentWorkingIcon from '@/components/ui/AgentWorkingIcon.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import FilterBuilder from '@/components/ui/FilterBuilder.vue'
 import IssueDetailView from '@/views/IssueDetailView.vue'
