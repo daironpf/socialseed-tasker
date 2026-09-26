@@ -1485,3 +1485,22 @@ Expanded `/board` (Dashboard) from 6 to 16 modules: added an operational pulse r
 | **ModuleCard shell** | Implemented | Shared `components/dashboard/ModuleCard.vue` (title + action slot) for the 6 card modules |
 | **i18n** | Implemented | `boardModules.*` (24 keys) EN/ES |
 | **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~79s) |
+
+## 61. Dashboard Section Layout & Advanced Analytics Modules (Board)
+
+Reorganized `/board` (Dashboard) into six labeled sections with hairline headers and expanded it from 16 to 25 modules.
+
+| Module | Status | Details |
+|---|---|---|
+| **SectionHeader** | Implemented | Uppercase tracking-wide label + hairline rule; six sections: Overview, Analytics, Issue Insights, Team & Quality, Ecosystem, Operations (`boardSections.*` EN/ES) |
+| **ActivityHeatmap** | Implemented | GitHub-style 13-week x 7-day heatmap of created+closed events per day, 5-level brand-green scale, month/weekday labels, localized per-day tooltip, Less/More legend, total-events chip |
+| **IssueAging** | Implemented | Age buckets for open issues (0-3 green / 4-7 amber / 8-14 orange / 15+ red) + avg-age and oldest-open footer stats |
+| **PriorityMatrix** | Implemented | Priority x Status grid (4 priorities x 5 statuses incl. new WAITING_HUMAN_APPROVAL column) with per-cell count and rgba intensity fill by priority color |
+| **LabelCloud** | Implemented | Top 18 labels by frequency, font size scaled 11-24px, rotating color palette, count per label, unique-label footer |
+| **TeamWorkload** | Implemented | Top 6 assignees by open issues: avatar, username, Human/AI badge, open/total counter, relative bar (green agents / blue humans), footer humans+agents counts and unassigned chip; fetches users on empty |
+| **DependencyRisk** | Implemented | Top 5 most-depended-upon issues (mono id chip + title + xN dependents badge tinted by fan-in) + footer dependency-edge and blocked counts |
+| **GovernanceCompliance** | Implemented | SVG compliance ring (compliant = no violations + solution summary + file impact) with 80/60 color thresholds + counters for violations, missing summaries, missing file impact |
+| **GitHubSyncHealth** | Implemented | Stacked SYNCED/PENDING/ERROR bar with % synced, per-status legend rows (`githubSync.status.*`), last-synced footer |
+| **AuditFeed** | Implemented | Latest 6 `auditLogStore` entries in a two-column list: severity dot + label, localized event type, actor/resource, relative timestamp; critical-count chip and "View all" RouterLink to `/audit-log` |
+| **i18n** | Implemented | `boardSections.*` (6 keys), `boardModules.*` +30 keys, `statusDistribution.waitingApproval` EN/ES |
+| **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~59s); BoardView chunk 34.7 -> 57.1 kB; Docker `tasker-board` rebuilt and verified serving `index-PgBU1Crg.js` with the new i18n keys |

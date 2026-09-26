@@ -13,46 +13,48 @@
         {{ t('system.refresh') }}
       </button>
     </div>
-    <div v-else class="flex flex-col h-full">
-      <!-- Dashboard Stats -->
-      <div class="p-6 pb-4">
+    <div v-else class="flex flex-col h-full pb-6">
+      <!-- Overview Section -->
+      <div class="px-6 pt-6">
+        <SectionHeader :title="t('boardSections.overview')" />
         <DashboardStats :issues="allIssues" />
-      </div>
 
-      <!-- Operational Pulse -->
-      <div class="px-6 pb-6">
-        <DashboardPulse :issues="allIssues" />
-      </div>
+        <!-- Operational Pulse -->
+        <div class="mt-4">
+          <DashboardPulse :issues="allIssues" />
+        </div>
 
-      <!-- Project Info Bar -->
-      <div class="px-6 pb-4">
-        <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-          <div class="flex items-center gap-4">
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900/30">
-              <svg class="h-5 w-5 text-brand-600 dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
+        <!-- Project Info Bar -->
+        <div class="mt-4">
+          <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+            <div class="flex items-center gap-4">
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900/30">
+                <svg class="h-5 w-5 text-brand-600 dark:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <div>
+                <h2 v-if="currentProject" class="text-lg font-semibold text-gray-900 dark:text-white">
+                  {{ currentProject.name }}
+                </h2>
+                <p v-if="currentProject" class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ currentProject.description || currentProject.slug }}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 v-if="currentProject" class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ currentProject.name }}
-              </h2>
-              <p v-if="currentProject" class="text-sm text-gray-500 dark:text-gray-400">
-                {{ currentProject.description || currentProject.slug }}
-              </p>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('policies.active') }}:</span>
+              <span class="rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                {{ policies.length }}
+              </span>
             </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="text-sm text-gray-500 dark:text-gray-400">{{ t('policies.active') }}:</span>
-            <span class="rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-              {{ policies.length }}
-            </span>
           </div>
         </div>
       </div>
 
-      <!-- Charts Row -->
-      <div class="px-6 pb-6">
+      <!-- Analytics Section -->
+      <div class="px-6 pt-6">
+        <SectionHeader :title="t('boardSections.analytics')" />
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <!-- Trend Chart -->
           <div class="lg:col-span-2">
@@ -70,20 +72,63 @@
           <DailyActivityChart :issues="allIssues" />
           <StatusDistribution :issues="allIssues" />
         </div>
+
+        <!-- Activity Heatmap & Issue Aging -->
+        <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div class="lg:col-span-2">
+            <ActivityHeatmap :issues="allIssues" />
+          </div>
+          <IssueAging :issues="allIssues" />
+        </div>
       </div>
 
-      <!-- Insight Modules -->
-      <div class="grid grid-cols-1 gap-6 px-6 pb-6 lg:grid-cols-3">
-        <PriorityBreakdown :issues="allIssues" />
-        <ComponentWorkload :issues="allIssues" />
-        <NotificationsFeed />
+      <!-- Issue Insights Section -->
+      <div class="px-6 pt-6">
+        <SectionHeader :title="t('boardSections.insights')" />
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <PriorityBreakdown :issues="allIssues" />
+          <ComponentWorkload :issues="allIssues" />
+          <NotificationsFeed />
+        </div>
+
+        <!-- Priority Matrix & Label Cloud -->
+        <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div class="lg:col-span-2">
+            <PriorityMatrix :issues="allIssues" />
+          </div>
+          <LabelCloud :issues="allIssues" />
+        </div>
       </div>
 
-      <!-- Operations Modules -->
-      <div class="grid grid-cols-1 gap-6 px-6 pb-6 lg:grid-cols-3">
-        <AutoHealingMini />
-        <SyncStatusCard />
-        <BudgetMini />
+      <!-- Team & Quality Section -->
+      <div class="px-6 pt-6">
+        <SectionHeader :title="t('boardSections.teamQuality')" />
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <TeamWorkload :issues="allIssues" />
+          <DependencyRisk :issues="allIssues" />
+          <GovernanceCompliance :issues="allIssues" />
+        </div>
+      </div>
+
+      <!-- Ecosystem Section -->
+      <div class="px-6 pt-6">
+        <SectionHeader :title="t('boardSections.ecosystem')" />
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <GitHubSyncHealth :issues="allIssues" />
+          <div class="lg:col-span-2">
+            <AuditFeed />
+          </div>
+        </div>
+      </div>
+
+      <!-- Operations Section -->
+      <div class="px-6 pt-6">
+        <SectionHeader :title="t('boardSections.operations')" />
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <AutoHealingMini />
+          <SyncStatusCard />
+          <BudgetMini />
+        </div>
       </div>
     </div>
   </div>
@@ -113,6 +158,16 @@ import NotificationsFeed from '@/components/dashboard/NotificationsFeed.vue'
 import AutoHealingMini from '@/components/dashboard/AutoHealingMini.vue'
 import SyncStatusCard from '@/components/dashboard/SyncStatusCard.vue'
 import BudgetMini from '@/components/dashboard/BudgetMini.vue'
+import SectionHeader from '@/components/dashboard/SectionHeader.vue'
+import ActivityHeatmap from '@/components/dashboard/ActivityHeatmap.vue'
+import IssueAging from '@/components/dashboard/IssueAging.vue'
+import PriorityMatrix from '@/components/dashboard/PriorityMatrix.vue'
+import LabelCloud from '@/components/dashboard/LabelCloud.vue'
+import TeamWorkload from '@/components/dashboard/TeamWorkload.vue'
+import DependencyRisk from '@/components/dashboard/DependencyRisk.vue'
+import GovernanceCompliance from '@/components/dashboard/GovernanceCompliance.vue'
+import GitHubSyncHealth from '@/components/dashboard/GitHubSyncHealth.vue'
+import AuditFeed from '@/components/dashboard/AuditFeed.vue'
 
 const issuesStore = useIssuesStore()
 const componentsStore = useComponentsStore()
