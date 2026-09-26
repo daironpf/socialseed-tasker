@@ -15,8 +15,13 @@
     </div>
     <div v-else class="flex flex-col h-full">
       <!-- Dashboard Stats -->
-      <div class="p-6">
+      <div class="p-6 pb-4">
         <DashboardStats :issues="allIssues" />
+      </div>
+
+      <!-- Operational Pulse -->
+      <div class="px-6 pb-6">
+        <DashboardPulse :issues="allIssues" />
       </div>
 
       <!-- Project Info Bar -->
@@ -66,6 +71,20 @@
           <StatusDistribution :issues="allIssues" />
         </div>
       </div>
+
+      <!-- Insight Modules -->
+      <div class="grid grid-cols-1 gap-6 px-6 pb-6 lg:grid-cols-3">
+        <PriorityBreakdown :issues="allIssues" />
+        <ComponentWorkload :issues="allIssues" />
+        <NotificationsFeed />
+      </div>
+
+      <!-- Operations Modules -->
+      <div class="grid grid-cols-1 gap-6 px-6 pb-6 lg:grid-cols-3">
+        <AutoHealingMini />
+        <SyncStatusCard />
+        <BudgetMini />
+      </div>
     </div>
   </div>
 </template>
@@ -87,6 +106,13 @@ import TrendChart from '@/components/dashboard/TrendChart.vue'
 import AvgResolutionTime from '@/components/dashboard/AvgResolutionTime.vue'
 import DailyActivityChart from '@/components/dashboard/DailyActivityChart.vue'
 import StatusDistribution from '@/components/dashboard/StatusDistribution.vue'
+import DashboardPulse from '@/components/dashboard/DashboardPulse.vue'
+import PriorityBreakdown from '@/components/dashboard/PriorityBreakdown.vue'
+import ComponentWorkload from '@/components/dashboard/ComponentWorkload.vue'
+import NotificationsFeed from '@/components/dashboard/NotificationsFeed.vue'
+import AutoHealingMini from '@/components/dashboard/AutoHealingMini.vue'
+import SyncStatusCard from '@/components/dashboard/SyncStatusCard.vue'
+import BudgetMini from '@/components/dashboard/BudgetMini.vue'
 
 const issuesStore = useIssuesStore()
 const componentsStore = useComponentsStore()

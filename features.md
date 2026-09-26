@@ -1466,3 +1466,22 @@ Shared `AgentWorkingIcon` showing which issues currently have an agent working o
 | **Issue List** | Implemented | `ListView` title cell: icon inline before the title (flex + truncate preserved), shown only when `issue.agent_working` |
 | **Data source** | Existing | `Issue.agent_working` / `agent_working_started_at` (5 of 100 mock issues seeded active); toggled by governance alerts and the kill switch |
 | **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~63s) |
+
+---
+
+## 60. Dashboard Information Modules (Board)
+
+Expanded `/board` (Dashboard) from 6 to 16 modules: added an operational pulse row and two insight/operations rows fed by existing stores.
+
+| Module | Status | Details |
+|---|---|---|
+| **DashboardPulse** | Implemented | 4 `StatsCard`s: Agents Working (issues `agent_working` + `usersStore.activeAgents`, fetch-on-empty), HITL Approvals (`pendingCount` / urgent subtitle), SLA At Risk (open issues vs `SLA_HOURS`: breached >100%, at-risk >80%; subtitle = breached count), Notifications (`unreadCount` + emergency-group unread subtitle) |
+| **PriorityBreakdown** | Implemented | Horizontal bars per priority (CRITICAL red / HIGH orange / MEDIUM blue / LOW gray, matching PriorityBadge) over open issues, count + relative width |
+| **ComponentWorkload** | Implemented | Top 5 components by open-issue count (brand-colored bars, name via `componentsStore`, fetch-on-empty) |
+| **NotificationsFeed** | Implemented | Latest 4 notifications sorted desc: category chip (CATEGORY_CONFIG glyph + tinted bg), title/message, HH:MM timestamp; unread count chip in card action slot |
+| **AutoHealingMini** | Implemented | Running/completed/failed counters from `autoHealingStore.runs` + live running-stage row (i18n `autoHealing.stages.*`, pulsing dot, run id) |
+| **SyncStatusCard** | Implemented | `uiStore.pendingSyncCount` + network mode chip (online green / degraded amber / offline red) + `connectionState` label |
+| **BudgetMini** | Implemented | `finopsStore.metrics.totalCost` (red if critical alerts) + budget alert chip (critical+warning) or "Sin alertas" |
+| **ModuleCard shell** | Implemented | Shared `components/dashboard/ModuleCard.vue` (title + action slot) for the 6 card modules |
+| **i18n** | Implemented | `boardModules.*` (24 keys) EN/ES |
+| **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~79s) |
