@@ -65,6 +65,7 @@
                 :item="item"
                 :is-expanded="true"
                 :is-active="route.path === item.path"
+                :pending="isPendingFeature(item.path)"
                 @click="navigateTo(item.path)"
               />
             </div>
@@ -80,6 +81,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import NavItem from './NavItem.vue'
+import { isPendingFeature } from '@/utils/pendingFeatures'
 
 defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()

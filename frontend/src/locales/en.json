@@ -459,7 +459,8 @@
     "close": "Close",
     "confirm": "Confirm",
     "noData": "No data available",
-    "textEditor": "Text editor"
+    "textEditor": "Text editor",
+    "pendingDev": "Feature awaiting development"
   },
   "dashboardStats": {
     "totalIssues": "Total Issues",

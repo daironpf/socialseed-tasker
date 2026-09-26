@@ -8,7 +8,7 @@
     ]"
     :aria-label="item.label"
   >
-    <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center">
+    <div class="relative flex h-8 w-8 flex-shrink-0 items-center justify-center">
       <svg
         class="h-5 w-5"
         :class="[
@@ -22,6 +22,7 @@
       >
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
       </svg>
+      <PendingDevBadge v-if="pending" class="absolute -right-1 -top-1" />
     </div>
     <span
       v-if="isExpanded"
@@ -39,6 +40,8 @@
 </template>
 
 <script setup lang="ts">
+import PendingDevBadge from '@/components/ui/PendingDevBadge.vue'
+
 interface NavItem {
   path: string
   label: string
@@ -50,5 +53,6 @@ defineProps<{
   item: NavItem
   isExpanded: boolean
   isActive: boolean
+  pending?: boolean
 }>()
 </script>

@@ -2,7 +2,7 @@
 
 > Complete catalog of all UI features, interactions, and capabilities currently implemented.
 > Use this document to identify gaps, plan new features, and track what is missing.
-> Last updated: 2026-09-24
+> Last updated: 2026-09-25
 
 ---
 
@@ -1435,3 +1435,19 @@ Issue #516 (`composables/useSoundEffects.ts`, `components/ui/ToastThemeSettings.
 | **Theme picker** | Implemented | `ToastThemeSettings` with 3 mini previews, mounted in UserMenu under Alerts |
 | **i18n** | Implemented | `soundEffects.*` (4 keys) + `toastTheme.*` (8 keys) + `notifPanel.*` (11 keys) + `autoHealing.simulateSuccess` in EN/ES |
 | **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~43s) |
+
+---
+
+## 58. Pending-Feature Badges (mock-only scope)
+
+Visual indicator that a feature is awaiting development: every view still running exclusively on the mock API (`USE_MOCK = true`, see §50 Known Gaps) shows an amber hourglass badge in the navigation and in the page header.
+
+| Feature | Status | Details |
+|---|---|---|
+| **Pending route registry** | Implemented | `utils/pendingFeatures.ts`: `PENDING_FEATURE_ROUTES` (24 routes) + `isPendingFeature(path)`; covers all mock-backed sidebar routes; `/profile` (local-only) and NotFound excluded |
+| **Badge component** | Implemented | `components/ui/PendingDevBadge.vue`: amber hourglass SVG in a tinted pill (dark-mode aware), sizes `xs` (16px) / `sm` (20px), `role="img"` with `title` + `aria-label` tooltip |
+| **Sidebar nav** | Implemented | `NavItem.vue`: `pending` prop renders the badge overlaid at the icon's top-right corner (visible in both collapsed w-20 and expanded w-64 states) |
+| **Mobile drawer** | Implemented | `MobileDrawer.vue` passes `:pending="isPendingFeature(item.path)"` (mobile parity with desktop sidebar) |
+| **Page header** | Implemented | `AppHeader.vue`: badge rendered right after `pageTitle` when `isPendingFeature(route.path)` |
+| **i18n** | Implemented | `common.pendingDev`: "Feature awaiting development" (EN) / "Funcionalidad pendiente de desarrollo" (ES) |
+| **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~80s) |

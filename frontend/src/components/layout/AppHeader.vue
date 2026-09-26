@@ -42,6 +42,7 @@
         <h1 class="truncate text-base font-bold text-gray-900 dark:text-white sm:text-lg">
           {{ pageTitle }}
         </h1>
+        <PendingDevBadge v-if="pendingRoute" size="sm" />
       </div>
       <div class="flex flex-shrink-0 items-center gap-1 sm:gap-3">
         <OrganizationSwitcher class="hidden lg:flex" />
@@ -73,8 +74,10 @@ import ProjectSelector from '@/components/ui/ProjectSelector.vue'
 import SyncStatusBadge from '@/components/ui/SyncStatusBadge.vue'
 import NetworkModeToggle from '@/components/sync/NetworkModeToggle.vue'
 import HITLQuickActionModal from '@/components/ui/HITLQuickActionModal.vue'
+import PendingDevBadge from '@/components/ui/PendingDevBadge.vue'
 import { useHitlStore } from '@/stores/hitlStore'
 import { useNotificationsStore } from '@/stores/notificationsStore'
+import { isPendingFeature } from '@/utils/pendingFeatures'
 
 defineEmits<{ 'open-mobile-menu': [] }>()
 
@@ -133,4 +136,6 @@ const pageTitle = computed(() => {
   }
   return titles[route.path] || t('header.dashboard')
 })
+
+const pendingRoute = computed(() => isPendingFeature(route.path))
 </script>

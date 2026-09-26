@@ -460,7 +460,8 @@
     "close": "Cerrar",
     "confirm": "Confirmar",
     "noData": "No hay datos disponibles",
-    "textEditor": "Editor de texto"
+    "textEditor": "Editor de texto",
+    "pendingDev": "Funcionalidad pendiente de desarrollo"
   },
   "dashboardStats": {
     "totalIssues": "Total Issues",
