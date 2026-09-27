@@ -45,7 +45,9 @@ services:
       - TASKER_API_HOST=0.0.0.0
       - TASKER_API_PORT=8000
       - TASKER_API_KEY=test-token
-      - TASKER_AUTH_ENABLED=false
+      - TASKER_AUTH_ENABLED=true
+      - TASKER_JWT_SECRET=tasker-local-review-secret
+      - TASKER_FRONTEND_URL=http://localhost:19001
     depends_on:
       tasker-db:
         condition: service_healthy
