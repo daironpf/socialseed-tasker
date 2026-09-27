@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { apiMode, setApiMode as setClientApiMode, type ApiMode } from '@/api/client'
 import {
   loadQueue,
   saveQueue,
@@ -312,6 +313,13 @@ export const useUiStore = defineStore('ui', () => {
     }
   }
 
+  // API data source: mock dataset vs real FastAPI backend (issue #517)
+  const isMockApi = computed(() => apiMode.value === 'mock')
+
+  function setApiMode(mode: ApiMode) {
+    setClientApiMode(mode)
+  }
+
   return {
     selectedIssueId,
     sidebarOpen,
@@ -349,5 +357,8 @@ export const useUiStore = defineStore('ui', () => {
     resolveConflict,
     flushQueue,
     getBackendFilters,
+    apiMode,
+    isMockApi,
+    setApiMode,
   }
 })

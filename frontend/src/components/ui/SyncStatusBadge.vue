@@ -17,6 +17,14 @@
     </span>
     <span class="font-medium">{{ stateLabel }}</span>
     <span
+      v-if="sourceLabel"
+      class="rounded-full px-1.5 py-0.5 text-[10px] font-bold"
+      :class="sourceLabelClass"
+      data-testid="api-source-chip"
+    >
+      {{ sourceLabel }}
+    </span>
+    <span
       v-if="uiStore.pendingSyncCount"
       class="rounded-full bg-white/70 px-1.5 text-[10px] font-bold text-amber-700 dark:bg-black/40 dark:text-amber-300"
     >
@@ -30,10 +38,12 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/stores/uiStore'
+import { useRealtimeStatus } from '@/api/realtime'
 import SyncQueueDrawer from '@/components/sync/SyncQueueDrawer.vue'
 
 const { t } = useI18n()
 const uiStore = useUiStore()
+const { realtimeState } = useRealtimeStatus()
 
 const drawerOpen = ref(false)
 
@@ -50,6 +60,41 @@ const stateLabel = computed(() => {
       return t('offline.degraded')
     default:
       return t('sync.synced')
+  }
+})
+
+// Data source + SSE stream state (issue #517)
+const sourceLabel = computed(() => {
+  if (uiStore.apiMode === 'mock') return t('sync.mock')
+  switch (realtimeState.value) {
+    case 'live':
+      return t('sync.live')
+    case 'connecting':
+      return t('sync.connecting')
+    case 'reconnecting':
+      return t('sync.reconnecting')
+    case 'offline':
+      return t('sync.streamOffline')
+    default:
+      return null
+  }
+})
+
+const sourceLabelClass = computed(() => {
+  if (uiStore.apiMode === 'mock') {
+    return 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
+  }
+  switch (realtimeState.value) {
+    case 'live':
+      return 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+    case 'connecting':
+      return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+    case 'reconnecting':
+      return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+    case 'offline':
+      return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+    default:
+      return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
   }
 })
 

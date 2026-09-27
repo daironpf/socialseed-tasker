@@ -360,6 +360,7 @@ def create_app(
         commit_router,
         webhook_router,
         secrets_router,
+        realtime_router,
     )
     from socialseed_tasker.events.routes import webhook_router as events_webhook_router
 
@@ -388,6 +389,7 @@ def create_app(
     app.include_router(commit_router, prefix="/api/v1", tags=["commits"])
     app.include_router(secrets_router, prefix="", tags=["secrets"])
     app.include_router(tenants_router, prefix="/api/v1", tags=["tenants"])
+    app.include_router(realtime_router, prefix="/api/v1", tags=["realtime"])
     app.include_router(events_webhook_router, tags=["webhooks"])
 
     from socialseed_tasker.data_catalog.api import router as registry_router
@@ -467,6 +469,10 @@ def create_app(
     app.state.delivery_worker = DeliveryWorker(storage=evt_storage)
     if os.getenv("TASKER_INTEGRATION") == "1":
         app.state.delivery_worker.start()
+
+    # Realtime SSE hub (agent logs + presence, issue #517)
+    from socialseed_tasker.infrastructure.web_api.routers.realtime import RealtimeHub
+    app.state.realtime_hub = RealtimeHub()
 
     # SSO / Keycloak wiring
     from socialseed_tasker.auth.oauth import SessionStore

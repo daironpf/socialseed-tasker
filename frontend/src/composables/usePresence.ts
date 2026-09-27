@@ -1,4 +1,6 @@
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import client, { isMockMode, apiMode } from '@/api/client'
+import { connectSSE, type SSEHandle } from '@/api/realtime'
 
 export interface PresenceUser {
   id: string
@@ -68,6 +70,16 @@ function generateMockPresence(_issueId: string): PresenceUser[] {
   })
 }
 
+function presencePayload(extra: Record<string, unknown> = {}) {
+  return {
+    user_id: localPresenceId.value,
+    username: 'You',
+    avatar: '👤',
+    type: 'human',
+    ...extra,
+  }
+}
+
 export function usePresence(issueId: string) {
   const instanceId = `presence-${issueId}-${++instanceCounter}`
   const viewers = computed(() => {
@@ -85,6 +97,8 @@ export function usePresence(issueId: string) {
     return fields.length > 1 && new Set(fields).size < fields.length
   })
 
+  // -------------------------------------------------------------- mock mode
+
   function joinPresence() {
     const list = presenceMap.value.get(issueId) || []
     const localUser: PresenceUser = {
@@ -101,22 +115,13 @@ export function usePresence(issueId: string) {
     }
   }
 
-  function updateField(fieldName: string | undefined) {
-    const list = presenceMap.value.get(issueId) || []
-    const idx = list.findIndex(u => u.id === localPresenceId.value)
-    if (idx >= 0) {
-      list[idx].viewingField = fieldName
-      list[idx].lastSeen = Date.now()
-      presenceMap.value.set(issueId, [...list])
-    }
-  }
-
   function leavePresence() {
     const list = presenceMap.value.get(issueId) || []
     presenceMap.value.set(issueId, list.filter(u => u.id !== localPresenceId.value))
+    presenceMap.value.delete(`mock-${issueId}`)
   }
 
-  function heartbeat() {
+  function heartbeatMock() {
     const list = presenceMap.value.get(issueId) || []
     const idx = list.findIndex(u => u.id === localPresenceId.value)
     if (idx >= 0) {
@@ -134,15 +139,128 @@ export function usePresence(issueId: string) {
     })))
   }
 
+  // -------------------------------------------------------------- real mode
+
+  let sse: SSEHandle | null = null
+  let joinedReal = false
+  let currentField: string | undefined
+
+  function applyServerViewers(payload: unknown) {
+    const viewersList = (payload as { viewers?: PresenceUser[] } | null)?.viewers
+    if (Array.isArray(viewersList)) {
+      presenceMap.value.set(issueId, viewersList)
+    }
+  }
+
+  async function joinReal(extra: Record<string, unknown> = {}) {
+    try {
+      const { data } = await client.post(
+        `/issues/${issueId}/presence`,
+        presencePayload(extra),
+      )
+      applyServerViewers(data?.data)
+      joinedReal = true
+    } catch {
+      joinedReal = false
+    }
+  }
+
+  async function leaveReal() {
+    if (!joinedReal) return
+    joinedReal = false
+    try {
+      const { data } = await client.post(`/issues/${issueId}/presence/leave`, {
+        user_id: localPresenceId.value,
+      })
+      applyServerViewers(data?.data)
+    } catch {
+      // best effort
+    }
+  }
+
+  function connectPresenceStream() {
+    if (sse) return
+    sse = connectSSE(
+      `/issues/${issueId}/presence/stream`,
+      {
+        onEvent: (type, data) => {
+          if (type === 'viewers') applyServerViewers(data)
+        },
+      },
+      { events: ['connected', 'viewers', 'ping'] },
+    )
+  }
+
+  function disconnectPresenceStream() {
+    sse?.close()
+    sse = null
+  }
+
+  function startReal() {
+    joinReal()
+    connectPresenceStream()
+  }
+
+  function stopReal() {
+    disconnectPresenceStream()
+    leaveReal()
+  }
+
+  // -------------------------------------------------------------- lifecycle
+
+  function heartbeat() {
+    if (isMockMode()) {
+      heartbeatMock()
+    } else if (joinedReal) {
+      joinReal({ viewing_field: currentField })
+    }
+  }
+
+  function updateField(fieldName: string | undefined) {
+    currentField = fieldName
+    if (!isMockMode()) {
+      if (joinedReal) {
+        joinReal({ viewing_field: fieldName })
+      }
+      return
+    }
+    const list = presenceMap.value.get(issueId) || []
+    const idx = list.findIndex(u => u.id === localPresenceId.value)
+    if (idx >= 0) {
+      list[idx].viewingField = fieldName
+      list[idx].lastSeen = Date.now()
+      presenceMap.value.set(issueId, [...list])
+    }
+  }
+
+  watch(apiMode, () => {
+    if (isMockMode()) {
+      stopReal()
+      presenceMap.value.delete(issueId)
+      joinPresence()
+    } else {
+      leavePresence()
+      startReal()
+    }
+  })
+
   onMounted(() => {
-    joinPresence()
+    if (isMockMode()) {
+      joinPresence()
+    } else {
+      startReal()
+    }
     const hb = setInterval(heartbeat, HEARTBEAT_MS)
     instanceIntervals.set(instanceId, hb)
     startGlobalExpire()
   })
 
   onUnmounted(() => {
-    leavePresence()
+    if (isMockMode()) {
+      leavePresence()
+    } else {
+      stopReal()
+    }
     const hb = instanceIntervals.get(instanceId)
     if (hb) clearInterval(hb)
     instanceIntervals.delete(instanceId)

@@ -2,7 +2,7 @@
 
 > Complete catalog of all UI features, interactions, and capabilities currently implemented.
 > Use this document to identify gaps, plan new features, and track what is missing.
-> Last updated: 2026-09-25
+> Last updated: 2026-09-26
 
 ---
 
@@ -60,6 +60,16 @@
 50. [Known Gaps & Missing Features](#50-known-gaps--missing-features)
 51. [Organization Multi-Tenancy & Enterprise Settings](#51-organization-multi-tenancy--enterprise-settings)
 52. [Governance Matrix, RBAC & Approval Queue](#52-governance-matrix-rbac--approval-queue)
+53. [Audit Log, Compliance & PII Redaction Suite](#53-audit-log-compliance--pii-redaction-suite)
+54. [Agent Studio (Mock Agent Simulator & Custom Agent Builder)](#54-agent-studio-mock-agent-simulator--custom-agent-builder)
+55. [Custom Dashboards, Reporting Engine & SLA Metrics](#55-custom-dashboards-reporting-engine--sla-metrics)
+56. [Offline First & Mock Sync Queue](#56-offline-first--mock-sync-queue)
+57. [Sound Effects, Notification Center Groups & Toast Themes](#57-sound-effects-notification-center-groups--toast-themes)
+58. [Pending-Feature Badges (mock-only scope)](#58-pending-feature-badges-mock-only-scope)
+59. [Agent-Working Indicator in Kanban & Issue List](#59-agent-working-indicator-in-kanban--issue-list)
+60. [Dashboard Information Modules (Board)](#60-dashboard-information-modules-board)
+61. [Dashboard Section Layout & Advanced Analytics Modules (Board)](#61-dashboard-section-layout--advanced-analytics-modules-board)
+62. [Backend Integration & Live SSE Architecture (mock/real toggle)](#62-backend-integration--live-sse-architecture-mockreal-toggle)
 
 ---
 
@@ -70,9 +80,9 @@
 | Vue 3.5 + TypeScript | Implemented | Composition API, `<script setup>`, vue-tsc type checking |
 | Vite 6 build tool | Implemented | HMR, optimized production builds, lazy-loaded routes |
 | Tailwind CSS 3 | Implemented | Dark mode via `class` strategy; Inter font |
-| Pinia state management | Implemented | 21 stores under `src/stores/` |
-| Vue Router | Implemented | 22 view routes + `/` redirect + catch-all NotFound; lazy-loaded; scroll-to-top on navigate |
-| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 65 top-level sections, ~1255 leaf keys per language, localStorage persistence |
+| Pinia state management | Implemented | 24 stores under `src/stores/` |
+| Vue Router | Implemented | 26 view routes + `/` redirect + catch-all NotFound; lazy-loaded; scroll-to-top on navigate |
+| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 75 top-level sections, ~1477 leaf keys per language, localStorage persistence |
 | Dark mode | Implemented | Toggle via UserMenu / `D` shortcut / CommandPalette; localStorage; system preference detection |
 | Mock API mode | Implemented | `USE_MOCK = true` in `client.ts`; axios instance swapped for mock client; `mockApi.ts` uses `fetch` against `/mock-api` |
 | Real API mode | Implemented | Axios client, base `window.__API_URL__ \|\| '/api/v1'`, API key auth via `X-API-Key`, 401 interceptor → `auth:unauthorized` |
@@ -189,16 +199,34 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 
 ## 4. Dashboard (BoardView)
 
+25 information modules grouped in 6 labeled sections with hairline headers. See §60 and §61 for the full per-module breakdown and evolution.
+
+| Section | Modules |
+|---|---|
+| **Overview** | DashboardStats (4 stat cards), DashboardPulse (4 ops cards), Project info bar |
+| **Analytics** | TrendChart, AvgResolutionTime, DailyActivityChart, StatusDistribution, ActivityHeatmap, IssueAging |
+| **Issue Insights** | PriorityBreakdown, ComponentWorkload, NotificationsFeed, PriorityMatrix, LabelCloud |
+| **Team & Quality** | TeamWorkload, DependencyRisk, GovernanceCompliance |
+| **Ecosystem** | GitHubSyncHealth, AuditFeed |
+| **Operations** | AutoHealingMini, SyncStatusCard, BudgetMini |
+
 | Feature | Status | Details |
 |---|---|---|
+| **Section headers** | Implemented | `SectionHeader`: uppercase tracking-wide label + hairline rule (`boardSections.*` EN/ES) |
 | **Stats cards** | Implemented | 4 cards: Total Issues, Resolved This Month, In Progress, Blocked |
+| **Operational pulse** | Implemented | 4 cards: Agents Working, HITL Approvals, SLA At Risk, Notifications (§60) |
 | **Trend chart** | Implemented | Custom SVG line chart, 8-week rolling, 3 lines (Open/Closed/In Progress), legend |
 | **Avg Resolution Time** | Implemented | Circular SVG gauge, color-coded (green ≤3d, blue ≤7d, orange ≤14d, red >14d) |
 | **Daily Activity Chart** | Implemented | Custom SVG bar chart, month selector, created vs resolved bars |
-| **Status Distribution** | Implemented | Horizontal bar chart, 5 statuses, percentage breakdown |
+| **Status Distribution** | Implemented | Horizontal bar chart, 5 statuses incl. Waiting Approval, percentage breakdown |
+| **Analytics modules** | Implemented | ActivityHeatmap (13-week day grid), IssueAging (age buckets), PriorityMatrix (priority x status), LabelCloud (§61) |
+| **Team & quality modules** | Implemented | TeamWorkload (assignee leaderboard), DependencyRisk (fan-in ranking), GovernanceCompliance ring (§61) |
+| **Ecosystem modules** | Implemented | GitHubSyncHealth (stacked SYNCED/PENDING/ERROR), AuditFeed (last 6 events + `/audit-log` link) (§61) |
+| **Insight & ops modules** | Implemented | PriorityBreakdown, ComponentWorkload, NotificationsFeed, AutoHealingMini, SyncStatusCard, BudgetMini (§60) |
+| **Data sources** | Implemented | issuesStore, componentsStore, usersStore, hitlStore, notificationsStore, finopsStore, autoHealingStore, uiStore, auditLogStore |
 | **Project info bar** | Implemented | Project name, description, active policies count |
-| Loading/Error states | Implemented | Spinner + error message with refresh |
-| i18n | Implemented | All labels, tooltips, and chart data translated |
+| **Loading/Error states** | Implemented | Spinner + error message with refresh |
+| i18n | Implemented | `boardModules.*` (54 keys), `boardSections.*` (6 keys), chart sections translated |
 
 ---
 
@@ -433,7 +461,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 ### Layout Components
 | Component | Purpose | Details |
 |---|---|---|
-| `Sidebar` | Main navigation | Collapsible, 3 groups, 21 items, desktop-only |
+| `Sidebar` | Main navigation | Collapsible, 3 groups, 24 items, desktop-only |
 | `MobileDrawer` | Mobile navigation | Overlay drawer, swipe-to-close, same 24 items |
 | `AppHeader` | Top bar | Dynamic title, HITL banner, hamburger, org switcher (lg+), project selector, network mode toggle (xl+), sync badge (opens queue drawer), notifications, user menu |
 | `OrganizationSwitcher` | Org/workspace selector | Hierarchical Organization → Workspace dropdown, localStorage persistence, link to `/organization` settings |
@@ -456,11 +484,30 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 ### Dashboard Components
 | Component | Purpose | Details |
 |---|---|---|
+| `DashboardStats` | Stats row | 4 top stat cards (Total, Resolved, In Progress, Blocked) |
+| `DashboardPulse` | Ops pulse row | Agents Working, HITL Approvals, SLA At Risk, Notifications cards |
+| `ModuleCard` | Module shell | Shared card: title + action slot + default slot (all 21 card modules) |
+| `SectionHeader` | Section divider | Uppercase label + hairline rule for the 6 dashboard sections |
 | `StatsCard` | Metric display | Title, value, subtitle, trend, color theme |
 | `TrendChart` | Line chart | 8-week SVG, 3 series, legend |
 | `DailyActivityChart` | Bar chart | Month selector, created/resolved bars |
 | `AvgResolutionTime` | Gauge chart | Circular SVG, color-coded |
 | `StatusDistribution` | Horizontal bars | 5 statuses, percentages |
+| `PriorityBreakdown` | Priority bars | Open issues per priority, color-coded |
+| `ComponentWorkload` | Workload bars | Top 5 components by open issues |
+| `NotificationsFeed` | Notification list | Latest 4 notifications + unread chip |
+| `AutoHealingMini` | Pipeline counters | Runs summary + live running-stage row |
+| `SyncStatusCard` | Sync card | Pending mutations + network mode chip |
+| `BudgetMini` | FinOps card | Total cost + budget alert chip |
+| `ActivityHeatmap` | GitHub-style heatmap | 13-week created/closed event grid, 5-level brand scale |
+| `IssueAging` | Aging bars | Open issues by age bucket + avg/oldest stats |
+| `PriorityMatrix` | Matrix grid | Priority x status counts with intensity fill |
+| `LabelCloud` | Tag cloud | Top 18 labels scaled by frequency |
+| `TeamWorkload` | Team leaderboard | Top assignees, Human/AI badges, open/total bars |
+| `DependencyRisk` | Fan-in ranking | Most-depended-upon issues + edge/blocked totals |
+| `GovernanceCompliance` | Compliance ring | SVG ring + violations/missing-summary/missing-files counters |
+| `GitHubSyncHealth` | Sync health | Stacked SYNCED/PENDING/ERROR bar + % synced |
+| `AuditFeed` | Audit list | Latest 6 audit events, 2-column, link to `/audit-log` |
 | `TeamTicker` | Bottom marquee | User avatars, auto-refresh |
 
 ### Analysis Components
@@ -545,7 +592,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `LoginScreen` | API key gate | Full-screen overlay login |
 **Total view components:** 27 files in `src/views/` (26 routed incl. NotFound + `IssueDetailView` embedded)
 
-**Total shared components:** 78 `.vue` files under `src/components/`
+**Total shared components:** 98 `.vue` files under `src/components/`
 
 ---
 
@@ -851,11 +898,11 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 ## 27. i18n Coverage
 
 ### Locale Files
-- `en.json`: ~1415 leaf keys, **73** top-level sections
-- `es.json`: ~1416 leaf keys, matching structure
+- `en.json`: 1477 leaf keys, **75** top-level sections
+- `es.json`: 1478 leaf keys, matching structure
 
-### Sections (73)
-`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`, `agentStudio`, `analytics`, `sla`, `offline`, `syncQueue`, `soundEffects`, `toastTheme`, `notifPanel`
+### Sections (75)
+`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `boardModules`, `boardSections`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`, `agentStudio`, `analytics`, `sla`, `offline`, `syncQueue`, `soundEffects`, `toastTheme`, `notifPanel`
 
 ### Coverage
 - All user-visible text uses `t()`
@@ -1239,7 +1286,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | `IssueDetailView.vue` | Embedded slide-in in ListView, KanbanView, GraphView |
 
 ### Composables (`src/composables/`)
-`useToast`, `usePresence`, `useMockStream`, `useKeyboardShortcuts`, `useExport`, `useAgentStream`
+`useToast`, `usePresence`, `useMockStream`, `useKeyboardShortcuts`, `useExport`, `useAgentStream`, `useSoundEffects`
 
 ### Scripts
 | Script | Command |
@@ -1254,8 +1301,8 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 ## 50. Known Gaps & Missing Features
 
 ### Not Implemented
-- No real backend integration (mock mode only; `USE_MOCK = true`)
-- No actual WebSocket/SSE connections to a live server (mock stream only)
+- Real backend integration is opt-in only (mock mode is the default; toggle via UserMenu → Data Source → Real switches REST calls to `/api/v1`, not all endpoints verified against the real API)
+- No WebSocket transport (SSE over HTTP only, for agent-logs and presence; other "live" views remain mock-driven)
 - No real user authentication (API key only; mock auto-auth)
 - No real multi-user concurrent editing
 - No actual PII remediation (masking UI only)
@@ -1504,3 +1551,23 @@ Reorganized `/board` (Dashboard) into six labeled sections with hairline headers
 | **AuditFeed** | Implemented | Latest 6 `auditLogStore` entries in a two-column list: severity dot + label, localized event type, actor/resource, relative timestamp; critical-count chip and "View all" RouterLink to `/audit-log` |
 | **i18n** | Implemented | `boardSections.*` (6 keys), `boardModules.*` +30 keys, `statusDistribution.waitingApproval` EN/ES |
 | **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~59s); BoardView chunk 34.7 -> 57.1 kB; Docker `tasker-board` rebuilt and verified serving `index-PgBU1Crg.js` with the new i18n keys |
+
+---
+
+## 62. Backend Integration & Live SSE Architecture (mock/real toggle)
+
+Issue #517. First real backend integration: an app-wide mock/real data-source toggle plus genuine SSE transport for agent logs and presence (replacing mock-only simulation from §47 when Real mode is active).
+
+| Feature | Status | Details |
+|---|---|---|
+| **Data-source toggle (mock/real)** | Implemented | `apiMode` ref lives in `frontend/src/api/client.ts` (resolution order: `localStorage['socialseed-api-mode']` > `VITE_USE_MOCK` > default `mock`); `isMockMode()`/`setApiMode()` helpers; the exported axios wrapper `client` dispatches every call to `mockClient` (in-bundle `mockApi.ts`) or `realClient` (axios → `/api/v1`) via a reactive proxy; selector segmented Mock/Real in `UserMenu` (Data Source section, `data-testid="api-mode-mock|real"`); `uiStore.apiMode/isMockApi/setApiMode` facade; `authStore` and `LoginScreen` use `isMockMode()` |
+| **Realtime SSE client** | Implemented | `frontend/src/api/realtime.ts`: `connectSSE(path, handlers)` on native `EventSource` with exponential backoff + jitter (max 8 attempts), 45s watchdog (forced reconnect if no event/heartbeat), aggregated reactive `realtimeState` (`live/connecting/reconnecting/offline/idle`) exposed via `useRealtimeStatus()`; reads `API_URL` (same-origin `/api/v1` or `VITE_API_URL`) |
+| **Agent-log stream** | Implemented | `useAgentStream` connects to `/api/v1/issues/{id}/agent-logs/stream` in Real mode (never in mock), maps stream state → `ConnectionStatus`, reconnects on `issue.id` change; `IssueDetailView` merges REST list + SSE events into `displayLogs` with dedupe by `id` (and `timestamp|content_markdown`) |
+| **Presence (real)** | Implemented | `usePresence` in Real mode: `POST /presence` on join, 30s heartbeat, `POST /presence/leave` on unmount, `GET /presence/stream` for live viewer updates with `currentField` tracking; mock keeps the previous in-memory behavior; `watch(apiMode)` resets local state when switching back to mock |
+| **Backend SSE hub** | Implemented | `src/.../web_api/routers/realtime.py`: `RealtimeHub` (per-issue log ring buffer of 200 entries, presence registry with 90s TTL, asyncio pub/sub); registered in `routers/__init__.py`, `routes.py` and `app.py` (`prefix=/api/v1`, `app.state.realtime_hub`); endpoints `GET/POST /issues/{id}/agent-logs`, `GET /issues/{id}/agent-logs/stream`, `GET/POST /issues/{id}/presence`, `POST /issues/{id}/presence/leave`, `GET /issues/{id}/presence/stream` |
+| **SSE protocol** | Implemented | Streams send `event: connected` (+ replay payload) atomically before subscribing to live traffic, then `event: log` / `event: viewers`, with a named `event: ping` heartbeat every 15s (named event so the client watchdog never treats it as silence); `X-Accel-Buffering: no` header |
+| **nginx streaming** | Implemented | `frontend/nginx.conf` `/api/` location: `proxy_buffering off`, `proxy_cache off`, `chunked_transfer_encoding on`, `proxy_read_timeout 3600s`, `X-Accel-Buffering no` — EventSource cannot send headers, so auth relies on the existing nginx-injected `X-API-Key` |
+| **SyncStatusBadge states** | Implemented | Badge shows `sourceLabel` + `sourceLabelClass`: `Mock` (purple) / `Live` (green) / `Connecting` (blue) / `Reconnecting` (amber) / `Stream offline` (red); `data-testid="api-source-chip"`; hours/loso pending badge gated to mock (`isMockMode()`) |
+| **i18n** | Implemented | `sync.{mock,live,connecting,reconnecting,streamOffline}` + `apiMode.{title,hint,mock,real}` EN/ES |
+| **Env & docs** | Implemented | `frontend/.env.example` documents `VITE_USE_MOCK`, `VITE_API_URL` and the SSE endpoints |
+| **Verification** | Implemented | `npm run build` green (`vue-tsc -b && vite build`); `ruff check realtime.py` clean (remaining `app.py` findings pre-exist at HEAD); Docker `tasker-api`+`tasker-board` rebuilt — smoke: SSE `connected`+replay (`replayed:1`), live delivery while subscribed, `ping` at 15s, presence join/list/stream-broadcast/leave all through nginx `:19001`, mock-api `:8001` intact, UI serving new bundle `index-BSCi2qGL.js` |

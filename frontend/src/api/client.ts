@@ -1,12 +1,36 @@
 import axios, { AxiosInstance } from 'axios'
+import { ref } from 'vue'
 import * as mockApi from './mockApi'
 import { useToast } from '@/composables/useToast'
 
-// Mock mode flag - set to true to use mock data
-const USE_MOCK = true
+// API mode: mock (default) or real FastAPI backend (issue #517).
+// Resolution order: localStorage override > VITE_USE_MOCK env flag > mock.
+export type ApiMode = 'mock' | 'real'
 
-const API_URL = (window as any).__API_URL__ || '/api/v1'
-const API_KEY = (window as any).__API_KEY__ || ''
+const env = import.meta.env as unknown as Record<string, string | undefined>
+const envMock = (env.VITE_USE_MOCK ?? 'true') !== 'false'
+const storedMode = localStorage.getItem('socialseed-api-mode')
+
+export const apiMode = ref<ApiMode>(
+  storedMode === 'real' || storedMode === 'mock'
+    ? storedMode
+    : envMock
+      ? 'mock'
+      : 'real',
+)
+
+export function isMockMode(): boolean {
+  return apiMode.value === 'mock'
+}
+
+export function setApiMode(mode: ApiMode): void {
+  apiMode.value = mode
+  localStorage.setItem('socialseed-api-mode', mode)
+}
+
+const API_URL =
+  (window as unknown as { __API_URL__?: string }).__API_URL__ || env.VITE_API_URL || '/api/v1'
+const API_KEY = (window as unknown as { __API_KEY__?: string }).__API_KEY__ || ''
 
 // Mock client that intercepts requests
 const mockClient = {
@@ -226,11 +250,24 @@ realClient.interceptors.response.use(
   },
 )
 
-// Export based on mock mode
-const client = USE_MOCK ? mockClient : realClient
+// Dynamic client: dispatches each call to the mock or real client based on
+// the reactive `apiMode`, so the mode can be switched at runtime (issue #517)
+const client = {
+  defaults: realClient.defaults,
+  interceptors: realClient.interceptors,
+  get: (url: string, config?: any) => pickClient().get(url, config),
+  post: (url: string, body?: any, config?: any) => pickClient().post(url, body, config),
+  put: (url: string, body?: any, config?: any) => pickClient().put(url, body, config),
+  patch: (url: string, body?: any, config?: any) => pickClient().patch(url, body, config),
+  delete: (url: string, config?: any) => pickClient().delete(url, config),
+} as unknown as AxiosInstance
+
+function pickClient(): AxiosInstance {
+  return isMockMode() ? mockClient : realClient
+}
 
 export default client
-export { API_KEY, USE_MOCK }
+export { API_KEY, API_URL }
 
 declare global {
   interface Window {

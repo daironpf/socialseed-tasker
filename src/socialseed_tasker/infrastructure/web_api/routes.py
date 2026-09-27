@@ -33,6 +33,7 @@ from socialseed_tasker.infrastructure.web_api.routers import (
     user_router,
     commit_router,
     webhook_router,
+    realtime_router,
 )
 
 # Maintain backward compatibility for any potential internal imports of helper dependencies

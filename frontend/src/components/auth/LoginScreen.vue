@@ -37,7 +37,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
-import { USE_MOCK } from '@/api/client'
+import { isMockMode } from '@/api/client'
 
 const { t } = useI18n()
 
@@ -66,7 +66,7 @@ onUnmounted(() => {
 })
 
 function handleUnauthorized() {
-  if (!USE_MOCK) {
+  if (!isMockMode()) {
     window.location.reload()
   }
 }

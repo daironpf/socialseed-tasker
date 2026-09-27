@@ -81,6 +81,30 @@
           </div>
         </div>
 
+        <!-- Data Source (API mode) -->
+        <div class="border-b border-gray-100 px-2 py-2 dark:border-gray-700">
+          <div class="px-3 py-1 text-xs font-medium text-gray-400 dark:text-gray-500">{{ t('apiMode.title') }}</div>
+          <div class="flex gap-1 px-2 py-1">
+            <button
+              @click="uiStore.setApiMode('mock')"
+              class="flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+              :class="uiStore.apiMode === 'mock' ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700'"
+              data-testid="api-mode-mock"
+            >
+              🧪 {{ t('apiMode.mock') }}
+            </button>
+            <button
+              @click="uiStore.setApiMode('real')"
+              class="flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+              :class="uiStore.apiMode === 'real' ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700'"
+              data-testid="api-mode-real"
+            >
+              ⚡ {{ t('apiMode.real') }}
+            </button>
+          </div>
+          <div class="px-3 text-[10px] text-gray-400 dark:text-gray-500">{{ t('apiMode.hint') }}</div>
+        </div>
+
         <!-- Sound & Alerts -->
         <div class="border-b border-gray-100 px-4 py-3 dark:border-gray-700">
           <div class="mb-2 flex items-center justify-between">

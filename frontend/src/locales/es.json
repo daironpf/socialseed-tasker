@@ -923,7 +923,12 @@
   "sync": {
     "synced": "Sincronizado",
     "offlineQueued": "Offline ({count} pendientes)",
-    "syncing": "Sincronizando..."
+    "syncing": "Sincronizando...",
+    "mock": "Mock",
+    "live": "En vivo",
+    "connecting": "Conectando...",
+    "reconnecting": "Reconectando",
+    "streamOffline": "Flujo sin conexion"
   },
   "export": {
     "title": "Exportar",
@@ -1706,5 +1711,11 @@
       "sla": "SLA",
       "mention": "Menciones"
     }
+  },
+  "apiMode": {
+    "title": "Fuente de datos",
+    "hint": "Dataset mock o backend FastAPI real (/api/v1)",
+    "mock": "Mock",
+    "real": "API real"
   }
 }

@@ -922,7 +922,12 @@
   "sync": {
     "synced": "Synced",
     "offlineQueued": "Offline ({count} pending)",
-    "syncing": "Syncing..."
+    "syncing": "Syncing...",
+    "mock": "Mock",
+    "live": "Live",
+    "connecting": "Connecting...",
+    "reconnecting": "Reconnecting",
+    "streamOffline": "Stream offline"
   },
   "export": {
     "title": "Export",
@@ -1705,5 +1710,11 @@
       "sla": "SLA",
       "mention": "Mentions"
     }
+  },
+  "apiMode": {
+    "title": "Data Source",
+    "hint": "Mock dataset or real FastAPI backend (/api/v1)",
+    "mock": "Mock",
+    "real": "Real API"
   }
 }

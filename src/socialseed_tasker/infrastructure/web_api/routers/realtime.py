@@ -1,0 +1,255 @@
+"""Realtime SSE endpoints for agent log streaming and issue presence (issue #517).
+
+Provides:
+- ``GET  /issues/{id}/agent-logs``          — buffered agent log history
+- ``POST /issues/{id}/agent-logs``          — append + broadcast a log entry
+- ``GET  /issues/{id}/agent-logs/stream``   — SSE stream (replay + live + heartbeat)
+- ``GET  /issues/{id}/presence``            — current viewers (poll fallback)
+- ``POST /issues/{id}/presence``            — join / heartbeat a viewer
+- ``POST /issues/{id}/presence/leave``      — remove a viewer
+- ``GET  /issues/{id}/presence/stream``     — SSE stream of viewer snapshots
+
+State lives in an in-process :class:`RealtimeHub` stored on ``app.state.realtime_hub``.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import time
+import uuid
+from typing import Any
+
+from fastapi import APIRouter, Request
+from fastapi.responses import StreamingResponse
+
+realtime_router = APIRouter()
+
+LOG_BUFFER_SIZE = 200
+HEARTBEAT_SECONDS = 15.0
+PRESENCE_TTL_MS = 90_000
+
+_SSE_HEADERS = {
+    "Cache-Control": "no-cache, no-transform",
+    "Connection": "keep-alive",
+    "X-Accel-Buffering": "no",
+}
+
+
+def _sse(event: str, data: Any) -> str:
+    """Format a Server-Sent Event frame."""
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+def _hub(request: Request) -> RealtimeHub:
+    hub = getattr(request.app.state, "realtime_hub", None)
+    if hub is None:
+        hub = RealtimeHub()
+        request.app.state.realtime_hub = hub
+    return hub
+
+
+class RealtimeHub:
+    """In-process pub/sub hub: per-issue log buffers and presence registries.
+
+    All methods are synchronous and run on the event loop, so a
+    ``subscribe_*`` call is atomic with respect to publishers.
+    """
+
+    def __init__(self) -> None:
+        self._logs: dict[str, list[dict[str, Any]]] = {}
+        self._log_subs: dict[str, list[asyncio.Queue[dict[str, Any]]]] = {}
+        self._presence: dict[str, dict[str, dict[str, Any]]] = {}
+        self._presence_subs: dict[str, list[asyncio.Queue[list[dict[str, Any]]]]] = {}
+
+    # ------------------------------------------------------------------ logs
+
+    def append_log(self, issue_id: str, log: dict[str, Any]) -> dict[str, Any]:
+        entry: dict[str, Any] = {
+            "id": str(uuid.uuid4()),
+            "timestamp": log.get("timestamp")
+            or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "type": log.get("type", "progress"),
+            "content_markdown": log.get("content_markdown", ""),
+        }
+        if log.get("agent"):
+            entry["agent"] = log["agent"]
+        buffer = self._logs.setdefault(issue_id, [])
+        buffer.append(entry)
+        if len(buffer) > LOG_BUFFER_SIZE:
+            del buffer[:-LOG_BUFFER_SIZE]
+        for queue in self._log_subs.get(issue_id, []):
+            queue.put_nowait({"event": "log", "data": entry})
+        return entry
+
+    def replay_logs(self, issue_id: str) -> list[dict[str, Any]]:
+        return list(self._logs.get(issue_id, []))
+
+    def subscribe_logs(self, issue_id: str) -> tuple[asyncio.Queue[dict[str, Any]], list[dict[str, Any]]]:
+        """Atomically snapshot the buffer and register a live subscriber."""
+        queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
+        snapshot = list(self._logs.get(issue_id, []))
+        self._log_subs.setdefault(issue_id, []).append(queue)
+        return queue, snapshot
+
+    def unsubscribe_logs(self, issue_id: str, queue: asyncio.Queue[dict[str, Any]]) -> None:
+        subs = self._log_subs.get(issue_id, [])
+        if queue in subs:
+            subs.remove(queue)
+
+    # -------------------------------------------------------------- presence
+
+    def upsert_viewer(self, issue_id: str, payload: dict[str, Any]) -> list[dict[str, Any]]:
+        registry = self._presence.setdefault(issue_id, {})
+        user_id = str(payload.get("user_id") or uuid.uuid4())
+        viewer: dict[str, Any] = {
+            "id": user_id,
+            "username": payload.get("username") or user_id,
+            "avatar": payload.get("avatar") or "\U0001f464",
+            "type": payload.get("type") or "human",
+            "lastSeen": int(time.time() * 1000),
+        }
+        if payload.get("viewing_field"):
+            viewer["viewingField"] = payload["viewing_field"]
+        if "is_typing" in payload:
+            viewer["isTyping"] = bool(payload["is_typing"])
+        if payload.get("typing_message"):
+            viewer["typingMessage"] = payload["typing_message"]
+        registry[user_id] = viewer
+        viewers = self.viewers(issue_id)
+        self._broadcast_presence(issue_id, viewers)
+        return viewers
+
+    def remove_viewer(self, issue_id: str, user_id: str) -> list[dict[str, Any]]:
+        registry = self._presence.get(issue_id, {})
+        registry.pop(str(user_id), None)
+        viewers = self.viewers(issue_id)
+        self._broadcast_presence(issue_id, viewers)
+        return viewers
+
+    def viewers(self, issue_id: str) -> list[dict[str, Any]]:
+        registry = self._presence.get(issue_id, {})
+        now = time.time() * 1000
+        stale = [uid for uid, v in registry.items() if now - v.get("lastSeen", 0) > PRESENCE_TTL_MS]
+        for uid in stale:
+            del registry[uid]
+        return list(registry.values())
+
+    def tick_presence(self, issue_id: str) -> None:
+        """Prune stale viewers and broadcast when the snapshot changed."""
+        registry = self._presence.get(issue_id, {})
+        before = list(registry.values())
+        now = time.time() * 1000
+        stale = [uid for uid, v in registry.items() if now - v.get("lastSeen", 0) > PRESENCE_TTL_MS]
+        if not stale:
+            return
+        for uid in stale:
+            del registry[uid]
+        after = list(registry.values())
+        if after != before:
+            self._broadcast_presence(issue_id, after)
+
+    def subscribe_presence(self, issue_id: str) -> tuple[asyncio.Queue[list[dict[str, Any]]], list[dict[str, Any]]]:
+        queue: asyncio.Queue[list[dict[str, Any]]] = asyncio.Queue()
+        snapshot = self.viewers(issue_id)
+        self._presence_subs.setdefault(issue_id, []).append(queue)
+        return queue, snapshot
+
+    def unsubscribe_presence(self, issue_id: str, queue: asyncio.Queue[list[dict[str, Any]]]) -> None:
+        subs = self._presence_subs.get(issue_id, [])
+        if queue in subs:
+            subs.remove(queue)
+
+    def _broadcast_presence(self, issue_id: str, viewers: list[dict[str, Any]]) -> None:
+        for queue in self._presence_subs.get(issue_id, []):
+            queue.put_nowait(viewers)
+
+
+# --------------------------------------------------------------------- logs
+
+
+@realtime_router.get("/issues/{issue_id}/agent-logs")
+async def get_agent_logs(issue_id: str, request: Request) -> dict[str, Any]:
+    hub = _hub(request)
+    return {"data": {"issue_id": issue_id, "logs": hub.replay_logs(issue_id)}}
+
+
+@realtime_router.post("/issues/{issue_id}/agent-logs")
+async def publish_agent_log(issue_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
+    hub = _hub(request)
+    entry = hub.append_log(issue_id, payload)
+    return {"data": entry}
+
+
+@realtime_router.get("/issues/{issue_id}/agent-logs/stream")
+async def stream_agent_logs(issue_id: str, request: Request) -> StreamingResponse:
+    hub = _hub(request)
+    queue, snapshot = hub.subscribe_logs(issue_id)
+
+    async def generate():
+        try:
+            yield _sse(
+                "connected",
+                {"issue_id": issue_id, "replayed": len(snapshot)},
+            )
+            for entry in snapshot:
+                yield _sse("log", entry)
+            while True:
+                if await request.is_disconnected():
+                    return
+                try:
+                    item = await asyncio.wait_for(queue.get(), timeout=HEARTBEAT_SECONDS)
+                except asyncio.TimeoutError:
+                    yield _sse("ping", {"ts": int(time.time() * 1000)})
+                    continue
+                yield _sse(item["event"], item["data"])
+        finally:
+            hub.unsubscribe_logs(issue_id, queue)
+
+    return StreamingResponse(generate(), media_type="text/event-stream", headers=_SSE_HEADERS)
+
+
+# --------------------------------------------------------------- presence
+
+
+@realtime_router.get("/issues/{issue_id}/presence")
+async def get_presence(issue_id: str, request: Request) -> dict[str, Any]:
+    hub = _hub(request)
+    return {"data": {"viewers": hub.viewers(issue_id)}}
+
+
+@realtime_router.post("/issues/{issue_id}/presence")
+async def upsert_presence(issue_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
+    hub = _hub(request)
+    return {"data": {"viewers": hub.upsert_viewer(issue_id, payload)}}
+
+
+@realtime_router.post("/issues/{issue_id}/presence/leave")
+async def leave_presence(issue_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
+    hub = _hub(request)
+    return {"data": {"viewers": hub.remove_viewer(issue_id, str(payload.get("user_id", "")))}}
+
+
+@realtime_router.get("/issues/{issue_id}/presence/stream")
+async def stream_presence(issue_id: str, request: Request) -> StreamingResponse:
+    hub = _hub(request)
+    queue, snapshot = hub.subscribe_presence(issue_id)
+
+    async def generate():
+        try:
+            yield _sse("connected", {"issue_id": issue_id})
+            yield _sse("viewers", {"viewers": snapshot})
+            while True:
+                if await request.is_disconnected():
+                    return
+                try:
+                    viewers = await asyncio.wait_for(queue.get(), timeout=HEARTBEAT_SECONDS)
+                except asyncio.TimeoutError:
+                    hub.tick_presence(issue_id)
+                    yield _sse("ping", {"ts": int(time.time() * 1000)})
+                    continue
+                yield _sse("viewers", {"viewers": viewers})
+        finally:
+            hub.unsubscribe_presence(issue_id, queue)
+
+    return StreamingResponse(generate(), media_type="text/event-stream", headers=_SSE_HEADERS)

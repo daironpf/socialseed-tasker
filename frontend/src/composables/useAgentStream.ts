@@ -1,5 +1,7 @@
-import { ref, onUnmounted } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import type { AgentLog } from '@/types'
+import { connectSSE, type SSEHandle } from '@/api/realtime'
+import { isMockMode, apiMode } from '@/api/client'
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'reconnecting'
 
@@ -14,85 +16,71 @@ export function useAgentStream() {
   const status = ref<ConnectionStatus>('disconnected')
   const error = ref<string | null>(null)
 
-  let eventSource: EventSource | null = null
-  let reconnectTimer: ReturnType<typeof setTimeout> | null = null
-  let reconnectAttempts = 0
-  const MAX_RECONNECT_ATTEMPTS = 5
-  const BASE_DELAY = 1000
+  let handle: SSEHandle | null = null
+  let currentIssueId: string | null = null
 
   function connect(issueId: string) {
-    if (eventSource) {
-      disconnect()
-    }
+    disconnect()
+    currentIssueId = issueId
 
-    status.value = 'connecting'
-    error.value = null
-    reconnectAttempts = 0
-
-    try {
-      const apiUrl = (window as any).__API_URL__ || '/api/v1'
-      const url = `${apiUrl}/issues/${issueId}/agent-logs/stream`
-
-      eventSource = new EventSource(url)
-
-      eventSource.onopen = () => {
-        status.value = 'connected'
-        reconnectAttempts = 0
-      }
-
-      eventSource.addEventListener('log', (event) => {
-        try {
-          const data = JSON.parse(event.data) as AgentLog
-          logs.value.push(data)
-        } catch {
-          // ignore parse errors
-        }
-      })
-
-      eventSource.addEventListener('done', () => {
-        status.value = 'disconnected'
-        eventSource?.close()
-        eventSource = null
-      })
-
-      eventSource.onerror = () => {
-        status.value = 'disconnected'
-        eventSource?.close()
-        eventSource = null
-        attemptReconnect(issueId)
-      }
-    } catch {
+    // Mock mode: the view drives logs with useMockStream, no network stream.
+    if (isMockMode()) {
       status.value = 'disconnected'
-      attemptReconnect(issueId)
-    }
-  }
-
-  function attemptReconnect(issueId: string) {
-    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-      error.value = 'Max reconnection attempts reached'
       return
     }
 
-    status.value = 'reconnecting'
-    const delay = BASE_DELAY * Math.pow(2, reconnectAttempts)
-    reconnectAttempts++
-
-    reconnectTimer = setTimeout(() => {
-      connect(issueId)
-    }, delay)
+    error.value = null
+    handle = connectSSE(
+      `/issues/${issueId}/agent-logs/stream`,
+      {
+        onEvent: (type, data) => {
+          if (type === 'log') {
+            logs.value.push(data as AgentLog)
+          } else if (type === 'error') {
+            error.value = typeof data === 'string' ? data : 'Stream error'
+          }
+        },
+        onState: (state) => {
+          switch (state) {
+            case 'connecting':
+              status.value = 'connecting'
+              break
+            case 'live':
+              status.value = 'connected'
+              break
+            case 'reconnecting':
+              status.value = 'reconnecting'
+              break
+            case 'offline':
+              status.value = 'disconnected'
+              error.value = error.value || 'Max reconnection attempts reached'
+              break
+            default:
+              status.value = 'disconnected'
+          }
+        },
+      },
+      { events: ['connected', 'log', 'done', 'ping', 'error'] },
+    )
   }
 
   function disconnect() {
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer)
-      reconnectTimer = null
-    }
-    if (eventSource) {
-      eventSource.close()
-      eventSource = null
-    }
+    handle?.close()
+    handle = null
+    currentIssueId = null
     status.value = 'disconnected'
   }
+
+  // Runtime data-source switch (mock <-> real), issue #517
+  watch(apiMode, () => {
+    if (isMockMode()) {
+      handle?.close()
+      handle = null
+      status.value = 'disconnected'
+    } else if (currentIssueId) {
+      connect(currentIssueId)
+    }
+  })
 
   function clearLogs() {
     logs.value = []
@@ -103,7 +91,9 @@ export function useAgentStream() {
   }
 
   onUnmounted(() => {
-    disconnect()
+    handle?.close()
+    handle = null
+    status.value = 'disconnected'
   })
 
   return {

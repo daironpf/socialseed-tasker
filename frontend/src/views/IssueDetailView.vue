@@ -38,10 +38,10 @@
         >
           {{ tab.label }}
           <span
-            v-if="tab.key === 'reasoning' && agentLogs.length"
+            v-if="tab.key === 'reasoning' && displayLogs.length"
             class="ml-1.5 rounded-full bg-purple-100 px-1.5 py-0.5 text-[10px] font-bold text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
           >
-            {{ agentLogs.length }}
+            {{ displayLogs.length }}
           </span>
         </button>
       </div>
@@ -209,7 +209,7 @@
     <!-- AI REASONING TAB -->
     <div v-else-if="activeTab === 'reasoning'" class="p-6">
       <AgentLogStream
-        :logs="agentLogs"
+        :logs="displayLogs"
         :status="streamStatus"
         :is-mock-active="mockStream.isRunning.value"
         :is-mock-paused="mockStream.isPaused.value"
@@ -344,7 +344,7 @@
         </div>
 
         <TokenMetrics
-          v-if="agentLogs.length > 0"
+          v-if="displayLogs.length > 0"
           model="claude-3.5-sonnet"
           :prompt-tokens="estimatedPromptTokens"
           :completion-tokens="estimatedCompletionTokens"
@@ -439,6 +439,7 @@ import { IssueStatus } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { fetchAgentLogs } from '@/api/agentLogsApi'
 import { fetchUsers } from '@/api/usersApi'
+import { isMockMode } from '@/api/client'
 import MarkdownRenderer from '@/components/analysis/MarkdownRenderer.vue'
 import RichTextEditor from '@/components/ui/RichTextEditor.vue'
 import DiffViewer from '@/components/ui/DiffViewer.vue'
@@ -536,9 +537,32 @@ const agentLogs = ref<AgentLog[]>([])
 const logsLoading = ref(false)
 const users = ref<User[]>([])
 
-const { status: streamStatus, disconnect: disconnectStream } = useAgentStream()
+const { status: streamStatus, logs: streamLogs, connect: connectStream, disconnect: disconnectStream } = useAgentStream()
 const mockStream = useMockStream()
 const { viewers, typingAgents, hasConflict } = usePresence(props.issue.id)
+
+// REST history + live SSE entries, deduplicated (issue #517)
+const displayLogs = computed<AgentLog[]>(() => {
+  const seen = new Set<string>()
+  const out: AgentLog[] = []
+  for (const log of [...agentLogs.value, ...streamLogs.value]) {
+    const key = `${log.timestamp}|${log.content_markdown}`
+    if (!seen.has(key)) {
+      seen.add(key)
+      out.push(log)
+    }
+  }
+  return out
+})
+
+watch(
+  () => props.issue.id,
+  (newId, oldId) => {
+    if (newId === oldId) return
+    disconnectStream()
+    connectStream(newId)
+  },
+)
 
 const expandedFiles = ref(new Set<number>())
 
@@ -591,12 +615,12 @@ function onGithubSyncStatusUpdate(status: 'SYNCED' | 'PENDING_PUSH' | 'ERROR') {
   }
 }
 
-const progressLogs = computed(() => agentLogs.value.filter(l => l.type === 'progress'))
-const fileLogs = computed(() => agentLogs.value.filter(l => l.type === 'files'))
-const debtLogs = computed(() => agentLogs.value.filter(l => l.type === 'debt'))
+const progressLogs = computed(() => displayLogs.value.filter(l => l.type === 'progress'))
+const fileLogs = computed(() => displayLogs.value.filter(l => l.type === 'files'))
+const debtLogs = computed(() => displayLogs.value.filter(l => l.type === 'debt'))
 
 const estimatedPromptTokens = computed(() => {
-  return agentLogs.value.reduce((sum, log) => {
+  return displayLogs.value.reduce((sum, log) => {
     const text = log.content_markdown || ''
     return sum + Math.ceil(text.length / 4)
   }, 0)
@@ -740,19 +764,20 @@ function onModify(params: string) {
 watch(activeTab, (tab) => {
   if (tab === 'reasoning' || tab === 'progress') {
     loadLogs()
-    if (props.issue.agent_working) {
+    if (isMockMode() && props.issue.agent_working) {
       mockStream.start()
     }
   }
 })
 
 onMounted(async () => {
+  connectStream(props.issue.id)
   try {
     users.value = await fetchUsers()
   } catch {
     users.value = []
   }
-  if (props.issue.agent_working && activeTab.value === 'reasoning') {
+  if (isMockMode() && props.issue.agent_working && activeTab.value === 'reasoning') {
     mockStream.start()
   }
 })
