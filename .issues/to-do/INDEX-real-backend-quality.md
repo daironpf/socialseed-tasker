@@ -16,7 +16,7 @@
 |---|---|---|---|---|---|
 | #517 | Backend Integration & Live WebSocket/SSE Architecture | CRITICAL | feat / architecture | DONE (→ `.issues/done/`) | [ISSUE-01] |
 | #518 | Test Suite & CI/CD Pipeline (Frontend) | HIGH | infra / quality | DONE (→ `.issues/done/`) | [ISSUE-02] |
-| #519 | OAuth2 / SSO Authentication & Role-Based Route Protection | HIGH | feat / security | TODO | [ISSUE-03] |
+| #519 | OAuth2 / SSO Authentication & Role-Based Route Protection | HIGH | feat / security | DONE (→ `.issues/done/`) | [ISSUE-03] |
 | #520 | Real Persistence & Auto-Healing Pipeline Engine | MEDIUM | feat / core | TODO | [ISSUE-04] |
 | #521 | Policy Sandbox Rules Engine | MEDIUM | feat / governance | TODO | [ISSUE-05] |
 | #522 | Bidirectional Real Sync with GitHub | MEDIUM | feat / integration | TODO | [ISSUE-06] |
@@ -34,7 +34,7 @@
 - **#518 Tests & CI (DONE):** Vitest + Vue Test Utils (81 unit tests), Playwright E2E (8 tests), ESLint flat config, job `frontend-ci.yml` en GitHub Actions
 
 ### Security
-- **#519 Auth & RBAC:** login JWT/OAuth2 (GitHub/Google), rotación de refresh tokens, guards de rutas y acciones por rol
+- **#519 Auth & RBAC (DONE):** login JWT + OAuth2 GitHub/Google (PKCE), rotación de refresh tokens con reuse detection, guards de rutas/sidebar/acciones por rol (`can()`), logout que revoca en backend, i18n EN/ES
 
 ### Core
 - **#520 Auto-Healing Real:** ejecutor real de pipelines, cancel/restart de etapas en vivo, descarga de `.patch` aplicados
@@ -81,7 +81,8 @@
 
 - [x] **#517** implemented — DONE 2026-09-26 (moved to `.issues/done/`, `features.md` §62)
 - [x] **#518** implemented — DONE 2026-09-27 (moved to `.issues/done/`, `features.md` §63)
-- [ ] Remaining 6 issues implemented in `.issues/to-do` order (or by priority)
+- [x] **#519** implemented — DONE 2026-09-27 (moved to `.issues/done/`, `features.md` §64)
+- [ ] Remaining 5 issues implemented in `.issues/to-do` order (or by priority)
 - [ ] Each issue: `npm run build` green, i18n EN+ES, `features.md` updated
 - [ ] Move issue file to `.issues/done/` with `Status: DONE` when complete
 - [ ] Commit message references `#NNN`

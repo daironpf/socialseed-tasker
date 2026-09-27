@@ -71,6 +71,7 @@
 61. [Dashboard Section Layout & Advanced Analytics Modules (Board)](#61-dashboard-section-layout--advanced-analytics-modules-board)
  62. [Backend Integration & Live SSE Architecture (mock/real toggle)](#62-backend-integration--live-sse-architecture-mockreal-toggle)
  63. [Test Suite, Linting & Frontend CI/CD](#63-test-suite-linting--frontend-cicd)
+ 64. [OAuth2/SSO Authentication & Role-Based Route Protection](#64-oauth2sso-authentication--role-based-route-protection)
 
 ---
 
@@ -1304,7 +1305,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 ### Not Implemented
 - Real backend integration is opt-in only (mock mode is the default; toggle via UserMenu → Data Source → Real switches REST calls to `/api/v1`, not all endpoints verified against the real API)
 - No WebSocket transport (SSE over HTTP only, for agent-logs and presence; other "live" views remain mock-driven)
-- No real user authentication (API key only; mock auto-auth)
+- OAuth2/SSO login requires `GITHUB_*`/`GOOGLE_*` client env vars on the server (API-key login works out of the box); refresh token lives in localStorage (not an httpOnly cookie)
 - No real multi-user concurrent editing
 - No actual PII remediation (masking UI only)
 - No real code graph extraction (mock data only)
@@ -1587,3 +1588,28 @@ Issue #518. First quality gate for the frontend: unit tests, E2E tests, a linter
 | **Fixes de código** | Implemented | `useMockStream.ts` (`let`→`const` en `tokenCounter`, `default` en el switch de `intervalMs`), `piiDetector.ts` (escapes `\-` innecesarios en el regex de API keys); spacing auto-fixable en `FloatingChat`/`GitHubSyncCard`/`DashboardSystemView`/`IssueDetailView` |
 | **i18n** | Not needed | Los tests usan los textos EN existentes (no se añadieron claves) |
 | **Verification** | Implemented | `npm run lint` ✓ (0 errores), `npm test` ✓ (81/81), `npm run build` ✓, `npm run test:e2e` ✓ (8/8 en dos corridas consecutivas) |
+
+---
+
+## 64. OAuth2/SSO Authentication & Role-Based Route Protection
+
+Issue #519. Real login for the frontend: JWT sessions with rotating refresh tokens, GitHub/Google OAuth2 (PKCE), API-key fallback and role-based protection of routes, sidebar items and actions.
+
+| Feature | Status | Details |
+|---|---|---|
+| **JWT issue & verify (HS256)** | Implemented | `src/socialseed_tasker/auth/tokens.py`, stdlib puro (`hmac`/`hashlib`/`base64`, sin dependencias nuevas): access 900s (`TASKER_JWT_ACCESS_TTL`), refresh 604800s (`TASKER_JWT_REFRESH_TTL`), secret `TASKER_JWT_SECRET`; claims `sub/username/role/permissions/typ/jti` |
+| **Refresh rotation + reuse detection** | Implemented | jtis activos en registro in-memory por subject; `POST /auth/refresh` descarta el jti viejo y emite uno nuevo; presentar un refresh ya rotado revoca todos los jtis del subject (fuerza re-login); logout revoca el jti presentado |
+| **Auth endpoints** | Implemented | `src/.../routers/auth.py` (`/api/v1/auth/`): `POST login` (API key → JWT + user; reutiliza `InMemoryAuthProvider` de `TASKER_AUTH_USERS`/`auth/users.json`; rol derivado de permisos: `admin`→ADMIN, `create/delete:issue`→DEVELOPER, resto VIEWER), `POST refresh`, `POST logout`, `GET me`, `GET oauth/{provider}/authorize` (state + PKCE S256, TTL 600s), `GET oauth/{provider}/callback` (code exchange → perfil GitHub/Google → redirect `TASKER_FRONTEND_URL/auth/oauth-callback?code=` con código one-time 60s; `TASKER_AUTH_ADMIN_EMAILS` promueve a ADMIN), `POST exchange`; sin `GITHUB_*`/`GOOGLE_*` → 403 `oauth_not_configured:{provider}` |
+| **Middleware** | Implemented | `app.py`: salta `/api/v1/auth/*`; `X-API-Key` intacto para CLI/SSE; un `Authorization: Bearer` distinto de la API key se valida como JWT (`verify_access`) → 401 solo si tampoco es JWT válido; `/health` y docs siguen abiertos |
+| **Session holder** | Implemented | `frontend/src/api/authSession.ts`: access en RAM, refresh en `localStorage['tasker_refresh_token']`, user en `tasker_session_user`, auto-refresh programado 60s antes de expirar, `clearSession()`; sin imports de axios/Pinia (evita ciclos de módulos) |
+| **Auth API client** | Implemented | `frontend/src/api/authApi.ts` (axios propio, sin `X-API-Key`): `login/refresh/logout/me/exchange/startOAuth`, refresh **single-flight** (promesa compartida entre timer e interceptor), `restoreSession(legacyKey)` al arrancar (refresh guardado → API key legada/env); registra el handler de refresh en el holder |
+| **authStore RBAC** | Implemented | `stores/authStore.ts` (rewrite): `initSession()` idempotente (mock → usuario demo ADMIN en memoria; real → `restoreSession`), `login`/`loginOAuth`/`completeOAuth`/`logout`, `can(action)`→permiso backend (`issue.create/edit/kill`→`create:issue`, `issue.delete`→`delete:issue`, `hitl.approve`/`user.manage`/`settings.manage`/`admin.reset`→`admin`), `hasRole`/`rolesAllowed` con rango ADMIN≥DEVELOPER≥VIEWER; **en mock `can()` autoriza siempre** (demo auto-auth intacta); `auth:unauthorized` cierra la sesión → overlay de login |
+| **Client interceptors** | Implemented | `client.ts`: request añade `Bearer` en modo real (excepto `/auth/`); response 401 → `refresh()` + retry 1× (marcador `__retried`, token nuevo gracias al interceptor de request) → si el refresh falla, limpia sesión y emite `auth:unauthorized`; los errores ≥400 siguen con toast |
+| **Route guards** | Implemented | `router.beforeEach`: `await initSession()` + `meta.roles` en `/users`, `/organization`, `/audit-log`, `/constraints` → redirect `/board` con toast `auth.forbidden`; nueva ruta `/auth/oauth-callback` (`AuthCallbackView` completa el intercambio y redirige a `/board`) |
+| **Sidebar filtering** | Implemented | `Sidebar.vue` filtra items con `useAuthGuard().canRoute(path)` (resuelve `meta.roles` vía `router.resolve`); grupos que quedan vacíos se ocultan |
+| **Action gating** | Implemented | `IssueCard` kill switch → `can('issue.kill')`; `HITLCommandCenter` approve/modify/reject → `can('hitl.approve')`; `IssueDetailView` selects de status/priority/assignee → `can('issue.edit')` (con estilo `disabled` visible) |
+| **Login screen & menu** | Implemented | `LoginScreen.vue`: botones GitHub/Google (`data-testid="oauth-github|google"`), divisor "or continue with API key", formulario API key existente con busy/error (`data-testid="login-submit|login-error|login-clear"`); errores traducidos desde `detail` del backend (401 key inválida, 403 oauth sin configurar); `UserMenu` muestra username + rol reales (`profile.roles.*`) y `logout()` (revoca refresh en backend + limpia sesión + reload) |
+| **i18n** | Implemented | `auth.{github,google,orContinue,invalidKey,loginFailed,oauthError,oauthNotConfigured,forbidden}` EN/ES |
+| **Tests** | Implemented | `authStore.spec.ts` (10 tests): auto-auth mock, restore/login/API key legada, permisos de admin/developer/viewer, `rolesAllowed` por ruta, errores traducidos (key inválida + oauth sin configurar), exchange OAuth |
+| **Verification** | Implemented | Frontend: `npm test` ✓ (91/91), `npm run lint` ✓ (0 errores/2 warnings preexistentes), `npm run build` ✓ (vue-tsc + vite), `npm run test:e2e` ✓ (8/8). Backend: `ruff`+`mypy` limpios en los ficheros nuevos; `app.py` ruff 34 (baseline 35) y mypy 78 (baseline 79), delta no positivo; smoke `TestClient` 19/19 (middleware 401/200 con API key y Bearer JWT, login admin/viewer, `/auth/me`, rotación de refresh, reuse detection, logout, token adulterado, oauth 403 sin env, `/health` abierto); `pytest -k "not integration"` 1009 passed / 3 failed (las 3 preexistentes en HEAD, verificadas con stash: `test_delivery_retry` + 2 de `workers/test_tasks_unit`) y `tests/api/test_flags_api_unit.py` 8/8 (2 fallos preexistentes corregidos: fixture `TASKER_AUTH_ENABLED=true` + import de `HTTPException` en `_require_admin`) |
+| **Docker review** | Implemented | `docker-compose.yml`: `TASKER_AUTH_ENABLED=true`, `TASKER_JWT_SECRET`, `TASKER_FRONTEND_URL`, `TASKER_API_KEY=test-token`; fix `[tool.setuptools.package-data]` `auth/*.json` en `pyproject.toml` (el wheel no incluía `users.json`); `_require_admin` acepta ahora Bearer JWT (claims firmados `role`/`permissions`) además de la API key cruda; 4 contenedores healthy; smoke en :19001: login admin 200/ADMIN/6 perms/900s, login reader 200/VIEWER/2, key mala 401, `/admin/flags` sin Bearer 403 / con JWT admin 200 / con JWT reader 403, refresh rota (token nuevo), whoami con JWT 200 `authenticated=true`, UI sirve bundle nuevo |
