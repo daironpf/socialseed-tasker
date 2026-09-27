@@ -12,6 +12,7 @@ from socialseed_tasker.infrastructure.web_api.routers import (
     agent_router,
     ai_search_router,
     analysis_router,
+    auth_router,
     code_graph_router,
     components_dep_router,
     components_router,

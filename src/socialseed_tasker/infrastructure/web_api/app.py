@@ -168,6 +168,14 @@ def create_app(
     api_key = os.getenv("TASKER_API_KEY")
     auth_enabled = os.getenv("TASKER_AUTH_ENABLED", "false").lower() == "true"
 
+    def _verify_jwt(token: str) -> bool:
+        try:
+            from socialseed_tasker.auth.tokens import verify_access
+
+            return verify_access(token) is not None
+        except Exception:
+            return False
+
     @app.middleware("http")
     async def api_key_auth_middleware(request: Request, call_next):
         # Skip auth if no API key configured or auth disabled in development
@@ -177,12 +185,18 @@ def create_app(
         if request.url.path in ("/health", "/docs", "/openapi.json", "/redoc"):
             return await call_next(request)
 
+        # Login/refresh/OAuth endpoints issue the credentials themselves (issue #519)
+        if request.url.path.startswith("/api/v1/auth/"):
+            return await call_next(request)
+
         provided_key = request.headers.get("X-API-Key")
-        if provided_key is None:
-            auth_header = request.headers.get("Authorization", "")
-            if auth_header.startswith("Bearer "):
-                provided_key = auth_header[7:]
-        if provided_key != api_key:
+        auth_header = request.headers.get("Authorization", "")
+        bearer = auth_header[7:] if auth_header.startswith("Bearer ") else None
+        if provided_key is None and bearer is not None:
+            provided_key = bearer
+        # A Bearer token may be a short-lived JWT from /auth/login instead of
+        # the raw API key; accept it when the signature checks out.
+        if provided_key != api_key and (bearer is None or not _verify_jwt(bearer)):
             return JSONResponse(
                 status_code=401,
                 content={"error": {"code": "UNAUTHORIZED", "message": "Invalid or missing API key"}},
@@ -361,6 +375,7 @@ def create_app(
         webhook_router,
         secrets_router,
         realtime_router,
+        auth_router,
     )
     from socialseed_tasker.events.routes import webhook_router as events_webhook_router
 
@@ -390,6 +405,7 @@ def create_app(
     app.include_router(secrets_router, prefix="", tags=["secrets"])
     app.include_router(tenants_router, prefix="/api/v1", tags=["tenants"])
     app.include_router(realtime_router, prefix="/api/v1", tags=["realtime"])
+    app.include_router(auth_router, prefix="/api/v1", tags=["auth"])
     app.include_router(events_webhook_router, tags=["webhooks"])
 
     from socialseed_tasker.data_catalog.api import router as registry_router
@@ -530,6 +546,10 @@ def create_app(
         auth = request.headers.get("authorization")
         if auth and auth.lower().startswith("bearer "):
             token = auth.split(" ", 1)[1]
+            from socialseed_tasker.auth.tokens import verify_access
+            claims = verify_access(token)
+            if claims:
+                return {"username": claims.get("username"), "authenticated": True}
             from socialseed_tasker.auth.auth import load_auth_provider
             provider = load_auth_provider()
             user_id = provider.verify_token(token)
@@ -625,18 +645,25 @@ def create_app(
     def _require_admin(request: Request):
         if not auth_enabled:
             return None
+        from fastapi import HTTPException
         from socialseed_tasker.auth.auth import load_auth_provider
         from socialseed_tasker.cli.wiring import build_default_container
         auth = request.headers.get("authorization", "")
-        user_id = None
-        if auth.lower().startswith("bearer "):
-            user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
-        if not user_id:
-            raise HTTPException(status_code=403, detail="forbidden")
-        container = build_default_container()
-        if not container.rbac.has_permission(user_id, "admin"):
-            raise HTTPException(status_code=403, detail="forbidden")
-        return container
+        token = auth.split(" ", 1)[1] if auth.lower().startswith("bearer ") else None
+        if token:
+            user_id = load_auth_provider().verify_token(token)
+            if user_id:
+                container = build_default_container()
+                if not container.rbac.has_permission(user_id, "admin"):
+                    raise HTTPException(status_code=403, detail="forbidden")
+                return container
+            # Frontend sessions carry a signed JWT whose role/permissions were
+            # derived from the same user store at login (issue #519).
+            from socialseed_tasker.auth.tokens import verify_access
+            claims = verify_access(token)
+            if claims and (claims.get("role") == "ADMIN" or "admin" in (claims.get("permissions") or [])):
+                return build_default_container()
+        raise HTTPException(status_code=403, detail="forbidden")
 
     # Admin feature-flag endpoints
     @app.get("/api/v1/admin/flags")

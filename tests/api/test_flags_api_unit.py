@@ -8,6 +8,13 @@ from fastapi.testclient import TestClient
 from socialseed_tasker.infrastructure.web_api.app import create_app
 
 
+@pytest.fixture(autouse=True)
+def enable_admin_auth(monkeypatch):
+    # _require_admin skips enforcement when TASKER_AUTH_ENABLED is off; these
+    # tests assert the enforced behavior, so opt in explicitly.
+    monkeypatch.setenv("TASKER_AUTH_ENABLED", "true")
+
+
 @pytest.fixture
 def mock_container():
     container = MagicMock()

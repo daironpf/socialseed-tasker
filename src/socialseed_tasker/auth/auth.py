@@ -1,14 +1,19 @@
 from __future__ import annotations
-import os
+
 import json
-from typing import Optional, Dict, Protocol
+import os
+from typing import Any, Protocol
+
 
 class AuthProvider(Protocol):
-    def verify_token(self, token: str) -> Optional[str]:
+    def verify_token(self, token: str) -> str | None:
+        ...
+
+    def get_user_info(self, user_id: str) -> dict[str, Any] | None:
         ...
 
 class InMemoryAuthProvider:
-    def __init__(self, users: Optional[Dict[str, Dict]] = None) -> None:
+    def __init__(self, users: dict[str, dict[str, Any]] | None = None) -> None:
         if users is not None:
             self._users = users
         else:
@@ -18,7 +23,7 @@ class InMemoryAuthProvider:
             else:
                 path = os.path.join(os.path.dirname(__file__), "users.json")
                 if os.path.exists(path):
-                    with open(path, "r", encoding="utf-8") as fh:
+                    with open(path, encoding="utf-8") as fh:
                         self._users = json.load(fh)
                 else:
                     self._users = {}
@@ -29,8 +34,11 @@ class InMemoryAuthProvider:
             if token:
                 self._token_map[token] = uid
 
-    def verify_token(self, token: str) -> Optional[str]:
+    def verify_token(self, token: str) -> str | None:
         return self._token_map.get(token)
+
+    def get_user_info(self, user_id: str) -> dict[str, Any] | None:
+        return self._users.get(user_id)
 
 def load_auth_provider() -> AuthProvider:
     provider = os.getenv("TASKER_AUTH_PROVIDER", "inmemory")

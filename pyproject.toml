@@ -116,6 +116,7 @@ socialseed_tasker = [
     "assets/templates/skills/**/*",
     "assets/templates/configs/**/*",
     "assets/frontend/**/*",
+    "auth/*.json",
 ]
 
 [project.scripts]
