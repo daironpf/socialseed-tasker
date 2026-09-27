@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (prioridad absoluta a UI/UX Enterprise sobre API mockeada)
 **Created:** 2026-09-24
-**Status:** TODO
+**Status:** DONE (2026-09-24/26 — #509–#516 verificadas en `.issues/done`)
 
 > Las issues de `notas.md` usaban números #501–#508, ya ocupados en `.issues/done`.
 > Se renumeraron a **#509–#516** conservando el orden y contenido del plan original.
@@ -13,14 +13,14 @@
 
 | # | Issue | Priority | Type | Status | notas.md |
 |---|---|---|---|---|---|
-| #509 | Multi-Tenancy & Enterprise Organization Management (Mock-Enabled) | CRITICAL | feat / enterprise | TODO | #501 |
-| #510 | Advanced Agent Governance, RBAC & Granular HITL Approval UI | HIGH | feat / governance | TODO | #502 |
-| #511 | Interactive Graph Visualization with Mock Graph Exploration & Filters | HIGH | feat / visualization | TODO | #503 |
-| #512 | Comprehensive Audit Log, Compliance & PII Redaction Suite | HIGH | feat / compliance | TODO | #504 |
-| #513 | Mock Agent Simulator & Custom Agent Builder Studio | MEDIUM | feat / agents | TODO | #505 |
-| #514 | Custom Dashboards, Reporting Engine & SLA Metric Tracking | MEDIUM | feat / analytics | TODO | #506 |
-| #515 | Offline First Capabilities & Mock Sync Queue Management | MEDIUM | feat / ux | TODO | #507 |
-| #516 | UI Sound Effects, Notifications Center & Toast Theme System | LOW | feat / polish | TODO | #508 |
+| #509 | Multi-Tenancy & Enterprise Organization Management (Mock-Enabled) | CRITICAL | feat / enterprise | DONE | #501 |
+| #510 | Advanced Agent Governance, RBAC & Granular HITL Approval UI | HIGH | feat / governance | DONE | #502 |
+| #511 | Interactive Graph Visualization with Mock Graph Exploration & Filters | HIGH | feat / visualization | DONE | #503 |
+| #512 | Comprehensive Audit Log, Compliance & PII Redaction Suite | HIGH | feat / compliance | DONE | #504 |
+| #513 | Mock Agent Simulator & Custom Agent Builder Studio | MEDIUM | feat / agents | DONE | #505 |
+| #514 | Custom Dashboards, Reporting Engine & SLA Metric Tracking | MEDIUM | feat / analytics | DONE | #506 |
+| #515 | Offline First Capabilities & Mock Sync Queue Management | MEDIUM | feat / ux | DONE | #507 |
+| #516 | UI Sound Effects, Notifications Center & Toast Theme System | LOW | feat / polish | DONE | #508 |
 
 ---
 
@@ -78,7 +78,7 @@
 
 ## Release Checklist (backlog)
 
-- [ ] 8 issues implemented in `.issues/to-do` order (or by priority)
-- [ ] Each issue: `npm run build` green, i18n EN+ES, `features.md` updated
-- [ ] Move issue file to `.issues/done/` with `Status: DONE` when complete
-- [ ] Commit message references `#NNN`
+- [x] 8 issues implemented in `.issues/to-do` order (or by priority)
+- [x] Each issue: `npm run build` green, i18n EN+ES, `features.md` updated
+- [x] Move issue file to `.issues/done/` with `Status: DONE` when complete
+- [x] Commit message references `#NNN`
