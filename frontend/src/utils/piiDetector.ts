@@ -11,7 +11,7 @@ export interface PIIDetection {
 }
 
 const PATTERNS: { category: PIICategory; label: string; severity: 'critical' | 'warning' | 'info'; regex: RegExp; mask?: (m: string) => string }[] = [
-  { category: 'api_key', label: 'API Key', severity: 'critical', regex: /\b(sk-[a-zA-Z0-9]{20,}|AKIA[0-9A-Z]{16}|ghp_[a-zA-Z0-9]{36}|glpat-[a-zA-Z0-9\-]{20,}|xox[bpsa]-[a-zA-Z0-9\-]+)\b/g },
+  { category: 'api_key', label: 'API Key', severity: 'critical', regex: /\b(sk-[a-zA-Z0-9]{20,}|AKIA[0-9A-Z]{16}|ghp_[a-zA-Z0-9]{36}|glpat-[a-zA-Z0-9-]{20,}|xox[bpsa]-[a-zA-Z0-9-]+)\b/g },
   { category: 'jwt', label: 'JWT Token', severity: 'critical', regex: /\beyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\b/g },
   { category: 'private_key', label: 'Private Key', severity: 'critical', regex: /-----BEGIN (RSA |EC )?PRIVATE KEY-----/g },
   { category: 'password', label: 'Password', severity: 'critical', regex: /\b(password|passwd|pwd)\s*[:=]\s*["']?[^\s"']{6,}["']?/gi },

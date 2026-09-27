@@ -51,7 +51,7 @@ export function useMockStream(options: MockStreamOptions = {}) {
   const currentIndex = ref(0)
 
   let intervalId: ReturnType<typeof setInterval> | null = null
-  let tokenCounter = ref(0)
+  const tokenCounter = ref(0)
 
   const BASE_INTERVAL_MS = 2000
 
@@ -60,6 +60,7 @@ export function useMockStream(options: MockStreamOptions = {}) {
       case '1x': return BASE_INTERVAL_MS
       case '2x': return BASE_INTERVAL_MS / 2
       case '5x': return BASE_INTERVAL_MS / 5
+      default: return BASE_INTERVAL_MS
     }
   })
 

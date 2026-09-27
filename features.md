@@ -69,7 +69,8 @@
 59. [Agent-Working Indicator in Kanban & Issue List](#59-agent-working-indicator-in-kanban--issue-list)
 60. [Dashboard Information Modules (Board)](#60-dashboard-information-modules-board)
 61. [Dashboard Section Layout & Advanced Analytics Modules (Board)](#61-dashboard-section-layout--advanced-analytics-modules-board)
-62. [Backend Integration & Live SSE Architecture (mock/real toggle)](#62-backend-integration--live-sse-architecture-mockreal-toggle)
+ 62. [Backend Integration & Live SSE Architecture (mock/real toggle)](#62-backend-integration--live-sse-architecture-mockreal-toggle)
+ 63. [Test Suite, Linting & Frontend CI/CD](#63-test-suite-linting--frontend-cicd)
 
 ---
 
@@ -1316,10 +1317,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 - No HITL backend workflow
 - No Policy Sandbox rule engine
 - No real audit trail persistence
-- No test suite (no Vitest/Jest configuration or `*.spec.ts` / `*.test.ts`)
-- No CI/CD pipeline (no `.github/workflows`)
 - No Storybook / component documentation
-- No E2E tests
 - No accessibility audit (WCAG compliance)
 - No performance monitoring / Lighthouse
 - No service worker / offline support
@@ -1571,3 +1569,21 @@ Issue #517. First real backend integration: an app-wide mock/real data-source to
 | **i18n** | Implemented | `sync.{mock,live,connecting,reconnecting,streamOffline}` + `apiMode.{title,hint,mock,real}` EN/ES |
 | **Env & docs** | Implemented | `frontend/.env.example` documents `VITE_USE_MOCK`, `VITE_API_URL` and the SSE endpoints |
 | **Verification** | Implemented | `npm run build` green (`vue-tsc -b && vite build`); `ruff check realtime.py` clean (remaining `app.py` findings pre-exist at HEAD); Docker `tasker-api`+`tasker-board` rebuilt — smoke: SSE `connected`+replay (`replayed:1`), live delivery while subscribed, `ping` at 15s, presence join/list/stream-broadcast/leave all through nginx `:19001`, mock-api `:8001` intact, UI serving new bundle `index-BSCi2qGL.js` |
+
+
+---
+
+## 63. Test Suite, Linting & Frontend CI/CD
+
+Issue #518. First quality gate for the frontend: unit tests, E2E tests, a linter and a dedicated GitHub Actions workflow (previously the only verification was `npm run build` and CI only covered the Python backend).
+
+| Feature | Status | Details |
+|---|---|---|
+| **Vitest + Vue Test Utils** | Implemented | `frontend/vitest.config.ts` (merge de `vite.config.ts`, entorno jsdom, setup global, coverage v8); `src/test/setup.ts` (polyfills `matchMedia`/`ResizeObserver`/`scrollIntoView`, `localStorage.clear()` por test); `src/test/mount.ts` (`mountComponent` con Pinia + i18n singletons + stubs `RouterLink`/`Teleport`, montado en `document.body` con `enableAutoUnmount`); scripts `test`, `test:watch`, `test:coverage` |
+| **Unit tests (81)** | Implemented | 9 spec files: stores `issuesStore` (fetch/CRUD/filtros/estados), `uiStore` (filtros, cola offline, apiMode, dark mode), `notificationsStore` (push/dismiss/persistencia/categorías); composables `useKeyboardShortcuts` (registro/alcance/secuencias/limpieza), `useSoundEffects` (AudioContext mock, mute, throttle); componentes `FilterBuilder` (dropdowns/tri-state/chips/clear), `IssueCard` (render/emitidos/kill switch), `ModuleCard`, `SyncQueueDrawer` (vacío/cola/retry/delete/conflictos con `Keep local`/`Keep remote`/`Merge`) |
+| **Playwright E2E (8)** | Implemented | `frontend/playwright.config.ts`: `webServer` dual — Vite (`:5173 --host --strictPort`) + mock API (`python -m uvicorn server:app --app-dir ../mock-api`, `DATA_DIR` = copia temporal `.e2e-data/` generada por `scripts/prepare-e2e-data.mjs` vía hook `pretest:e2e`, para no escribir sobre el dataset git-trackeado); `workers: 1` (el mock API lee/escribe JSON sin locks → paralelismo provoca carreras), `retries: 2` en CI, reporter `list` + `html`; specs: `navigation.spec.ts` (redirect `/`→`/board`, sidebar→Kanban, sandbox, 404), `issue-flow.spec.ts` (crear issue → tarjeta → detalle → cerrar, drag & drop Open→Blocked, overview del board), `sandbox.spec.ts` (seleccionar regla → Simulate → `Simulation Result` con edges/violations) |
+| **ESLint flat config** | Implemented | `frontend/eslint.config.js` (ESLint 9: `@eslint/js` + `typescript-eslint` recommended + `eslint-plugin-vue` flat/recommended); reglas relajadas según convención del proyecto (`no-explicit-any` off, formato Vue off, `vue/no-mutating-props` en `warn`, `vue/require-toggle-inside-transition` off); scripts `lint`/`lint:fix`; resultado: 0 errores, 2 warnings |
+| **GitHub Actions** | Implemented | `.github/workflows/frontend-ci.yml` (workflow separado de `ci.yml`, activado por cambios en `frontend/**`): setup Node 20 con cache npm → `npm ci` → `npm run lint` → `npm run build` (vue-tsc + vite) → `npm test` → setup Python 3.11 + `pip install -r mock-api/requirements.txt` → `npx playwright install --with-deps chromium` → `npm run test:e2e`; sube `playwright-report/` como artifact si falla; los jobs Python de `ci.yml` quedan intactos |
+| **Fixes de código** | Implemented | `useMockStream.ts` (`let`→`const` en `tokenCounter`, `default` en el switch de `intervalMs`), `piiDetector.ts` (escapes `\-` innecesarios en el regex de API keys); spacing auto-fixable en `FloatingChat`/`GitHubSyncCard`/`DashboardSystemView`/`IssueDetailView` |
+| **i18n** | Not needed | Los tests usan los textos EN existentes (no se añadieron claves) |
+| **Verification** | Implemented | `npm run lint` ✓ (0 errores), `npm test` ✓ (81/81), `npm run build` ✓, `npm run test:e2e` ✓ (8/8 en dos corridas consecutivas) |

@@ -15,7 +15,7 @@
 | # | Issue | Priority | Type | Status | notas.md |
 |---|---|---|---|---|---|
 | #517 | Backend Integration & Live WebSocket/SSE Architecture | CRITICAL | feat / architecture | DONE (→ `.issues/done/`) | [ISSUE-01] |
-| #518 | Test Suite & CI/CD Pipeline (Frontend) | HIGH | infra / quality | TODO | [ISSUE-02] |
+| #518 | Test Suite & CI/CD Pipeline (Frontend) | HIGH | infra / quality | DONE (→ `.issues/done/`) | [ISSUE-02] |
 | #519 | OAuth2 / SSO Authentication & Role-Based Route Protection | HIGH | feat / security | TODO | [ISSUE-03] |
 | #520 | Real Persistence & Auto-Healing Pipeline Engine | MEDIUM | feat / core | TODO | [ISSUE-04] |
 | #521 | Policy Sandbox Rules Engine | MEDIUM | feat / governance | TODO | [ISSUE-05] |
@@ -31,7 +31,7 @@
 - **#517 Live Backend (DONE):** flag mock/real configurable (UserMenu), API real `/api/v1`, SSE con backoff+jitter+watchdog, estado en `SyncStatusBadge`; backend `realtime.py` (agent-logs + presence)
 
 ### Quality
-- **#518 Tests & CI:** Vitest + Vue Test Utils, Playwright E2E, ESLint, job de frontend en GitHub Actions
+- **#518 Tests & CI (DONE):** Vitest + Vue Test Utils (81 unit tests), Playwright E2E (8 tests), ESLint flat config, job `frontend-ci.yml` en GitHub Actions
 
 ### Security
 - **#519 Auth & RBAC:** login JWT/OAuth2 (GitHub/Google), rotación de refresh tokens, guards de rutas y acciones por rol
@@ -80,7 +80,8 @@
 ## Release Checklist (backlog)
 
 - [x] **#517** implemented — DONE 2026-09-26 (moved to `.issues/done/`, `features.md` §62)
-- [ ] Remaining 7 issues implemented in `.issues/to-do` order (or by priority)
+- [x] **#518** implemented — DONE 2026-09-27 (moved to `.issues/done/`, `features.md` §63)
+- [ ] Remaining 6 issues implemented in `.issues/to-do` order (or by priority)
 - [ ] Each issue: `npm run build` green, i18n EN+ES, `features.md` updated
 - [ ] Move issue file to `.issues/done/` with `Status: DONE` when complete
 - [ ] Commit message references `#NNN`

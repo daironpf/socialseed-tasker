@@ -8,7 +8,7 @@
       @click="toggleOpen"
     >
       <svg class="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.908 1.432 5.507 3.676 7.21V22l3.588-1.97c.955.263 1.965.403 3.016.403 5.523 0 10-4.145 10-9.243S17.523 2 12 2zm1.075 12.478l-2.545-2.728-4.97 2.728 5.475-5.826 2.6 2.728 4.9-2.728-5.46 5.826z"/>
+        <path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.908 1.432 5.507 3.676 7.21V22l3.588-1.97c.955.263 1.965.403 3.016.403 5.523 0 10-4.145 10-9.243S17.523 2 12 2zm1.075 12.478l-2.545-2.728-4.97 2.728 5.475-5.826 2.6 2.728 4.9-2.728-5.46 5.826z" />
       </svg>
       <span
         v-if="chatStore.totalUnread > 0"
@@ -60,7 +60,7 @@
             </div>
             <div v-else class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
               <svg class="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.908 1.432 5.507 3.676 7.21V22l3.588-1.97c.955.263 1.965.403 3.016.403 5.523 0 10-4.145 10-9.243S17.523 2 12 2z"/>
+                <path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.908 1.432 5.507 3.676 7.21V22l3.588-1.97c.955.263 1.965.403 3.016.403 5.523 0 10-4.145 10-9.243S17.523 2 12 2z" />
               </svg>
             </div>
             <span
@@ -230,7 +230,7 @@
                 <div v-else-if="msg.type === 'code'" class="mb-1 flex" :class="msg.senderId === 'admin' ? 'justify-end' : 'justify-start'">
                   <div class="max-w-[85%] overflow-hidden rounded-2xl bg-gray-900 shadow-sm">
                     <div class="flex items-center gap-1.5 border-b border-gray-700 px-3 py-1.5 text-[10px] text-gray-400">
-                      <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                      <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
                       <span>{{ msg.metadata?.language || 'code' }}</span>
                     </div>
                     <pre class="overflow-x-auto p-3 text-[12px] leading-relaxed text-gray-200"><code>{{ msg.content }}</code></pre>
@@ -323,7 +323,7 @@
                 @click="handleSend"
               >
                 <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                 </svg>
               </button>
               <button
@@ -332,7 +332,7 @@
                 :aria-label="t('floatingChat.like')"
               >
                 <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M2 21h4V9H2v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/>
+                  <path d="M2 21h4V9H2v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" />
                 </svg>
               </button>
             </div>
