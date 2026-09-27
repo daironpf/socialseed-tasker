@@ -1,4 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
+import { useToast } from '@/composables/useToast'
+import i18n from '@/i18n'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -11,26 +14,37 @@ const router = createRouter({
     { path: '/graph', name: 'Graph', component: () => import('@/views/GraphView.vue') },
     { path: '/components', name: 'Components', component: () => import('@/views/ComponentsView.vue') },
     { path: '/policies', name: 'Policies', component: () => import('@/views/PoliciesView.vue') },
-    { path: '/constraints', name: 'Constraints', component: () => import('@/views/ConstraintsView.vue') },
+    { path: '/constraints', name: 'Constraints', component: () => import('@/views/ConstraintsView.vue'), meta: { roles: ['ADMIN'] } },
     { path: '/sandbox', name: 'PolicySandbox', component: () => import('@/views/PolicySandboxView.vue') },
     { path: '/rag', name: 'GraphRAGExplorer', component: () => import('@/views/GraphRAGExplorerView.vue') },
     { path: '/finops', name: 'AgentFinOps', component: () => import('@/views/AgentFinOpsView.vue') },
     { path: '/auto-healing', name: 'AutoHealing', component: () => import('@/views/AutoHealingMonitorView.vue') },
     { path: '/replay', name: 'AgentReplay', component: () => import('@/views/AgentReplayView.vue') },
     { path: '/executive', name: 'ExecutiveDashboard', component: () => import('@/views/ExecutiveDashboardView.vue') },
-    { path: '/users', name: 'Users', component: () => import('@/views/UsersView.vue') },
+    { path: '/users', name: 'Users', component: () => import('@/views/UsersView.vue'), meta: { roles: ['ADMIN'] } },
     { path: '/chat', name: 'Chat', component: () => import('@/views/ChatView.vue') },
     { path: '/profile', name: 'Profile', component: () => import('@/views/ProfileView.vue') },
     { path: '/analysis', name: 'Analysis', component: () => import('@/views/AnalysisView.vue') },
     { path: '/mcp', name: 'MCPInspector', component: () => import('@/views/MCPInspectorView.vue') },
     { path: '/hitl', name: 'HITLCommandCenter', component: () => import('@/views/HITLCommandCenter.vue') },
-    { path: '/organization', name: 'OrganizationSettings', component: () => import('@/views/OrganizationSettingsView.vue') },
+    { path: '/organization', name: 'OrganizationSettings', component: () => import('@/views/OrganizationSettingsView.vue'), meta: { roles: ['ADMIN'] } },
     { path: '/governance-matrix', name: 'GovernanceMatrix', component: () => import('@/views/GovernanceMatrixView.vue') },
-    { path: '/audit-log', name: 'AuditLog', component: () => import('@/views/AuditLogView.vue') },
+    { path: '/audit-log', name: 'AuditLog', component: () => import('@/views/AuditLogView.vue'), meta: { roles: ['ADMIN'] } },
     { path: '/agents/studio', name: 'AgentStudio', component: () => import('@/views/AgentStudioView.vue') },
     { path: '/analytics', name: 'Analytics', component: () => import('@/views/AnalyticsDashboardView.vue') },
+    { path: '/auth/oauth-callback', name: 'AuthCallback', component: () => import('@/views/AuthCallbackView.vue') },
     { path: '/:pathMatch(.*)*', name: 'NotFound', component: () => import('@/views/NotFoundView.vue') },
   ],
+})
+
+router.beforeEach(async (to) => {
+  const authStore = useAuthStore()
+  await authStore.initSession()
+  if (!authStore.rolesAllowed(to.meta.roles as string[] | undefined)) {
+    useToast().warning(i18n.global.t('auth.forbidden'))
+    return { path: '/board', replace: true }
+  }
+  return true
 })
 
 router.afterEach(() => {

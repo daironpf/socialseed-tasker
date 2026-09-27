@@ -75,6 +75,7 @@
           <label class="block text-[10px] font-medium text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wider">{{ t('issues.assignee') }}</label>
           <select
             v-model="assignee"
+            :disabled="!can('issue.edit')"
             class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           >
             <option value="">{{ t('issues.unassigned') }}</option>
@@ -109,7 +110,8 @@
           <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t('issues.status') }}</label>
           <select
             v-model="status"
-            class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            :disabled="!can('issue.edit')"
+            class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <option value="OPEN">{{ t('issues.open') }}</option>
             <option value="IN_PROGRESS">{{ t('issues.inProgress') }}</option>
@@ -122,6 +124,7 @@
           <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ t('issues.priority') }}</label>
           <select
             v-model="priority"
+            :disabled="!can('issue.edit')"
             class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
           >
             <option value="LOW">{{ t('issues.low') }}</option>
@@ -440,6 +443,7 @@ import { useIssuesStore } from '@/stores/issuesStore'
 import { fetchAgentLogs } from '@/api/agentLogsApi'
 import { fetchUsers } from '@/api/usersApi'
 import { isMockMode } from '@/api/client'
+import { useAuthGuard } from '@/composables/useAuthGuard'
 import MarkdownRenderer from '@/components/analysis/MarkdownRenderer.vue'
 import RichTextEditor from '@/components/ui/RichTextEditor.vue'
 import DiffViewer from '@/components/ui/DiffViewer.vue'
@@ -458,6 +462,7 @@ import { usePresence } from '@/composables/usePresence'
 import type { AuditEntry } from '@/types/audit'
 
 const { t } = useI18n()
+const { can } = useAuthGuard()
 
 const props = defineProps<{ issue: Issue }>()
 const emit = defineEmits<{

@@ -17,8 +17,9 @@
     >
       <AgentWorkingIcon :issue="issue" show-timer />
       <button
-        class="bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+        class="bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-30 disabled:cursor-not-allowed"
         :title="t('agent.killSwitch')"
+        :disabled="!can('issue.kill')"
         @click.stop="killAgent"
       >
         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -58,8 +59,10 @@ import LabelTag from '@/components/ui/LabelTag.vue'
 import AgentWorkingIcon from '@/components/ui/AgentWorkingIcon.vue'
 import { useI18n } from 'vue-i18n'
 import { useSoundEffects } from '@/composables/useSoundEffects'
+import { useAuthGuard } from '@/composables/useAuthGuard'
 
 const { t } = useI18n()
+const { can } = useAuthGuard()
 const issuesStore = useIssuesStore()
 const uiStore = useUiStore()
 

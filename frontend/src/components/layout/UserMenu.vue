@@ -36,7 +36,7 @@
             </div>
             <div>
               <div class="text-sm font-medium text-gray-900 dark:text-white">{{ username }}</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">{{ t('profile.roles.admin') }}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">{{ roleLabel }}</div>
             </div>
             <svg class="ml-auto h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
@@ -192,8 +192,12 @@ function playTest() {
 const isOpen = ref(false)
 const menuRef = ref<HTMLElement | null>(null)
 
-const username = computed(() => 'admin')
-const initials = computed(() => 'A')
+const username = computed(() => authStore.user?.username ?? 'admin')
+const roleLabel = computed(() => {
+  const role = authStore.role ?? 'ADMIN'
+  return t(`profile.roles.${role.toLowerCase()}`)
+})
+const initials = computed(() => username.value.slice(0, 1).toUpperCase())
 
 const darkLabel = computed(() => uiStore.darkMode ? t('menu.lightMode') : t('menu.darkMode'))
 
@@ -204,8 +208,7 @@ function switchLocale(newLocale: 'en' | 'es') {
 }
 
 function handleLogout() {
-  authStore.clearApiKey()
-  window.location.reload()
+  void authStore.logout()
 }
 
 function navigateToProfile() {

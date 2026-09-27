@@ -445,7 +445,15 @@
     "apiKey": "API Key",
     "enterApiKey": "Enter your API key...",
     "submit": "Sign In",
-    "connecting": "Connecting..."
+    "connecting": "Connecting...",
+    "github": "Continue with GitHub",
+    "google": "Continue with Google",
+    "orContinue": "or continue with API key",
+    "invalidKey": "Invalid API key. Check it and try again.",
+    "loginFailed": "Sign-in failed. Please try again.",
+    "oauthError": "External sign-in failed. Please try again.",
+    "oauthNotConfigured": "This sign-in method is not configured on the server.",
+    "forbidden": "You don't have permission to access this page."
   },
   "common": {
     "loading": "Loading...",

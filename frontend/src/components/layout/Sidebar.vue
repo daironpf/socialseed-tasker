@@ -53,14 +53,16 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import NavItem from './NavItem.vue'
 import { isPendingFeature } from '@/utils/pendingFeatures'
+import { useAuthGuard } from '@/composables/useAuthGuard'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+const { canRoute } = useAuthGuard()
 
 const isExpanded = ref(false)
 
-const navGroups = computed(() => [
+const baseGroups = computed(() => [
   {
     key: 'principal',
     items: [
@@ -101,6 +103,12 @@ const navGroups = computed(() => [
     ],
   },
 ])
+
+const navGroups = computed(() =>
+  baseGroups.value
+    .map((group) => ({ ...group, items: group.items.filter((item) => canRoute(item.path)) }))
+    .filter((group) => group.items.length > 0),
+)
 
 function navigateTo(path: string) {
   if (path) {

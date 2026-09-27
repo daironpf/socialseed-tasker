@@ -2,6 +2,8 @@ import axios, { AxiosInstance } from 'axios'
 import { ref } from 'vue'
 import * as mockApi from './mockApi'
 import { useToast } from '@/composables/useToast'
+import { getAccessToken } from './authSession'
+import { refresh } from './authApi'
 
 // API mode: mock (default) or real FastAPI backend (issue #517).
 // Resolution order: localStorage override > VITE_USE_MOCK env flag > mock.
@@ -233,14 +235,40 @@ if (API_KEY) {
   realClient.defaults.headers.common['X-API-Key'] = API_KEY
 }
 
+// Attach the short-lived JWT when a session exists (issue #519).
+realClient.interceptors.request.use((config) => {
+  const token = getAccessToken()
+  if (token && !(config.url || '').startsWith('/auth/')) {
+    config.headers = config.headers ?? {}
+    ;(config.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
+  }
+  return config
+})
+
 realClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const message =
       error.response?.data?.error?.message ||
       error.response?.data?.detail ||
       error.message ||
       'Unknown error occurred'
+    const original = error.config as
+      | ({ url?: string; __retried?: boolean } & Record<string, unknown>)
+      | undefined
+    const isAuthPath = (original?.url || '').startsWith('/auth/')
+
+    // Expired access token: rotate the refresh token once and retry (issue #519).
+    if (error.response?.status === 401 && original && !isAuthPath && !original.__retried) {
+      original.__retried = true
+      const renewed = await refresh()
+      if (renewed) {
+        return realClient(original as never)
+      }
+      window.dispatchEvent(new CustomEvent('auth:unauthorized'))
+      return Promise.reject(new Error(message))
+    }
+
     if (error.response?.status === 401) {
       window.dispatchEvent(new CustomEvent('auth:unauthorized'))
     } else if (error.response?.status >= 400) {

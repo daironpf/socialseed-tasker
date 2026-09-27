@@ -144,7 +144,8 @@
             <!-- Actions (only for pending) -->
             <div v-if="hitlStore.selectedRequest.status === 'pending'" class="flex items-center gap-2">
               <button
-                class="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors"
+                class="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="!can('hitl.approve')"
                 @click="handleApprove"
               >
                 <svg class="mr-1.5 inline h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -153,7 +154,8 @@
                 {{ t('hitlCenter.approve') }}
               </button>
               <button
-                class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+                class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="!can('hitl.approve')"
                 @click="showModifyForm = !showModifyForm"
               >
                 <svg class="mr-1.5 inline h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -162,7 +164,8 @@
                 {{ t('hitlCenter.modify') }}
               </button>
               <button
-                class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors"
+                class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="!can('hitl.approve')"
                 @click="showRejectForm = !showRejectForm"
               >
                 <svg class="mr-1.5 inline h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -345,8 +348,10 @@ import { useI18n } from 'vue-i18n'
 import { useHitlStore } from '@/stores/hitlStore'
 import DiffViewer from '@/components/ui/DiffViewer.vue'
 import type { HITLRequestStatus } from '@/types/hitl'
+import { useAuthGuard } from '@/composables/useAuthGuard'
 
 const { t } = useI18n()
+const { can } = useAuthGuard()
 const hitlStore = useHitlStore()
 
 const activeStatusFilter = ref<'all' | HITLRequestStatus>('all')

@@ -446,7 +446,15 @@
     "apiKey": "Clave API",
     "enterApiKey": "Ingresa tu clave API...",
     "submit": "Iniciar Sesion",
-    "connecting": "Conectando..."
+    "connecting": "Conectando...",
+    "github": "Continuar con GitHub",
+    "google": "Continuar con Google",
+    "orContinue": "o continuar con clave API",
+    "invalidKey": "Clave API invalida. Verificala e intentalo de nuevo.",
+    "loginFailed": "Fallo al iniciar sesion. Intentalo de nuevo.",
+    "oauthError": "El inicio de sesion externo fallo. Intentalo de nuevo.",
+    "oauthNotConfigured": "Este metodo de inicio de sesion no esta configurado en el servidor.",
+    "forbidden": "No tienes permiso para acceder a esta pagina."
   },
   "common": {
     "loading": "Cargando...",
