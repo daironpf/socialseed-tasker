@@ -6,7 +6,7 @@ La vista *Auto-Healing Pipeline Monitor* (`AutoHealingMonitorView`) funciona con
 
 Origen: `notas.md` → [ISSUE-04] Persistencia Real y Motor del Pipeline de Auto-Healing (→ #520).
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: MEDIUM
 
@@ -23,12 +23,18 @@ feat / core
 4. **Verificación** contra backend Docker con ejecuciones reales; el modo mock actual debe seguir funcionando sin backend (regresión).
 
 ## Acceptance Criteria
-- [ ] Pipeline monitor reads real execution runs from the backend (mock fallback preserved)
-- [ ] Restart or cancel of live pipeline stages from the UI
-- [ ] View and download the actual `.patch`/diff files applied to the repository
-- [ ] Stage progress updates live without page reload
-- [ ] i18n support (EN + ES)
-- [ ] `npm run build` passes
+- [x] Pipeline monitor reads real execution runs from the backend (mock fallback preserved)
+- [x] Restart or cancel of live pipeline stages from the UI
+- [x] View and download the actual `.patch`/diff files applied to the repository
+- [x] Stage progress updates live without page reload
+- [x] i18n support (EN + ES)
+- [x] `npm run build` passes
+
+## Verification (2026-09-27)
+
+- Backend: `tests/api/test_auto_healing_unit.py` 7/7; `pytest -k "not integration"` 1016 passed / 3 pre-existing failures; `ruff` 1012 (≤ HEAD), `mypy` 1158/133 (HEAD 1173/133), delta no positivo.
+- Frontend: `npm run lint` 0 errors, `npm test` 91/91, `npm run build` green.
+- Docker (:19001): real run → 5/5 `completed`, commit `706cfab`, fix issue created in Neo4j, patch download 200 attachment with real unified diff; cancel → `cancelled` (2nd → 409); restart on cancelled → `completed` with a fresh patch; 404s and 409 conflict codes verified.
 
 ## Files to Create
 - `frontend/src/api/autoHealingApi.ts`
