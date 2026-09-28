@@ -22,6 +22,7 @@
         <div class="bg-brand-500" :style="{ width: `${pcts.SYNCED}%` }" />
         <div class="bg-amber-400" :style="{ width: `${pcts.PENDING_PUSH}%` }" />
         <div class="bg-red-500" :style="{ width: `${pcts.ERROR}%` }" />
+        <div class="bg-orange-500" :style="{ width: `${pcts.CONFLICT}%` }" />
       </div>
 
       <ul class="mt-3 space-y-2">
@@ -63,12 +64,13 @@ const props = defineProps<{ issues?: Issue[] }>()
 
 const issuesStore = useIssuesStore()
 
-const STATUSES = ['SYNCED', 'PENDING_PUSH', 'ERROR'] as const
+const STATUSES = ['SYNCED', 'PENDING_PUSH', 'ERROR', 'CONFLICT'] as const
 
 const DOTS: Record<string, string> = {
   SYNCED: 'bg-brand-500',
   PENDING_PUSH: 'bg-amber-400',
   ERROR: 'bg-red-500',
+  CONFLICT: 'bg-orange-500',
 }
 
 const allIssues = computed(() => props.issues ?? issuesStore.issues)
@@ -78,7 +80,7 @@ const syncedIssues = computed(() => allIssues.value.filter((i) => i.github_sync)
 const total = computed(() => syncedIssues.value.length)
 
 const counts = computed(() => {
-  const map: Record<string, number> = { SYNCED: 0, PENDING_PUSH: 0, ERROR: 0 }
+  const map: Record<string, number> = { SYNCED: 0, PENDING_PUSH: 0, ERROR: 0, CONFLICT: 0 }
   for (const issue of syncedIssues.value) {
     const status = issue.github_sync!.sync_status
     if (status in map) map[status]++
@@ -92,6 +94,7 @@ const pcts = computed(() => {
     SYNCED: (counts.value.SYNCED / base) * 100,
     PENDING_PUSH: (counts.value.PENDING_PUSH / base) * 100,
     ERROR: (counts.value.ERROR / base) * 100,
+    CONFLICT: (counts.value.CONFLICT / base) * 100,
   }
 })
 
@@ -112,7 +115,7 @@ const rows = computed(() =>
 const lastSynced = computed(() => {
   const stamps = syncedIssues.value
     .map((i) => i.github_sync!.last_synced_at)
-    .filter(Boolean)
+    .filter((s): s is string => Boolean(s))
     .sort()
   if (stamps.length === 0) return '—'
   return new Date(stamps[stamps.length - 1]).toLocaleString(locale.value, {

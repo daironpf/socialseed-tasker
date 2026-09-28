@@ -650,6 +650,37 @@ class TestFailureRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+class GitHubConflictResponse(BaseModel):
+    """Double-edit conflict detected between Tasker and GitHub."""
+
+    fields: list[str] = Field(default_factory=list)
+    local: dict[str, Any] = Field(default_factory=dict)
+    remote: dict[str, Any] = Field(default_factory=dict)
+    detected_at: datetime | None = None
+
+
+class GitHubSyncResponse(BaseModel):
+    """GitHub synchronization state for a linked issue."""
+
+    issue_number: int
+    github_url: str
+    sync_status: str = "SYNCED"
+    last_synced_at: datetime | None = None
+    conflict: GitHubConflictResponse | None = None
+    error: str | None = None
+    pr_url: str | None = None
+
+
+class GitHubResolveRequest(BaseModel):
+    """Request body for resolving a detected GitHub sync conflict."""
+
+    resolution: str = Field(..., description="Resolution strategy: local, remote or merge")
+    fields: dict[str, Any] | None = Field(
+        None,
+        description="Merged field values, required when resolution is merge",
+    )
+
+
 class IssueResponse(BaseModel):
     """Single issue in API responses."""
 
@@ -676,6 +707,7 @@ class IssueResponse(BaseModel):
     manifest_todo: list[dict[str, str]] = Field(default_factory=list)
     manifest_files: list[str] = Field(default_factory=list)
     manifest_notes: list[str] = Field(default_factory=list)
+    github_sync: GitHubSyncResponse | None = None
 
 
 class ComponentResponse(BaseModel):
@@ -803,6 +835,7 @@ class GitHubWebhookLogResponse(BaseModel):
     received_at: datetime
     processed_at: datetime | None
     error: str | None
+    detail: str | None = None
 
 
 class GitHubWebhookTestResponse(BaseModel):

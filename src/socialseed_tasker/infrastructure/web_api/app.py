@@ -189,6 +189,11 @@ def create_app(
         if request.url.path.startswith("/api/v1/auth/"):
             return await call_next(request)
 
+        # GitHub sends HMAC-signed webhooks and cannot attach an API key;
+        # the receiver enforces X-Hub-Signature-256 validation (issue #522).
+        if request.url.path == "/api/v1/webhooks/github":
+            return await call_next(request)
+
         provided_key = request.headers.get("X-API-Key")
         auth_header = request.headers.get("Authorization", "")
         bearer = auth_header[7:] if auth_header.startswith("Bearer ") else None

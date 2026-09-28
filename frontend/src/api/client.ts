@@ -125,6 +125,16 @@ const mockClient = {
       const data = await mockApi.closeIssue(id)
       return { data: { data } }
     }
+    if (url.match(/\/issues\/[^/]+\/github-sync\/resolve$/)) {
+      const id = url.split('/')[2]
+      const data = await mockApi.resolveGithubConflict(id, body?.resolution, body?.fields)
+      return { data: { data } }
+    }
+    if (url.match(/\/issues\/[^/]+\/github-sync$/)) {
+      const id = url.split('/')[2]
+      const data = await mockApi.resyncGithubIssue(id)
+      return { data: { data } }
+    }
     if (url === '/users') {
       const data = await mockApi.createUser(body)
       return { data: { data } }

@@ -146,11 +146,24 @@
     "status": {
       "SYNCED": "Sincronizado",
       "PENDING_PUSH": "Pendiente",
-      "ERROR": "Error"
+      "ERROR": "Error",
+      "CONFLICT": "Conflicto"
     },
     "lastSynced": "Última sincronización",
+    "neverSynced": "Nunca sincronizado",
     "forceResync": "Forzar Re-sincronización",
-    "syncing": "Sincronizando..."
+    "syncing": "Sincronizando...",
+    "conflict": "Conflicto de doble edicion",
+    "conflictHint": "Tasker y GitHub cambiaron estos campos. Elige que version conservar.",
+    "keepLocal": "Conservar local",
+    "keepRemote": "Conservar remoto",
+    "merge": "Combinar",
+    "applyMerge": "Aplicar combinacion",
+    "local": "Tasker",
+    "remote": "GitHub",
+    "error": "Error de sincronizacion",
+    "actionFailed": "Error en la accion de sincronizacion",
+    "prView": "Ver pull request"
   },
   "governance": {
     "title": "Validación de Gobernanza Requerida",

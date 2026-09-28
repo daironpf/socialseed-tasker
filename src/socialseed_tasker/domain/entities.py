@@ -150,6 +150,13 @@ class Issue(BaseModel):
     github_issue_url: Optional[str] = None
     github_issue_number: Optional[int] = None
     last_mirrored_at: Optional[datetime] = None
+    github_sync_status: str | None = None
+    github_last_synced_at: datetime | None = None
+    github_conflict: dict[str, Any] | None = None
+    github_error: str | None = None
+    github_base: dict[str, Any] | None = None
+    github_pr_url: str | None = None
+    github_pr_number: int | None = None
     estimated_hours: Optional[float] = None
     hourly_rate_tier: Optional[str] = None
     resolved_by_commit_sha: Optional[str] = Field(default=None, description="Git commit SHA that resolved this issue")

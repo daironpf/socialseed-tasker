@@ -112,6 +112,11 @@ class GitHubAdapter:
             timeout=30.0,
         )
 
+    @property
+    def is_configured(self) -> bool:
+        """Whether a token and repository are available for real requests."""
+        return bool(self._token and self._repo)
+
     def _request(self, method: str, path: str, **kwargs) -> dict:
         """Make an API request with rate limiting and retry logic."""
         self._rate_limiter.wait()

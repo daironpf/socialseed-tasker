@@ -896,7 +896,7 @@ function buildNodeInspector(id: string): InspectorPayload | null {
       badge: linked.github_sync.sync_status,
       fields: [
         { label: t('graphExplorer.fields.syncStatus'), value: linked.github_sync.sync_status },
-        { label: t('graphExplorer.fields.lastSync'), value: linked.github_sync.last_synced_at },
+        { label: t('graphExplorer.fields.lastSync'), value: linked.github_sync.last_synced_at ?? '—' },
         { label: t('graphExplorer.fields.linkedIssue'), value: linked.title },
       ],
       links: [

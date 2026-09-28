@@ -19,6 +19,8 @@ from socialseed_tasker.application.actions import (
 from socialseed_tasker.domain.entities import Component, Issue
 from socialseed_tasker.infrastructure.web_api.schemas import (
     ComponentResponse,
+    GitHubConflictResponse,
+    GitHubSyncResponse,
     IssueResponse,
     Meta,
     PaginatedResponse,
@@ -105,12 +107,33 @@ def convert_domain_issue_to_api_response(domain_issue: Issue) -> IssueResponse:
 
     Enforces self-documenting property mappings.
     """
+    conflict = domain_issue.github_conflict
+    github_sync = None
+    if domain_issue.github_issue_number:
+        conflict_response = None
+        if isinstance(conflict, dict):
+            conflict_response = GitHubConflictResponse(
+                fields=list(conflict.get("fields", [])),
+                local=dict(conflict.get("local", {})),
+                remote=dict(conflict.get("remote", {})),
+                detected_at=conflict.get("detected_at"),
+            )
+        github_sync = GitHubSyncResponse(
+            issue_number=domain_issue.github_issue_number,
+            github_url=domain_issue.github_issue_url
+            or f"https://github.com/issue/{domain_issue.github_issue_number}",
+            sync_status=domain_issue.github_sync_status or "SYNCED",
+            last_synced_at=domain_issue.github_last_synced_at,
+            conflict=conflict_response,
+            error=domain_issue.github_error,
+            pr_url=domain_issue.github_pr_url,
+        )
     return IssueResponse(
         id=str(domain_issue.id),
         title=domain_issue.title,
         description=domain_issue.description,
-        status=domain_issue.status.value,
-        priority=domain_issue.priority.value,
+        status=getattr(domain_issue.status, "value", domain_issue.status),
+        priority=getattr(domain_issue.priority, "value", domain_issue.priority),
         component_id=str(domain_issue.component_id),
         labels=domain_issue.labels,
         dependencies=[str(dep_id) for dep_id in domain_issue.dependencies],
@@ -146,6 +169,7 @@ def convert_domain_issue_to_api_response(domain_issue: Issue) -> IssueResponse:
             }
             for c in domain_issue.comments
         ],
+        github_sync=github_sync,
     )
 
 

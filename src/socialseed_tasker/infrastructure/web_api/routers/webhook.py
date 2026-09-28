@@ -379,21 +379,19 @@ async def receive_github_webhook(
     }
 
     try:
-        if event_type == "issues":
-            action = payload.get("action", "")
-            _issue = payload.get("issue", {})
+        if event_type in ("issues", "issue_comment", "pull_request"):
+            from socialseed_tasker.application.github_sync import apply_github_event
+            from socialseed_tasker.infrastructure.web_api.routers.realtime import publish_github_sync
 
-            if action in ("opened", "closed", "reopened"):
-                pass
-
-        elif event_type == "issue_comment":
-            _comment = payload.get("comment", {})
-
-        elif event_type == "label":
-            _label = payload.get("label", {})
-
-        elif event_type == "milestone":
-            _milestone = payload.get("milestone", {})
+            summary = apply_github_event(repo, event_type, payload)
+            detail_parts = [str(summary.get("status", "ignored"))]
+            if summary.get("changes"):
+                detail_parts.append(",".join(summary["changes"]))
+            log_entry["detail"] = " ".join(detail_parts)
+            if summary.get("issue_id") and request is not None:
+                publish_github_sync(request.app, str(summary["issue_id"]), summary)
+        elif event_type in ("label", "milestone"):
+            log_entry["detail"] = "ignored"
 
         log_entry["delivery_status"] = "processed"
         log_entry["processed_at"] = datetime.now(timezone.utc).isoformat()
@@ -427,6 +425,7 @@ def get_webhook_logs() -> APIResponse[list[GitHubWebhookLogResponse]]:
             received_at=log["received_at"],
             processed_at=log.get("processed_at"),
             error=log.get("error"),
+            detail=log.get("detail"),
         )
         for log in _github_webhook_logs
     ]

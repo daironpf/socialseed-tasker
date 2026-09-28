@@ -45,6 +45,20 @@ def _to_uuid_list(vals: Any) -> list[UUID]:
     return result
 
 
+def _json_obj(raw: Any) -> dict[str, Any] | None:
+    if raw is None:
+        return None
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+        except (ValueError, TypeError):
+            return None
+        return parsed if isinstance(parsed, dict) else None
+    if isinstance(raw, dict):
+        return raw
+    return None
+
+
 def _node_to_issue(node: dict[str, Any]) -> Issue:
     """Convert a Neo4j node to a domain Issue."""
     data = dict(node)
@@ -114,6 +128,20 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
         manifest_notes=data.get("manifestNotes", []),
         resolved_by_commit_sha=data.get("resolvedByCommitSha") or data.get("resolved_by_commit_sha"),
         resolution=data.get("resolution"),
+        github_issue_url=data.get("githubIssueUrl") or data.get("github_issue_url"),
+        github_issue_number=data.get("githubIssueNumber") or data.get("github_issue_number"),
+        last_mirrored_at=data.get("lastMirroredAt") or data.get("last_mirrored_at"),
+        github_sync_status=data.get("githubSyncStatus") or data.get("github_sync_status"),
+        github_last_synced_at=data.get("githubLastSyncedAt") or data.get("github_last_synced_at"),
+        github_conflict=_json_obj(
+            data.get("githubConflict") if data.get("githubConflict") is not None else data.get("github_conflict")
+        ),
+        github_error=data.get("githubError") if data.get("githubError") is not None else data.get("github_error"),
+        github_base=_json_obj(
+            data.get("githubBase") if data.get("githubBase") is not None else data.get("github_base")
+        ),
+        github_pr_url=data.get("githubPrUrl") or data.get("github_pr_url"),
+        github_pr_number=data.get("githubPrNumber") or data.get("github_pr_number"),
     )
 
 

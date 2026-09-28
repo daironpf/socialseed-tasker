@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, TYPE_CHECKING
+from typing import Annotated, Any, TYPE_CHECKING
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Body, HTTPException
@@ -78,6 +78,7 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     DependencyGraphResponse,
     DependencyRequest,
     DependencyResponse,
+    GitHubResolveRequest,
     GitHubWebhookLogResponse,
     GitHubWebhookTestResponse,
     ImpactAnalysisResponse,
@@ -118,6 +119,14 @@ from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     convert_domain_issue_to_api_response as _issue_to_response,
     convert_domain_component_to_api_response as _component_to_response,
 )
+from socialseed_tasker.application.github_sync import (
+    issue_snapshot,
+    now_iso,
+    pull_github_issue,
+    push_issue_to_github,
+    resolve_github_conflict,
+)
+from socialseed_tasker.infrastructure.web_api.routers.realtime import publish_github_sync
 
 logger = logging.getLogger(__name__)
 
@@ -543,6 +552,10 @@ def update_issue(
         )
 
     updated = repo.update_issue(issue_id, updates)
+    if updated.github_issue_number:
+        sync_updates = push_issue_to_github(updated, set(updates.keys()))
+        if sync_updates:
+            updated = repo.update_issue(issue_id, sync_updates)
     return APIResponse(data=_issue_to_response(updated), meta=Meta(request_id=None))
 
 
@@ -607,6 +620,11 @@ def close_issue(
             )
     
     issue = close_issue_action(repo, issue_id, commit_sha, resolution)
+
+    if issue.github_issue_number:
+        sync_updates = push_issue_to_github(issue, {"status"})
+        if sync_updates:
+            issue = repo.update_issue(issue_id, sync_updates)
 
     if affected_files and request:
         try:
@@ -673,17 +691,22 @@ def link_github_issue(
     if issue is None:
         raise IssueNotFoundError(issue_id)
 
-    match = re.search(r"github\.com/([^/]+)/([^/]+)/issues/(\d+)", github_issue_url)
+    match = re.search(r"github\.com/([^/]+)/([^/]+)/(issues|pull)/(\d+)", github_issue_url)
     if not match:
         from fastapi import HTTPException
 
         raise HTTPException(status_code=400, detail="Invalid GitHub issue URL")
 
-    github_issue_number = int(match.group(3))
+    github_issue_number = int(match.group(4))
 
     updates = {
         "github_issue_url": github_issue_url,
         "github_issue_number": github_issue_number,
+        "github_sync_status": "SYNCED",
+        "github_last_synced_at": now_iso(),
+        "github_conflict": None,
+        "github_error": None,
+        "github_base": issue_snapshot(issue),
     }
     updated_issue = repo.update_issue(issue_id, updates)
     return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
@@ -706,9 +729,77 @@ def unlink_github_issue(
     updates = {
         "github_issue_url": None,
         "github_issue_number": None,
+        "github_sync_status": None,
+        "github_last_synced_at": None,
+        "github_conflict": None,
+        "github_error": None,
+        "github_base": None,
+        "github_pr_url": None,
+        "github_pr_number": None,
     }
     updated_issue = repo.update_issue(issue_id, updates)
     return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
+
+
+@issues_router.post(
+    "/issues/{issue_id}/github-sync",
+    response_model=APIResponse[IssueResponse],
+    summary="Force GitHub re-sync",
+    description=(
+        "Pull the linked GitHub issue state and merge it into the local issue. "
+        "Detects double-edit conflicts instead of overwriting local changes."
+    ),
+    responses={
+        400: {"description": "Issue not linked to GitHub"},
+        404: {"description": "Issue not found"},
+    },
+)
+async def sync_github_issue(
+    issue_id: str,
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
+    request: Request,
+) -> APIResponse[IssueResponse]:
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+    if not issue.github_issue_number:
+        raise HTTPException(status_code=400, detail="Issue not linked to GitHub")
+
+    updated = pull_github_issue(repo, issue)
+    publish_github_sync(request.app, str(issue_id), {"source": "resync", "issue_id": str(issue_id)})
+    return APIResponse(data=_issue_to_response(updated), meta=Meta(request_id=None))
+
+
+@issues_router.post(
+    "/issues/{issue_id}/github-sync/resolve",
+    response_model=APIResponse[IssueResponse],
+    summary="Resolve GitHub sync conflict",
+    description=(
+        "Resolve a detected double-edit conflict: keep local (push to GitHub), "
+        "keep remote (apply to Tasker) or merge provided values."
+    ),
+    responses={
+        400: {"description": "No conflict or invalid resolution"},
+        404: {"description": "Issue not found"},
+    },
+)
+async def resolve_github_sync_conflict(
+    issue_id: str,
+    body: GitHubResolveRequest,
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
+    request: Request,
+) -> APIResponse[IssueResponse]:
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+
+    try:
+        updated = resolve_github_conflict(repo, issue, body.resolution, body.fields)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    publish_github_sync(request.app, str(issue_id), {"source": "resolve", "issue_id": str(issue_id)})
+    return APIResponse(data=_issue_to_response(updated), meta=Meta(request_id=None))
 
 
 @issues_router.post(

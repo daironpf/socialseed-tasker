@@ -199,8 +199,9 @@
 
       <GitHubSyncCard
         v-if="issue.github_sync"
+        :issue-id="issue.id"
         :github="issue.github_sync"
-        @update:sync-status="onGithubSyncStatusUpdate"
+        @sync:updated="onGithubSyncUpdated"
       />
 
       <div class="text-xs text-gray-400 space-y-1">
@@ -443,6 +444,7 @@ import { useIssuesStore } from '@/stores/issuesStore'
 import { fetchAgentLogs } from '@/api/agentLogsApi'
 import { fetchUsers } from '@/api/usersApi'
 import { isMockMode } from '@/api/client'
+import { connectSSE } from '@/api/realtime'
 import { useAuthGuard } from '@/composables/useAuthGuard'
 import MarkdownRenderer from '@/components/analysis/MarkdownRenderer.vue'
 import RichTextEditor from '@/components/ui/RichTextEditor.vue'
@@ -611,14 +613,35 @@ const assigneeHistoryWithUsers = computed(() => {
   }).sort((a, b) => new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime())
 })
 
-function onGithubSyncStatusUpdate(status: 'SYNCED' | 'PENDING_PUSH' | 'ERROR') {
-  if (props.issue.github_sync) {
-    props.issue.github_sync.sync_status = status
-    if (status === 'SYNCED') {
-      props.issue.github_sync.last_synced_at = new Date().toISOString()
-    }
-  }
+function onGithubSyncUpdated(issue: Issue) {
+  Object.assign(props.issue, issue)
 }
+
+let githubSyncStream: ReturnType<typeof connectSSE> | null = null
+
+function connectGithubSyncStream() {
+  if (githubSyncStream || isMockMode() || !props.issue.github_sync) return
+  githubSyncStream = connectSSE(
+    `/issues/${props.issue.id}/github-sync/stream`,
+    {
+      onEvent: (type) => {
+        if (type === 'sync') refreshIssueFromServer()
+      },
+    },
+    { events: ['connected', 'ping', 'sync'] },
+  )
+}
+
+async function refreshIssueFromServer() {
+  const fresh = await issuesStore.fetchIssue(props.issue.id)
+  if (fresh) Object.assign(props.issue, fresh)
+}
+
+watch(() => props.issue.id, () => {
+  githubSyncStream?.close()
+  githubSyncStream = null
+  connectGithubSyncStream()
+})
 
 const progressLogs = computed(() => displayLogs.value.filter(l => l.type === 'progress'))
 const fileLogs = computed(() => displayLogs.value.filter(l => l.type === 'files'))
@@ -777,6 +800,7 @@ watch(activeTab, (tab) => {
 
 onMounted(async () => {
   connectStream(props.issue.id)
+  connectGithubSyncStream()
   try {
     users.value = await fetchUsers()
   } catch {
@@ -790,5 +814,6 @@ onMounted(async () => {
 onUnmounted(() => {
   disconnectStream()
   mockStream.stop()
+  githubSyncStream?.close()
 })
 </script>

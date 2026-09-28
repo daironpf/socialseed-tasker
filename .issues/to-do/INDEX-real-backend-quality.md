@@ -19,7 +19,7 @@
 | #519 | OAuth2 / SSO Authentication & Role-Based Route Protection | HIGH | feat / security | DONE (→ `.issues/done/`) | [ISSUE-03] |
 | #520 | Real Persistence & Auto-Healing Pipeline Engine | MEDIUM | feat / core | DONE (→ `.issues/done/`) | [ISSUE-04] |
 | #521 | Policy Sandbox Rules Engine | MEDIUM | feat / governance | DONE (→ `.issues/done/`) | [ISSUE-05] |
-| #522 | Bidirectional Real Sync with GitHub | MEDIUM | feat / integration | TODO | [ISSUE-06] |
+| #522 | Bidirectional Real Sync with GitHub | MEDIUM | feat / integration | DONE (→ `.issues/done/`) | [ISSUE-06] |
 | #523 | Keyboard Navigation & Accessibility (WCAG 2.1) | LOW | accessibility / ux | TODO | [ISSUE-07] |
 | #524 | RAG Explorer & MCP Server Integration | MEDIUM | feat / ai infrastructure | TODO | [ISSUE-08] |
 
@@ -43,7 +43,7 @@
 - **#521 Rules Engine (DONE):** motor de evaluación de reglas sobre el grafo real, editor avanzado, promoción real a `/policies`
 
 ### Integration
-- **#522 GitHub Sync:** estados reales, webhooks bidireccionales, resolución de conflictos GitHub↔Tasker
+- **#522 GitHub Sync (DONE):** estados reales, webhooks bidireccionales firmados, resolución de conflictos GitHub↔Tasker
 
 ### UX
 - **#523 A11y:** atajos `J`/`K`/`Enter` suscritos, focus trap, contraste WCAG 2.1 AA
@@ -84,7 +84,8 @@
 - [x] **#519** implemented — DONE 2026-09-27 (moved to `.issues/done/`, `features.md` §64)
 - [x] **#520** implemented — DONE 2026-09-27 (moved to `.issues/done/`, `features.md` §65)
 - [x] **#521** implemented — DONE 2026-09-28 (moved to `.issues/done/`, `features.md` §66)
-- [ ] Remaining 3 issues implemented in `.issues/to-do` order (or by priority)
+- [x] **#522** implemented — DONE 2026-09-28 (moved to `.issues/done/`, `features.md` §67)
+- [ ] Remaining 2 issues implemented in `.issues/to-do` order (or by priority)
 - [ ] Each issue: `npm run build` green, i18n EN+ES, `features.md` updated
 - [ ] Move issue file to `.issues/done/` with `Status: DONE` when complete
 - [ ] Commit message references `#NNN`

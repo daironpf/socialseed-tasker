@@ -79,8 +79,11 @@ class IssueRepositoryMixin:
             return _node_to_issue(record["i"])
 
     def update_issue(self, issue_id: str, updates: dict[str, Any]) -> Issue:
+        camel_updates = {_to_camel(k): v for k, v in updates.items()}
+        for key, value in list(camel_updates.items()):
+            if isinstance(value, dict):
+                camel_updates[key] = json.dumps(value, default=str)
         with _session(self._driver) as session:
-            camel_updates = {_to_camel(k): v for k, v in updates.items()}
             result = session.run(
                 queries.UPDATE_ISSUE,
                 id=issue_id,

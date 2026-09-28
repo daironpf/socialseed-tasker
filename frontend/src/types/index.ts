@@ -49,8 +49,18 @@ export interface AssigneeHistoryEntry {
 export interface GitHubSync {
   issue_number: number
   github_url: string
-  sync_status: 'SYNCED' | 'PENDING_PUSH' | 'ERROR'
-  last_synced_at: string
+  sync_status: 'SYNCED' | 'PENDING_PUSH' | 'ERROR' | 'CONFLICT'
+  last_synced_at: string | null
+  conflict?: GitHubConflict | null
+  error?: string | null
+  pr_url?: string | null
+}
+
+export interface GitHubConflict {
+  fields: string[]
+  local: Record<string, unknown>
+  remote: Record<string, unknown>
+  detected_at: string | null
 }
 
 export interface GovernanceValidation {

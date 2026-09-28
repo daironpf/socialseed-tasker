@@ -299,6 +299,7 @@ class IssueUpdate(BaseModel):
     architectural_constraints: Optional[list[str]] = None
     closed_at: Optional[str] = None
     agent_working: Optional[bool] = None
+    github_sync: Optional[dict] = None
 
 
 @app.patch("/mock/issues/{issue_id}")

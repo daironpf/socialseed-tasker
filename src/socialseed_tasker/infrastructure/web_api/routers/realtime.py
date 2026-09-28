@@ -8,6 +8,7 @@ Provides:
 - ``POST /issues/{id}/presence``            — join / heartbeat a viewer
 - ``POST /issues/{id}/presence/leave``      — remove a viewer
 - ``GET  /issues/{id}/presence/stream``     — SSE stream of viewer snapshots
+- ``GET  /issues/{id}/github-sync/stream``  — SSE stream of GitHub sync events (issue #522)
 
 State lives in an in-process :class:`RealtimeHub` stored on ``app.state.realtime_hub``.
 """
@@ -18,6 +19,7 @@ import asyncio
 import json
 import time
 import uuid
+from collections.abc import AsyncGenerator
 from typing import Any
 
 from fastapi import APIRouter, Request
@@ -49,6 +51,13 @@ def _hub(request: Request) -> RealtimeHub:
     return hub
 
 
+def publish_github_sync(app: Any, issue_id: str, payload: dict[str, Any]) -> None:
+    """Broadcast a GitHub sync event when a stream hub already exists."""
+    hub = getattr(app.state, "realtime_hub", None)
+    if hub is not None:
+        hub.publish_sync(issue_id, payload)
+
+
 class RealtimeHub:
     """In-process pub/sub hub: per-issue log buffers and presence registries.
 
@@ -61,6 +70,24 @@ class RealtimeHub:
         self._log_subs: dict[str, list[asyncio.Queue[dict[str, Any]]]] = {}
         self._presence: dict[str, dict[str, dict[str, Any]]] = {}
         self._presence_subs: dict[str, list[asyncio.Queue[list[dict[str, Any]]]]] = {}
+        self._sync_subs: dict[str, list[asyncio.Queue[dict[str, Any]]]] = {}
+
+    # ---------------------------------------------------------- github sync
+
+    def publish_sync(self, issue_id: str, payload: dict[str, Any]) -> None:
+        entry = {"event": "sync", "data": {"issue_id": issue_id, **payload}}
+        for queue in self._sync_subs.get(issue_id, []):
+            queue.put_nowait(entry)
+
+    def subscribe_sync(self, issue_id: str) -> asyncio.Queue[dict[str, Any]]:
+        queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
+        self._sync_subs.setdefault(issue_id, []).append(queue)
+        return queue
+
+    def unsubscribe_sync(self, issue_id: str, queue: asyncio.Queue[dict[str, Any]]) -> None:
+        subs = self._sync_subs.get(issue_id, [])
+        if queue in subs:
+            subs.remove(queue)
 
     # ------------------------------------------------------------------ logs
 
@@ -251,5 +278,32 @@ async def stream_presence(issue_id: str, request: Request) -> StreamingResponse:
                 yield _sse("viewers", {"viewers": viewers})
         finally:
             hub.unsubscribe_presence(issue_id, queue)
+
+    return StreamingResponse(generate(), media_type="text/event-stream", headers=_SSE_HEADERS)
+
+
+# ----------------------------------------------------------- github sync
+
+
+@realtime_router.get("/issues/{issue_id}/github-sync/stream")
+async def stream_github_sync(issue_id: str, request: Request) -> StreamingResponse:
+    """Live stream of GitHub sync events (webhook updates, conflicts) for one issue."""
+    hub = _hub(request)
+    queue = hub.subscribe_sync(issue_id)
+
+    async def generate() -> AsyncGenerator[str, None]:
+        try:
+            yield _sse("connected", {"issue_id": issue_id})
+            while True:
+                if await request.is_disconnected():
+                    return
+                try:
+                    item = await asyncio.wait_for(queue.get(), timeout=HEARTBEAT_SECONDS)
+                except asyncio.TimeoutError:
+                    yield _sse("ping", {"ts": int(time.time() * 1000)})
+                    continue
+                yield _sse(item["event"], item["data"])
+        finally:
+            hub.unsubscribe_sync(issue_id, queue)
 
     return StreamingResponse(generate(), media_type="text/event-stream", headers=_SSE_HEADERS)

@@ -145,11 +145,24 @@
     "status": {
       "SYNCED": "Synced",
       "PENDING_PUSH": "Pending",
-      "ERROR": "Error"
+      "ERROR": "Error",
+      "CONFLICT": "Conflict"
     },
     "lastSynced": "Last synced",
+    "neverSynced": "Never synced",
     "forceResync": "Force Re-sync",
-    "syncing": "Syncing..."
+    "syncing": "Syncing...",
+    "conflict": "Double-edit conflict",
+    "conflictHint": "Tasker and GitHub both changed these fields. Choose which version to keep.",
+    "keepLocal": "Keep local",
+    "keepRemote": "Keep remote",
+    "merge": "Merge",
+    "applyMerge": "Apply merge",
+    "local": "Tasker",
+    "remote": "GitHub",
+    "error": "Sync error",
+    "actionFailed": "GitHub sync action failed",
+    "prView": "View pull request"
   },
   "governance": {
     "title": "Governance Validation Required",

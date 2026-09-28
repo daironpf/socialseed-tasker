@@ -65,6 +65,55 @@ export async function closeIssue(id: string): Promise<Issue> {
   })
 }
 
+export async function resyncGithubIssue(id: string): Promise<Issue> {
+  const issue = await fetchIssue(id)
+  const sync = issue.github_sync
+  if (!sync) return issue
+  return apiCall<Issue>(`/mock/issues/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      github_sync: {
+        ...sync,
+        sync_status: 'SYNCED',
+        conflict: null,
+        error: null,
+        last_synced_at: new Date().toISOString(),
+      },
+    }),
+  })
+}
+
+export async function resolveGithubConflict(
+  id: string,
+  resolution?: 'local' | 'remote' | 'merge',
+  fields?: Record<string, unknown>,
+): Promise<Issue> {
+  const issue = await fetchIssue(id)
+  const sync = issue.github_sync
+  if (!sync) return issue
+  const patch: Record<string, unknown> = {}
+  const conflict = sync.conflict
+  if (conflict) {
+    if (resolution === 'remote') {
+      for (const field of conflict.fields) patch[field] = conflict.remote[field]
+    }
+    if (resolution === 'merge' && fields) {
+      for (const [key, value] of Object.entries(fields)) patch[key] = value
+    }
+  }
+  patch.github_sync = {
+    ...sync,
+    sync_status: 'SYNCED',
+    conflict: null,
+    error: null,
+    last_synced_at: new Date().toISOString(),
+  }
+  return apiCall<Issue>(`/mock/issues/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  })
+}
+
 export async function fetchBlockedIssues(): Promise<Issue[]> {
   return fetchIssues(1, 200, 'BLOCKED')
 }
