@@ -1,10 +1,14 @@
 <template>
   <div
+    :id="`issue-card-${issue.id}`"
+    role="option"
+    :aria-selected="active"
     class="rounded-lg border bg-white p-3 shadow-sm transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700 relative group"
     :class="{
       'border-l-4 border-l-red-500': issue.priority === 'CRITICAL',
       'border-l-4 border-l-orange-400': issue.priority === 'HIGH',
-      'cursor-grab active:cursor-grabbing': true
+      'cursor-grab active:cursor-grabbing': true,
+      'outline outline-2 -outline-offset-2 outline-brand-600 bg-brand-50 dark:bg-brand-900/30': active,
     }"
     draggable="true"
     @dragstart="onDragStart"
@@ -36,9 +40,9 @@
       <span v-for="(label, idx) in issue.labels.slice(0, 3)" :key="`${label}-${idx}`" class="text-xs">
         <LabelTag :label="label" />
       </span>
-      <span v-if="issue.labels.length > 3" class="text-xs text-gray-400">+{{ issue.labels.length - 3 }}</span>
+      <span v-if="issue.labels.length > 3" class="text-xs text-gray-500 dark:text-gray-400">+{{ issue.labels.length - 3 }}</span>
     </div>
-    <div class="mt-2 flex items-center justify-between text-xs text-gray-400">
+    <div class="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
       <span v-if="componentName" class="truncate max-w-[120px]">{{ componentName }}</span>
       <span v-if="issue.dependencies.length > 0" class="flex items-center gap-1">
         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -69,6 +73,7 @@ const uiStore = useUiStore()
 const props = defineProps<{
   issue: Issue
   componentName?: string
+  active?: boolean
 }>()
 
 const emit = defineEmits<{

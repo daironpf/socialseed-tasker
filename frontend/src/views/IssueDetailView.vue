@@ -18,7 +18,7 @@
         </div>
         <div class="flex items-center gap-3">
           <PresenceAvatars :viewers="viewers" />
-          <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="$emit('close')" :aria-label="t('common.close')">
+          <button class="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="$emit('close')" :aria-label="t('common.close')">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -72,7 +72,7 @@
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-          <label class="block text-[10px] font-medium text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wider">{{ t('issues.assignee') }}</label>
+          <label class="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">{{ t('issues.assignee') }}</label>
           <select
             v-model="assignee"
             :disabled="!can('issue.edit')"
@@ -85,7 +85,7 @@
           </select>
         </div>
         <div v-if="creatorUser" class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-          <label class="block text-[10px] font-medium text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wider">{{ t('issues.createdBy') }}</label>
+          <label class="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">{{ t('issues.createdBy') }}</label>
           <div class="flex items-center gap-2">
             <span class="text-lg">{{ creatorUser.avatar || '👤' }}</span>
             <div>
@@ -169,7 +169,7 @@
             class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-700"
           >
             {{ label }}
-            <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" :aria-label="t('issues.removeLabel', { label })" @click="labels.splice(idx, 1)">x</button>
+            <button class="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" :aria-label="t('issues.removeLabel', { label })" @click="labels.splice(idx, 1)">x</button>
           </span>
           <input
             v-model="newLabel"
@@ -194,7 +194,7 @@
             <span class="text-gray-600 dark:text-gray-300 truncate">{{ getIssueTitle(depId) }}</span>
           </div>
         </div>
-        <div v-else class="text-sm text-gray-400">{{ t('issues.noDependencies') }}</div>
+        <div v-else class="text-sm text-gray-500 dark:text-gray-400">{{ t('issues.noDependencies') }}</div>
       </div>
 
       <GitHubSyncCard
@@ -204,7 +204,7 @@
         @sync:updated="onGithubSyncUpdated"
       />
 
-      <div class="text-xs text-gray-400 space-y-1">
+      <div class="text-xs text-gray-500 dark:text-gray-400 space-y-1">
         <p>{{ t('issues.created') }}: {{ new Date(issue.created_at).toLocaleString() }}</p>
         <p>{{ t('issues.updated') }}: {{ new Date(issue.updated_at).toLocaleString() }}</p>
       </div>
@@ -255,7 +255,7 @@
                   {{ t(`issues.changeType.${file.change_type}`) }}
                 </span>
                 <code class="text-xs text-gray-600 dark:text-gray-400 font-mono flex-1 truncate">{{ file.path }}</code>
-                <span v-if="file.language" class="text-[10px] text-gray-400 dark:text-gray-500 flex-shrink-0">{{ file.language }}</span>
+                <span v-if="file.language" class="text-[10px] text-gray-500 dark:text-gray-400 flex-shrink-0">{{ file.language }}</span>
                 <button
                   v-if="file.diff_hunk"
                   class="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 transition-colors flex-shrink-0"
@@ -266,7 +266,7 @@
                 </button>
                 <svg
                   v-if="file.diff_hunk"
-                  class="h-4 w-4 text-gray-400 transition-transform"
+                  class="h-4 w-4 text-gray-500 dark:text-gray-400 transition-transform"
                   :class="{ 'rotate-180': expandedFiles.has(idx) }"
                   fill="none" viewBox="0 0 24 24" stroke="currentColor"
                 ><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -288,7 +288,7 @@
             </div>
           </div>
         </div>
-        <div v-else-if="issue.affected_files !== undefined" class="text-sm text-gray-400">{{ t('issues.noAffectedFiles') }}</div>
+        <div v-else-if="issue.affected_files !== undefined" class="text-sm text-gray-500 dark:text-gray-400">{{ t('issues.noAffectedFiles') }}</div>
 
         <!-- Technical Debt Notes Section -->
         <div v-if="issue.technical_debt_notes">
@@ -307,7 +307,7 @@
           >
             <div class="mb-2 flex items-center gap-2">
               <span class="rounded bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700 dark:bg-green-900/30 dark:text-green-300">{{ t('issues.logTypeProgress') }}</span>
-              <span class="text-[10px] text-gray-400">{{ new Date(log.timestamp).toLocaleString() }}</span>
+              <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ new Date(log.timestamp).toLocaleString() }}</span>
             </div>
             <MarkdownRenderer :content="log.content_markdown" />
           </div>
@@ -322,7 +322,7 @@
           >
             <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
               <span class="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">{{ t('issues.logTypeFiles') }}</span>
-              <span class="text-[10px] text-gray-400">{{ new Date(log.timestamp).toLocaleString() }}</span>
+              <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ new Date(log.timestamp).toLocaleString() }}</span>
             </div>
             <DiffViewer :content="log.content_markdown" />
           </div>
@@ -337,13 +337,13 @@
           >
             <div class="mb-2 flex items-center gap-2">
               <span class="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">{{ t('issues.logTypeDebt') }}</span>
-              <span class="text-[10px] text-gray-400">{{ new Date(log.timestamp).toLocaleString() }}</span>
+              <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ new Date(log.timestamp).toLocaleString() }}</span>
             </div>
             <MarkdownRenderer :content="log.content_markdown" />
           </div>
         </div>
 
-        <div v-if="!progressLogs.length && !fileLogs.length && !debtLogs.length" class="flex flex-col items-center justify-center py-12 text-gray-400">
+        <div v-if="!progressLogs.length && !fileLogs.length && !debtLogs.length" class="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
           <p class="text-sm">{{ t('issues.noProgressData') }}</p>
         </div>
 

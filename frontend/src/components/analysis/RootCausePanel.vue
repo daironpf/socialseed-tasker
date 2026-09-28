@@ -141,7 +141,7 @@
       </div>
     </div>
 
-    <div v-else-if="!analysisStore.loadingRootCause && searched" class="flex flex-col items-center justify-center py-12 text-gray-400">
+    <div v-else-if="!analysisStore.loadingRootCause && searched" class="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
       <svg class="mb-3 h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>

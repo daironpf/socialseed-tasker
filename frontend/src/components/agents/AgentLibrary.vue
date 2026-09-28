@@ -7,7 +7,7 @@
       </span>
     </div>
 
-    <div v-if="!profiles.length" class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400 dark:border-gray-600">
+    <div v-if="!profiles.length" class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:text-gray-400 dark:border-gray-600">
       {{ t('agentStudio.library.empty') }}
     </div>
 
@@ -61,25 +61,25 @@
           <span v-if="profile.tools.length > 4" class="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:bg-gray-700 dark:text-gray-400">
             +{{ profile.tools.length - 4 }}
           </span>
-          <span v-if="!profile.tools.length" class="text-[9px] text-gray-400">{{ t('agentStudio.library.noTools') }}</span>
+          <span v-if="!profile.tools.length" class="text-[9px] text-gray-500 dark:text-gray-400">{{ t('agentStudio.library.noTools') }}</span>
         </div>
 
         <div class="mt-3 grid grid-cols-3 gap-1.5 border-t border-gray-100 pt-2.5 text-center dark:border-gray-700/60">
           <div>
             <div class="text-[11px] font-bold text-gray-700 dark:text-gray-300">{{ formatTokens(profile.limits.maxTokensPerRun) }}</div>
-            <div class="text-[8px] uppercase text-gray-400">{{ t('agentStudio.library.tokens') }}</div>
+            <div class="text-[8px] uppercase text-gray-500 dark:text-gray-400">{{ t('agentStudio.library.tokens') }}</div>
           </div>
           <div>
             <div class="text-[11px] font-bold text-gray-700 dark:text-gray-300">{{ profile.limits.timeoutSeconds }}s</div>
-            <div class="text-[8px] uppercase text-gray-400">{{ t('agentStudio.library.timeout') }}</div>
+            <div class="text-[8px] uppercase text-gray-500 dark:text-gray-400">{{ t('agentStudio.library.timeout') }}</div>
           </div>
           <div>
             <div class="text-[11px] font-bold" :class="riskClass(profile.limits.maxRisk)">{{ profile.limits.maxRisk }}</div>
-            <div class="text-[8px] uppercase text-gray-400">{{ t('agentStudio.library.risk') }}</div>
+            <div class="text-[8px] uppercase text-gray-500 dark:text-gray-400">{{ t('agentStudio.library.risk') }}</div>
           </div>
         </div>
 
-        <div class="mt-2 text-[9px] text-gray-400">
+        <div class="mt-2 text-[9px] text-gray-500 dark:text-gray-400">
           {{ t('agentStudio.library.lastUsed') }}: {{ profile.lastUsedAt ? formatDate(profile.lastUsedAt) : t('agentStudio.library.never') }}
         </div>
 

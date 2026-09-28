@@ -3,7 +3,7 @@
     <div class="w-full max-w-2xl rounded-xl bg-white shadow-2xl dark:bg-gray-800">
       <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ rule ? t('sandbox.edit') : t('sandbox.newRule') }}</h2>
-        <button class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700" :aria-label="t('sandbox.cancel')" @click="emit('close')">
+        <button class="rounded p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700" :aria-label="t('sandbox.cancel')" @click="emit('close')">
           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
       </div>

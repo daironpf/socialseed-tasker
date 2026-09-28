@@ -3,7 +3,7 @@
     <!-- Toolbar -->
     <div class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
       <div class="flex items-center gap-2">
-        <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
         </svg>
         <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ t('piiSuite.title') }}</span>
@@ -50,7 +50,7 @@
 
       <!-- Detections -->
       <div v-if="detections.length" class="space-y-1.5">
-        <div class="text-[10px] font-semibold uppercase text-gray-400">{{ t('piiSuite.detectedHeader') }}</div>
+        <div class="text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">{{ t('piiSuite.detectedHeader') }}</div>
         <div
           v-for="(d, i) in detections"
           :key="i"
@@ -59,18 +59,18 @@
         >
           <span class="font-bold uppercase" :class="getSeverityColor(d.severity)">{{ t(`piiSuite.categories.${d.category}`) }}</span>
           <span class="font-mono text-gray-600 dark:text-gray-300">→ {{ d.masked }}</span>
-          <span class="ml-auto truncate font-mono text-[10px] text-gray-400" :title="d.match">{{ d.match }}</span>
+          <span class="ml-auto truncate font-mono text-[10px] text-gray-500 dark:text-gray-400" :title="d.match">{{ d.match }}</span>
         </div>
       </div>
 
       <!-- Before / After preview -->
       <div :class="compact ? 'grid grid-cols-1 gap-3' : 'grid grid-cols-1 gap-3 md:grid-cols-2'">
         <div>
-          <div class="mb-1 text-[10px] font-semibold uppercase text-gray-400">{{ t('piiSuite.before') }}</div>
+          <div class="mb-1 text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">{{ t('piiSuite.before') }}</div>
           <pre class="max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-3 font-mono text-[11px] text-gray-700 dark:bg-gray-900 dark:text-gray-300">{{ text }}</pre>
         </div>
         <div>
-          <div class="mb-1 text-[10px] font-semibold uppercase text-gray-400">{{ t('piiSuite.after') }}</div>
+          <div class="mb-1 text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">{{ t('piiSuite.after') }}</div>
           <pre class="max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded-lg p-3 font-mono text-[11px]"
             :class="maskEnabled && !revealed ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300' : 'bg-gray-50 text-gray-500 dark:bg-gray-900 dark:text-gray-400'"
           >{{ previewText }}</pre>

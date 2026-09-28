@@ -85,7 +85,7 @@
                     class="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
                     @click="handleAssign('')"
                   >
-                    <span class="text-gray-400">-</span>
+                    <span class="text-gray-500 dark:text-gray-400">-</span>
                     {{ t('bulkActions.unassign') }}
                   </button>
                   <button

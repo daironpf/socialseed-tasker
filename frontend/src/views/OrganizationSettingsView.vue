@@ -250,7 +250,7 @@
             >
               <div class="mb-1 flex items-center justify-between">
                 <span class="font-medium text-gray-900 dark:text-white">{{ ws.name }}</span>
-                <span class="text-xs text-gray-400">{{ ws.department }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ ws.department }}</span>
               </div>
               <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">{{ ws.description }}</p>
               <div class="flex gap-3 text-xs text-gray-500 dark:text-gray-400">

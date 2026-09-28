@@ -63,7 +63,7 @@
         <option value="">{{ t('graphExplorer.traceSource') }}</option>
         <option v-for="opt in traceOptions" :key="opt.id" :value="opt.id">{{ opt.label }}</option>
       </select>
-      <svg class="h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg class="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
       </svg>
       <select

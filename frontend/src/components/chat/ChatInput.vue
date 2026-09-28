@@ -14,7 +14,7 @@
     <div class="flex items-end gap-2">
       <div class="flex gap-1">
         <button
-          class="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+          class="rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
           :aria-label="t('chat.attachFile')"
           @click="insertCodeBlock"
         >
@@ -30,10 +30,10 @@
           v-model="message"
           :placeholder="t('chat.placeholder')"
           rows="1"
-          class="w-full resize-none rounded-lg border bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1"
+          class="w-full resize-none rounded-lg border bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-1"
           :class="piiDetections.length > 0
             ? 'border-amber-300 focus:border-amber-500 focus:ring-amber-500 dark:border-amber-700'
-            : 'border-gray-200 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500'"
+            : 'border-gray-200 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400'"
           :aria-label="t('chat.messageInput')"
           @keydown.enter.exact.prevent="handleSend"
           @input="onInput"

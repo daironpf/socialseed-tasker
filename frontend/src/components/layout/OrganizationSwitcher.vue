@@ -5,7 +5,7 @@
       :aria-label="t('organizations.switcher')"
       @click="open = !open"
     >
-      <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -18,12 +18,12 @@
       </span>
       <span
         v-if="store.currentWorkspace"
-        class="hidden max-w-[100px] truncate text-xs text-gray-400 md:inline"
+        class="hidden max-w-[100px] truncate text-xs text-gray-500 dark:text-gray-400 md:inline"
       >
         / {{ store.currentWorkspace.name }}
       </span>
       <svg
-        class="h-3.5 w-3.5 text-gray-400 transition-transform"
+        class="h-3.5 w-3.5 text-gray-500 dark:text-gray-400 transition-transform"
         :class="{ 'rotate-180': open }"
         fill="none"
         viewBox="0 0 24 24"
@@ -122,7 +122,7 @@
                     @click="selectWorkspace(ws.id)"
                   >
                     <span class="truncate">{{ ws.name }}</span>
-                    <span class="ml-2 shrink-0 text-[10px] text-gray-400">{{ ws.department }}</span>
+                    <span class="ml-2 shrink-0 text-[10px] text-gray-500 dark:text-gray-400">{{ ws.department }}</span>
                   </button>
                 </div>
               </div>

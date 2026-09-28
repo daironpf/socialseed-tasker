@@ -1,9 +1,15 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-gray-900 focus:shadow-lg dark:focus:bg-gray-800 dark:focus:text-gray-100"
+    >
+      {{ t('a11y.skipToContent') }}
+    </a>
     <Sidebar />
     <div class="md:ml-20 flex flex-1 flex-col transition-all duration-300 pb-8">
       <AppHeader @open-mobile-menu="mobileMenuOpen = true" />
-      <main class="flex-1 overflow-hidden">
+      <main id="main-content" tabindex="-1" class="flex-1 overflow-hidden focus:outline-none">
         <RouterView />
       </main>
     </div>

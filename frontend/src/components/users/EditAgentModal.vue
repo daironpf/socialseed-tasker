@@ -22,7 +22,7 @@
         </div>
         <button
           @click="close"
-          class="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+          class="rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
         >
           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -85,7 +85,7 @@
             step="0.05"
             class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-purple-600"
           />
-          <div class="flex justify-between text-[10px] text-gray-400 mt-1">
+          <div class="flex justify-between text-[10px] text-gray-500 dark:text-gray-400 mt-1">
             <span>{{ t('agents.tempPrecise') }}</span>
             <span>{{ t('agents.tempBalanced') }}</span>
             <span>{{ t('agents.tempCreative') }}</span>

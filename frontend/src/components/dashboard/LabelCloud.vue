@@ -1,6 +1,6 @@
 <template>
   <ModuleCard :title="t('boardModules.labelsTitle')">
-    <div v-if="topLabels.length === 0" class="text-sm text-gray-400">
+    <div v-if="topLabels.length === 0" class="text-sm text-gray-500 dark:text-gray-400">
       {{ t('boardModules.labelsEmpty') }}
     </div>
     <div v-else class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
@@ -16,7 +16,7 @@
         <span class="text-[10px] font-normal opacity-60">{{ l.count }}</span>
       </span>
     </div>
-    <p class="mt-3 text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500">
+    <p class="mt-3 text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
       {{ t('boardModules.labelsFooter', { count: uniqueCount }) }}
     </p>
   </ModuleCard>

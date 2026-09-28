@@ -14,7 +14,7 @@
         <span class="h-1.5 w-1.5 rounded-full" :class="modeDotClass" />
         {{ modeLabel }}
       </span>
-      <span class="text-xs text-gray-400 dark:text-gray-500">{{ uiStore.connectionState }}</span>
+      <span class="text-xs text-gray-500 dark:text-gray-400">{{ uiStore.connectionState }}</span>
     </div>
   </ModuleCard>
 </template>

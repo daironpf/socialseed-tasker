@@ -171,10 +171,10 @@
             </div>
           </div>
           <div class="p-5">
-            <div v-if="!syncQueue" class="text-center text-sm text-gray-400">{{ t('system.loadingSyncQueue') }}</div>
+            <div v-if="!syncQueue" class="text-center text-sm text-gray-500 dark:text-gray-400">{{ t('system.loadingSyncQueue') }}</div>
             <div v-else-if="syncQueue.queue.length === 0" class="rounded-lg border border-dashed border-gray-300 dark:border-gray-600 p-8 text-center">
               <div class="text-sm text-gray-500">{{ t('system.noPendingSync') }}</div>
-              <div class="mt-1 text-xs text-gray-400">{{ t('system.allSynced') }}</div>
+              <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('system.allSynced') }}</div>
             </div>
             <div v-else class="space-y-3">
               <div class="flex items-center justify-between text-sm">
@@ -198,7 +198,7 @@
                       :class="item.action === 'push' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'"
                     >{{ item.action.toUpperCase() }}</span>
                     <span class="text-sm text-gray-700 dark:text-gray-300">{{ item.resource }}</span>
-                    <span class="font-mono text-xs text-gray-400">{{ item.resource_id }}</span>
+                    <span class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ item.resource_id }}</span>
                   </div>
                   <div class="flex items-center gap-2">
                     <span v-if="item.retry_count > 0" class="text-xs text-amber-500">{{ t('system.retryCount', { count: item.retry_count }) }}</span>
@@ -230,7 +230,7 @@
               <div class="text-xs text-gray-500">{{ t('system.active') }}</div>
             </div>
             <div class="text-center">
-              <div class="text-2xl font-bold text-gray-400">{{ (health?.metrics.total_constraints || 0) - (health?.metrics.active_constraints || 0) }}</div>
+              <div class="text-2xl font-bold text-gray-500 dark:text-gray-400">{{ (health?.metrics.total_constraints || 0) - (health?.metrics.active_constraints || 0) }}</div>
               <div class="text-xs text-gray-500">{{ t('system.inactive') }}</div>
             </div>
           </div>

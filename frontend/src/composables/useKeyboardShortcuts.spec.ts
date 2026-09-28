@@ -134,6 +134,64 @@ describe('useKeyboardShortcuts', () => {
       expect(action).toHaveBeenCalledTimes(1)
     })
 
+    it('does not fire a sequence shortcut on its prefix key alone', () => {
+      const action = vi.fn()
+      kb.register(makeShortcut({ key: 'g', sequence: ['g', 'i'], action }))
+
+      press('g')
+      expect(action).not.toHaveBeenCalled()
+
+      press('i')
+      expect(action).toHaveBeenCalledTimes(1)
+    })
+
+    it('runs local shortcuts registered by the active view', () => {
+      const action = vi.fn()
+      kb.register(makeShortcut({ key: 'j', scope: 'local', action }))
+
+      const event = new KeyboardEvent('keydown', { key: 'j', cancelable: true })
+      document.dispatchEvent(event)
+
+      expect(action).toHaveBeenCalledTimes(1)
+      expect(event.defaultPrevented).toBe(true)
+    })
+
+    it('lets sequences win over a local shortcut with the same key', () => {
+      const sequenceAction = vi.fn()
+      const localAction = vi.fn()
+      kb.register(makeShortcut({ key: 'g', sequence: ['g', 'k'], action: sequenceAction }))
+      kb.register(makeShortcut({ key: 'k', scope: 'local', action: localAction }))
+
+      press('g')
+      press('k')
+
+      expect(sequenceAction).toHaveBeenCalledTimes(1)
+      expect(localAction).not.toHaveBeenCalled()
+    })
+
+    it('fires escape shortcuts even when an input is focused', () => {
+      const action = vi.fn()
+      kb.register(makeShortcut({ key: 'escape', scope: 'local', action }))
+
+      const input = document.createElement('input')
+      document.body.appendChild(input)
+      input.focus()
+
+      press('Escape')
+      expect(action).toHaveBeenCalledTimes(1)
+    })
+
+    it('skips shortcuts when the event was already handled', () => {
+      const action = vi.fn()
+      kb.register(makeShortcut({ key: 'x', action }))
+
+      const event = new KeyboardEvent('keydown', { key: 'x', cancelable: true })
+      event.preventDefault()
+      document.dispatchEvent(event)
+
+      expect(action).not.toHaveBeenCalled()
+    })
+
     it('stops listening after destroyKeyboardShortcuts', () => {
       const action = vi.fn()
       kb.register(makeShortcut({ key: 'j', action }))

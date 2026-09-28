@@ -29,7 +29,7 @@
             </div>
           </div>
           <button
-            class="flex-shrink-0 rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+            class="flex-shrink-0 rounded-lg p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
             :aria-label="t('common.close')"
             @click="$emit('close')"
           >
@@ -46,7 +46,7 @@
 
         <!-- Command -->
         <div>
-          <label class="block text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">
+          <label class="block text-[10px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
             {{ t('hitlQuickAction.command') }}
           </label>
           <pre class="rounded-lg bg-gray-900 p-3 text-xs font-mono text-green-400 overflow-x-auto">{{ request.command }}</pre>

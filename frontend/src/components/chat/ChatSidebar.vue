@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
       <h2 class="text-lg font-bold text-gray-900 dark:text-white">{{ t('chat.title') }}</h2>
       <button
-        class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+        class="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
         :aria-label="t('chat.newConversation')"
         @click="$emit('newConversation')"
       >
@@ -15,14 +15,14 @@
 
     <div class="px-3 py-2">
       <div class="relative">
-        <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
           v-model="chatStore.searchQuery"
           type="text"
           :placeholder="t('chat.search')"
-          class="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+          class="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
         />
       </div>
     </div>
@@ -55,7 +55,7 @@
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-1">
             <span class="truncate text-sm font-medium text-gray-900 dark:text-white">{{ conv.name }}</span>
-            <span v-if="conv.isPinned" class="text-gray-400">📌</span>
+            <span v-if="conv.isPinned" class="text-gray-500 dark:text-gray-400">📌</span>
           </div>
           <p class="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
             {{ conv.lastMessage?.content || conv.description || t('chat.noMessages') }}
@@ -63,7 +63,7 @@
         </div>
 
         <div class="flex flex-col items-end gap-1">
-          <span v-if="conv.lastMessage" class="text-[10px] text-gray-400 dark:text-gray-500">
+          <span v-if="conv.lastMessage" class="text-[10px] text-gray-500 dark:text-gray-400">
             {{ formatShortTime(conv.updatedAt) }}
           </span>
           <span

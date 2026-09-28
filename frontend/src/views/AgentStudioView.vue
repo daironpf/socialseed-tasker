@@ -159,7 +159,7 @@
           >
             {{ t('common.cancel') }}
           </button>
-          <span v-if="editingId" class="text-[11px] text-gray-400">{{ t('agentStudio.builder.editHint') }}</span>
+          <span v-if="editingId" class="text-[11px] text-gray-500 dark:text-gray-400">{{ t('agentStudio.builder.editHint') }}</span>
         </div>
       </div>
 

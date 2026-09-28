@@ -13,7 +13,7 @@
       </span>
     </template>
 
-    <div v-if="total === 0" class="text-sm text-gray-400">
+    <div v-if="total === 0" class="text-sm text-gray-500 dark:text-gray-400">
       {{ t('boardModules.syncNoData') }}
     </div>
 
@@ -37,13 +37,13 @@
           </span>
           <span class="font-semibold text-gray-900 dark:text-white">
             {{ row.count }}
-            <span class="font-normal text-gray-400">({{ row.pct }}%)</span>
+            <span class="font-normal text-gray-500 dark:text-gray-400">({{ row.pct }}%)</span>
           </span>
         </li>
       </ul>
 
       <p
-        class="mt-3 border-t border-gray-100 pt-2.5 text-[10px] text-gray-400 dark:border-gray-700 dark:text-gray-500"
+        class="mt-3 border-t border-gray-100 pt-2.5 text-[10px] text-gray-500 dark:border-gray-700 dark:text-gray-400"
       >
         {{ t('githubSync.lastSynced') }}: {{ lastSynced }}
       </p>

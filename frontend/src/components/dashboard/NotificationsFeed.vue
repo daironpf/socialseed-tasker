@@ -9,7 +9,7 @@
       </span>
     </template>
 
-    <div v-if="recent.length === 0" class="text-sm text-gray-400">
+    <div v-if="recent.length === 0" class="text-sm text-gray-500 dark:text-gray-400">
       {{ t('boardModules.noNotifications') }}
     </div>
 
@@ -28,9 +28,9 @@
           >
             {{ n.title }}
           </p>
-          <p class="truncate text-xs text-gray-400 dark:text-gray-500">{{ n.message }}</p>
+          <p class="truncate text-xs text-gray-500 dark:text-gray-400">{{ n.message }}</p>
         </div>
-        <span class="flex-shrink-0 text-[10px] text-gray-400">{{ timeOf(n.createdAt) }}</span>
+        <span class="flex-shrink-0 text-[10px] text-gray-500 dark:text-gray-400">{{ timeOf(n.createdAt) }}</span>
       </li>
     </ul>
   </ModuleCard>

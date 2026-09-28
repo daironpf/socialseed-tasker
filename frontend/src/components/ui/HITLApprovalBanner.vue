@@ -22,14 +22,14 @@
         </div>
 
         <div class="mb-3">
-          <label class="block text-[10px] font-medium text-gray-400 dark:text-gray-500 mb-1 uppercase tracking-wider">
+          <label class="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
             {{ t('hitl.command') }}
           </label>
           <pre class="rounded bg-gray-50 dark:bg-gray-900 p-3 text-xs font-mono text-gray-800 dark:text-gray-200 overflow-x-auto border border-gray-200 dark:border-gray-700">{{ actionDetails.command }}</pre>
         </div>
 
         <div v-if="actionDetails.target" class="mb-3">
-          <label class="block text-[10px] font-medium text-gray-400 dark:text-gray-500 mb-1 uppercase tracking-wider">
+          <label class="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">
             {{ t('hitl.target') }}
           </label>
           <span class="text-sm text-gray-700 dark:text-gray-300">{{ actionDetails.target }}</span>

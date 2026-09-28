@@ -1,8 +1,14 @@
 <template>
-  <div class="relative w-full max-w-lg rounded-lg bg-white shadow-xl dark:bg-gray-800">
+  <div
+    ref="rootRef"
+    class="relative w-full max-w-lg rounded-lg bg-white shadow-xl dark:bg-gray-800"
+    role="dialog"
+    aria-modal="true"
+    :aria-label="t('issues.createIssue')"
+  >
     <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
       <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ t('issues.createIssue') }}</h3>
-      <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="$emit('close')" :aria-label="t('common.close')">
+      <button class="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="$emit('close')" :aria-label="t('common.close')">
         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
@@ -14,6 +20,7 @@
         <input
           v-model="form.title"
           required
+          autofocus
           class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
         />
       </div>
@@ -53,7 +60,7 @@
         <div class="flex flex-wrap gap-1">
           <span v-for="(label, idx) in form.labels" :key="idx" class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs dark:bg-gray-700">
             {{ label }}
-            <button type="button" class="text-gray-400 hover:text-gray-600" @click="form.labels.splice(idx, 1)">x</button>
+            <button type="button" class="text-gray-500 dark:text-gray-400 hover:text-gray-600" @click="form.labels.splice(idx, 1)">x</button>
           </span>
           <input v-model="newLabel" :placeholder="t('issues.addLabel')" class="rounded-md border border-gray-300 bg-transparent px-2 py-0.5 text-xs focus:border-brand-500 focus:outline-none dark:border-gray-600" @keydown.enter.prevent="addLabel" />
         </div>
@@ -73,11 +80,15 @@ import { useI18n } from 'vue-i18n'
 import { useComponentsStore } from '@/stores/componentsStore'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useUsersStore } from '@/stores/usersStore'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 import { IssuePriority } from '@/types'
 
 const { t } = useI18n()
 
 const emit = defineEmits<{ close: []; created: [] }>()
+
+const rootRef = ref<HTMLElement | null>(null)
+useFocusTrap(rootRef, { onClose: () => emit('close') })
 
 const componentsStore = useComponentsStore()
 const issuesStore = useIssuesStore()

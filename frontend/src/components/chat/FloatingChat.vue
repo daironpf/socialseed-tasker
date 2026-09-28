@@ -115,14 +115,14 @@
             <!-- Search -->
             <div class="px-2 py-1.5">
               <div class="relative">
-                <svg class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <svg class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <input
                   v-model="chatStore.searchQuery"
                   type="text"
                   :placeholder="t('floatingChat.search')"
-                  class="w-full rounded-full bg-gray-100 py-1.5 pl-8 pr-3 text-[13px] text-gray-900 placeholder-gray-400 focus:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500 dark:focus:ring-blue-800"
+                  class="w-full rounded-full bg-gray-100 py-1.5 pl-8 pr-3 text-[13px] text-gray-900 placeholder-gray-500 focus:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-200 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 dark:focus:ring-blue-800"
                 />
               </div>
             </div>
@@ -154,7 +154,7 @@
                 <div class="min-w-0 flex-1 border-b border-gray-100 py-1 dark:border-gray-800">
                   <div class="flex items-center justify-between">
                     <span class="truncate text-[13px] font-semibold text-gray-900 dark:text-white">{{ conv.name }}</span>
-                    <span v-if="conv.lastMessage" class="ml-1 flex-shrink-0 text-[11px] text-gray-400 dark:text-gray-500">
+                    <span v-if="conv.lastMessage" class="ml-1 flex-shrink-0 text-[11px] text-gray-500 dark:text-gray-400">
                       {{ formatShortTime(conv.updatedAt) }}
                     </span>
                   </div>
@@ -229,7 +229,7 @@
                 <!-- Code block -->
                 <div v-else-if="msg.type === 'code'" class="mb-1 flex" :class="msg.senderId === 'admin' ? 'justify-end' : 'justify-start'">
                   <div class="max-w-[85%] overflow-hidden rounded-2xl bg-gray-900 shadow-sm">
-                    <div class="flex items-center gap-1.5 border-b border-gray-700 px-3 py-1.5 text-[10px] text-gray-400">
+                    <div class="flex items-center gap-1.5 border-b border-gray-700 px-3 py-1.5 text-[10px] text-gray-500 dark:text-gray-400">
                       <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
                       <span>{{ msg.metadata?.language || 'code' }}</span>
                     </div>
@@ -270,7 +270,7 @@
                   class="mt-0.5 flex px-1"
                   :class="msg.senderId === 'admin' ? 'justify-end' : 'justify-start'"
                 >
-                  <span class="ml-9 text-[10px] text-gray-400 dark:text-gray-500">
+                  <span class="ml-9 text-[10px] text-gray-500 dark:text-gray-400">
                     {{ formatBubbleTime(msg.createdAt) }}
                   </span>
                 </div>
@@ -284,7 +284,7 @@
                 <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400 dark:bg-gray-500" style="animation-delay: 150ms"></span>
                 <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400 dark:bg-gray-500" style="animation-delay: 300ms"></span>
               </div>
-              <span class="text-[11px] text-gray-400 dark:text-gray-500">
+              <span class="text-[11px] text-gray-500 dark:text-gray-400">
                 {{ chatStore.typingUsers.map(u => u.username).join(', ') }} {{ t('chat.typing') }}
               </span>
             </div>
@@ -308,7 +308,7 @@
                   v-model="message"
                   :placeholder="t('floatingChat.placeholder')"
                   rows="1"
-                  class="w-full resize-none bg-transparent text-[13px] text-gray-900 placeholder-gray-400 focus:outline-none dark:text-white dark:placeholder-gray-500"
+                  class="w-full resize-none bg-transparent text-[13px] text-gray-900 placeholder-gray-500 focus:outline-none dark:text-white dark:placeholder-gray-400"
                   style="line-height: 22px"
                   @keydown.enter.exact.prevent="handleSend"
                   @input="autoResize"

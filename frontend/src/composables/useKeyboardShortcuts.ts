@@ -33,12 +33,16 @@ function matchModifier(e: KeyboardEvent, modifiers?: Shortcut['modifiers']): boo
 }
 
 function handleKeydown(e: KeyboardEvent) {
-  if (isInputFocused()) return
+  if (e.defaultPrevented) return
 
   const key = e.key.toLowerCase()
+  const isEscape = key === 'escape'
+
+  if (!isEscape && isInputFocused()) return
 
   const globalMatches = registeredShortcuts.value.filter((s) => {
     if (s.scope !== 'global') return false
+    if (s.sequence) return false
     if (s.key !== key) return false
     if (!matchModifier(e, s.modifiers)) return false
     if (s.enabled && !s.enabled()) return false
@@ -71,6 +75,21 @@ function handleKeydown(e: KeyboardEvent) {
     e.preventDefault()
     seqMatches[0].action()
     sequenceBuffer.value = []
+    return
+  }
+
+  const localMatches = registeredShortcuts.value.filter((s) => {
+    if (s.scope !== 'local') return false
+    if (s.sequence) return false
+    if (s.key !== key) return false
+    if (!matchModifier(e, s.modifiers)) return false
+    if (s.enabled && !s.enabled()) return false
+    return true
+  })
+
+  if (localMatches.length > 0) {
+    e.preventDefault()
+    localMatches[0].action()
     return
   }
 }

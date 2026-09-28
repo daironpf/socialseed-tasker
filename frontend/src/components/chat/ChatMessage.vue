@@ -19,12 +19,12 @@
           v-if="senderType === 'agent'"
           class="rounded bg-purple-100 px-1.5 py-0.5 text-[9px] font-bold text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
         >AI</span>
-        <span v-if="senderType === 'system'" class="text-[10px] text-gray-400 dark:text-gray-500">SYSTEM</span>
-        <span class="text-[10px] text-gray-400 dark:text-gray-500">{{ formattedTime }}</span>
+        <span v-if="senderType === 'system'" class="text-[10px] text-gray-500 dark:text-gray-400">SYSTEM</span>
+        <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ formattedTime }}</span>
       </div>
 
       <div v-if="type === 'code'" class="mt-1.5">
-        <div class="flex items-center gap-2 rounded-t bg-gray-800 px-3 py-1.5 text-[10px] text-gray-400">
+        <div class="flex items-center gap-2 rounded-t bg-gray-800 px-3 py-1.5 text-[10px] text-gray-500 dark:text-gray-400">
           <span>{{ metadata?.language || 'code' }}</span>
         </div>
         <pre class="overflow-x-auto rounded-b bg-gray-900 p-3 text-xs text-gray-200"><code>{{ content }}</code></pre>

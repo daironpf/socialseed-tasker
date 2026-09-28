@@ -27,7 +27,7 @@
           class="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:border-blue-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
           @change="onFromChange(($event.target as HTMLInputElement).value)"
         >
-        <span class="text-xs text-gray-400">→</span>
+        <span class="text-xs text-gray-500 dark:text-gray-400">→</span>
         <input
           type="date"
           :value="store.dateRange.to"
@@ -45,14 +45,14 @@
         class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800"
       >
         <div class="text-2xl font-bold" :class="toneText(kpi.tone)">{{ kpi.value }}</div>
-        <div class="mt-1 text-xs font-semibold uppercase text-gray-400">{{ t(`analytics.kpi_${kpi.label}`) }}</div>
+        <div class="mt-1 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">{{ t(`analytics.kpi_${kpi.label}`) }}</div>
         <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ kpi.sub }}</div>
       </div>
     </div>
 
     <!-- Period comparison -->
     <div class="flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 bg-white px-5 py-3 text-xs dark:border-gray-700 dark:bg-gray-800">
-      <span class="font-semibold uppercase text-gray-400">{{ t('analytics.vsPrevious') }}</span>
+      <span class="font-semibold uppercase text-gray-500 dark:text-gray-400">{{ t('analytics.vsPrevious') }}</span>
       <span class="text-gray-600 dark:text-gray-300">
         {{ t('analytics.resolved') }}:
         <strong>{{ store.comparison.resolved.current }}</strong>

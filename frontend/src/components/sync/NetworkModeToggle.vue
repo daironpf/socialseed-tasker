@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-0.5 dark:border-gray-700 dark:bg-gray-800">
-    <span class="px-1.5 text-[10px] font-semibold uppercase text-gray-400">{{ t('offline.networkLabel') }}</span>
+    <span class="px-1.5 text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">{{ t('offline.networkLabel') }}</span>
     <button
       v-for="mode in modes"
       :key="mode.value"

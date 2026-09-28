@@ -49,7 +49,7 @@
             </span>
           </div>
           <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">{{ mcpStore.metrics.totalSessions }}</p>
-          <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">{{ t('mcp.allConnections') }}</p>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('mcp.allConnections') }}</p>
         </div>
 
         <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
@@ -62,7 +62,7 @@
             </span>
           </div>
           <p class="mt-2 text-3xl font-bold text-green-600 dark:text-green-400">{{ mcpStore.metrics.activeSessions }}</p>
-          <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">{{ t('mcp.currentlyConnected') }}</p>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('mcp.currentlyConnected') }}</p>
         </div>
 
         <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
@@ -75,7 +75,7 @@
             </span>
           </div>
           <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">{{ mcpStore.formatBytes(mcpStore.metrics.totalContextConsumed) }}</p>
-          <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">{{ t('mcp.acrossAllSessions') }}</p>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('mcp.acrossAllSessions') }}</p>
         </div>
 
         <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
@@ -88,7 +88,7 @@
             </span>
           </div>
           <p class="mt-2 text-3xl font-bold text-gray-900 dark:text-white">{{ mcpStore.metrics.totalCypherQueries.toLocaleString() }}</p>
-          <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">{{ t('mcp.avgPerMin', { rate: mcpStore.metrics.avgQueriesPerMin.toFixed(1) }) }}</p>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('mcp.avgPerMin', { rate: mcpStore.metrics.avgQueriesPerMin.toFixed(1) }) }}</p>
         </div>
       </div>
 
@@ -116,7 +116,7 @@
         </div>
 
         <div v-if="filteredSessions.length === 0" class="px-6 py-12 text-center">
-          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="mx-auto h-12 w-12 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
           </svg>
           <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">{{ t('mcp.noSessions') }}</p>
@@ -149,7 +149,7 @@
                     </div>
                     <div>
                       <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ session.clientName }}</p>
-                      <p class="text-xs text-gray-400 dark:text-gray-500">{{ session.id }}</p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">{{ session.id }}</p>
                     </div>
                   </div>
                 </td>
@@ -183,7 +183,7 @@
                   <div class="w-32">
                     <div class="flex items-center justify-between text-xs">
                       <span class="text-gray-700 dark:text-gray-300">{{ mcpStore.formatBytes(session.contextConsumed) }}</span>
-                      <span class="text-gray-400 dark:text-gray-500">{{ Math.round((session.contextConsumed / session.contextLimit) * 100) }}%</span>
+                      <span class="text-gray-500 dark:text-gray-400">{{ Math.round((session.contextConsumed / session.contextLimit) * 100) }}%</span>
                     </div>
                     <div class="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-600">
                       <div
@@ -199,7 +199,7 @@
                 <td class="px-6 py-4">
                   <div>
                     <p class="text-sm font-medium text-gray-900 dark:text-white">{{ session.cypherQueries.toLocaleString() }}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
                       {{ session.status === 'active' ? `${session.cypherQueriesPerMin} ${t('mcp.perMin')}` : t('mcp.idle') }}
                     </p>
                   </div>
@@ -217,7 +217,7 @@
                     </span>
                     <span
                       v-if="session.toolsUsed.length > 3"
-                      class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-500"
+                      class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400"
                     >
                       +{{ session.toolsUsed.length - 3 }}
                     </span>

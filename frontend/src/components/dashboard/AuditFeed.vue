@@ -9,7 +9,7 @@
       </span>
     </template>
 
-    <div v-if="recent.length === 0" class="text-sm text-gray-400">
+    <div v-if="recent.length === 0" class="text-sm text-gray-500 dark:text-gray-400">
       {{ t('boardModules.auditEmpty') }}
     </div>
 
@@ -29,11 +29,11 @@
               {{ t(`auditLog.severities.${e.severity}`) }}
             </span>
           </p>
-          <p class="truncate text-[10px] text-gray-400 dark:text-gray-500">
+          <p class="truncate text-[10px] text-gray-500 dark:text-gray-400">
             {{ e.actor }} · <span class="font-mono">{{ e.resource }}</span>
           </p>
         </div>
-        <span class="flex-shrink-0 text-[10px] text-gray-400 dark:text-gray-500">
+        <span class="flex-shrink-0 text-[10px] text-gray-500 dark:text-gray-400">
           {{ timeOf(e.timestamp) }}
         </span>
       </li>

@@ -18,10 +18,10 @@
         <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-20">
           <div class="rounded-lg bg-gray-900 dark:bg-gray-700 px-3 py-1.5 text-xs text-white whitespace-nowrap shadow-lg">
             <div class="font-medium">{{ viewer.username }}</div>
-            <div v-if="viewer.viewingField" class="text-gray-400 text-[10px]">
+            <div v-if="viewer.viewingField" class="text-gray-500 dark:text-gray-400 text-[10px]">
               {{ t('presence.editing', { field: viewer.viewingField }) }}
             </div>
-            <div class="text-gray-400 text-[10px]">{{ timeAgo(viewer.lastSeen) }}</div>
+            <div class="text-gray-500 dark:text-gray-400 text-[10px]">{{ timeAgo(viewer.lastSeen) }}</div>
           </div>
         </div>
       </div>

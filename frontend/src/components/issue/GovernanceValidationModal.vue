@@ -1,9 +1,11 @@
 <template>
   <div
+    ref="rootRef"
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
     @click.self="$emit('close')"
     role="dialog"
     aria-modal="true"
+    :aria-label="t('governance.title')"
   >
     <div class="w-full max-w-md rounded-lg bg-white shadow-xl dark:bg-gray-800">
       <div class="flex items-center gap-3 border-b border-gray-200 px-6 py-4 dark:border-gray-700">
@@ -83,7 +85,9 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 import type { GovernanceValidation } from '../../types'
 
 const { t } = useI18n()
@@ -93,8 +97,11 @@ defineProps<{
   governance: GovernanceValidation
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'close'): void
   (e: 'override'): void
 }>()
+
+const rootRef = ref<HTMLElement | null>(null)
+useFocusTrap(rootRef, { onClose: () => emit('close') })
 </script>

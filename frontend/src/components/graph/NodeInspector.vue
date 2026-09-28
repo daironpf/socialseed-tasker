@@ -30,7 +30,7 @@
             </p>
           </div>
           <button
-            class="rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+            class="rounded p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
             :aria-label="t('common.close')"
             @click="$emit('close')"
           >
@@ -44,7 +44,7 @@
       <div class="space-y-5 p-6">
         <!-- Edge details -->
         <section v-if="payload.edge">
-          <h3 class="mb-2 text-xs font-semibold uppercase text-gray-400">
+          <h3 class="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
             {{ t('graphExplorer.inspector.relationship') }}
           </h3>
           <div class="space-y-2 rounded-lg bg-gray-50 p-3 text-sm dark:bg-gray-900/40">
@@ -78,7 +78,7 @@
 
         <!-- Metadata -->
         <section v-if="payload.fields.length">
-          <h3 class="mb-2 text-xs font-semibold uppercase text-gray-400">
+          <h3 class="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
             {{ t('graphExplorer.inspector.metadata') }}
           </h3>
           <dl class="space-y-2">
@@ -93,7 +93,7 @@
 
         <!-- Blast radius -->
         <section v-if="payload.blast">
-          <h3 class="mb-2 text-xs font-semibold uppercase text-gray-400">
+          <h3 class="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
             {{ t('graphExplorer.inspector.blastRadius') }}
           </h3>
           <div class="grid grid-cols-3 gap-2">
@@ -122,7 +122,7 @@
 
         <!-- Quick links -->
         <section v-if="payload.links.length">
-          <h3 class="mb-2 text-xs font-semibold uppercase text-gray-400">
+          <h3 class="mb-2 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
             {{ t('graphExplorer.inspector.links') }}
           </h3>
           <div class="flex flex-wrap gap-2">

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="space-y-6" id="executive-dashboard">
     <div class="flex items-center justify-between">
       <div>
@@ -38,13 +38,13 @@
       <div class="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
         <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-700">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('executive.cycleTimeComparison') }}</h3>
-          <p class="text-xs text-gray-400">{{ t('executive.avgSpeedup', { x: store.avgSpeedup }) }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('executive.avgSpeedup', { x: store.avgSpeedup }) }}</p>
         </div>
         <div class="p-5 space-y-4">
           <div v-for="ct in store.cycleTime" :key="ct.category" class="space-y-1.5">
             <div class="flex items-center justify-between text-xs">
               <span class="font-medium text-gray-700 dark:text-gray-300">{{ ct.category }}</span>
-              <span class="text-gray-400">{{ ct.humanMinutes }}m vs {{ ct.agentMinutes }}m</span>
+              <span class="text-gray-500 dark:text-gray-400">{{ ct.humanMinutes }}m vs {{ ct.agentMinutes }}m</span>
             </div>
             <div class="relative h-5 space-y-0.5">
               <div class="h-2.5 rounded bg-gray-200 dark:bg-gray-700"><div class="h-2.5 rounded bg-gray-400 dark:bg-gray-500" :style="{ width: humanBarWidth(ct.humanMinutes) }"></div></div>
@@ -60,7 +60,7 @@
       <div class="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
         <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-700">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('executive.debtReduction') }}</h3>
-          <p class="text-xs text-gray-400">{{ t('executive.totalReduced', { n: store.totalDebtReduction }) }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('executive.totalReduced', { n: store.totalDebtReduction }) }}</p>
         </div>
         <div class="p-5">
           <div class="flex items-end gap-1.5 h-40">
@@ -69,7 +69,7 @@
                 <div class="w-full rounded-t bg-green-400 dark:bg-green-500" :style="{ height: debtBarHeight(d.resolved) + 'px' }"></div>
                 <div class="w-full rounded-b bg-red-300 dark:bg-red-600" :style="{ height: debtBarHeight(d.created) + 'px' }"></div>
               </div>
-              <span class="text-[10px] text-gray-400">{{ d.month }}</span>
+              <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ d.month }}</span>
             </div>
           </div>
           <div class="flex items-center gap-4 mt-3 pt-2 border-t border-gray-100 dark:border-gray-700">
@@ -85,7 +85,7 @@
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('executive.archCompliance') }}</h3>
-            <p class="text-xs text-gray-400">{{ t('executive.overallScore', { score: store.overallCompliance }) }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('executive.overallScore', { score: store.overallCompliance }) }}</p>
           </div>
           <div class="text-3xl font-bold" :class="store.complianceColor(store.overallCompliance)">{{ store.overallCompliance }}</div>
         </div>

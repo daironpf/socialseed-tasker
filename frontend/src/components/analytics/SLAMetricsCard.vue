@@ -3,7 +3,7 @@
     <div class="mb-4 flex items-center justify-between">
       <div>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('sla.title') }}</h3>
-        <p class="text-xs text-gray-400">{{ t('sla.subtitle') }}</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('sla.subtitle') }}</p>
       </div>
       <button
         v-if="counts.breached > 0 || counts.atRisk > 0"
@@ -85,11 +85,11 @@
           />
         </div>
       </div>
-      <div v-if="items.length > 6" class="text-center text-[11px] text-gray-400">
+      <div v-if="items.length > 6" class="text-center text-[11px] text-gray-500 dark:text-gray-400">
         {{ t('sla.moreItems', { n: items.length - 6 }) }}
       </div>
     </div>
-    <div v-else class="py-8 text-center text-sm text-gray-400">{{ t('sla.noOpen') }}</div>
+    <div v-else class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">{{ t('sla.noOpen') }}</div>
   </div>
 </template>
 

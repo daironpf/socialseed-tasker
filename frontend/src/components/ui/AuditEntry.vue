@@ -29,14 +29,14 @@
         >{{ actionLabel }}</span>
       </div>
       <p class="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{{ entry.description }}</p>
-      <div v-if="entry.details" class="mt-1 text-xs text-gray-500 dark:text-gray-500">
+      <div v-if="entry.details" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
         <template v-if="entry.details.from && entry.details.to">
           <span class="line-through opacity-60">{{ entry.details.from }}</span>
           <span class="mx-1">→</span>
           <span class="font-medium">{{ entry.details.to }}</span>
         </template>
       </div>
-      <span class="mt-1 block text-[11px] text-gray-400 dark:text-gray-500">{{ timeAgo }}</span>
+      <span class="mt-1 block text-[11px] text-gray-500 dark:text-gray-400">{{ timeAgo }}</span>
     </div>
   </div>
 </template>

@@ -26,7 +26,7 @@
           v-for="i in 5"
           :key="i"
           class="text-[10px] w-4 text-center"
-          :class="i <= modelValue ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-gray-400'"
+          :class="i <= modelValue ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-gray-500 dark:text-gray-400'"
         >{{ i }}</span>
       </div>
     </div>
@@ -54,7 +54,7 @@
         v-for="marker in depthMarkers"
         :key="marker.level"
         class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-        :class="marker.active ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500'"
+        :class="marker.active ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-400'"
       >
         <span class="h-1.5 w-1.5 rounded-full" :class="marker.active ? 'bg-blue-500' : 'bg-gray-300'"></span>
         L{{ marker.level }}: {{ marker.count }}

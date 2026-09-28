@@ -1,6 +1,6 @@
 <template>
   <ModuleCard :title="t('boardModules.depTitle')">
-    <div v-if="top.length === 0" class="text-sm text-gray-400">
+    <div v-if="top.length === 0" class="text-sm text-gray-500 dark:text-gray-400">
       {{ t('issues.noDependencies') }}
     </div>
 
@@ -25,7 +25,7 @@
     </ul>
 
     <div
-      class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3 text-[10px] uppercase tracking-wide text-gray-400 dark:border-gray-700 dark:text-gray-500"
+      class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3 text-[10px] uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:text-gray-400"
     >
       <span>{{ t('boardModules.depLinks') }}: {{ totalEdges }}</span>
       <span :class="blockedCount > 0 ? 'text-red-600 dark:text-red-400' : ''">

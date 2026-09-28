@@ -1,7 +1,7 @@
 <template>
   <div class="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
     <div class="flex flex-wrap items-center gap-1.5 border-b border-gray-200 px-3 py-2 dark:border-gray-700">
-      <span class="mr-1 text-[10px] font-semibold uppercase text-gray-400">{{ t('agentStudio.prompt.variables') }}</span>
+      <span class="mr-1 text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">{{ t('agentStudio.prompt.variables') }}</span>
       <button
         v-for="variable in PROMPT_VARIABLES"
         :key="variable"
@@ -10,7 +10,7 @@
       >
         {{ variable }}
       </button>
-      <span class="ml-auto font-mono text-[10px] text-gray-400">{{ modelValue.length }} / 2000</span>
+      <span class="ml-auto font-mono text-[10px] text-gray-500 dark:text-gray-400">{{ modelValue.length }} / 2000</span>
     </div>
 
     <textarea

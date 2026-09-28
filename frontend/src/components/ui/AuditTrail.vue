@@ -10,7 +10,7 @@
           class="rounded px-2 py-1 text-[10px] font-medium transition-colors"
           :class="activeFilter === filter.key
             ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-            : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'"
+            : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'"
           @click="activeFilter = filter.key"
         >
           {{ filter.label }}
@@ -19,7 +19,7 @@
     </div>
 
     <!-- Timeline -->
-    <div v-if="filteredEntries.length === 0" class="flex flex-col items-center justify-center py-8 text-gray-400">
+    <div v-if="filteredEntries.length === 0" class="flex flex-col items-center justify-center py-8 text-gray-500 dark:text-gray-400">
       <svg class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>

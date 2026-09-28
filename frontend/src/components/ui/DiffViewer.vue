@@ -2,11 +2,11 @@
   <div class="diff-viewer rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
     <div class="flex items-center justify-between bg-gray-50 dark:bg-gray-800 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
       <div class="flex items-center gap-2">
-        <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
         <span class="text-xs font-medium text-gray-600 dark:text-gray-300">{{ filename }}</span>
-        <span v-if="stats" class="text-[10px] text-gray-400">
+        <span v-if="stats" class="text-[10px] text-gray-500 dark:text-gray-400">
           <span class="text-green-600 dark:text-green-400">+{{ stats.added }}</span>
           <span class="mx-0.5">/</span>
           <span class="text-red-600 dark:text-red-400">-{{ stats.removed }}</span>
@@ -29,7 +29,7 @@
         </button>
         <div class="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
         <button
-          class="rounded p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+          class="rounded p-1 text-gray-500 dark:text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors"
           :title="t('diff.copy')"
           @click="copyDiff"
         >
@@ -38,7 +38,7 @@
           </svg>
         </button>
         <button
-          class="rounded p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+          class="rounded p-1 text-gray-500 dark:text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors"
           :title="t('diff.download')"
           @click="downloadPatch"
         >
@@ -62,17 +62,17 @@
               'bg-amber-50 dark:bg-amber-900/10': line.type === 'context',
             }"
           >
-            <td class="w-12 px-2 py-0.5 text-right text-gray-400 select-none border-r border-gray-200 dark:border-gray-700">
+            <td class="w-12 px-2 py-0.5 text-right text-gray-500 dark:text-gray-400 select-none border-r border-gray-200 dark:border-gray-700">
               {{ line.oldLine ?? '' }}
             </td>
-            <td class="w-12 px-2 py-0.5 text-right text-gray-400 select-none border-r border-gray-200 dark:border-gray-700">
+            <td class="w-12 px-2 py-0.5 text-right text-gray-500 dark:text-gray-400 select-none border-r border-gray-200 dark:border-gray-700">
               {{ line.newLine ?? '' }}
             </td>
             <td class="w-6 px-1 py-0.5 text-center select-none"
               :class="{
                 'text-green-600 dark:text-green-400': line.type === 'add',
                 'text-red-600 dark:text-red-400': line.type === 'remove',
-                'text-gray-400': line.type === 'context',
+                'text-gray-500 dark:text-gray-400': line.type === 'context',
               }"
             >
               {{ line.type === 'add' ? '+' : line.type === 'remove' ? '-' : ' ' }}
@@ -106,7 +106,7 @@
                   'bg-gray-50 dark:bg-gray-800/50': line.type === 'empty',
                 }"
               >
-                <td class="w-10 px-2 py-0.5 text-right text-gray-400 select-none border-r border-gray-200 dark:border-gray-700">
+                <td class="w-10 px-2 py-0.5 text-right text-gray-500 dark:text-gray-400 select-none border-r border-gray-200 dark:border-gray-700">
                   {{ line.line ?? '' }}
                 </td>
                 <td class="w-5 px-1 py-0.5 text-center text-red-600 dark:text-red-400 select-none">
@@ -138,7 +138,7 @@
                   'bg-gray-50 dark:bg-gray-800/50': line.type === 'empty',
                 }"
               >
-                <td class="w-10 px-2 py-0.5 text-right text-gray-400 select-none border-r border-gray-200 dark:border-gray-700">
+                <td class="w-10 px-2 py-0.5 text-right text-gray-500 dark:text-gray-400 select-none border-r border-gray-200 dark:border-gray-700">
                   {{ line.line ?? '' }}
                 </td>
                 <td class="w-5 px-1 py-0.5 text-center text-green-600 dark:text-green-400 select-none">

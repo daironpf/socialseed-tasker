@@ -7,7 +7,7 @@
           v-for="period in periods"
           :key="period.key"
           class="rounded px-2 py-1 text-[10px] font-medium transition-colors"
-          :class="selectedPeriod === period.key ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'"
+          :class="selectedPeriod === period.key ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'"
           @click="selectedPeriod = period.key"
         >
           {{ period.label }}
@@ -15,7 +15,7 @@
       </div>
     </div>
 
-    <div v-if="chartData.length === 0" class="flex items-center justify-center h-40 text-sm text-gray-400">
+    <div v-if="chartData.length === 0" class="flex items-center justify-center h-40 text-sm text-gray-500 dark:text-gray-400">
       {{ t('tokens.noData') }}
     </div>
 

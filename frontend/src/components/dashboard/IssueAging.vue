@@ -1,6 +1,6 @@
 <template>
   <ModuleCard :title="t('boardModules.agingTitle')">
-    <div v-if="openIssues.length === 0" class="text-sm text-gray-400">
+    <div v-if="openIssues.length === 0" class="text-sm text-gray-500 dark:text-gray-400">
       {{ t('boardModules.noOpenIssues') }}
     </div>
     <div v-else class="space-y-3">
@@ -22,13 +22,13 @@
       <div class="flex items-center justify-between border-t border-gray-100 pt-3 dark:border-gray-700">
         <div>
           <p class="text-lg font-bold text-gray-900 dark:text-white">{{ avgAge }}d</p>
-          <p class="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500">
+          <p class="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
             {{ t('boardModules.agingAvg') }}
           </p>
         </div>
         <div class="text-right">
           <p class="text-lg font-bold text-red-600 dark:text-red-400">{{ oldestAge }}d</p>
-          <p class="text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500">
+          <p class="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
             {{ t('boardModules.agingOldest') }}
           </p>
         </div>

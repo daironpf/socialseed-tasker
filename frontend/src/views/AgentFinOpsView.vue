@@ -21,7 +21,7 @@
           </div>
           <div class="flex items-center gap-2">
             <span class="text-sm font-bold text-red-600 dark:text-red-400">${{ alert.currentCost.toFixed(2) }}</span>
-            <span class="text-xs text-gray-400">/ ${{ alert.threshold.toFixed(2) }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">/ ${{ alert.threshold.toFixed(2) }}</span>
           </div>
         </div>
       </div>
@@ -32,22 +32,22 @@
       <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-xs text-gray-500 dark:text-gray-400">{{ t('finops.totalTokenCost') }}</div>
         <div class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">${{ store.metrics.totalCost.toFixed(2) }}</div>
-        <div class="mt-1 text-xs text-gray-400">{{ store.metrics.totalTokens.toLocaleString() }} {{ t('finops.tokens') }}</div>
+        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ store.metrics.totalTokens.toLocaleString() }} {{ t('finops.tokens') }}</div>
       </div>
       <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-xs text-gray-500 dark:text-gray-400">{{ t('finops.humanHoursSaved') }}</div>
         <div class="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">{{ store.metrics.estimatedHumanHoursSaved.toFixed(1) }}h</div>
-        <div class="mt-1 text-xs text-gray-400">${{ store.metrics.estimatedHumanCostSaved.toLocaleString() }} {{ t('finops.equivalentValue') }}</div>
+        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">${{ store.metrics.estimatedHumanCostSaved.toLocaleString() }} {{ t('finops.equivalentValue') }}</div>
       </div>
       <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-xs text-gray-500 dark:text-gray-400">{{ t('finops.overallROI') }}</div>
         <div class="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">{{ store.metrics.overallROI.toFixed(0) }}%</div>
-        <div class="mt-1 text-xs text-gray-400">{{ t('finops.returnOnInvestment') }}</div>
+        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('finops.returnOnInvestment') }}</div>
       </div>
       <div class="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
         <div class="text-xs text-gray-500 dark:text-gray-400">{{ t('finops.avgCostPerRequest') }}</div>
         <div class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">${{ store.metrics.avgCostPerRequest.toFixed(3) }}</div>
-        <div class="mt-1 text-xs text-gray-400">{{ store.metrics.totalRequests }} {{ t('finops.requests') }}</div>
+        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ store.metrics.totalRequests }} {{ t('finops.requests') }}</div>
       </div>
     </div>
 
@@ -95,7 +95,7 @@
               <div class="h-full rounded bg-blue-500 dark:bg-blue-600 transition-all" :style="{ width: componentBarWidth(c.totalCost) }"></div>
             </div>
             <span class="w-16 text-right text-xs font-medium text-gray-900 dark:text-white">${{ c.totalCost.toFixed(2) }}</span>
-            <span class="w-12 text-right text-xs text-gray-400">{{ c.requests }}</span>
+            <span class="w-12 text-right text-xs text-gray-500 dark:text-gray-400">{{ c.requests }}</span>
           </div>
         </div>
       </div>
@@ -122,7 +122,7 @@
             <tr v-for="t_item in topTasks" :key="t_item.issueId" class="hover:bg-gray-50 dark:hover:bg-gray-700/30">
               <td class="px-5 py-3">
                 <div class="text-sm font-medium text-gray-900 dark:text-white">{{ t_item.issueTitle }}</div>
-                <div class="text-xs text-gray-400">{{ t_item.issueId }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">{{ t_item.issueId }}</div>
               </td>
               <td class="px-5 py-3 text-sm text-gray-500 dark:text-gray-400">{{ t_item.model }}</td>
               <td class="px-5 py-3 text-right text-sm text-gray-700 dark:text-gray-300">{{ t_item.tokensUsed.toLocaleString() }}</td>
@@ -164,7 +164,7 @@
               </div>
             </div>
             <span class="text-xs font-medium text-gray-700 dark:text-gray-300">${{ cap.used.toFixed(2) }} / ${{ cap.limit.toFixed(2) }}</span>
-            <span class="text-xs text-gray-400">{{ capUsedPercent(cap).toFixed(0) }}%</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ capUsedPercent(cap).toFixed(0) }}%</span>
           </div>
         </div>
       </div>

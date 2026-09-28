@@ -1,6 +1,6 @@
 <template>
   <ModuleCard :title="t('boardModules.complianceTitle')">
-    <div v-if="govIssues.length === 0" class="text-sm text-gray-400">
+    <div v-if="govIssues.length === 0" class="text-sm text-gray-500 dark:text-gray-400">
       {{ t('boardModules.govNoData') }}
     </div>
 

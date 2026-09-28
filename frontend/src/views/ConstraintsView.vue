@@ -44,7 +44,7 @@
     <!-- Filters -->
     <div class="flex flex-wrap gap-3">
       <div class="relative flex-1 min-w-[200px]">
-        <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
@@ -128,7 +128,7 @@
           </div>
         </div>
         <button
-class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+class="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
           :aria-label="t('common.close')"
           @click="store.validationResult = null"
         >
@@ -153,7 +153,7 @@ class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
           <div class="flex-1">
             <div class="text-sm font-medium text-gray-900 dark:text-white">{{ v.constraint_name }}</div>
             <div class="text-xs text-gray-600 dark:text-gray-400">{{ v.message }}</div>
-            <div class="mt-1 text-xs text-gray-500 dark:text-gray-500">{{ t('constraints.remediation') }} {{ v.remediation }}</div>
+            <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('constraints.remediation') }} {{ v.remediation }}</div>
           </div>
           <span class="rounded px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ v.category }}</span>
         </div>
@@ -203,21 +203,21 @@ class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               <svg v-if="c.auto_fix" class="mx-auto h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
-              <span v-else class="text-xs text-gray-400">—</span>
+              <span v-else class="text-xs text-gray-500 dark:text-gray-400">—</span>
             </td>
             <td class="px-4 py-3 text-right">
               <div class="flex items-center justify-end gap-1">
-                <button class="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-700" @click.stop="openEditModal(c)">
+                <button class="rounded p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-700" @click.stop="openEditModal(c)">
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                 </button>
-                <button class="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-700" @click.stop="deleteConstraint(c)" :title="t('issues.delete')">
+                <button class="rounded p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-700" @click.stop="deleteConstraint(c)" :title="t('issues.delete')">
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
               </div>
             </td>
           </tr>
           <tr v-if="filteredConstraints.length === 0">
-            <td colspan="8" class="px-4 py-12 text-center text-sm text-gray-400">{{ t('common.noData') }}</td>
+            <td colspan="8" class="px-4 py-12 text-center text-sm text-gray-500 dark:text-gray-400">{{ t('common.noData') }}</td>
           </tr>
         </tbody>
       </table>
@@ -241,7 +241,7 @@ class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 <p class="text-xs text-gray-500 font-mono">{{ selectedConstraint.id }}</p>
               </div>
             </div>
-            <button class="text-gray-400 hover:text-gray-600" @click="selectedConstraint = null">
+            <button class="text-gray-500 dark:text-gray-400 hover:text-gray-600" @click="selectedConstraint = null">
               <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>

@@ -8,10 +8,14 @@
       >
         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" @click="close" />
         <div
+          ref="panelRef"
           class="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="t('palette.title')"
         >
           <div class="flex items-center border-b border-gray-200 dark:border-gray-700 px-4">
-            <svg class="h-5 w-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="h-5 w-5 text-gray-500 dark:text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -19,7 +23,7 @@
               v-model="query"
               type="text"
               :placeholder="t('palette.placeholder')"
-              class="flex-1 bg-transparent px-3 py-4 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none"
+              class="flex-1 bg-transparent px-3 py-4 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none"
               @keydown.down.prevent="moveDown"
               @keydown.up.prevent="moveUp"
               @keydown.enter.prevent="executeSelected"
@@ -32,7 +36,7 @@
 
           <div class="max-h-80 overflow-y-auto p-2">
             <div v-if="query === '' && recentActions.length > 0" class="mb-2">
-              <div class="px-3 py-1.5 text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              <div class="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {{ t('palette.recent') }}
               </div>
               <button
@@ -45,16 +49,16 @@
               >
                 <span class="text-lg" v-html="action.icon" />
                 <span class="flex-1 text-left">{{ action.label }}</span>
-                <span class="text-xs text-gray-400 dark:text-gray-500">{{ action.category }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ action.category }}</span>
               </button>
             </div>
 
-            <div v-if="query !== '' && filteredResults.length === 0" class="py-8 text-center text-sm text-gray-400 dark:text-gray-500">
+            <div v-if="query !== '' && filteredResults.length === 0" class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
               {{ t('palette.noResults') }}
             </div>
 
             <template v-for="(group, groupName) in groupedResults" :key="groupName">
-              <div class="px-3 py-1.5 text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              <div class="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {{ groupName }}
               </div>
               <button
@@ -67,12 +71,12 @@
               >
                 <span class="text-lg" v-html="item.icon" />
                 <span class="flex-1 text-left truncate">{{ item.label }}</span>
-                <span v-if="item.description" class="text-xs text-gray-400 dark:text-gray-500 truncate max-w-[120px]">{{ item.description }}</span>
+                <span v-if="item.description" class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">{{ item.description }}</span>
               </button>
             </template>
           </div>
 
-          <div class="flex items-center gap-4 border-t border-gray-200 dark:border-gray-700 px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
+          <div class="flex items-center gap-4 border-t border-gray-200 dark:border-gray-700 px-4 py-2 text-xs text-gray-500 dark:text-gray-400">
             <span class="flex items-center gap-1">
               <kbd class="rounded border border-gray-300 dark:border-gray-600 px-1 py-0.5">↑↓</kbd>
               {{ t('palette.navigate') }}
@@ -99,6 +103,7 @@ import { useI18n } from 'vue-i18n'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useComponentsStore } from '@/stores/componentsStore'
 import { useUiStore } from '@/stores/uiStore'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -110,6 +115,8 @@ const isOpen = ref(false)
 const query = ref('')
 const selectedIndex = ref(0)
 const inputRef = ref<HTMLInputElement | null>(null)
+const panelRef = ref<HTMLElement | null>(null)
+const focusTrap = useFocusTrap(panelRef, { immediate: false, onClose: close })
 
 interface PaletteItem {
   id: string
@@ -268,13 +275,17 @@ function open() {
   isOpen.value = true
   query.value = ''
   selectedIndex.value = 0
-  nextTick(() => inputRef.value?.focus())
+  nextTick(() => {
+    focusTrap.activate()
+    inputRef.value?.focus()
+  })
 }
 
 function close() {
   isOpen.value = false
   query.value = ''
   selectedIndex.value = 0
+  focusTrap.deactivate()
 }
 
 watch(query, () => {

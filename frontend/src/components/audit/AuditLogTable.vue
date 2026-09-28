@@ -2,7 +2,7 @@
   <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
     <table class="w-full text-left text-xs">
       <thead>
-        <tr class="border-b border-gray-200 text-[10px] uppercase text-gray-400 dark:border-gray-700">
+        <tr class="border-b border-gray-200 text-[10px] uppercase text-gray-500 dark:text-gray-400 dark:border-gray-700">
           <th class="px-4 py-3 font-semibold">{{ t('auditLog.columns.timestamp') }}</th>
           <th class="px-4 py-3 font-semibold">{{ t('auditLog.columns.actor') }}</th>
           <th class="px-4 py-3 font-semibold">{{ t('auditLog.columns.event') }}</th>
@@ -31,7 +31,7 @@
               </span>
               <div class="min-w-0">
                 <div class="truncate font-medium text-gray-800 dark:text-gray-200">{{ entry.actor }}</div>
-                <div class="text-[10px] uppercase text-gray-400">{{ t(`auditLog.actorTypes.${entry.actorType}`) }}</div>
+                <div class="text-[10px] uppercase text-gray-500 dark:text-gray-400">{{ t(`auditLog.actorTypes.${entry.actorType}`) }}</div>
               </div>
             </div>
           </td>
@@ -51,12 +51,12 @@
           <td class="max-w-[220px] truncate px-4 py-2.5 text-gray-700 dark:text-gray-300" :title="entry.action">
             {{ entry.action }}
           </td>
-          <td class="whitespace-nowrap px-4 py-2.5 font-mono text-[11px] text-gray-400">
+          <td class="whitespace-nowrap px-4 py-2.5 font-mono text-[11px] text-gray-500 dark:text-gray-400">
             {{ entry.ip || '—' }}
           </td>
         </tr>
         <tr v-if="entries.length === 0">
-          <td colspan="7" class="px-4 py-10 text-center text-gray-400">
+          <td colspan="7" class="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
             {{ t('common.noData') }}
           </td>
         </tr>

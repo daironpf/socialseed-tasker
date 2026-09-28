@@ -56,7 +56,7 @@
     <!-- Run Selector -->
     <div v-if="store.runs.length" class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
       <div class="flex items-center gap-2 mb-3">
-        <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+        <svg class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('autoHealing.selectRun') }}</span>
       </div>
       <div class="flex flex-wrap gap-2">
@@ -67,7 +67,7 @@
             : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-gray-500'">
           <span class="h-2 w-2 rounded-full" :class="store.stageColor(run.status)"></span>
           <span class="font-medium">{{ run.issueId }}</span>
-          <span class="text-gray-400">{{ run.issueTitle }}</span>
+          <span class="text-gray-500 dark:text-gray-400">{{ run.issueTitle }}</span>
         </button>
       </div>
     </div>
@@ -84,7 +84,7 @@
             <span v-else-if="!isMock" class="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
               <button :disabled="actionBusy" class="disabled:opacity-50" @click="restartSelected">{{ t('autoHealing.restartRun') }}</button>
             </span>
-            <span class="text-xs text-gray-400">{{ store.selectedRun.repo }}/{{ store.selectedRun.branch }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ store.selectedRun.repo }}/{{ store.selectedRun.branch }}</span>
             <span class="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-500 dark:bg-gray-700 dark:text-gray-400">{{ store.selectedRun.commitSha || '-' }}</span>
           </div>
         </div>
@@ -103,8 +103,8 @@
               <svg v-else class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="3" /></svg>
             </div>
             <div class="text-[11px] font-medium text-gray-700 dark:text-gray-300">{{ t('autoHealing.stages.' + stage.id) }}</div>
-            <div v-if="stage.durationMs" class="text-[10px] text-gray-400">{{ store.formatDuration(stage.durationMs) }}</div>
-            <div v-if="stage.details" class="mt-1 text-[10px] text-gray-400 truncate max-w-[120px] mx-auto" :title="stage.details">{{ stage.details }}</div>
+            <div v-if="stage.durationMs" class="text-[10px] text-gray-500 dark:text-gray-400">{{ store.formatDuration(stage.durationMs) }}</div>
+            <div v-if="stage.details" class="mt-1 text-[10px] text-gray-500 dark:text-gray-400 truncate max-w-[120px] mx-auto" :title="stage.details">{{ stage.details }}</div>
           </div>
         </div>
       </div>
@@ -114,10 +114,10 @@
         <div class="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
           <div class="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-700">
             <div class="flex items-center gap-2">
-              <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              <svg class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               <span class="text-sm font-medium text-gray-900 dark:text-white">{{ t('autoHealing.liveLogs') }}</span>
             </div>
-            <span class="text-[10px] text-gray-400">{{ store.runLogs.length }} {{ t('autoHealing.entries') }}</span>
+            <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ store.runLogs.length }} {{ t('autoHealing.entries') }}</span>
           </div>
           <div ref="terminalRef" class="bg-gray-900 text-green-400 font-mono text-xs p-4 rounded-b-xl overflow-auto max-h-80">
             <div v-for="log in store.runLogs" :key="log.id" class="flex gap-2 leading-relaxed">
@@ -136,16 +136,16 @@
         <div v-if="store.runPatches.length > 0" class="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
           <div class="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-700">
             <div class="flex items-center gap-2">
-              <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <svg class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               <span class="text-sm font-medium text-gray-900 dark:text-white">{{ t('autoHealing.patches') }}</span>
             </div>
-            <span class="text-[10px] text-gray-400">{{ store.runPatches.length }}</span>
+            <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ store.runPatches.length }}</span>
           </div>
           <div class="p-5 space-y-4 max-h-80 overflow-auto">
             <div v-for="patch in store.runPatches" :key="patch.id" class="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
               <div class="flex items-start justify-between mb-2 gap-2">
                 <span class="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">{{ patch.strategy }}</span>
-                <span class="font-mono text-[10px] text-gray-400">{{ patch.commitSha ? patch.commitSha.slice(0, 7) : '-' }} · {{ formatSize(patch.sizeBytes) }}</span>
+                <span class="font-mono text-[10px] text-gray-500 dark:text-gray-400">{{ patch.commitSha ? patch.commitSha.slice(0, 7) : '-' }} · {{ formatSize(patch.sizeBytes) }}</span>
               </div>
               <div class="flex flex-wrap gap-1 mb-2">
                 <span v-for="f in patch.files" :key="f" class="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-600 dark:bg-gray-700 dark:text-gray-400">{{ f }}</span>
@@ -159,7 +159,7 @@
               </button>
             </div>
 
-            <div v-if="diffLoading" class="py-4 text-center text-xs text-gray-400">{{ t('autoHealing.loadingDiff') }}</div>
+            <div v-if="diffLoading" class="py-4 text-center text-xs text-gray-500 dark:text-gray-400">{{ t('autoHealing.loadingDiff') }}</div>
             <div v-else-if="patchContent && activePatch" class="space-y-2">
               <DiffViewer
                 :content="patchContent"
@@ -180,12 +180,12 @@
         <div v-else class="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
           <div class="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-700">
             <div class="flex items-center gap-2">
-              <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+              <svg class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
               <span class="text-sm font-medium text-gray-900 dark:text-white">{{ t('autoHealing.fixAttempts') }}</span>
             </div>
           </div>
           <div class="p-5 space-y-4 max-h-80 overflow-auto">
-            <div v-if="store.runFixes.length === 0" class="text-center py-8 text-sm text-gray-400">{{ t('autoHealing.noFixes') }}</div>
+            <div v-if="store.runFixes.length === 0" class="text-center py-8 text-sm text-gray-500 dark:text-gray-400">{{ t('autoHealing.noFixes') }}</div>
             <div v-for="fix in store.runFixes" :key="fix.id" class="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
               <div class="flex items-start justify-between mb-2">
                 <div class="text-sm text-gray-700 dark:text-gray-300">{{ fix.description }}</div>

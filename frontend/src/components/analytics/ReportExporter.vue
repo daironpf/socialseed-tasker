@@ -3,7 +3,7 @@
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4 dark:border-gray-700">
       <div>
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('analytics.reportTitle') }}</h3>
-        <p class="text-xs text-gray-400">{{ t('analytics.reportSubtitle') }}</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('analytics.reportSubtitle') }}</p>
       </div>
       <div class="flex flex-wrap gap-2">
         <button
@@ -50,13 +50,13 @@
           <div class="text-base font-bold text-gray-900 dark:text-white">
             {{ store.report.type === 'weekly' ? t('analytics.weeklyReport') : t('analytics.monthlyReport') }}
           </div>
-          <div class="text-xs text-gray-400">
+          <div class="text-xs text-gray-500 dark:text-gray-400">
             {{ store.report.periodStart }} → {{ store.report.periodEnd }}
             · {{ t('analytics.generatedAt') }} {{ formatDateTime(store.report.generatedAt) }}
           </div>
         </div>
         <button
-          class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          class="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
           @click="store.clearReport()"
         >
           {{ t('common.close') }}
@@ -72,7 +72,7 @@
           :class="toneBorder(kpi.tone)"
         >
           <div class="text-lg font-bold" :class="toneText(kpi.tone)">{{ kpi.value }}</div>
-          <div class="text-[10px] font-semibold uppercase text-gray-400">{{ t(`analytics.kpi_${kpi.label}`) }}</div>
+          <div class="text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">{{ t(`analytics.kpi_${kpi.label}`) }}</div>
           <div class="mt-0.5 text-[10px] text-gray-500 dark:text-gray-400">{{ kpi.sub }}</div>
         </div>
       </div>
@@ -81,7 +81,7 @@
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead>
-            <tr class="border-b border-gray-200 text-[10px] uppercase text-gray-400 dark:border-gray-700">
+            <tr class="border-b border-gray-200 text-[10px] uppercase text-gray-500 dark:text-gray-400 dark:border-gray-700">
               <th class="px-2 py-2">{{ t('analytics.exceptionKind') }}</th>
               <th class="px-2 py-2">{{ t('analytics.exceptionItem') }}</th>
               <th class="px-2 py-2">{{ t('analytics.exceptionDetail') }}</th>
@@ -115,14 +115,14 @@
               </td>
             </tr>
             <tr v-if="!store.report.exceptions.length">
-              <td colspan="4" class="px-2 py-6 text-center text-gray-400">{{ t('analytics.noExceptions') }}</td>
+              <td colspan="4" class="px-2 py-6 text-center text-gray-500 dark:text-gray-400">{{ t('analytics.noExceptions') }}</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <div v-else class="px-5 py-10 text-center text-sm text-gray-400">
+    <div v-else class="px-5 py-10 text-center text-sm text-gray-500 dark:text-gray-400">
       {{ t('analytics.noReport') }}
     </div>
   </div>

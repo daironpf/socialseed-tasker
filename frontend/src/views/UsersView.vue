@@ -119,7 +119,7 @@
 
           <!-- Last Active -->
           <div class="mt-3 flex items-center justify-between">
-            <div class="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+            <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
               <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -129,7 +129,7 @@
               <button
                 v-if="user.type === 'agent'"
                 @click="openEditAgent(user)"
-                class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-purple-600 dark:hover:bg-gray-700 dark:hover:text-purple-400"
+                class="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-purple-600 dark:hover:bg-gray-700 dark:hover:text-purple-400"
                 :title="t('users.editAgent')"
                 :aria-label="t('users.editAgent')"
               >
@@ -140,7 +140,7 @@
               <button
                 v-if="user.type === 'human'"
                 @click="openEditUser(user)"
-                class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-700 dark:hover:text-blue-400"
+                class="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-700 dark:hover:text-blue-400"
                 :title="t('users.editUser')"
                 :aria-label="t('users.editUser')"
               >
@@ -151,7 +151,7 @@
               <button
                 v-if="user.type === 'agent'"
                 @click="deleteAgent(user)"
-                class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
+                class="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
                 :title="t('users.deleteAgent')"
                 :aria-label="t('users.deleteAgent')"
               >
@@ -162,7 +162,7 @@
               <button
                 v-if="user.type === 'human'"
                 @click="deleteUser(user)"
-                class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
+                class="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
                 :title="t('users.deleteUser')"
                 :aria-label="t('users.deleteUser')"
               >
@@ -205,7 +205,7 @@
           </div>
           <button
             @click="closeIssuesModal"
-            class="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+            class="rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
           >
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

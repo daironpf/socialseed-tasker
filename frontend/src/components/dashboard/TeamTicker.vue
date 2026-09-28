@@ -7,7 +7,7 @@
             <span class="text-xs">{{ member.avatar }}</span>
             <span
               class="text-[11px] font-medium"
-              :class="member.isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'"
+              :class="member.isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'"
             >
               {{ member.username }}
             </span>
@@ -25,7 +25,7 @@
             <span class="text-xs">{{ member.avatar }}</span>
             <span
               class="text-[11px] font-medium"
-              :class="member.isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'"
+              :class="member.isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'"
             >
               {{ member.username }}
             </span>

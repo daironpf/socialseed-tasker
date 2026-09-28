@@ -591,6 +591,9 @@
   "statsCard": {
     "vsLastMonth": "vs last month"
   },
+  "a11y": {
+    "skipToContent": "Skip to main content"
+  },
   "shortcuts": {
     "title": "Keyboard Shortcuts",
     "hint": "Press ? anywhere to toggle this panel",
@@ -614,6 +617,7 @@
     "toggleDark": "Toggle dark mode"
   },
   "palette": {
+    "title": "Command palette",
     "placeholder": "Search pages, issues, components...",
     "recent": "Recent",
     "noResults": "No results found",

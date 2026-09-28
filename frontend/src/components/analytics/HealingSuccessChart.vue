@@ -3,7 +3,7 @@
     <div class="mb-4 flex items-center justify-between">
       <div>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('analytics.healingTitle') }}</h3>
-        <p class="text-xs text-gray-400">{{ t('analytics.healingSubtitle') }}</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('analytics.healingSubtitle') }}</p>
       </div>
       <span
         class="rounded-full px-2.5 py-1 text-xs font-bold"
@@ -56,7 +56,7 @@
         </text>
       </svg>
     </div>
-    <div v-else class="flex h-64 items-center justify-center text-sm text-gray-400">{{ t('common.noData') }}</div>
+    <div v-else class="flex h-64 items-center justify-center text-sm text-gray-500 dark:text-gray-400">{{ t('common.noData') }}</div>
   </div>
 </template>
 

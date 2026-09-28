@@ -6,11 +6,11 @@
         class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
         @click="open = !open"
       >
-        <svg class="h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
         </svg>
         {{ selectedCount > 0 ? t('graph.componentsSelected', { n: selectedCount }) : t('graph.allComponents') }}
-        <svg class="h-3.5 w-3.5 text-gray-400 transition-transform" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="h-3.5 w-3.5 text-gray-500 dark:text-gray-400 transition-transform" :class="{ 'rotate-180': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
@@ -68,7 +68,7 @@
         class="rounded-full px-2 py-0.5 text-[10px] font-bold transition-colors"
         :class="selectedCriticalities?.includes(c)
           ? criticalityClass(c)
-          : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'"
+          : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'"
         @click="toggleCriticality(c)"
       >
         {{ t(`issues.${c.toLowerCase()}`) }}
@@ -84,7 +84,7 @@
         class="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition-colors"
         :class="selectedNodeTypes?.includes(nt.id)
           ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-          : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:hover:bg-gray-600'"
+          : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'"
         @click="toggleNodeType(nt.id)"
       >
         <span class="h-2 w-2 rounded-full" :class="nt.dotClass"></span>

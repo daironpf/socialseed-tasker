@@ -38,7 +38,7 @@
               <div class="text-sm font-medium text-gray-900 dark:text-white">{{ username }}</div>
               <div class="text-xs text-gray-500 dark:text-gray-400">{{ roleLabel }}</div>
             </div>
-            <svg class="ml-auto h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <svg class="ml-auto h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </div>
@@ -62,7 +62,7 @@
 
         <!-- Language Selector -->
         <div class="border-b border-gray-100 px-2 py-2 dark:border-gray-700">
-          <div class="px-3 py-1 text-xs font-medium text-gray-400 dark:text-gray-500">{{ t('menu.language') }}</div>
+          <div class="px-3 py-1 text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('menu.language') }}</div>
           <div class="flex gap-1 px-2 py-1">
             <button
               @click="switchLocale('en')"
@@ -83,7 +83,7 @@
 
         <!-- Data Source (API mode) -->
         <div class="border-b border-gray-100 px-2 py-2 dark:border-gray-700">
-          <div class="px-3 py-1 text-xs font-medium text-gray-400 dark:text-gray-500">{{ t('apiMode.title') }}</div>
+          <div class="px-3 py-1 text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('apiMode.title') }}</div>
           <div class="flex gap-1 px-2 py-1">
             <button
               @click="uiStore.setApiMode('mock')"
@@ -102,16 +102,16 @@
               ⚡ {{ t('apiMode.real') }}
             </button>
           </div>
-          <div class="px-3 text-[10px] text-gray-400 dark:text-gray-500">{{ t('apiMode.hint') }}</div>
+          <div class="px-3 text-[10px] text-gray-500 dark:text-gray-400">{{ t('apiMode.hint') }}</div>
         </div>
 
         <!-- Sound & Alerts -->
         <div class="border-b border-gray-100 px-4 py-3 dark:border-gray-700">
           <div class="mb-2 flex items-center justify-between">
-            <span class="text-xs font-medium text-gray-400 dark:text-gray-500">{{ t('soundEffects.title') }}</span>
+            <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('soundEffects.title') }}</span>
             <div class="flex items-center gap-1.5">
               <button
-                class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-700"
+                class="rounded p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-blue-600 dark:hover:bg-gray-700"
                 :title="t('soundEffects.test')"
                 @click="playTest"
               >
@@ -144,12 +144,12 @@
             :aria-label="t('soundEffects.volume')"
             @input="sound.setVolume(Number(($event.target as HTMLInputElement).value))"
           />
-          <div class="mt-1 flex items-center justify-between text-[10px] text-gray-400">
+          <div class="mt-1 flex items-center justify-between text-[10px] text-gray-500 dark:text-gray-400">
             <span>{{ t('soundEffects.hint') }}</span>
             <span>{{ sound.volume.value }}%</span>
           </div>
 
-          <div class="mt-3 mb-1.5 text-xs font-medium text-gray-400 dark:text-gray-500">{{ t('toastTheme.title') }}</div>
+          <div class="mt-3 mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('toastTheme.title') }}</div>
           <ToastThemeSettings />
         </div>
 

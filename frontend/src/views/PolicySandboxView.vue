@@ -35,7 +35,7 @@
 
     <div class="flex flex-wrap gap-3">
       <div class="relative flex-1 min-w-[200px]">
-        <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
         <input v-model="search" type="text" :placeholder="t('sandbox.search')" :aria-label="t('sandbox.search')" class="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800" />
       </div>
       <select v-model="filterStatus" :aria-label="t('sandbox.allStatus')" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800">
@@ -67,22 +67,22 @@
                   <span class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold" :class="rule.severity === 'HARD' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'">{{ rule.severity }}</span>
                 </div>
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">{{ rule.description }}</p>
-                <div class="mt-1 flex items-center gap-3 text-[10px] text-gray-400"><span>{{ rule.category }}</span><span>{{ rule.scope }}</span></div>
+                <div class="mt-1 flex items-center gap-3 text-[10px] text-gray-500 dark:text-gray-400"><span>{{ rule.category }}</span><span>{{ rule.scope }}</span></div>
               </div>
               <div class="flex items-center gap-1 ml-2">
-                <button class="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-blue-600 dark:hover:bg-gray-700" :aria-label="t('sandbox.simulate')" :disabled="store.loading" @click.stop="simulateRule(rule)">
+                <button class="rounded p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-200 hover:text-blue-600 dark:hover:bg-gray-700" :aria-label="t('sandbox.simulate')" :disabled="store.loading" @click.stop="simulateRule(rule)">
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 </button>
-                <button class="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-green-600 dark:hover:bg-gray-700" :aria-label="t('sandbox.edit')" @click.stop="openEditModal(rule)">
+                <button class="rounded p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-200 hover:text-green-600 dark:hover:bg-gray-700" :aria-label="t('sandbox.edit')" @click.stop="openEditModal(rule)">
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                 </button>
-                <button class="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-red-600 dark:hover:bg-gray-700" :aria-label="t('sandbox.delete')" @click.stop="confirmDelete(rule)">
+                <button class="rounded p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-200 hover:text-red-600 dark:hover:bg-gray-700" :aria-label="t('sandbox.delete')" @click.stop="confirmDelete(rule)">
                   <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
               </div>
             </div>
           </div>
-          <div v-if="filteredRules.length === 0" class="px-4 py-12 text-center text-sm text-gray-400">{{ t('sandbox.noRules') }}</div>
+          <div v-if="filteredRules.length === 0" class="px-4 py-12 text-center text-sm text-gray-500 dark:text-gray-400">{{ t('sandbox.noRules') }}</div>
         </div>
       </div>
 

@@ -13,15 +13,15 @@
     <div class="grid grid-cols-3 gap-3 mb-4">
       <div class="text-center">
         <div class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ formatTokens(promptTokens) }}</div>
-        <div class="text-[10px] text-gray-400 uppercase tracking-wider">{{ t('tokens.prompt') }}</div>
+        <div class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('tokens.prompt') }}</div>
       </div>
       <div class="text-center">
         <div class="text-lg font-bold text-green-600 dark:text-green-400">{{ formatTokens(completionTokens) }}</div>
-        <div class="text-[10px] text-gray-400 uppercase tracking-wider">{{ t('tokens.completion') }}</div>
+        <div class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('tokens.completion') }}</div>
       </div>
       <div class="text-center">
         <div class="text-lg font-bold text-purple-600 dark:text-purple-400">{{ formatCost(totalCost) }}</div>
-        <div class="text-[10px] text-gray-400 uppercase tracking-wider">{{ t('tokens.cost') }}</div>
+        <div class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">{{ t('tokens.cost') }}</div>
       </div>
     </div>
 
@@ -43,7 +43,7 @@
     </div>
 
     <div v-if="budget" class="mt-3">
-      <div class="flex items-center justify-between text-[10px] text-gray-400 mb-1">
+      <div class="flex items-center justify-between text-[10px] text-gray-500 dark:text-gray-400 mb-1">
         <span>{{ formatCost(totalCost) }}</span>
         <span>{{ formatCost(budget) }}</span>
       </div>

@@ -640,10 +640,11 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | Feature | Status | Details |
 |---|---|---|
 | **Global listener** | Implemented | `initKeyboardShortcuts()` attaches keydown handler |
-| **Sequence support** | Implemented | Multi-key sequences (`g` then `i`), 1000ms timeout |
+| **Sequence support** | Implemented | Multi-key sequences (`g` then `i`), 1000ms timeout; prefix keys no longer fire their single-key action immediately |
 | **Modifier matching** | Implemented | Ctrl, Shift, Alt, Meta |
-| **Input field detection** | Implemented | Skips shortcuts when focused in input/textarea/contenteditable |
-| **Scope system** | Implemented | `global` and `local` scopes |
+| **Input field detection** | Implemented | Skips shortcuts when focused in input/textarea/contenteditable (`Escape` is exempt so panels always close) |
+| **Scope system** | Implemented | `global` and `local` scopes; local shortcuts dispatch while the view is mounted and sequences win over same-key locals |
+| **Handled events** | Implemented | Already-handled events (`defaultPrevented`) are ignored |
 
 ### Registered global shortcuts (App.vue + helpers)
 
@@ -661,7 +662,24 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `?` | Show shortcuts help | KeyboardShortcutsHelp |
 | `Esc` | Close palette/help | CommandPalette / KeyboardShortcutsHelp |
 
-> Help modal also lists `J`/`K`/`Enter`/`Esc` for list navigation; these are displayed in the help UI but are **not** currently registered via `useKeyboardShortcuts`.
+### Registered local shortcuts (ListView / KanbanView, scope `local`)
+
+| Shortcut | Action | Source |
+|---|---|---|
+| `J` | Move cursor down (row / card) | ListView / KanbanView |
+| `K` | Move cursor up (row / card) | ListView / KanbanView |
+| `Enter` | Open the active issue detail | ListView / KanbanView |
+| `Esc` | Close top layer (delete confirm, create modal, export menu, governance modal, detail panel) | ListView / KanbanView |
+
+> List/board navigation highlights the active element (`aria-activedescendant` on the `role="grid"` table / `role="listbox"` board, `aria-selected` + visible `outline` on the row/card) and scrolls it into view; `Enter` opens the detail and the panel is labelled `role="dialog"` / `aria-modal`.
+
+### Keyboard navigation state (List / Kanban)
+
+| Feature | Status | Details |
+|---|---|---|
+| **List cursor** | Implemented | `ListView` cursor over `filteredList`, row ids `issue-row-{i}`, clamped on filter changes |
+| **Board cursor** | Implemented | `KanbanView` flat cursor across columns in priority order, card ids `issue-card-{id}`, passed through `KanbanColumn` → `IssueCard` |
+| **Detail close** | Implemented | `Esc` restores focus to the active row/card after closing |
 
 ### Command Palette (`CommandPalette`)
 
@@ -674,6 +692,21 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **Issue/Component search** | Implemented | Search by ID/title or name, opens detail panel |
 | **Keyboard navigation** | Implemented | Arrow keys, Enter, Esc; footer hints |
 | i18n | Implemented | `palette` section |
+
+### Accessibility - WCAG 2.1 (#523)
+
+| Feature | Status | Details |
+|---|---|---|
+| **Focus trap** | Implemented | New `composable/useFocusTrap.ts`: Tab/Shift+Tab cycle within the overlay (wraps at boundaries, prefers `[autofocus]`), Escape closes via capture-phase listener (stops propagation so only one handler runs), focus restores to the trigger on deactivate and the listener is removed on unmount |
+| **Trapped overlays** | Implemented | `CreateIssueModal`, `GovernanceValidationModal`, `SyncQueueDrawer` (immediate on mount) and `CommandPalette` + `KeyboardShortcutsHelp` (manual activate on open); all expose `role="dialog"`, `aria-modal` and an accessible name (palette/help gained `palette.title` / existing titles) |
+| **Side panel** | Implemented | The issue detail overlay is a labelled `role="dialog"` with `aria-modal`; `Esc` closes it (layer priority: delete confirm → create modal → export menu → governance modal → detail) and returns focus to the active row/card |
+| **Skip link** | Implemented | First element of `App.vue` is a skip-to-content link (visible on focus) targeting `#main-content` (`main` gets `tabindex="-1"`); i18n key `a11y.skipToContent` |
+| **Focus visibility** | Implemented | Global `:focus-visible` outline (brand green, 2px) in `assets/main.css`; interactive list/board surfaces use `focus:outline-none` + row/card highlight |
+| **Contrast audit (AA)** | Implemented | Dark-mode secondary text pairs `text-gray-400 dark:text-gray-500` (3.6:1) swapped to `text-gray-500 dark:text-gray-400` (4.8:1 light / 6.6:1 dark), all remaining light-mode `text-gray-400` (2.5:1) raised to `text-gray-500`, standalone `dark:text-gray-500` dark variants raised to `dark:text-gray-400`, placeholders `gray-400` → `gray-500` (`dark:` → `gray-400`); spot-checked chips/badges (`red`/`amber`/`emerald` light+dark pairs ≥4.5:1) and skipped decorative graphics/always-dark code surfaces per WCAG 1.4.11/1.4.6 exemptions |
+| **Help modal accuracy** | Implemented | Documents only shortcuts that fire (J/K/Enter/Esc now registered; `Ctrl+K`, `?`, `D`, `C`, `G+*` active); test asserts the exact rendered key set |
+| **i18n** | Implemented | `a11y.skipToContent` and `palette.title` added in EN + ES (ASCII in ES) |
+| **Tests** | Implemented | New `useFocusTrap.spec.ts` (5), `KeyboardShortcutsHelp.spec.ts` (3), `CreateIssueModal.spec.ts` (3), `ListView.spec.ts` (3), `KanbanView.spec.ts` (2) plus 5 new dispatch cases in `useKeyboardShortcuts.spec.ts` (16 new, 140 total) |
+| **Verification** | Implemented | `npm run lint` 0 errors (2 pre-existing `vue/no-mutating-props` warnings), `npm test` 140/140, `npm run build` green (vue-tsc + vite); keyboard-only walk covered by tests (cursor move, open, Escape layer close, Tab traps, skip link) and the contrast sweep left zero `text-gray-400` occurrences unpaired with an AA-compliant dark variant |
 
 ---
 

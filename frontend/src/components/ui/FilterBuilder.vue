@@ -42,7 +42,7 @@
           <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           {{ t('filterBuilder.status') }}
           <span v-if="uiStore.filters.status.length" class="rounded-full bg-blue-200 px-1.5 text-[10px] font-bold text-blue-800 dark:bg-blue-800 dark:text-blue-200">{{ uiStore.filters.status.length }}</span>
-          <svg class="h-3 w-3 text-gray-400 transition-transform" :class="{ 'rotate-180': openDropdown === 'status' }" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+          <svg class="h-3 w-3 text-gray-500 dark:text-gray-400 transition-transform" :class="{ 'rotate-180': openDropdown === 'status' }" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
         </button>
         <Teleport to="body">
           <div v-if="openDropdown === 'status'" class="fixed z-50 w-48 rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900" :style="dropdownPos">
@@ -68,7 +68,7 @@
           <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" /></svg>
           {{ t('filterBuilder.priority') }}
           <span v-if="uiStore.filters.priority.length" class="rounded-full bg-amber-200 px-1.5 text-[10px] font-bold text-amber-800 dark:bg-amber-800 dark:text-amber-200">{{ uiStore.filters.priority.length }}</span>
-          <svg class="h-3 w-3 text-gray-400 transition-transform" :class="{ 'rotate-180': openDropdown === 'priority' }" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+          <svg class="h-3 w-3 text-gray-500 dark:text-gray-400 transition-transform" :class="{ 'rotate-180': openDropdown === 'priority' }" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
         </button>
         <Teleport to="body">
           <div v-if="openDropdown === 'priority'" class="fixed z-50 w-48 rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900" :style="dropdownPos">
@@ -94,7 +94,7 @@
           <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
           {{ t('filterBuilder.labels') }}
           <span v-if="uiStore.filters.labels.length" class="rounded-full bg-purple-200 px-1.5 text-[10px] font-bold text-purple-800 dark:bg-purple-800 dark:text-purple-200">{{ uiStore.filters.labels.length }}</span>
-          <svg class="h-3 w-3 text-gray-400 transition-transform" :class="{ 'rotate-180': openDropdown === 'labels' }" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+          <svg class="h-3 w-3 text-gray-500 dark:text-gray-400 transition-transform" :class="{ 'rotate-180': openDropdown === 'labels' }" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
         </button>
         <Teleport to="body">
           <div v-if="openDropdown === 'labels'" class="fixed z-50 w-48 rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900" :style="dropdownPos">
@@ -103,7 +103,7 @@
                 <input type="checkbox" :checked="uiStore.filters.labels.includes(label)" class="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600" @change="toggleArrayFilter('labels', label)" />
                 <span class="text-gray-700 dark:text-gray-300">{{ label }}</span>
               </label>
-              <div v-if="availableLabels.length === 0" class="px-2 py-3 text-center text-xs text-gray-400">{{ t('filterBuilder.noLabels') }}</div>
+              <div v-if="availableLabels.length === 0" class="px-2 py-3 text-center text-xs text-gray-500 dark:text-gray-400">{{ t('filterBuilder.noLabels') }}</div>
             </div>
           </div>
         </Teleport>
@@ -150,7 +150,7 @@
           class="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
           @change="setDateFilter('dateFrom', ($event.target as HTMLInputElement).value)"
         />
-        <span class="text-xs text-gray-400">-</span>
+        <span class="text-xs text-gray-500 dark:text-gray-400">-</span>
         <input
           type="date"
           :value="uiStore.filters.dateTo"
@@ -205,7 +205,7 @@
               </div>
             </div>
             <div class="max-h-48 overflow-y-auto p-1">
-              <div v-if="uiStore.savedSearches.length === 0" class="px-2 py-3 text-center text-xs text-gray-400">{{ t('filterBuilder.noSavedSearches') }}</div>
+              <div v-if="uiStore.savedSearches.length === 0" class="px-2 py-3 text-center text-xs text-gray-500 dark:text-gray-400">{{ t('filterBuilder.noSavedSearches') }}</div>
               <div
                 v-for="search in uiStore.savedSearches"
                 :key="search.id"
@@ -214,7 +214,7 @@
                 <button class="flex-1 text-left text-gray-700 dark:text-gray-300" @click="loadSavedSearch(search.id)">
                   {{ search.name }}
                 </button>
-                <button class="ml-1 text-gray-400 hover:text-red-500" @click="uiStore.deleteSearch(search.id)">
+                <button class="ml-1 text-gray-500 dark:text-gray-400 hover:text-red-500" @click="uiStore.deleteSearch(search.id)">
                   <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>

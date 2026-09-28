@@ -78,8 +78,17 @@
         {{ t('issues.showing') }} {{ filteredList.length }} {{ t('issues.of') }} {{ issuesStore.filteredIssues.length }} {{ t('issues.title').toLowerCase() }}
       </div>
 
-      <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+      <div
+        class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700"
+      >
+        <table
+          ref="tableRef"
+          role="grid"
+          tabindex="-1"
+          class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 focus:outline-none"
+          :aria-activedescendant="activeRowId"
+          :aria-label="t('issues.title')"
+        >
           <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 w-10">
@@ -103,13 +112,16 @@
           </thead>
           <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
             <tr
-              v-for="issue in filteredList"
+              v-for="(issue, idx) in filteredList"
               :key="issue.id"
+              :id="`issue-row-${idx}`"
+              :aria-selected="cursorIndex === idx"
               class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
               :class="{
                 'border-l-4 border-l-red-500': issue.priority === 'CRITICAL',
                 'border-l-4 border-l-orange-400': issue.priority === 'HIGH' && issue.status !== 'CLOSED',
                 'bg-brand-50 dark:bg-brand-900/20': selectedIds.has(issue.id),
+                'bg-brand-50 dark:bg-brand-900/30 outline outline-2 -outline-offset-2 outline-brand-600': cursorIndex === idx,
               }"
               @click="openIssue(issue)"
             >
@@ -134,7 +146,7 @@
               <td class="hidden px-4 py-3 text-sm lg:table-cell">
                 <div class="flex gap-1 flex-wrap">
                   <LabelTag v-for="label in issue.labels.slice(0, 2)" :key="label" :label="label" />
-                  <span v-if="issue.labels.length > 2" class="text-xs text-gray-400">+{{ issue.labels.length - 2 }}</span>
+                  <span v-if="issue.labels.length > 2" class="text-xs text-gray-500 dark:text-gray-400">+{{ issue.labels.length - 2 }}</span>
                 </div>
               </td>
               <td class="hidden px-4 py-3 text-sm text-gray-500 dark:text-gray-400 lg:table-cell">{{ formatDate(issue.created_at) }}</td>
@@ -151,7 +163,7 @@
             </tr>
           </tbody>
         </table>
-        <div v-if="filteredList.length === 0" class="py-12 text-center text-gray-400">
+        <div v-if="filteredList.length === 0" class="py-12 text-center text-gray-500 dark:text-gray-400">
           {{ t('common.noData') }}
         </div>
       </div>
@@ -160,6 +172,9 @@
     <div
       v-if="selectedIssue"
       class="fixed inset-0 z-40 bg-black/50 flex justify-end"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="selectedIssue.title"
       @click.self="uiStore.setSelectedIssue(null)"
     >
       <IssueDetailView
@@ -228,13 +243,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Issue, IssueUpdateRequest } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useComponentsStore } from '@/stores/componentsStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useToast } from '@/composables/useToast'
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import PriorityBadge from '@/components/ui/PriorityBadge.vue'
 import LabelTag from '@/components/ui/LabelTag.vue'
@@ -252,9 +268,64 @@ const componentsStore = useComponentsStore()
 const uiStore = useUiStore()
 const toast = useToast()
 const { exportCSV, exportJSON } = useExport()
+const { register, unregisterAll } = useKeyboardShortcuts()
 const showCreateModal = ref(false)
 const showExportMenu = ref(false)
 const exportDropdownRef = ref<HTMLElement | null>(null)
+const tableRef = ref<HTMLElement | null>(null)
+const cursorIndex = ref(-1)
+
+const activeRowId = computed(() => {
+  if (cursorIndex.value < 0 || cursorIndex.value >= filteredList.value.length) return undefined
+  return `issue-row-${cursorIndex.value}`
+})
+
+function moveCursor(delta: number) {
+  const list = filteredList.value
+  if (list.length === 0) return
+  if (cursorIndex.value < 0) {
+    cursorIndex.value = delta > 0 ? 0 : list.length - 1
+  } else {
+    cursorIndex.value = Math.max(0, Math.min(list.length - 1, cursorIndex.value + delta))
+  }
+  nextTick(() => {
+    const id = activeRowId.value
+    if (id) document.getElementById(id)?.scrollIntoView({ block: 'nearest' })
+    tableRef.value?.focus()
+  })
+}
+
+function moveCursorDown() {
+  moveCursor(1)
+}
+
+function moveCursorUp() {
+  moveCursor(-1)
+}
+
+function openCursorIssue() {
+  const issue = filteredList.value[cursorIndex.value]
+  if (issue) openIssue(issue)
+}
+
+function onEscapeKey() {
+  if (showDeleteConfirm.value) {
+    showDeleteConfirm.value = false
+    return
+  }
+  if (showCreateModal.value) {
+    showCreateModal.value = false
+    return
+  }
+  if (showExportMenu.value) {
+    showExportMenu.value = false
+    return
+  }
+  if (uiStore.selectedIssueId) {
+    uiStore.setSelectedIssue(null)
+    nextTick(() => tableRef.value?.focus())
+  }
+}
 
 const selectedIds = ref(new Set<string>())
 
@@ -404,9 +475,50 @@ async function downloadJSON() {
 }
 
 onMounted(async () => {
+  register({
+    key: 'j',
+    label: 'Next item',
+    description: t('shortcuts.nextItem'),
+    scope: 'local',
+    action: moveCursorDown,
+  })
+  register({
+    key: 'k',
+    label: 'Previous item',
+    description: t('shortcuts.prevItem'),
+    scope: 'local',
+    action: moveCursorUp,
+  })
+  register({
+    key: 'enter',
+    label: 'Open item',
+    description: t('shortcuts.openDetail'),
+    scope: 'local',
+    action: openCursorIssue,
+  })
+  register({
+    key: 'escape',
+    label: 'Close panel',
+    description: t('shortcuts.closePanel'),
+    scope: 'local',
+    action: onEscapeKey,
+  })
   await componentsStore.fetchComponents()
   await fetchWithFilters()
 })
+
+onUnmounted(() => {
+  unregisterAll('local')
+})
+
+watch(
+  () => filteredList.value.length,
+  (length) => {
+    if (cursorIndex.value >= length) {
+      cursorIndex.value = length - 1
+    }
+  },
+)
 
 watch(
   () => [uiStore.filters.status, uiStore.filters.priority, uiStore.filters.component, uiStore.filters.project],

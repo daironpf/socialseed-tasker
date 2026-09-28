@@ -33,14 +33,14 @@
       <!-- Immutable chain indicator -->
       <div class="mt-4 border-t border-gray-100 pt-4 dark:border-gray-700">
         <div class="mb-2 flex items-center gap-2">
-          <span class="text-[10px] font-semibold uppercase text-gray-400">{{ t('auditLog.chain.title') }}</span>
+          <span class="text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">{{ t('auditLog.chain.title') }}</span>
           <span class="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
             <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
             {{ t('auditLog.chain.verified') }}
           </span>
-          <span class="text-[10px] text-gray-400">{{ t('auditLog.chain.blocks', { count: auditStore.chain.length }) }}</span>
+          <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ t('auditLog.chain.blocks', { count: auditStore.chain.length }) }}</span>
         </div>
         <div class="flex flex-wrap gap-2">
           <div
@@ -67,7 +67,7 @@
           @click="toggleSeverity(sev)"
         >
           <div class="text-lg font-bold" :class="severityTextClass(sev)">{{ auditStore.severityCounts[sev] }}</div>
-          <div class="text-[10px] font-semibold uppercase text-gray-400">{{ t(`auditLog.severities.${sev}`) }}</div>
+          <div class="text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">{{ t(`auditLog.severities.${sev}`) }}</div>
         </button>
       </div>
     </div>
@@ -75,7 +75,7 @@
     <!-- Filters -->
     <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
       <div class="flex flex-wrap items-end gap-3">
-        <label class="flex flex-col gap-1 text-[10px] font-semibold uppercase text-gray-400">
+        <label class="flex flex-col gap-1 text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">
           {{ t('auditLog.filters.dateFrom') }}
           <input
             v-model="auditStore.filters.dateFrom"
@@ -83,7 +83,7 @@
             class="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
           >
         </label>
-        <label class="flex flex-col gap-1 text-[10px] font-semibold uppercase text-gray-400">
+        <label class="flex flex-col gap-1 text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">
           {{ t('auditLog.filters.dateTo') }}
           <input
             v-model="auditStore.filters.dateTo"
@@ -91,7 +91,7 @@
             class="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
           >
         </label>
-        <label class="flex flex-col gap-1 text-[10px] font-semibold uppercase text-gray-400">
+        <label class="flex flex-col gap-1 text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">
           {{ t('auditLog.filters.actor') }}
           <select
             v-model="auditStore.filters.actor"
@@ -101,7 +101,7 @@
             <option v-for="a in auditStore.actors" :key="a" :value="a">{{ a }}</option>
           </select>
         </label>
-        <label class="flex flex-col gap-1 text-[10px] font-semibold uppercase text-gray-400">
+        <label class="flex flex-col gap-1 text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">
           {{ t('auditLog.filters.agent') }}
           <select
             v-model="auditStore.filters.agent"
@@ -111,7 +111,7 @@
             <option v-for="a in auditStore.agents" :key="a" :value="a">{{ a }}</option>
           </select>
         </label>
-        <label class="flex flex-col gap-1 text-[10px] font-semibold uppercase text-gray-400">
+        <label class="flex flex-col gap-1 text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">
           {{ t('auditLog.filters.eventType') }}
           <select
             v-model="auditStore.filters.eventType"
@@ -121,7 +121,7 @@
             <option v-for="et in AUDIT_EVENT_TYPES" :key="et" :value="et">{{ t(`auditLog.eventTypes.${et}`) }}</option>
           </select>
         </label>
-        <label class="flex flex-col gap-1 text-[10px] font-semibold uppercase text-gray-400">
+        <label class="flex flex-col gap-1 text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">
           {{ t('auditLog.filters.severity') }}
           <select
             v-model="auditStore.filters.severity"
@@ -131,7 +131,7 @@
             <option v-for="sev in AUDIT_SEVERITIES" :key="sev" :value="sev">{{ t(`auditLog.severities.${sev}`) }}</option>
           </select>
         </label>
-        <label class="min-w-[180px] flex-1 flex flex-col gap-1 text-[10px] font-semibold uppercase text-gray-400">
+        <label class="min-w-[180px] flex-1 flex flex-col gap-1 text-[10px] font-semibold uppercase text-gray-500 dark:text-gray-400">
           {{ t('auditLog.filters.search') }}
           <input
             v-model="auditStore.filters.search"
@@ -147,7 +147,7 @@
           {{ t('auditLog.filters.clear') }}
         </button>
       </div>
-      <div class="mt-3 text-xs text-gray-400">
+      <div class="mt-3 text-xs text-gray-500 dark:text-gray-400">
         {{ t('auditLog.showing', { shown: pageEntries.length, total: auditStore.filteredEntries.length }) }}
       </div>
     </div>
@@ -155,7 +155,7 @@
     <!-- Table + pagination -->
     <AuditLogTable :entries="pageEntries" />
     <div class="flex items-center justify-between">
-      <span class="text-xs text-gray-400">
+      <span class="text-xs text-gray-500 dark:text-gray-400">
         {{ t('auditLog.page', { page: totalPages === 0 ? 0 : page, total: totalPages }) }}
       </span>
       <div class="flex gap-2">

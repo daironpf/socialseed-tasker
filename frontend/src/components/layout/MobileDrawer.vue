@@ -43,7 +43,7 @@
             <span class="text-lg font-bold text-gray-900 dark:text-white">SocialSeed</span>
           </div>
           <button
-            class="flex h-11 w-11 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+            class="flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
             :aria-label="t('common.close')"
             @click="$emit('close')"
           >
@@ -55,7 +55,7 @@
 
         <nav class="flex-1 overflow-y-auto px-3 py-4">
           <div v-for="group in navGroups" :key="group.key" class="mb-6">
-            <p class="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            <p class="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               {{ t(`nav.${group.key}`) }}
             </p>
             <div class="space-y-1">

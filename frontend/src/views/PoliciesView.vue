@@ -35,7 +35,7 @@
 
     <div v-else-if="store.policies.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
       <div class="rounded-full bg-gray-100 p-4 dark:bg-gray-800">
-        <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="h-8 w-8 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       </div>
@@ -63,7 +63,7 @@
               {{ policy.is_active ? t('policies.active') : t('policies.inactive') }}
             </span>
             <button
-              class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              class="rounded p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
               @click="openEditModal(policy)"
               :title="t('common.edit')"
               :aria-label="t('common.edit')"
@@ -73,7 +73,7 @@
               </svg>
             </button>
             <button
-              class="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400"
+              class="rounded p-1 text-gray-500 dark:text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400"
               @click="confirmDelete(policy)"
               :title="t('policies.delete')"
               :aria-label="t('policies.delete')"

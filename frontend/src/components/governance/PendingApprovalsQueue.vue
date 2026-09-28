@@ -54,7 +54,7 @@
         <div class="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
           <div class="mb-1 flex items-start justify-between gap-2">
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ selected.title }}</h3>
-            <span class="shrink-0 text-xs text-gray-400">{{ hitlStore.formatTimeAgo(selected.createdAt) }}</span>
+            <span class="shrink-0 text-xs text-gray-500 dark:text-gray-400">{{ hitlStore.formatTimeAgo(selected.createdAt) }}</span>
           </div>
           <p class="text-xs text-gray-500 dark:text-gray-400">{{ selected.description }}</p>
           <pre
@@ -94,7 +94,7 @@
               :filename="d.filename"
             />
           </template>
-          <p v-else class="py-3 text-center text-xs text-gray-400">
+          <p v-else class="py-3 text-center text-xs text-gray-500 dark:text-gray-400">
             {{ t('governanceMatrix.queue.noDiffs') }}
           </p>
         </div>

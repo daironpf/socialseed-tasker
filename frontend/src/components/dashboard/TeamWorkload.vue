@@ -9,7 +9,7 @@
       </span>
     </template>
 
-    <div v-if="rows.length === 0" class="text-sm text-gray-400">
+    <div v-if="rows.length === 0" class="text-sm text-gray-500 dark:text-gray-400">
       {{ t('boardModules.noOpenIssues') }}
     </div>
 
@@ -36,7 +36,7 @@
             </span>
             <span class="flex-shrink-0 text-xs font-bold text-gray-700 dark:text-gray-300">
               {{ row.open }}
-              <span class="text-[10px] font-normal text-gray-400">/{{ row.total }}</span>
+              <span class="text-[10px] font-normal text-gray-500 dark:text-gray-400">/{{ row.total }}</span>
             </span>
           </div>
           <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
@@ -51,7 +51,7 @@
     </ul>
 
     <div
-      class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3 text-[10px] uppercase tracking-wide text-gray-400 dark:border-gray-700 dark:text-gray-500"
+      class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3 text-[10px] uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:text-gray-400"
     >
       <span>{{ t('users.humans') }}: {{ usersStore.humans.length }}</span>
       <span>{{ t('users.aiAgents') }}: {{ usersStore.agents.length }}</span>

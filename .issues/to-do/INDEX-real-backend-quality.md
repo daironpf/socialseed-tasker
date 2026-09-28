@@ -20,7 +20,7 @@
 | #520 | Real Persistence & Auto-Healing Pipeline Engine | MEDIUM | feat / core | DONE (→ `.issues/done/`) | [ISSUE-04] |
 | #521 | Policy Sandbox Rules Engine | MEDIUM | feat / governance | DONE (→ `.issues/done/`) | [ISSUE-05] |
 | #522 | Bidirectional Real Sync with GitHub | MEDIUM | feat / integration | DONE (→ `.issues/done/`) | [ISSUE-06] |
-| #523 | Keyboard Navigation & Accessibility (WCAG 2.1) | LOW | accessibility / ux | TODO | [ISSUE-07] |
+| #523 | Keyboard Navigation & Accessibility (WCAG 2.1) | LOW | accessibility / ux | DONE (→ `.issues/done/`) | [ISSUE-07] |
 | #524 | RAG Explorer & MCP Server Integration | MEDIUM | feat / ai infrastructure | TODO | [ISSUE-08] |
 
 ---
@@ -46,7 +46,7 @@
 - **#522 GitHub Sync (DONE):** estados reales, webhooks bidireccionales firmados, resolución de conflictos GitHub↔Tasker
 
 ### UX
-- **#523 A11y:** atajos `J`/`K`/`Enter` suscritos, focus trap, contraste WCAG 2.1 AA
+- **#523 A11y (DONE):** atajos `J`/`K`/`Enter` suscritos, focus trap, contraste WCAG 2.1 AA
 
 ### AI Infrastructure
 - **#524 RAG & MCP:** Neo4j vector real en RAG Explorer, tool calls MCP en vivo con métricas de latencia
@@ -85,7 +85,8 @@
 - [x] **#520** implemented — DONE 2026-09-27 (moved to `.issues/done/`, `features.md` §65)
 - [x] **#521** implemented — DONE 2026-09-28 (moved to `.issues/done/`, `features.md` §66)
 - [x] **#522** implemented — DONE 2026-09-28 (moved to `.issues/done/`, `features.md` §67)
-- [ ] Remaining 2 issues implemented in `.issues/to-do` order (or by priority)
+- [x] **#523** implemented — DONE 2026-09-28 (moved to `.issues/done/`, `features.md` §20)
+- [ ] Remaining 1 issue implemented in `.issues/to-do` order (or by priority)
 - [ ] Each issue: `npm run build` green, i18n EN+ES, `features.md` updated
 - [ ] Move issue file to `.issues/done/` with `Status: DONE` when complete
 - [ ] Commit message references `#NNN`

@@ -1,6 +1,6 @@
 <template>
   <ModuleCard :title="t('boardModules.priorityBreakdown')">
-    <div v-if="totalOpen === 0" class="text-sm text-gray-400">
+    <div v-if="totalOpen === 0" class="text-sm text-gray-500 dark:text-gray-400">
       {{ t('boardModules.noOpenIssues') }}
     </div>
     <div v-else class="space-y-3">

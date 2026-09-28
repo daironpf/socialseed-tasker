@@ -138,7 +138,7 @@
     <div v-if="loading" class="flex items-center justify-center h-64">
       <LoadingSpinner />
     </div>
-      <div v-else-if="graphData.nodes.length === 0" class="text-center py-12 text-gray-400">
+      <div v-else-if="graphData.nodes.length === 0" class="text-center py-12 text-gray-500 dark:text-gray-400">
         {{ t('graph.noData') }}
       </div>
     <div ref="networkContainer" role="application" :aria-label="t('graph.title')" class="w-full h-[600px] rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800" />
@@ -210,7 +210,7 @@
                 <p class="text-xs text-gray-500 font-mono">{{ selectedCodeNode.id }}</p>
               </div>
             </div>
-            <button class="rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700" :aria-label="t('common.close')" @click="selectedCodeNode = null">
+            <button class="rounded p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700" :aria-label="t('common.close')" @click="selectedCodeNode = null">
               <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>

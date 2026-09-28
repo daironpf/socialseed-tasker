@@ -592,6 +592,9 @@
   "statsCard": {
     "vsLastMonth": "vs mes anterior"
   },
+  "a11y": {
+    "skipToContent": "Saltar al contenido principal"
+  },
   "shortcuts": {
     "title": "Atajos de Teclado",
     "hint": "Presiona ? en cualquier lugar para mostrar/ocultar esta ayuda",
@@ -615,6 +618,7 @@
     "toggleDark": "Cambiar modo oscuro"
   },
   "palette": {
+    "title": "Paleta de comandos",
     "placeholder": "Buscar paginas, issues, componentes...",
     "recent": "Recientes",
     "noResults": "No se encontraron resultados",

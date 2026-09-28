@@ -18,22 +18,22 @@
         <span
           class="truncate text-sm"
           :class="notification.read
-            ? 'font-normal text-gray-500 dark:text-gray-500'
+            ? 'font-normal text-gray-500 dark:text-gray-400'
             : 'font-semibold text-gray-900 dark:text-white'"
         >{{ notification.title }}</span>
         <span v-if="notification.requiresAction" class="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
           {{ t('notifications.action') }}
         </span>
       </div>
-      <p class="mt-0.5 truncate text-xs" :class="notification.read ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-300'">{{ notification.message }}</p>
+      <p class="mt-0.5 truncate text-xs" :class="notification.read ? 'text-gray-500 dark:text-gray-400' : 'text-gray-600 dark:text-gray-300'">{{ notification.message }}</p>
       <div class="mt-1 flex items-center gap-2">
-        <span class="text-[10px] text-gray-400">{{ timeAgo }}</span>
+        <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ timeAgo }}</span>
         <span v-if="!notification.read" class="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
       </div>
     </div>
 
     <button
-      class="shrink-0 rounded p-1 text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700"
+      class="shrink-0 rounded p-1 text-gray-500 dark:text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700"
       @click.stop="$emit('dismiss', notification.id)"
     >
       <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

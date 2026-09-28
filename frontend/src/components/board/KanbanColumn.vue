@@ -1,10 +1,12 @@
 <template>
   <div
     class="flex flex-col rounded-lg bg-gray-100 dark:bg-gray-800 min-h-[200px]"
+    role="group"
+    :aria-label="title"
     @dragover.prevent
     @drop="onDrop"
   >
-    <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700" role="presentation">
       <h3 class="text-sm font-semibold uppercase tracking-wider" :class="headerColor">
         {{ title }}
       </h3>
@@ -12,16 +14,17 @@
         {{ issues.length }}
       </span>
     </div>
-    <div class="flex-1 p-2 space-y-2 overflow-y-auto">
+    <div class="flex-1 p-2 space-y-2 overflow-y-auto" role="presentation">
       <IssueCard
         v-for="issue in sortedIssues"
         :key="issue.id"
         :issue="issue"
         :component-name="getComponentName(issue.component_id)"
+        :active="issue.id === activeIssueId"
         @select="$emit('openIssue', issue)"
         @dragstart="onDragStart($event, issue)"
       />
-      <div v-if="sortedIssues.length === 0" class="text-center py-8 text-sm text-gray-400">
+      <div v-if="sortedIssues.length === 0" class="text-center py-8 text-sm text-gray-500 dark:text-gray-400">
         {{ t('common.noData') }}
       </div>
     </div>
@@ -41,6 +44,7 @@ const props = defineProps<{
   title: string
   status: IssueStatus
   issues: Issue[]
+  activeIssueId?: string
 }>()
 
 const emit = defineEmits<{

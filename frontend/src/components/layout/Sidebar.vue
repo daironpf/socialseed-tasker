@@ -25,7 +25,7 @@
       <div v-for="group in navGroups" :key="group.key" class="mb-6">
         <p
           v-if="isExpanded"
-          class="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500"
+          class="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
         >
           {{ t(`nav.${group.key}`) }}
         </p>

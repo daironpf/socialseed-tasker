@@ -38,7 +38,7 @@
 
       <div class="flex items-center gap-3 mb-4">
         <div class="h-px flex-1 bg-gray-200 dark:bg-gray-600" />
-        <span class="text-xs uppercase text-gray-400 dark:text-gray-500">{{ t('auth.orContinue') }}</span>
+        <span class="text-xs uppercase text-gray-500 dark:text-gray-400">{{ t('auth.orContinue') }}</span>
         <div class="h-px flex-1 bg-gray-200 dark:bg-gray-600" />
       </div>
 

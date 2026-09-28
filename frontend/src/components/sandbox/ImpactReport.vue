@@ -40,7 +40,7 @@
         <div class="flex-1">
           <div class="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
             <span class="font-mono text-xs text-blue-600 dark:text-blue-400">{{ v.edgeFrom }}</span>
-            <svg class="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+            <svg class="h-3 w-3 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
             <span class="font-mono text-xs text-blue-600 dark:text-blue-400">{{ v.edgeTo }}</span>
           </div>
           <div class="mt-1 text-xs text-gray-600 dark:text-gray-400">{{ v.message }}</div>

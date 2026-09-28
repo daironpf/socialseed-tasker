@@ -38,7 +38,7 @@
 
     <button
       class="shrink-0 rounded p-0.5 transition-opacity"
-      :class="uiStore.toastTheme === 'enterprise' ? 'text-gray-400 hover:text-gray-600' : 'opacity-60 hover:opacity-100'"
+      :class="uiStore.toastTheme === 'enterprise' ? 'text-gray-500 dark:text-gray-400 hover:text-gray-600' : 'opacity-60 hover:opacity-100'"
       @click="$emit('dismiss', toast.id)"
       :aria-label="t('toast.dismiss')"
     >
@@ -133,7 +133,7 @@ const textClass = computed(() => {
 
 const iconColorClass = computed(() => {
   const theme = uiStore.toastTheme
-  if (theme === 'minimal') return 'text-gray-400 dark:text-gray-500'
+  if (theme === 'minimal') return 'text-gray-500 dark:text-gray-400'
   if (theme === 'enterprise') return typeColors.value.label
   return ''
 })

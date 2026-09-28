@@ -86,9 +86,9 @@
               <div class="mt-1 flex items-center gap-2">
                 <span class="text-xs text-gray-500 dark:text-gray-400">{{ req.agentName }}</span>
                 <span class="text-gray-300 dark:text-gray-600">·</span>
-                <span class="text-xs text-gray-400 dark:text-gray-500">{{ req.issueId }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ req.issueId }}</span>
                 <span class="text-gray-300 dark:text-gray-600">·</span>
-                <span class="text-xs text-gray-400 dark:text-gray-500">{{ hitlStore.formatTimeAgo(req.createdAt) }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ hitlStore.formatTimeAgo(req.createdAt) }}</span>
               </div>
               <div class="mt-1.5 flex items-center gap-1">
                 <span
@@ -97,7 +97,7 @@
                 >
                   {{ t(`hitlCenter.statuses.${req.status}`) }}
                 </span>
-                <span class="text-[10px] text-gray-400 dark:text-gray-500">{{ req.component }}</span>
+                <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ req.component }}</span>
               </div>
             </div>
           </div>
@@ -130,7 +130,7 @@
                 </span>
               </div>
               <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ hitlStore.selectedRequest.description }}</p>
-              <div class="mt-2 flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
+              <div class="mt-2 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                 <span>{{ hitlStore.selectedRequest.agentName }}</span>
                 <span>·</span>
                 <span>{{ hitlStore.selectedRequest.issueId }} — {{ hitlStore.selectedRequest.issueTitle }}</span>
@@ -192,7 +192,7 @@
             <textarea
               v-model="rejectFeedback"
               rows="3"
-              class="mt-2 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 dark:border-red-800 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+              class="mt-2 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 dark:border-red-800 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
               :placeholder="t('hitlCenter.rejectPlaceholder')"
             ></textarea>
             <div class="mt-3 flex justify-end gap-2">
@@ -218,7 +218,7 @@
             <textarea
               v-model="modifyFeedback"
               rows="3"
-              class="mt-2 w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-amber-800 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+              class="mt-2 w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-amber-800 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
               :placeholder="t('hitlCenter.modifyPlaceholder')"
             ></textarea>
             <div class="mt-3 flex justify-end gap-2">
@@ -250,15 +250,15 @@
           <!-- Diff Panel -->
           <div class="flex flex-1 flex-col overflow-hidden border-r border-gray-200 dark:border-gray-700">
             <div class="flex items-center gap-2 border-b border-gray-100 px-4 py-2 dark:border-gray-700">
-              <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <svg class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">{{ t('hitlCenter.codeChanges') }}</span>
-              <span class="text-[10px] text-gray-400 dark:text-gray-500">({{ hitlStore.selectedRequest.diffs.length }} {{ t('hitlCenter.files') }})</span>
+              <span class="text-[10px] text-gray-500 dark:text-gray-400">({{ hitlStore.selectedRequest.diffs.length }} {{ t('hitlCenter.files') }})</span>
             </div>
             <div class="flex-1 overflow-y-auto p-4">
               <div v-if="hitlStore.selectedRequest.diffs.length === 0" class="flex flex-col items-center justify-center py-8">
-                <p class="text-sm text-gray-400 dark:text-gray-500">{{ t('hitlCenter.noDiffs') }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('hitlCenter.noDiffs') }}</p>
               </div>
               <div v-else class="space-y-4">
                 <DiffViewer
@@ -274,7 +274,7 @@
           <!-- Impact Panel -->
           <div class="flex w-80 flex-shrink-0 flex-col overflow-hidden">
             <div class="flex items-center gap-2 border-b border-gray-100 px-4 py-2 dark:border-gray-700">
-              <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <svg class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">{{ t('hitlCenter.impactAnalysis') }}</span>

@@ -8,12 +8,17 @@
       >
         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" @click="close" />
         <div
+          ref="panelRef"
           class="relative w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden mx-4"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="t('shortcuts.title')"
         >
           <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('shortcuts.title') }}</h2>
             <button
-              class="rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              class="rounded-lg p-1 text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              :aria-label="t('common.close')"
               @click="close"
             >
               <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -24,7 +29,7 @@
 
           <div class="max-h-[60vh] overflow-y-auto p-5 space-y-5">
             <div v-for="group in shortcutGroups" :key="group.label">
-              <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+              <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
                 {{ group.label }}
               </h3>
               <div class="space-y-1.5">
@@ -49,7 +54,7 @@
           </div>
 
           <div class="px-5 py-3 border-t border-gray-200 dark:border-gray-700 text-center">
-            <span class="text-xs text-gray-400 dark:text-gray-500">{{ t('shortcuts.hint') }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('shortcuts.hint') }}</span>
           </div>
         </div>
       </div>
@@ -58,11 +63,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 
 const { t } = useI18n()
 const isOpen = ref(false)
+const panelRef = ref<HTMLElement | null>(null)
+const focusTrap = useFocusTrap(panelRef, { immediate: false, onClose: close })
 
 interface ShortcutItem {
   keys: string
@@ -113,14 +121,20 @@ const shortcutGroups = computed<ShortcutGroup[]>(() => [
 
 function open() {
   isOpen.value = true
+  nextTick(() => focusTrap.activate())
 }
 
 function close() {
   isOpen.value = false
+  focusTrap.deactivate()
 }
 
 function toggle() {
-  isOpen.value = !isOpen.value
+  if (isOpen.value) {
+    close()
+  } else {
+    open()
+  }
 }
 
 function handleKeydown(e: KeyboardEvent) {

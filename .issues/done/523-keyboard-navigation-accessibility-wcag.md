@@ -6,7 +6,7 @@ Las teclas de navegación en listas (`J`/`K`/`Enter`) figuran en el modal de ayu
 
 Origen: `notas.md` → [ISSUE-07] Navegación por Teclado e Accesibilidad (WCAG 2.1) (→ #523).
 
-## Status: TODO
+## Status: DONE (2026-09-28)
 
 ## Priority: LOW
 
@@ -23,12 +23,12 @@ accessibility / ux
 4. **Verificación:** recorrido solo con teclado de los flujos principales + comprobación de contraste + `npm run build`.
 
 ## Acceptance Criteria
-- [ ] `J` (next) / `K` (previous) / `Enter` (open) subscribed for lists and boards with visible focus
-- [ ] Help modal documents only shortcuts that are actually registered
-- [ ] Modals and side panels: focus trap, ESC close, focus restore, aria labels
-- [ ] Color contrast meets WCAG 2.1 AA; keyboard-only navigation of main flows works
-- [ ] i18n support (EN + ES)
-- [ ] `npm run build` passes
+- [x] `J` (next) / `K` (previous) / `Enter` (open) subscribed for lists and boards with visible focus
+- [x] Help modal documents only shortcuts that are actually registered
+- [x] Modals and side panels: focus trap, ESC close, focus restore, aria labels
+- [x] Color contrast meets WCAG 2.1 AA; keyboard-only navigation of main flows works
+- [x] i18n support (EN + ES)
+- [x] `npm run build` passes
 
 ## Files to Create
 - `frontend/src/composables/useFocusTrap.ts`
@@ -44,3 +44,10 @@ accessibility / ux
 
 ## Related Issues
 - #467 (Command Palette Cmd+K), #468 (Keyboard Shortcuts Composable), #508 (Mobile Responsive), #516 (Help/notification polish)
+
+## Verification (2026-09-28)
+- `npm run lint`: 0 errores (2 warnings preexistentes `vue/no-mutating-props` en IssueDetailView)
+- `npm test`: 140/140 (17 ficheros; 16 tests nuevos: useFocusTrap 5, useKeyboardShortcuts +5, KeyboardShortcutsHelp 3, CreateIssueModal 3, ListView 3, KanbanView 2)
+- `npm run build`: verde (vue-tsc + vite)
+- Smoke HTTP en :19001 tras `docker compose build tasker-board && docker compose up -d`: contenedores healthy; bundle principal sirve skip link + claves `a11y`/`palette` (ES), chunks `ListView`/`KanbanView` contienen `aria-activedescendant`/`listbox`/`issue-card-`, CSS sirve `:focus-visible`
+- features.md §20 actualizada (tabla local shortcuts + subsección "Accessibility - WCAG 2.1"; eliminada la nota de atajos no suscritos)

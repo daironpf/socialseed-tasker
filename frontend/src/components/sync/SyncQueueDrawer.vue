@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" :aria-label="t('syncQueue.title')">
+  <div ref="rootRef" class="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" :aria-label="t('syncQueue.title')">
     <div class="absolute inset-0 bg-black/40" @click="$emit('close')" />
 
     <aside class="relative ml-auto flex h-full w-full max-w-md flex-col bg-white shadow-xl dark:bg-gray-800">
@@ -7,7 +7,7 @@
       <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-700">
         <div>
           <h2 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('syncQueue.title') }}</h2>
-          <p class="text-xs text-gray-400">{{ t('syncQueue.subtitle') }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('syncQueue.subtitle') }}</p>
         </div>
         <div class="flex items-center gap-2">
           <span
@@ -19,7 +19,7 @@
             {{ t('syncQueue.count', { n: uiStore.syncQueue.length }) }}
           </span>
           <button
-            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            class="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             :aria-label="t('common.close')"
             @click="$emit('close')"
           >
@@ -47,7 +47,7 @@
 
       <!-- Queue list -->
       <div class="flex-1 space-y-3 overflow-y-auto px-5 py-4">
-        <div v-if="!uiStore.syncQueue.length" class="py-12 text-center text-sm text-gray-400">
+        <div v-if="!uiStore.syncQueue.length" class="py-12 text-center text-sm text-gray-500 dark:text-gray-400">
           {{ t('syncQueue.empty') }}
         </div>
 
@@ -79,7 +79,7 @@
             </span>
           </div>
 
-          <div class="mt-1.5 flex items-center justify-between text-[10px] text-gray-400">
+          <div class="mt-1.5 flex items-center justify-between text-[10px] text-gray-500 dark:text-gray-400">
             <span>{{ formatTime(entry.timestamp) }}<template v-if="entry.retries"> · {{ t('syncQueue.retries', { n: entry.retries }) }}</template></span>
             <span v-if="entry.status === 'pending'" class="font-medium text-amber-600 dark:text-amber-400">{{ t('syncQueue.pending') }}</span>
           </div>
@@ -104,11 +104,11 @@
           <div v-else class="mt-2 space-y-2">
             <div class="grid grid-cols-2 gap-1 font-mono text-[9px]">
               <div class="rounded bg-gray-50 p-1.5 dark:bg-gray-900/60">
-                <div class="mb-1 font-sans font-bold uppercase text-gray-400">{{ t('syncQueue.local') }}</div>
+                <div class="mb-1 font-sans font-bold uppercase text-gray-500 dark:text-gray-400">{{ t('syncQueue.local') }}</div>
                 <div class="break-all text-gray-600 dark:text-gray-300">{{ shortJson(entry.payload) }}</div>
               </div>
               <div class="rounded bg-gray-50 p-1.5 dark:bg-gray-900/60">
-                <div class="mb-1 font-sans font-bold uppercase text-gray-400">{{ t('syncQueue.remote') }}</div>
+                <div class="mb-1 font-sans font-bold uppercase text-gray-500 dark:text-gray-400">{{ t('syncQueue.remote') }}</div>
                 <div class="break-all text-gray-600 dark:text-gray-300">{{ shortJson(entry.remotePayload) }}</div>
               </div>
             </div>
@@ -150,7 +150,7 @@
       </div>
 
       <!-- Footer -->
-      <div class="border-t border-gray-200 px-5 py-3 text-[10px] text-gray-400 dark:border-gray-700">
+      <div class="border-t border-gray-200 px-5 py-3 text-[10px] text-gray-500 dark:text-gray-400 dark:border-gray-700">
         {{ t('syncQueue.footerHint') }}
       </div>
     </aside>
@@ -163,14 +163,18 @@ import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/stores/uiStore'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { usePoliciesStore } from '@/stores/policiesStore'
+import { useFocusTrap } from '@/composables/useFocusTrap'
 import type { QueuedMutation } from '@/utils/offlineQueue'
 
-defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: [] }>()
 
 const { t, d } = useI18n()
 const uiStore = useUiStore()
 const issuesStore = useIssuesStore()
 const policiesStore = usePoliciesStore()
+
+const rootRef = ref<HTMLElement | null>(null)
+useFocusTrap(rootRef, { onClose: () => emit('close') })
 
 const mergingId = ref<string | null>(null)
 const mergeDraft = ref('')

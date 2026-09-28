@@ -3,7 +3,7 @@
     <div class="mb-4 flex items-center justify-between">
       <div>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('analytics.mttrTitle') }}</h3>
-        <p class="text-xs text-gray-400">{{ t('analytics.mttrSubtitle') }}</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('analytics.mttrSubtitle') }}</p>
       </div>
       <div class="flex gap-4 text-xs">
         <div class="flex items-center gap-1.5">
@@ -62,7 +62,7 @@
         </g>
       </svg>
     </div>
-    <div v-else class="flex h-64 items-center justify-center text-sm text-gray-400">{{ t('common.noData') }}</div>
+    <div v-else class="flex h-64 items-center justify-center text-sm text-gray-500 dark:text-gray-400">{{ t('common.noData') }}</div>
 
     <div class="mt-3 flex flex-wrap gap-4 border-t border-gray-100 pt-3 text-xs dark:border-gray-700/60">
       <span class="text-gray-500 dark:text-gray-400">

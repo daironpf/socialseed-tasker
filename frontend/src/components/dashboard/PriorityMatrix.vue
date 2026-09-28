@@ -1,6 +1,6 @@
 <template>
   <ModuleCard :title="t('boardModules.matrixTitle')">
-    <div v-if="allIssues.length === 0" class="text-sm text-gray-400">
+    <div v-if="allIssues.length === 0" class="text-sm text-gray-500 dark:text-gray-400">
       {{ t('boardModules.matrixNoData') }}
     </div>
     <div v-else class="overflow-x-auto">
@@ -12,7 +12,7 @@
         <div
           v-for="s in STATUSES"
           :key="s"
-          class="pb-1 text-center text-[10px] font-medium text-gray-400 dark:text-gray-500"
+          class="pb-1 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400"
         >
           {{ statusLabel(s) }}
         </div>

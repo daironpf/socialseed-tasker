@@ -23,9 +23,9 @@
       <span class="min-w-0 flex-1 truncate text-xs font-medium text-gray-700 dark:text-gray-300">
         {{ t(`autoHealing.stages.${currentStage.id}`) }}
       </span>
-      <span class="flex-shrink-0 text-[10px] text-gray-400">{{ currentRun.id }}</span>
+      <span class="flex-shrink-0 text-[10px] text-gray-500 dark:text-gray-400">{{ currentRun.id }}</span>
     </div>
-    <p v-else class="mt-4 text-xs text-gray-400">{{ t('boardModules.autoHealingIdle') }}</p>
+    <p v-else class="mt-4 text-xs text-gray-500 dark:text-gray-400">{{ t('boardModules.autoHealingIdle') }}</p>
   </ModuleCard>
 </template>
 

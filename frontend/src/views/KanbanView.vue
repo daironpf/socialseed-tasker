@@ -46,13 +46,21 @@
 
       <!-- Kanban Columns -->
       <div class="relative flex-1">
-        <div class="flex h-full gap-4 overflow-x-auto snap-x snap-mandatory md:snap-none scroll-smooth pb-2">
+        <div
+          ref="boardRef"
+          role="listbox"
+          tabindex="-1"
+          class="flex h-full gap-4 overflow-x-auto snap-x snap-mandatory md:snap-none scroll-smooth pb-2 focus:outline-none"
+          :aria-label="t('header.kanban')"
+          :aria-activedescendant="activeCardId"
+        >
           <KanbanColumn
             v-for="col in columns"
             :key="col.status"
             :title="col.title"
             :status="col.status"
             :issues="issuesByStatus(col.status)"
+            :active-issue-id="activeIssueId"
             class="flex-1 min-w-[85vw] max-w-[400px] sm:min-w-[280px] snap-start scroll-mt-4"
             @openIssue="openIssue"
             @dropIssue="onDropIssue"
@@ -89,6 +97,9 @@
     <div
       v-if="selectedIssue"
       class="fixed inset-0 z-40 bg-black/50 flex justify-end"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="selectedIssue.title"
       @click.self="uiStore.setSelectedIssue(null)"
     >
       <IssueDetailView
@@ -121,13 +132,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, ref, watch } from 'vue'
+import { onMounted, onUnmounted, computed, ref, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Issue, IssueUpdateRequest } from '@/types'
 import { IssueStatus } from '@/types'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useComponentsStore } from '@/stores/componentsStore'
 import { useUiStore } from '@/stores/uiStore'
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 import KanbanColumn from '@/components/board/KanbanColumn.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import FilterBuilder from '@/components/ui/FilterBuilder.vue'
@@ -140,12 +152,79 @@ const { t } = useI18n()
 const issuesStore = useIssuesStore()
 const componentsStore = useComponentsStore()
 const uiStore = useUiStore()
+const { register, unregisterAll } = useKeyboardShortcuts()
 
 const showCreateModal = ref(false)
 const showDeleteConfirm = ref(false)
 const deleteTargetId = ref('')
 const showGovernanceModal = ref(false)
 const governanceTargetIssue = ref<Issue | null>(null)
+const boardRef = ref<HTMLElement | null>(null)
+const cursorIndex = ref(-1)
+
+const priorityOrder: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 }
+
+const flatIssues = computed(() =>
+  columns.value.flatMap((col) =>
+    [...issuesByStatus(col.status)].sort(
+      (a, b) => (priorityOrder[a.priority] ?? 99) - (priorityOrder[b.priority] ?? 99),
+    ),
+  ),
+)
+
+const activeIssueId = computed(() => flatIssues.value[cursorIndex.value]?.id)
+
+const activeCardId = computed(() => {
+  const issue = flatIssues.value[cursorIndex.value]
+  return issue ? `issue-card-${issue.id}` : undefined
+})
+
+function moveCursor(delta: number) {
+  const list = flatIssues.value
+  if (list.length === 0) return
+  if (cursorIndex.value < 0) {
+    cursorIndex.value = delta > 0 ? 0 : list.length - 1
+  } else {
+    cursorIndex.value = Math.max(0, Math.min(list.length - 1, cursorIndex.value + delta))
+  }
+  nextTick(() => {
+    const id = activeCardId.value
+    if (id) document.getElementById(id)?.scrollIntoView({ block: 'nearest' })
+    boardRef.value?.focus()
+  })
+}
+
+function moveCursorDown() {
+  moveCursor(1)
+}
+
+function moveCursorUp() {
+  moveCursor(-1)
+}
+
+function openCursorIssue() {
+  const issue = flatIssues.value[cursorIndex.value]
+  if (issue) openIssue(issue)
+}
+
+function onEscapeKey() {
+  if (showDeleteConfirm.value) {
+    showDeleteConfirm.value = false
+    return
+  }
+  if (showCreateModal.value) {
+    showCreateModal.value = false
+    return
+  }
+  if (showGovernanceModal.value) {
+    onGovernanceClose()
+    return
+  }
+  if (uiStore.selectedIssueId) {
+    uiStore.setSelectedIssue(null)
+    nextTick(() => boardRef.value?.focus())
+  }
+}
 
 function deleteIssue(id: string) {
   deleteTargetId.value = id
@@ -241,9 +320,50 @@ async function fetchWithFilters() {
 }
 
 onMounted(async () => {
+  register({
+    key: 'j',
+    label: 'Next card',
+    description: t('shortcuts.nextItem'),
+    scope: 'local',
+    action: moveCursorDown,
+  })
+  register({
+    key: 'k',
+    label: 'Previous card',
+    description: t('shortcuts.prevItem'),
+    scope: 'local',
+    action: moveCursorUp,
+  })
+  register({
+    key: 'enter',
+    label: 'Open card',
+    description: t('shortcuts.openDetail'),
+    scope: 'local',
+    action: openCursorIssue,
+  })
+  register({
+    key: 'escape',
+    label: 'Close panel',
+    description: t('shortcuts.closePanel'),
+    scope: 'local',
+    action: onEscapeKey,
+  })
   await componentsStore.fetchComponents()
   await fetchWithFilters()
 })
+
+onUnmounted(() => {
+  unregisterAll('local')
+})
+
+watch(
+  () => flatIssues.value.length,
+  (length) => {
+    if (cursorIndex.value >= length) {
+      cursorIndex.value = length - 1
+    }
+  },
+)
 
 watch(
   () => [uiStore.filters.status, uiStore.filters.priority, uiStore.filters.component, uiStore.filters.project],

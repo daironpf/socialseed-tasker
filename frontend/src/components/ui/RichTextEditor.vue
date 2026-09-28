@@ -40,7 +40,7 @@
         class="absolute z-20 mt-1 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden"
         :style="{ top: slashMenuTop + 'px', left: slashMenuLeft + 'px' }"
       >
-        <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+        <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
           {{ t('editor.commands') }}
         </div>
         <button
@@ -54,7 +54,7 @@
           <span class="text-base">{{ cmd.icon }}</span>
           <div>
             <div class="font-medium">{{ cmd.label }}</div>
-            <div class="text-[10px] text-gray-400 dark:text-gray-500">{{ cmd.description }}</div>
+            <div class="text-[10px] text-gray-500 dark:text-gray-400">{{ cmd.description }}</div>
           </div>
         </button>
       </div>
@@ -65,7 +65,7 @@
         v-model="localValue"
         :rows="rows"
         :aria-label="placeholder || t('common.textEditor')"
-        class="w-full px-3 py-2 text-sm bg-transparent text-gray-900 dark:text-gray-100 resize-none focus:outline-none placeholder-gray-400"
+        class="w-full px-3 py-2 text-sm bg-transparent text-gray-900 dark:text-gray-100 resize-none focus:outline-none placeholder-gray-500"
         :placeholder="placeholder"
         @input="onInput"
         @keydown="onKeydown"

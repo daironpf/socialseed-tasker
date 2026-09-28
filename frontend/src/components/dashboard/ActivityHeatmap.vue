@@ -1,13 +1,13 @@
 <template>
   <ModuleCard :title="t('boardModules.activityMap')">
     <template #action>
-      <span class="text-xs font-medium text-gray-400 dark:text-gray-500">
+      <span class="text-xs font-medium text-gray-500 dark:text-gray-400">
         {{ t('boardModules.activityTotal', { count: totalEvents }) }}
       </span>
     </template>
 
     <div class="flex gap-2">
-      <div class="flex flex-col gap-1 pt-4 text-[9px] leading-none text-gray-400 dark:text-gray-500">
+      <div class="flex flex-col gap-1 pt-4 text-[9px] leading-none text-gray-500 dark:text-gray-400">
         <span
           v-for="(label, idx) in weekdayLabels"
           :key="idx"
@@ -17,7 +17,7 @@
         </span>
       </div>
       <div class="min-w-0">
-        <div class="flex gap-1 pb-1.5 text-[9px] leading-none text-gray-400 dark:text-gray-500">
+        <div class="flex gap-1 pb-1.5 text-[9px] leading-none text-gray-500 dark:text-gray-400">
           <span
             v-for="(m, i) in monthLabels"
             :key="i"
@@ -40,7 +40,7 @@
       </div>
     </div>
 
-    <div class="mt-3 flex items-center justify-end gap-1.5 text-[10px] text-gray-400 dark:text-gray-500">
+    <div class="mt-3 flex items-center justify-end gap-1.5 text-[10px] text-gray-500 dark:text-gray-400">
       <span>{{ t('boardModules.heatmapLess') }}</span>
       <span
         v-for="lvl in 5"

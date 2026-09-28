@@ -3,7 +3,7 @@
     <div class="mb-4 flex items-center justify-between">
       <div>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('analytics.budgetTitle') }}</h3>
-        <p class="text-xs text-gray-400">{{ t('analytics.budgetSubtitle', { days: rangeDays }) }}</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('analytics.budgetSubtitle', { days: rangeDays }) }}</p>
       </div>
       <span class="text-xs font-semibold text-gray-500 dark:text-gray-400">
         ${{ totalSpent }} / ${{ totalBudget }}
@@ -28,7 +28,7 @@
         </div>
       </div>
     </div>
-    <div v-else class="py-10 text-center text-sm text-gray-400">{{ t('common.noData') }}</div>
+    <div v-else class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">{{ t('common.noData') }}</div>
 
     <div class="mt-4 flex flex-wrap gap-3 border-t border-gray-100 pt-3 text-[11px] dark:border-gray-700/60">
       <span class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">

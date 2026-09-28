@@ -11,7 +11,7 @@
           }"
         />
         <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('stream.status.' + status) }}</span>
-        <span v-if="logs.length" class="text-[10px] text-gray-400 dark:text-gray-500">
+        <span v-if="logs.length" class="text-[10px] text-gray-500 dark:text-gray-400">
           {{ logs.length }} {{ t('stream.entries') }}
         </span>
         <span v-if="isMockActive" class="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
@@ -35,7 +35,7 @@
             class="rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors"
             :class="mockSpeed === s
               ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-              : 'text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
+              : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
             @click="$emit('setSpeed', s)"
           >
             {{ s }}
@@ -54,14 +54,14 @@
         </button>
         <button
           class="rounded px-2 py-1 text-[10px] font-medium transition-colors"
-          :class="maskPii ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
+          :class="maskPii ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
           @click="maskPii = !maskPii"
         >
           {{ t('piiSuite.maskToggle') }}
         </button>
         <button
           class="rounded px-2 py-1 text-[10px] font-medium transition-colors"
-          :class="autoScroll ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
+          :class="autoScroll ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'"
           @click="autoScroll = !autoScroll"
         >
           {{ t('stream.autoScroll') }}
@@ -81,7 +81,7 @@
       class="flex-1 overflow-y-auto space-y-2 min-h-[200px] max-h-[400px]"
       @scroll="onScroll"
     >
-      <div v-if="logs.length === 0 && status === 'disconnected'" class="flex flex-col items-center justify-center h-full text-gray-400">
+      <div v-if="logs.length === 0 && status === 'disconnected'" class="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
         <svg class="mb-3 h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
         </svg>
@@ -101,7 +101,7 @@
           >
             {{ logTypeLabel(log.type) }}
           </span>
-          <span class="text-[10px] text-gray-400">{{ formatTime(log.timestamp) }}</span>
+          <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ formatTime(log.timestamp) }}</span>
           <span
             v-if="maskPii && piiCount(log.content_markdown) > 0"
             class="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
