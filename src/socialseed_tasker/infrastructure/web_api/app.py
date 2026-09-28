@@ -376,6 +376,7 @@ def create_app(
         secrets_router,
         realtime_router,
         auth_router,
+        auto_healing_router,
     )
     from socialseed_tasker.events.routes import webhook_router as events_webhook_router
 
@@ -406,6 +407,7 @@ def create_app(
     app.include_router(tenants_router, prefix="/api/v1", tags=["tenants"])
     app.include_router(realtime_router, prefix="/api/v1", tags=["realtime"])
     app.include_router(auth_router, prefix="/api/v1", tags=["auth"])
+    app.include_router(auto_healing_router, prefix="/api/v1", tags=["auto-healing"])
     app.include_router(events_webhook_router, tags=["webhooks"])
 
     from socialseed_tasker.data_catalog.api import router as registry_router
@@ -489,6 +491,14 @@ def create_app(
     # Realtime SSE hub (agent logs + presence, issue #517)
     from socialseed_tasker.infrastructure.web_api.routers.realtime import RealtimeHub
     app.state.realtime_hub = RealtimeHub()
+
+    # Auto-healing pipeline engine (real runs, patches, cancel/restart - issue #520)
+    from socialseed_tasker.healing.engine import DEFAULT_HEALING_DIR, AutoHealingEngine
+    from socialseed_tasker.healing.storage import HealingStorage
+    app.state.auto_healing = AutoHealingEngine(
+        HealingStorage(os.getenv("TASKER_HEALING_DIR") or DEFAULT_HEALING_DIR),
+        repo_provider=lambda: app.state.repository,
+    )
 
     # SSO / Keycloak wiring
     from socialseed_tasker.auth.oauth import SessionStore
