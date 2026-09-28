@@ -32,6 +32,12 @@ COPY --from=builder /install /usr/local
 # Copy application source
 COPY src/ ./src/
 
+# git powers the auto-healing pipeline's real branch commits (issue #520);
+# without it the pipeline falls back to snapshot hashes
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
 # Environment variables for Neo4j configuration
 ENV TASKER_NEO4J_URI=bolt://localhost:7687
 ENV TASKER_NEO4J_USERNAME=neo4j
