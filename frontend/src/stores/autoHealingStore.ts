@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { PipelineRun, LogEntry, FixAttempt, PipelineStage } from '@/types/autoHealing'
 import { useSoundEffects } from '@/composables/useSoundEffects'
+import { isMockMode } from '@/api/client'
+import * as healingApi from '@/api/autoHealingApi'
 
 const MOCK_STAGES: PipelineStage[] = [
   { id: 'test_failure', label: 'Test Failure Detected', status: 'completed', startedAt: '2026-09-20T10:00:00Z', completedAt: '2026-09-20T10:00:02Z', durationMs: 2000, details: '3 tests failed in auth module' },
@@ -66,25 +68,39 @@ const MOCK_FIX_ATTEMPTS: FixAttempt[] = [
   { id: 'fix-003', runId: 'run-003', timestamp: '2026-09-19T09:00:20Z', description: 'Fix WebSocket reconnect backoff', filesChanged: ['src/websocket/reconnect.ts'], status: 'failed', error: 'Circular dependency detected between reconnect.ts and connection.ts' },
 ]
 
+const POLL_INTERVAL_MS = 2000
+
+function sortByTimestamp(entries: LogEntry[]): LogEntry[] {
+  return [...entries].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+}
+
 export const useAutoHealingStore = defineStore('autoHealing', () => {
-  const runs = ref<PipelineRun[]>([...MOCK_RUNS])
-  const logs = ref<LogEntry[]>([...MOCK_LOGS])
-  const fixAttempts = ref<FixAttempt[]>([...MOCK_FIX_ATTEMPTS])
-  const selectedRunId = ref<string>('run-001')
+  const runs = ref<PipelineRun[]>([])
+  const logs = ref<LogEntry[]>([])
+  const fixAttempts = ref<FixAttempt[]>([])
+  const selectedRunId = ref<string | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
   const selectedRun = computed(() => runs.value.find(r => r.id === selectedRunId.value))
-  const runLogs = computed(() => logs.value.filter(l => l.runId === selectedRunId.value).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()))
+  const runLogs = computed(() => {
+    if (!isMockMode()) {
+      return sortByTimestamp(selectedRun.value?.logs ?? [])
+    }
+    return sortByTimestamp(logs.value.filter(l => l.runId === selectedRunId.value))
+  })
   const runFixes = computed(() => fixAttempts.value.filter(f => f.runId === selectedRunId.value))
+  const runPatches = computed(() => selectedRun.value?.patches ?? [])
   const activeRuns = computed(() => runs.value.filter(r => r.status === 'running'))
   const completedRuns = computed(() => runs.value.filter(r => r.status === 'completed'))
   const failedRuns = computed(() => runs.value.filter(r => r.status === 'failed'))
+  const cancelledRuns = computed(() => runs.value.filter(r => r.status === 'cancelled'))
 
   function stageColor(status: string) {
     if (status === 'completed') return 'bg-green-500'
     if (status === 'running') return 'bg-blue-500 animate-pulse'
     if (status === 'failed') return 'bg-red-500'
+    if (status === 'cancelled') return 'bg-amber-500'
     return 'bg-gray-300 dark:bg-gray-600'
   }
 
@@ -92,10 +108,137 @@ export const useAutoHealingStore = defineStore('autoHealing', () => {
     if (status === 'completed') return 'M5 13l4 4L19 7'
     if (status === 'running') return 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
     if (status === 'failed') return 'M6 18L18 6M6 6l12 12'
+    if (status === 'cancelled') return 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636'
     return 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
   }
 
   function selectRun(id: string) { selectedRunId.value = id }
+
+  // --- Persistence + live progress (issue #520) ---------------------------
+
+  let pollTimer: ReturnType<typeof setInterval> | null = null
+
+  function ensurePolling(active: boolean) {
+    if (active && !pollTimer) {
+      pollTimer = setInterval(() => { void refresh() }, POLL_INTERVAL_MS)
+    }
+    if (!active && pollTimer) {
+      clearInterval(pollTimer)
+      pollTimer = null
+    }
+  }
+
+  function stopPolling() {
+    ensurePolling(false)
+  }
+
+  function errorMessage(e: unknown): string {
+    return e instanceof Error ? e.message : String(e)
+  }
+
+  async function init() {
+    if (isMockMode()) {
+      runs.value = [...MOCK_RUNS]
+      logs.value = [...MOCK_LOGS]
+      fixAttempts.value = [...MOCK_FIX_ATTEMPTS]
+      selectedRunId.value = runs.value[0]?.id ?? null
+      return
+    }
+    loading.value = true
+    try {
+      await refresh()
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function refresh() {
+    if (isMockMode()) return
+    const previous = new Map(runs.value.map(r => [r.id, r.status]))
+    try {
+      const list = await healingApi.fetchPipelineRuns()
+      runs.value = list
+      if (!selectedRunId.value || !list.some(r => r.id === selectedRunId.value)) {
+        selectedRunId.value = list[0]?.id ?? null
+      }
+      const justCompleted = list.some(r => r.status === 'completed' && previous.get(r.id) === 'running')
+      if (justCompleted) useSoundEffects().playSuccess()
+      error.value = null
+      ensurePolling(list.some(r => r.status === 'running'))
+    } catch (e) {
+      error.value = errorMessage(e)
+      ensurePolling(false)
+    }
+  }
+
+  async function startRun(issueId: string): Promise<PipelineRun | null> {
+    if (isMockMode()) {
+      const now = new Date().toISOString()
+      const run: PipelineRun = {
+        id: `run-${Date.now()}`, issueId, issueTitle: issueId,
+        repo: 'socialseed-tasker', branch: `autohealing/${Date.now()}`, commitSha: '',
+        stages: MOCK_STAGES.map(s => ({ ...s, status: 'pending' as const, startedAt: undefined, completedAt: undefined, durationMs: undefined, details: undefined })),
+        currentStageIndex: 0, startedAt: now, status: 'running',
+      }
+      runs.value = [run, ...runs.value]
+      selectedRunId.value = run.id
+      return run
+    }
+    loading.value = true
+    try {
+      const run = await healingApi.startPipelineRun(issueId)
+      runs.value = [run, ...runs.value.filter(r => r.id !== run.id)]
+      selectedRunId.value = run.id
+      error.value = null
+      ensurePolling(true)
+      return run
+    } catch (e) {
+      error.value = errorMessage(e)
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function cancelRun(runId: string): Promise<boolean> {
+    if (isMockMode()) {
+      const run = runs.value.find(r => r.id === runId)
+      if (!run || run.status !== 'running') return false
+      run.status = 'cancelled'
+      run.stages = run.stages.map(s => (s.status === 'running' || s.status === 'pending' ? { ...s, status: 'cancelled' as const } : s))
+      return true
+    }
+    try {
+      const run = await healingApi.cancelPipelineRun(runId)
+      runs.value = runs.value.map(r => (r.id === run.id ? run : r))
+      error.value = null
+      return true
+    } catch (e) {
+      error.value = errorMessage(e)
+      return false
+    }
+  }
+
+  async function restartRun(runId: string, stageId?: string): Promise<boolean> {
+    if (isMockMode()) {
+      const run = runs.value.find(r => r.id === runId)
+      if (!run || run.status === 'running') return false
+      run.status = 'running'
+      run.completedAt = undefined
+      return true
+    }
+    try {
+      const run = await healingApi.restartPipelineRun(runId, stageId)
+      runs.value = runs.value.map(r => (r.id === run.id ? run : r))
+      selectedRunId.value = run.id
+      error.value = null
+      ensurePolling(true)
+      return true
+    } catch (e) {
+      error.value = errorMessage(e)
+      return false
+    }
+  }
 
   function simulateCompletion(id?: string): boolean {
     const run =
@@ -134,7 +277,8 @@ export const useAutoHealingStore = defineStore('autoHealing', () => {
 
   return {
     runs, logs, fixAttempts, selectedRunId, loading, error,
-    selectedRun, runLogs, runFixes, activeRuns, completedRuns, failedRuns,
+    selectedRun, runLogs, runFixes, runPatches, activeRuns, completedRuns, failedRuns, cancelledRuns,
     stageColor, stageIcon, selectRun, simulateCompletion, formatDuration, formatTime,
+    init, refresh, stopPolling, startRun, cancelRun, restartRun,
   }
 })

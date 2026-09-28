@@ -1144,7 +1144,19 @@
       "agent_fix": "Correccion del Agente",
       "pr_created": "PR Creado"
     },
-    "simulateSuccess": "Simular éxito del pipeline"
+    "simulateSuccess": "Simular éxito del pipeline",
+    "startRun": "Iniciar Pipeline",
+    "starting": "Iniciando...",
+    "selectIssue": "Seleccionar issue",
+    "noRuns": "Aún no hay ejecuciones de pipeline. Inicia una desde un issue arriba.",
+    "cancelRun": "Cancelar Ejecución",
+    "restartRun": "Reiniciar Ejecución",
+    "cancelled": "Cancelados",
+    "patches": "Artefactos de Patch",
+    "viewDiff": "Ver Diff",
+    "hideDiff": "Ocultar Diff",
+    "closeDiff": "Cerrar Diff",
+    "loadingDiff": "Cargando diff..."
   },
   "replay": {
     "title": "Reproductor de Replay de Agente",

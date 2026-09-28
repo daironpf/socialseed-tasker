@@ -1143,7 +1143,19 @@
       "agent_fix": "Agent Fix",
       "pr_created": "PR Created"
     },
-    "simulateSuccess": "Simulate pipeline success"
+    "simulateSuccess": "Simulate pipeline success",
+    "startRun": "Start Pipeline",
+    "starting": "Starting...",
+    "selectIssue": "Select issue",
+    "noRuns": "No pipeline runs yet. Start one from an issue above.",
+    "cancelRun": "Cancel Run",
+    "restartRun": "Restart Run",
+    "cancelled": "Cancelled",
+    "patches": "Patch Artifacts",
+    "viewDiff": "View Diff",
+    "hideDiff": "Hide Diff",
+    "closeDiff": "Close Diff",
+    "loadingDiff": "Loading diff..."
   },
   "replay": {
     "title": "Agent Replay Player",

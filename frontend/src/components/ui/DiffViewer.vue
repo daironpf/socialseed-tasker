@@ -167,12 +167,14 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import client from '@/api/client'
 
 const { t } = useI18n()
 
 const props = defineProps<{
   content: string
   filename?: string
+  downloadUrl?: string
 }>()
 
 const viewMode = ref<'unified' | 'split'>('unified')
@@ -269,12 +271,25 @@ async function copyDiff() {
   }
 }
 
-function downloadPatch() {
-  const blob = new Blob([props.content], { type: 'text/plain' })
+async function downloadPatch() {
+  let blob: Blob
+  const name = props.filename ? `${props.filename}.patch` : 'changes.patch'
+  if (props.downloadUrl) {
+    try {
+      // Fetch the raw artifact from the API so the file matches the stored
+      // .patch exactly (issue #520); fall back to the rendered content.
+      const { data } = await client.get(props.downloadUrl, { responseType: 'blob' })
+      blob = new Blob([data as BlobPart], { type: 'text/plain' })
+    } catch {
+      blob = new Blob([props.content], { type: 'text/plain' })
+    }
+  } else {
+    blob = new Blob([props.content], { type: 'text/plain' })
+  }
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = props.filename ? `${props.filename}.patch` : 'changes.patch'
+  a.download = name
   a.click()
   URL.revokeObjectURL(url)
 }

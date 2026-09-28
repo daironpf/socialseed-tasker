@@ -6,10 +6,27 @@
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('autoHealing.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-3">
+        <!-- Real mode: start a new pipeline run against an existing issue (issue #520) -->
+        <div v-if="!isMock" class="flex items-center gap-2">
+          <select
+            v-model="selectedIssueId"
+            class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+          >
+            <option value="" disabled>{{ t('autoHealing.selectIssue') }}</option>
+            <option v-for="issue in issues" :key="issue.id" :value="issue.id">{{ issue.title }}</option>
+          </select>
+          <button
+            class="rounded-lg border border-blue-500 bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+            :disabled="!selectedIssueId || store.loading"
+            @click="startPipeline"
+          >
+            {{ store.loading ? t('autoHealing.starting') : t('autoHealing.startRun') }}
+          </button>
+        </div>
         <button
-          v-if="store.activeRuns.length"
+          v-if="isMock && store.activeRuns.length"
           class="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 dark:hover:bg-emerald-900/40"
-          @click="store.simulateCompletion(store.selectedRunId)"
+          @click="store.simulateCompletion(store.selectedRunId ?? undefined)"
         >
           {{ t('autoHealing.simulateSuccess') }}
         </button>
@@ -23,11 +40,21 @@
         <span class="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-300">
           {{ store.failedRuns.length }} {{ t('autoHealing.failed') }}
         </span>
+        <span
+          v-if="store.cancelledRuns.length"
+          class="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+        >
+          {{ store.cancelledRuns.length }} {{ t('autoHealing.cancelled') }}
+        </span>
       </div>
     </div>
 
+    <p v-if="!isMock && store.runs.length === 0 && !store.loading" class="rounded-lg border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-500 dark:border-gray-600 dark:text-gray-400">
+      {{ t('autoHealing.noRuns') }}
+    </p>
+
     <!-- Run Selector -->
-    <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+    <div v-if="store.runs.length" class="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
       <div class="flex items-center gap-2 mb-3">
         <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('autoHealing.selectRun') }}</span>
@@ -38,7 +65,7 @@
           :class="store.selectedRunId === run.id
             ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/20 dark:text-blue-300'
             : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:border-gray-500'">
-          <span class="h-2 w-2 rounded-full" :class="run.status === 'running' ? 'bg-blue-500 animate-pulse' : run.status === 'completed' ? 'bg-green-500' : 'bg-red-500'"></span>
+          <span class="h-2 w-2 rounded-full" :class="store.stageColor(run.status)"></span>
           <span class="font-medium">{{ run.issueId }}</span>
           <span class="text-gray-400">{{ run.issueTitle }}</span>
         </button>
@@ -51,13 +78,19 @@
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('autoHealing.pipelineProgress') }}</h3>
           <div class="flex items-center gap-2">
+            <span v-if="!isMock && store.selectedRun.status === 'running'" class="rounded bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-300">
+              <button :disabled="actionBusy" class="disabled:opacity-50" @click="cancelSelected">{{ t('autoHealing.cancelRun') }}</button>
+            </span>
+            <span v-else-if="!isMock" class="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+              <button :disabled="actionBusy" class="disabled:opacity-50" @click="restartSelected">{{ t('autoHealing.restartRun') }}</button>
+            </span>
             <span class="text-xs text-gray-400">{{ store.selectedRun.repo }}/{{ store.selectedRun.branch }}</span>
-            <span class="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-500 dark:bg-gray-700 dark:text-gray-400">{{ store.selectedRun.commitSha }}</span>
+            <span class="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-500 dark:bg-gray-700 dark:text-gray-400">{{ store.selectedRun.commitSha || '-' }}</span>
           </div>
         </div>
         <div class="relative mb-6">
           <div class="h-2 rounded-full bg-gray-200 dark:bg-gray-700">
-            <div class="h-2 rounded-full transition-all duration-500" :class="store.selectedRun.status === 'failed' ? 'bg-red-500' : 'bg-blue-500'" :style="{ width: pipelineProgress + '%' }"></div>
+            <div class="h-2 rounded-full transition-all duration-500" :class="progressBarClass" :style="{ width: pipelineProgress + '%' }"></div>
           </div>
         </div>
         <div class="grid grid-cols-5 gap-2">
@@ -66,6 +99,7 @@
               <svg v-if="stage.status === 'completed'" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
               <svg v-else-if="stage.status === 'running'" class="h-5 w-5 text-white animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
               <svg v-else-if="stage.status === 'failed'" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              <svg v-else-if="stage.status === 'cancelled'" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
               <svg v-else class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="3" /></svg>
             </div>
             <div class="text-[11px] font-medium text-gray-700 dark:text-gray-300">{{ t('autoHealing.stages.' + stage.id) }}</div>
@@ -98,8 +132,52 @@
           </div>
         </div>
 
-        <!-- Fix Attempts -->
-        <div class="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <!-- Patch Artifacts (real mode, issue #520) -->
+        <div v-if="store.runPatches.length > 0" class="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <div class="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-700">
+            <div class="flex items-center gap-2">
+              <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">{{ t('autoHealing.patches') }}</span>
+            </div>
+            <span class="text-[10px] text-gray-400">{{ store.runPatches.length }}</span>
+          </div>
+          <div class="p-5 space-y-4 max-h-80 overflow-auto">
+            <div v-for="patch in store.runPatches" :key="patch.id" class="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+              <div class="flex items-start justify-between mb-2 gap-2">
+                <span class="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">{{ patch.strategy }}</span>
+                <span class="font-mono text-[10px] text-gray-400">{{ patch.commitSha ? patch.commitSha.slice(0, 7) : '-' }} · {{ formatSize(patch.sizeBytes) }}</span>
+              </div>
+              <div class="flex flex-wrap gap-1 mb-2">
+                <span v-for="f in patch.files" :key="f" class="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-600 dark:bg-gray-700 dark:text-gray-400">{{ f }}</span>
+              </div>
+              <button
+                class="rounded border border-gray-300 px-2 py-1 text-[10px] font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                :disabled="diffLoading"
+                @click="viewPatch(patch)"
+              >
+                {{ activePatch?.id === patch.id && patchContent ? t('autoHealing.hideDiff') : t('autoHealing.viewDiff') }}
+              </button>
+            </div>
+
+            <div v-if="diffLoading" class="py-4 text-center text-xs text-gray-400">{{ t('autoHealing.loadingDiff') }}</div>
+            <div v-else-if="patchContent && activePatch" class="space-y-2">
+              <DiffViewer
+                :content="patchContent"
+                :filename="activePatch.filename"
+                :download-url="downloadUrl(activePatch)"
+              />
+              <button
+                class="w-full rounded border border-gray-300 px-2 py-1 text-[10px] font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                @click="closeDiff"
+              >
+                {{ t('autoHealing.closeDiff') }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fix Attempts (mock mode fallback) -->
+        <div v-else class="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
           <div class="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-700">
             <div class="flex items-center gap-2">
               <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -143,13 +221,38 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAutoHealingStore } from '@/stores/autoHealingStore'
+import { isMockMode } from '@/api/client'
+import { fetchIssues } from '@/api/issuesApi'
+import * as healingApi from '@/api/autoHealingApi'
+import DiffViewer from '@/components/ui/DiffViewer.vue'
+import type { Issue } from '@/types'
+import type { PatchMeta } from '@/types/autoHealing'
 
 const { t } = useI18n()
 const store = useAutoHealingStore()
 const terminalRef = ref<HTMLElement | null>(null)
+
+const isMock = computed(() => isMockMode())
+
+// Issue picker for starting a real pipeline run (issue #520)
+const issues = ref<Issue[]>([])
+const selectedIssueId = ref('')
+const actionBusy = ref(false)
+
+// Patch diff viewer state
+const activePatch = ref<PatchMeta | null>(null)
+const patchContent = ref('')
+const diffLoading = ref(false)
+
+const progressBarClass = computed(() => {
+  const status = store.selectedRun?.status
+  if (status === 'failed') return 'bg-red-500'
+  if (status === 'cancelled') return 'bg-amber-500'
+  return 'bg-blue-500'
+})
 
 const pipelineProgress = computed(() => {
   if (!store.selectedRun) return 0
@@ -158,5 +261,88 @@ const pipelineProgress = computed(() => {
   const current = store.selectedRun.stages[store.selectedRun.currentStageIndex]
   const bonus = current?.status === 'running' ? 0.5 : 0
   return ((completed + bonus) / total) * 100
+})
+
+async function loadIssues() {
+  if (isMock.value) return
+  try {
+    const { items } = await fetchIssues(1, 100)
+    issues.value = items
+    if (!selectedIssueId.value && items.length) {
+      selectedIssueId.value = items[0].id
+    }
+  } catch {
+    issues.value = []
+  }
+}
+
+async function startPipeline() {
+  if (!selectedIssueId.value) return
+  const run = await store.startRun(selectedIssueId.value)
+  if (run) closeDiff()
+}
+
+async function cancelSelected() {
+  if (!store.selectedRunId) return
+  actionBusy.value = true
+  try {
+    await store.cancelRun(store.selectedRunId)
+  } finally {
+    actionBusy.value = false
+  }
+}
+
+async function restartSelected() {
+  if (!store.selectedRunId) return
+  actionBusy.value = true
+  try {
+    await store.restartRun(store.selectedRunId)
+  } finally {
+    actionBusy.value = false
+  }
+}
+
+function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  return `${(bytes / 1024).toFixed(1)} KB`
+}
+
+async function viewPatch(patch: PatchMeta) {
+  if (activePatch.value?.id === patch.id && patchContent.value) {
+    closeDiff()
+    return
+  }
+  if (!store.selectedRunId) return
+  diffLoading.value = true
+  try {
+    patchContent.value = await healingApi.fetchPatchContent(store.selectedRunId, patch.id)
+    activePatch.value = patch
+  } catch {
+    patchContent.value = ''
+    activePatch.value = null
+  } finally {
+    diffLoading.value = false
+  }
+}
+
+function downloadUrl(patch: PatchMeta) {
+  if (!store.selectedRunId) return undefined
+  return healingApi.patchDownloadUrl(store.selectedRunId, patch.id)
+}
+
+function closeDiff() {
+  activePatch.value = null
+  patchContent.value = ''
+}
+
+watch(() => store.selectedRunId, closeDiff)
+
+onMounted(async () => {
+  await store.init()
+  await loadIssues()
+})
+
+onUnmounted(() => {
+  store.stopPolling()
 })
 </script>

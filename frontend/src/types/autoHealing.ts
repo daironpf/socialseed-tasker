@@ -1,5 +1,6 @@
 export type PipelineStageId = 'test_failure' | 'neo4j_root_cause' | 'task_generation' | 'agent_fix' | 'pr_created'
-export type PipelineStageStatus = 'pending' | 'running' | 'completed' | 'failed'
+export type PipelineStageStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+export type PipelineRunStatus = 'running' | 'completed' | 'failed' | 'cancelled'
 
 export interface PipelineStage {
   id: PipelineStageId
@@ -9,6 +10,26 @@ export interface PipelineStage {
   completedAt?: string
   durationMs?: number
   details?: string
+}
+
+export interface LogEntry {
+  id: string
+  runId: string
+  timestamp: string
+  source: 'test' | 'agent' | 'system'
+  content: string
+}
+
+export interface PatchMeta {
+  id: string
+  runId: string
+  stageId: string
+  strategy: string
+  filename: string
+  files: string[]
+  createdAt: string
+  sizeBytes: number
+  commitSha: string
 }
 
 export interface PipelineRun {
@@ -22,17 +43,12 @@ export interface PipelineRun {
   currentStageIndex: number
   startedAt: string
   completedAt?: string
-  status: 'running' | 'completed' | 'failed'
+  status: PipelineRunStatus
   prUrl?: string
   neo4jNodeId?: string
-}
-
-export interface LogEntry {
-  id: string
-  runId: string
-  timestamp: string
-  source: 'test' | 'agent' | 'system'
-  content: string
+  createdIssueId?: string
+  patches?: PatchMeta[]
+  logs?: LogEntry[]
 }
 
 export interface FixAttempt {
