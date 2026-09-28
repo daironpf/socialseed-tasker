@@ -1,4 +1,4 @@
-export type SandboxRuleFormat = 'cypher' | 'yaml'
+export type SandboxRuleFormat = 'json' | 'cypher' | 'yaml'
 
 export type SandboxRuleSeverity = 'HARD' | 'SOFT'
 
@@ -27,6 +27,24 @@ export interface SimulationViolation {
   message: string
 }
 
+export interface MatchedNode {
+  id: string
+  title: string
+  component: string | null
+  status?: string
+  priority?: string
+}
+
+export interface BlastRadiusSummary {
+  direct: number
+  total: number
+  maxDepth: number
+  critical: number
+  high: number
+}
+
+export type SimulationDataSource = 'api' | 'fallback'
+
 export interface SimulationResult {
   id: string
   ruleId: string
@@ -34,9 +52,14 @@ export interface SimulationResult {
   status: SimulationStatus
   startedAt: string
   completedAt: string | null
+  totalNodesChecked: number
   totalEdgesChecked: number
   violatingEdges: number
   violations: SimulationViolation[]
+  matchedNodes: MatchedNode[]
+  blastRadius: BlastRadiusSummary | null
+  dataSource: SimulationDataSource
+  truncated: boolean
   error?: string
 }
 

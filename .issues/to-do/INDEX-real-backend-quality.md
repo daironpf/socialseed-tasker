@@ -18,7 +18,7 @@
 | #518 | Test Suite & CI/CD Pipeline (Frontend) | HIGH | infra / quality | DONE (→ `.issues/done/`) | [ISSUE-02] |
 | #519 | OAuth2 / SSO Authentication & Role-Based Route Protection | HIGH | feat / security | DONE (→ `.issues/done/`) | [ISSUE-03] |
 | #520 | Real Persistence & Auto-Healing Pipeline Engine | MEDIUM | feat / core | DONE (→ `.issues/done/`) | [ISSUE-04] |
-| #521 | Policy Sandbox Rules Engine | MEDIUM | feat / governance | TODO | [ISSUE-05] |
+| #521 | Policy Sandbox Rules Engine | MEDIUM | feat / governance | DONE (→ `.issues/done/`) | [ISSUE-05] |
 | #522 | Bidirectional Real Sync with GitHub | MEDIUM | feat / integration | TODO | [ISSUE-06] |
 | #523 | Keyboard Navigation & Accessibility (WCAG 2.1) | LOW | accessibility / ux | TODO | [ISSUE-07] |
 | #524 | RAG Explorer & MCP Server Integration | MEDIUM | feat / ai infrastructure | TODO | [ISSUE-08] |
@@ -40,7 +40,7 @@
 - **#520 Auto-Healing Real (DONE):** ejecutor real de pipelines, cancel/restart de etapas en vivo, descarga de `.patch` aplicados
 
 ### Governance
-- **#521 Rules Engine:** motor de evaluación de reglas sobre el grafo real, editor avanzado, promoción real a `/policies`
+- **#521 Rules Engine (DONE):** motor de evaluación de reglas sobre el grafo real, editor avanzado, promoción real a `/policies`
 
 ### Integration
 - **#522 GitHub Sync:** estados reales, webhooks bidireccionales, resolución de conflictos GitHub↔Tasker
@@ -83,7 +83,8 @@
 - [x] **#518** implemented — DONE 2026-09-27 (moved to `.issues/done/`, `features.md` §63)
 - [x] **#519** implemented — DONE 2026-09-27 (moved to `.issues/done/`, `features.md` §64)
 - [x] **#520** implemented — DONE 2026-09-27 (moved to `.issues/done/`, `features.md` §65)
-- [ ] Remaining 4 issues implemented in `.issues/to-do` order (or by priority)
+- [x] **#521** implemented — DONE 2026-09-28 (moved to `.issues/done/`, `features.md` §66)
+- [ ] Remaining 3 issues implemented in `.issues/to-do` order (or by priority)
 - [ ] Each issue: `npm run build` green, i18n EN+ES, `features.md` updated
 - [ ] Move issue file to `.issues/done/` with `Status: DONE` when complete
 - [ ] Commit message references `#NNN`

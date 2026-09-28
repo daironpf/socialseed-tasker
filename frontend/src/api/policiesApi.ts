@@ -18,8 +18,32 @@ export interface PolicyCreateRequest {
   target_scope?: string
 }
 
+const SEVERITY_BY_LEVEL: Record<string, string> = {
+  HARD: 'BLOCKER',
+  SOFT: 'WARNING',
+  INFO: 'INFO',
+  WARNING: 'WARNING',
+  BLOCKER: 'BLOCKER',
+}
+
+const SCOPE_BY_TARGET: Record<string, string> = {
+  project: 'PROJECT',
+  component: 'COMPONENT',
+  issue: 'CODE_SYMBOL',
+  PROJECT: 'PROJECT',
+  COMPONENT: 'COMPONENT',
+  COMMIT: 'COMMIT',
+  CODE_SYMBOL: 'CODE_SYMBOL',
+}
+
 export async function createPolicy(policy: PolicyCreateRequest): Promise<Policy> {
-  const { data } = await client.post<APIResponse<Policy>>('/policies', policy)
+  const body = {
+    ...policy,
+    target_scope: SCOPE_BY_TARGET[policy.target_scope ?? 'project'] ?? 'PROJECT',
+    logic_definition: policy.rule,
+    severity: SEVERITY_BY_LEVEL[policy.level ?? 'SOFT'] ?? 'WARNING',
+  }
+  const { data } = await client.post<APIResponse<Policy>>('/policies', body)
   return data.data!
 }
 

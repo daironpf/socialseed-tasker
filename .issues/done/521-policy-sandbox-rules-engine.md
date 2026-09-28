@@ -6,7 +6,7 @@ La vista `PolicySandboxView` genera reportes de impacto predefinidos sintéticam
 
 Origen: `notas.md` → [ISSUE-05] Motor de Reglas para Policy Sandbox (→ #521).
 
-## Status: TODO
+## Status: DONE (2026-09-28)
 
 ## Priority: MEDIUM
 
@@ -23,12 +23,17 @@ feat / governance
 4. i18n + build + smoke con backend.
 
 ## Acceptance Criteria
-- [ ] Rule engine evaluates rules against the real graph structure (not predefined fixtures)
-- [ ] Advanced in-sandbox rule editing: parameters, scope, severity, draft persistence
-- [ ] Impact report shows matching nodes, violations and blast radius before promotion
-- [ ] Promote sends the rule to the real policies API (mock fallback preserved)
-- [ ] i18n support (EN + ES)
-- [ ] `npm run build` passes
+- [x] Rule engine evaluates rules against the real graph structure (not predefined fixtures)
+- [x] Advanced in-sandbox rule editing: parameters, scope, severity, draft persistence
+- [x] Impact report shows matching nodes, violations and blast radius before promotion
+- [x] Promote sends the rule to the real policies API (mock fallback preserved)
+- [x] i18n support (EN + ES)
+- [x] `npm run build` passes
+
+## Verification (2026-09-28)
+
+- Frontend: `npm run lint` 0 errors (2 pre-existing warnings), `npm test` 113/113 (new `utils/ruleEngine.spec.ts` 22 tests), `npm run build` green (vue-tsc + vite); backend untouched (gates sin cambios).
+- Docker (:19001): `tasker-board` rebuilt from the fresh `dist/`, 4 containers healthy; smoke → page 200, served bundle contains the `PolicySandboxView` chunk + new i18n keys, `GET /api/v1/graph/dependencies` → real Neo4j nodes/edges, `POST /api/v1/policies` with the mapped body → 201 (`target_scope: PROJECT`, `severity: BLOCKER`, `logic_definition` stored, policy `c48bfc24…`).
 
 ## Files to Create
 - `frontend/src/utils/ruleEngine.ts` (o `frontend/src/api/sandboxApi.ts`)

@@ -24,7 +24,7 @@ export const usePoliciesStore = defineStore('policies', () => {
     }
   }
 
-  async function createPolicy(body: { name: string; description?: string; rule: string; level?: string; target_scope?: string }): Promise<Policy | null> {
+  async function createPolicy(body: api.PolicyCreateRequest): Promise<Policy | null> {
     const uiStore = useUiStore()
     if (uiStore.networkMode === 'offline') {
       const now = new Date().toISOString()

@@ -45,6 +45,7 @@
       </select>
       <select v-model="filterFormat" :aria-label="t('sandbox.allFormats')" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800">
         <option value="">{{ t('sandbox.allFormats') }}</option>
+        <option value="json">JSON</option>
         <option value="cypher">Cypher</option>
         <option value="yaml">YAML</option>
       </select>
@@ -91,50 +92,33 @@
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ activeRule ? t('sandbox.editor') + ' — ' + activeRule.name : t('sandbox.editor') }}</h3>
             <div v-if="activeRule" class="flex items-center gap-2">
               <span class="text-xs text-gray-500">{{ t('sandbox.format') }}:</span>
-              <select v-model="editorFormat" class="rounded border border-gray-300 px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-700"><option value="cypher">Cypher</option><option value="yaml">YAML</option></select>
+              <select v-model="editorFormat" class="rounded border border-gray-300 px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-700"><option value="json">JSON</option><option value="cypher">Cypher</option><option value="yaml">YAML</option></select>
             </div>
           </div>
           <div class="p-4">
             <textarea v-model="editorCode" :placeholder="t('sandbox.editorPlaceholder')" :disabled="!activeRule" rows="14" class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 font-mono text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200" spellcheck="false" />
           </div>
           <div class="flex items-center justify-between border-t border-gray-200 px-4 py-3 dark:border-gray-700">
-            <div class="text-xs text-gray-500"><span v-if="activeRule">{{ lineCount }} lines</span></div>
+            <div class="text-xs text-gray-500">
+              <span v-if="activeRule">{{ lineCount }} lines</span>
+              <span v-if="store.graphSource === 'api'" class="ml-2 rounded bg-green-100 px-1.5 py-0.5 font-bold text-green-700 dark:bg-green-900/40 dark:text-green-300">{{ t('sandbox.graphSourceApi') }}</span>
+              <span v-else-if="store.graphData" class="ml-2 rounded bg-amber-100 px-1.5 py-0.5 font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">{{ t('sandbox.graphSourceFallback') }}</span>
+            </div>
             <div class="flex gap-2">
-              <button v-if="activeRule" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700" @click="saveRule" :disabled="store.loading">{{ t('sandbox.saveDraft') }}</button>
-              <button v-if="activeRule" class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50" @click="simulateRule(activeRule)" :disabled="store.loading || !editorCode.trim()">
+              <button v-if="activeRule" class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700" @click="saveDraft" :disabled="store.loading">{{ t('sandbox.saveDraft') }}</button>
+              <button v-if="activeRule" class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50" @click="simulateActiveRule" :disabled="store.loading || !editorCode.trim()">
                 <span v-if="store.loading" class="flex items-center gap-1"><span class="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent"></span>{{ t('sandbox.running') }}</span>
-                <span v-else>{{ t('sandbox.simulate') }}</span>
+                <span v-else>{{ t('sandbox.simulateReal') }}</span>
               </button>
             </div>
           </div>
         </div>
 
-        <ImpactReport v-if="store.currentSimulation" :simulation="store.currentSimulation" :can-promote="!!activeRule?.isDraft" @promote="promoteRule" />
+        <ImpactReport v-if="store.currentSimulation" :simulation="store.currentSimulation" :can-promote="!!activeRule?.isDraft && !promoting" @promote="promoteRule" />
       </div>
     </div>
 
-    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeModal" role="dialog" aria-modal="true">
-      <div class="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800">
-        <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{{ editingRule ? t('sandbox.edit') : t('sandbox.newRule') }}</h2>
-        <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-          <div><label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('sandbox.nameField') }} *</label><input v-model="form.name" :placeholder="t('sandbox.namePlaceholder')" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" /></div>
-          <div><label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('sandbox.descriptionField') }}</label><textarea v-model="form.description" rows="2" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700" /></div>
-          <div class="grid grid-cols-2 gap-3">
-            <div><label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('sandbox.formatField') }}</label><select v-model="form.format" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"><option value="cypher">Cypher</option><option value="yaml">YAML</option></select></div>
-            <div><label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('sandbox.severityField') }}</label><select v-model="form.severity" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"><option value="HARD">{{ t('sandbox.hard') }}</option><option value="SOFT">{{ t('sandbox.soft') }}</option></select></div>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div><label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('sandbox.scopeField') }}</label><select v-model="form.scope" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"><option value="project">project</option><option value="component">component</option><option value="issue">issue</option></select></div>
-            <div><label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('sandbox.categoryField') }}</label><select v-model="form.category" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"><option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option></select></div>
-          </div>
-          <div><label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('sandbox.codeField') }}</label><textarea v-model="form.code" rows="6" :placeholder="t('sandbox.codePlaceholder')" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 font-mono text-sm dark:border-gray-600 dark:bg-gray-700" spellcheck="false" /></div>
-        </div>
-        <div class="mt-6 flex justify-end gap-2">
-          <button class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700" @click="closeModal">{{ t('sandbox.cancel') }}</button>
-          <button :disabled="!form.name" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50" @click="saveRuleFromModal">{{ editingRule ? t('sandbox.save') : t('sandbox.create') }}</button>
-        </div>
-      </div>
-    </div>
+    <RuleEditorModal :open="showModal" :rule="editingRule" @close="closeModal" @saved="onRuleSaved" />
 
     <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showDeleteConfirm = false" role="dialog" aria-modal="true">
       <div class="w-full max-w-sm rounded-lg bg-white shadow-xl p-6 dark:bg-gray-800">
@@ -153,34 +137,28 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSandboxStore } from '@/stores/sandboxStore'
-import type { SandboxRule, SandboxRuleFormat, SandboxRuleSeverity } from '@/types/sandbox'
+import { usePoliciesStore } from '@/stores/policiesStore'
+import { useToast } from '@/composables/useToast'
+import type { SandboxRule, SandboxRuleFormat } from '@/types/sandbox'
 import ImpactReport from '@/components/sandbox/ImpactReport.vue'
+import RuleEditorModal from '@/components/sandbox/RuleEditorModal.vue'
 
 const { t } = useI18n()
 const store = useSandboxStore()
+const policiesStore = usePoliciesStore()
+const toast = useToast()
 
 const search = ref('')
 const filterStatus = ref('')
 const filterFormat = ref('')
 const activeRule = ref<SandboxRule | null>(null)
 const editorCode = ref('')
-const editorFormat = ref<SandboxRuleFormat>('cypher')
+const editorFormat = ref<SandboxRuleFormat>('json')
 const showModal = ref(false)
 const editingRule = ref<SandboxRule | null>(null)
 const showDeleteConfirm = ref(false)
 const deleteTarget = ref<SandboxRule | null>(null)
-
-const categories = ['ARCHITECTURE', 'TECHNOLOGY', 'NAMING', 'PATTERNS', 'DEPENDENCIES']
-
-const form = ref({
-  name: '',
-  description: '',
-  format: 'cypher' as SandboxRuleFormat,
-  severity: 'SOFT' as SandboxRuleSeverity,
-  scope: 'project',
-  category: 'ARCHITECTURE',
-  code: '',
-})
+const promoting = ref(false)
 
 const filteredRules = computed(() => {
   let result = store.rules
@@ -203,54 +181,87 @@ function selectRule(rule: SandboxRule) {
 
 function openCreateModal() {
   editingRule.value = null
-  form.value = { name: '', description: '', format: 'cypher', severity: 'SOFT', scope: 'project', category: 'ARCHITECTURE', code: '' }
   showModal.value = true
 }
 
 function openEditModal(rule: SandboxRule) {
   editingRule.value = rule
-  form.value = { name: rule.name, description: rule.description, format: rule.format, severity: rule.severity, scope: rule.scope, category: rule.category, code: rule.code }
   showModal.value = true
 }
 
-function closeModal() { showModal.value = false; editingRule.value = null }
+function closeModal() {
+  showModal.value = false
+  editingRule.value = null
+}
 
-function confirmDelete(rule: SandboxRule) { deleteTarget.value = rule; showDeleteConfirm.value = true }
+function onRuleSaved(rule: SandboxRule) {
+  selectRule(rule)
+}
+
+function confirmDelete(rule: SandboxRule) {
+  deleteTarget.value = rule
+  showDeleteConfirm.value = true
+}
 
 async function executeDelete() {
   if (!deleteTarget.value) return
-  await store.deleteRule(deleteTarget.value.id)
-  if (activeRule.value?.id === deleteTarget.value.id) { activeRule.value = null; editorCode.value = '' }
+  const id = deleteTarget.value.id
+  await store.deleteRule(id)
+  if (activeRule.value?.id === id) {
+    activeRule.value = null
+    editorCode.value = ''
+    store.currentSimulation = null
+  }
   showDeleteConfirm.value = false
   deleteTarget.value = null
 }
 
-async function saveRule() {
+async function saveDraft() {
   if (!activeRule.value) return
   await store.updateRule(activeRule.value.id, { code: editorCode.value, format: editorFormat.value })
-}
-
-async function saveRuleFromModal() {
-  if (!form.value.name) return
-  if (editingRule.value) {
-    await store.updateRule(editingRule.value.id, form.value)
-  } else {
-    const newRule = await store.createRule(form.value)
-    selectRule(newRule)
-  }
-  closeModal()
+  const updated = store.rules.find(r => r.id === activeRule.value!.id)
+  if (updated) activeRule.value = updated
 }
 
 async function simulateRule(rule: SandboxRule) {
-  if (!activeRule.value || activeRule.value.id !== rule.id) selectRule(rule)
+  if (activeRule.value?.id !== rule.id) selectRule(rule)
   await store.simulateRule(rule.id)
 }
 
-async function promoteRule() {
+async function simulateActiveRule() {
   if (!activeRule.value) return
-  await store.promoteRule(activeRule.value.id)
-  activeRule.value = { ...activeRule.value, isDraft: false }
+  await saveDraft()
+  if (!activeRule.value) return
+  await store.simulateRule(activeRule.value.id)
 }
 
-onMounted(() => store.fetchRules?.())
+async function promoteRule() {
+  if (!activeRule.value || promoting.value) return
+  promoting.value = true
+  try {
+    const rule = activeRule.value
+    const policy = await policiesStore.createPolicy({
+      name: rule.name,
+      description: rule.description,
+      rule: rule.code,
+      level: rule.severity,
+      target_scope: rule.scope,
+    })
+    if (!policy) {
+      toast.error(policiesStore.error || t('sandbox.promoteFailed'))
+      return
+    }
+    await store.promoteRule(rule.id)
+    const promoted = store.rules.find(r => r.id === rule.id)
+    if (promoted) activeRule.value = promoted
+    toast.success(t('sandbox.promoteSuccess'))
+  } finally {
+    promoting.value = false
+  }
+}
+
+onMounted(() => {
+  store.fetchRules()
+  store.loadGraph()
+})
 </script>
