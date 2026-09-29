@@ -2,7 +2,7 @@
 
 > Complete catalog of all UI features, interactions, and capabilities currently implemented.
 > Use this document to identify gaps, plan new features, and track what is missing.
-> Last updated: 2026-09-26
+> Last updated: 2026-09-29
 
 ---
 
@@ -65,13 +65,17 @@
 55. [Custom Dashboards, Reporting Engine & SLA Metrics](#55-custom-dashboards-reporting-engine--sla-metrics)
 56. [Offline First & Mock Sync Queue](#56-offline-first--mock-sync-queue)
 57. [Sound Effects, Notification Center Groups & Toast Themes](#57-sound-effects-notification-center-groups--toast-themes)
-58. [Pending-Feature Badges (mock-only scope)](#58-pending-feature-badges-mock-only-scope)
+58. [Under-Construction Indicators (pending features, mock and real)](#58-under-construction-indicators-pending-features-mock-and-real)
 59. [Agent-Working Indicator in Kanban & Issue List](#59-agent-working-indicator-in-kanban--issue-list)
 60. [Dashboard Information Modules (Board)](#60-dashboard-information-modules-board)
 61. [Dashboard Section Layout & Advanced Analytics Modules (Board)](#61-dashboard-section-layout--advanced-analytics-modules-board)
- 62. [Backend Integration & Live SSE Architecture (mock/real toggle)](#62-backend-integration--live-sse-architecture-mockreal-toggle)
- 63. [Test Suite, Linting & Frontend CI/CD](#63-test-suite-linting--frontend-cicd)
- 64. [OAuth2/SSO Authentication & Role-Based Route Protection](#64-oauth2sso-authentication--role-based-route-protection)
+62. [Backend Integration & Live SSE Architecture (mock/real toggle)](#62-backend-integration--live-sse-architecture-mockreal-toggle)
+63. [Test Suite, Linting & Frontend CI/CD](#63-test-suite-linting--frontend-cicd)
+64. [OAuth2/SSO Authentication & Role-Based Route Protection](#64-oauth2sso-authentication--role-based-route-protection)
+65. [Real Persistence & Auto-Healing Pipeline Engine](#65-real-persistence--auto-healing-pipeline-engine)
+66. [Policy Sandbox Rules Engine](#66-policy-sandbox-rules-engine)
+67. [Bidirectional Real Sync with GitHub](#67-bidirectional-real-sync-with-github)
+68. [RAG Explorer & MCP Server Integration](#68-rag-explorer--mcp-server-integration)
 
 ---
 
@@ -84,10 +88,10 @@
 | Tailwind CSS 3 | Implemented | Dark mode via `class` strategy; Inter font |
 | Pinia state management | Implemented | 24 stores under `src/stores/` |
 | Vue Router | Implemented | 26 view routes + `/` redirect + catch-all NotFound; lazy-loaded; scroll-to-top on navigate |
-| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 75 top-level sections, ~1477 leaf keys per language, localStorage persistence |
+| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 77 top-level sections, 1600 leaf keys per language (both languages balanced), localStorage persistence |
 | Dark mode | Implemented | Toggle via UserMenu / `D` shortcut / CommandPalette; localStorage; system preference detection |
-| Mock API mode | Implemented | `USE_MOCK = true` in `client.ts`; axios instance swapped for mock client; `mockApi.ts` uses `fetch` against `/mock-api` |
-| Real API mode | Implemented | Axios client, base `window.__API_URL__ \|\| '/api/v1'`, API key auth via `X-API-Key`, 401 interceptor → `auth:unauthorized` |
+| Data-source mode (mock/real) | Implemented | Reactive `apiMode` ref in `client.ts` (resolution: `localStorage['socialseed-api-mode']` > `VITE_USE_MOCK` > default `mock`); reactive proxy dispatches to the mock client or the axios real client; toggle in UserMenu (§62) |
+| Real API mode | Implemented | Axios client, base `window.__API_URL__ \|\| '/api/v1'`, auth via `Bearer` JWT (auto-refresh) or `X-API-Key`, 401 → refresh retry → `auth:unauthorized` (§64) |
 | Docker deployment | Implemented | Frontend `127.0.0.1:19001→80`, mock-api `127.0.0.1:8001`, real API `127.0.0.1:8888`, Neo4j `7474`/`7687` |
 | Mock data volume | Implemented | `frontend/dataset-de-pruebas/` mounted into mock-api container (`DATA_DIR`) |
 | Toast notification system | Implemented | Singleton `useToast()`: success/error/warning/info, auto-dismiss, max 5 concurrent |
@@ -118,12 +122,13 @@
 
 | Feature | Status | Details |
 |---|---|---|
-| Login screen | Implemented | Full-screen overlay (`LoginScreen.vue`), password input for API key |
-| API key storage | Implemented | localStorage `tasker_api_key` via `authStore` |
-| Mock mode bypass | Implemented | `isAuthenticated` true when `USE_MOCK = true` (auto-authenticated) |
-| 401 interceptor | Implemented | Dispatches `auth:unauthorized`, triggers reload |
-| Logout | Implemented | Clears API key + full page reload (UserMenu) |
-| Sign-in flow | Implemented | `App.vue` shows `LoginScreen` when unauthenticated; reload on login |
+| Login screen | Implemented | Full-screen overlay (`LoginScreen.vue`): API-key form (busy/error) + GitHub/Google OAuth2 buttons (`data-testid="oauth-github|google"`), #519 — §64 |
+| Session storage | Implemented | Mock: demo ADMIN user in memory; Real: JWT access in RAM + refresh token + user profile in `localStorage` (`authSession.ts`), auto-refresh 60s before expiry — §64 |
+| Mock mode bypass | Implemented | `isAuthenticated` true in mock mode (auto-authenticated, `authStore.can()` always grants); real mode requires `initSession()` — §64 |
+| 401 handling | Implemented | Response 401 → single-flight refresh + 1 retry; refresh fails → `auth:unauthorized` → login overlay |
+| Logout | Implemented | Real mode revokes the refresh token in the backend, clears session + reload (UserMenu) |
+| RBAC | Implemented | Route guards (`meta.roles` → redirect + toast), action gating (`authStore.can()`), role range ADMIN ≥ DEVELOPER ≥ VIEWER — §64 |
+| Sign-in flow | Implemented | `App.vue` shows `LoginScreen` when unauthenticated; OAuth callback route `/auth/oauth-callback` |
 
 ---
 
@@ -139,6 +144,8 @@
 | Active route highlighting | Implemented | Color change on current route |
 | Nav icons | Implemented | SVG icons per nav item |
 | i18n labels | Implemented | All nav labels use `t()` |
+| Stable across data-source modes | Implemented | No RBAC/feature filtering of nav items: the same 3 groups / 24 items render in mock and real modes (route-level RBAC stays in the router guard, §64) |
+| Pending badges | Implemented | Amber construction badge on pending routes, visible in **both** mock and real modes (§58) |
 | Mobile behavior | Implemented | Hidden below `md` (`hidden md:flex`); hamburger opens MobileDrawer |
 
 **Nav groups**
@@ -154,6 +161,8 @@
 | Feature | Status | Details |
 |---|---|---|
 | Dynamic page title | Implemented | Maps route path → translated title (23 paths; `/profile` falls back to dashboard title) |
+| Pending badge | Implemented | `PendingDevBadge` after the title when the route is pending (mock and real modes, §58) |
+| Under-construction chip | Implemented | Amber text chip "Under construction / En construccion" (`common.underConstruction`, `role="status"`) next to the title when the route is pending **and** the app consumes the real API (`isRealPendingFeature`); mock mode shows only the icon badge (§58) |
 | Organization switcher | Implemented | `OrganizationSwitcher` (`hidden lg:flex`, before ProjectSelector): hierarchical Organization → Workspace dropdown, localStorage, link to `/organization` settings |
 | Global HITL banner | Implemented | Shown when `urgentPendingCount > 0` (CRITICAL/HIGH pending); click → HITLCommandCenter; Review button → HITLQuickActionModal |
 | Hamburger menu | Implemented | 44×44 button (`md:hidden`), emits `open-mobile-menu` |
@@ -180,6 +189,8 @@
 | Dropdown menu | Implemented | Click to toggle, click-outside to close |
 | Dark/Light mode toggle | Implemented | Sun/Moon icons |
 | Language selector | Implemented | EN/ES flag buttons, reactive switching |
+| Data source (Mock/Real) | Implemented | Segmented control (`data-testid="api-mode-mock|real"`) switching `apiMode` → `localStorage['socialseed-api-mode']`; drives all API calls, badges and RBAC bypass (#517/#519, §62) |
+| Signed-in identity | Implemented | Real username + role (`profile.roles.*`); OAuth-aware logout revokes the refresh token (#519) |
 | Sign out | Implemented | Clears auth + reloads |
 | Profile link | Implemented | Navigates to `/profile` |
 
@@ -290,7 +301,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **Assignee management** | Implemented | Interactive select with all users, i18n "Unassigned" |
 | **Assignee history** | Implemented | Timeline with avatars, dates, reassignment tracking |
 | **Dependency management** | Implemented | Add/remove via RelationshipModal |
-| **GitHub Sync card** | Implemented | GitHubSyncCard: issue # link, sync badge, last synced, Force Re-sync |
+| **GitHub Sync card** | Implemented | GitHubSyncCard: issue # link, sync badge, last synced, Force Re-sync; in real mode also CONFLICT badge, sync error panel and per-field Keep local / Keep remote / Merge resolution (#522, §67) |
 | **Governance validation** | Implemented | Blocks CLOSED when requirements unmet → GovernanceValidationModal (Fix/Override) |
 | **AI Reasoning tab** | Implemented | Loading state, reasoning logs with MarkdownRenderer, timestamps |
 | **Progress tab** | Implemented | Affected Files (NEW/EDITED/DELETED badges + per-file DiffViewer via `diff_hunk`), Tech Debt Notes (amber Markdown), Task Checklist, Files Changed, agent-log diffs |
@@ -451,9 +462,10 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | Feature | Status | Details |
 |---|---|---|
 | **Full-screen overlay** | Implemented | Centered card with branding |
-| **API key input** | Implemented | Password field with label |
+| **API key input** | Implemented | Password field with busy/error states; translated backend errors (401 invalid key, 403 oauth not configured) |
+| **OAuth2 buttons** | Implemented | GitHub + Google, `data-testid="oauth-github|google"`, "or continue with API key" divider (#519, §64) |
 | **Sign in / Skip buttons** | Implemented | Both with dark mode variants |
-| **Error message** | Implemented | Red alert for invalid credentials |
+| **Error message** | Implemented | Red alert for invalid credentials (`login-error` testid) |
 | i18n | Implemented | All labels translated |
 
 ---
@@ -463,9 +475,9 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 ### Layout Components
 | Component | Purpose | Details |
 |---|---|---|
-| `Sidebar` | Main navigation | Collapsible, 3 groups, 24 items, desktop-only |
+| `Sidebar` | Main navigation | Collapsible, 3 groups, 24 items, desktop-only; stable across data-source modes, pending badges (§58) |
 | `MobileDrawer` | Mobile navigation | Overlay drawer, swipe-to-close, same 24 items |
-| `AppHeader` | Top bar | Dynamic title, HITL banner, hamburger, org switcher (lg+), project selector, network mode toggle (xl+), sync badge (opens queue drawer), notifications, user menu |
+| `AppHeader` | Top bar | Dynamic title + pending badge + under-construction chip (real mode), HITL banner, hamburger, org switcher (lg+), project selector, network mode toggle (xl+), sync badge (opens queue drawer), notifications, user menu |
 | `OrganizationSwitcher` | Org/workspace selector | Hierarchical Organization → Workspace dropdown, localStorage persistence, link to `/organization` settings |
 | `UserMenu` | User dropdown | Avatar, dark mode, language, logout, profile link |
 | `NavItem` | Sidebar link | Icon + label, active state, badge, 44px touch target |
@@ -550,6 +562,8 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `GraphFilters` | Graph filtering | Component checkboxes, priority (CRITICAL/HIGH/MEDIUM/LOW) and node type pills, status filter, max hops |
 | `ProjectSelector` | Project switcher | 4 projects, localStorage, filters all views |
 | `SyncStatusBadge` | Sync indicator | Clickable button (opens `SyncQueueDrawer`), green/yellow/blue/amber, animated ping, pending count |
+| `PendingDevBadge` | Pending indicator | Amber construction badge on pending nav items and page headers (§58) |
+| `AgentWorkingIcon` | Agent indicator | Pulsing robot + live elapsed timer on cards/list rows (§59) |
 | `AuditLogTable` | Audit table | Timestamp, actor avatar/type, event badge, severity pill, resource, action, IP |
 | `PIIRedactionPreview` | PII suite | Live `detectPII` list, Mask PII toggle, before/after preview, Mask/Reveal actions |
 
@@ -592,9 +606,9 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | Component | Purpose | Details |
 |---|---|---|
 | `LoginScreen` | API key gate | Full-screen overlay login |
-**Total view components:** 27 files in `src/views/` (26 routed incl. NotFound + `IssueDetailView` embedded)
+**Total view components:** 28 files in `src/views/` (27 routed incl. NotFound + `IssueDetailView` embedded)
 
-**Total shared components:** 98 `.vue` files under `src/components/`
+**Total shared components:** 99 `.vue` files under `src/components/`
 
 ---
 
@@ -613,6 +627,8 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **Mock presence generation** | Implemented | Realistic mock presence data for demo |
 | **Sync status simulation** | Implemented | `simulateSync()`: OFFLINE_QUEUED → 2s → SYNCING → 0.8s → SYNCED |
 | **Mock event stream** | Implemented | `useMockStream` simulates SSE/WebSocket events (#504) |
+| **GitHub sync stream** | Implemented | Real mode: `GET /issues/{id}/github-sync/stream` SSE (`connected`/`ping`/`sync`) → `IssueDetailView` refetches on events (#522, §67) |
+| **MCP tool-call stream** | Implemented | Real mode: `GET /mcp/tool-calls/stream` SSE feeds the MCP Inspector live tool-call feed (#524, §68) |
 
 ---
 
@@ -740,8 +756,8 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 
 | Store | State | Key Actions |
 |---|---|---|
-| `authStore` | storedKey, isAuthenticated | setApiKey, clearApiKey, getApiKey |
-| `uiStore` | darkMode, locale, sidebarOpen, viewMode, currentProject, availableProjects, filters, savedSearches, connectionState (SYNCED/OFFLINE_QUEUED/SYNCING/DEGRADED), pendingSyncCount, networkMode (online/degraded/offline), syncQueue[], toastTheme (minimal/rich/enterprise) | setFilter, clearFilters, saveSearch, applySearch, toggleDarkMode, setLocale, simulateSync (guarded), setNetworkMode, enqueueMutation, flushQueue, removeQueued, retryQueued, resolveConflict, setToastTheme |
+| `authStore` | user, sessionReady, busy, error, isAuthenticated, role, permissions | initSession, login, loginOAuth, completeOAuth, logout, clearSession, can, hasRole, rolesAllowed (#519, §64) |
+| `uiStore` | darkMode, locale, sidebarOpen, viewMode, currentProject, availableProjects, filters, savedSearches, connectionState (SYNCED/OFFLINE_QUEUED/SYNCING/DEGRADED), pendingSyncCount, networkMode (online/degraded/offline), syncQueue[], toastTheme (minimal/rich/enterprise), apiMode/isMockApi | setFilter, clearFilters, saveSearch, applySearch, toggleDarkMode, setLocale, simulateSync (guarded), setNetworkMode, enqueueMutation, flushQueue, removeQueued, retryQueued, resolveConflict, setToastTheme, setApiMode |
 | `issuesStore` | issues[], filteredIssues, pagination, loading, selectedIssue | fetchIssues, createIssue, updateIssue, deleteIssue, closeIssue (create/update enqueue + local-apply when offline, #515) |
 | `componentsStore` | components[], projects, loading | fetchComponents, createComponent, updateComponent, deleteComponent |
 | `usersStore` | users[], loading | fetchUsers, createUser, updateUser, deleteUser |
@@ -750,13 +766,13 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `analysisStore` | impactResult, rootCauseResults[], testFailures[] | analyzeImpact, analyzeRootCause, fetchTestFailures, clearResults |
 | `notificationsStore` | notifications[], preferences (per-channel sound), unreadCount, unreadByCategory (5 categories) | markAsRead, markAllAsRead, markManyRead, dismiss, dismissMany, setChannelSound, getFiltered, ensureHitlNotifications (addNotification triggers configured sound via `useSoundEffects`, #516) |
 | `chatStore` | conversations[], messages, activeConversationId, typingUsers[], searchQuery | selectConversation, sendMessage, togglePin, createConversation, simulateTyping |
-| `sandboxStore` | rules[], selectedRule, simulationResult | Mock CRUD + simulation |
-| `ragStore` | searchResults[], queryStats | Mock search, getContext |
-| `mcpStore` | sessions[], selectedSession, isStreaming | Mock MCP session management |
+| `sandboxStore` | rules[] (localStorage drafts), selectedRule, simulationResult, graph | loadGraph (real `/graph/dependencies`), simulateRule/simulatePreview (ruleEngine), createRule, updateRule, deleteRule, promoteRule (#521, §66) |
+| `ragStore` | searchResults[], queryStats, error, metrics | Real mode: `searchRag`/`getRagStats` against `/rag/search` + `/rag/stats`; mock keeps 800ms fixtures (#524, §68) |
+| `mcpStore` | sessions[], servers[], toolCalls[], selectedSession, isStreaming, error | Real mode: Promise.all of servers/sessions/tool-calls + SSE `connectSSE('/mcp/tool-calls/stream')`; mock keeps fixtures + 5s ticker (#524, §68) |
 | `hitlStore` | requests[], selectedRequest, urgentPendingCount/Requests, quickActionRequestId, loadedOnce | fetchRequests, resolveAction, openQuickAction, closeQuickAction |
 | `finopsStore` | models[], components[], tasks[], roi[], alerts[], caps[], metrics | updateCap, toggleCap |
 | `executiveStore` | kpis[], cycleTime[], debt[], compliance[] | formatTrend, complianceColor |
-| `autoHealingStore` | runs[], logs[], fixAttempts[], selectedRunId | selectRun, stageColor, formatDuration, simulateCompletion (running run → completed + success sound, #516) |
+| `autoHealingStore` | runs[], logs[], fixAttempts[], selectedRunId, running poll | Real mode: init/refresh + startRun/cancelRun/restartRun with 2s polling and patch artifacts; mock arrays + simulateCompletion untouched (#520, §65) |
 | `agentReplayStore` | sessions[], currentTime, isPlaying, playSpeed | play, pause, stepForward, stepBackward, seekTo |
 | `codeGraphStore` | nodes[], codeEdges[], enabled | fetchCodeStructure, toggle |
 | `organizationsStore` | organizations[], currentOrgId, currentWorkspaceId, activeRole, quotaUsage, canEdit/canManage | fetchOrganizations, createOrganization, updateOrganization, setOrg, setWorkspace, setActiveRole, upsertAccount, removeAccount (persists `currentOrg`/`currentWorkspace`/`activeEnterpriseRole` in localStorage; syncs workspace → `uiStore.setProject`) |
@@ -775,17 +791,25 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 
 | Module | Endpoints | Methods |
 |---|---|---|
-| `client.ts` | Dual client: mock (`USE_MOCK`) vs axios real; API key header; 401 interceptor | — |
+| `client.ts` | Dual client: mock (`USE_MOCK`/`isMockMode`) vs axios real; Bearer token + single-flight refresh retry on 401; API key header fallback (#519/#517) | — |
 | `mockApi.ts` | `fetch` → `/mock-api/mock/*` | issues, components, policies, users, constraints, analysis, agent-logs, dashboard-stats, health, sync-queue, admin seed/reset |
+| `authApi` | `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/oauth/{provider}`, `/auth/oauth/{provider}/callback`, `/auth/profile` | POST, GET (#519) |
+| `authSession` | In-memory access token + refresh queue, `hasValidSession()` (#519) | — |
+| `realtime` | `connectSSE` EventSource wrapper with `enabled` gate (mock mode never connects), used by streams below (#517) | SSE |
 | `issuesApi` | `/issues`, `/issues/{id}`, `/issues/{id}/close`, `/blocked-issues` | GET, POST, PATCH, DELETE |
 | `componentsApi` | `/components`, `/components/{id}` | GET, POST, PATCH, DELETE |
 | `policiesApi` | `/policies`, `/policies/{id}` | GET, POST, PATCH, DELETE |
 | `constraintsApi` | `/constraints`, `/constraints/{id}`, `/constraints/validate` | GET, POST, PATCH, DELETE |
 | `usersApi` | `/users`, `/users/{id}` | GET, POST, PUT, DELETE |
 | `analysisApi` | `/analysis/impact/{id}`, `/analysis/root-cause`, `/test-failures` | GET, POST |
-| `systemApi` | `/health`, `/sync-queue`, `/admin/seed`, `/admin/reset` | GET, POST |
+| `systemApi` | `/health`, `/sync-queue` (missing on real backend → defaults), `/admin/seed`, `/admin/reset` | GET, POST |
 | `agentLogsApi` | `/issues/{id}/agent-logs` | GET |
-| `organizationsApi` | `/organizations`, `/organizations/{id}` | GET, POST, PATCH, DELETE |
+| `autoHealingApi` | `/auto-healing/*` runs/logs/start/cancel/restart (#520) | GET, POST |
+| `graphApi` | `/graph/dependencies` (+ explore queries, #521/#524) | GET |
+| `githubSyncApi` | `/issues/{id}/github-sync`, `/conflicts`, `/resolve`, `/stream` (#522) | GET, POST, SSE |
+| `ragApi` | `/rag/search`, `/rag/stats`, `/rag/context` (#524) | GET, POST |
+| `mcpApi` | `/mcp/servers`, `/mcp/sessions`, `/mcp/tool-calls`, `/mcp/tool-calls/stream` (#524) | GET, POST, SSE |
+| `organizationsApi` | Hardcoded base `/mock-api/mock/organizations` — **not on real backend yet** | GET, POST, PATCH, DELETE |
 | `useAgentStream` | `/issues/{id}/agent-logs/stream` | SSE |
 
 ### Mock API server (`mock-api/server.py`)
@@ -933,11 +957,11 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 ## 27. i18n Coverage
 
 ### Locale Files
-- `en.json`: 1477 leaf keys, **75** top-level sections
-- `es.json`: 1478 leaf keys, matching structure
+- `en.json`: 1600 leaf keys, **77** top-level sections
+- `es.json`: 1600 leaf keys, matching structure (both balanced)
 
-### Sections (75)
-`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `boardModules`, `boardSections`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`, `agentStudio`, `analytics`, `sla`, `offline`, `syncQueue`, `soundEffects`, `toastTheme`, `notifPanel`
+### Sections (77)
+`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `boardModules`, `boardSections`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `a11y`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`, `agentStudio`, `analytics`, `sla`, `offline`, `syncQueue`, `soundEffects`, `toastTheme`, `notifPanel`, `apiMode`
 
 ### Coverage
 - All user-visible text uses `t()`
@@ -994,8 +1018,9 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 |---|---|---|
 | **Session list** | Implemented | Cards: session name, server, model, status badge |
 | **Session detail** | Implemented | Slide-in panel with tools list, status, model info |
-| **Mock data** | Implemented | 2 sessions: code-creator (active), data-analyst (idle) |
-| **Store** | Implemented | `mcpStore.ts` |
+| **Mock data** | Implemented | Mock mode: 2 sessions (code-creator active, data-analyst idle) |
+| **Live mode (#524)** | Implemented | Real mode: live registry (LIVE/MOCK badge), servers panel, latency table, payload modal, re-run, SSE tool-call feed — see §68 |
+| **Store** | Implemented | `mcpStore.ts` (fixtures vs REST+SSE branch) |
 | i18n | Implemented | `mcp` section |
 
 ---
@@ -1027,8 +1052,8 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | **Rule list** | Implemented | Cards: rule name, status badge, severity, scope |
 | **Simulation** | Implemented | Simulate → impact report |
 | **Impact report** | Implemented | Pass/fail, violation details with severity |
-| **Rule promotion** | Implemented | Promote simulated rules to production (UI only) |
-| **Mock data** | Implemented | 3 rules: dependency-depth-limit, technology-restriction, naming-convention |
+| **Rule promotion** | Implemented | Promotes the simulated rule to a real backend policy (`POST /policies`, #521 — §66) |
+| **Draft rules** | Implemented | Seeded drafts persisted in `localStorage`; simulated on the real dependency graph (`/graph/dependencies`) — §66 |
 | **Store** | Implemented | `sandboxStore.ts` |
 | i18n | Implemented | `sandbox` section |
 
@@ -1041,7 +1066,8 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | **Search input** | Implemented | Text field + search button, Enter key |
 | **Results list** | Implemented | Cards: entity name, type, score, sub-graph preview |
 | **Query stats** | Implemented | Tokens, nodes, edges, sub-graph count |
-| **Mock data** | Implemented | 2 results: authentication-service, payment-service |
+| **Mock data** | Implemented | Mock mode: 2 results (authentication-service, payment-service) |
+| **Live mode (#524)** | Implemented | Real mode: `POST /rag/search` over real Neo4j vector index + `GET /rag/stats` metrics — see §68 |
 | **Store** | Implemented | `ragStore.ts` |
 | i18n | Implemented | `rag` section |
 
@@ -1073,7 +1099,8 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | **Run detail** | Implemented | Slide-in with 5-stage pipeline progress bar |
 | **Live terminal** | Implemented | Scrollable logs with colored stage indicators |
 | **Fix attempts** | Implemented | Description, test output, `diffPreview` code block |
-| **Mock data** | Implemented | 3 runs, 12 log entries, 3 fix attempts |
+| **Mock data** | Implemented | Mock mode: 3 runs, 12 log entries, 3 fix attempts |
+| **Real pipeline (#520)** | Implemented | Real mode: Start/Cancel/Restart runs, patch artifacts, 2s log polling — see §65 |
 | **Store** | Implemented | `autoHealingStore.ts` |
 | i18n | Implemented | `autoHealing` section |
 
@@ -1152,7 +1179,8 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | **Issue link** | Implemented | Clickable `#issue_number` → GitHub URL |
 | **Status badge** | Implemented | Green SYNCED, yellow PENDING_PUSH, red ERROR |
 | **Last synced** | Implemented | Timestamp of last sync |
-| **Force Re-sync** | Implemented | Button with spinner, simulates sync cycle |
+| **Force Re-sync** | Implemented | Button with spinner; mock mode simulates a sync cycle |
+| **Live sync & conflicts (#522)** | Implemented | Real mode: real webhook-driven sync, conflict panel with Keep local / Keep remote / Merge, SSE-driven updates — see §67 |
 | **Component** | Implemented | `GitHubSyncCard.vue` |
 | **Integration** | Implemented | IssueDetailView Details tab (conditional on `issue.github_sync`) |
 | i18n | Implemented | `githubSync` section |
@@ -1321,7 +1349,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | `IssueDetailView.vue` | Embedded slide-in in ListView, KanbanView, GraphView |
 
 ### Composables (`src/composables/`)
-`useToast`, `usePresence`, `useMockStream`, `useKeyboardShortcuts`, `useExport`, `useAgentStream`, `useSoundEffects`
+`useToast`, `usePresence`, `useMockStream`, `useKeyboardShortcuts`, `useExport`, `useAgentStream`, `useSoundEffects`, `useAuthGuard` (route RBAC, §64), `useFocusTrap` (modal a11y, §20)
 
 ### Scripts
 | Script | Command |
@@ -1343,23 +1371,20 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 - No actual PII remediation (masking UI only)
 - No real code graph extraction (mock data only)
 - No real FinOps billing data
-- No real auto-healing pipeline execution
 - No real agent replay recording
 - No real executive KPI calculations
 - MCP servers run in-process (registry + SSE tool-call stream; no external stdio/http MCP processes are launched and re-run is limited to local executors)
 - No HITL backend workflow
-- No Policy Sandbox rule engine
 - No real audit trail persistence
 - No Storybook / component documentation
-- No accessibility audit (WCAG compliance)
 - No performance monitoring / Lighthouse
-- No service worker / offline support
+- No service worker / offline support (offline queue is localStorage + flush, no SW)
 - No internationalization for right-to-left languages
 - No mobile bottom navigation bar (hamburger drawer only)
-- No real GitHub bidirectional sync
 - No real governance rule engine backend
-- No real sync queue persistence
-- Local list-nav shortcuts (`J`/`K`/`Enter`) shown in help modal but not registered
+- No real sync queue persistence (server side)
+- `organizationsApi` is hardcoded to `/mock-api` — organization data is not available on the real backend
+- `GET /sync-queue` does not exist on the real backend (`systemApi` silently falls back to defaults)
 - Header page title map omits `/profile` (falls back to dashboard title)
 - `data-pipeline` project selectable but has zero mock issues
 
@@ -1516,19 +1541,22 @@ Issue #516 (`composables/useSoundEffects.ts`, `components/ui/ToastThemeSettings.
 
 ---
 
-## 58. Pending-Feature Badges (mock-only scope)
+## 58. Under-Construction Indicators (pending features, mock and real)
 
-Visual indicator that a feature is awaiting development: every view still running exclusively on the mock API (`USE_MOCK = true`, see §50 Known Gaps) shows an amber hourglass badge in the navigation and in the page header.
+Visual indicator that a feature is still backed only by mock/local data. The badge renders in **both** data-source modes: in mock mode it marks the view as demo-only, and when the app consumes the real REST backend (§62) it warns that the view still does not talk to the API. On the real API the page header additionally renders a visible "Under construction" text chip.
 
 | Feature | Status | Details |
 |---|---|---|
-| **Pending route registry** | Implemented | `utils/pendingFeatures.ts`: `PENDING_FEATURE_ROUTES` (24 routes) + `isPendingFeature(path)`; covers all mock-backed sidebar routes; `/profile` (local-only) and NotFound excluded |
+| **Pending route registry** | Implemented | `utils/pendingFeatures.ts`: `PENDING_FEATURE_ROUTES` (22 routes) + `isPendingFeature(path)` (no data-source gate) + `isRealPendingFeature(path)` (pending **and** real mode, used by the header chip); covers the mock-backed sidebar routes; `/profile` (local-only) and NotFound excluded |
 | **Badge component** | Implemented | `components/ui/PendingDevBadge.vue`: amber hourglass SVG in a tinted pill (dark-mode aware), sizes `xs` (16px) / `sm` (20px), `role="img"` with `title` + `aria-label` tooltip |
 | **Sidebar nav** | Implemented | `NavItem.vue`: `pending` prop renders the badge overlaid at the icon's top-right corner (visible in both collapsed w-20 and expanded w-64 states) |
 | **Mobile drawer** | Implemented | `MobileDrawer.vue` passes `:pending="isPendingFeature(item.path)"` (mobile parity with desktop sidebar) |
-| **Page header** | Implemented | `AppHeader.vue`: badge rendered right after `pageTitle` when `isPendingFeature(route.path)` |
-| **i18n** | Implemented | `common.pendingDev`: "Feature awaiting development" (EN) / "Funcionalidad pendiente de desarrollo" (ES) |
-| **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`, ~80s) |
+| **Page header badge** | Implemented | `AppHeader.vue`: badge rendered right after `pageTitle` when `isPendingFeature(route.path)` (mock and real modes) |
+| **Under-construction chip (real mode)** | Implemented | `AppHeader.vue`: amber text chip `common.underConstruction` ("Under construction" / "En construccion") next to the title when `isRealPendingFeature(route.path)`; `role="status"`; hidden in mock mode where the icon badge already communicates the state |
+| **Stable sidebar** | Implemented | Nav is not filtered by data source: the same 3 groups / 24 items render in mock and real modes (RBAC filtering removed from `Sidebar.vue`; route-level protection stays in the router guard, §64) — no items appear/disappear when toggling modes |
+| **i18n** | Implemented | `common.pendingDev`: "Feature awaiting development" / "Funcionalidad pendiente de desarrollo"; `common.underConstruction`: "Under construction" / "En construccion" (ASCII); `nav.finops`/`nav.autoHealing`/`nav.replay`/`nav.executive`/`nav.graph` and `header.graph` were missing and are now translated in both locales |
+| **Tests** | Implemented | `utils/pendingFeatures.spec.ts` (4 tests) + `components/layout/Sidebar.spec.ts` (5 tests, stable 24 items/3 groups + `nav.*` i18n); suite 167/167 (22 files) |
+| **Build** | Implemented | `npm run build` passes (`vue-tsc -b && vite build`); `tasker-board` image rebuilt and verified serving the new strings |
 
 ---
 
@@ -1598,7 +1626,7 @@ Issue #517. First real backend integration: an app-wide mock/real data-source to
 | **Backend SSE hub** | Implemented | `src/.../web_api/routers/realtime.py`: `RealtimeHub` (per-issue log ring buffer of 200 entries, presence registry with 90s TTL, asyncio pub/sub); registered in `routers/__init__.py`, `routes.py` and `app.py` (`prefix=/api/v1`, `app.state.realtime_hub`); endpoints `GET/POST /issues/{id}/agent-logs`, `GET /issues/{id}/agent-logs/stream`, `GET/POST /issues/{id}/presence`, `POST /issues/{id}/presence/leave`, `GET /issues/{id}/presence/stream` |
 | **SSE protocol** | Implemented | Streams send `event: connected` (+ replay payload) atomically before subscribing to live traffic, then `event: log` / `event: viewers`, with a named `event: ping` heartbeat every 15s (named event so the client watchdog never treats it as silence); `X-Accel-Buffering: no` header |
 | **nginx streaming** | Implemented | `frontend/nginx.conf` `/api/` location: `proxy_buffering off`, `proxy_cache off`, `chunked_transfer_encoding on`, `proxy_read_timeout 3600s`, `X-Accel-Buffering no` — EventSource cannot send headers, so auth relies on the existing nginx-injected `X-API-Key` |
-| **SyncStatusBadge states** | Implemented | Badge shows `sourceLabel` + `sourceLabelClass`: `Mock` (purple) / `Live` (green) / `Connecting` (blue) / `Reconnecting` (amber) / `Stream offline` (red); `data-testid="api-source-chip"`; hours/loso pending badge gated to mock (`isMockMode()`) |
+| **SyncStatusBadge states** | Implemented | Badge shows `sourceLabel` + `sourceLabelClass`: `Mock` (purple) / `Live` (green) / `Connecting` (blue) / `Reconnecting` (amber) / `Stream offline` (red); `data-testid="api-source-chip"`; pending-queue count chip renders whenever `pendingSyncCount > 0` (both modes, no data-source gate) |
 | **i18n** | Implemented | `sync.{mock,live,connecting,reconnecting,streamOffline}` + `apiMode.{title,hint,mock,real}` EN/ES |
 | **Env & docs** | Implemented | `frontend/.env.example` documents `VITE_USE_MOCK`, `VITE_API_URL` and the SSE endpoints |
 | **Verification** | Implemented | `npm run build` green (`vue-tsc -b && vite build`); `ruff check realtime.py` clean (remaining `app.py` findings pre-exist at HEAD); Docker `tasker-api`+`tasker-board` rebuilt — smoke: SSE `connected`+replay (`replayed:1`), live delivery while subscribed, `ping` at 15s, presence join/list/stream-broadcast/leave all through nginx `:19001`, mock-api `:8001` intact, UI serving new bundle `index-BSCi2qGL.js` |
@@ -1620,12 +1648,13 @@ Issue #518. First quality gate for the frontend: unit tests, E2E tests, a linter
 | **Fixes de código** | Implemented | `useMockStream.ts` (`let`→`const` en `tokenCounter`, `default` en el switch de `intervalMs`), `piiDetector.ts` (escapes `\-` innecesarios en el regex de API keys); spacing auto-fixable en `FloatingChat`/`GitHubSyncCard`/`DashboardSystemView`/`IssueDetailView` |
 | **i18n** | Not needed | Los tests usan los textos EN existentes (no se añadieron claves) |
 | **Verification** | Implemented | `npm run lint` ✓ (0 errores), `npm test` ✓ (81/81), `npm run build` ✓, `npm run test:e2e` ✓ (8/8 en dos corridas consecutivas) |
+| **Suite status (2026-09-29)** | Implemented | 167 unit tests / **22 spec files** (los 9 de #518 + `authStore`, `CreateIssueModal`, `GitHubSyncCard`, `KanbanView`, `ListView`, `KeyboardShortcutsHelp`, `MCPInspectorView`, `mcpStore`, `ragStore`, `ruleEngine`, `useFocusTrap`, `pendingFeatures`, `Sidebar`); lint 0 errores (2 warnings preexistentes `vue/no-mutating-props` en IssueDetailView), build verde, E2E 8/8 |
 
 ---
 
 ## 64. OAuth2/SSO Authentication & Role-Based Route Protection
 
-Issue #519. Real login for the frontend: JWT sessions with rotating refresh tokens, GitHub/Google OAuth2 (PKCE), API-key fallback and role-based protection of routes, sidebar items and actions.
+Issue #519. Real login for the frontend: JWT sessions with rotating refresh tokens, GitHub/Google OAuth2 (PKCE), API-key fallback and role-based protection of routes and actions (the sidebar menu itself stays stable across data-source modes, §58).
 
 | Feature | Status | Details |
 |---|---|---|
@@ -1638,7 +1667,7 @@ Issue #519. Real login for the frontend: JWT sessions with rotating refresh toke
 | **authStore RBAC** | Implemented | `stores/authStore.ts` (rewrite): `initSession()` idempotente (mock → usuario demo ADMIN en memoria; real → `restoreSession`), `login`/`loginOAuth`/`completeOAuth`/`logout`, `can(action)`→permiso backend (`issue.create/edit/kill`→`create:issue`, `issue.delete`→`delete:issue`, `hitl.approve`/`user.manage`/`settings.manage`/`admin.reset`→`admin`), `hasRole`/`rolesAllowed` con rango ADMIN≥DEVELOPER≥VIEWER; **en mock `can()` autoriza siempre** (demo auto-auth intacta); `auth:unauthorized` cierra la sesión → overlay de login |
 | **Client interceptors** | Implemented | `client.ts`: request añade `Bearer` en modo real (excepto `/auth/`); response 401 → `refresh()` + retry 1× (marcador `__retried`, token nuevo gracias al interceptor de request) → si el refresh falla, limpia sesión y emite `auth:unauthorized`; los errores ≥400 siguen con toast |
 | **Route guards** | Implemented | `router.beforeEach`: `await initSession()` + `meta.roles` en `/users`, `/organization`, `/audit-log`, `/constraints` → redirect `/board` con toast `auth.forbidden`; nueva ruta `/auth/oauth-callback` (`AuthCallbackView` completa el intercambio y redirige a `/board`) |
-| **Sidebar filtering** | Implemented | `Sidebar.vue` filtra items con `useAuthGuard().canRoute(path)` (resuelve `meta.roles` vía `router.resolve`); grupos que quedan vacíos se ocultan |
+| **Sidebar items (stable)** | Implemented | `Sidebar.vue` **no** filtra ítems: renderiza los 3 grupos / 24 items idénticos en mock y real (el filtro por `canRoute` se retiró para que el menú no cambie al alternar data source); la protección RBAC sigue en `router.beforeEach` (redirect `/board` + toast `auth.forbidden`) y en el gate de acciones |
 | **Action gating** | Implemented | `IssueCard` kill switch → `can('issue.kill')`; `HITLCommandCenter` approve/modify/reject → `can('hitl.approve')`; `IssueDetailView` selects de status/priority/assignee → `can('issue.edit')` (con estilo `disabled` visible) |
 | **Login screen & menu** | Implemented | `LoginScreen.vue`: botones GitHub/Google (`data-testid="oauth-github|google"`), divisor "or continue with API key", formulario API key existente con busy/error (`data-testid="login-submit|login-error|login-clear"`); errores traducidos desde `detail` del backend (401 key inválida, 403 oauth sin configurar); `UserMenu` muestra username + rol reales (`profile.roles.*`) y `logout()` (revoca refresh en backend + limpia sesión + reload) |
 | **i18n** | Implemented | `auth.{github,google,orContinue,invalidKey,loginFailed,oauthError,oauthNotConfigured,forbidden}` EN/ES |
