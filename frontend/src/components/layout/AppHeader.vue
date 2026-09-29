@@ -43,6 +43,13 @@
           {{ pageTitle }}
         </h1>
         <PendingDevBadge v-if="pendingRoute" size="sm" />
+        <span
+          v-if="realPendingRoute"
+          class="inline-flex flex-shrink-0 items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+          role="status"
+        >
+          {{ t('common.underConstruction') }}
+        </span>
       </div>
       <div class="flex flex-shrink-0 items-center gap-1 sm:gap-3">
         <OrganizationSwitcher class="hidden lg:flex" />
@@ -77,7 +84,7 @@ import HITLQuickActionModal from '@/components/ui/HITLQuickActionModal.vue'
 import PendingDevBadge from '@/components/ui/PendingDevBadge.vue'
 import { useHitlStore } from '@/stores/hitlStore'
 import { useNotificationsStore } from '@/stores/notificationsStore'
-import { isPendingFeature } from '@/utils/pendingFeatures'
+import { isPendingFeature, isRealPendingFeature } from '@/utils/pendingFeatures'
 
 defineEmits<{ 'open-mobile-menu': [] }>()
 
@@ -138,4 +145,5 @@ const pageTitle = computed(() => {
 })
 
 const pendingRoute = computed(() => isPendingFeature(route.path))
+const realPendingRoute = computed(() => isRealPendingFeature(route.path))
 </script>

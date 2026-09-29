@@ -3,11 +3,14 @@
  *
  * Every listed view runs exclusively against the mock API / local dataset
  * (mock API mode in `api/client.ts`), so the UI shows a pending badge
- * (hourglass) in the sidebar navigation and in the page header to signal
- * that the feature is awaiting development.
+ * (construction icon) in the sidebar navigation, the mobile drawer and the
+ * page header to signal that the feature is awaiting development.
  *
- * The badge is only shown while the app runs in mock mode; switching the
- * data source to the real API (issue #517) hides it.
+ * The badge is shown in both data-source modes: in mock mode it marks the
+ * view as demo-only, and when the app consumes data from the real REST
+ * backend (issue #517) it warns that the feature still does not talk to the
+ * API. On the real API the page header additionally renders a visible
+ * "Under construction" text chip via `isRealPendingFeature`.
  *
  * See features.md §50 "Known Gaps & Missing Features".
  */
@@ -39,5 +42,9 @@ export const PENDING_FEATURE_ROUTES: readonly string[] = [
 ]
 
 export function isPendingFeature(path: string): boolean {
-  return isMockMode() && PENDING_FEATURE_ROUTES.includes(path)
+  return PENDING_FEATURE_ROUTES.includes(path)
+}
+
+export function isRealPendingFeature(path: string): boolean {
+  return !isMockMode() && isPendingFeature(path)
 }

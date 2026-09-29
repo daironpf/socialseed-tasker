@@ -24,6 +24,11 @@
     "hitl": "HITL Center",
     "sandbox": "Policy Sandbox",
     "rag": "Graph RAG Explorer",
+    "finops": "Agent FinOps",
+    "autoHealing": "Auto-Healing Monitor",
+    "replay": "Agent Replay",
+    "executive": "Executive Dashboard",
+    "graph": "Dependency Graph",
     "analysisView": "Analysis",
     "organization": "Organization",
     "governanceMatrix": "Governance Matrix",
@@ -49,6 +54,7 @@
     "autoHealing": "Auto-Healing Monitor",
     "replay": "Agent Replay",
     "executive": "Executive Dashboard",
+    "graph": "Dependency Graph",
     "analysis": "Impact Analysis",
     "notFound": "Not Found",
     "organization": "Organization Settings",
@@ -481,7 +487,8 @@
     "confirm": "Confirm",
     "noData": "No data available",
     "textEditor": "Text editor",
-    "pendingDev": "Feature awaiting development"
+    "pendingDev": "Feature awaiting development",
+    "underConstruction": "Under construction"
   },
   "dashboardStats": {
     "totalIssues": "Total Issues",

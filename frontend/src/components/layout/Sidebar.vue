@@ -22,7 +22,7 @@
 
     <!-- Navigation -->
     <nav class="flex-1 overflow-y-auto px-3 py-4">
-      <div v-for="group in navGroups" :key="group.key" class="mb-6">
+      <div v-for="group in baseGroups" :key="group.key" class="mb-6">
         <p
           v-if="isExpanded"
           class="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
@@ -53,12 +53,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import NavItem from './NavItem.vue'
 import { isPendingFeature } from '@/utils/pendingFeatures'
-import { useAuthGuard } from '@/composables/useAuthGuard'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
-const { canRoute } = useAuthGuard()
 
 const isExpanded = ref(false)
 
@@ -103,12 +101,6 @@ const baseGroups = computed(() => [
     ],
   },
 ])
-
-const navGroups = computed(() =>
-  baseGroups.value
-    .map((group) => ({ ...group, items: group.items.filter((item) => canRoute(item.path)) }))
-    .filter((group) => group.items.length > 0),
-)
 
 function navigateTo(path: string) {
   if (path) {
