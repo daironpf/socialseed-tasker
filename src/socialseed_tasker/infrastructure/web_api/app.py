@@ -484,11 +484,13 @@ def create_app(
     app.state.driver = neo4j_driver
 
     # Events wiring
-    from socialseed_tasker.infrastructure.memory_storage import MemoryStorage
+    from socialseed_tasker.config.storage import build_storage
     from socialseed_tasker.events.webhooks import WebhookManager
     from socialseed_tasker.events.bus import EventBus
     from socialseed_tasker.events.delivery import DeliveryWorker
-    evt_storage = MemoryStorage()
+    storage_backend, evt_storage = build_storage()
+    app.state.storage_backend = storage_backend
+    logger.info("event storage backend: %s", storage_backend)
     app.state.events = WebhookManager(storage=evt_storage)
     app.state.events_bus = EventBus()
     app.state.delivery_worker = DeliveryWorker(storage=evt_storage)

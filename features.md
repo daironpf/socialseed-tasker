@@ -92,7 +92,8 @@
 | Dark mode | Implemented | Toggle via UserMenu / `D` shortcut / CommandPalette; localStorage; system preference detection |
 | Data-source mode (mock/real) | Implemented | Reactive `apiMode` ref in `client.ts` (resolution: `localStorage['socialseed-api-mode']` > `VITE_USE_MOCK` > default `mock`); reactive proxy dispatches to the mock client or the axios real client; toggle in UserMenu (§62) |
 | Real API mode | Implemented | Axios client, base `window.__API_URL__ \|\| '/api/v1'`, auth via `Bearer` JWT (auto-refresh) or `X-API-Key`, 401 → refresh retry → `auth:unauthorized` (§64) |
-| Docker deployment | Implemented | Frontend `127.0.0.1:19001→80`, mock-api `127.0.0.1:8001`, real API `127.0.0.1:8888`, Neo4j `7474`/`7687` |
+| Docker deployment | Implemented | Frontend `127.0.0.1:19001→80`, mock-api `127.0.0.1:8001`, real API `127.0.0.1:8888`, Neo4j `7474`/`7687`, PostgreSQL `127.0.0.1:15432→5432`, Redis `127.0.0.1:6379` |
+| Hybrid storage backends | Implemented | `TASKER_REDIS_URL`/`TASKER_DATABASE_URL` (convención `TASKER_*`) vía `config/storage.py`: Redis con fallback in-memory cuando no hay URL o Redis inaccesible; consumido por la capa web (events/session store) y `cli/wiring.py`; `TASKER_JWT_SECRET` → `auth/tokens.py` (#525) |
 | Mock data volume | Implemented | `frontend/dataset-de-pruebas/` mounted into mock-api container (`DATA_DIR`) |
 | Toast notification system | Implemented | Singleton `useToast()`: success/error/warning/info, auto-dismiss, max 5 concurrent |
 | html2canvas + jspdf | Implemented | PDF/PNG export for executive dashboard |
@@ -110,11 +111,13 @@
 | Service | Container | Host port | Role |
 |---|---|---|---|
 | tasker-db | neo4j:5.26.15 | 7474 / 7687 | Graph DB (APOC) |
+| tasker-db-pg | postgres:15-alpine | 127.0.0.1:15432→5432 | PostgreSQL 15 — usuarios/credenciales (#525) |
+| tasker-redis | redis:7-alpine | 127.0.0.1:6379 | Redis 7 — sesiones/caché/rate limiting (#525) |
 | tasker-api | tasker-api:local | 127.0.0.1:8888→8000 | Real FastAPI backend |
 | tasker-board | tasker-board:local | 127.0.0.1:19001→80 | Vue SPA + nginx (proxies `/api/`, `/mock-api/`) |
 | mock-api | mock-api:local | 127.0.0.1:8001 | FastAPI mock serving dataset JSON under `/mock/*` |
 
-> Note: Hyper-V reserves host ports 8001–8900 on some Windows machines. Local workaround uses `19000`/`19001`/`19002`; committed compose uses `19001`/`8001`/`8888` as above.
+> Note: Hyper-V reserves host ports 8001–8900 on some Windows machines. Local workaround uses `19000`/`19001`/`19002`; committed compose uses `19001`/`8001`/`8888` as above. PostgreSQL se publica en `15432` porque el anfitrión ya tiene un Postgres nativo en el `5432`.
 
 ---
 

@@ -7,6 +7,7 @@ import os
 from dataclasses import dataclass
 
 from socialseed_tasker.config.runtime import RuntimeConfig
+from socialseed_tasker.config.storage import build_storage, get_redis_url
 from socialseed_tasker.infrastructure.neo4j_adapter import Neo4jGraphAdapter
 from socialseed_tasker.infrastructure.neo4j_graph_repository import Neo4jGraphRepository
 from socialseed_tasker.infrastructure.neo4j_issue_repository import Neo4jIssueRepository
@@ -15,8 +16,6 @@ from socialseed_tasker.observability.exporter import start_exporter
 from socialseed_tasker.observability.logging import get_logger
 from socialseed_tasker.auth.auth import load_auth_provider
 from socialseed_tasker.auth.rbac import RBAC
-from socialseed_tasker.infrastructure.memory_storage import MemoryStorage
-from socialseed_tasker.infrastructure.redis_storage import RedisStorage
 from socialseed_tasker.events.webhooks import WebhookManager
 from socialseed_tasker.events.bus import EventBus
 from socialseed_tasker.events.delivery import DeliveryWorker
@@ -86,19 +85,12 @@ def build_default_container() -> Container:
                     rbac.grant(uid, p)
         except Exception:
             pass
-    redis_url = os.getenv("TASKER_REDIS_URL")
-    if redis_url:
-        try:
-            storage = RedisStorage(url=redis_url)
-        except Exception:
-            storage = MemoryStorage()
-    else:
-        storage = MemoryStorage()
+    _, storage = build_storage()
     events = WebhookManager(storage=storage)
     events_bus = EventBus()
     delivery_worker = DeliveryWorker(storage=storage)
     session_store = SessionStore(storage=storage)
-    redis_url = os.getenv("TASKER_REDIS_URL")
+    redis_url = get_redis_url()
     if redis_url and _REDIS_RATE_AVAILABLE:
         try:
             rate_limiter = RedisRateLimiter(redis_url, rate_per_min=int(os.getenv("TASKER_RATE_USER_PER_MIN", "120")), burst=int(os.getenv("TASKER_RATE_BURST", "60")))

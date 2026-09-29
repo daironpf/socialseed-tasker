@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v3 — ÉPICAS 1–6: infra auth multi-capa FastAPI + Redis + PostgreSQL, vistas de grafo e impacto, observabilidad de agentes, gobernanza/constraints, dashboard y sync, Graph RAG & MCP)
 **Created:** 2026-09-29
-**Status:** TODO
+**Status:** TODO (1/11 done: #525)
 
 > `notas.md` (v3) plantea 14 issues (Issue #1–#14 repartidas en 6 épicas); el siguiente
 > número libre en `.issues/done` era **#524**, por lo que se numeraron **#525–#535**
@@ -18,7 +18,7 @@
 
 | # | Issue | Priority | Type | Status | notas.md |
 |---|---|---|---|---|---|
-| #525 | Docker Compose Hybrid (PostgreSQL 15 + Redis 7) | CRITICAL | infra / architecture | TODO | É1 · Issue #1 |
+| #525 | Docker Compose Hybrid (PostgreSQL 15 + Redis 7) | CRITICAL | infra / architecture | DONE | É1 · Issue #1 |
 | #526 | Username Normalization & PostgreSQL User Seeding (bcrypt) | HIGH | feat / security | TODO | É1 · Issue #2 |
 | #527 | Auth API & Redis Session Management | HIGH | feat / security | TODO | É1 · Issue #3 |
 | — | Conexión de `authStore` con el backend real | — | feat / integration | NO CREADA — ya resuelta en #517/#519 | É1 · Issue #4 |
@@ -101,7 +101,7 @@
 
 ## Release Checklist (backlog)
 
-- [ ] **#525** implemented — move to `.issues/done/`, `features.md` §1
+- [x] **#525** implemented — move to `.issues/done/`, `features.md` §1
 - [ ] **#526** implemented — move to `.issues/done/`, `features.md` §2
 - [ ] **#527** implemented — move to `.issues/done/`, `features.md` §2/§64
 - [ ] **#528** implemented — move to `.issues/done/`, `features.md` §12
