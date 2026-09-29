@@ -16,6 +16,7 @@ from socialseed_tasker.infrastructure.web_api.routers.dependencies import depend
 from socialseed_tasker.infrastructure.web_api.routers.epic import epic_router
 from socialseed_tasker.infrastructure.web_api.routers.issues import issues_router
 from socialseed_tasker.infrastructure.web_api.routers.labels import label_router
+from socialseed_tasker.infrastructure.web_api.routers.mcp import mcp_router as mcp_router
 from socialseed_tasker.infrastructure.web_api.routers.objective import objective_router
 from socialseed_tasker.infrastructure.web_api.routers.policy import policy_router
 from socialseed_tasker.infrastructure.web_api.routers.policy_relationships import policy_rel_router

@@ -37,6 +37,9 @@ from socialseed_tasker.infrastructure.web_api.routers import (
     user_router,
     webhook_router,
 )
+from socialseed_tasker.infrastructure.web_api.routers import (
+    mcp_router as mcp_router,
+)
 from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     construct_paginated_api_response as _paginated,
 )

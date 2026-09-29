@@ -17,6 +17,43 @@ export interface MCPSession {
   toolsUsed: string[]
   projectId: string
   userId: string
+  server?: string | null
+}
+
+export interface MCPServer {
+  id: string
+  name: string
+  transport: string
+  url: string | null
+  tools: string[]
+  status: string
+  lastSeen: string
+}
+
+export type MCPToolCallStatus = 'running' | 'success' | 'error'
+
+export interface MCPToolCall {
+  id: string
+  sessionId: string | null
+  server: string | null
+  tool: string
+  arguments: Record<string, unknown>
+  status: MCPToolCallStatus
+  startedAt: string
+  durationMs: number | null
+  resultSummary: string | null
+  error: string | null
+  rerunOf: string | null
+}
+
+export interface MCPToolMetric {
+  tool: string
+  calls: number
+  successes: number
+  errors: number
+  avgMs: number
+  maxMs: number
+  slow: boolean
 }
 
 export interface MCPMetrics {

@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { RAGResult, RAGSearchResponse, RAGMetrics } from '@/types/rag'
+import { isMockMode } from '@/api/client'
+import { searchRag, getRagStats, type RAGSearchResultItem } from '@/api/ragApi'
 
 const MOCK_RESULTS: RAGResult[] = [
   {
@@ -141,6 +143,60 @@ const MOCK_RESULTS: RAGResult[] = [
   },
 ]
 
+const MOCK_TOP_COMPONENTS = [
+  { name: 'Auth', count: 2 },
+  { name: 'API', count: 3 },
+  { name: 'Frontend', count: 4 },
+  { name: 'Neo4j', count: 2 },
+]
+
+interface RAGStatsLive {
+  total: number
+  by_type: Record<string, number>
+}
+
+function errorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : String(e)
+}
+
+function mapRealResult(raw: RAGSearchResultItem, index: number): RAGResult {
+  const firstLine = (raw.content || '').split('\n')[0]?.trim() || raw.id
+  const isIssueSource = raw.sourceType.toLowerCase().includes('issue')
+  const sourceLabel =
+    raw.sourceId.length > 20 ? `${raw.sourceId.slice(0, 20)}...` : raw.sourceId
+  return {
+    id: raw.id,
+    issueId: raw.sourceId,
+    issueTitle: firstLine.slice(0, 140),
+    issueStatus: 'INDEXED',
+    similarity: raw.score,
+    solutionSummary: raw.content,
+    solutionDate: '',
+    component: raw.sourceType,
+    keywords: [],
+    contextNodes: [
+      { id: 'chunk', label: `chunk ${index + 1}`, type: 'Module', relevance: raw.score },
+      {
+        id: 'source',
+        label: sourceLabel,
+        type: isIssueSource ? 'Issue' : 'Component',
+        relevance: 1,
+      },
+    ],
+    contextEdges: [{ from: 'chunk', to: 'source', type: 'FROM' }],
+  }
+}
+
+function emptyResponse(query: string, searchTimeMs: number): RAGSearchResponse {
+  return {
+    query,
+    results: [],
+    totalMatches: 0,
+    searchTimeMs,
+    embeddingModel: 'neo4j-vector',
+  }
+}
+
 export const useRagStore = defineStore('rag', () => {
   const results = ref<RAGResult[]>([])
   const loading = ref(false)
@@ -148,24 +204,40 @@ export const useRagStore = defineStore('rag', () => {
   const lastQuery = ref('')
   const searchResponse = ref<RAGSearchResponse | null>(null)
   const selectedResult = ref<RAGResult | null>(null)
+  const stats = ref<RAGStatsLive | null>(null)
 
-  const metrics = computed<RAGMetrics>(() => ({
-    totalEmbeddings: MOCK_RESULTS.length,
-    avgSimilarity: results.value.length > 0
-      ? results.value.reduce((sum, r) => sum + r.similarity, 0) / results.value.length
-      : 0,
-    topComponents: [
-      { name: 'Auth', count: 2 },
-      { name: 'API', count: 3 },
-      { name: 'Frontend', count: 4 },
-      { name: 'Neo4j', count: 2 },
-    ],
-    lastIndexedAt: '2026-09-20T08:00:00Z',
-  }))
+  const source = computed<'mock' | 'live'>(() => (isMockMode() ? 'mock' : 'live'))
+
+  const metrics = computed<RAGMetrics>(() => {
+    const live = stats.value
+    return {
+      totalEmbeddings: live ? live.total : MOCK_RESULTS.length,
+      avgSimilarity: results.value.length > 0
+        ? results.value.reduce((sum, r) => sum + r.similarity, 0) / results.value.length
+        : 0,
+      topComponents: live
+        ? Object.entries(live.by_type)
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count)
+        : MOCK_TOP_COMPONENTS,
+      lastIndexedAt: live ? null : '2026-09-20T08:00:00Z',
+    }
+  })
 
   async function search(query: string, threshold: number = 0.5, maxResults: number = 10): Promise<RAGSearchResponse> {
     loading.value = true
     error.value = null
+    try {
+      if (isMockMode()) {
+        return await mockSearch(query, threshold, maxResults)
+      }
+      return await realSearch(query, threshold, maxResults)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  function mockSearch(query: string, threshold: number, maxResults: number): Promise<RAGSearchResponse> {
     return new Promise((resolve) => {
       setTimeout(() => {
         const filtered = MOCK_RESULTS
@@ -184,10 +256,64 @@ export const useRagStore = defineStore('rag', () => {
         results.value = filtered
         searchResponse.value = response
         lastQuery.value = query
-        loading.value = false
         resolve(response)
       }, 800)
     })
+  }
+
+  async function realSearch(query: string, threshold: number, maxResults: number): Promise<RAGSearchResponse> {
+    const started = performance.now()
+    try {
+      const raw = await searchRag(query, maxResults, threshold)
+      const searchTimeMs = Math.round(performance.now() - started)
+
+      if (raw.error) {
+        error.value = raw.error
+        results.value = []
+        searchResponse.value = emptyResponse(query, searchTimeMs)
+        lastQuery.value = query
+        return searchResponse.value
+      }
+
+      const mapped = (raw.results ?? []).map(mapRealResult)
+      results.value = mapped
+      searchResponse.value = {
+        query,
+        results: mapped,
+        totalMatches: raw.count ?? mapped.length,
+        searchTimeMs,
+        embeddingModel: 'neo4j-vector',
+      }
+      lastQuery.value = query
+      return searchResponse.value
+    } catch (e) {
+      error.value = errorMessage(e)
+      const searchTimeMs = Math.round(performance.now() - started)
+      results.value = []
+      searchResponse.value = emptyResponse(query, searchTimeMs)
+      lastQuery.value = query
+      return searchResponse.value
+    }
+  }
+
+  async function init() {
+    if (isMockMode()) {
+      stats.value = null
+      return
+    }
+    try {
+      const raw = await getRagStats()
+      if (raw.error || typeof raw.total !== 'number') {
+        stats.value = null
+        error.value = raw.error ?? 'Stats unavailable'
+        return
+      }
+      stats.value = { total: raw.total, by_type: raw.by_type ?? {} }
+      error.value = null
+    } catch (e) {
+      stats.value = null
+      error.value = errorMessage(e)
+    }
   }
 
   function selectResult(result: RAGResult | null) {
@@ -201,8 +327,11 @@ export const useRagStore = defineStore('rag', () => {
     lastQuery,
     searchResponse,
     selectedResult,
+    source,
+    stats,
     metrics,
     search,
+    init,
     selectResult,
   }
 })

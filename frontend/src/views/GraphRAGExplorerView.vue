@@ -2,7 +2,22 @@
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('rag.title') }}</h1>
+        <div class="flex items-center gap-3">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ t('rag.title') }}</h1>
+          <span
+            v-if="store.source === 'live'"
+            class="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-400"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
+            {{ t('rag.dataLive') }}
+          </span>
+          <span
+            v-else
+            class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+          >
+            {{ t('rag.dataMock') }}
+          </span>
+        </div>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('rag.subtitle') }}</p>
       </div>
     </div>
@@ -35,6 +50,14 @@
               </select>
             </div>
           </div>
+        </div>
+
+        <div
+          v-if="store.error"
+          role="alert"
+          class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300"
+        >
+          <span class="font-semibold">{{ t('rag.errorTitle') }}:</span> {{ store.error }}
         </div>
 
         <div v-if="store.searchResponse" class="text-xs text-gray-500">
@@ -126,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRagStore } from '@/stores/ragStore'
 import type { RAGResult } from '@/types/rag'
@@ -195,6 +218,13 @@ function selectResult(r: RAGResult) {
 }
 
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString()
+  if (!d) return '-'
+  const date = new Date(d)
+  if (Number.isNaN(date.getTime())) return '-'
+  return date.toLocaleDateString()
 }
+
+onMounted(() => {
+  void store.init()
+})
 </script>

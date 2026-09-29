@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v2 — Known Gaps: integración real, tests/CI, seguridad, accesibilidad)
 **Created:** 2026-09-26
-**Status:** TODO
+**Status:** DONE
 
 > `notas.md` (v2) define las issues como [ISSUE-01]…[ISSUE-08]; el siguiente número
 > libre en `.issues/done` era **#516**, por lo que se numeraron **#517–#524**
@@ -21,7 +21,7 @@
 | #521 | Policy Sandbox Rules Engine | MEDIUM | feat / governance | DONE (→ `.issues/done/`) | [ISSUE-05] |
 | #522 | Bidirectional Real Sync with GitHub | MEDIUM | feat / integration | DONE (→ `.issues/done/`) | [ISSUE-06] |
 | #523 | Keyboard Navigation & Accessibility (WCAG 2.1) | LOW | accessibility / ux | DONE (→ `.issues/done/`) | [ISSUE-07] |
-| #524 | RAG Explorer & MCP Server Integration | MEDIUM | feat / ai infrastructure | TODO | [ISSUE-08] |
+| #524 | RAG Explorer & MCP Server Integration | MEDIUM | feat / ai infrastructure | DONE (→ `.issues/done/`) | [ISSUE-08] |
 
 ---
 
@@ -49,7 +49,7 @@
 - **#523 A11y (DONE):** atajos `J`/`K`/`Enter` suscritos, focus trap, contraste WCAG 2.1 AA
 
 ### AI Infrastructure
-- **#524 RAG & MCP:** Neo4j vector real en RAG Explorer, tool calls MCP en vivo con métricas de latencia
+- **#524 RAG & MCP (DONE):** Neo4j vector real en RAG Explorer, registry MCP con tool calls en vivo por SSE, métricas de latencia por tool, payload redactado y re-run
 
 ---
 
@@ -86,7 +86,8 @@
 - [x] **#521** implemented — DONE 2026-09-28 (moved to `.issues/done/`, `features.md` §66)
 - [x] **#522** implemented — DONE 2026-09-28 (moved to `.issues/done/`, `features.md` §67)
 - [x] **#523** implemented — DONE 2026-09-28 (moved to `.issues/done/`, `features.md` §20)
-- [ ] Remaining 1 issue implemented in `.issues/to-do` order (or by priority)
-- [ ] Each issue: `npm run build` green, i18n EN+ES, `features.md` updated
-- [ ] Move issue file to `.issues/done/` with `Status: DONE` when complete
+- [x] **#524** implemented — DONE 2026-09-28 (moved to `.issues/done/`, `features.md` §68)
+- [x] All 8 issues (#517–#524) implemented — backlog completo (2026-09-28)
+- [x] Each issue: `npm run build` green, i18n EN+ES, `features.md` updated
+- [x] Move issue file to `.issues/done/` with `Status: DONE` when complete
 - [ ] Commit message references `#NNN`

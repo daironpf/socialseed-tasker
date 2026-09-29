@@ -367,6 +367,7 @@ def create_app(
         epic_router,
         issues_router,
         label_router,
+        mcp_router,
         objective_router,
         policy_router,
         policy_rel_router,
@@ -405,6 +406,7 @@ def create_app(
     app.include_router(ai_search_router, prefix="/api/v1/ai", tags=["ai_search"])
     app.include_router(code_graph_router, prefix="/api/v1/code-graph", tags=["code-graph"])
     app.include_router(rag_router, prefix="/api/v1", tags=["rag"])
+    app.include_router(mcp_router, prefix="/api/v1", tags=["mcp"])
     app.include_router(reasoning_router, prefix="/api/v1", tags=["reasoning"])
     app.include_router(user_router, prefix="/api/v1", tags=["users"])
     app.include_router(commit_router, prefix="/api/v1", tags=["commits"])
