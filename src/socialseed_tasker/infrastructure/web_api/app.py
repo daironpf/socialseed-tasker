@@ -63,6 +63,16 @@ async def lifespan(app: FastAPI):
     Runs startup/shutdown logic. Initializes Neo4j indexes and handles
     connection management.
     """
+    if os.getenv("TASKER_AUTH_SEED", "false").lower() == "true":
+        try:
+            from socialseed_tasker.auth.user_store import seed_auth_users
+            seeded = seed_auth_users()
+            if seeded is None:
+                logger.info("auth seeding skipped: TASKER_DATABASE_URL not configured")
+            else:
+                logger.info("auth users seeded: %s", seeded)
+        except Exception as exc:
+            logger.warning("auth seeding failed (continuing): %s", exc)
     yield
 
 

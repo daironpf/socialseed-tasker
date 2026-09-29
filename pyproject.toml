@@ -35,6 +35,10 @@ dependencies = [
 
     # Cache / sessions
     "redis>=5.0.0",
+
+    # Auth / credentials
+    "bcrypt>=4.1.0",
+    "psycopg[binary]>=3.1.0",
     
     # Sync
     "httpx>=0.26.0",

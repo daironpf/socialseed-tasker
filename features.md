@@ -132,6 +132,8 @@
 | Logout | Implemented | Real mode revokes the refresh token in the backend, clears session + reload (UserMenu) |
 | RBAC | Implemented | Route guards (`meta.roles` → redirect + toast), action gating (`authStore.can()`), role range ADMIN ≥ DEVELOPER ≥ VIEWER — §64 |
 | Sign-in flow | Implemented | `App.vue` shows `LoginScreen` when unauthenticated; OAuth callback route `/auth/oauth-callback` |
+| Username normalization | Implemented | `normalize_username` (lowercase + trim + restringido a `a-z`/`0-9`/`.`) en `auth/user_store.py`; p.ej. `agent-architect` → `agentarchitect` - #526 |
+| PostgreSQL credential store | Implemented | Tabla `users` en PG15 con hashes bcrypt (= username normalizado); seeding idempotente de `dataset-de-pruebas/users.json` gated por `TASKER_AUTH_SEED` al arrancar la API, o `python -m socialseed_tasker.auth.user_store` - #526 |
 
 ---
 
