@@ -1,16 +1,22 @@
-"""Authentication endpoints for the frontend session flow (issue #519).
+"""Authentication endpoints for the frontend session flow (issues #519, #527).
 
-- ``POST /auth/login``            - exchange an API key for a JWT pair
-- ``POST /auth/refresh``          - rotate the refresh token
-- ``POST /auth/logout``           - revoke the presented refresh token
+- ``POST /auth/login``            - username/password (PostgreSQL + bcrypt) or
+  API key -> JWT pair backed by a Redis session
+- ``POST /auth/refresh``          - rotate the refresh token and renew the session
+- ``POST /auth/logout``           - revoke the session and the presented refresh token
 - ``GET  /auth/me``               - current session user (roles + permissions)
 - ``GET  /auth/oauth/{provider}/authorize`` - GitHub/Google OAuth2 (PKCE) start
 - ``GET  /auth/oauth/{provider}/callback``  - OAuth2 callback -> one-time code
 - ``POST /auth/exchange``         - swap the one-time code for a JWT pair
 
-The API-key login reuses the existing :class:`InMemoryAuthProvider`
-(``TASKER_AUTH_USERS`` / ``auth/users.json``) so CLI tokens double as
-frontend credentials. OAuth requires ``TASKER_{GITHUB,GOOGLE}_CLIENT_ID/SECRET``.
+Password login normalizes the username (issue #526) and validates the bcrypt
+hash in ``users`` (``TASKER_DATABASE_URL``); the API-key login reuses
+:class:`InMemoryAuthProvider` (``TASKER_AUTH_USERS`` / ``auth/users.json``) so
+CLI tokens double as frontend credentials. Every JWT pair carries a ``sid``
+session id persisted under ``session:{user_id}:{session_id}`` in Redis with a
+TTL equal to the refresh lifetime; logout deletes that key and refresh fails
+once the session is gone (issue #527). OAuth requires
+``TASKER_{GITHUB,GOOGLE}_CLIENT_ID/SECRET``.
 """
 
 from __future__ import annotations
@@ -20,16 +26,20 @@ import hashlib
 import os
 import secrets
 import time
+import uuid
 from typing import Any
 from urllib.parse import urlencode
 
 import requests  # type: ignore[import-untyped]
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
 from socialseed_tasker.auth import tokens
 from socialseed_tasker.auth.auth import load_auth_provider
+from socialseed_tasker.auth.redis_sessions import AuthSessionStore
+from socialseed_tasker.auth.user_store import authenticate_user
+from socialseed_tasker.config.storage import get_database_url
 
 auth_router = APIRouter()
 
@@ -52,7 +62,9 @@ _DEFAULT_VIEWER_PERMISSIONS = ["read:context", "read:impact"]
 
 
 class LoginRequest(BaseModel):
-    api_key: str
+    api_key: str | None = None
+    username: str | None = None
+    password: str | None = None
 
 
 class RefreshRequest(BaseModel):
@@ -87,6 +99,89 @@ def _public_session(pair: dict[str, Any], user: dict[str, Any]) -> dict[str, Any
     return {**pair, "user": user}
 
 
+def _permissions_for_db_role(role: Any) -> list[str]:
+    value = str(role or "").strip().lower()
+    if "admin" in value:
+        return sorted(set(_DEFAULT_DEV_PERMISSIONS + ["admin"]))
+    if value in ("lead-developer", "developer", "ai-agent"):
+        return list(_DEFAULT_DEV_PERMISSIONS)
+    return list(_DEFAULT_VIEWER_PERMISSIONS)
+
+
+def _session_store(request: Request) -> AuthSessionStore:
+    store = getattr(request.app.state, "auth_sessions", None)
+    if store is None:
+        store = AuthSessionStore()
+        request.app.state.auth_sessions = store
+    return store
+
+
+def _persist_session(
+    request: Request,
+    user: dict[str, Any],
+    pair: dict[str, Any],
+    session_id: str,
+    user_agent: str | None,
+    previous: dict[str, Any] | None = None,
+) -> None:
+    refresh_claims = tokens.peek(pair["refresh_token"]) or {}
+    access_claims = tokens.verify_access(pair["access_token"]) or {}
+    now = int(time.time())
+    payload: dict[str, Any] = {
+        "session_id": session_id,
+        "user_id": user["id"],
+        "username": user.get("username"),
+        "role": user.get("role"),
+        "permissions": user.get("permissions", []),
+        "access_jti": access_claims.get("jti"),
+        "refresh_jti": refresh_claims.get("jti"),
+        "user_agent": user_agent,
+        "created_at": (previous or {}).get("created_at") or now,
+        "updated_at": now,
+    }
+    _session_store(request).save(str(user["id"]), session_id, payload, tokens.REFRESH_TTL)
+
+
+def _login_with_password(body: LoginRequest) -> dict[str, Any]:
+    if not body.username or not body.password:
+        raise HTTPException(status_code=400, detail="Both username and password are required")
+    database_url = get_database_url()
+    if not database_url:
+        raise HTTPException(status_code=503, detail="Password login requires TASKER_DATABASE_URL")
+    try:
+        record = authenticate_user(database_url, body.username, body.password)
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Auth store unavailable") from exc
+    if record is None:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    user = _user_payload(
+        str(record["id"]),
+        _permissions_for_db_role(record.get("role")),
+        username=str(record["username"]),
+    )
+    if record.get("email"):
+        user["email"] = record["email"]
+    return user
+
+
+def _login_with_api_key(api_key: str) -> dict[str, Any]:
+    provider = load_auth_provider()
+    user_id = provider.verify_token(api_key)
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    info = provider.get_user_info(user_id) or {}
+    permissions = list(info.get("permissions") or _DEFAULT_VIEWER_PERMISSIONS)
+    return _user_payload(user_id, permissions, username=info.get("username", user_id))
+
+
+def _authenticate(body: LoginRequest) -> dict[str, Any]:
+    if body.username is not None or body.password is not None:
+        return _login_with_password(body)
+    if body.api_key:
+        return _login_with_api_key(body.api_key)
+    raise HTTPException(status_code=400, detail="Provide username/password or api_key")
+
+
 def _sweep() -> None:
     now = time.time()
     for store in (_OAUTH_STATES, _EXCHANGE_CODES):
@@ -94,48 +189,73 @@ def _sweep() -> None:
             store.pop(key, None)
 
 
-@auth_router.post("/auth/login", summary="Exchange an API key for a JWT session")
-def login(body: LoginRequest) -> dict[str, Any]:
-    provider = load_auth_provider()
-    user_id = provider.verify_token(body.api_key)
-    if user_id is None:
-        raise HTTPException(status_code=401, detail="Invalid API key")
-    info = provider.get_user_info(user_id) or {}
-    permissions = list(info.get("permissions") or _DEFAULT_VIEWER_PERMISSIONS)
-    user = _user_payload(user_id, permissions, username=info.get("username", user_id))
-    return _public_session(tokens.issue_tokens(user), user)
-
-
-@auth_router.post("/auth/refresh", summary="Rotate the refresh token")
-def refresh(body: RefreshRequest) -> dict[str, Any]:
-    claims = tokens.peek(body.refresh_token)
-    if claims is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
-    pair = tokens.rotate(body.refresh_token)
-    if pair is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
-    user = _user_payload(
-        claims.get("sub", "unknown"),
-        list(claims.get("permissions") or []),
-        username=claims.get("username"),
-    )
+@auth_router.post("/auth/login", summary="Exchange credentials for a JWT session")
+def login(
+    body: LoginRequest,
+    request: Request,
+    user_agent: str | None = Header(default=None),
+) -> dict[str, Any]:
+    user = _authenticate(body)
+    session_id = uuid.uuid4().hex
+    pair = tokens.issue_tokens(user, session_id)
+    _persist_session(request, user, pair, session_id, user_agent)
     return _public_session(pair, user)
 
 
-@auth_router.post("/auth/logout", summary="Revoke a refresh token")
-def logout(body: LogoutRequest) -> dict[str, Any]:
+@auth_router.post("/auth/refresh", summary="Rotate the refresh token")
+def refresh(
+    body: RefreshRequest,
+    request: Request,
+    user_agent: str | None = Header(default=None),
+) -> dict[str, Any]:
+    claims = tokens.peek(body.refresh_token)
+    if claims is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+    sub = str(claims.get("sub", ""))
+    old_session_id = str(claims.get("sid")) if claims.get("sid") else None
+    previous: dict[str, Any] | None = None
+    if old_session_id:
+        previous = _session_store(request).get(sub, old_session_id)
+        if previous is None:
+            raise HTTPException(status_code=401, detail="Session revoked")
+    session_id = old_session_id or uuid.uuid4().hex
+    pair = tokens.rotate(body.refresh_token, session_id=session_id)
+    if pair is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+    user = _user_payload(sub, list(claims.get("permissions") or []), username=claims.get("username"))
+    _persist_session(request, user, pair, session_id, user_agent, previous=previous)
+    return _public_session(pair, user)
+
+
+@auth_router.post("/auth/logout", summary="Revoke the session and refresh token")
+def logout(
+    body: LogoutRequest,
+    request: Request,
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
     if body.refresh_token:
+        claims = tokens.peek(body.refresh_token)
         tokens.revoke(body.refresh_token)
+        if claims is not None and claims.get("sid"):
+            _session_store(request).delete(str(claims.get("sub", "")), str(claims["sid"]))
+            return {"ok": True}
+    if authorization and authorization.startswith("Bearer "):
+        access = tokens.verify_access(authorization[7:])
+        if access is not None and access.get("sid"):
+            _session_store(request).delete(str(access.get("sub", "")), str(access["sid"]))
     return {"ok": True}
 
 
 @auth_router.get("/auth/me", summary="Current session user")
-def me(authorization: str | None = Header(default=None)) -> dict[str, Any]:
+def me(request: Request, authorization: str | None = Header(default=None)) -> dict[str, Any]:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing bearer token")
     claims = tokens.verify_access(authorization[7:])
     if claims is None:
         raise HTTPException(status_code=401, detail="Invalid or expired access token")
+    session_id = claims.get("sid")
+    if session_id and _session_store(request).get(str(claims.get("sub", "")), str(session_id)) is None:
+        raise HTTPException(status_code=401, detail="Session revoked")
     return {
         "id": claims.get("sub"),
         "username": claims.get("username"),
@@ -275,10 +395,13 @@ def oauth_callback(provider: str, code: str, state: str) -> RedirectResponse:
 
 
 @auth_router.post("/auth/exchange", summary="Swap the one-time OAuth code for a JWT pair")
-def exchange(body: ExchangeRequest) -> dict[str, Any]:
+def exchange(body: ExchangeRequest, request: Request, user_agent: str | None = Header(default=None)) -> dict[str, Any]:
     _sweep()
     entry = _EXCHANGE_CODES.pop(body.code, None)
     if entry is None:
         raise HTTPException(status_code=401, detail="Invalid or expired authorization code")
     user = entry["user"]
-    return _public_session(tokens.issue_tokens(user), user)
+    session_id = uuid.uuid4().hex
+    pair = tokens.issue_tokens(user, session_id)
+    _persist_session(request, user, pair, session_id, user_agent)
+    return _public_session(pair, user)

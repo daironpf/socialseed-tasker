@@ -182,7 +182,15 @@ def create_app(
         try:
             from socialseed_tasker.auth.tokens import verify_access
 
-            return verify_access(token) is not None
+            claims = verify_access(token)
+            if claims is None:
+                return False
+            session_id = claims.get("sid")
+            if session_id:
+                store = getattr(app.state, "auth_sessions", None)
+                if store is None or store.get(str(claims.get("sub", "")), str(session_id)) is None:
+                    return False
+            return True
         except Exception:
             return False
 
@@ -504,6 +512,11 @@ def create_app(
     app.state.events = WebhookManager(storage=evt_storage)
     app.state.events_bus = EventBus()
     app.state.delivery_worker = DeliveryWorker(storage=evt_storage)
+
+    # Auth sessions for JWT logins: Redis-backed with in-memory fallback (issue #527)
+    from socialseed_tasker.auth.redis_sessions import AuthSessionStore
+    app.state.auth_sessions = AuthSessionStore()
+    logger.info("auth session store backend: %s", app.state.auth_sessions.backend)
     if os.getenv("TASKER_INTEGRATION") == "1":
         app.state.delivery_worker.start()
 

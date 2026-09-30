@@ -34,6 +34,39 @@ def verify_password(password: str, password_hash: str) -> bool:
     return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
 
 
+def authenticate_user(database_url: str, username: str, password: str) -> dict[str, Any] | None:
+    """Return the user record when the normalized username exists and the bcrypt password matches.
+
+    Returns ``None`` for unknown users or wrong passwords. Connection and SQL
+    errors propagate so callers can tell an outage from a bad credential.
+    """
+    normalized = normalize_username(username)
+    if not normalized or not password:
+        return None
+    with closing(psycopg.connect(database_url, autocommit=True)) as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, username, email, password_hash, role, "type"
+            FROM users
+            WHERE username_normalized = %s
+            """,
+            (normalized,),
+        )
+        row = cur.fetchone()
+    if row is None:
+        return None
+    password_hash = row[3] or ""
+    if not password_hash or not verify_password(password, password_hash):
+        return None
+    return {
+        "id": row[0],
+        "username": row[1],
+        "email": row[2],
+        "role": row[4],
+        "type": row[5],
+    }
+
+
 class UserSeedStore(Protocol):
     """Credential store port implemented by PostgreSQL and by test fakes."""
 

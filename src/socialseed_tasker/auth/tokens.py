@@ -7,6 +7,9 @@ Stdlib-only implementation (no new dependencies):
   in-process active set. Rotation discards the old ``jti`` and registers the
   new one; presenting an already-rotated (reused) refresh token revokes every
   active refresh token for that user (reuse detection).
+- Both tokens optionally carry ``sid``, the session id of the Redis session
+  registry (issue #527). Logout deletes the session key and the auth
+  middleware rejects access tokens whose session no longer exists.
 """
 
 from __future__ import annotations
@@ -63,9 +66,9 @@ def _decode(token: str) -> dict[str, Any] | None:
 _ACTIVE: dict[str, set[str]] = {}
 
 
-def _access_claims(user: dict[str, Any]) -> dict[str, Any]:
+def _access_claims(user: dict[str, Any], session_id: str | None = None) -> dict[str, Any]:
     now = int(time.time())
-    return {
+    claims = {
         "sub": user["id"],
         "username": user.get("username", user["id"]),
         "role": user.get("role", "DEVELOPER"),
@@ -75,12 +78,15 @@ def _access_claims(user: dict[str, Any]) -> dict[str, Any]:
         "exp": now + ACCESS_TTL,
         "jti": uuid.uuid4().hex,
     }
+    if session_id:
+        claims["sid"] = session_id
+    return claims
 
 
-def issue_tokens(user: dict[str, Any]) -> dict[str, Any]:
-    access = _sign(_access_claims(user))
+def issue_tokens(user: dict[str, Any], session_id: str | None = None) -> dict[str, Any]:
+    access = _sign(_access_claims(user, session_id))
     now = int(time.time())
-    refresh_claims = {
+    refresh_claims: dict[str, Any] = {
         "sub": user["id"],
         "username": user.get("username", user["id"]),
         "role": user.get("role", "DEVELOPER"),
@@ -90,6 +96,8 @@ def issue_tokens(user: dict[str, Any]) -> dict[str, Any]:
         "exp": now + REFRESH_TTL,
         "jti": uuid.uuid4().hex,
     }
+    if session_id:
+        refresh_claims["sid"] = session_id
     refresh = _sign(refresh_claims)
     _ACTIVE.setdefault(refresh_claims["sub"], set()).add(refresh_claims["jti"])
     return {
@@ -122,7 +130,7 @@ def verify_refresh(token: str) -> dict[str, Any] | None:
     return None
 
 
-def rotate(refresh_token: str) -> dict[str, Any] | None:
+def rotate(refresh_token: str, session_id: str | None = None) -> dict[str, Any] | None:
     claims = verify_refresh(refresh_token)
     if claims is None:
         # verify_refresh already revoked the subject on reuse; fail closed.
@@ -135,7 +143,7 @@ def rotate(refresh_token: str) -> dict[str, Any] | None:
         "role": claims.get("role", "DEVELOPER"),
         "permissions": claims.get("permissions", []),
     }
-    return issue_tokens(user)
+    return issue_tokens(user, session_id=session_id or claims.get("sid"))
 
 
 def revoke(refresh_token: str) -> None:
