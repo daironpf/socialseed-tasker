@@ -434,7 +434,16 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **Test failure form** | Implemented | Test Name, Component (with "Any"), Error Message |
 | **Label toggles** | Implemented | 13 labels: bug, auth, security, performance, database, ui, feature, webhook, graphql, dependencies, regression, timeout, concurrency |
 | **Results list** | Implemented | Ranked candidates with confidence % and reason tags |
-| **Load Sample** | Implemented | Cycles through preset failures |
+| **Load Sample** | Implemented | Cycles through `GET /api/v1/test-failures` (empty list = valid, no error) |
+
+### Real API contract (#529)
+
+| Feature | Status | Details |
+|---|---|---|
+| **Impact endpoint** | Implemented | Frontend calls `GET /api/v1/analyze/impact/{issue_id}` (was `/analysis/*` → 404 in real mode); response includes `issue_title`, `issue_status`, `risk_level` (`LOW`/`MEDIUM`/`HIGH`/`CRITICAL`), `graph_depth`, `total_affected`, `directly/transitively_affected`, `blocked_issues` |
+| **Root-cause endpoint** | Implemented | Frontend calls `POST /api/v1/analyze/root-cause` with auto-generated `test_id`; body: `test_id`, `test_name`, `error_message`, `component?`, `labels[]`; response `confidence` is a percentage (0-100) plus `issue_status`, `issue_title`, `reasons`, `graph_distance` |
+| **Test failures endpoint** | Implemented | `GET /api/v1/test-failures` returns failures derived from issues labeled `test-failure` (registered via `POST /webhooks/test-failure`); no failures → empty list |
+| **Mock dispatch parity** | Implemented | `client.ts` mock matchers updated to `/analyze/*`; mock impact + root-cause verified in browser (0 pageerrors) |
 
 ---
 

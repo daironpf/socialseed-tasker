@@ -71,6 +71,7 @@ class ImpactAnalysis(BaseModel):
     blocked_issues: list[Issue] = Field(default_factory=list)
     affected_components: list[str] = Field(default_factory=list)
     risk_level: RiskLevel = RiskLevel.LOW
+    graph_depth: int = 0
 
 
 class ComponentImpactSummary(BaseModel):
@@ -421,17 +422,19 @@ class RootCauseAnalyzer:
 
         transitive_affected: list[Issue] = []
         transitive_visited: set[str] = set(directly_affected_ids)
-        queue: list[str] = list(directly_affected_ids)
+        queue: list[tuple[str, int]] = [(sid, 1) for sid in directly_affected_ids]
+        graph_depth = 1 if directly_affected_ids else 0
 
         while queue:
-            current_id = queue.pop(0)
+            current_id, current_depth = queue.pop(0)
             dependents = self._repository.get_dependents(current_id)
             for dep in dependents:
                 dep_id = str(dep.id)
                 if dep_id not in transitive_visited:
                     transitive_visited.add(dep_id)
                     transitive_affected.append(dep)
-                    queue.append(dep_id)
+                    queue.append((dep_id, current_depth + 1))
+                    graph_depth = max(graph_depth, current_depth + 1)
 
         blocked_issues = self._find_blocked_by(issue_id, directly_affected)
 
@@ -448,6 +451,7 @@ class RootCauseAnalyzer:
             blocked_issues=blocked_issues,
             affected_components=affected_components,
             risk_level=risk_level,
+            graph_depth=graph_depth,
         )
 
     def _find_blocked_by(self, source_id: str, dependents: list[Issue]) -> list[Issue]:

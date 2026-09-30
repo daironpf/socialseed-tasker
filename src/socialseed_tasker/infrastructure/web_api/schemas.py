@@ -733,9 +733,21 @@ class CausalLinkResponse(BaseModel):
 
     issue_id: str
     issue_title: str
-    confidence: float
+    issue_status: str = ""
+    confidence: float = Field(..., description="Match confidence as a percentage (0-100)")
     reasons: list[str]
     graph_distance: int
+
+
+class TestFailureResponse(BaseModel):
+    """Recorded test failure derived from a test-failure issue."""
+
+    test_id: str
+    test_name: str
+    error_message: str
+    component: str = ""
+    failed_at: str = ""
+    labels: list[str] = Field(default_factory=list)
 
 
 class ImpactIssueSummary(BaseModel):
@@ -750,11 +762,15 @@ class ImpactAnalysisResponse(BaseModel):
     """Impact analysis result for an issue."""
 
     issue_id: str
+    issue_title: str = ""
+    issue_status: str = "UNKNOWN"
     directly_affected: list[ImpactIssueSummary]
     transitively_affected: list[ImpactIssueSummary]
     blocked_issues: list[ImpactIssueSummary]
     affected_components: list[str]
     risk_level: str
+    graph_depth: int = 0
+    total_affected: int = 0
 
 
 class ComponentImpactIssueSummary(BaseModel):

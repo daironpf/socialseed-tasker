@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v3 — ÉPICAS 1–6: infra auth multi-capa FastAPI + Redis + PostgreSQL, vistas de grafo e impacto, observabilidad de agentes, gobernanza/constraints, dashboard y sync, Graph RAG & MCP)
 **Created:** 2026-09-29
-**Status:** TODO (4/11 done: #525, #526, #527, #528)
+**Status:** TODO (5/11 done: #525, #526, #527, #528, #529)
 
 > `notas.md` (v3) plantea 14 issues (Issue #1–#14 repartidas en 6 épicas); el siguiente
 > número libre en `.issues/done` era **#524**, por lo que se numeraron **#525–#535**
@@ -23,7 +23,7 @@
 | #527 | Auth API & Redis Session Management | HIGH | feat / security | DONE | É1 · Issue #3 |
 | — | Conexión de `authStore` con el backend real | — | feat / integration | NO CREADA — ya resuelta en #517/#519 | É1 · Issue #4 |
 | #528 | Graph View — etiquetas explícitas de aristas | LOW | feat / visualization | DONE | É2 · Issue #5 (gap) |
-| #529 | Análisis de impacto y causa raíz en modo real | HIGH | bug / integration | TODO | É2 · Issue #6 (gap) |
+| #529 | Análisis de impacto y causa raíz en modo real | HIGH | bug / integration | DONE | É2 · Issue #6 (gap) |
 | #530 | Ciclo de vida `agent_working` en tiempo real | MEDIUM | feat / observability | TODO | É3 · Issue #7 (gap) |
 | #531 | Checklists interactivas en la pestaña Progress | LOW | feat / ux | TODO | É3 · Issue #8 (gap) |
 | — | CRUD de componentes | — | feat / crud | NO CREADA — ya resuelta en #49/#433 | É4 · Issue #9 |
@@ -76,7 +76,7 @@
 
 1. **#525** (CRITICAL) — servicios base; desbloquea #526 → #527 → #533
 2. **#526, #527** (HIGH) — auth multi-capa sobre PostgreSQL + Redis
-3. **#529, #532** (HIGH) — contratos backend↔frontend en modo real (paralelizables entre sí)
+3. **#532** (HIGH) — contratos backend↔frontend en modo real
 4. **#530, #533, #534, #535** (MEDIUM) — #533 requiere #525; el resto independiente
 5. **#528, #531** (LOW) — polish de UI, en cualquier momento (#531 se beneficia del broadcast de #530)
 
@@ -105,7 +105,7 @@
 - [x] **#526** implemented — move to `.issues/done/`, `features.md` §2
 - [x] **#527** implemented — move to `.issues/done/`, `features.md` §2/§64
 - [x] **#528** implemented — move to `.issues/done/`, `features.md` §12
-- [ ] **#529** implemented — move to `.issues/done/`, `features.md` §13
+- [x] **#529** implemented — move to `.issues/done/`, `features.md` §13
 - [ ] **#530** implemented — move to `.issues/done/`, `features.md` §18/§43
 - [ ] **#531** implemented — move to `.issues/done/`, `features.md` §7
 - [ ] **#532** implemented — move to `.issues/done/`, `features.md` §10

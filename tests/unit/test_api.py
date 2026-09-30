@@ -773,6 +773,101 @@ class TestAnalysis:
         assert data["data"]["transitively_affected"] == []
         assert data["data"]["risk_level"] == "LOW"
 
+    def test_impact_analysis_contract_fields(self, client, component_id):
+        resp_root = client.post(
+            "/api/v1/issues",
+            json={"title": "Root feature", "component_id": component_id},
+        )
+        id_root = resp_root.json()["data"]["id"]
+        resp_child = client.post(
+            "/api/v1/issues",
+            json={"title": "Child feature", "component_id": component_id},
+        )
+        id_child = resp_child.json()["data"]["id"]
+        client.post(
+            f"/api/v1/issues/{id_child}/dependencies",
+            json={"depends_on_id": id_root},
+        )
+
+        resp = client.get(f"/api/v1/analyze/impact/{id_root}")
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert data["issue_id"] == id_root
+        assert data["issue_title"] == "Root feature"
+        assert data["issue_status"] == "OPEN"
+        assert data["graph_depth"] == 1
+        assert data["total_affected"] == len(data["directly_affected"]) + len(data["transitively_affected"])
+        assert data["total_affected"] == 1
+        assert data["risk_level"] in {"LOW", "MEDIUM", "HIGH", "CRITICAL"}
+
+    def test_root_cause_confidence_as_percentage_with_status(self, client, component_id):
+        resp_issue = client.post(
+            "/api/v1/issues",
+            json={"title": "Fix login bug", "component_id": component_id, "labels": ["auth"]},
+        )
+        issue_id = resp_issue.json()["data"]["id"]
+        client.post(f"/api/v1/issues/{issue_id}/close")
+
+        resp = client.post(
+            "/api/v1/analyze/root-cause",
+            json={
+                "test_id": "t-1",
+                "test_name": "test_login",
+                "error_message": "AssertionError",
+                "labels": ["auth"],
+            },
+        )
+        assert resp.status_code == 200
+        link = resp.json()["data"][0]
+        assert 0 < link["confidence"] <= 100
+        assert link["issue_status"] == "CLOSED"
+        assert link["issue_title"] == "Fix login bug"
+
+    def test_test_failures_empty_list(self, client):
+        resp = client.get("/api/v1/test-failures")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["data"] == []
+        assert "meta" in body
+
+    def test_test_failures_derived_from_labeled_issue(self, client, component_id):
+        resp_issue = client.post(
+            "/api/v1/issues",
+            json={
+                "title": "Test Failure: test_login",
+                "component_id": component_id,
+                "description": "Details\n\n**Error Message:** AssertionError: boom",
+                "labels": ["test-failure", "auto-created", "integration"],
+            },
+        )
+        issue_id = resp_issue.json()["data"]["id"]
+        client.post("/api/v1/issues", json={"title": "Unrelated", "component_id": component_id})
+
+        resp = client.get("/api/v1/test-failures")
+        assert resp.status_code == 200
+        failures = resp.json()["data"]
+        assert len(failures) == 1
+        failure = failures[0]
+        assert failure["test_id"] == issue_id
+        assert failure["test_name"] == "test_login"
+        assert failure["error_message"] == "AssertionError: boom"
+        assert failure["component"] == "Backend"
+        assert failure["failed_at"]
+        assert failure["labels"] == ["test-failure", "auto-created", "integration"]
+
+    def test_subgraph_returns_nodes(self, client, component_id):
+        resp_issue = client.post(
+            "/api/v1/issues",
+            json={"title": "Center", "component_id": component_id},
+        )
+        issue_id = resp_issue.json()["data"]["id"]
+
+        resp = client.get(f"/api/v1/graph/{issue_id}/subgraph")
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert isinstance(data["nodes"], list)
+        assert any(n["id"] == issue_id for n in data["nodes"])
+
 
 class TestProjectEndpoints:
     def test_project_summary(self, client, component_id):

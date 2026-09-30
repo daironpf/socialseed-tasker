@@ -107,7 +107,7 @@ const mockClient = {
       const data = await mockApi.fetchTestFailures()
       return { data: { data } }
     }
-    if (url.match(/\/analysis\/impact\/[^/]+$/)) {
+    if (url.match(/\/analyze\/impact\/[^/]+$/)) {
       const issueId = url.split('/').pop()!
       const data = await mockApi.analyzeImpact(issueId)
       return { data: { data } }
@@ -163,7 +163,7 @@ const mockClient = {
       const data = await mockApi.validateConstraints(body.entity_type, body.entity_data)
       return { data: { data } }
     }
-    if (url === '/analysis/root-cause') {
+    if (url === '/analyze/root-cause') {
       const data = await mockApi.analyzeRootCause(body)
       return { data: { data } }
     }
