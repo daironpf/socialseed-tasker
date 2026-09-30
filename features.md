@@ -383,8 +383,10 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 
 | Feature | Status | Details |
 |---|---|---|
-| **vis-network graph** | Implemented | Nodes = components + issues, Edges = dependency arrows |
-| **Color legend** | Implemented | Component, Open, In Progress, Blocked, Closed + Code Overlay legend |
+| **vis-network graph** | Implemented | Nodes = components + issues, Edges = labeled relations (`DEPENDS_ON`, `BLOCKS`, `BELONGS_TO`, `AFFECTS`, `CODE_REFERENCE`, `ASSIGNED_TO`, `LINKED_TO_PR`) |
+| **Color legend** | Implemented | Component, Open, In Progress, Blocked, Closed + Code Overlay legend + relation chips (same tokens as edge labels) |
+| **Edge labels** | Implemented | Per-relation compact font (size 10) colored by type; `BLOCKS` = inverse edge derived from `issue.blocks` (skipped when blocker or target is CLOSED) (#528) |
+| **Edge label toggle** | Implemented | `GraphToolbar` button shows/hides labels live via `DataSet.update()` (no graph rebuild) (#528) |
 | **Status filter** | Implemented | Dropdown to filter issues by status |
 | **Search** | Implemented | Text filter |
 | **Component filter** | Implemented | GraphFilters with checkbox-based selection |
@@ -408,7 +410,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **Policy nodes** | Implemented | Pink stars from `policiesStore` (standalone governance nodes) |
 | **GitHub PR nodes** | Implemented | Gray squares `pr-<issueId>` from `issue.github_sync` with issue→PR edges (label `#<issue_number>`) |
 | **Node inspector** | Implemented | `NodeInspector` side panel: metadata, blast radius (total/direct/depth/critical/high via `graphUtils.blastRadius`), quick links (open issue, routes, GitHub URL) |
-| **Edge inspector** | Implemented | Relation type, direction, weight, cycle detection (reverse `findPath` on remaining edges) |
+| **Edge inspector** | Implemented | Relation type (same `graphExplorer.relations.*` tokens as edge labels), direction, weight, cycle detection (reverse `findPath` on remaining edges) |
 | i18n | Implemented | All labels translated (`graphExplorer` section) |
 
 ---

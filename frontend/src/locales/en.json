@@ -1485,6 +1485,8 @@
     "fit": "Fit to screen",
     "cluster": "Cluster by component",
     "clusterOn": "Clusters active",
+    "edgeLabels": "Show edge labels",
+    "edgeLabelsOn": "Edge labels visible",
     "criticality": "Priority",
     "nodeTypes": "Nodes",
     "traceSource": "From issue",
@@ -1505,11 +1507,13 @@
       "edge": "Relationship"
     },
     "relations": {
-      "component": "belongs to component",
-      "dependency": "depends on",
-      "code": "code reference",
-      "agent": "assigned to agent",
-      "pr": "linked to PR"
+      "component": "BELONGS_TO",
+      "dependency": "DEPENDS_ON",
+      "blocks": "BLOCKS",
+      "affects": "AFFECTS",
+      "code": "CODE_REFERENCE",
+      "agent": "ASSIGNED_TO",
+      "pr": "LINKED_TO_PR"
     },
     "inspector": {
       "relationship": "Relationship",

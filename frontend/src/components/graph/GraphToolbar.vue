@@ -52,6 +52,23 @@
 
     <div class="border-l border-gray-300 dark:border-gray-600"></div>
 
+    <!-- Edge label toggle (#528) -->
+    <button
+      class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors"
+      :class="showLabels
+        ? 'bg-sky-600 text-white hover:bg-sky-700'
+        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'"
+      @click="$emit('update:showLabels', !showLabels)"
+    >
+      <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
+        <circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none" />
+      </svg>
+      {{ showLabels ? t('graphExplorer.edgeLabelsOn') : t('graphExplorer.edgeLabels') }}
+    </button>
+
+    <div class="border-l border-gray-300 dark:border-gray-600"></div>
+
     <!-- Impact path tracing -->
     <div class="flex flex-wrap items-center gap-1.5">
       <select
@@ -105,6 +122,7 @@ import type { TraceSelectOption } from '@/types/graphExplorer'
 
 defineProps<{
   clustered: boolean
+  showLabels: boolean
   traceSource: string
   traceTarget: string
   traceOptions: TraceSelectOption[]
@@ -117,6 +135,7 @@ defineEmits<{
   'zoom-out': []
   fit: []
   'update:clustered': [value: boolean]
+  'update:showLabels': [value: boolean]
   'update:traceSource': [value: string]
   'update:traceTarget': [value: string]
   trace: []

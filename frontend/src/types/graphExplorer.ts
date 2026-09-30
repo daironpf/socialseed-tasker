@@ -1,6 +1,6 @@
 export type ExplorerNodeType = 'issue' | 'component' | 'agent' | 'policy' | 'pr' | 'code'
 
-export type EdgeRelation = 'component' | 'dependency' | 'code' | 'agent' | 'pr'
+export type EdgeRelation = 'component' | 'dependency' | 'blocks' | 'affects' | 'code' | 'agent' | 'pr'
 
 export interface InspectorField {
   label: string

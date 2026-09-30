@@ -1485,6 +1485,8 @@
     "fit": "Ajustar a pantalla",
     "cluster": "Agrupar por componente",
     "clusterOn": "Agrupación activa",
+    "edgeLabels": "Mostrar etiquetas",
+    "edgeLabelsOn": "Etiquetas visibles",
     "criticality": "Prioridad",
     "nodeTypes": "Nodos",
     "traceSource": "Desde issue",
@@ -1505,11 +1507,13 @@
       "edge": "Relación"
     },
     "relations": {
-      "component": "pertenece a componente",
-      "dependency": "depende de",
-      "code": "referencia de código",
-      "agent": "asignado a agente",
-      "pr": "vinculado a PR"
+      "component": "BELONGS_TO",
+      "dependency": "DEPENDS_ON",
+      "blocks": "BLOCKS",
+      "affects": "AFFECTS",
+      "code": "CODE_REFERENCE",
+      "agent": "ASSIGNED_TO",
+      "pr": "LINKED_TO_PR"
     },
     "inspector": {
       "relationship": "Relación",

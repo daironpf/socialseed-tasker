@@ -21,7 +21,7 @@
           <option value="BLOCKED">{{ t('issues.blocked') }}</option>
           <option value="CLOSED">{{ t('issues.closed') }}</option>
         </select>
-        <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
+        <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2 flex-wrap">
           <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-purple-500"></span> {{ t('issues.component') }}</span>
           <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500"></span> {{ t('issues.open') }}</span>
           <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500"></span> {{ t('issues.inProgress') }}</span>
@@ -43,6 +43,22 @@
           </template>
           <template v-if="visibleTypes.includes('pr')">
             <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-slate-500"></span> {{ t('graphExplorer.types.pr') }}</span>
+          </template>
+          <template v-if="showEdgeLabels">
+            <span class="border-l border-gray-300 dark:border-gray-600 mx-1 h-3"></span>
+            <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-blue-700"></span> {{ relationLabels.dependency }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-red-600"></span> {{ relationLabels.blocks }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-violet-600"></span> {{ relationLabels.component }}</span>
+            <template v-if="codeOverlayEnabled">
+              <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-pink-500"></span> {{ relationLabels.affects }}</span>
+              <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-cyan-600"></span> {{ relationLabels.code }}</span>
+            </template>
+            <template v-if="visibleTypes.includes('agent')">
+              <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-orange-600"></span> {{ relationLabels.agent }}</span>
+            </template>
+            <template v-if="visibleTypes.includes('pr')">
+              <span class="flex items-center gap-1"><span class="w-3 h-0.5 bg-slate-600"></span> {{ relationLabels.pr }}</span>
+            </template>
           </template>
         </div>
       </div>
@@ -119,6 +135,7 @@
     <div class="mb-3 flex items-center">
       <GraphToolbar
         :clustered="clustered"
+        :show-labels="showEdgeLabels"
         :trace-source="traceSource"
         :trace-target="traceTarget"
         :trace-options="traceOptions"
@@ -128,6 +145,7 @@
         @zoom-out="zoomOut"
         @fit="fitGraph"
         @update:clustered="toggleCluster"
+        @update:showLabels="toggleEdgeLabels"
         @update:trace-source="traceSource = $event"
         @update:trace-target="traceTarget = $event"
         @trace="tracePath"
@@ -245,7 +263,7 @@ import RelationshipModal from '@/components/ui/RelationshipModal.vue'
 import GraphFilters from '@/components/ui/GraphFilters.vue'
 import GraphToolbar from '@/components/graph/GraphToolbar.vue'
 import NodeInspector from '@/components/graph/NodeInspector.vue'
-import { wouldCreateCycle, findPath, blastRadius } from '@/utils/graphUtils'
+import { wouldCreateCycle, findPath, blastRadius, buildBlocksEdges, edgeRelationLabel, edgeRelationColor } from '@/utils/graphUtils'
 import { useExport } from '@/composables/useExport'
 import type { Issue, IssueUpdateRequest } from '@/types'
 import type { CodeNode } from '@/types/codeGraph'
@@ -295,9 +313,28 @@ const traceMessage = ref('')
 const traceOk = ref(false)
 const tracedPath = ref<string[]>([])
 const inspector = ref<InspectorPayload | null>(null)
+const showEdgeLabels = ref(true)
 
 function showType(type: string): boolean {
   return visibleTypes.value.includes(type)
+}
+
+const relationLabels = computed(() => ({
+  component: t('graphExplorer.relations.component'),
+  dependency: t('graphExplorer.relations.dependency'),
+  blocks: t('graphExplorer.relations.blocks'),
+  affects: t('graphExplorer.relations.affects'),
+  code: t('graphExplorer.relations.code'),
+  agent: t('graphExplorer.relations.agent'),
+  pr: t('graphExplorer.relations.pr'),
+}))
+
+function edgeLabel(relation: string): string {
+  return edgeRelationLabel(relation, relationLabels.value)
+}
+
+function edgeFont(relation: string): { color: string; size: number } {
+  return { color: edgeRelationColor(relation), size: 10 }
 }
 
 const codeNodeColors: Record<string, string> = {
@@ -356,7 +393,16 @@ const graphData = computed(() => {
   const issues = filteredIssues.value
   const components = componentsStore.components
   const nodeData: Array<{ id: string; label: string; color: string; shape: string; title: string; group?: string; componentId?: string; priority?: string }> = []
-  const edgeData: Array<{ id: string; from: string; to: string; arrows: string; relation: string }> = []
+  const edgeData: Array<{
+    id: string
+    from: string
+    to: string
+    arrows: string
+    relation: string
+    label: string
+    font: { color: string; size: number }
+    smooth?: { enabled: boolean; type: string; roundness: number }
+  }> = []
 
   // Build adjacency list for hop calculation
   const adj = new Map<string, Set<string>>()
@@ -435,6 +481,8 @@ const graphData = computed(() => {
           to: issue.id,
           arrows: 'to',
           relation: 'component',
+          label: edgeLabel('component'),
+          font: edgeFont('component'),
         })
       }
     }
@@ -447,8 +495,23 @@ const graphData = computed(() => {
           to: depId,
           arrows: 'to',
           relation: 'dependency',
+          label: edgeLabel('dependency'),
+          font: edgeFont('dependency'),
         })
       }
+    }
+  }
+
+  // Inverse BLOCKS edges derived from dependency chains (#528)
+  if (showType('issue')) {
+    for (const blockEdge of buildBlocksEdges(issues, visibleNodeIds)) {
+      edgeData.push({
+        ...blockEdge,
+        arrows: 'to',
+        label: edgeLabel('blocks'),
+        font: edgeFont('blocks'),
+        smooth: { enabled: true, type: 'curvedCCW', roundness: 0.2 },
+      })
     }
   }
 
@@ -474,6 +537,8 @@ const graphData = computed(() => {
             to: issue.id,
             arrows: 'to',
             relation: 'agent',
+            label: edgeLabel('agent'),
+            font: edgeFont('agent'),
           })
         }
       }
@@ -514,6 +579,8 @@ const graphData = computed(() => {
         to: prId,
         arrows: 'to',
         relation: 'pr',
+        label: edgeLabel('pr'),
+        font: edgeFont('pr'),
       })
     }
   }
@@ -535,23 +602,16 @@ const graphData = computed(() => {
     }
 
     for (const ce of codeEdgesList) {
-      if (ce.type === 'AFFECTS') {
-        edgeData.push({
-          id: `code-${ce.from}-${ce.to}`,
-          from: ce.from,
-          to: ce.to,
-          arrows: 'to',
-          relation: 'code',
-        })
-      } else {
-        edgeData.push({
-          id: `code-${ce.from}-${ce.to}`,
-          from: ce.from,
-          to: ce.to,
-          arrows: 'to',
-          relation: 'code',
-        })
-      }
+      const relation = ce.type === 'AFFECTS' ? 'affects' : 'code'
+      edgeData.push({
+        id: `code-${ce.from}-${ce.to}`,
+        from: ce.from,
+        to: ce.to,
+        arrows: 'to',
+        relation,
+        label: edgeLabel(relation),
+        font: edgeFont(relation),
+      })
     }
   }
 
@@ -564,7 +624,9 @@ function buildGraph() {
   loading.value = true
 
   nodes = new DataSet(graphData.value.nodes)
-  edges = new DataSet(graphData.value.edges)
+  edges = new DataSet(
+    graphData.value.edges.map(e => ({ ...e, label: showEdgeLabels.value ? e.label : '' })),
+  )
 
   const options = {
     nodes: {
@@ -708,6 +770,15 @@ function fitGraph() {
 function toggleCluster(value?: boolean) {
   clustered.value = value ?? !clustered.value
   buildGraph()
+}
+
+function toggleEdgeLabels() {
+  showEdgeLabels.value = !showEdgeLabels.value
+  if (!edges) return
+  edges.update(edges.get().map(e => ({
+    id: e.id,
+    label: showEdgeLabels.value ? edgeLabel(e.relation) : '',
+  })))
 }
 
 function applyClusters() {

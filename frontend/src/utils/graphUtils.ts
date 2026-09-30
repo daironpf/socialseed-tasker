@@ -1,3 +1,47 @@
+import type { EdgeRelation } from '@/types/graphExplorer'
+
+export const EDGE_RELATION_COLORS: Record<EdgeRelation, string> = {
+  dependency: '#2563eb',
+  blocks: '#dc2626',
+  component: '#7c3aed',
+  affects: '#ec4899',
+  code: '#0891b2',
+  agent: '#ea580c',
+  pr: '#475569',
+}
+
+export function edgeRelationLabel(relation: string, labels: Record<string, string>): string {
+  return labels[relation] ?? relation
+}
+
+export function edgeRelationColor(relation: string): string {
+  return EDGE_RELATION_COLORS[relation as EdgeRelation] ?? '#64748b'
+}
+
+export function buildBlocksEdges(
+  issues: Array<{ id: string; status: string; blocks?: string[] | null }>,
+  visibleIds?: Set<string> | null,
+): Array<{ id: string; from: string; to: string; relation: EdgeRelation }> {
+  const byId = new Map(issues.map(issue => [issue.id, issue]))
+  const result: Array<{ id: string; from: string; to: string; relation: EdgeRelation }> = []
+  for (const issue of issues) {
+    if (issue.status === 'CLOSED') continue
+    if (visibleIds && !visibleIds.has(issue.id)) continue
+    for (const blockedId of issue.blocks ?? []) {
+      const target = byId.get(blockedId)
+      if (!target || target.status === 'CLOSED') continue
+      if (visibleIds && !visibleIds.has(blockedId)) continue
+      result.push({
+        id: `${issue.id}-blocks-${blockedId}`,
+        from: issue.id,
+        to: blockedId,
+        relation: 'blocks',
+      })
+    }
+  }
+  return result
+}
+
 export function wouldCreateCycle(
   edges: Array<{ from: string; to: string }>,
   newFrom: string,
