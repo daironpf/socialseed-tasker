@@ -47,6 +47,22 @@ export async function updateIssue(id: string, body: IssueUpdateRequest): Promise
   return data.data
 }
 
+export async function startAgent(id: string, agentId?: string): Promise<Issue> {
+  const { data } = await client.post<APIResponse<Issue>>(`/issues/${id}/start-agent`, {
+    agent_id: agentId ?? '',
+  })
+  if (!data.data) throw new Error('Failed to start agent work')
+  return data.data
+}
+
+export async function stopAgent(id: string, agentId?: string): Promise<Issue> {
+  const { data } = await client.post<APIResponse<Issue>>(`/issues/${id}/stop-agent`, {
+    agent_id: agentId ?? '',
+  })
+  if (!data.data) throw new Error('Failed to stop agent work')
+  return data.data
+}
+
 export async function deleteIssue(id: string): Promise<void> {
   await client.delete(`/issues/${id}`)
 }

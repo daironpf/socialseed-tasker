@@ -277,6 +277,20 @@ class AgentFinishRequest(BaseModel):
     )
 
 
+class AgentToggleRequest(BaseModel):
+    """Request body for the start-agent/stop-agent aliases (issue #530).
+
+    The body is optional so a bare POST toggles the flag with the default
+    human operator identifier.
+    """
+
+    agent_id: str = Field(
+        default="",
+        description="Identifier for the agent (defaults to 'manual' when omitted)",
+        examples=["agent-001", "manual"],
+    )
+
+
 class AgentStatusResponse(BaseModel):
     """Agent work status in API responses."""
 
@@ -699,6 +713,7 @@ class IssueResponse(BaseModel):
     closed_at: datetime | None
     architectural_constraints: list[str]
     agent_working: bool | None = None
+    agent_working_started_at: datetime | None = None
     agent_started_at: datetime | None = None
     agent_finished_at: datetime | None = None
     agent_id: str | None = None

@@ -125,6 +125,22 @@ const mockClient = {
       const data = await mockApi.closeIssue(id)
       return { data: { data } }
     }
+    if (url.match(/\/issues\/[^/]+\/start-agent$/)) {
+      const id = url.split('/')[2]
+      const data = await mockApi.updateIssue(id, {
+        agent_working: true,
+        agent_working_started_at: new Date().toISOString(),
+      })
+      return { data: { data } }
+    }
+    if (url.match(/\/issues\/[^/]+\/stop-agent$/)) {
+      const id = url.split('/')[2]
+      const data = await mockApi.updateIssue(id, {
+        agent_working: false,
+        agent_working_started_at: null,
+      })
+      return { data: { data } }
+    }
     if (url.match(/\/issues\/[^/]+\/github-sync\/resolve$/)) {
       const id = url.split('/')[2]
       const data = await mockApi.resolveGithubConflict(id, body?.resolution, body?.fields)

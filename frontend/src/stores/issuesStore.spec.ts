@@ -1,8 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia, type Pinia } from 'pinia'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useUiStore } from '@/stores/uiStore'
 import * as api from '@/api/issuesApi'
+import { connectSSE } from '@/api/realtime'
+import { setApiMode } from '@/api/client'
 import { IssueStatus, IssuePriority, type Issue } from '@/types'
 
 vi.mock('@/api/issuesApi', () => ({
@@ -10,9 +12,15 @@ vi.mock('@/api/issuesApi', () => ({
   fetchIssue: vi.fn(),
   createIssue: vi.fn(),
   updateIssue: vi.fn(),
+  startAgent: vi.fn(),
+  stopAgent: vi.fn(),
   deleteIssue: vi.fn(),
   closeIssue: vi.fn(),
   fetchBlockedIssues: vi.fn(),
+}))
+
+vi.mock('@/api/realtime', () => ({
+  connectSSE: vi.fn(() => ({ close: vi.fn() })),
 }))
 
 function makeIssue(overrides: Partial<Issue> = {}): Issue {
@@ -47,6 +55,10 @@ describe('issuesStore', () => {
     setActivePinia(pinia)
     ui = useUiStore()
     store = useIssuesStore()
+  })
+
+  afterEach(() => {
+    setApiMode('mock')
   })
 
   describe('fetchIssues', () => {
@@ -169,6 +181,84 @@ describe('issuesStore', () => {
 
       expect(result?.status).toBe(IssueStatus.CLOSED)
       expect(store.issues[0].status).toBe(IssueStatus.CLOSED)
+    })
+  })
+
+  describe('startAgent / stopAgent', () => {
+    it('calls the dedicated endpoints and replaces the issue', async () => {
+      store.issues = [makeIssue()]
+      vi.mocked(api.startAgent).mockResolvedValue(
+        makeIssue({ agent_working: true, agent_working_started_at: '2026-09-30T10:00:00Z' }),
+      )
+      vi.mocked(api.stopAgent).mockResolvedValue(makeIssue({ agent_working: false }))
+
+      const started = await store.startAgent('ISS-1', 'agent-001')
+      expect(api.startAgent).toHaveBeenCalledWith('ISS-1', 'agent-001')
+      expect(started?.agent_working).toBe(true)
+      expect(store.issues[0].agent_working).toBe(true)
+
+      const stopped = await store.stopAgent('ISS-1')
+      expect(api.stopAgent).toHaveBeenCalledWith('ISS-1', undefined)
+      expect(stopped?.agent_working).toBe(false)
+      expect(store.issues[0].agent_working).toBe(false)
+    })
+
+    it('records the error when the toggle fails', async () => {
+      store.issues = [makeIssue()]
+      vi.mocked(api.stopAgent).mockRejectedValue(new Error('conflict'))
+
+      const result = await store.stopAgent('ISS-1')
+
+      expect(result).toBeNull()
+      expect(store.error).toBe('conflict')
+    })
+  })
+
+  describe('issue stream subscription', () => {
+    it('does not subscribe in mock mode', () => {
+      expect(connectSSE).not.toHaveBeenCalled()
+    })
+
+    it('subscribes in real mode and applies issue-updated events', () => {
+      setApiMode('real')
+      pinia = createPinia()
+      setActivePinia(pinia)
+      const realStore = useIssuesStore()
+      realStore.issues = [
+        makeIssue({ agent_working: false, agent_working_started_at: null }),
+      ]
+
+      expect(connectSSE).toHaveBeenCalledWith(
+        '/issues/stream',
+        expect.any(Object),
+        expect.objectContaining({ events: expect.arrayContaining(['issue-updated']) }),
+      )
+
+      const handlers = vi.mocked(connectSSE).mock.calls.at(-1)![1]
+      handlers.onEvent('issue-updated', {
+        issue_id: 'ISS-1',
+        agent_working: true,
+        agent_working_started_at: '2026-09-30T12:00:00Z',
+      })
+
+      expect(realStore.issues[0].agent_working).toBe(true)
+      expect(realStore.issues[0].agent_working_started_at).toBe('2026-09-30T12:00:00Z')
+
+      handlers.onEvent('issue-updated', { issue_id: 'ISS-1', agent_working: false })
+      expect(realStore.issues[0].agent_working).toBe(false)
+    })
+
+    it('ignores events for issues that are not loaded', () => {
+      setApiMode('real')
+      pinia = createPinia()
+      setActivePinia(pinia)
+      const realStore = useIssuesStore()
+      realStore.issues = [makeIssue()]
+
+      const handlers = vi.mocked(connectSSE).mock.calls.at(-1)![1]
+      handlers.onEvent('issue-updated', { issue_id: 'OTHER', agent_working: true })
+
+      expect(realStore.issues[0].agent_working).toBeUndefined()
     })
   })
 

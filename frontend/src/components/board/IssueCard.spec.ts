@@ -11,6 +11,8 @@ vi.mock('@/api/issuesApi', () => ({
   fetchIssue: vi.fn(),
   createIssue: vi.fn(),
   updateIssue: vi.fn(),
+  startAgent: vi.fn(),
+  stopAgent: vi.fn(),
   deleteIssue: vi.fn(),
   closeIssue: vi.fn(),
   fetchBlockedIssues: vi.fn(),
@@ -105,7 +107,7 @@ describe('IssueCard', () => {
     expect(wrapper.find('button[title="Stop Agent"]').exists()).toBe(false)
   })
 
-  it('stops the agent from the kill switch', async () => {
+  it('stops the agent from the kill switch via the dedicated endpoint', async () => {
     vi.useFakeTimers()
     const { wrapper, pinia } = mountComponent(IssueCard, {
       props: { issue: makeIssue({ agent_working: true, agent_working_started_at: '2026-09-26T10:00:00Z' }) },
@@ -117,10 +119,8 @@ describe('IssueCard', () => {
 
     await killButton.trigger('click')
 
-    expect(api.updateIssue).toHaveBeenCalledWith(
-      'ISS-1',
-      expect.objectContaining({ agent_working: false, agent_working_started_at: null }),
-    )
+    expect(api.stopAgent).toHaveBeenCalledWith('ISS-1', undefined)
+    expect(api.updateIssue).not.toHaveBeenCalled()
     expect(useUiStore(pinia).connectionState).toBe('OFFLINE_QUEUED')
 
     vi.runAllTimers()

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
@@ -12,7 +13,7 @@ from fastapi.testclient import TestClient
 
 from socialseed_tasker.application.actions import TaskRepositoryInterface
 from socialseed_tasker.application.constraints import Constraint, ConstraintCategory, ConstraintLevel
-from socialseed_tasker.domain.entities import Component, Issue, IssueStatus, IssuePriority
+from socialseed_tasker.domain.entities import Component, Issue, IssuePriority, IssueStatus
 from socialseed_tasker.infrastructure.web_api.app import create_app
 
 
@@ -181,13 +182,25 @@ class MockRepository(TaskRepositoryInterface):
 
     def start_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         issue = self._issues[issue_id]
-        updated = issue.model_copy(update={"agent_working": agent_id})
+        updated = issue.model_copy(
+            update={
+                "agent_working": True,
+                "agent_id": agent_id,
+                "agent_started_at": datetime.now(timezone.utc),
+            }
+        )
         self._issues[issue_id] = updated
         return updated
 
     def finish_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         issue = self._issues[issue_id]
-        updated = issue.model_copy(update={"agent_working": None})
+        updated = issue.model_copy(
+            update={
+                "agent_working": False,
+                "agent_id": agent_id,
+                "agent_finished_at": datetime.now(timezone.utc),
+            }
+        )
         self._issues[issue_id] = updated
         return updated
 

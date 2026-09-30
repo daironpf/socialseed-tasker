@@ -144,6 +144,7 @@ def convert_domain_issue_to_api_response(domain_issue: Issue) -> IssueResponse:
         closed_at=domain_issue.closed_at,
         architectural_constraints=domain_issue.architectural_constraints,
         agent_working=domain_issue.agent_working,
+        agent_working_started_at=domain_issue.agent_started_at,
         reasoning_logs=[
             {
                 "id": str(log.id),

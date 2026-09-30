@@ -11,6 +11,7 @@ from typing import Annotated, Any, TYPE_CHECKING
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Body, HTTPException
+from fastapi.responses import StreamingResponse
 
 from socialseed_tasker.application.analyzer import (
     ComponentImpactAnalysis,
@@ -57,6 +58,7 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentFinishRequest,
     AgentStartRequest,
     AgentStatusResponse,
+    AgentToggleRequest,
     AgentUpdateRequest,
     APIResponse,
     BulkDependencyRequest,
@@ -126,7 +128,11 @@ from socialseed_tasker.application.github_sync import (
     push_issue_to_github,
     resolve_github_conflict,
 )
-from socialseed_tasker.infrastructure.web_api.routers.realtime import publish_github_sync
+from socialseed_tasker.infrastructure.web_api.routers.realtime import (
+    issue_updates_stream,
+    publish_github_sync,
+    publish_issue_update,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -374,6 +380,19 @@ def list_issues(
 
 
 @issues_router.get(
+    "/issues/stream",
+    summary="Stream issue updates",
+    description=(
+        "SSE stream broadcasting issue flag changes (agent_working) to all connected "
+        "clients (issue #530). Registered before /issues/{issue_id} to avoid shadowing."
+    ),
+)
+async def stream_issue_updates(request: Request) -> StreamingResponse:
+    """Live SSE stream of issue flag changes (connected + ping heartbeat)."""
+    return issue_updates_stream(request)
+
+
+@issues_router.get(
     "/issues/{issue_id}",
     response_model=APIResponse[IssueResponse],
     summary="Get issue details",
@@ -476,6 +495,7 @@ def get_issue_deployments(
 def update_issue(
     issue_id: str,
     body: IssueUpdateRequest,
+    request: Request,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     """Update an issue with partial field updates.
@@ -487,6 +507,7 @@ def update_issue(
     Args:
         issue_id: UUID or short ID (8+ chars) of the issue.
         body: IssueUpdateRequest with fields to update.
+        request: FastAPI request used for the realtime broadcast (issue #530).
         repo: Repository dependency for data access.
 
     Returns:
@@ -556,6 +577,8 @@ def update_issue(
         sync_updates = push_issue_to_github(updated, set(updates.keys()))
         if sync_updates:
             updated = repo.update_issue(issue_id, sync_updates)
+    if "agent_working" in updates:
+        publish_issue_update(request.app, issue_id, _agent_flag_payload(updated))
     return APIResponse(data=_issue_to_response(updated), meta=Meta(request_id=None))
 
 
@@ -1165,6 +1188,41 @@ def get_manifest(
     )
 
 
+def _agent_flag_payload(issue: Issue) -> dict[str, Any]:
+    """Build the SSE payload for an agent flag change (issue #530)."""
+    started: Any = getattr(issue, "agent_started_at", None)
+    return {
+        "agent_working": bool(getattr(issue, "agent_working", False)),
+        "agent_working_started_at": started.isoformat() if hasattr(started, "isoformat") else started,
+    }
+
+
+def _run_agent_start(issue_id: str, agent_id: str, repo: TaskRepositoryInterface) -> Issue:
+    """Shared logic for /agent/start and /start-agent (issue #530)."""
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+    if getattr(issue, "agent_working", False):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Agent is already working on issue {issue_id}",
+        )
+    return repo.start_agent_work(issue_id, agent_id)
+
+
+def _run_agent_finish(issue_id: str, agent_id: str, repo: TaskRepositoryInterface) -> Issue:
+    """Shared logic for /agent/finish and /stop-agent (issue #530)."""
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+    if not getattr(issue, "agent_working", False):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Agent is not working on issue {issue_id}",
+        )
+    return repo.finish_agent_work(issue_id, agent_id)
+
+
 @issues_router.post(
     "/issues/{issue_id}/agent/start",
     response_model=APIResponse[IssueResponse],
@@ -1178,27 +1236,15 @@ def get_manifest(
 def start_agent_work(
     issue_id: str,
     body: AgentStartRequest,
+    request: Request,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[IssueResponse]:
     try:
-        issue = repo.get_issue(issue_id)
-        if issue is None:
-            raise IssueNotFoundError(issue_id)
-
-        if hasattr(issue, "agent_working") and issue.agent_working:
-            from fastapi import HTTPException
-
-            raise HTTPException(
-                status_code=409,
-                detail=f"Agent is already working on issue {issue_id}",
-            )
-
-        updated_issue = repo.start_agent_work(issue_id, body.agent_id)
-        return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
+        updated_issue = _run_agent_start(issue_id, body.agent_id, repo)
     except ValueError as e:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=409, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e)) from e
+    publish_issue_update(request.app, issue_id, _agent_flag_payload(updated_issue))
+    return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
 
 
 @issues_router.post(
@@ -1214,19 +1260,71 @@ def start_agent_work(
 def finish_agent_work(
     issue_id: str,
     body: AgentFinishRequest,
+    request: Request,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[IssueResponse]:
     try:
-        issue = repo.get_issue(issue_id)
-        if issue is None:
-            raise IssueNotFoundError(issue_id)
-
-        updated_issue = repo.finish_agent_work(issue_id, body.agent_id)
-        return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
+        updated_issue = _run_agent_finish(issue_id, body.agent_id, repo)
     except ValueError as e:
-        from fastapi import HTTPException
+        raise HTTPException(status_code=409, detail=str(e)) from e
+    publish_issue_update(request.app, issue_id, _agent_flag_payload(updated_issue))
+    return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
 
-        raise HTTPException(status_code=409, detail=str(e))
+
+@issues_router.post(
+    "/issues/{issue_id}/start-agent",
+    response_model=APIResponse[IssueResponse],
+    summary="Start agent work (human toggle alias)",
+    description=(
+        "Alias of POST /issues/{issue_id}/agent/start for UI toggles (issue #530). "
+        "agent_id is optional and defaults to 'manual'."
+    ),
+    responses={
+        404: {"description": "Issue not found"},
+        409: {"description": "Agent is already working on this issue"},
+    },
+)
+def start_agent_toggle(
+    issue_id: str,
+    request: Request,
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
+    body: Annotated[AgentToggleRequest | None, Body()] = None,
+) -> APIResponse[IssueResponse]:
+    agent_id = (body.agent_id if body else "") or "manual"
+    try:
+        updated_issue = _run_agent_start(issue_id, agent_id, repo)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
+    publish_issue_update(request.app, issue_id, _agent_flag_payload(updated_issue))
+    return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
+
+
+@issues_router.post(
+    "/issues/{issue_id}/stop-agent",
+    response_model=APIResponse[IssueResponse],
+    summary="Stop agent work (human kill switch alias)",
+    description=(
+        "Alias of POST /issues/{issue_id}/agent/finish for the kill switch (issue #530). "
+        "agent_id is optional and defaults to 'manual'."
+    ),
+    responses={
+        404: {"description": "Issue not found"},
+        409: {"description": "Agent is not working on this issue"},
+    },
+)
+def stop_agent_toggle(
+    issue_id: str,
+    request: Request,
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
+    body: Annotated[AgentToggleRequest | None, Body()] = None,
+) -> APIResponse[IssueResponse]:
+    agent_id = (body.agent_id if body else "") or "manual"
+    try:
+        updated_issue = _run_agent_finish(issue_id, agent_id, repo)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
+    publish_issue_update(request.app, issue_id, _agent_flag_payload(updated_issue))
+    return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
 
 
 @issues_router.post(

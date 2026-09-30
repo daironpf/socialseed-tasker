@@ -299,6 +299,7 @@ class IssueUpdate(BaseModel):
     architectural_constraints: Optional[list[str]] = None
     closed_at: Optional[str] = None
     agent_working: Optional[bool] = None
+    agent_working_started_at: Optional[str] = None
     github_sync: Optional[dict] = None
 
 

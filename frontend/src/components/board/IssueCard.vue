@@ -63,6 +63,7 @@ import LabelTag from '@/components/ui/LabelTag.vue'
 import AgentWorkingIcon from '@/components/ui/AgentWorkingIcon.vue'
 import { useI18n } from 'vue-i18n'
 import { useSoundEffects } from '@/composables/useSoundEffects'
+import { useToast } from '@/composables/useToast'
 import { useAuthGuard } from '@/composables/useAuthGuard'
 
 const { t } = useI18n()
@@ -81,9 +82,8 @@ const emit = defineEmits<{
 }>()
 
 function killAgent() {
-  issuesStore.updateIssue(props.issue.id, {
-    agent_working: false,
-    agent_working_started_at: null
+  issuesStore.stopAgent(props.issue.id).then((updated) => {
+    if (updated) useToast().success(t('agent.agentStopped'))
   })
   uiStore.simulateSync()
   useSoundEffects().playAlert()

@@ -646,6 +646,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **Mock event stream** | Implemented | `useMockStream` simulates SSE/WebSocket events (#504) |
 | **GitHub sync stream** | Implemented | Real mode: `GET /issues/{id}/github-sync/stream` SSE (`connected`/`ping`/`sync`) → `IssueDetailView` refetches on events (#522, §67) |
 | **MCP tool-call stream** | Implemented | Real mode: `GET /mcp/tool-calls/stream` SSE feeds the MCP Inspector live tool-call feed (#524, §68) |
+| **Issue flag stream** | Implemented | Real mode: `GET /issues/stream` SSE (`connected`/`ping`/`issue-updated`) broadcasts `agent_working` changes to all clients; `issuesStore` subscribes and merges in place (#530) |
 
 ---
 
@@ -1239,11 +1240,13 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 
 | Feature | Status | Details |
 |---|---|---|
-| **Timer data** | Implemented | `agent_working_started_at` on Issue, set for agent_working issues |
+| **Timer data** | Implemented | `agent_working_started_at` on Issue, set for agent_working issues; also exposed by the real API as `IssueResponse.agent_working_started_at` (#530) |
 | **Live timer** | Implemented | Updates every second; "Xh Ym Zs" or "Ym Zs" |
-| **Kill button** | Implemented | Red stop icon on hover; sets `agent_working=false` |
+| **Kill button** | Implemented | Red stop icon on hover; calls `POST /issues/{id}/stop-agent` (#530) |
 | **Timer cleanup** | Implemented | Interval cleared on unmount |
-| **Store update** | Implemented | `updateIssue()` with `agent_working: false`, `agent_working_started_at: null` |
+| **Dedicated endpoints** | Implemented | `POST /issues/{id}/start-agent` / `stop-agent` aliases over `agent/start`/`agent/finish` with `agent_id` optional (default `manual`); 404/409 documented (#530) |
+| **Store actions** | Implemented | `issuesStore.startAgent()` / `stopAgent()` replace the issue in place; used by the kill switch and governanceStore (#530) |
+| **Cross-client sync** | Implemented | SSE `issue-updated` → `issuesStore.applyIssueUpdate()` updates icon/timer in every connected window (#530) |
 | **Component** | Implemented | `IssueCard.vue` |
 | i18n | Implemented | `agent` section (killSwitch, agentStopped) |
 

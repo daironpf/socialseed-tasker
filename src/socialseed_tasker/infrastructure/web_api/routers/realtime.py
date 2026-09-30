@@ -9,6 +9,10 @@ Provides:
 - ``POST /issues/{id}/presence/leave``      — remove a viewer
 - ``GET  /issues/{id}/presence/stream``     — SSE stream of viewer snapshots
 - ``GET  /issues/{id}/github-sync/stream``  — SSE stream of GitHub sync events (issue #522)
+- ``GET  /issues/stream``                   — SSE stream of issue flag changes (issue #530)
+
+The ``/issues/stream`` route itself is registered in issues.py so that it wins
+over ``GET /issues/{issue_id}``.
 
 State lives in an in-process :class:`RealtimeHub` stored on ``app.state.realtime_hub``.
 """
@@ -58,6 +62,13 @@ def publish_github_sync(app: Any, issue_id: str, payload: dict[str, Any]) -> Non
         hub.publish_sync(issue_id, payload)
 
 
+def publish_issue_update(app: Any, issue_id: str, payload: dict[str, Any]) -> None:
+    """Broadcast an issue flag change when a stream hub already exists (issue #530)."""
+    hub = getattr(app.state, "realtime_hub", None)
+    if hub is not None:
+        hub.publish_issue_update({"issue_id": issue_id, **payload})
+
+
 class RealtimeHub:
     """In-process pub/sub hub: per-issue log buffers and presence registries.
 
@@ -71,6 +82,24 @@ class RealtimeHub:
         self._presence: dict[str, dict[str, dict[str, Any]]] = {}
         self._presence_subs: dict[str, list[asyncio.Queue[list[dict[str, Any]]]]] = {}
         self._sync_subs: dict[str, list[asyncio.Queue[dict[str, Any]]]] = {}
+        self._issue_subs: list[asyncio.Queue[dict[str, Any]]] = []
+
+    # --------------------------------------------------------- issue updates
+
+    def publish_issue_update(self, payload: dict[str, Any]) -> None:
+        """Broadcast an issue flag change (agent_working) to all subscribers."""
+        entry = {"event": "issue-updated", "data": payload}
+        for queue in list(self._issue_subs):
+            queue.put_nowait(entry)
+
+    def subscribe_issues(self) -> asyncio.Queue[dict[str, Any]]:
+        queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
+        self._issue_subs.append(queue)
+        return queue
+
+    def unsubscribe_issues(self, queue: asyncio.Queue[dict[str, Any]]) -> None:
+        if queue in self._issue_subs:
+            self._issue_subs.remove(queue)
 
     # ---------------------------------------------------------- github sync
 
@@ -305,5 +334,35 @@ async def stream_github_sync(issue_id: str, request: Request) -> StreamingRespon
                 yield _sse(item["event"], item["data"])
         finally:
             hub.unsubscribe_sync(issue_id, queue)
+
+    return StreamingResponse(generate(), media_type="text/event-stream", headers=_SSE_HEADERS)
+
+
+# ----------------------------------------------------------- issue updates
+
+
+def issue_updates_stream(request: Request) -> StreamingResponse:
+    """SSE stream of issue flag changes (issue #530).
+
+    The route lives in issues.py as ``GET /issues/stream`` so it is registered
+    before ``GET /issues/{issue_id}`` and is not shadowed by it.
+    """
+    hub = _hub(request)
+    queue = hub.subscribe_issues()
+
+    async def generate() -> AsyncGenerator[str, None]:
+        try:
+            yield _sse("connected", {"scope": "issues"})
+            while True:
+                if await request.is_disconnected():
+                    return
+                try:
+                    item = await asyncio.wait_for(queue.get(), timeout=HEARTBEAT_SECONDS)
+                except asyncio.TimeoutError:
+                    yield _sse("ping", {"ts": int(time.time() * 1000)})
+                    continue
+                yield _sse(item["event"], item["data"])
+        finally:
+            hub.unsubscribe_issues(queue)
 
     return StreamingResponse(generate(), media_type="text/event-stream", headers=_SSE_HEADERS)

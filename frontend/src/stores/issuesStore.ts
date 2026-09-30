@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import * as api from '@/api/issuesApi'
+import { connectSSE, type SSEHandle } from '@/api/realtime'
+import { isMockMode, apiMode } from '@/api/client'
 import type { Issue, IssueCreateRequest, IssueUpdateRequest, IssuePriority, IssueStatus, PaginationMeta } from '@/types'
 import { useUiStore } from './uiStore'
 
@@ -223,6 +225,76 @@ export const useIssuesStore = defineStore('issues', () => {
     }
   }
 
+  async function startAgent(id: string, agentId?: string): Promise<Issue | null> {
+    try {
+      const updated = await api.startAgent(id, agentId)
+      const idx = issues.value.findIndex((i) => i.id === id)
+      if (idx !== -1) issues.value[idx] = updated
+      return updated
+    } catch (e) {
+      error.value = (e as Error).message
+      return null
+    }
+  }
+
+  async function stopAgent(id: string, agentId?: string): Promise<Issue | null> {
+    try {
+      const updated = await api.stopAgent(id, agentId)
+      const idx = issues.value.findIndex((i) => i.id === id)
+      if (idx !== -1) issues.value[idx] = updated
+      return updated
+    } catch (e) {
+      error.value = (e as Error).message
+      return null
+    }
+  }
+
+  let issueStream: SSEHandle | null = null
+
+  function applyIssueUpdate(payload: {
+    issue_id?: string
+    agent_working?: boolean
+    agent_working_started_at?: string | null
+  }) {
+    if (!payload?.issue_id) return
+    const idx = issues.value.findIndex((i) => i.id === payload.issue_id)
+    if (idx === -1) return
+    const merged: Issue = { ...issues.value[idx] }
+    if (payload.agent_working !== undefined) merged.agent_working = payload.agent_working
+    if (payload.agent_working_started_at !== undefined) {
+      merged.agent_working_started_at = payload.agent_working_started_at
+    }
+    issues.value[idx] = merged
+  }
+
+  function connectIssueStream() {
+    if (issueStream || isMockMode()) return
+    issueStream = connectSSE(
+      '/issues/stream',
+      {
+        onEvent: (type, data) => {
+          if (type === 'issue-updated') {
+            applyIssueUpdate(data as Parameters<typeof applyIssueUpdate>[0])
+          }
+        },
+      },
+      { events: ['connected', 'issue-updated', 'ping'] },
+    )
+  }
+
+  function disconnectIssueStream() {
+    issueStream?.close()
+    issueStream = null
+  }
+
+  if (!isMockMode()) connectIssueStream()
+
+  // Runtime data-source switch (mock <-> real), issue #530
+  watch(apiMode, () => {
+    if (isMockMode()) disconnectIssueStream()
+    else connectIssueStream()
+  })
+
   return {
     issues,
     pagination,
@@ -238,5 +310,7 @@ export const useIssuesStore = defineStore('issues', () => {
     deleteIssue,
     closeIssue,
     fetchBlockedIssues,
+    startAgent,
+    stopAgent,
   }
 })

@@ -171,7 +171,7 @@ export const useGovernanceStore = defineStore('governance', () => {
     alerts.value.unshift(alert)
 
     if (alert.paused && issueId) {
-      issuesStore.updateIssue(issueId, { agent_working: false }).catch(() => undefined)
+      issuesStore.stopAgent(issueId).catch(() => undefined)
     }
     return alert
   }
@@ -189,9 +189,9 @@ export const useGovernanceStore = defineStore('governance', () => {
     if (alert.issueId) {
       const issuesStore = useIssuesStore()
       if (decision === 'approved') {
-        issuesStore.updateIssue(alert.issueId, { agent_working: true }).catch(() => undefined)
+        issuesStore.startAgent(alert.issueId, alert.agentName).catch(() => undefined)
       } else {
-        issuesStore.updateIssue(alert.issueId, { agent_working: false }).catch(() => undefined)
+        issuesStore.stopAgent(alert.issueId, alert.agentName).catch(() => undefined)
       }
     }
     return alert
