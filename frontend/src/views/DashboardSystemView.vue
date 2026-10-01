@@ -105,10 +105,54 @@
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <span class="text-sm text-gray-500">{{ health?.services.neo4j.latency_ms }}ms</span>
-                <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                  <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
-                  {{ t('system.connected') }}
+                <span v-if="latencyOf('neo4j') != null" class="text-sm text-gray-500">{{ latencyOf('neo4j') }}ms</span>
+                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium" :class="statusBadgeClass(serviceStatus('neo4j'))">
+                  <span class="h-1.5 w-1.5 rounded-full" :class="statusDotClass(serviceStatus('neo4j'))"></span>
+                  {{ statusLabel(serviceStatus('neo4j')) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Redis -->
+            <div class="flex items-center justify-between rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+              <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-900/30">
+                  <svg class="h-5 w-5 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                  </svg>
+                </div>
+                <div>
+                  <div class="font-medium text-gray-900 dark:text-white">{{ t('system.redis') }}</div>
+                  <div class="text-xs text-gray-500">{{ t('system.keyValueStore') }}</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span v-if="latencyOf('redis') != null" class="text-sm text-gray-500">{{ latencyOf('redis') }}ms</span>
+                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium" :class="statusBadgeClass(serviceStatus('redis'))">
+                  <span class="h-1.5 w-1.5 rounded-full" :class="statusDotClass(serviceStatus('redis'))"></span>
+                  {{ statusLabel(serviceStatus('redis')) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- PostgreSQL -->
+            <div class="flex items-center justify-between rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+              <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
+                  <svg class="h-5 w-5 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                  </svg>
+                </div>
+                <div>
+                  <div class="font-medium text-gray-900 dark:text-white">{{ t('system.postgres') }}</div>
+                  <div class="text-xs text-gray-500">{{ t('system.relationalDb') }}</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span v-if="latencyOf('postgres') != null" class="text-sm text-gray-500">{{ latencyOf('postgres') }}ms</span>
+                <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium" :class="statusBadgeClass(serviceStatus('postgres'))">
+                  <span class="h-1.5 w-1.5 rounded-full" :class="statusDotClass(serviceStatus('postgres'))"></span>
+                  {{ statusLabel(serviceStatus('postgres')) }}
                 </span>
               </div>
             </div>
@@ -416,6 +460,43 @@ async function executeReset() {
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleString()
+}
+
+type DependencyName = 'neo4j' | 'redis' | 'postgres'
+
+function serviceStatus(name: DependencyName): string | undefined {
+  return health.value?.services[name]?.status
+}
+
+function latencyOf(name: DependencyName): number | undefined {
+  return health.value?.services[name]?.latency_ms
+}
+
+function statusTone(status?: string): 'ok' | 'down' | 'idle' {
+  if (status === 'connected' || status === 'running') return 'ok'
+  if (status === 'disconnected') return 'down'
+  return 'idle'
+}
+
+function statusBadgeClass(status?: string): string {
+  const tone = statusTone(status)
+  if (tone === 'ok') return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+  if (tone === 'down') return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+  return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+}
+
+function statusDotClass(status?: string): string {
+  const tone = statusTone(status)
+  if (tone === 'ok') return 'bg-green-500'
+  if (tone === 'down') return 'bg-red-500'
+  return 'bg-gray-400'
+}
+
+function statusLabel(status?: string): string {
+  const tone = statusTone(status)
+  if (tone === 'ok') return t('system.connected')
+  if (tone === 'down') return t('system.disconnected')
+  return t('system.notConfigured')
 }
 
 async function refreshAll() {

@@ -200,7 +200,7 @@ def create_app(
         if api_key is None or not auth_enabled:
             return await call_next(request)
 
-        if request.url.path in ("/health", "/docs", "/openapi.json", "/redoc"):
+        if request.url.path in ("/health", "/api/v1/health", "/docs", "/openapi.json", "/redoc"):
             return await call_next(request)
 
         # Login/refresh/OAuth endpoints issue the credentials themselves (issue #519)
@@ -241,7 +241,7 @@ def create_app(
         if not rate_limit_enabled:
             return await call_next(request)
 
-        if request.url.path in ("/health", "/docs", "/openapi.json", "/redoc"):
+        if request.url.path in ("/health", "/api/v1/health", "/docs", "/openapi.json", "/redoc"):
             return await call_next(request)
 
         client_ip = request.client.host if request.client else "unknown"
@@ -444,8 +444,9 @@ def create_app(
     from socialseed_tasker.graphviz.server import router as graphviz_router
     app.include_router(graphviz_router)
 
-    # Health endpoint with Neo4j connectivity check
+    # Health endpoint with Neo4j/Redis/Postgres connectivity checks
     @app.get("/health", tags=["health"])
+    @app.get("/api/v1/health", include_in_schema=False)
     def health_check() -> dict[str, Any]:
         import sys
 
@@ -465,10 +466,13 @@ def create_app(
                 "docs": "https://github.com/anomalyco/socialseed-tasker",
             },
             "dependencies": {},
+            "dependency_latency_ms": {},
         }
 
         if neo4j_driver is not None:
+            _ping_started = time.perf_counter()
             neo4j_connected = neo4j_driver.health_check()
+            result["dependency_latency_ms"]["neo4j"] = round((time.perf_counter() - _ping_started) * 1000, 2)
             result["dependencies"]["neo4j"] = "connected" if neo4j_connected else "disconnected"
             from urllib.parse import urlparse
             parsed = urlparse(neo4j_driver.uri)
@@ -477,6 +481,42 @@ def create_app(
                 result["status"] = "degraded"
         else:
             result["dependencies"]["neo4j"] = "not configured"
+
+        # Redis ping (issue #533): PING with a short timeout when TASKER_REDIS_URL is set
+        _redis_url = os.getenv("TASKER_REDIS_URL")
+        if _redis_url:
+            _ping_started = time.perf_counter()
+            try:
+                import redis as _redis_client
+
+                with _redis_client.from_url(
+                    _redis_url, socket_connect_timeout=1, socket_timeout=1
+                ) as _rc:
+                    _rc.ping()
+                result["dependencies"]["redis"] = "connected"
+            except Exception:
+                result["dependencies"]["redis"] = "disconnected"
+                result["status"] = "degraded"
+            result["dependency_latency_ms"]["redis"] = round((time.perf_counter() - _ping_started) * 1000, 2)
+        else:
+            result["dependencies"]["redis"] = "not configured"
+
+        # Postgres ping (issue #533): SELECT 1 with a short timeout when TASKER_DATABASE_URL is set
+        _postgres_url = os.getenv("TASKER_DATABASE_URL")
+        if _postgres_url:
+            _ping_started = time.perf_counter()
+            try:
+                import psycopg
+
+                with psycopg.connect(_postgres_url, connect_timeout=1) as _conn, _conn.cursor() as _cur:
+                    _cur.execute("SELECT 1")
+                result["dependencies"]["postgres"] = "connected"
+            except Exception:
+                result["dependencies"]["postgres"] = "disconnected"
+                result["status"] = "degraded"
+            result["dependency_latency_ms"]["postgres"] = round((time.perf_counter() - _ping_started) * 1000, 2)
+        else:
+            result["dependencies"]["postgres"] = "not configured"
 
         try:
             import json

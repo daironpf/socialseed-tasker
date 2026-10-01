@@ -333,6 +333,13 @@ export interface ServiceStatus {
   queue_size?: number
 }
 
+export interface HealthDependencies {
+  neo4j: string
+  redis: string
+  postgres: string
+  httpx?: string
+}
+
 export interface SystemHealth {
   status: string
   timestamp: string
@@ -340,6 +347,8 @@ export interface SystemHealth {
     neo4j: ServiceStatus
     api: ServiceStatus
     workers: ServiceStatus
+    redis?: ServiceStatus
+    postgres?: ServiceStatus
   }
   metrics: {
     total_issues: number
@@ -349,6 +358,12 @@ export interface SystemHealth {
     total_users: number
     total_constraints: number
     active_constraints: number
+  }
+  dependencies?: HealthDependencies
+  dependency_latency_ms?: {
+    neo4j?: number
+    redis?: number
+    postgres?: number
   }
 }
 

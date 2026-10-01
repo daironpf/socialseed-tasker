@@ -457,6 +457,8 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 |---|---|---|
 | **Main metrics** | Implemented | 4 cards: Total Issues, Blocked Issues, Total Components, Agents Working |
 | **System health** | Implemented | Neo4j (connected, latency), API (FastAPI version), Workers |
+| **Redis/PostgreSQL cards** | Implemented | #533: tarjetas con estado + latencia leídas de `GET /health` (`dependencies` + `dependency_latency_ms`); badge dinámico connected/disconnected/not configured en Neo4j/Redis/Postgres; Refresh re-fetch |
+| **Health alias** | Implemented | #533: `GET /api/v1/health` alias sin auth del `/health` de raíz (el cliente real usa base `/api/v1`); `status: degraded` si un servicio configurado (`TASKER_REDIS_URL`/`TASKER_DATABASE_URL`) está caído |
 | **Sync queue** | Implemented | GitHub connected/disconnected, pending items, last sync |
 | **Constraints summary** | Implemented | Total rules, Active, Inactive |
 | **Seed/Reset buttons** | Implemented | Admin operations with confirm dialogs |

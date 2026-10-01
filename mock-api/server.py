@@ -990,6 +990,16 @@ def get_health():
                     "latency_ms": 12,
                     "last_check": __import__("datetime").datetime.utcnow().isoformat() + "Z",
                 },
+                "redis": {
+                    "status": "connected",
+                    "latency_ms": 8,
+                    "last_check": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+                },
+                "postgres": {
+                    "status": "connected",
+                    "latency_ms": 15,
+                    "last_check": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+                },
                 "api": {
                     "status": "running",
                     "uptime_seconds": 864000,
