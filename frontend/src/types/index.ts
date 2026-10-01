@@ -33,6 +33,7 @@ export interface Issue {
   architectural_constraints: string[]
   agent_working?: boolean
   agent_working_started_at?: string | null
+  task_checklist?: Record<string, boolean>
   assignee_history?: AssigneeHistoryEntry[]
   github_sync?: GitHubSync
   governance?: GovernanceValidation
@@ -142,6 +143,7 @@ export interface IssueUpdateRequest {
   assignee_history?: AssigneeHistoryEntry[]
   agent_working?: boolean
   agent_working_started_at?: string | null
+  task_checklist?: Record<string, boolean>
 }
 
 export interface DependencyRequest {

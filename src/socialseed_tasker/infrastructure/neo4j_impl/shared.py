@@ -126,6 +126,9 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
         manifest_todo=data.get("manifestTodo", []),
         manifest_files=data.get("manifestFiles", []),
         manifest_notes=data.get("manifestNotes", []),
+        task_checklist=_json_obj(
+            data.get("taskChecklist") if data.get("taskChecklist") is not None else data.get("task_checklist")
+        ) or {},
         resolved_by_commit_sha=data.get("resolvedByCommitSha") or data.get("resolved_by_commit_sha"),
         resolution=data.get("resolution"),
         github_issue_url=data.get("githubIssueUrl") or data.get("github_issue_url"),

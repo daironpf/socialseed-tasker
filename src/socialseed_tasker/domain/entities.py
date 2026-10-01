@@ -147,6 +147,7 @@ class Issue(BaseModel):
     manifest_todo: list[dict[str, str]] = Field(default_factory=list)
     manifest_files: list[str] = Field(default_factory=list)
     manifest_notes: list[str] = Field(default_factory=list)
+    task_checklist: dict[str, bool] = Field(default_factory=dict)
     github_issue_url: Optional[str] = None
     github_issue_number: Optional[int] = None
     last_mirrored_at: Optional[datetime] = None

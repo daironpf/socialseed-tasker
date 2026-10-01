@@ -577,8 +577,13 @@ def update_issue(
         sync_updates = push_issue_to_github(updated, set(updates.keys()))
         if sync_updates:
             updated = repo.update_issue(issue_id, sync_updates)
-    if "agent_working" in updates:
-        publish_issue_update(request.app, issue_id, _agent_flag_payload(updated))
+    if "agent_working" in updates or "task_checklist" in updates:
+        payload: dict[str, Any] = {}
+        if "agent_working" in updates:
+            payload.update(_agent_flag_payload(updated))
+        if "task_checklist" in updates:
+            payload["task_checklist"] = dict(updated.task_checklist or {})
+        publish_issue_update(request.app, issue_id, payload)
     return APIResponse(data=_issue_to_response(updated), meta=Meta(request_id=None))
 
 

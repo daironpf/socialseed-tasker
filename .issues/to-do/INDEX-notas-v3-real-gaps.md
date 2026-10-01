@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v3 — ÉPICAS 1–6: infra auth multi-capa FastAPI + Redis + PostgreSQL, vistas de grafo e impacto, observabilidad de agentes, gobernanza/constraints, dashboard y sync, Graph RAG & MCP)
 **Created:** 2026-09-29
-**Status:** TODO (6/11 done: #525, #526, #527, #528, #529, #530)
+**Status:** TODO (7/11 done: #525, #526, #527, #528, #529, #530, #531)
 
 > `notas.md` (v3) plantea 14 issues (Issue #1–#14 repartidas en 6 épicas); el siguiente
 > número libre en `.issues/done` era **#524**, por lo que se numeraron **#525–#535**
@@ -25,7 +25,7 @@
 | #528 | Graph View — etiquetas explícitas de aristas | LOW | feat / visualization | DONE | É2 · Issue #5 (gap) |
 | #529 | Análisis de impacto y causa raíz en modo real | HIGH | bug / integration | DONE | É2 · Issue #6 (gap) |
 | #530 | Ciclo de vida `agent_working` en tiempo real | MEDIUM | feat / observability | DONE | É3 · Issue #7 (gap) |
-| #531 | Checklists interactivas en la pestaña Progress | LOW | feat / ux | TODO | É3 · Issue #8 (gap) |
+| #531 | Checklists interactivas en la pestaña Progress | LOW | feat / ux | DONE | É3 · Issue #8 (gap) |
 | — | CRUD de componentes | — | feat / crud | NO CREADA — ya resuelta en #49/#433 | É4 · Issue #9 |
 | #532 | Validación de políticas en tiempo de escritura + errores HARD explícitos | HIGH | feat / governance | TODO | É4 · Issue #10 (gap) |
 | #533 | Health con Redis/Postgres y tarjetas de sistema | MEDIUM | feat / infra | TODO | É5 · Issue #11 (gap) |
@@ -107,7 +107,7 @@
 - [x] **#528** implemented — move to `.issues/done/`, `features.md` §12
 - [x] **#529** implemented — move to `.issues/done/`, `features.md` §13
 - [x] **#530** implemented — move to `.issues/done/`, `features.md` §18/§43
-- [ ] **#531** implemented — move to `.issues/done/`, `features.md` §7
+- [x] **#531** implemented — move to `.issues/done/`, `features.md` §7
 - [ ] **#532** implemented — move to `.issues/done/`, `features.md` §10
 - [ ] **#533** implemented — move to `.issues/done/`, `features.md` §14
 - [ ] **#534** implemented — move to `.issues/done/`, `features.md` §68/§50

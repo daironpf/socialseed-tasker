@@ -130,6 +130,8 @@
     "loadingAgentLogs": "Cargando logs del agente...",
     "noReasoningLogs": "No hay logs de razonamiento para este issue",
     "taskChecklist": "Lista de Verificacion",
+    "checklistProgress": "Marcadas {done} de {total}",
+    "checklistUpdateFailed": "No se pudo actualizar la lista de verificacion",
     "filesChanged": "Archivos Modificados",
     "technicalDebt": "Deuda Tecnica",
     "noProgressData": "No hay datos de progreso para este issue",

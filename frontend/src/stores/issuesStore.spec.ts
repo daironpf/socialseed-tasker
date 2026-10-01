@@ -214,6 +214,54 @@ describe('issuesStore', () => {
     })
   })
 
+  describe('updateChecklist', () => {
+    it('applies the toggle optimistically and persists it', async () => {
+      store.issues = [makeIssue({ task_checklist: { alpha: true } })]
+      vi.mocked(api.updateIssue).mockResolvedValue(
+        makeIssue({ task_checklist: { alpha: true, beta: true } }),
+      )
+
+      const result = await store.updateChecklist('ISS-1', 'beta', true)
+
+      expect(api.updateIssue).toHaveBeenCalledWith('ISS-1', {
+        task_checklist: { alpha: true, beta: true },
+      })
+      expect(store.issues[0].task_checklist).toEqual({ alpha: true, beta: true })
+      expect(result).not.toBeNull()
+      expect(store.error).toBeNull()
+    })
+
+    it('rolls back the optimistic toggle when the API fails', async () => {
+      store.issues = [makeIssue({ task_checklist: { alpha: true } })]
+      vi.mocked(api.updateIssue).mockRejectedValue(new Error('boom'))
+
+      const result = await store.updateChecklist('ISS-1', 'beta', true)
+
+      expect(result).toBeNull()
+      expect(store.issues[0].task_checklist).toEqual({ alpha: true })
+      expect(store.error).toBe('boom')
+    })
+
+    it('queues the toggle when offline', async () => {
+      store.issues = [makeIssue()]
+      ui.setNetworkMode('offline')
+
+      const result = await store.updateChecklist('ISS-1', 'gamma', true)
+
+      expect(result?.task_checklist).toEqual({ gamma: true })
+      expect(api.updateIssue).not.toHaveBeenCalled()
+      expect(ui.syncQueue).toHaveLength(1)
+      expect(ui.syncQueue[0].operation).toBe('update')
+      expect(ui.syncQueue[0].payload).toEqual({ task_checklist: { gamma: true } })
+    })
+
+    it('returns null for unknown ids', async () => {
+      const result = await store.updateChecklist('missing', 'beta', true)
+      expect(result).toBeNull()
+      expect(api.updateIssue).not.toHaveBeenCalled()
+    })
+  })
+
   describe('issue stream subscription', () => {
     it('does not subscribe in mock mode', () => {
       expect(connectSSE).not.toHaveBeenCalled()
@@ -246,6 +294,22 @@ describe('issuesStore', () => {
 
       handlers.onEvent('issue-updated', { issue_id: 'ISS-1', agent_working: false })
       expect(realStore.issues[0].agent_working).toBe(false)
+    })
+
+    it('merges task_checklist from issue-updated events', () => {
+      setApiMode('real')
+      pinia = createPinia()
+      setActivePinia(pinia)
+      const realStore = useIssuesStore()
+      realStore.issues = [makeIssue({ task_checklist: { alpha: true } })]
+
+      const handlers = vi.mocked(connectSSE).mock.calls.at(-1)![1]
+      handlers.onEvent('issue-updated', {
+        issue_id: 'ISS-1',
+        task_checklist: { alpha: false, beta: true },
+      })
+
+      expect(realStore.issues[0].task_checklist).toEqual({ alpha: false, beta: true })
     })
 
     it('ignores events for issues that are not loaded', () => {

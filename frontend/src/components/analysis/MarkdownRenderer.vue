@@ -1,15 +1,22 @@
 <template>
-  <div class="markdown-body prose prose-sm dark:prose-invert max-w-none" v-html="rendered"></div>
+  <div class="markdown-body prose prose-sm dark:prose-invert max-w-none" v-html="rendered" @change="onCheckboxChange"></div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import mermaid from 'mermaid'
+import { checklistKey, checklistKeyFromEscaped, escapeHtml } from '@/utils/checklist'
 
 const { t } = useI18n()
 
-const props = defineProps<{ content: string }>()
+const props = defineProps<{
+  content: string
+  interactive?: boolean
+  checked?: Record<string, boolean>
+}>()
+
+const emit = defineEmits<{ toggle: [key: string, checked: boolean] }>()
 
 const rendered = ref('')
 const mermaidIdCounter = ref(0)
@@ -36,15 +43,6 @@ const darkObserver = new MutationObserver(() => {
 darkObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
 
 onUnmounted(() => darkObserver.disconnect())
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-}
 
 async function renderMermaidDiagrams(html: string): Promise<string> {
   const mermaidRegex = /<code class="language-mermaid">([\s\S]*?)<\/code>/g
@@ -95,8 +93,21 @@ function renderMarkdown(md: string): string {
     return `<pre class="bg-gray-100 dark:bg-gray-800 rounded p-3 text-xs font-mono overflow-x-auto my-2"><code class="language-${lang}">${code}</code></pre>`
   })
 
-  html = html.replace(/^- \[x\] (.+)$/gm, '<div class="flex items-center gap-2"><input type="checkbox" checked disabled class="h-4 w-4 rounded border-gray-300 text-green-600" /><span class="line-through text-gray-500">$1</span></div>')
-  html = html.replace(/^- \[ \] (.+)$/gm, '<div class="flex items-center gap-2"><input type="checkbox" disabled class="h-4 w-4 rounded border-gray-300" /><span>$1</span></div>')
+  html = html.replace(/^- \[([xX ])\] (.+)$/gm, (_m, marker: string, text: string) => {
+    const key = checklistKeyFromEscaped(text)
+    const markerChecked = marker.toLowerCase() === 'x'
+    if (!props.interactive) {
+      if (markerChecked) {
+        return `<div class="flex items-center gap-2"><input type="checkbox" checked disabled class="h-4 w-4 rounded border-gray-300 text-green-600" /><span class="line-through text-gray-500">${text}</span></div>`
+      }
+      return `<div class="flex items-center gap-2"><input type="checkbox" disabled class="h-4 w-4 rounded border-gray-300" /><span>${text}</span></div>`
+    }
+    const overrides = props.checked ?? {}
+    const isChecked = Object.prototype.hasOwnProperty.call(overrides, key)
+      ? overrides[key]
+      : markerChecked
+    return `<div class="flex items-center gap-2"><input type="checkbox" data-task-key="${escapeHtml(key)}" ${isChecked ? 'checked ' : ''}class="h-4 w-4 rounded border-gray-300${isChecked ? ' text-green-600' : ''}" /><span${isChecked ? ' class="line-through text-gray-500"' : ''}>${text}</span></div>`
+  })
   html = html.replace(/^- (.+)$/gm, '<li>$1</li>')
   html = html.replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul class="list-disc pl-5 space-y-1">${match}</ul>`)
   html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
@@ -121,13 +132,21 @@ function renderMarkdown(md: string): string {
   return html
 }
 
+function onCheckboxChange(event: Event) {
+  const target = event.target
+  if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') return
+  const key = target.dataset.taskKey
+  if (key === undefined) return
+  emit('toggle', checklistKey(key), target.checked)
+}
+
 watch(
-  () => props.content,
+  () => [props.content, props.checked, props.interactive] as const,
   async () => {
     const html = renderMarkdown(props.content)
     rendered.value = await renderMermaidDiagrams(html)
   },
-  { immediate: true }
+  { immediate: true, deep: true }
 )
 </script>
 

@@ -249,12 +249,48 @@ export const useIssuesStore = defineStore('issues', () => {
     }
   }
 
+  async function updateChecklist(id: string, key: string, checked: boolean): Promise<Issue | null> {
+    const idx = issues.value.findIndex((i) => i.id === id)
+    if (idx === -1) return null
+    const previous = { ...(issues.value[idx].task_checklist ?? {}) }
+    const merged: Record<string, boolean> = { ...previous, [key]: checked }
+    issues.value[idx] = {
+      ...issues.value[idx],
+      task_checklist: merged,
+      updated_at: new Date().toISOString(),
+    }
+    const uiStore = useUiStore()
+    if (uiStore.networkMode === 'offline') {
+      uiStore.enqueueMutation({
+        entity: 'issue',
+        operation: 'update',
+        entityId: id,
+        payload: { task_checklist: merged },
+      })
+      return issues.value[idx]
+    }
+    try {
+      const updated = await api.updateIssue(id, { task_checklist: merged })
+      const current = issues.value.findIndex((i) => i.id === id)
+      if (current !== -1) issues.value[current] = updated
+      return updated
+    } catch (e) {
+      const current = issues.value.findIndex((i) => i.id === id)
+      if (current !== -1) {
+        issues.value[current] = { ...issues.value[current], task_checklist: previous }
+      }
+      error.value = (e as Error).message
+      return null
+    }
+  }
+
   let issueStream: SSEHandle | null = null
 
   function applyIssueUpdate(payload: {
     issue_id?: string
     agent_working?: boolean
     agent_working_started_at?: string | null
+    task_checklist?: Record<string, boolean>
   }) {
     if (!payload?.issue_id) return
     const idx = issues.value.findIndex((i) => i.id === payload.issue_id)
@@ -264,6 +300,7 @@ export const useIssuesStore = defineStore('issues', () => {
     if (payload.agent_working_started_at !== undefined) {
       merged.agent_working_started_at = payload.agent_working_started_at
     }
+    if (payload.task_checklist !== undefined) merged.task_checklist = { ...payload.task_checklist }
     issues.value[idx] = merged
   }
 
@@ -312,5 +349,6 @@ export const useIssuesStore = defineStore('issues', () => {
     fetchBlockedIssues,
     startAgent,
     stopAgent,
+    updateChecklist,
   }
 })

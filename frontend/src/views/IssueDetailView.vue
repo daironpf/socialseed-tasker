@@ -309,7 +309,7 @@
               <span class="rounded bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700 dark:bg-green-900/30 dark:text-green-300">{{ t('issues.logTypeProgress') }}</span>
               <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ new Date(log.timestamp).toLocaleString() }}</span>
             </div>
-            <MarkdownRenderer :content="log.content_markdown" />
+            <TaskChecklist :content="log.content_markdown" :checked="checklistState" @toggle="onChecklistToggle" />
           </div>
         </div>
 
@@ -446,7 +446,9 @@ import { fetchUsers } from '@/api/usersApi'
 import { isMockMode } from '@/api/client'
 import { connectSSE } from '@/api/realtime'
 import { useAuthGuard } from '@/composables/useAuthGuard'
+import { useToast } from '@/composables/useToast'
 import MarkdownRenderer from '@/components/analysis/MarkdownRenderer.vue'
+import TaskChecklist from '@/components/analysis/TaskChecklist.vue'
 import RichTextEditor from '@/components/ui/RichTextEditor.vue'
 import DiffViewer from '@/components/ui/DiffViewer.vue'
 import HITLApprovalBanner from '@/components/ui/HITLApprovalBanner.vue'
@@ -475,6 +477,16 @@ const emit = defineEmits<{
 }>()
 
 const issuesStore = useIssuesStore()
+
+const checklistState = computed(() => {
+  const fromStore = issuesStore.issues.find((i) => i.id === props.issue.id)
+  return fromStore?.task_checklist ?? props.issue.task_checklist ?? {}
+})
+
+async function onChecklistToggle(key: string, checked: boolean) {
+  const result = await issuesStore.updateChecklist(props.issue.id, key, checked)
+  if (!result) useToast().error(t('issues.checklistUpdateFailed'))
+}
 
 const tabs = computed(() => [
   { key: 'details', label: t('issues.details') },

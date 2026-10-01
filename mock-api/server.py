@@ -300,6 +300,7 @@ class IssueUpdate(BaseModel):
     closed_at: Optional[str] = None
     agent_working: Optional[bool] = None
     agent_working_started_at: Optional[str] = None
+    task_checklist: Optional[dict[str, bool]] = None
     github_sync: Optional[dict] = None
 
 

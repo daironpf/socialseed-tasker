@@ -488,6 +488,10 @@ class IssueUpdateRequest(BaseModel):
         None,
         description="Whether an AI agent is currently working on this issue",
     )
+    task_checklist: dict[str, bool] | None = Field(
+        None,
+        description="Interactive checklist state keyed by normalized TODO item text",
+    )
 
 
 class DependencyRequest(BaseModel):
@@ -722,6 +726,7 @@ class IssueResponse(BaseModel):
     manifest_todo: list[dict[str, str]] = Field(default_factory=list)
     manifest_files: list[str] = Field(default_factory=list)
     manifest_notes: list[str] = Field(default_factory=list)
+    task_checklist: dict[str, bool] = Field(default_factory=dict)
     github_sync: GitHubSyncResponse | None = None
 
 

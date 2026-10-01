@@ -311,6 +311,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **Governance validation** | Implemented | Blocks CLOSED when requirements unmet → GovernanceValidationModal (Fix/Override) |
 | **AI Reasoning tab** | Implemented | Loading state, reasoning logs with MarkdownRenderer, timestamps |
 | **Progress tab** | Implemented | Affected Files (NEW/EDITED/DELETED badges + per-file DiffViewer via `diff_hunk`), Tech Debt Notes (amber Markdown), Task Checklist, Files Changed, agent-log diffs |
+| **Interactive task checklist** | Implemented | Progress tab checkboxes enabled (`TaskChecklist` + `MarkdownRenderer` `interactive`), per-item keys normalized, state persisted per issue in `task_checklist` (server + mock), optimistic toggle with rollback toast, live updates via `issue-updated` SSE, counter `issues.checklistProgress`, i18n EN/ES (#531) |
 | **Diff preview** | Implemented | DiffViewer expand/collapse per affected file; also on agent log content |
 | **Audit trail** | Implemented | 9 mock entries, action-type icons/colors, actor avatars, type filters |
 | **Agent log stream** | Implemented | SSE via `useAgentStream`, status indicators, auto-scroll, kill switch |

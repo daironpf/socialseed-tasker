@@ -130,6 +130,8 @@
     "loadingAgentLogs": "Loading agent logs...",
     "noReasoningLogs": "No reasoning logs for this issue",
     "taskChecklist": "Task Checklist",
+    "checklistProgress": "Checked {done} of {total}",
+    "checklistUpdateFailed": "Could not update the checklist",
     "filesChanged": "Files Changed",
     "technicalDebt": "Technical Debt",
     "noProgressData": "No progress data for this issue",

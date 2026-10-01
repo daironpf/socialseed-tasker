@@ -158,6 +158,7 @@ def convert_domain_issue_to_api_response(domain_issue: Issue) -> IssueResponse:
         manifest_todo=domain_issue.manifest_todo,
         manifest_files=domain_issue.manifest_files,
         manifest_notes=domain_issue.manifest_notes,
+        task_checklist=dict(domain_issue.task_checklist or {}),
         agent_started_at=domain_issue.agent_started_at,
         agent_finished_at=domain_issue.agent_finished_at,
         agent_id=domain_issue.agent_id,
