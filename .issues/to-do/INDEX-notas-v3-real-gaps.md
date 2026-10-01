@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v3 — ÉPICAS 1–6: infra auth multi-capa FastAPI + Redis + PostgreSQL, vistas de grafo e impacto, observabilidad de agentes, gobernanza/constraints, dashboard y sync, Graph RAG & MCP)
 **Created:** 2026-09-29
-**Status:** TODO (9/11 done: #525, #526, #527, #528, #529, #530, #531, #532, #533)
+**Status:** TODO (10/11 done: #525, #526, #527, #528, #529, #530, #531, #532, #533, #534)
 
 > `notas.md` (v3) plantea 14 issues (Issue #1–#14 repartidas en 6 épicas); el siguiente
 > número libre en `.issues/done` era **#524**, por lo que se numeraron **#525–#535**
@@ -30,7 +30,7 @@
 | #532 | Validación de políticas en tiempo de escritura + errores HARD explícitos | HIGH | feat / governance | DONE | É4 · Issue #10 (gap) |
 | #533 | Health con Redis/Postgres y tarjetas de sistema | MEDIUM | feat / infra | DONE | É5 · Issue #11 (gap) |
 | — | Offline-first sync (navbar ONLINE/OFFLINE/SYNCING) | — | feat / ux | NO CREADA — ya resuelta en #515/#522 | É5 · Issue #12 |
-| #534 | Graph Memory: auto-embed al cerrar + `search-similar-solutions` | MEDIUM | feat / ai infrastructure | TODO | É6 · Issue #13 (gap) |
+| #534 | Graph Memory: auto-embed al cerrar + `search-similar-solutions` | MEDIUM | feat / ai infrastructure | DONE | É6 · Issue #13 (gap) |
 | #535 | Servidor MCP real (stdio/HTTP) para Cursor y Claude Desktop | MEDIUM | feat / ai infrastructure | TODO | É6 · Issue #14 (gap) |
 
 ---
@@ -110,7 +110,7 @@
 - [x] **#531** implemented — move to `.issues/done/`, `features.md` §7
 - [x] **#532** implemented — move to `.issues/done/`, `features.md` §10
 - [x] **#533** implemented — move to `.issues/done/`, `features.md` §14
-- [ ] **#534** implemented — move to `.issues/done/`, `features.md` §68/§50
+- [x] **#534** implemented — move to `.issues/done/`, `features.md` §68/§50
 - [ ] **#535** implemented — move to `.issues/done/`, `features.md` §68/§50
 - [ ] Each issue: gates en baseline (`ruff`/`mypy`/`pytest`, `lint`/`test`/`build`), i18n EN+ES si aplica UI
 - [ ] Move issue file to `.issues/done/` with `Status: DONE` when complete

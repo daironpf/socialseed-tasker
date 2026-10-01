@@ -6,6 +6,7 @@ actions that enforce business rules regardless of storage backend.
 
 from __future__ import annotations
 
+import logging
 from collections import deque
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -20,11 +21,14 @@ from socialseed_tasker.application.constraints import (
     ConstraintValidationResult,
     ConstraintViolation,
 )
+from socialseed_tasker.application.ports import EmbeddingPort
 from socialseed_tasker.domain.entities import (
     Component,
     Issue,
     IssueStatus,
 )
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Custom exceptions
@@ -553,11 +557,80 @@ def create_issue_action(
     return issue, warnings
 
 
+def build_solution_text(issue: Issue) -> str:
+    """Compose the canonical solution text of a closed issue for embedding.
+
+    Intent: Make closed issues searchable by what was actually resolved
+    (resolution and commit), not only by their original description.
+    Business Value: Enables semantic retrieval of past solutions when
+    tackling similar future issues.
+    """
+    parts = [f"Issue: {issue.title}"]
+    if issue.resolution:
+        parts.append(f"Resolution: {issue.resolution}")
+    if issue.description:
+        parts.append(f"Description: {issue.description}")
+    if issue.resolved_by_commit_sha:
+        parts.append(f"Commit: {issue.resolved_by_commit_sha}")
+    return "\n\n".join(parts)
+
+
+def resolve_embedding_port() -> EmbeddingPort | None:
+    """Return the default embedding port when a provider is configured, else None.
+
+    Intent: Keep infrastructure imports lazy so the application layer has no
+    hard dependency on it and deployments without OPENAI_API_KEY degrade to
+    no-embedding behaviour instead of failing.
+    Business Value: Closing and searching issues keeps working everywhere;
+    semantic search activates automatically where an embedding provider exists.
+    """
+    try:
+        from socialseed_tasker.infrastructure.embedding_service import get_embedding_service
+        from socialseed_tasker.infrastructure.shims import EmbeddingShim
+
+        service = get_embedding_service()
+        if not service.is_available():
+            return None
+        return EmbeddingShim(service)
+    except Exception:
+        return None
+
+
+def embed_issue_solution(
+    repository: TaskRepositoryInterface,
+    issue: Issue,
+    embedder: EmbeddingPort | None = None,
+) -> bool:
+    """Persist the solution embedding of a closed issue. Never raises.
+
+    Intent: Enrich closed issues for semantic retrieval while keeping the
+    close operation resilient - embedding failures must not fail the close.
+    Business Value: The knowledge graph learns from completed work without
+    risking data loss when the embedding provider is down or unconfigured.
+    """
+    try:
+        if embedder is None:
+            embedder = resolve_embedding_port()
+        if embedder is None:
+            logger.info("solution embedding skipped for issue %s: no embedding provider", issue.id)
+            return False
+        embedding = embedder.embed_text(build_solution_text(issue))
+        if not embedding:
+            logger.info("solution embedding skipped for issue %s: empty embedding", issue.id)
+            return False
+        repository.update_issue_embedding(str(issue.id), embedding)
+        return True
+    except Exception as exc:
+        logger.warning("solution embedding failed for issue %s: %s", issue.id, exc)
+        return False
+
+
 def close_issue_action(
     repository: TaskRepositoryInterface,
     issue_id: str,
     commit_sha: str | None = None,
     resolution: str = "implemented",
+    embedder: EmbeddingPort | None = None,
 ) -> Issue:
     """Close an issue after validating it has no open dependencies.
 
@@ -578,7 +651,10 @@ def close_issue_action(
         if open_deps:
             raise OpenDependenciesError(issue_id, open_deps)
 
-        return repository.close_issue(issue_id, commit_sha, resolution)
+        issue = repository.close_issue(issue_id, commit_sha, resolution)
+
+    embed_issue_solution(repository, issue, embedder)
+    return issue
 
 
 def move_issue_action(

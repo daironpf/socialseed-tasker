@@ -28,11 +28,13 @@ from socialseed_tasker.application.actions import (
     add_dependency_action,
     close_issue_action,
     create_issue_action,
+    embed_issue_solution,
     get_blocked_issues_action,
     get_dependency_chain_action,
     get_workable_issues_action,
     remove_dependency_action,
     reset_data_action,
+    resolve_embedding_port,
 )
 from socialseed_tasker.domain.entities import (
     Agent,
@@ -95,6 +97,7 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     ProjectResponse,
     ReasoningLogEntryRequest,
     ReasoningLogEntryResponse,
+    SimilarSolutionsRequest,
     TestFailureRequest,
     TestFailureWebhookRequest,
     TestFailureWebhookResponse,
@@ -225,3 +228,79 @@ def generate_issue_embedding(
         from fastapi import HTTPException
 
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@ai_search_router.post(
+    "/search-similar-solutions",
+    response_model=APIResponse[list[Any]],
+    summary="Search similar solutions",
+    description="Embed the query and return closed issues whose solution embeddings are semantically similar.",
+)
+def search_similar_solutions(
+    body: SimilarSolutionsRequest,
+    repo: TaskRepositoryInterface = Depends(get_repo),  # noqa: B008
+) -> APIResponse[list[Any]]:
+    embedder = resolve_embedding_port()
+    if embedder is None:
+        return APIResponse(data=[], meta=Meta(request_id=None))
+    try:
+        query_embedding = embedder.embed_text(body.query)
+    except Exception:
+        return APIResponse(data=[], meta=Meta(request_id=None))
+    if not query_embedding:
+        return APIResponse(data=[], meta=Meta(request_id=None))
+    candidates = repo.search_by_embedding(
+        query_embedding,
+        threshold=body.threshold,
+        limit=min(body.limit * 3, 50),
+    )
+    solutions: list[dict[str, Any]] = []
+    for candidate in candidates:
+        issue = repo.get_issue(str(candidate["issue_id"]))
+        if issue is None or issue.status != IssueStatus.CLOSED:
+            continue
+        solutions.append(
+            {
+                "issue_id": candidate["issue_id"],
+                "title": issue.title,
+                "score": candidate.get("score", 0.0),
+                "resolution": issue.resolution,
+            }
+        )
+        if len(solutions) >= body.limit:
+            break
+    return APIResponse(data=solutions, meta=Meta(request_id=None))
+
+
+@ai_search_router.post(
+    "/backfill-embeddings",
+    response_model=APIResponse[dict[str, Any]],
+    summary="Backfill solution embeddings",
+    description="Embed closed issues that are missing a solution embedding; force=true re-embeds them all.",
+)
+def backfill_solution_embeddings(
+    force: bool = Query(False, description="Re-embed closed issues even if an embedding already exists"),
+    repo: TaskRepositoryInterface = Depends(get_repo),  # noqa: B008
+) -> APIResponse[dict[str, Any]]:
+    embedder = resolve_embedding_port()
+    if embedder is None:
+        return APIResponse(
+            data={"embedded": 0, "skipped": 0, "failed": 0, "total_closed": 0},
+            meta=Meta(request_id=None),
+        )
+    closed_issues = repo.list_issues(statuses=[IssueStatus.CLOSED.value])
+    embedded = 0
+    skipped = 0
+    failed = 0
+    for issue in closed_issues:
+        if not force and issue.description_embedding:
+            skipped += 1
+            continue
+        if embed_issue_solution(repo, issue, embedder):
+            embedded += 1
+        else:
+            failed += 1
+    return APIResponse(
+        data={"embedded": embedded, "skipped": skipped, "failed": failed, "total_closed": len(closed_issues)},
+        meta=Meta(request_id=None),
+    )

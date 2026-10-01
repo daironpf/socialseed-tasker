@@ -138,21 +138,6 @@ class IssueRepositoryMixin:
                 except Exception:
                     pass
 
-            # Index for RAG (Native in Graph)
-            embedding_service = get_embedding_service()
-            if embedding_service.is_available():
-                try:
-                    text = issue.to_indexable_text()
-                    embedding = embedding_service.generate(text)
-                    if embedding:
-                        session.run(
-                            queries.UPDATE_ISSUE_EMBEDDING,
-                            id=issue_id,
-                            embedding=embedding,
-                        )
-                except Exception:
-                    pass
-
             return issue
 
     def delete_issue(self, issue_id: str) -> None:

@@ -543,6 +543,14 @@ class BulkDependencyResponse(BaseModel):
     results: list[dict[str, Any]]
 
 
+class SimilarSolutionsRequest(BaseModel):
+    """Request body for semantic search over closed issue solutions."""
+
+    query: str = Field(..., min_length=1, description="Natural language description of the problem to solve")
+    threshold: float = Field(0.7, ge=0.0, le=1.0, description="Minimum similarity score")
+    limit: int = Field(10, ge=1, le=50, description="Maximum number of solutions returned")
+
+
 class BulkIssueCreateItem(BaseModel):
     """A single issue entry inside a bulk creation request."""
 
