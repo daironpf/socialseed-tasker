@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v3 — ÉPICAS 1–6: infra auth multi-capa FastAPI + Redis + PostgreSQL, vistas de grafo e impacto, observabilidad de agentes, gobernanza/constraints, dashboard y sync, Graph RAG & MCP)
 **Created:** 2026-09-29
-**Status:** TODO (7/11 done: #525, #526, #527, #528, #529, #530, #531)
+**Status:** TODO (8/11 done: #525, #526, #527, #528, #529, #530, #531, #532)
 
 > `notas.md` (v3) plantea 14 issues (Issue #1–#14 repartidas en 6 épicas); el siguiente
 > número libre en `.issues/done` era **#524**, por lo que se numeraron **#525–#535**
@@ -27,7 +27,7 @@
 | #530 | Ciclo de vida `agent_working` en tiempo real | MEDIUM | feat / observability | DONE | É3 · Issue #7 (gap) |
 | #531 | Checklists interactivas en la pestaña Progress | LOW | feat / ux | DONE | É3 · Issue #8 (gap) |
 | — | CRUD de componentes | — | feat / crud | NO CREADA — ya resuelta en #49/#433 | É4 · Issue #9 |
-| #532 | Validación de políticas en tiempo de escritura + errores HARD explícitos | HIGH | feat / governance | TODO | É4 · Issue #10 (gap) |
+| #532 | Validación de políticas en tiempo de escritura + errores HARD explícitos | HIGH | feat / governance | DONE | É4 · Issue #10 (gap) |
 | #533 | Health con Redis/Postgres y tarjetas de sistema | MEDIUM | feat / infra | TODO | É5 · Issue #11 (gap) |
 | — | Offline-first sync (navbar ONLINE/OFFLINE/SYNCING) | — | feat / ux | NO CREADA — ya resuelta en #515/#522 | É5 · Issue #12 |
 | #534 | Graph Memory: auto-embed al cerrar + `search-similar-solutions` | MEDIUM | feat / ai infrastructure | TODO | É6 · Issue #13 (gap) |
@@ -108,7 +108,7 @@
 - [x] **#529** implemented — move to `.issues/done/`, `features.md` §13
 - [x] **#530** implemented — move to `.issues/done/`, `features.md` §18/§43
 - [x] **#531** implemented — move to `.issues/done/`, `features.md` §7
-- [ ] **#532** implemented — move to `.issues/done/`, `features.md` §10
+- [x] **#532** implemented — move to `.issues/done/`, `features.md` §10
 - [ ] **#533** implemented — move to `.issues/done/`, `features.md` §14
 - [ ] **#534** implemented — move to `.issues/done/`, `features.md` §68/§50
 - [ ] **#535** implemented — move to `.issues/done/`, `features.md` §68/§50

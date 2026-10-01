@@ -361,6 +361,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **Create/Edit** | Implemented | Modal with all fields |
 | **Delete** | Implemented | Confirm dialog |
 | **Run Validation** | Implemented | Button → results banner with violation cards |
+| **Write-time max_depth** | Implemented | #532: `POST /issues/{id}/dependencies` (+ bulk) aborts con 409 `POLICY_VIOLATION` si la nueva arista excede una constraint activa HARD `max_depth`; `details` = policy_name, constraint, rule_type, severity, message, suggestion |
 | **Responsive table** | Implemented | `overflow-x-auto` + `min-w-[720px]` |
 | i18n | Implemented | All labels translated |
 
@@ -397,6 +398,8 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **Click node → detail** | Implemented | Opens IssueDetailView for issue nodes |
 | **Connect mode** | Implemented | Create relationships via click-to-connect |
 | **Cycle detection** | Implemented | Prevents circular dependencies |
+| **Dependency creation wired** | Implemented | #532: `onCreateRelationship` llama a `POST /issues/{id}/dependencies` y refresca el grafo al tener éxito |
+| **HARD violation inline panel** | Implemented | #532: `RelationshipModal` muestra panel inline traducido (título, badge HARD/SOFT, mensaje, política/constraint, sugerencia) en vez de toast genérico; `client.ts` propaga `code`/`details` con `suppressErrorToast` |
 | **Code Overlay toggle** | Implemented | Show/hide AST nodes (File/Class/Function) |
 | **Code node rendering** | Implemented | Files (cyan/database), Classes (teal/diamond), Functions (emerald/triangle) |
 | **Code node detail** | Implemented | Click shows file path, language, lines, type |
@@ -1218,6 +1221,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | **Kanban intercept** | Implemented | Blocks drop to CLOSED, shows modal |
 | **Detail intercept** | Implemented | Blocks CLOSED in `save()`, shows modal |
 | **Component** | Implemented | `GovernanceValidationModal.vue` |
+| **Write-time violations** | Implemented | #532: violaciones en escritura devuelven 409 estructurado (`POLICY_VIOLATION`/`CIRCULAR_DEPENDENCY`) con policy/constraint + sugerencia, superficie en el flujo de creación de dependencias |
 | i18n | Implemented | `governance` section |
 
 ---

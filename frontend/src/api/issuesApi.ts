@@ -81,3 +81,11 @@ export async function fetchBlockedIssues(): Promise<Issue[]> {
   }
   return responseData ?? []
 }
+
+export async function addDependency(issueId: string, dependsOnId: string): Promise<void> {
+  await client.post(
+    `/issues/${issueId}/dependencies`,
+    { depends_on_id: dependsOnId },
+    { suppressErrorToast: true },
+  )
+}

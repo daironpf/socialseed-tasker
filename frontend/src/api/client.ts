@@ -4,6 +4,7 @@ import * as mockApi from './mockApi'
 import { useToast } from '@/composables/useToast'
 import { getAccessToken } from './authSession'
 import { refresh } from './authApi'
+import type { PolicyViolationDetail } from '@/types'
 
 // API mode: mock (default) or real FastAPI backend (issue #517).
 // Resolution order: localStorage override > VITE_USE_MOCK env flag > mock.
@@ -297,10 +298,18 @@ realClient.interceptors.response.use(
 
     if (error.response?.status === 401) {
       window.dispatchEvent(new CustomEvent('auth:unauthorized'))
-    } else if (error.response?.status >= 400) {
+    } else if (error.response?.status >= 400 && !original?.suppressErrorToast) {
       useToast().error(message)
     }
-    return Promise.reject(new Error(message))
+    const apiError = new Error(message) as Error & {
+      status?: number
+      code?: string
+      details?: PolicyViolationDetail
+    }
+    apiError.status = error.response?.status
+    apiError.code = error.response?.data?.error?.code
+    apiError.details = error.response?.data?.error?.details
+    return Promise.reject(apiError)
   },
 )
 
@@ -327,5 +336,11 @@ declare global {
   interface Window {
     __API_URL__?: string
     __API_KEY__?: string
+  }
+}
+
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    suppressErrorToast?: boolean
   }
 }

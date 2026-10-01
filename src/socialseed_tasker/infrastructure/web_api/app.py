@@ -910,25 +910,30 @@ def create_app(
     async def circular_dependency_handler(request: Request, exc: CircularDependencyError) -> JSONResponse:
         return JSONResponse(
             status_code=409,
-            content=_error_response("CIRCULAR_DEPENDENCY", str(exc)),
+            content=_error_response(
+                "CIRCULAR_DEPENDENCY",
+                str(exc),
+                details={"cycle_path": exc.cycle_path or []},
+            ),
         )
 
     @app.exception_handler(PolicyViolationError)
     async def policy_violation_handler(request: Request, exc: PolicyViolationError) -> JSONResponse:
+        label = exc.constraint or exc.policy_name
         return JSONResponse(
-            status_code=400,
-            content={
-                "error": {
-                    "code": "POLICY_VIOLATION",
-                    "message": f"Operation blocked by policy '{exc.policy_name}'",
-                    "details": {
-                        "policy": exc.policy_name,
-                        "rule_type": exc.rule_type,
-                        "message": exc.message,
-                        "suggestion": exc.suggestion,
-                    },
+            status_code=409,
+            content=_error_response(
+                "POLICY_VIOLATION",
+                f"Operation blocked by policy '{label}'",
+                details={
+                    "policy_name": exc.policy_name,
+                    "constraint": exc.constraint,
+                    "rule_type": exc.rule_type,
+                    "severity": exc.severity,
+                    "message": exc.message,
+                    "suggestion": exc.suggestion,
                 },
-            },
+            ),
         )
 
     @app.exception_handler(IssueAlreadyClosedError)

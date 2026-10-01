@@ -30,6 +30,31 @@
             <div class="text-xs text-gray-500 dark:text-gray-400">{{ type.description }}</div>
           </div>
         </button>
+
+        <div
+          v-if="error"
+          data-testid="violation-panel"
+          role="alert"
+          class="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-700 dark:bg-red-900/30 dark:text-red-200"
+        >
+          <div class="flex items-center gap-2 font-semibold">
+            <span>{{ violationTitle }}</span>
+            <span
+              v-if="error.severity"
+              class="rounded px-1.5 py-0.5 text-xs font-bold"
+              :class="error.severity === 'hard'
+                ? 'bg-red-600 text-white'
+                : 'bg-amber-500 text-white'"
+            >{{ severityLabel }}</span>
+          </div>
+          <p class="mt-1" data-testid="violation-message">{{ error.message }}</p>
+          <p v-if="violationResource" class="mt-1">
+            <span class="font-medium">{{ violationResource.label }}: </span>{{ violationResource.value }}
+          </p>
+          <p v-if="error.suggestion" class="mt-1" data-testid="violation-suggestion">
+            <span class="font-medium">{{ t('graph.violationSuggestion') }}: </span>{{ error.suggestion }}
+          </p>
+        </div>
       </div>
 
       <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 p-4">
@@ -50,13 +75,15 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { PolicyViolationDetail } from '@/types'
 
 const { t } = useI18n()
 
-defineProps<{
+const props = defineProps<{
   show: boolean
   fromLabel: string
   toLabel: string
+  error?: PolicyViolationDetail | null
 }>()
 
 const emit = defineEmits<{
@@ -65,6 +92,21 @@ const emit = defineEmits<{
 }>()
 
 const selectedType = ref('DEPENDS_ON')
+
+const violationTitle = computed(() => {
+  if (!props.error) return ''
+  if (props.error.code === 'CIRCULAR_DEPENDENCY') return t('graph.cycleDetected')
+  return t('graph.policyViolation')
+})
+
+const violationResource = computed(() => {
+  if (!props.error) return null
+  if (props.error.constraint) return { label: t('graph.violationConstraint'), value: props.error.constraint }
+  if (props.error.policy_name) return { label: t('graph.violationPolicy'), value: props.error.policy_name }
+  return null
+})
+
+const severityLabel = computed(() => (props.error?.severity ?? '').toUpperCase())
 
 const relationshipTypes = computed(() => [
   {

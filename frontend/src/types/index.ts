@@ -150,6 +150,17 @@ export interface DependencyRequest {
   depends_on_id: string
 }
 
+export interface PolicyViolationDetail {
+  code?: string
+  message?: string
+  policy_name?: string
+  constraint?: string
+  rule_type?: string
+  severity?: string
+  suggestion?: string
+  cycle_path?: string[]
+}
+
 export interface ComponentCreateRequest {
   name: string
   alias?: string

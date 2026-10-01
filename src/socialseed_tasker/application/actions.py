@@ -15,6 +15,8 @@ from socialseed_tasker.application.constraints import (
     Constraint,
     ConstraintCategory,
     ConstraintConfig,
+    ConstraintLevel,
+    ConstraintStatus,
     ConstraintValidationResult,
     ConstraintViolation,
 )
@@ -67,14 +69,25 @@ class IssueAlreadyClosedError(Exception):
 
 
 class PolicyViolationError(Exception):
-    """Raised when an action violates an architectural policy."""
+    """Raised when an action violates an architectural policy or constraint."""
 
-    def __init__(self, policy_name: str, rule_type: str, message: str, suggestion: str = "") -> None:
-        super().__init__(f"Policy violation: {policy_name} - {message}")
+    def __init__(
+        self,
+        policy_name: str,
+        rule_type: str,
+        message: str,
+        suggestion: str = "",
+        constraint: str = "",
+        severity: str = "hard",
+    ) -> None:
+        label = constraint or policy_name
+        super().__init__(f"Policy violation: {label} - {message}")
         self.policy_name = policy_name
+        self.constraint = constraint
         self.rule_type = rule_type
         self.message = message
         self.suggestion = suggestion
+        self.severity = severity
 
 
 class OpenDependenciesError(Exception):
@@ -944,8 +957,6 @@ def load_constraints_from_config_action(
     Returns:
         Dict with counts of created/updated constraints
     """
-    from socialseed_tasker.application.constraints import ConstraintStatus
-
     existing = repository.list_constraints()
     for c in existing:
         repository.delete_constraint(str(c.id))
@@ -1024,6 +1035,40 @@ def _get_dependency_depth(repository: TaskRepositoryInterface, issue_id: str, vi
         max_depth = max(max_depth, dep_depth + 1)
 
     return max_depth
+
+
+def check_max_depth_at_write_time(
+    repository: TaskRepositoryInterface,
+    issue_id: str,
+    depends_on_id: str,
+) -> None:
+    """Abort dependency creation when the new edge would exceed an active max_depth constraint.
+
+    The resulting chain depth for `issue_id` is 1 + depth(depends_on_id).
+    SOFT max_depth constraints are advisory and do not block the write.
+    """
+    new_depth = _get_dependency_depth(repository, depends_on_id, set()) + 1
+
+    for constraint in repository.list_constraints():
+        if (
+            constraint.status == ConstraintStatus.ACTIVE
+            and constraint.category == ConstraintCategory.DEPENDENCIES
+            and constraint.rule_type == "max_depth"
+            and constraint.max_depth is not None
+            and constraint.level == ConstraintLevel.HARD
+            and new_depth > constraint.max_depth
+        ):
+            raise PolicyViolationError(
+                policy_name="",
+                rule_type="max_depth",
+                message=(
+                    f"Adding dependency {issue_id} -> {depends_on_id} creates a dependency "
+                    f"chain of depth {new_depth}, exceeding max_depth {constraint.max_depth}"
+                ),
+                suggestion="Restructure dependencies to reduce depth",
+                constraint=constraint.description or "max_depth",
+                severity=constraint.level.value,
+            )
 
 
 def check_soft_constraints_for_closure(

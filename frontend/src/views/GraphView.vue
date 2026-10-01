@@ -191,7 +191,8 @@
       :show="showRelModal"
       :from-label="relFromLabel"
       :to-label="relToLabel"
-      @close="showRelModal = false"
+      :error="relError"
+      @close="closeRelModal"
       @create="onCreateRelationship"
     />
 
@@ -264,8 +265,9 @@ import GraphFilters from '@/components/ui/GraphFilters.vue'
 import GraphToolbar from '@/components/graph/GraphToolbar.vue'
 import NodeInspector from '@/components/graph/NodeInspector.vue'
 import { wouldCreateCycle, findPath, blastRadius, buildBlocksEdges, edgeRelationLabel, edgeRelationColor } from '@/utils/graphUtils'
+import { addDependency } from '@/api/issuesApi'
 import { useExport } from '@/composables/useExport'
-import type { Issue, IssueUpdateRequest } from '@/types'
+import type { Issue, IssueUpdateRequest, PolicyViolationDetail } from '@/types'
 import type { CodeNode } from '@/types/codeGraph'
 import type { InspectorPayload, InspectorLink, TraceSelectOption } from '@/types/graphExplorer'
 
@@ -295,6 +297,9 @@ const connectFrom = ref<string | null>(null)
 const showRelModal = ref(false)
 const relFromLabel = ref('')
 const relToLabel = ref('')
+const relFromId = ref('')
+const relToId = ref('')
+const relError = ref<PolicyViolationDetail | null>(null)
 const cycleError = ref('')
 let cycleErrorTimeout: ReturnType<typeof setTimeout> | null = null
 const selectedComponents = ref<string[]>([])
@@ -699,6 +704,9 @@ function buildGraph() {
             } else {
               relFromLabel.value = fromIssue.title
               relToLabel.value = toIssue.title
+              relFromId.value = connectFrom.value
+              relToId.value = nodeId
+              relError.value = null
               showRelModal.value = true
             }
           }
@@ -1063,8 +1071,25 @@ async function onCloseIssue(id: string) {
   buildGraph()
 }
 
-function onCreateRelationship(_type: string) {
+function closeRelModal() {
   showRelModal.value = false
+  relError.value = null
+}
+
+async function onCreateRelationship(type: string) {
+  if (type !== 'DEPENDS_ON' || !relFromId.value || !relToId.value) {
+    closeRelModal()
+    return
+  }
+  relError.value = null
+  try {
+    await addDependency(relFromId.value, relToId.value)
+    closeRelModal()
+    await issuesStore.fetchIssues(1, 500)
+  } catch (err) {
+    const e = err as Error & { code?: string; details?: PolicyViolationDetail }
+    relError.value = { code: e.code, message: e.message, ...e.details }
+  }
 }
 
 async function exportGraphPNG() {

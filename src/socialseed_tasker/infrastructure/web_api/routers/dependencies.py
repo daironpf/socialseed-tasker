@@ -27,6 +27,7 @@ from socialseed_tasker.application.actions import (
     PolicyViolationError,
     TaskRepositoryInterface,
     add_dependency_action,
+    check_max_depth_at_write_time,
     close_issue_action,
     create_issue_action,
     get_blocked_issues_action,
@@ -130,7 +131,7 @@ dependencies_router = APIRouter()
     description=("Create a [:DEPENDS_ON] relationship. Fails if adding it would create a circular dependency."),
     responses={
         404: {"description": "Issue not found"},
-        409: {"description": "Circular dependency or duplicate dependency detected"},
+        409: {"description": "Circular dependency, policy violation or max_depth constraint exceeded"},
     },
 )
 def add_dependency(
@@ -142,6 +143,10 @@ def add_dependency(
     from socialseed_tasker.application.policy import PolicyEngine
     from socialseed_tasker.application.actions import PolicyViolationError
 
+    depends_on_id = body.depends_on_id
+    if depends_on_id is None:
+        raise HTTPException(status_code=422, detail="depends_on_id is required")
+
     policies = _policy_engine.get("policies", [])
     if policies and request and hasattr(request.app.state, "config"):
         enforcement_mode = getattr(request.app.state.config, "policy_enforcement_mode", "warn")
@@ -150,7 +155,7 @@ def add_dependency(
             engine = PolicyEngine(policies)
 
             issue = repo.get_issue(issue_id)
-            target = repo.get_issue(body.depends_on_id)
+            target = repo.get_issue(depends_on_id)
 
             if issue and target:
                 from_component = repo.get_component(str(issue.component_id))
@@ -174,13 +179,15 @@ def add_dependency(
                         suggestion=violation.suggestion,
                     )
 
+    check_max_depth_at_write_time(repo, issue_id, depends_on_id)
+
     try:
-        add_dependency_action(repo, issue_id, body.depends_on_id)
+        add_dependency_action(repo, issue_id, depends_on_id)
     except DuplicateDependencyError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
 
     return APIResponse(
-        data=DependencyResponse(issue_id=issue_id, depends_on_id=body.depends_on_id),
+        data=DependencyResponse(issue_id=issue_id, depends_on_id=depends_on_id),
         meta=Meta(request_id=None),
     )
 
@@ -192,7 +199,7 @@ def add_dependency(
     description="Add multiple [:DEPENDS_ON] relationships in a single request.",
     responses={
         404: {"description": "Issue not found"},
-        409: {"description": "Circular dependency detected"},
+        409: {"description": "Circular dependency, policy violation or max_depth constraint exceeded"},
     },
 )
 def add_dependencies_bulk(
@@ -208,6 +215,9 @@ def add_dependencies_bulk(
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
+
+    for dep_id in body.depends_on_ids:
+        check_max_depth_at_write_time(repo, issue_id, dep_id)
 
     successful = 0
     failed = 0
