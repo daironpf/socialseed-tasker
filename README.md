@@ -147,7 +147,7 @@ socialseed-tasker/
 ├── .github/workflows/         # CI: lint, mypy, pytest (3.10–3.12), release, security
 ├── mock-api/server.py         # standalone mock backend for the UI
 ├── docker-compose.yml         # 4 services: db, api, board, mock-api
-├── features.md                # living feature inventory (57 sections)
+├── features.md                # living feature inventory (68 sections)
 └── .issues/                   # issue tracker: to-do/ + done/ (515 closed)
 ```
 

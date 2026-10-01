@@ -2,7 +2,7 @@
 
 > Complete catalog of all UI features, interactions, and capabilities currently implemented.
 > Use this document to identify gaps, plan new features, and track what is missing.
-> Last updated: 2026-09-29
+> Last updated: 2026-10-01
 
 ---
 
@@ -14,7 +14,7 @@
 4. [Dashboard (BoardView)](#4-dashboard-boardview)
 5. [Issues List (ListView)](#5-issues-list-listview)
 6. [Kanban Board (KanbanView)](#6-kanban-board-kanbanview)
-7. [Issue Detail Panel (IssueDetailView)](#7-issue-detail-panel-issueDetailView)
+7. [Issue Detail Panel (IssueDetailView)](#7-issue-detail-panel-issuedetailview)
 8. [Components Management (ComponentsView)](#8-components-management-componentsview)
 9. [Policies Management (PoliciesView)](#9-policies-management-policiesview)
 10. [Constraints Management (ConstraintsView)](#10-constraints-management-constraintsview)
@@ -87,8 +87,8 @@
 | Vite 6 build tool | Implemented | HMR, optimized production builds, lazy-loaded routes |
 | Tailwind CSS 3 | Implemented | Dark mode via `class` strategy; Inter font |
 | Pinia state management | Implemented | 24 stores under `src/stores/` |
-| Vue Router | Implemented | 26 view routes + `/` redirect + catch-all NotFound; lazy-loaded; scroll-to-top on navigate |
-| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 77 top-level sections, 1600 leaf keys per language (both languages balanced), localStorage persistence |
+| Vue Router | Implemented | 26 page routes + `/` redirect + catch-all NotFound; lazy-loaded; scroll-to-top on navigate |
+| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 77 top-level sections, 1615 leaf keys per language (both languages balanced), localStorage persistence |
 | Dark mode | Implemented | Toggle via UserMenu / `D` shortcut / CommandPalette; localStorage; system preference detection |
 | Data-source mode (mock/real) | Implemented | Reactive `apiMode` ref in `client.ts` (resolution: `localStorage['socialseed-api-mode']` > `VITE_USE_MOCK` > default `mock`); reactive proxy dispatches to the mock client or the axios real client; toggle in UserMenu (§62) |
 | Real API mode | Implemented | Axios client, base `window.__API_URL__ \|\| '/api/v1'`, auth via `Bearer` JWT (auto-refresh) or `X-API-Key`, 401 → refresh retry → `auth:unauthorized` (§64) |
@@ -817,7 +817,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 |---|---|---|
 | `client.ts` | Dual client: mock (`USE_MOCK`/`isMockMode`) vs axios real; Bearer token + single-flight refresh retry on 401; API key header fallback (#519/#517) | — |
 | `mockApi.ts` | `fetch` → `/mock-api/mock/*` | issues, components, policies, users, constraints, analysis, agent-logs, dashboard-stats, health, sync-queue, admin seed/reset |
-| `authApi` | `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/oauth/{provider}`, `/auth/oauth/{provider}/callback`, `/auth/profile` | POST, GET (#519) |
+| `authApi` | `/auth/login` (API key → JWT), `/auth/exchange` (OAuth code → session), `/auth/me`, `/auth/refresh`, `/auth/logout`, `/auth/oauth/{provider}/authorize` (github, google) | POST, GET (#519) |
 | `authSession` | In-memory access token + refresh queue, `hasValidSession()` (#519) | — |
 | `realtime` | `connectSSE` EventSource wrapper with `enabled` gate (mock mode never connects), used by streams below (#517) | SSE |
 | `issuesApi` | `/issues`, `/issues/{id}`, `/issues/{id}/close`, `/blocked-issues` | GET, POST, PATCH, DELETE |
@@ -825,7 +825,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `policiesApi` | `/policies`, `/policies/{id}` | GET, POST, PATCH, DELETE |
 | `constraintsApi` | `/constraints`, `/constraints/{id}`, `/constraints/validate` | GET, POST, PATCH, DELETE |
 | `usersApi` | `/users`, `/users/{id}` | GET, POST, PUT, DELETE |
-| `analysisApi` | `/analysis/impact/{id}`, `/analysis/root-cause`, `/test-failures` | GET, POST |
+| `analysisApi` | `/analyze/impact/{id}`, `/analyze/root-cause`, `/test-failures` | GET, POST |
 | `systemApi` | `/health`, `/sync-queue` (missing on real backend → defaults), `/admin/seed`, `/admin/reset` | GET, POST |
 | `agentLogsApi` | `/issues/{id}/agent-logs` | GET |
 | `autoHealingApi` | `/auto-healing/*` runs/logs/start/cancel/restart (#520) | GET, POST |
@@ -981,8 +981,8 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 ## 27. i18n Coverage
 
 ### Locale Files
-- `en.json`: 1600 leaf keys, **77** top-level sections
-- `es.json`: 1600 leaf keys, matching structure (both balanced)
+- `en.json`: 1615 leaf keys, **77** top-level sections
+- `es.json`: 1615 leaf keys, matching structure (both balanced)
 
 ### Sections (77)
 `kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `boardModules`, `boardSections`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `a11y`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`, `agentStudio`, `analytics`, `sla`, `offline`, `syncQueue`, `soundEffects`, `toastTheme`, `notifPanel`, `apiMode`
@@ -1368,6 +1368,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | `/audit-log` | **AuditLog** | AuditLogView.vue |
 | `/agents/studio` | **AgentStudio** | AgentStudioView.vue |
 | `/analytics` | **Analytics** | AnalyticsDashboardView.vue |
+| `/auth/oauth-callback` | **AuthCallback** | AuthCallbackView.vue (OAuth code exchange, error state, fallback) |
 | `/:pathMatch(.*)*` | NotFound | NotFoundView.vue |
 
 ### Views without routes
@@ -1677,6 +1678,7 @@ Issue #518. First quality gate for the frontend: unit tests, E2E tests, a linter
 | **i18n** | Not needed | Los tests usan los textos EN existentes (no se añadieron claves) |
 | **Verification** | Implemented | `npm run lint` ✓ (0 errores), `npm test` ✓ (81/81), `npm run build` ✓, `npm run test:e2e` ✓ (8/8 en dos corridas consecutivas) |
 | **Suite status (2026-09-29)** | Implemented | 167 unit tests / **22 spec files** (los 9 de #518 + `authStore`, `CreateIssueModal`, `GitHubSyncCard`, `KanbanView`, `ListView`, `KeyboardShortcutsHelp`, `MCPInspectorView`, `mcpStore`, `ragStore`, `ruleEngine`, `useFocusTrap`, `pendingFeatures`, `Sidebar`); lint 0 errores (2 warnings preexistentes `vue/no-mutating-props` en IssueDetailView), build verde, E2E 8/8 |
+| **Suite status (2026-10-01)** | Implemented | **208 unit tests / 27 spec files** (`npm test` 27/27 verdes), `npm run lint` 0 errores (2 warnings preexistentes `vue/no-mutating-props`), `npm run build` verde (`vue-tsc -b && vite build`); inventario de UI recalado contra el código el 2026-10-01 (#535, §68) |
 
 ---
 
