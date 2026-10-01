@@ -39,6 +39,11 @@ def test_mcp_register_and_list_servers():
     resp = client.get("/api/v1/mcp/servers")
     assert resp.status_code == 200
     servers = resp.json()["data"]
+    builtin = [server for server in servers if server["id"] == "tasker-mcp"]
+    assert len(builtin) == 1
+    assert builtin[0]["name"] == "SocialSeed Tasker"
+    assert builtin[0]["status"] == "online"
+    servers = [server for server in servers if server["id"] != "tasker-mcp"]
     assert len(servers) == 1
     assert servers[0]["status"] == "offline"
 

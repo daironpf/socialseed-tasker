@@ -26,7 +26,10 @@ dependencies = [
     # API
     "fastapi>=0.109.0",
     "uvicorn[standard]>=0.27.0",
-    
+
+    # MCP server (streamable HTTP + stdio transports, issue #535)
+    "mcp>=2.0.0",
+
     # Validation
     "pydantic>=2.5.0",
     
@@ -129,6 +132,7 @@ socialseed_tasker = [
 [project.scripts]
 socialseed-tasker = "socialseed_tasker.cli.app:main_entry"
 tasker = "socialseed_tasker.cli.app:main_entry"
+tasker-mcp = "socialseed_tasker.entrypoints.mcp_server:main"
 
 [tool.black]
 line-length = 88

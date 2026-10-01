@@ -15,7 +15,9 @@ Endpoints consumed by the MCP Inspector view:
 State lives in an in-process :class:`MCPRegistry` stored on
 ``app.state.mcp_registry`` (same pattern as the realtime hub). Argument
 payloads are redacted server-side before storage and re-execution runs
-through the registered tool executors.
+through the registered tool executors. Sessions and tool calls coming
+from external MCP clients connected over the real streamable HTTP
+transport (issue #535) are recorded here too.
 """
 
 from __future__ import annotations

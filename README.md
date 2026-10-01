@@ -148,7 +148,7 @@ socialseed-tasker/
 ├── mock-api/server.py         # standalone mock backend for the UI
 ├── docker-compose.yml         # 4 services: db, api, board, mock-api
 ├── features.md                # living feature inventory (57 sections)
-└── .issues/                   # issue tracker: to-do/ + done/ (514 closed)
+└── .issues/                   # issue tracker: to-do/ + done/ (515 closed)
 ```
 
 ---
@@ -166,6 +166,58 @@ socialseed-tasker/
 | **Collaboration** | Chat with agents & users, floating chat widget, presence avatars, typing indicators, mentions |
 | **Reports** | Executive dashboard, analytics dashboard (MTTR, healing rate, budget), report exporter (PDF / PNG / JSON), CSV/JSON export everywhere |
 | **Platform** | Dark mode, EN/ES i18n, command palette, keyboard shortcuts, toasts (3 themes), sound effects, PII detection & redaction suite, mobile responsive drawer |
+
+---
+
+## MCP clients (Cursor / Claude Desktop)
+
+The real API serves a live MCP server over streamable HTTP at `/mcp`, guarded
+by the same `X-API-Key` check as the rest of the API (`http://localhost:8888/mcp`
+in Docker, `http://localhost:8000/mcp` locally). Six graph tools are available:
+`graph_architecture`, `list_components`, `blocked_issues`, `active_policies`,
+`issue_detail`, `dependency_impact`.
+
+**Cursor** — `.cursor/mcp.json` (or Settings → MCP → New MCP Server):
+
+```json
+{
+  "mcpServers": {
+    "socialseed-tasker": {
+      "url": "http://localhost:8888/mcp",
+      "headers": { "X-API-Key": "test-token" }
+    }
+  }
+}
+```
+
+**Claude Desktop** — `claude_desktop_config.json`, remote server:
+
+```json
+{
+  "mcpServers": {
+    "socialseed-tasker": {
+      "type": "http",
+      "url": "http://localhost:8888/mcp",
+      "headers": { "X-API-Key": "test-token" }
+    }
+  }
+}
+```
+
+or the local stdio server (installed with the package; talks to Neo4j through
+`Container.from_env()`, no API key needed):
+
+```json
+{
+  "mcpServers": {
+    "socialseed-tasker": { "command": "tasker-mcp" }
+  }
+}
+```
+
+Then ask e.g. *"Which issues are blocked today?"*. Every external call shows
+up in the MCP inspector with an `ext-*` session id (derived from the client's
+User-Agent).
 
 ---
 

@@ -73,7 +73,13 @@ async def lifespan(app: FastAPI):
                 logger.info("auth users seeded: %s", seeded)
         except Exception as exc:
             logger.warning("auth seeding failed (continuing): %s", exc)
-    yield
+
+    mcp_session_manager = getattr(app.state, "mcp_session_manager", None)
+    if mcp_session_manager is not None:
+        async with mcp_session_manager.run():
+            yield
+    else:
+        yield
 
 
 def create_app(
@@ -1055,6 +1061,58 @@ def create_app(
                 {"detail": str(exc) if app.debug else None},
             ),
         )
+
+    from socialseed_tasker.entrypoints.mcp_server import (
+        MCP_HTTP_PATH,
+        MCP_SERVER_ID,
+        MCP_SERVER_NAME,
+        MCP_TOOL_NAMES,
+        build_mcp_server,
+        build_streamable_http_app,
+    )
+    from socialseed_tasker.infrastructure.web_api.routers.mcp import MCPRegistry
+
+    def _mcp_audit(payload: dict[str, Any]) -> None:
+        hub: MCPRegistry | None = getattr(app.state, "mcp_registry", None)
+        if hub is None:
+            hub = MCPRegistry()
+            app.state.mcp_registry = hub
+        session_id = payload.get("sessionId")
+        if session_id:
+            hub.upsert_session(
+                {
+                    "id": session_id,
+                    "clientName": payload.get("clientName") or "mcp-client",
+                    "clientType": "external",
+                    "status": "active",
+                    "server": MCP_SERVER_ID,
+                }
+            )
+        hub.record_call(payload)
+
+    mcp_server = build_mcp_server(
+        repo_provider=lambda: app.state.repository,
+        driver_provider=lambda: app.state.driver,
+        audit=_mcp_audit,
+    )
+    mcp_http_app = build_streamable_http_app(mcp_server)
+    app.state.mcp_server = mcp_server
+    app.state.mcp_session_manager = mcp_server.session_manager
+    app.routes.extend(mcp_http_app.routes)
+    hub: MCPRegistry | None = getattr(app.state, "mcp_registry", None)
+    if hub is None:
+        hub = MCPRegistry()
+        app.state.mcp_registry = hub
+    hub.register_server(
+        {
+            "id": MCP_SERVER_ID,
+            "name": MCP_SERVER_NAME,
+            "transport": "http",
+            "url": MCP_HTTP_PATH,
+            "tools": list(MCP_TOOL_NAMES),
+            "status": "online",
+        }
+    )
 
     return app
 
