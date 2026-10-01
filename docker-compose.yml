@@ -65,6 +65,25 @@ services:
     networks:
       - tasker-net
 
+  tasker-db-mongo:
+    container_name: tasker-db-mongo
+    image: mongo:7.0
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: [ "CMD-SHELL", "mongosh --quiet --eval \"db.adminCommand('ping')\" || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - tasker-net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
   tasker-api:
     container_name: tasker-api
     image: tasker-api:local
@@ -86,6 +105,7 @@ services:
       - TASKER_FRONTEND_URL=http://localhost:19001
       - TASKER_DATABASE_URL=postgresql://tasker:tasker@tasker-db-pg:5432/tasker
       - TASKER_REDIS_URL=redis://tasker-redis:6379/0
+      - TASKER_MONGO_URL=mongodb://tasker-db-mongo:27017/tasker_chat
       - TASKER_AUTH_SEED=true
       - TASKER_AUTH_SEED_PATH=/app/dataset/users.json
     volumes:
@@ -96,6 +116,8 @@ services:
       tasker-db-pg:
         condition: service_healthy
       tasker-redis:
+        condition: service_healthy
+      tasker-db-mongo:
         condition: service_healthy
     networks:
       - tasker-net
@@ -139,3 +161,4 @@ volumes:
   neo4j-data:
   pg-data:
   redis-data:
+  mongo-data:

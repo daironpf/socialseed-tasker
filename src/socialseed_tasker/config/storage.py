@@ -19,6 +19,11 @@ def get_database_url() -> str | None:
     return os.getenv("TASKER_DATABASE_URL") or None
 
 
+def get_mongo_url() -> str | None:
+    """Return TASKER_MONGO_URL when configured, else None (chat persistence disabled)."""
+    return os.getenv("TASKER_MONGO_URL") or None
+
+
 def build_storage() -> tuple[str, StoragePort]:
     """Return (backend_name, storage): Redis when TASKER_REDIS_URL is set and reachable, memory otherwise."""
     redis_url = get_redis_url()

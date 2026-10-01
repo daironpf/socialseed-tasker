@@ -113,6 +113,7 @@
 | tasker-db | neo4j:5.26.15 | 7474 / 7687 | Graph DB (APOC) |
 | tasker-db-pg | postgres:15-alpine | 127.0.0.1:15432→5432 | PostgreSQL 15 — usuarios/credenciales (#525) |
 | tasker-redis | redis:7-alpine | 127.0.0.1:6379 | Redis 7 — sesiones/caché/rate limiting (#525) |
+| tasker-db-mongo | mongo:7.0-alpine | 127.0.0.1:27017 | MongoDB 7 — persistencia del chat (`TASKER_MONGO_URL`, #536) |
 | tasker-api | tasker-api:local | 127.0.0.1:8888→8000 | Real FastAPI backend |
 | tasker-board | tasker-board:local | 127.0.0.1:19001→80 | Vue SPA + nginx (proxies `/api/`, `/mock-api/`) |
 | mock-api | mock-api:local | 127.0.0.1:8001 | FastAPI mock serving dataset JSON under `/mock/*` |
