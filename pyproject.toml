@@ -36,6 +36,9 @@ dependencies = [
     # Database
     "neo4j>=5.15.0",
 
+    # Chat persistence (async MongoDB client, issue #537)
+    "motor>=3.3.0",
+
     # Cache / sessions
     "redis>=5.0.0",
 

@@ -8,6 +8,7 @@ fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
 pydantic>=2.5.0
 neo4j>=5.15.0
+motor>=3.3.0
 python-dotenv>=1.0.0
 tree-sitter>=0.20.0
 tree-sitter-python>=0.20.0

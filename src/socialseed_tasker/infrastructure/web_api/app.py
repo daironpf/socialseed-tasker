@@ -75,11 +75,25 @@ async def lifespan(app: FastAPI):
             logger.warning("auth seeding failed (continuing): %s", exc)
 
     mcp_session_manager = getattr(app.state, "mcp_session_manager", None)
-    if mcp_session_manager is not None:
-        async with mcp_session_manager.run():
+
+    # Chat Mongo bootstrap (issue #537): lazy client + idempotent indexes; no URL -> no-op
+    from socialseed_tasker.infrastructure.mongo.client import (
+        close_mongo,
+        ensure_chat_indexes,
+        get_mongo_client,
+    )
+
+    if get_mongo_client() is not None:
+        await ensure_chat_indexes()
+
+    try:
+        if mcp_session_manager is not None:
+            async with mcp_session_manager.run():
+                yield
+        else:
             yield
-    else:
-        yield
+    finally:
+        close_mongo()
 
 
 def create_app(
