@@ -19,8 +19,11 @@ def main() -> None:
     if os.environ.get("TASKER_DEMO_MODE", "").lower() in ("1", "true", "yes"):
         _seed_demo_data(repository)
 
+    chat_socket = getattr(app.state, "chat_socket", None)
+    served_app = chat_socket.asgi(app) if chat_socket is not None else app
+
     config = uvicorn.Config(
-        app,
+        served_app,
         host=container.config.api_host,
         port=container.config.api_port,
         reload=container.config.debug,

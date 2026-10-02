@@ -577,6 +577,16 @@ def create_app(
     from socialseed_tasker.auth.redis_sessions import AuthSessionStore
     app.state.auth_sessions = AuthSessionStore()
     logger.info("auth session store backend: %s", app.state.auth_sessions.backend)
+
+    # Chat Socket.IO transport (issue #538): JWT handshake, rooms, chat events
+    from socialseed_tasker.infrastructure.mongo import ChatMongoRepository
+    from socialseed_tasker.infrastructure.web_api.socketio_server import ChatSocketIOServer
+    app.state.chat_repository = ChatMongoRepository()
+    app.state.chat_socket = ChatSocketIOServer(
+        repository=app.state.chat_repository,
+        session_store_provider=lambda: getattr(app.state, "auth_sessions", None),
+    )
+    logger.info("chat socket.io server ready (path /socket.io/)")
     if os.getenv("TASKER_INTEGRATION") == "1":
         app.state.delivery_worker.start()
 

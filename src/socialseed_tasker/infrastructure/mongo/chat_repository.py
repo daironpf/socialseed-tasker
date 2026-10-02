@@ -121,6 +121,20 @@ class ChatMongoRepository:
             logger.warning("chat create_or_get_conversation failed: %s", exc)
             raise ChatStoreError(f"create conversation failed: {exc}") from exc
 
+    async def get_conversation(self, conversation_id: str) -> dict[str, Any] | None:
+        """Fetch one conversation by id; None when it does not exist."""
+        if not conversation_id:
+            raise ChatStoreError("conversation_id is required")
+        try:
+            coll = self._collection("conversations")
+            doc: Any = await coll.find_one({"_id": _object_id(conversation_id)})
+            return _serialize(doc) if doc else None
+        except ChatStoreError:
+            raise
+        except Exception as exc:
+            logger.warning("chat get_conversation failed for %s: %s", conversation_id, exc)
+            raise ChatStoreError(f"get conversation failed: {exc}") from exc
+
     async def list_messages(
         self,
         conversation_id: str,

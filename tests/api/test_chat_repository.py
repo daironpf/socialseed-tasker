@@ -247,6 +247,17 @@ async def test_insert_message_schema_and_bump(repo: ChatMongoRepository, db: Fak
     assert stored_conv["updated_at"] >= before
 
 
+async def test_get_conversation_by_id(repo: ChatMongoRepository) -> None:
+    conv = await repo.create_or_get_conversation(["alice", "bob"], "direct")
+    found = await repo.get_conversation(conv["id"])
+    assert found is not None
+    assert found["id"] == conv["id"]
+    assert found["participant_ids"] == ["alice", "bob"]
+    assert await repo.get_conversation(str(ObjectId())) is None
+    with pytest.raises(ChatStoreError, match="conversation_id"):
+        await repo.get_conversation("")
+
+
 async def test_insert_message_validates(repo: ChatMongoRepository) -> None:
     with pytest.raises(ChatStoreError, match="invalid message type"):
         await repo.insert_message("c1", "alice", "hi", "audio")
