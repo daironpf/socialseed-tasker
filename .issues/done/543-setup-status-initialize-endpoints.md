@@ -8,7 +8,7 @@ Contexto real del repo: hoy **no existe** ningún rastro de `TASKER_INSTALLED` n
 
 Origen: `notas.md` → Épica Flow de Onboarding & Setup Wizard Empresarial · Issue #2 (→ #543).
 
-## Status: TODO
+## Status: DONE (2026-10-03)
 
 ## Priority: CRITICAL
 
@@ -32,12 +32,12 @@ feat / backend
 8. **Tests:** `tests/api/test_setup_endpoints.py` con Neo4j/repositorios fake (sin containers ni red), patrón de `test_chat_endpoints.py`.
 
 ## Acceptance Criteria
-- [ ] En un sistema nuevo `GET /api/v1/setup/status` retorna `{"installed": false, "needSetup": true}`
-- [ ] `POST /api/v1/setup/initialize` crea el administrador (PG bcrypt + nodo `:User` ADMIN), el `:Project` raíz y las políticas seleccionadas/custom vinculadas al proyecto
-- [ ] `admin_user` se sanitiza a minúsculas sin caracteres especiales y las credenciales vacías caen a `admin`/`admin`
-- [ ] Posteriores llamadas a `GET /setup/status` devuelven `{"installed": true}`
-- [ ] Si `installed == true`, `POST /setup/initialize` retorna HTTP 403
-- [ ] Tests backend sin dependencias de servicios externos y gates (`ruff`/`mypy`/`pytest`) sin regresiones
+- [x] En un sistema nuevo `GET /api/v1/setup/status` retorna `{"installed": false, "needSetup": true}`
+- [x] `POST /api/v1/setup/initialize` crea el administrador (PG bcrypt + nodo `:User` ADMIN), el `:Project` raíz y las políticas seleccionadas/custom vinculadas al proyecto
+- [x] `admin_user` se sanitiza a minúsculas sin caracteres especiales y las credenciales vacías caen a `admin`/`admin`
+- [x] Posteriores llamadas a `GET /setup/status` devuelven `{"installed": true}`
+- [x] Si `installed == true`, `POST /setup/initialize` retorna HTTP 403
+- [x] Tests backend sin dependencias de servicios externos y gates (`ruff`/`mypy`/`pytest`) sin regresiones
 
 ## Files to Create
 - `src/socialseed_tasker/infrastructure/web_api/routers/setup.py`
@@ -51,3 +51,29 @@ feat / backend
 
 ## Related Issues
 - #526/#527 (usuarios PG, bcrypt, sesiones), #260 (repositorio de usuarios en Neo4j), #509/#246 (organizaciones/proyectos), #501/#82 (políticas de gobernanza), #542 (CLI que inyecta `TASKER_INSTALLED`), #544 (guard que consume `/setup/status`)
+
+## Verification (2026-10-03)
+
+**Implementación:** nuevo `src/socialseed_tasker/infrastructure/web_api/routers/setup.py` (`setup_router`, `Neo4jSetupStore` + Protocol `SetupStore`, `SetupStoreError`, `PREDEFINED_POLICIES`, `SetupStatusResponse`/`SetupPayload`/`SetupInitializeResponse`), `create_user()` idempotente con bcrypt en `auth/user_store.py`, registro en `routers/__init__.py`, `web_api/routes.py` y `web_api/app.py`, tests en `tests/api/test_setup_endpoints.py`.
+
+**Gates (backend, sin regresiones):**
+- `ruff check src/` → **1011** errores (baseline 1011; `routers/setup.py` y `user_store.py` a 0)
+- `mypy src/` → **1153** errores / 134 ficheros; diff A/B contra HEAD (cambios en stash) = **mismo set de errores**, solo line-shift en `app.py` (+4 líneas); 0 regresiones
+- `pytest -q` → **1271 passed / 27 skipped / 3 failed** (los 3 preexistentes de HEAD: `test_delivery_retry` + 2× `test_tasks_unit`); 11/11 tests nuevos de `tests/api/test_setup_endpoints.py`
+
+**Smoke live (stack Docker, API `127.0.0.1:8888`, `TASKER_AUTH_ENABLED=true`):**
+- Rebuild de `tasker-api` (src va horneado en la imagen) y contenedor healthy
+- `GET /api/v1/setup/status` **sin API key** → 200 `{"installed": false, "needSetup": true}` (exención del middleware de auth)
+- `POST /setup/initialize` con policy desconocida → 400 `Unknown policy`
+- `POST /setup/initialize` válido → 200: `admin_user` sanitizado a `admin.review`, password vacío → fallback, `credentials:"created"` (fila PG con bcrypt), `projectId`, 4 políticas persistidas
+- `POST /auth/login` con `admin.review`/`admin` → 200 JWT rol `ADMIN` (bcrypt end-to-end)
+- Neo4j verificado con `cypher-shell`: `:Project Review543` con `initialized_at`, `:User admin.review` role `ADMIN`, 4 `(Project)-[:ENFORCES]->(Policy)`
+- `GET /setup/status` → `{"installed": true, "needSetup": false}`; segundo `POST initialize` → **403**
+- Post-smoke: reset del stack (borrado del proyecto/políticas/usuario creado en Neo4j y de la fila PG) → status final `{"installed": false, "needSetup": true}` (estado virgen para #544–#546)
+
+**Decisiones / desviaciones respecto al texto de la issue:**
+- `[:APPLIES_POLICY]` no existe en el repo; se usan nodos `:Policy` + `(Project)-[:ENFORCES]->(Policy)` (el modelo real de `routers/policy.py`), cumpliendo "alineadas al modelo `Policy` existente"
+- Exención del auth middleware para `path.startswith("/api/v1/setup/")` en `app.py` (chicken-egg: el wizard no existe admin ni JWT)
+- Fuente de verdad `installed`: `:Project.initialized_at` en Neo4j **o** env `TASKER_INSTALLED=true` como override de arranque (solo si es `true`; `false` no pisa la BD); si Neo4j no responde degrada solo a env
+- Re-export explícito `setup_router as setup_router` en `routers/__init__.py` y `routes.py` (patrón `chat_router`/`mcp_router`) para no sumar errores `attr-defined` de `no_implicit_reexport`
+- Payload acepta `policies[]` (claves `prevent_circular_dependencies`, `require_solution_summary`, `require_human_approval_core`) y `custom_policies[]` (strings libres, name truncado a 100)

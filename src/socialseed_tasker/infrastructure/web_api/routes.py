@@ -43,6 +43,9 @@ from socialseed_tasker.infrastructure.web_api.routers import (
 from socialseed_tasker.infrastructure.web_api.routers import (
     mcp_router as mcp_router,
 )
+from socialseed_tasker.infrastructure.web_api.routers import (
+    setup_router as setup_router,
+)
 from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     construct_paginated_api_response as _paginated,
 )

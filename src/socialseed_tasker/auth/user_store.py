@@ -6,6 +6,7 @@ import json
 import os
 import re
 from contextlib import closing
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -149,6 +150,41 @@ class PostgresUserStore:
                 ),
             )
             return "created" if cur.rowcount else "existing"
+
+
+def create_user(
+    *,
+    username: str,
+    password: str,
+    role: str | None = None,
+    email: str | None = None,
+    user_type: str | None = None,
+) -> str:
+    """Idempotently create a credential user with a bcrypt password hash (issue #543).
+
+    The username is normalized first; an already existing username keeps its
+    stored password (``ON CONFLICT DO NOTHING``). Returns ``"created"`` or
+    ``"existing"``, and ``"skipped"`` when TASKER_DATABASE_URL is not
+    configured so first-run flows degrade without a PostgreSQL instance.
+    """
+    normalized = normalize_username(username)
+    if not normalized:
+        raise ValueError("username must contain at least one alphanumeric character")
+    database_url = get_database_url()
+    if not database_url:
+        return "skipped"
+    store = PostgresUserStore(database_url)
+    store.create_schema()
+    return store.upsert_user(
+        user_id=normalized,
+        username=username,
+        username_normalized=normalized,
+        email=email,
+        password_hash=hash_password(password),
+        role=role,
+        user_type=user_type,
+        created_at=datetime.now(timezone.utc).isoformat(),
+    )
 
 
 def seed_users(store: UserSeedStore, json_path: str | Path) -> dict[str, int]:

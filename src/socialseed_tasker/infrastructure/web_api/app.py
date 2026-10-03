@@ -232,6 +232,10 @@ def create_app(
         if request.url.path.startswith("/api/v1/auth/"):
             return await call_next(request)
 
+        # Setup endpoints run before install/login: there is no admin or JWT yet (issue #543)
+        if request.url.path.startswith("/api/v1/setup/"):
+            return await call_next(request)
+
         # GitHub sends HMAC-signed webhooks and cannot attach an API key;
         # the receiver enforces X-Hub-Signature-256 validation (issue #522).
         if request.url.path == "/api/v1/webhooks/github":
@@ -427,6 +431,7 @@ def create_app(
         auth_router,
         auto_healing_router,
         chat_router,
+        setup_router,
     )
     from socialseed_tasker.events.routes import webhook_router as events_webhook_router
 
@@ -460,6 +465,7 @@ def create_app(
     app.include_router(auth_router, prefix="/api/v1", tags=["auth"])
     app.include_router(auto_healing_router, prefix="/api/v1", tags=["auto-healing"])
     app.include_router(chat_router, prefix="/api/v1", tags=["chat"])
+    app.include_router(setup_router, prefix="/api/v1", tags=["setup"])
     app.include_router(events_webhook_router, tags=["webhooks"])
 
     from socialseed_tasker.data_catalog.api import router as registry_router
@@ -599,6 +605,10 @@ def create_app(
 
     app.state.chat_emit = _chat_emit
     logger.info("chat socket.io server ready (path /socket.io/)")
+
+    # Setup wizard state (issue #543): initialized-project flag + first-run writes
+    from socialseed_tasker.infrastructure.web_api.routers.setup import Neo4jSetupStore
+    app.state.setup_store = Neo4jSetupStore()
     if os.getenv("TASKER_INTEGRATION") == "1":
         app.state.delivery_worker.start()
 
