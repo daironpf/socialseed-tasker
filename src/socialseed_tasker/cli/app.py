@@ -149,6 +149,11 @@ from socialseed_tasker.cli.init_command import scaffold_command, interactive_ini
 app.command(name="install", help="Install Tasker infrastructure into a project (non-interactive)")(scaffold_command)
 app.command(name="init", help="Initialize Tasker in a project interactively")(interactive_init_command)
 
+# Register setup as a standalone command (first-run Docker stack boot)
+from socialseed_tasker.cli.setup_command import setup_command
+
+app.command(name="setup", help="Start the Docker stack and print the Setup Wizard URL")(setup_command)
+
 # Register status as a standalone command (not a typer)
 app.command(name="status", help="Show CLI status and configuration")(commands.status_command)
 

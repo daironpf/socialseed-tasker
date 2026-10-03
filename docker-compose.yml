@@ -9,7 +9,7 @@ services:
     environment:
       # IMPORTANT: Neo4j 5.x requires password to differ from username "neo4j" for security.
       # Using "neoSocial" as default. Do not change to "neo4j" or container will fail to start.
-      - NEO4J_AUTH=neo4j/neoSocial
+      - NEO4J_AUTH=neo4j/${TASKER_NEO4J_PASSWORD:-neoSocial}
       - NEO4J_dbms_memory_heap_initial__size=100M
       - NEO4J_dbms_memory_heap_max__size=100M
       - NEO4J_dbms_memory_pagecache_size=50M
@@ -19,7 +19,7 @@ services:
     volumes:
       - neo4j-data:/var/lib/neo4j/data
     healthcheck:
-      test: [ "CMD-SHELL", "echo 'RETURN 1' | cypher-shell -u neo4j -p neoSocial || exit 1" ]
+      test: [ "CMD-SHELL", "echo 'RETURN 1' | cypher-shell -u neo4j -p ${TASKER_NEO4J_PASSWORD:-neoSocial} || exit 1" ]
       interval: 10s
       timeout: 10s
       retries: 30
@@ -34,7 +34,7 @@ services:
     container_name: tasker-db-pg
     image: postgres:15-alpine
     ports:
-      - "127.0.0.1:15432:5432"
+      - "127.0.0.1:${TASKER_PG_PORT:-15432}:5432"
     environment:
       - POSTGRES_USER=tasker
       - POSTGRES_PASSWORD=tasker
@@ -91,18 +91,19 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "127.0.0.1:8888:8000"
+      - "127.0.0.1:${API_PORT:-8888}:8000"
     environment:
       - TASKER_NEO4J_URI=bolt://tasker-db:7687
       - TASKER_NEO4J_USERNAME=neo4j
-      - TASKER_NEO4J_PASSWORD=neoSocial
+      - TASKER_NEO4J_PASSWORD=${TASKER_NEO4J_PASSWORD:-neoSocial}
       - TASKER_API_HOST=0.0.0.0
       - TASKER_API_PORT=8000
-      - TASKER_API_KEY=test-token
+      - TASKER_API_KEY=${TASKER_API_KEY:-test-token}
       - TASKER_AUTH_ENABLED=true
-      - GITHUB_WEBHOOK_SECRET=test-webhook-secret
-      - TASKER_JWT_SECRET=tasker-local-review-secret
-      - TASKER_FRONTEND_URL=http://localhost:19001
+      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-test-webhook-secret}
+      - TASKER_JWT_SECRET=${TASKER_JWT_SECRET:-tasker-local-review-secret}
+      - TASKER_FRONTEND_URL=http://localhost:${FRONTEND_PORT:-19001}
+      - TASKER_INSTALLED=${TASKER_INSTALLED:-false}
       - TASKER_DATABASE_URL=postgresql://tasker:tasker@tasker-db-pg:5432/tasker
       - TASKER_REDIS_URL=redis://tasker-redis:6379/0
       - TASKER_MONGO_URL=mongodb://tasker-db-mongo:27017/tasker_chat
@@ -131,7 +132,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "127.0.0.1:19001:80"
+      - "127.0.0.1:${FRONTEND_PORT:-19001}:80"
     depends_on:
       - tasker-api
       - mock-api
@@ -145,7 +146,7 @@ services:
       context: ./mock-api
       dockerfile: Dockerfile
     ports:
-      - "127.0.0.1:8001:8001"
+      - "127.0.0.1:${MOCK_API_PORT:-8001}:8001"
     environment:
       - DATA_DIR=/app/dataset-de-pruebas
     volumes:

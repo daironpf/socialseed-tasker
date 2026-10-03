@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v5 — Épica: Flow de Onboarding & Setup Wizard Empresarial, de la instalación por CLI/Docker a la configuración guiada en la UI)
 **Created:** 2026-10-03
-**Status:** TODO (0/5 done: #542, #543, #544, #545, #546)
+**Status:** IN PROGRESS (1/5 done: #542; pending #543, #544, #545, #546)
 
 > `notas.md` (v5) define las issues como [Issue #1]…[Issue #5]; interpretando la carpeta
 > `.issues/done/` el siguiente número libre era **#542** (máximo actual **#541**, cerrado en
@@ -30,7 +30,7 @@
 
 | # | Issue | Priority | Type | Status | notas.md |
 |---|---|---|---|---|---|
-| #542 | Comando `tasker setup` e inicialización del stack Docker | HIGH | feat / cli | TODO | Issue #1 |
+| #542 | Comando `tasker setup` e inicialización del stack Docker | HIGH | feat / cli | DONE (→ `.issues/done/`) | Issue #1 |
 | #543 | Endpoints `GET /setup/status` y `POST /setup/initialize` | CRITICAL | feat / backend | TODO | Issue #2 |
 | #544 | Navigation guard de instalación y estado `isInstalled` | HIGH | feat / integration | TODO | Issue #3 |
 | #545 | Componente `SetupWizardView.vue` (asistente paso a paso) | HIGH | feat / ux | TODO | Issue #4 |
@@ -83,7 +83,7 @@
 
 ## Release Checklist (backlog)
 
-- [ ] **#542** implemented — move to `.issues/done/` with `Status: DONE`
+- [x] **#542** implemented - DONE 2026-10-03 (moved to `.issues/done/`, comando `tasker setup` + `setup_command.py` + compose parametrizado `${...}` + `.env.example`, 13 tests nuevos, gates ruff 1011 / mypy 1152 / pytest 1260 sin regresión)
 - [ ] **#543** implemented — move to `.issues/done/` with `Status: DONE`
 - [ ] **#544** implemented — move to `.issues/done/` with `Status: DONE`
 - [ ] **#545** implemented — move to `.issues/done/` with `Status: DONE`
