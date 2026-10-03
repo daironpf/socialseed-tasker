@@ -288,6 +288,28 @@ async def test_list_messages_pagination_before(repo: ChatMongoRepository, db: Fa
         await repo.list_messages("conv-1", before="not-a-date")
 
 
+async def test_latest_message(repo: ChatMongoRepository, db: FakeDB) -> None:
+    conv = await repo.create_or_get_conversation(["alice", "bob"], "direct")
+    assert await repo.latest_message(conv["id"]) is None
+    base = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    for offset, text in ((0, "old"), (1, "new")):
+        db.messages.docs.append(
+            {
+                "_id": ObjectId(),
+                "conversation_id": conv["id"],
+                "sender_id": "alice",
+                "text": text,
+                "type": "text",
+                "read_by": ["alice"],
+                "reactions": [],
+                "created_at": base + timedelta(days=offset),
+            }
+        )
+    latest = await repo.latest_message(conv["id"])
+    assert latest is not None
+    assert latest["text"] == "new"
+
+
 async def test_toggle_pin_add_and_remove(repo: ChatMongoRepository, db: FakeDB) -> None:
     conv = await repo.create_or_get_conversation(["alice", "bob"], "direct")
     pinned = await repo.toggle_pin(conv["id"], "alice")

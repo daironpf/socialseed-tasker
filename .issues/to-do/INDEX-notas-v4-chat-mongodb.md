@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v4 — Épica: Chat en Tiempo Real y Persistencia MongoDB, estrategia Socket.IO)
 **Created:** 2026-10-01
-**Status:** TODO (3/6 done: #536, #537, #538)
+**Status:** TODO (4/6 done: #536, #537, #538, #539)
 
 > `notas.md` (v4) define las issues como [ISSUE-CHAT-01]…[ISSUE-CHAT-06]; el siguiente
 > número libre en `.issues/done` era **#536** (máximo actual #535), por lo que se
@@ -23,7 +23,7 @@
 | #536 | Servicio Docker MongoDB para chat | HIGH | infra / devops | DONE (→ `.issues/done/`) | [ISSUE-CHAT-01] |
 | #537 | Esquema del modelo y repositorio MongoDB del chat | HIGH | feat / backend | DONE (→ `.issues/done/`) | [ISSUE-CHAT-02] |
 | #538 | Servidor Socket.IO (python-socketio) con autenticación JWT | CRITICAL | feat / architecture | DONE (→ `.issues/done/`) | [ISSUE-CHAT-03] |
-| #539 | Endpoints REST del chat e integración con Socket.IO | MEDIUM | feat / backend | TODO | [ISSUE-CHAT-04] |
+| #539 | Endpoints REST del chat e integración con Socket.IO | MEDIUM | feat / backend | DONE (→ `.issues/done/`) | [ISSUE-CHAT-04] |
 | #540 | Conexión Socket.IO cliente y estado reactivo en frontend (chatStore) | HIGH | feat / integration | TODO | [ISSUE-CHAT-05] |
 | #541 | Suite de pruebas unitarias, integración y Socket.IO del chat | HIGH | test / quality | TODO | [ISSUE-CHAT-06] |
 
@@ -32,7 +32,7 @@
 ## Feature Summary
 
 ### Infraestructura
-- **#536 MongoDB (HIGH):** contenedor `tasker-db-mongo` (`mongo:7.0-alpine`), volumen `tasker-mongo-data`, env `TASKER_MONGO_URL` leída en `config/storage.py` con fallback seguro
+- **#536 MongoDB (HIGH):** contenedor `tasker-db-mongo` (`mongo:7.0`), volumen `tasker-mongo-data`, env `TASKER_MONGO_URL` leída en `config/storage.py` con fallback seguro
 
 ### Backend
 - **#537 Esquema y repositorio (HIGH):** `motor` asíncrono, colecciones `conversations`/`messages` con `user_id` inalterables del Auth Store (PostgreSQL), índices `conversation_id`/`participant_ids`/`created_at`
@@ -76,7 +76,7 @@
 - [x] **#536** implemented — DONE 2026-10-01 (moved to `.issues/done/`, `features.md` §1 topología; imagen `mongo:7.0` por tag alpine inexistente)
 - [x] **#537** implemented — DONE 2026-10-02 (moved to `.issues/done/`, `motor` en pyproject+requirements, 16 tests)
 - [x] **#538** implemented — DONE 2026-10-02 (moved to `.issues/done/`, `python-socketio` + ASGIApp + nginx `/socket.io/`, smoke cliente real)
-- [ ] **#539** implemented — move to `.issues/done/`, `features.md` (chat/REST)
+- [x] **#539** implemented — DONE 2026-10-02 (moved to `.issues/done/`, `features.md` §28 "Real API contract (#539)", wire camelCase unificado REST+Socket.IO, 9 tests, smoke 22/22)
 - [ ] **#540** implemented — move to `.issues/done/`, `features.md` (chat/frontend)
 - [ ] **#541** implemented — move to `.issues/done/`, `features.md` (chat/tests)
 - [ ] Each issue: gates backend (`ruff`/`mypy`/`pytest`), `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI

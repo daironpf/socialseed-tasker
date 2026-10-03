@@ -172,6 +172,11 @@ def create_app(
                 "description": "Deployment traceability. "
                 "Track which issues are deployed to which environments (PROD, STAGING, DEV).",
             },
+            {
+                "name": "chat",
+                "description": "Chat conversations, history and pinning. "
+                "Messages created over REST are broadcast in realtime over Socket.IO (issues #538/#539).",
+            },
         ],
         lifespan=lifespan,
     )
@@ -421,6 +426,7 @@ def create_app(
         realtime_router,
         auth_router,
         auto_healing_router,
+        chat_router,
     )
     from socialseed_tasker.events.routes import webhook_router as events_webhook_router
 
@@ -453,6 +459,7 @@ def create_app(
     app.include_router(realtime_router, prefix="/api/v1", tags=["realtime"])
     app.include_router(auth_router, prefix="/api/v1", tags=["auth"])
     app.include_router(auto_healing_router, prefix="/api/v1", tags=["auto-healing"])
+    app.include_router(chat_router, prefix="/api/v1", tags=["chat"])
     app.include_router(events_webhook_router, tags=["webhooks"])
 
     from socialseed_tasker.data_catalog.api import router as registry_router
@@ -586,6 +593,11 @@ def create_app(
         repository=app.state.chat_repository,
         session_store_provider=lambda: getattr(app.state, "auth_sessions", None),
     )
+
+    async def _chat_emit(event: str, data: dict[str, Any], room: str) -> None:
+        await app.state.chat_socket.sio.emit(event, data, room=room)
+
+    app.state.chat_emit = _chat_emit
     logger.info("chat socket.io server ready (path /socket.io/)")
     if os.getenv("TASKER_INTEGRATION") == "1":
         app.state.delivery_worker.start()

@@ -6,6 +6,7 @@ from socialseed_tasker.infrastructure.web_api.routers.ai_search import ai_search
 from socialseed_tasker.infrastructure.web_api.routers.analysis import analysis_router
 from socialseed_tasker.infrastructure.web_api.routers.auth import auth_router
 from socialseed_tasker.infrastructure.web_api.routers.auto_healing import auto_healing_router
+from socialseed_tasker.infrastructure.web_api.routers.chat import chat_router as chat_router
 from socialseed_tasker.infrastructure.web_api.routers.code_graph import code_graph_router
 from socialseed_tasker.infrastructure.web_api.routers.commit import commit_router
 from socialseed_tasker.infrastructure.web_api.routers.components import components_router

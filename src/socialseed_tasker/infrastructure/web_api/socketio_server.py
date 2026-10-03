@@ -11,6 +11,13 @@ Events (server): ``join_room``, ``leave_room``, ``send_message``,
 ``typing_start``, ``typing_stop``, ``mark_as_read``.
 Emitted to the room: ``new_message``, ``messages_read``, ``typing_start``,
 ``typing_stop``.
+
+This module also owns the shared wire projections ``conversation_wire`` /
+``message_wire``: every payload crossing the wire (Socket.IO acks, room
+emissions and the REST chat endpoints of #539) is camelCase and matches the
+frontend contract of #540 (``conversationId``, ``senderId``, ``content``,
+``readBy``, ``createdAt``). Inbound events stay tolerant: room payloads
+accept ``conversation_id`` or ``conversationId``.
 """
 
 from __future__ import annotations
@@ -59,8 +66,48 @@ def _extract_token(environ: dict[str, Any], auth: dict[str, Any] | None) -> str 
     return None
 
 
-def _is_object_id(value: str) -> bool:
+def is_object_id(value: str) -> bool:
     return len(value) == 24 and all(c in "0123456789abcdef" for c in value.lower())
+
+
+def _room(data: dict[str, Any] | None) -> str:
+    payload = data or {}
+    return str(payload.get("conversation_id") or payload.get("conversationId") or "")
+
+
+def conversation_wire(doc: dict[str, Any]) -> dict[str, Any]:
+    """Conversation document -> camelCase payload shared by REST and Socket.IO."""
+    return {
+        "id": str(doc.get("id", "")),
+        "title": doc.get("title"),
+        "type": str(doc.get("type", "direct")),
+        "participantIds": [str(p) for p in doc.get("participant_ids", [])],
+        "pinnedBy": [str(p) for p in doc.get("pinned_by", [])],
+        "createdAt": doc.get("created_at"),
+        "updatedAt": doc.get("updated_at"),
+    }
+
+
+def message_wire(doc: dict[str, Any]) -> dict[str, Any]:
+    """Message document -> camelCase payload matching the frontend ChatMessage type."""
+    reactions: dict[str, list[str]] = {}
+    for reaction in doc.get("reactions") or []:
+        emoji = str(reaction.get("emoji", ""))
+        if emoji:
+            reactions.setdefault(emoji, []).append(str(reaction.get("user_id", "")))
+    wire: dict[str, Any] = {
+        "id": str(doc.get("id", "")),
+        "conversationId": str(doc.get("conversation_id", "")),
+        "senderId": str(doc.get("sender_id", "")),
+        "content": str(doc.get("text", "")),
+        "type": str(doc.get("type", "text")),
+        "readBy": [str(u) for u in doc.get("read_by", [])],
+        "reactions": reactions,
+        "createdAt": doc.get("created_at"),
+    }
+    if doc.get("updated_at") is not None:
+        wire["updatedAt"] = doc["updated_at"]
+    return wire
 
 
 def _ok(payload: Any) -> dict[str, Any]:
@@ -117,7 +164,7 @@ class ChatSocketIOServer:
         if user_id is None:
             raise _AccessDeniedError("UNAUTHENTICATED", "socket session not authenticated")
         cid = str(conversation_id or "")
-        if not _is_object_id(cid):
+        if not is_object_id(cid):
             raise _AccessDeniedError("VALIDATION_ERROR", "invalid conversation_id")
         conv = await self._repository.get_conversation(cid)
         if conv is None:
@@ -157,29 +204,29 @@ class ChatSocketIOServer:
             logger.info("socket.io disconnected (sid=%s)", sid)
 
         async def join_room(sid: str, data: dict[str, Any] | None = None) -> dict[str, Any]:
-            cid = str((data or {}).get("conversation_id") or "")
+            cid = _room(data)
 
             async def action(user_id: str) -> dict[str, Any]:
                 await sio.enter_room(sid, room=cid)
                 logger.info("socket.io join_room user=%s conversation=%s", user_id, cid)
-                return {"conversation_id": cid, "joined": True}
+                return {"conversationId": cid, "joined": True}
 
             return await self._guarded(sid, cid, action)
 
         async def leave_room(sid: str, data: dict[str, Any] | None = None) -> dict[str, Any]:
-            cid = str((data or {}).get("conversation_id") or "")
+            cid = _room(data)
 
             async def action(user_id: str) -> dict[str, Any]:
                 await sio.leave_room(sid, room=cid)
                 logger.info("socket.io leave_room user=%s conversation=%s", user_id, cid)
-                return {"conversation_id": cid, "left": True}
+                return {"conversationId": cid, "left": True}
 
             return await self._guarded(sid, cid, action)
 
         async def send_message(sid: str, data: dict[str, Any] | None = None) -> dict[str, Any]:
             payload = data or {}
-            cid = str(payload.get("conversation_id") or "")
-            text = str(payload.get("text") or "")
+            cid = _room(payload)
+            text = str(payload.get("text") or payload.get("content") or "")
             message_type = str(payload.get("type") or "text")
 
             async def action(user_id: str) -> dict[str, Any]:
@@ -188,22 +235,23 @@ class ChatSocketIOServer:
                 if message_type not in MESSAGE_TYPES:
                     raise _AccessDeniedError("VALIDATION_ERROR", f"invalid message type: {message_type}")
                 message = await self._repository.insert_message(cid, user_id, text, message_type)
-                await sio.emit("new_message", message, room=cid)
-                return message
+                wire = message_wire(message)
+                await sio.emit("new_message", wire, room=cid)
+                return wire
 
             return await self._guarded(sid, cid, action)
 
         async def _typing(sid: str, data: dict[str, Any] | None, event: str) -> dict[str, Any]:
-            cid = str((data or {}).get("conversation_id") or "")
+            cid = _room(data)
 
             async def action(user_id: str) -> dict[str, Any]:
                 await sio.emit(
                     event,
-                    {"conversation_id": cid, "user_id": user_id},
+                    {"conversationId": cid, "userId": user_id},
                     room=cid,
                     skip_sid=sid,
                 )
-                return {"conversation_id": cid, "typing": event == "typing_start"}
+                return {"conversationId": cid, "typing": event == "typing_start"}
 
             return await self._guarded(sid, cid, action)
 
@@ -217,12 +265,17 @@ class ChatSocketIOServer:
         sio.on("typing_stop", typing_stop)
 
         async def mark_as_read(sid: str, data: dict[str, Any] | None = None) -> dict[str, Any]:
-            cid = str((data or {}).get("conversation_id") or "")
+            cid = _room(data)
 
             async def action(user_id: str) -> dict[str, Any]:
                 result = await self._repository.mark_as_read(cid, user_id)
-                await sio.emit("messages_read", result, room=cid)
-                return result
+                wire = {
+                    "conversationId": str(result.get("conversation_id", cid)),
+                    "userId": str(result.get("user_id", user_id)),
+                    "matchedCount": int(result.get("matched_count", 0)),
+                }
+                await sio.emit("messages_read", wire, room=cid)
+                return wire
 
             return await self._guarded(sid, cid, action)
 

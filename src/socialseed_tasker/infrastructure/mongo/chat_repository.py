@@ -163,6 +163,21 @@ class ChatMongoRepository:
             logger.warning("chat list_messages failed for %s: %s", conversation_id, exc)
             raise ChatStoreError(f"list messages failed: {exc}") from exc
 
+    async def latest_message(self, conversation_id: str) -> dict[str, Any] | None:
+        """Return the most recent message of a conversation, or None when empty."""
+        if not conversation_id:
+            raise ChatStoreError("conversation_id is required")
+        try:
+            coll = self._collection("messages")
+            cursor = coll.find({"conversation_id": str(conversation_id)}).sort("created_at", -1)
+            docs: Any = await cursor.to_list(length=1)
+            return _serialize(docs[0]) if docs else None
+        except ChatStoreError:
+            raise
+        except Exception as exc:
+            logger.warning("chat latest_message failed for %s: %s", conversation_id, exc)
+            raise ChatStoreError(f"latest message failed: {exc}") from exc
+
     async def toggle_pin(self, conversation_id: str, user_id: str) -> dict[str, Any]:
         """Add or remove user_id from the conversation pinned_by array."""
         if not conversation_id or not user_id:

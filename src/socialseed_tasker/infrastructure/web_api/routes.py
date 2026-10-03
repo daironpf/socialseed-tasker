@@ -38,6 +38,9 @@ from socialseed_tasker.infrastructure.web_api.routers import (
     webhook_router,
 )
 from socialseed_tasker.infrastructure.web_api.routers import (
+    chat_router as chat_router,
+)
+from socialseed_tasker.infrastructure.web_api.routers import (
     mcp_router as mcp_router,
 )
 from socialseed_tasker.infrastructure.web_api.routers.helpers import (

@@ -1022,6 +1022,25 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 | **Pin/unpin** | Implemented | Pin conversations to top of list |
 | i18n | Implemented | All labels in `chat` section |
 
+### Real API contract (#539)
+
+Backend REST + Socket.IO chat contract (MongoDB #537, servidor Socket.IO #538). Identity:
+JWT `sub`, token API-key, cookie OAuth o header `X-User-ID` (solo con auth deshabilitada).
+
+| Endpoint | Method | Details |
+|---|---|---|
+| `/api/v1/chat/conversations` | GET | Conversaciones del usuario con `lastMessage` (orden por `updatedAt`) |
+| `/api/v1/chat/conversations` | POST | `participantIds` (direct=2 / group>=2, sin duplicados) |
+| `/api/v1/chat/conversations/{id}/messages` | GET | Histórico paginado `limit` + cursor `before` (created_at ISO); 403 no participante |
+| `/api/v1/chat/conversations/{id}/messages` | POST | Persiste con `senderId` = JWT `sub` y emite `new_message` a la sala (dispatcher `app.state.chat_emit`) |
+| `/api/v1/chat/conversations/{id}/pin` | POST | Alterna `pinnedBy` del usuario |
+
+Wire camelCase (envelope `APIResponse` + eventos Socket.IO, contrato de #540):
+
+- **Conversación:** `id`, `title`, `type`, `participantIds`, `pinnedBy`, `createdAt`, `updatedAt`, `lastMessage?`
+- **Mensaje:** `id`, `conversationId`, `senderId`, `content`, `type`, `readBy`, `reactions` (`{emoji: [user_ids]}`), `createdAt`
+- **Eventos:** servidor → `new_message`/`messages_read` (`{conversationId,userId,matchedCount}`)/`typing_*` (`{conversationId,userId}`); acks `{conversationId, joined|left|typing}`. Entrada acepta `conversation_id` o `conversationId`.
+
 ---
 
 ## 29. Floating Chat Widget
