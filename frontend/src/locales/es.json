@@ -1853,5 +1853,10 @@
     "hint": "Dataset mock o backend FastAPI real (/api/v1)",
     "mock": "Mock",
     "real": "API real"
+  },
+  "setup": {
+    "title": "Configuracion de Tasker",
+    "loading": "Preparando el asistente de instalacion...",
+    "statusError": "No se pudo verificar el estado de instalacion. La navegacion continua sin el guard de setup."
   }
 }

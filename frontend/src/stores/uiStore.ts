@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { apiMode, setApiMode as setClientApiMode, type ApiMode } from '@/api/client'
+import { getSetupStatus } from '@/api/setupApi'
 import {
   loadQueue,
   saveQueue,
@@ -320,6 +321,27 @@ export const useUiStore = defineStore('ui', () => {
     setClientApiMode(mode)
   }
 
+  // Installation state from GET /setup/status (issue #543/#544).
+  // `null` = unknown (not checked yet or the check failed); the check runs at
+  // most once per SPA load so navigations never trigger redundant requests.
+  const isInstalled = ref<boolean | null>(null)
+  const setupChecked = ref(false)
+
+  async function checkSetupStatus(): Promise<boolean> {
+    if (setupChecked.value) {
+      return isInstalled.value !== null
+    }
+    setupChecked.value = true
+    try {
+      const status = await getSetupStatus()
+      isInstalled.value = status.installed
+      return true
+    } catch {
+      isInstalled.value = null
+      return false
+    }
+  }
+
   return {
     selectedIssueId,
     sidebarOpen,
@@ -360,5 +382,8 @@ export const useUiStore = defineStore('ui', () => {
     apiMode,
     isMockApi,
     setApiMode,
+    isInstalled,
+    setupChecked,
+    checkSetupStatus,
   }
 })

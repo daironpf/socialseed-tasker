@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v5 — Épica: Flow de Onboarding & Setup Wizard Empresarial, de la instalación por CLI/Docker a la configuración guiada en la UI)
 **Created:** 2026-10-03
-**Status:** IN PROGRESS (2/5 done: #542, #543; pending #544, #545, #546)
+**Status:** IN PROGRESS (3/5 done: #542, #543, #544; pending #545, #546)
 
 > `notas.md` (v5) define las issues como [Issue #1]…[Issue #5]; interpretando la carpeta
 > `.issues/done/` el siguiente número libre era **#542** (máximo actual **#541**, cerrado en
@@ -32,7 +32,7 @@
 |---|---|---|---|---|---|
 | #542 | Comando `tasker setup` e inicialización del stack Docker | HIGH | feat / cli | DONE (→ `.issues/done/`) | Issue #1 |
 | #543 | Endpoints `GET /setup/status` y `POST /setup/initialize` | CRITICAL | feat / backend | DONE (→ `.issues/done/`) | Issue #2 |
-| #544 | Navigation guard de instalación y estado `isInstalled` | HIGH | feat / integration | TODO | Issue #3 |
+| #544 | Navigation guard de instalación y estado `isInstalled` | HIGH | feat / integration | DONE (→ `.issues/done/`) | Issue #3 |
 | #545 | Componente `SetupWizardView.vue` (asistente paso a paso) | HIGH | feat / ux | TODO | Issue #4 |
 | #546 | Configuración de credenciales de IA y servidores MCP | MEDIUM | feat / enterprise | TODO | Issue #5 |
 
@@ -85,7 +85,7 @@
 
 - [x] **#542** implemented - DONE 2026-10-03 (moved to `.issues/done/`, comando `tasker setup` + `setup_command.py` + compose parametrizado `${...}` + `.env.example`, 13 tests nuevos, gates ruff 1011 / mypy 1152 / pytest 1260 sin regresión)
 - [x] **#543** implemented - DONE 2026-10-03 (moved to `.issues/done/`, router `setup.py` con `GET status`/`POST initialize`, `create_user` bcrypt en `user_store`, exención middleware `/api/v1/setup/`, 11 tests nuevos, gates ruff 1011 / mypy 1153 sin regresiones / pytest 1271 + smoke live completo con reset del stack)
-- [ ] **#544** implemented — move to `.issues/done/` with `Status: DONE`
+- [x] **#544** implemented - DONE 2026-10-03 (moved to `.issues/done/`, `setupApi.ts` + `isInstalled`/`checkSetupStatus` en `uiStore`, guard `setupGuard.ts` encadenado a `initSession()`, ruta `/setup` placeholder, `LoginScreen` exento, i18n EN+ES, 5 tests nuevos, gates lint 0 / test 242 / build verde, smoke Playwright live con redirección `/`→`/setup`→tras initialize→`/board`)
 - [ ] **#545** implemented — move to `.issues/done/` with `Status: DONE`
 - [ ] **#546** implemented — move to `.issues/done/` with `Status: DONE`
 - [ ] Each issue: gates backend (`ruff`/`mypy`/`pytest`), `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI

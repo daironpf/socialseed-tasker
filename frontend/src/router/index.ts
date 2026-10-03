@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { applySetupGuard } from '@/router/setupGuard'
 import { useToast } from '@/composables/useToast'
 import i18n from '@/i18n'
 
@@ -33,6 +34,7 @@ const router = createRouter({
     { path: '/agents/studio', name: 'AgentStudio', component: () => import('@/views/AgentStudioView.vue') },
     { path: '/analytics', name: 'Analytics', component: () => import('@/views/AnalyticsDashboardView.vue') },
     { path: '/auth/oauth-callback', name: 'AuthCallback', component: () => import('@/views/AuthCallbackView.vue') },
+    { path: '/setup', name: 'Setup', component: () => import('@/views/SetupWizardView.vue') },
     { path: '/:pathMatch(.*)*', name: 'NotFound', component: () => import('@/views/NotFoundView.vue') },
   ],
 })
@@ -40,6 +42,10 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
   await authStore.initSession()
+  const setupDecision = await applySetupGuard(to)
+  if (setupDecision !== true) {
+    return setupDecision
+  }
   if (!authStore.rolesAllowed(to.meta.roles as string[] | undefined)) {
     useToast().warning(i18n.global.t('auth.forbidden'))
     return { path: '/board', replace: true }

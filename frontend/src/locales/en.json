@@ -1853,5 +1853,10 @@
     "hint": "Mock dataset or real FastAPI backend (/api/v1)",
     "mock": "Mock",
     "real": "Real API"
+  },
+  "setup": {
+    "title": "Tasker Setup",
+    "loading": "Preparing the installation wizard...",
+    "statusError": "Could not verify the installation status. Navigation continues without the setup guard."
   }
 }

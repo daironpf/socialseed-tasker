@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
-import { RouterView, useRouter } from 'vue-router'
+import { RouterView, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import Sidebar from '@/components/layout/Sidebar.vue'
@@ -44,6 +44,7 @@ import { useKeyboardShortcuts, initKeyboardShortcuts } from '@/composables/useKe
 const uiStore = useUiStore()
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const { t } = useI18n()
 const { register } = useKeyboardShortcuts()
 
@@ -51,7 +52,9 @@ const paletteRef = ref<InstanceType<typeof CommandPalette> | null>(null)
 const shortcutsHelpRef = ref<InstanceType<typeof KeyboardShortcutsHelp> | null>(null)
 const mobileMenuOpen = ref(false)
 
-const showLogin = computed(() => !authStore.isAuthenticated)
+// /setup runs before any administrator exists (issue #544), so the login
+// overlay must not cover the wizard.
+const showLogin = computed(() => route.path !== '/setup' && !authStore.isAuthenticated)
 
 function onLoggedIn() {
   window.location.reload()
