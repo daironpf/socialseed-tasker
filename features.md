@@ -1050,6 +1050,14 @@ Cliente `socket.io-client` ^4.8 en `frontend/src/api/chatSocket.ts`: singleton `
 - **Modo real:** hidrata la lista con `GET /chat/conversations`, carga mensajes al seleccionar (`limit=50`), envía por `POST .../messages` (fallback local si la API cae, sin simulación de agente) y tras `reconnect` resincroniza con merge de la última página (`limit=100`).
 - **UI:** chip de estado en el header de ChatView + estado vacío y punto en el widget flotante (claves `chat.connectionConnected|Connecting|Reconnecting|Disconnected`); debounce de `typing_start` al escribir (2s inactivo → `typing_stop`). Modo mock intacto (fixtures con copias frescas al volver).
 
+### Chat test suite (#541)
+
+Batería que blinda #536–#540 sin servicios externos (repo fake/memoria, sin containers ni red):
+
+- **Backend (`tests/api/`):** `test_chat_socketio.py` impulsa el `ChatSocketIOServer` real envuelto en `socketio.ASGIApp` mediante el transporte websocket ASGI en memoria de `TestClient` (framing EIO/SIO manual; `python-socketio` ≥5 ya no incluye `test_client`): handshake con JWT válido acepta y con token ausente/inválido/expirado rechaza (`44` CONNECT_ERROR), guards de sala (`FORBIDDEN`/`NOT_FOUND`/`VALIDATION_ERROR`), 2 clientes en la misma sala (`send_message` → `new_message` con el payload persistido), `typing_start`/`typing_stop` sin eco al emisor (`skip_sid`), `mark_as_read` → `messages_read` broadcast con `matchedCount` y `POST` REST → evento recibido por el cliente conectado (mismo proceso). `test_chat_endpoints.py` amplía autoría: `senderId` y creador salen siempre del JWT (ignora spoofing por body y `X-User-ID`).
+- **Frontend (`vitest`):** `chatStore.spec.ts` (17 tests) cubre modo real con `socket.io-client` mockeado (conexión + hidratación, join/leave, re-join en `connect`, `new_message` con dedupe/unread/`mark_as_read`, typing con auto-limpieza a 7s, `messages_read`, reconexión con resync `limit=100`, envío por API con dedupe del eco y fallback offline, conmutación `apiMode`) y modo mock (fixtures sin abrir socket); `ChatView.spec.ts` (5 tests) verifica `notifyTyping` al escribir, envío con Enter (trim) y bloqueo de PII crítica con enmascarado `[REDACTED_SECRET]` previo al envío (máscara/cancelar/confirmar).
+- **Gates:** pytest `1247 passed / 27 skipped / 3 failed` (3 preexistentes), ruff 1011 / mypy 1152-133 sin cambios; frontend `237 passed / 30 ficheros`, lint 0 errores y build verdes.
+
 ---
 
 ## 29. Floating Chat Widget

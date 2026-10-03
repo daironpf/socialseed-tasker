@@ -113,6 +113,15 @@ class FakeChatRepository:
         self.messages.append(message)
         return message
 
+    async def mark_as_read(self, conversation_id: str, user_id: str) -> dict[str, Any]:
+        self._guard("mark_as_read")
+        matched = 0
+        for message in self.messages:
+            if message["conversation_id"] == conversation_id and user_id not in message["read_by"]:
+                message["read_by"].append(user_id)
+                matched += 1
+        return {"conversation_id": conversation_id, "user_id": user_id, "matched_count": matched}
+
 
 def _headers(user_id: str) -> dict[str, str]:
     tokens = issue_tokens({"id": user_id, "username": user_id})
@@ -312,6 +321,44 @@ def test_create_message_persists_and_emits(chat_env: SimpleNamespace) -> None:
     )
     assert resp.status_code == 403
     assert len(chat_env.emitted) == 1
+
+
+def test_message_authorship_always_follows_token_identity(chat_env: SimpleNamespace) -> None:
+    resp = chat_env.client.post(
+        f"/api/v1/chat/conversations/{CONV_ID}/messages",
+        json={"text": "spoof", "senderId": "mallory", "sender_id": "mallory"},
+        headers=_headers("alice"),
+    )
+    assert resp.status_code == 200
+    assert resp.json()["data"]["senderId"] == "alice"
+    assert chat_env.repo.messages[-1]["sender_id"] == "alice"
+
+    resp = chat_env.client.post(
+        f"/api/v1/chat/conversations/{CONV_ID}/messages",
+        json={"text": "jwt gana"},
+        headers={**_headers("alice"), "X-User-ID": "mallory"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["data"]["senderId"] == "alice"
+
+    resp = chat_env.client.post(
+        f"/api/v1/chat/conversations/{CONV_ID}/messages",
+        json={"text": "solo dev header"},
+        headers={"X-User-ID": "bob"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["data"]["senderId"] == "bob"
+
+
+def test_conversation_creator_identity_always_follows_token(chat_env: SimpleNamespace) -> None:
+    resp = chat_env.client.post(
+        "/api/v1/chat/conversations",
+        json={"participantIds": ["bob"]},
+        headers={**_headers("alice"), "X-User-ID": "mallory"},
+    )
+    assert resp.status_code == 200
+    created = resp.json()["data"]
+    assert created["participantIds"] == ["alice", "bob"]
 
 
 def test_dev_header_identity_when_auth_disabled(chat_env: SimpleNamespace) -> None:

@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v4 — Épica: Chat en Tiempo Real y Persistencia MongoDB, estrategia Socket.IO)
 **Created:** 2026-10-01
-**Status:** TODO (5/6 done: #536, #537, #538, #539, #540)
+**Status:** DONE (6/6 done: #536, #537, #538, #539, #540, #541)
 
 > `notas.md` (v4) define las issues como [ISSUE-CHAT-01]…[ISSUE-CHAT-06]; el siguiente
 > número libre en `.issues/done` era **#536** (máximo actual #535), por lo que se
@@ -25,7 +25,7 @@
 | #538 | Servidor Socket.IO (python-socketio) con autenticación JWT | CRITICAL | feat / architecture | DONE (→ `.issues/done/`) | [ISSUE-CHAT-03] |
 | #539 | Endpoints REST del chat e integración con Socket.IO | MEDIUM | feat / backend | DONE (→ `.issues/done/`) | [ISSUE-CHAT-04] |
 | #540 | Conexión Socket.IO cliente y estado reactivo en frontend (chatStore) | HIGH | feat / integration | DONE (→ `.issues/done/`) | [ISSUE-CHAT-05] |
-| #541 | Suite de pruebas unitarias, integración y Socket.IO del chat | HIGH | test / quality | TODO | [ISSUE-CHAT-06] |
+| #541 | Suite de pruebas unitarias, integración y Socket.IO del chat | HIGH | test / quality | DONE (→ `.issues/done/`) | [ISSUE-CHAT-06] |
 
 ---
 
@@ -78,7 +78,7 @@
 - [x] **#538** implemented — DONE 2026-10-02 (moved to `.issues/done/`, `python-socketio` + ASGIApp + nginx `/socket.io/`, smoke cliente real)
 - [x] **#539** implemented — DONE 2026-10-02 (moved to `.issues/done/`, `features.md` §28 "Real API contract (#539)", wire camelCase unificado REST+Socket.IO, 9 tests, smoke 22/22)
 - [x] **#540** implemented — DONE 2026-10-03 (moved to `.issues/done/`, `features.md` §28 "Realtime frontend (#540)", `chatSocket.ts` + ciclo de vida en `chatStore`, gates lint 0 / test 215 / build verdes, `chatSocket.spec.ts` +7)
-- [ ] **#541** implemented — move to `.issues/done/`, `features.md` (chat/tests)
+- [x] **#541** implemented — DONE 2026-10-03 (moved to `.issues/done/`, `features.md` §28 "Chat test suite (#541)", 12 tests backend + 22 frontend, gates pytest 1247 / test 237 / lint 0 / build verdes)
 - [ ] Each issue: gates backend (`ruff`/`mypy`/`pytest`), `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI
 - [ ] Move issue file to `.issues/done/` with `Status: DONE` when complete
 - [ ] Commit message references `#NNN`
