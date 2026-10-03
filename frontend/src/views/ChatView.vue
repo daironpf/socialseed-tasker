@@ -35,6 +35,15 @@
               {{ chatStore.activeConversation.description || getParticipantNames(chatStore.activeConversation) }}
             </p>
           </div>
+          <span
+            v-if="chatStore.isRealtimeApi"
+            class="flex items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-semibold"
+            :class="connectionChipClass"
+            :title="t('chat.' + chatStore.connectionKey)"
+          >
+            <span class="h-1.5 w-1.5 rounded-full" :class="connectionDotClass"></span>
+            {{ t('chat.' + chatStore.connectionKey) }}
+          </span>
           <button
             class="rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
             :aria-label="t('chat.togglePin')"
@@ -67,7 +76,7 @@
                 :metadata="msg.metadata"
                 :reactions="msg.reactions"
                 :created-at="msg.createdAt"
-                :is-own="msg.senderId === 'admin'"
+                :is-own="msg.senderId === chatStore.currentUserId"
               />
             </div>
           </div>
@@ -86,6 +95,15 @@
             </div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('chat.selectConversation') }}</h3>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('chat.selectConversationDesc') }}</p>
+            <span
+              v-if="chatStore.isRealtimeApi"
+              class="mt-4 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold"
+              :class="connectionChipClass"
+              :title="t('chat.' + chatStore.connectionKey)"
+            >
+              <span class="h-1.5 w-1.5 rounded-full" :class="connectionDotClass"></span>
+              {{ t('chat.' + chatStore.connectionKey) }}
+            </span>
           </div>
         </div>
       </template>
@@ -194,6 +212,25 @@ import type { Conversation } from '@/types/chat'
 
 const { t } = useI18n()
 const chatStore = useChatStore()
+
+const CONNECTION_CHIP_TONES: Record<string, string> = {
+  green: 'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/30 dark:text-green-400',
+  blue: 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  amber: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+  gray: 'border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400',
+}
+const CONNECTION_DOT_TONES: Record<string, string> = {
+  green: 'bg-green-500',
+  blue: 'bg-blue-500',
+  amber: 'bg-amber-500',
+  gray: 'bg-gray-400',
+}
+const connectionChipClass = computed(
+  () => CONNECTION_CHIP_TONES[chatStore.connectionTone] || CONNECTION_CHIP_TONES.gray,
+)
+const connectionDotClass = computed(
+  () => CONNECTION_DOT_TONES[chatStore.connectionTone] || CONNECTION_DOT_TONES.gray,
+)
 
 const messagesContainer = ref<HTMLDivElement | null>(null)
 const showNewChatModal = ref(false)

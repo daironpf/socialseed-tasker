@@ -838,7 +838,11 @@
     "now": "now",
     "today": "Today",
     "yesterday": "Yesterday",
-    "issue": "Issue"
+    "issue": "Issue",
+    "connectionConnected": "Connected",
+    "connectionConnecting": "Connecting",
+    "connectionReconnecting": "Reconnecting",
+    "connectionDisconnected": "Disconnected"
   },
   "mcp": {
     "title": "MCP Inspector",

@@ -87,6 +87,7 @@ const emit = defineEmits<{
 function onInput() {
   piiDetections.value = detectPII(message.value)
   autoResize()
+  chatStore.notifyTyping()
 }
 
 function handleSend() {

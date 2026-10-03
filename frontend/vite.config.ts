@@ -16,6 +16,11 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
+      '/socket.io': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        ws: true,
+      },
       '/mock-api': {
         target: 'http://localhost:8001',
         changeOrigin: true,

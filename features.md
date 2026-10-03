@@ -1041,6 +1041,15 @@ Wire camelCase (envelope `APIResponse` + eventos Socket.IO, contrato de #540):
 - **Mensaje:** `id`, `conversationId`, `senderId`, `content`, `type`, `readBy`, `reactions` (`{emoji: [user_ids]}`), `createdAt`
 - **Eventos:** servidor → `new_message`/`messages_read` (`{conversationId,userId,matchedCount}`)/`typing_*` (`{conversationId,userId}`); acks `{conversationId, joined|left|typing}`. Entrada acepta `conversation_id` o `conversationId`.
 
+### Realtime frontend (#540)
+
+Cliente `socket.io-client` ^4.8 en `frontend/src/api/chatSocket.ts`: singleton `io(origen, { path: '/socket.io/', auth: { token } })` con el JWT activo (origen derivado de `window.__API_URL__`), gate por `apiMode` (en mock **nunca** conecta) y estados `connecting/connected/reconnecting/disconnected` con el backoff nativo de socket.io.
+
+- **Ciclo de vida (`chatStore.ts`):** conecta al entrar en modo real y al aparecer la sesión; `join_room` + `mark_as_read` al abrir una conversación, `leave_room` al cambiar; re-join del activo en cada (re)conexión; desconecta al volver a mock o perder la sesión (logout recarga la página).
+- **Listeners:** `new_message` → inserta con dedupe por `id`, actualiza `lastMessage`/no leídos y emite `mark_as_read` si está activa; `typing_start`/`typing_stop` → `typingUsers` (auto-limpieza a los 7s); `messages_read` → `readBy`.
+- **Modo real:** hidrata la lista con `GET /chat/conversations`, carga mensajes al seleccionar (`limit=50`), envía por `POST .../messages` (fallback local si la API cae, sin simulación de agente) y tras `reconnect` resincroniza con merge de la última página (`limit=100`).
+- **UI:** chip de estado en el header de ChatView + estado vacío y punto en el widget flotante (claves `chat.connectionConnected|Connecting|Reconnecting|Disconnected`); debounce de `typing_start` al escribir (2s inactivo → `typing_stop`). Modo mock intacto (fixtures con copias frescas al volver).
+
 ---
 
 ## 29. Floating Chat Widget

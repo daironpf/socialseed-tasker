@@ -1,5 +1,17 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import client, { apiMode, isMockMode } from '@/api/client'
+import { getAccessToken } from '@/api/authSession'
+import {
+  connectChatSocket,
+  disconnectChatSocket,
+  emitChatEvent,
+  useChatConnectionState,
+  type ChatConnectionState,
+  type ChatSocketHandlers,
+} from '@/api/chatSocket'
+import { useAuthStore } from '@/stores/authStore'
+import type { APIResponse } from '@/types'
 import type { Conversation, ChatMessage, ChatParticipant, TypingUser } from '@/types/chat'
 
 const CURRENT_USER_ID = 'admin'
@@ -151,13 +163,125 @@ const MOCK_MESSAGES: Record<string, ChatMessage[]> = {
   ],
 }
 
+interface ChatMessageWire {
+  id: string
+  conversationId: string
+  senderId: string
+  content: string
+  type: string
+  readBy?: string[]
+  reactions?: Record<string, string[]>
+  createdAt: string
+  updatedAt?: string
+}
+
+interface ConversationWire {
+  id: string
+  title?: string | null
+  type: string
+  participantIds: string[]
+  pinnedBy?: string[]
+  createdAt: string
+  updatedAt: string
+  lastMessage?: ChatMessageWire
+}
+
+const CONVERSATION_KINDS = ['direct', 'group', 'agent']
+
+const CONNECTION_LABELS: Record<ChatConnectionState, string> = {
+  connected: 'connectionConnected',
+  connecting: 'connectionConnecting',
+  reconnecting: 'connectionReconnecting',
+  disconnected: 'connectionDisconnected',
+}
+
+const CONNECTION_TONES: Record<ChatConnectionState, string> = {
+  connected: 'green',
+  connecting: 'blue',
+  reconnecting: 'amber',
+  disconnected: 'gray',
+}
+
+function resolveParticipant(id: string): ChatParticipant {
+  return MOCK_PARTICIPANTS[id] || { id, username: id, avatar: '👤', type: 'human', isOnline: false }
+}
+
+function decodeJwtSub(): string | null {
+  const token = getAccessToken()
+  if (!token) return null
+  try {
+    const base64 = token.split('.')[1]
+    if (!base64) return null
+    const claims = JSON.parse(atob(base64.replace(/-/g, '+').replace(/_/g, '/'))) as { sub?: unknown }
+    return typeof claims.sub === 'string' && claims.sub ? claims.sub : null
+  } catch {
+    return null
+  }
+}
+
+function wireToMessage(wire: ChatMessageWire): ChatMessage {
+  const sender = resolveParticipant(wire.senderId)
+  const message: ChatMessage = {
+    id: wire.id,
+    conversationId: wire.conversationId,
+    senderId: wire.senderId,
+    senderName: sender.username,
+    senderAvatar: sender.avatar,
+    senderType: sender.type,
+    content: wire.content,
+    type: wire.type as ChatMessage['type'],
+    readBy: wire.readBy ? [...wire.readBy] : [],
+    createdAt: wire.createdAt,
+  }
+  if (wire.reactions && Object.keys(wire.reactions).length > 0) {
+    message.reactions = wire.reactions
+  }
+  if (wire.updatedAt) {
+    message.updatedAt = wire.updatedAt
+  }
+  return message
+}
+
+function wireToConversation(wire: ConversationWire, me: string): Conversation {
+  const kind = CONVERSATION_KINDS.includes(wire.type) ? wire.type : 'direct'
+  const participants = (wire.participantIds || []).map(resolveParticipant)
+  const others = participants.filter((p) => p.id !== me)
+  const conversation: Conversation = {
+    id: wire.id,
+    type: kind as Conversation['type'],
+    name:
+      wire.title ||
+      (kind === 'direct' && others.length > 0 ? others.map((p) => p.username).join(', ') : 'Chat'),
+    participants,
+    unreadCount: 0,
+    isPinned: (wire.pinnedBy || []).includes(me),
+    createdAt: wire.createdAt,
+    updatedAt: wire.updatedAt,
+  }
+  if (wire.lastMessage) {
+    conversation.lastMessage = wireToMessage(wire.lastMessage)
+  }
+  return conversation
+}
+
 export const useChatStore = defineStore('chat', () => {
-  const conversations = ref<Conversation[]>(MOCK_CONVERSATIONS)
-  const messages = ref<Record<string, ChatMessage[]>>(MOCK_MESSAGES)
+  const conversations = ref<Conversation[]>(MOCK_CONVERSATIONS.map((c) => ({ ...c })))
+  const messages = ref<Record<string, ChatMessage[]>>(
+    Object.fromEntries(Object.entries(MOCK_MESSAGES).map(([key, list]) => [key, [...list]])),
+  )
   const activeConversationId = ref<string | null>(null)
   const typingUsers = ref<TypingUser[]>([])
   const searchQuery = ref('')
   const loading = ref(false)
+  const currentUserId = ref<string>(decodeJwtSub() || CURRENT_USER_ID)
+  const connectionState = useChatConnectionState()
+  const isRealtimeApi = computed(() => !isMockMode())
+  const connectionKey = computed(() => CONNECTION_LABELS[connectionState.value])
+  const connectionTone = computed(() => CONNECTION_TONES[connectionState.value])
+  const typingTimers = new Map<string, ReturnType<typeof setTimeout>>()
+  let typingActive = false
+  let typingConversationId: string | null = null
+  let typingIdleTimer: ReturnType<typeof setTimeout> | null = null
 
   const activeConversation = computed(() =>
     conversations.value.find(c => c.id === activeConversationId.value) || null
@@ -189,14 +313,30 @@ export const useChatStore = defineStore('chat', () => {
   )
 
   function selectConversation(id: string) {
+    const previous = activeConversationId.value
+    if (previous && previous !== id) {
+      emitChatEvent('leave_room', { conversation_id: previous })
+      clearTypingFor(previous)
+    }
     activeConversationId.value = id
     const conv = conversations.value.find(c => c.id === id)
     if (conv) {
       conv.unreadCount = 0
     }
+    if (isMockMode()) return
+    emitChatEvent('join_room', { conversation_id: id })
+    emitChatEvent('mark_as_read', { conversation_id: id })
+    if (!messages.value[id]) {
+      void loadMessages(id)
+    }
   }
 
   function sendMessage(conversationId: string, content: string, type: ChatMessage['type'] = 'text', metadata?: ChatMessage['metadata']) {
+    if (!isMockMode()) {
+      void sendMessageReal(conversationId, content, type, metadata)
+      return
+    }
+
     const msg: ChatMessage = {
       id: `msg-${Date.now()}`,
       conversationId,
@@ -261,6 +401,202 @@ export const useChatStore = defineStore('chat', () => {
       if (activeConversationId.value !== conversationId) {
         conv.unreadCount++
       }
+    }
+  }
+
+  async function sendMessageReal(
+    conversationId: string,
+    content: string,
+    type: ChatMessage['type'],
+    metadata?: ChatMessage['metadata'],
+  ) {
+    stopTyping()
+    try {
+      const response = await client.post<APIResponse<ChatMessageWire>>(
+        `/chat/conversations/${conversationId}/messages`,
+        { text: content, type },
+      )
+      const wire = response.data.data
+      if (wire) {
+        applyIncomingMessage(wire)
+        const stored = messages.value[conversationId]?.find((m) => m.id === wire.id)
+        if (stored && metadata) {
+          stored.metadata = metadata
+        }
+        return
+      }
+    } catch {
+      // Offline or chat API degraded: keep the message locally (no agent simulation).
+    }
+    const sender = resolveParticipant(currentUserId.value)
+    commitMessage({
+      id: `msg-${Date.now()}`,
+      conversationId,
+      senderId: currentUserId.value,
+      senderName: sender.username,
+      senderAvatar: sender.avatar,
+      senderType: sender.type,
+      content,
+      type,
+      metadata,
+      readBy: [currentUserId.value],
+      createdAt: new Date().toISOString(),
+    })
+  }
+
+  function commitMessage(message: ChatMessage) {
+    const list = messages.value[message.conversationId] || (messages.value[message.conversationId] = [])
+    if (list.some(m => m.id === message.id)) return
+    list.push(message)
+    list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    const conv = conversations.value.find(c => c.id === message.conversationId)
+    if (conv) {
+      conv.lastMessage = message
+      conv.updatedAt = message.createdAt
+      if (
+        message.conversationId !== activeConversationId.value &&
+        message.senderId !== currentUserId.value
+      ) {
+        conv.unreadCount++
+      }
+    }
+    if (message.conversationId === activeConversationId.value) {
+      emitChatEvent('mark_as_read', { conversation_id: message.conversationId })
+    }
+  }
+
+  function applyIncomingMessage(payload: unknown) {
+    const wire = payload as ChatMessageWire | null
+    if (!wire?.id || !wire.conversationId) return
+    commitMessage(wireToMessage(wire))
+  }
+
+  function handleMessagesRead(payload: unknown) {
+    const data = payload as { conversationId?: string; userId?: string } | null
+    if (!data?.conversationId || !data.userId) return
+    const list = messages.value[data.conversationId]
+    if (!list) return
+    for (const message of list) {
+      if (!message.readBy.includes(data.userId)) {
+        message.readBy.push(data.userId)
+      }
+    }
+  }
+
+  function removeTyping(conversationId: string, userId: string) {
+    typingUsers.value = typingUsers.value.filter(
+      t => !(t.conversationId === conversationId && t.userId === userId),
+    )
+  }
+
+  function handleTypingStart(payload: unknown) {
+    const data = payload as { conversationId?: string; userId?: string } | null
+    if (!data?.conversationId || !data.userId) return
+    const { conversationId, userId } = data
+    if (!typingUsers.value.some(t => t.conversationId === conversationId && t.userId === userId)) {
+      typingUsers.value.push({
+        userId,
+        username: resolveParticipant(userId).username,
+        conversationId,
+        startedAt: Date.now(),
+      })
+    }
+    const key = `${conversationId}:${userId}`
+    const stale = typingTimers.get(key)
+    if (stale) clearTimeout(stale)
+    typingTimers.set(
+      key,
+      setTimeout(() => {
+        typingTimers.delete(key)
+        removeTyping(conversationId, userId)
+      }, 7000),
+    )
+  }
+
+  function handleTypingStop(payload: unknown) {
+    const data = payload as { conversationId?: string; userId?: string } | null
+    if (!data?.conversationId || !data.userId) return
+    const key = `${data.conversationId}:${data.userId}`
+    const timer = typingTimers.get(key)
+    if (timer) clearTimeout(timer)
+    typingTimers.delete(key)
+    removeTyping(data.conversationId, data.userId)
+  }
+
+  function clearTypingFor(conversationId: string) {
+    typingUsers.value = typingUsers.value.filter(t => t.conversationId !== conversationId)
+    for (const [key, timer] of typingTimers) {
+      if (key.startsWith(`${conversationId}:`)) {
+        clearTimeout(timer)
+        typingTimers.delete(key)
+      }
+    }
+  }
+
+  function notifyTyping() {
+    if (isMockMode() || !activeConversationId.value) return
+    const conversationId = activeConversationId.value
+    if (!typingActive) {
+      typingActive = emitChatEvent('typing_start', { conversation_id: conversationId })
+      if (typingActive) typingConversationId = conversationId
+    }
+    if (typingIdleTimer) clearTimeout(typingIdleTimer)
+    typingIdleTimer = setTimeout(() => stopTyping(), 2000)
+  }
+
+  function stopTyping() {
+    if (typingIdleTimer) {
+      clearTimeout(typingIdleTimer)
+      typingIdleTimer = null
+    }
+    if (typingActive && typingConversationId) {
+      emitChatEvent('typing_stop', { conversation_id: typingConversationId })
+    }
+    typingActive = false
+    typingConversationId = null
+  }
+
+  async function hydrateConversations() {
+    if (isMockMode()) return
+    try {
+      const response = await client.get<APIResponse<ConversationWire[]>>('/chat/conversations', {
+        suppressErrorToast: true,
+      })
+      const wires = response.data.data || []
+      conversations.value = wires.map(wire => wireToConversation(wire, currentUserId.value))
+    } catch {
+      // Keep the current list while the API is unreachable or the session is not ready.
+    }
+  }
+
+  async function loadMessages(conversationId: string, resync = false) {
+    if (isMockMode()) return
+    loading.value = true
+    try {
+      const response = await client.get<APIResponse<{ messages: ChatMessageWire[] }>>(
+        `/chat/conversations/${conversationId}/messages`,
+        { params: { limit: resync ? 100 : 50 }, suppressErrorToast: resync },
+      )
+      const incoming = (response.data.data?.messages || []).map(wireToMessage)
+      if (resync) {
+        const existing = messages.value[conversationId] || []
+        const known = new Set(existing.map(m => m.id))
+        const merged = [...existing, ...incoming.filter(m => !known.has(m.id))]
+        merged.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        messages.value[conversationId] = merged
+      } else {
+        messages.value[conversationId] = incoming
+      }
+      const newest = incoming.length > 0 ? incoming[incoming.length - 1] : null
+      const conv = conversations.value.find(c => c.id === conversationId)
+      if (conv && newest && (!conv.lastMessage || newest.createdAt >= conv.updatedAt)) {
+        conv.lastMessage = newest
+        conv.updatedAt = newest.createdAt
+      }
+    } catch {
+      // Resync/load failure keeps whatever is already loaded.
+    } finally {
+      loading.value = false
     }
   }
 
@@ -345,6 +681,87 @@ export const useChatStore = defineStore('chat', () => {
     return Object.values(MOCK_PARTICIPANTS).filter(p => p.isOnline)
   }
 
+  const socketHandlers: ChatSocketHandlers = {
+    onConnect: () => {
+      const conversationId = activeConversationId.value
+      if (conversationId) {
+        emitChatEvent('join_room', { conversation_id: conversationId })
+        emitChatEvent('mark_as_read', { conversation_id: conversationId })
+      }
+    },
+    onReconnect: () => {
+      const conversationId = activeConversationId.value
+      if (conversationId && messages.value[conversationId]) {
+        void loadMessages(conversationId, true)
+      }
+    },
+    onNewMessage: applyIncomingMessage,
+    onTypingStart: handleTypingStart,
+    onTypingStop: handleTypingStop,
+    onMessagesRead: handleMessagesRead,
+  }
+
+  function syncChatSocket() {
+    if (isMockMode()) {
+      disconnectChatSocket()
+      return
+    }
+    currentUserId.value = decodeJwtSub() || currentUserId.value
+    connectChatSocket(socketHandlers)
+  }
+
+  function restoreMockFixtures() {
+    conversations.value = MOCK_CONVERSATIONS.map(c => ({ ...c }))
+    messages.value = Object.fromEntries(
+      Object.entries(MOCK_MESSAGES).map(([key, list]) => [key, [...list]]),
+    )
+    typingUsers.value = []
+    for (const timer of typingTimers.values()) clearTimeout(timer)
+    typingTimers.clear()
+    stopTyping()
+    if (
+      activeConversationId.value &&
+      !conversations.value.some(c => c.id === activeConversationId.value)
+    ) {
+      activeConversationId.value = null
+    }
+  }
+
+  const authStore = useAuthStore()
+
+  syncChatSocket()
+  if (!isMockMode()) {
+    void hydrateConversations()
+  }
+
+  // Runtime data-source switch (mock <-> real), issues #517/#540
+  watch(apiMode, () => {
+    if (isMockMode()) {
+      disconnectChatSocket()
+      restoreMockFixtures()
+    } else {
+      currentUserId.value = decodeJwtSub() || currentUserId.value
+      connectChatSocket(socketHandlers)
+      void hydrateConversations()
+    }
+  })
+
+  // The socket handshake needs the active JWT: connect/hydrate when the
+  // session appears and disconnect when it goes away (issue #540).
+  watch(
+    () => authStore.user,
+    user => {
+      if (isMockMode()) return
+      if (user) {
+        currentUserId.value = decodeJwtSub() || currentUserId.value
+        connectChatSocket(socketHandlers)
+        void hydrateConversations()
+      } else {
+        disconnectChatSocket()
+      }
+    },
+  )
+
   return {
     conversations,
     messages,
@@ -354,6 +771,11 @@ export const useChatStore = defineStore('chat', () => {
     typingUsers,
     searchQuery,
     loading,
+    currentUserId,
+    connectionState,
+    connectionKey,
+    connectionTone,
+    isRealtimeApi,
     filteredConversations,
     totalUnread,
     selectConversation,
@@ -363,6 +785,8 @@ export const useChatStore = defineStore('chat', () => {
     togglePin,
     getParticipant,
     getOnlineParticipants,
+    notifyTyping,
+    stopTyping,
     MOCK_PARTICIPANTS,
   }
 })

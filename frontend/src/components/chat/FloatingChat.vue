@@ -84,6 +84,12 @@
 
           <!-- Actions -->
           <div class="flex items-center gap-0.5">
+            <span
+              v-if="chatStore.isRealtimeApi"
+              class="mr-1 h-2 w-2 flex-shrink-0 rounded-full"
+              :class="connectionDotClass"
+              :title="t('chat.' + chatStore.connectionKey)"
+            ></span>
             <button
               class="rounded-full p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-800"
               :aria-label="isMinimized ? t('floatingChat.expand') : t('floatingChat.minimize')"
@@ -161,7 +167,7 @@
                   <div class="flex items-center justify-between">
                     <p class="mr-2 min-w-0 truncate text-[12px] text-gray-500 dark:text-gray-400">
                       <template v-if="conv.lastMessage">
-                        {{ conv.lastMessage.senderId === 'admin' ? t('floatingChat.you') + ': ' : '' }}{{ conv.lastMessage.content }}
+                        {{ conv.lastMessage.senderId === chatStore.currentUserId ? t('floatingChat.you') + ': ' : '' }}{{ conv.lastMessage.content }}
                       </template>
                       <template v-else>
                         {{ conv.description || t('floatingChat.noMessages') }}
@@ -227,7 +233,7 @@
                 </div>
 
                 <!-- Code block -->
-                <div v-else-if="msg.type === 'code'" class="mb-1 flex" :class="msg.senderId === 'admin' ? 'justify-end' : 'justify-start'">
+                <div v-else-if="msg.type === 'code'" class="mb-1 flex" :class="msg.senderId === chatStore.currentUserId ? 'justify-end' : 'justify-start'">
                   <div class="max-w-[85%] overflow-hidden rounded-2xl bg-gray-900 shadow-sm">
                     <div class="flex items-center gap-1.5 border-b border-gray-700 px-3 py-1.5 text-[10px] text-gray-500 dark:text-gray-400">
                       <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
@@ -241,7 +247,7 @@
                 <div
                   v-else
                   class="mb-0.5 flex items-end gap-1.5"
-                  :class="msg.senderId === 'admin' ? 'justify-end' : 'justify-start'"
+                  :class="msg.senderId === chatStore.currentUserId ? 'justify-end' : 'justify-start'"
                 >
                   <!-- Other's avatar (show only on first message in a row) -->
                   <div
@@ -257,7 +263,7 @@
                   <!-- Bubble -->
                   <div
                     class="max-w-[85%] rounded-2xl px-3 py-2 text-[13px] leading-relaxed"
-                    :class="msg.senderId === 'admin'
+                    :class="msg.senderId === chatStore.currentUserId
                       ? 'bg-blue-500 text-white rounded-br-md'
                       : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white rounded-bl-md'"
                     v-html="renderBubble(msg.content)"
@@ -268,7 +274,7 @@
                 <div
                   v-if="isLastInGroup(idx)"
                   class="mt-0.5 flex px-1"
-                  :class="msg.senderId === 'admin' ? 'justify-end' : 'justify-start'"
+                  :class="msg.senderId === chatStore.currentUserId ? 'justify-end' : 'justify-start'"
                 >
                   <span class="ml-9 text-[10px] text-gray-500 dark:text-gray-400">
                     {{ formatBubbleTime(msg.createdAt) }}
@@ -311,7 +317,7 @@
                   class="w-full resize-none bg-transparent text-[13px] text-gray-900 placeholder-gray-500 focus:outline-none dark:text-white dark:placeholder-gray-400"
                   style="line-height: 22px"
                   @keydown.enter.exact.prevent="handleSend"
-                  @input="autoResize"
+                  @input="onChatInput"
                 ></textarea>
               </div>
 
@@ -355,6 +361,16 @@ defineEmits<{
 
 const { t } = useI18n()
 const chatStore = useChatStore()
+
+const CONNECTION_DOT_TONES: Record<string, string> = {
+  green: 'bg-green-500',
+  blue: 'bg-blue-500',
+  amber: 'bg-amber-500',
+  gray: 'bg-gray-400',
+}
+const connectionDotClass = computed(
+  () => CONNECTION_DOT_TONES[chatStore.connectionTone] || CONNECTION_DOT_TONES.gray,
+)
 
 const isOpen = ref(false)
 const isMinimized = ref(false)
@@ -403,6 +419,11 @@ function handleSend() {
   })
 }
 
+function onChatInput() {
+  autoResize()
+  chatStore.notifyTyping()
+}
+
 function autoResize() {
   if (!textareaRef.value) return
   textareaRef.value.style.height = 'auto'
@@ -420,13 +441,13 @@ function scrollToBottom() {
 function getConvIcon(conv: Conversation): string {
   if (conv.type === 'group') return '👥'
   if (conv.type === 'agent') return '🤖'
-  const other = conv.participants.find(p => p.id !== 'admin')
+  const other = conv.participants.find(p => p.id !== chatStore.currentUserId)
   return other?.avatar || '👤'
 }
 
 function isOnline(conv: Conversation): boolean {
-  if (conv.type === 'group') return conv.participants.some(p => p.id !== 'admin' && p.isOnline)
-  const other = conv.participants.find(p => p.id !== 'admin')
+  if (conv.type === 'group') return conv.participants.some(p => p.id !== chatStore.currentUserId && p.isOnline)
+  const other = conv.participants.find(p => p.id !== chatStore.currentUserId)
   return other?.isOnline || false
 }
 
