@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v5 — Épica: Flow de Onboarding & Setup Wizard Empresarial, de la instalación por CLI/Docker a la configuración guiada en la UI)
 **Created:** 2026-10-03
-**Status:** IN PROGRESS (3/5 done: #542, #543, #544; pending #545, #546)
+**Status:** IN PROGRESS (4/5 done: #542, #543, #544, #545; pending #546)
 
 > `notas.md` (v5) define las issues como [Issue #1]…[Issue #5]; interpretando la carpeta
 > `.issues/done/` el siguiente número libre era **#542** (máximo actual **#541**, cerrado en
@@ -33,7 +33,7 @@
 | #542 | Comando `tasker setup` e inicialización del stack Docker | HIGH | feat / cli | DONE (→ `.issues/done/`) | Issue #1 |
 | #543 | Endpoints `GET /setup/status` y `POST /setup/initialize` | CRITICAL | feat / backend | DONE (→ `.issues/done/`) | Issue #2 |
 | #544 | Navigation guard de instalación y estado `isInstalled` | HIGH | feat / integration | DONE (→ `.issues/done/`) | Issue #3 |
-| #545 | Componente `SetupWizardView.vue` (asistente paso a paso) | HIGH | feat / ux | TODO | Issue #4 |
+| #545 | Componente `SetupWizardView.vue` (asistente paso a paso) | HIGH | feat / ux | DONE (→ `.issues/done/`) | Issue #4 |
 | #546 | Configuración de credenciales de IA y servidores MCP | MEDIUM | feat / enterprise | TODO | Issue #5 |
 
 ---
@@ -44,7 +44,7 @@
 - **#542 `tasker setup` (HIGH):** chequeo Docker/Compose (`shutil.which`), `.env` idempotente con `TASKER_INSTALLED=false`, `docker-compose.yml` parametrizado con defaults actuales, `docker compose up -d` y salida `Rich` con la URL `http://localhost:<port>/setup` (`--port` default `19001`, flag `--dev`)
 
 ### Backend
-- **#543 Endpoints de setup (CRITICAL):** `GET /api/v1/setup/status` → `{installed, needSetup}` (nodo raíz/estado persistido o env override) y `POST /setup/initialize` con `SetupPayload` (admin sanitizado con `normalize_username`, default `admin`/`admin`, alta en PG bcrypt + nodo `:User` ADMIN, `:Project`, políticas `[:APPLIES_POLICY]`), bandera persistida, **403 si ya instalado**, tests con fakes
+- **#543 Endpoints de setup (CRITICAL):** `GET /api/v1/setup/status` → `{installed, needSetup}` (nodo raíz/estado persistido o env override) y `POST /setup/initialize` con `SetupPayload` (admin sanitizado con `normalize_username`, default `admin`/`admin`, alta en PG bcrypt + nodo `:User` ADMIN, `:Project`, políticas `[:APPLIES_POLICY]`), bandera persistida, **403 si ya instalado**, tests con fakes; **amend #545:** el initialize **wipea** Neo4j + PostgreSQL + MongoDB chat + Redis antes de crear y el seed de desarrollo ya no corre si está instalado
 
 ### Frontend
 - **#544 Guard (HIGH):** `setupApi.ts` + `uiStore.isInstalled` cacheado, `beforeEach` encadenado a `initSession()` → `/setup` si no instalado, `/board` si intenta entrar instalado, `/setup` exento de `LoginScreen`, sin guard en modo mock
@@ -86,7 +86,7 @@
 - [x] **#542** implemented - DONE 2026-10-03 (moved to `.issues/done/`, comando `tasker setup` + `setup_command.py` + compose parametrizado `${...}` + `.env.example`, 13 tests nuevos, gates ruff 1011 / mypy 1152 / pytest 1260 sin regresión)
 - [x] **#543** implemented - DONE 2026-10-03 (moved to `.issues/done/`, router `setup.py` con `GET status`/`POST initialize`, `create_user` bcrypt en `user_store`, exención middleware `/api/v1/setup/`, 11 tests nuevos, gates ruff 1011 / mypy 1153 sin regresiones / pytest 1271 + smoke live completo con reset del stack)
 - [x] **#544** implemented - DONE 2026-10-03 (moved to `.issues/done/`, `setupApi.ts` + `isInstalled`/`checkSetupStatus` en `uiStore`, guard `setupGuard.ts` encadenado a `initSession()`, ruta `/setup` placeholder, `LoginScreen` exento, i18n EN+ES, 5 tests nuevos, gates lint 0 / test 242 / build verde, smoke Playwright live con redirección `/`→`/setup`→tras initialize→`/board`)
-- [ ] **#545** implemented — move to `.issues/done/` with `Status: DONE`
+- [x] **#545** implemented - DONE 2026-10-03 (moved to `.issues/done/`, `SetupWizardView.vue` de 4 pasos + `postSetupInitialize()` en `setupApi.ts`, flip manual `isInstalled` + redirect `/board`, shell de `App.vue` limpio y centrado en `/setup` sin sidebar/header/ticker/chat vía `isSetupRoute`, i18n sección `setup` completa EN+ES, 6 tests nuevos, gates lint 0 / test 248 / build verde, smoke Playwright live 1/1 con DOM limpio en `/setup` → initialize 200 → chrome restaurado en `/board` y reset del stack)
 - [ ] **#546** implemented — move to `.issues/done/` with `Status: DONE`
 - [ ] Each issue: gates backend (`ruff`/`mypy`/`pytest`), `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI
 - [ ] `features.md` actualizado por issue (rutas, componentes, secciones nuevas)

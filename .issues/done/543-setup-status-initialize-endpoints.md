@@ -77,3 +77,19 @@ feat / backend
 - Fuente de verdad `installed`: `:Project.initialized_at` en Neo4j **o** env `TASKER_INSTALLED=true` como override de arranque (solo si es `true`; `false` no pisa la BD); si Neo4j no responde degrada solo a env
 - Re-export explícito `setup_router as setup_router` en `routers/__init__.py` y `routes.py` (patrón `chat_router`/`mcp_router`) para no sumar errores `attr-defined` de `no_implicit_reexport`
 - Payload acepta `policies[]` (claves `prevent_circular_dependencies`, `require_solution_summary`, `require_human_approval_core`) y `custom_policies[]` (strings libres, name truncado a 100)
+
+## Amendment (2026-10-03): wipe de datos ajenos a la instalación
+
+Revisión del usuario durante #545: *"cuando instala tiene que limpiar todo lo que esté en base de datos que no tenga que ver con la instalación"* → `POST /setup/initialize` ahora **borra todos los datos previos** (solo aplica con `installed == false`; el 403 precede al wipe) antes de crear admin/proyecto/políticas:
+
+- **Neo4j:** `Neo4jSetupStore.wipe()` → `MATCH (n) DETACH DELETE n` (nuevo método en el Protocol `SetupStore`); fallo → 503.
+- **PostgreSQL:** `wipe_postgres_data()` en `user_store.py` → `TRUNCATE` de todas las tablas del schema `public` con `RESTART IDENTITY CASCADE` (listado desde `pg_tables`, comillas escapadas); sin `TASKER_DATABASE_URL` → no-op (mismo degradado que `create_user`); fallo → 503.
+- **MongoDB:** `_wipe_mongo()` con `pymongo` síncrono (import lazy) → drop de todas las colecciones del chat (excepto `system.*`); sin URL o error → degradado con warning (patrón "continuing" del repo).
+- **Redis:** `_wipe_redis()` → `FLUSHDB` del `TASKER_REDIS_URL` (sesiones/rate-limit/cache); sin URL o error → degradado con warning.
+- **Seed de desarrollo:** en `app.py` lifespan, `seed_auth_users()` ahora solo corre si el sistema **no está instalado** (`_installed(Neo4jSetupStore())`), para que los 8 usuarios del dataset no resuciten en cada arranque tras instalar (`TASKER_AUTH_SEED=true` en compose).
+
+**Tests:** `FakeSetupStore.wipe()` + spy de `wipe_postgres_data` en la fixture; nuevos `test_initialize_wipes_all_stores_before_creating` (wipe antes de crear, sin wipe tras status) y aserciones de "sin wipe" en los 403/400/503 existentes; `TestWipePostgresData` (2 unit tests con `psycopg` fake).
+
+**Gates (sin regresiones):** `ruff src/` **1011** · `ruff tests/` 0 · `mypy src/` **1153/134/224** · `pytest -q` **1274 passed / 27 skipped / 3 failed preexistentes** (1271 + 3 nuevos).
+
+**Smoke live (API `:8888`, stack con basura sembrada):** Neo4j con nodos Legacy/pedro/Issue, PG con 8 seeds, Mongo con 2 conversaciones, Redis con 27 keys → rebuild `tasker-api` → `initialize` 200 (`credentials:"created"`) → verificado: PG **solo `admin`**, Neo4j **solo** admin+`SmokeWipe545`+3 policies, Mongo **0** conversaciones, Redis **2** keys (solo rate-limit de las propias peticiones) → `restart tasker-api` → log `auth seeding skipped: tasker is already installed` y PG sigue en **1** (los seeds no resucitan) → status `installed:true` → post-smoke: stack reseteado a `{"installed": false, "needSetup": true}` con Neo4j 0 / PG 0 / Mongo 0.
