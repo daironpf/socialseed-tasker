@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { isMockMode, apiMode } from '@/api/client'
 import type {
   ROIMetric, CostByModel, CostByComponent, CostByTask,
   BudgetAlert, CostCap, FinOpsMetrics
@@ -53,14 +54,25 @@ const MOCK_CAPS: CostCap[] = [
 ]
 
 export const useFinopsStore = defineStore('finops', () => {
-  const models = ref<CostByModel[]>([...MOCK_MODELS])
-  const components = ref<CostByComponent[]>([...MOCK_COMPONENTS])
-  const tasks = ref<CostByTask[]>([...MOCK_TASKS])
-  const roi = ref<ROIMetric[]>([...MOCK_ROI])
-  const alerts = ref<BudgetAlert[]>([...MOCK_ALERTS])
-  const caps = ref<CostCap[]>([...MOCK_CAPS])
+  // Mock fixtures only in mock mode; real mode starts empty (issue #545).
+  const models = ref<CostByModel[]>(isMockMode() ? [...MOCK_MODELS] : [])
+  const components = ref<CostByComponent[]>(isMockMode() ? [...MOCK_COMPONENTS] : [])
+  const tasks = ref<CostByTask[]>(isMockMode() ? [...MOCK_TASKS] : [])
+  const roi = ref<ROIMetric[]>(isMockMode() ? [...MOCK_ROI] : [])
+  const alerts = ref<BudgetAlert[]>(isMockMode() ? [...MOCK_ALERTS] : [])
+  const caps = ref<CostCap[]>(isMockMode() ? [...MOCK_CAPS] : [])
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  watch(apiMode, () => {
+    const mock = isMockMode()
+    models.value = mock ? [...MOCK_MODELS] : []
+    components.value = mock ? [...MOCK_COMPONENTS] : []
+    tasks.value = mock ? [...MOCK_TASKS] : []
+    roi.value = mock ? [...MOCK_ROI] : []
+    alerts.value = mock ? [...MOCK_ALERTS] : []
+    caps.value = mock ? [...MOCK_CAPS] : []
+  })
 
   const metrics = computed<FinOpsMetrics>(() => {
     const totalCost = models.value.reduce((s, m) => s + m.cost, 0)

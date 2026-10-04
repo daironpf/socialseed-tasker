@@ -1,5 +1,6 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
+import { isMockMode, apiMode } from '@/api/client'
 import type {
   AuditLogEntry,
   AuditLogEventType,
@@ -109,7 +110,7 @@ function mockHash(input: string): string {
 }
 
 export const useAuditLogStore = defineStore('auditLog', () => {
-  const entries = ref<AuditLogEntry[]>(generateEntries())
+  const entries = ref<AuditLogEntry[]>(isMockMode() ? generateEntries() : [])
   const filters = ref<AuditLogFilters>({
     dateFrom: '',
     dateTo: '',
@@ -200,6 +201,11 @@ export const useAuditLogStore = defineStore('auditLog', () => {
       ip: entry.ip ?? '',
     }))
   }
+
+  // Demo entries only exist in mock mode; real mode stays empty (issue #545).
+  watch(apiMode, () => {
+    entries.value = isMockMode() ? generateEntries() : []
+  })
 
   return {
     entries,

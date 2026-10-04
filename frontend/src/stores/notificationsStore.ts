@@ -3,9 +3,10 @@ import { ref, computed } from 'vue'
 import type { AppNotification, NotificationCategory } from '@/types/notifications'
 import type { HITLRequest } from '@/types/hitl'
 import { useSoundEffects } from '@/composables/useSoundEffects'
+import { isMockMode } from '@/api/client'
 
 const STORAGE_KEY = 'socialseed-notifications'
-const SEED_VERSION = 2
+const SEED_VERSION = 3
 const PREFS_KEY = 'socialseed-alert-prefs'
 
 export interface AlertPreferences {
@@ -167,6 +168,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
   }
 
   function seedMockNotifications() {
+    if (!isMockMode()) return
     if (notifications.value.length > 0) return
     const now = Date.now()
     const hour = 3600000

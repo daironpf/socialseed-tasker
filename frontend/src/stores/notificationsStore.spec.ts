@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia, type Pinia } from 'pinia'
 import { useNotificationsStore } from '@/stores/notificationsStore'
+import { setApiMode } from '@/api/client'
 import type { AppNotification } from '@/types/notifications'
 import type { HITLRequest } from '@/types/hitl'
 
@@ -56,9 +57,14 @@ describe('notificationsStore', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    setApiMode('mock')
     pinia = createPinia()
     setActivePinia(pinia)
     store = useNotificationsStore()
+  })
+
+  afterEach(() => {
+    setApiMode('mock')
   })
 
   it('adds a notification at the top, persists it and counts it as unread', () => {
@@ -138,11 +144,17 @@ describe('notificationsStore', () => {
   it('seeds mock notifications once', () => {
     store.seedMockNotifications()
     expect(store.notifications).toHaveLength(12)
-    expect(localStorage.getItem(`${STORAGE_KEY}-version`)).toBe('2')
+    expect(localStorage.getItem(`${STORAGE_KEY}-version`)).toBe('3')
 
     store.addNotification(makeNotification({ title: 'extra' }))
     store.seedMockNotifications()
     expect(store.notifications).toHaveLength(13)
+  })
+
+  it('never seeds mock notifications in real mode', () => {
+    setApiMode('real')
+    store.seedMockNotifications()
+    expect(store.notifications).toHaveLength(0)
   })
 
   it('ensures HITL notifications for pending requests without duplicating', () => {
@@ -178,6 +190,6 @@ describe('notificationsStore', () => {
     const fresh = useNotificationsStore()
 
     expect(fresh.notifications).toEqual([])
-    expect(localStorage.getItem(`${STORAGE_KEY}-version`)).toBe('2')
+    expect(localStorage.getItem(`${STORAGE_KEY}-version`)).toBe('3')
   })
 })
