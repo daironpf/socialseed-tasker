@@ -5,6 +5,7 @@ import SetupWizardView from '@/views/SetupWizardView.vue'
 import { useUiStore } from '@/stores/uiStore'
 import { useToast } from '@/composables/useToast'
 import * as setupApi from '@/api/setupApi'
+import { setApiMode } from '@/api/client'
 
 const push = vi.fn()
 
@@ -30,6 +31,7 @@ describe('SetupWizardView', () => {
     vi.clearAllMocks()
     push.mockReset()
     useToast().clearAll()
+    setApiMode('mock')
   })
 
   it('walks the four steps with the default credentials and submits the payload', async () => {
@@ -87,6 +89,7 @@ describe('SetupWizardView', () => {
       custom_policies: [],
     })
     expect(useUiStore(pinia).isInstalled).toBe(true)
+    expect(localStorage.getItem('socialseed-api-mode')).toBe('real')
   })
 
   it('adds and removes custom policies', async () => {
@@ -143,6 +146,7 @@ describe('SetupWizardView', () => {
     const errors = useToast().toasts.value.filter((toast) => toast.type === 'error')
     expect(errors).toHaveLength(1)
     expect(useUiStore(pinia).isInstalled).toBe(true)
+    expect(localStorage.getItem('socialseed-api-mode')).toBe('real')
   })
 
   it('keeps the wizard open with an error toast on unexpected failures', async () => {

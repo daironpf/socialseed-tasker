@@ -335,6 +335,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { postSetupInitialize } from '@/api/setupApi'
+import { setApiMode } from '@/api/client'
 import { useUiStore } from '@/stores/uiStore'
 import { useToast } from '@/composables/useToast'
 
@@ -427,11 +428,14 @@ async function submit() {
     // The guard caches isInstalled=false from the entry navigation; flip it
     // before pushing so /board is not bounced back to /setup.
     uiStore.isInstalled = true
+    // A freshly installed system runs against real data only (issue #545).
+    setApiMode('real')
     router.push('/board')
   } catch (err) {
     const status = (err as { status?: number }).status
     if (status === 403) {
       uiStore.isInstalled = true
+      setApiMode('real')
       toast.error(t('setup.errors.alreadyInstalled'))
       router.push('/board')
     } else {
