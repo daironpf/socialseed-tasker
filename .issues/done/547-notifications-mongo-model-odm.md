@@ -8,7 +8,7 @@ Contexto real del repo: no existe el paquete `src/socialseed_tasker/models/` ni 
 
 Origen: `notas.md` → Sistema de Notificaciones Real en MongoDB · Issue #1 (→ #547).
 
-## Status: TODO
+## Status: DONE (2026-10-04)
 
 ## Priority: HIGH
 
@@ -26,19 +26,28 @@ feat / backend
 5. **Tests:** unitario que crea y lee un documento de notificación directamente en Mongo (o con repo fake en memoria cuando no hay `TASKER_MONGO_URL` en el entorno, patrón de #541); tipos limpios en `ruff`/`mypy` sobre los ficheros nuevos.
 
 ## Acceptance Criteria
-- [ ] La aplicación FastAPI accede a la colección `notifications` de `TASKER_MONGO_URL` al iniciar
-- [ ] Definición de tipos válida con `pydantic` sin errores de `mypy`/`ruff` en los ficheros nuevos
-- [ ] Los índices `{user_id, read}` y `{created_at}` existen y su creación es idempotente
-- [ ] Test unitario creando y leyendo un documento de notificación (Mongo real o fake equivalente sin servicios externos)
-- [ ] Gates backend sin regresiones (`ruff` 1011 / `mypy` 1153 / `pytest` 1282 + 3 preexistentes)
+- [x] La aplicación FastAPI accede a la colección `notifications` de `TASKER_MONGO_URL` al iniciar
+- [x] Definición de tipos válida con `pydantic` sin errores de `mypy`/`ruff` en los ficheros nuevos
+- [x] Los índices `{user_id, read}` y `{created_at}` existen y su creación es idempotente
+- [x] Test unitario creando y leyendo un documento de notificación (Mongo real o fake equivalente sin servicios externos)
+- [x] Gates backend sin regresiones (`ruff` sin deltas vs HEAD, `mypy` 1153, `pytest` 1282 + 3 preexistentes + 12 nuevos = 1294 passed)
 
 ## Files to Create
 - `src/socialseed_tasker/models/__init__.py`
 - `src/socialseed_tasker/models/notification.py`
+- `src/socialseed_tasker/infrastructure/mongo/notification_repository.py` — repo `NotificationMongoRepository` + `NotificationStoreError` (requerido por la implementation point 2, fuera de la lista original)
 - `tests/unit/test_notification_model.py`
 
 ## Files to Modify
-- `src/socialseed_tasker/infrastructure/mongo/client.py` — alias/ensure de la colección `notifications` si procede
+- `src/socialseed_tasker/infrastructure/mongo/client.py` — `ensure_notification_indexes()` idempotente sobre `get_chat_database()`
+- `src/socialseed_tasker/infrastructure/mongo/__init__.py` — exports de repo/errores/ensure
+- `src/socialseed_tasker/infrastructure/web_api/app.py` — lifespan llama `ensure_notification_indexes()` junto a `ensure_chat_indexes()` y registra `app.state.notification_repository`
+
+## Notes
+- El paquete `src/socialseed_tasker/models/` nace aquí (pide `notas.md`); la constante `NOTIFICATIONS_COLLECTION` es la única fuente de verdad del nombre de colección.
+- `FRONTEND_CATEGORIES` fija el contrato enum → `NotificationCategory` de `frontend/src/types/notifications.ts` (5 existentes + `welcome` de #549/#551).
+- Wipe de Mongo en `setup_initialize` (#543) ya borra **todas** las colecciones de la DB (incluida `notifications`), por lo que #549 no necesita ampliarlo.
+- Baseline `ruff src/` real medido en HEAD: **1013** (la cifra 1011 anotada al crear la issue no coincidía; verificado con stash que los cambios de esta issue no añaden errores: 1013 = 1013). `mypy` 1153 exacto, `pytest` 1294 passed / 3 failed preexistentes / 27 skipped.
 
 ## Related Issues
 - #536 (contenedor MongoDB + `TASKER_MONGO_URL`), #537 (patrón repo/errores Mongo), #525 (config storage), #548 (API REST que consume el modelo), #549 (inserción de la bienvenida), #551 (mapeo a las categorías del store)
