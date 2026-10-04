@@ -2,7 +2,7 @@
 
 > Complete catalog of all UI features, interactions, and capabilities currently implemented.
 > Use this document to identify gaps, plan new features, and track what is missing.
-> Last updated: 2026-10-01
+> Last updated: 2026-10-04
 
 ---
 
@@ -88,19 +88,19 @@
 | Vite 6 build tool | Implemented | HMR, optimized production builds, lazy-loaded routes |
 | Tailwind CSS 3 | Implemented | Dark mode via `class` strategy; Inter font |
 | Pinia state management | Implemented | 24 stores under `src/stores/` |
-| Vue Router | Implemented | 26 page routes + `/` redirect + catch-all NotFound; lazy-loaded; scroll-to-top on navigate |
-| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 77 top-level sections, 1615 leaf keys per language (both languages balanced), localStorage persistence |
+| Vue Router | Implemented | 27 page routes + `/` redirect + catch-all NotFound; lazy-loaded; scroll-to-top on navigate; setup guard chained before auth/RBAC (`router/setupGuard.ts`, §69) |
+| i18n (EN/ES) | Implemented | `vue-i18n` with `legacy:false`, 78 top-level sections, 1680 leaf keys per language (both languages balanced), localStorage persistence |
 | Dark mode | Implemented | Toggle via UserMenu / `D` shortcut / CommandPalette; localStorage; system preference detection |
 | Data-source mode (mock/real) | Implemented | Reactive `apiMode` ref in `client.ts` (resolution: `localStorage['socialseed-api-mode']` > `VITE_USE_MOCK` > default `mock`); reactive proxy dispatches to the mock client or the axios real client; toggle in UserMenu (§62) |
 | Real API mode | Implemented | Axios client, base `window.__API_URL__ \|\| '/api/v1'`, auth via `Bearer` JWT (auto-refresh) or `X-API-Key`, 401 → refresh retry → `auth:unauthorized` (§64) |
-| Docker deployment | Implemented | Frontend `127.0.0.1:19001→80`, mock-api `127.0.0.1:8001`, real API `127.0.0.1:8888`, Neo4j `7474`/`7687`, PostgreSQL `127.0.0.1:15432→5432`, Redis `127.0.0.1:6379` |
+| Docker deployment | Implemented | Frontend `127.0.0.1:19001→80`, mock-api `127.0.0.1:8001`, real API `127.0.0.1:8888`, Neo4j `7474`/`7687`, PostgreSQL `127.0.0.1:15432→5432`, Redis `127.0.0.1:6379`, MongoDB `127.0.0.1:27017` |
 | Hybrid storage backends | Implemented | `TASKER_REDIS_URL`/`TASKER_DATABASE_URL` (convención `TASKER_*`) vía `config/storage.py`: Redis con fallback in-memory cuando no hay URL o Redis inaccesible; consumido por la capa web (events/session store) y `cli/wiring.py`; `TASKER_JWT_SECRET` → `auth/tokens.py` (#525) |
 | Mock data volume | Implemented | `frontend/dataset-de-pruebas/` mounted into mock-api container (`DATA_DIR`) |
 | Toast notification system | Implemented | Singleton `useToast()`: success/error/warning/info, auto-dismiss, max 5 concurrent |
 | html2canvas + jspdf | Implemented | PDF/PNG export for executive dashboard |
 | Mermaid diagrams | Implemented | MarkdownRenderer renders Mermaid syntax in agent reasoning logs |
 | vis-network | Implemented | Dependency graph visualization (issues + components + optional code nodes) |
-| utils | Implemented | `modelPricing.ts`, `piiDetector.ts`, `graphUtils.ts` (BFS, cycle detection, blast radius, transitive deps) |
+| utils | Implemented | `modelPricing.ts`, `piiDetector.ts`, `graphUtils.ts` (BFS, cycle detection, blast radius, transitive deps), `ruleEngine.ts` (§66), `offlineQueue.ts` (§56), `pendingFeatures.ts` (§58), `studioAgents.ts` (§54) |
 | Build / typecheck | Implemented | `npm run build` → `vue-tsc -b && vite build` |
 
 ### Mock dataset files (`frontend/dataset-de-pruebas/`)
@@ -116,7 +116,7 @@
 | tasker-redis | redis:7-alpine | 127.0.0.1:6379 | Redis 7 — sesiones/caché/rate limiting (#525) |
 | tasker-db-mongo | mongo:7.0-alpine | 127.0.0.1:27017 | MongoDB 7 — persistencia del chat (`TASKER_MONGO_URL`, #536) |
 | tasker-api | tasker-api:local | 127.0.0.1:8888→8000 | Real FastAPI backend |
-| tasker-board | tasker-board:local | 127.0.0.1:19001→80 | Vue SPA + nginx (proxies `/api/`, `/mock-api/`) |
+| tasker-board | tasker-board:local | 127.0.0.1:19001→80 | Vue SPA + nginx (proxies `/api/`, `/mock-api/`, `/mcp/`; `index.html` served `Cache-Control: no-cache`) |
 | mock-api | mock-api:local | 127.0.0.1:8001 | FastAPI mock serving dataset JSON under `/mock/*` |
 
 > Note: Hyper-V reserves host ports 8001–8900 on some Windows machines. Local workaround uses `19000`/`19001`/`19002`; committed compose uses `19001`/`8001`/`8888` as above. PostgreSQL se publica en `15432` porque el anfitrión ya tiene un Postgres nativo en el `5432`.
@@ -631,9 +631,15 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | Component | Purpose | Details |
 |---|---|---|
 | `LoginScreen` | API key gate | Full-screen overlay login |
-**Total view components:** 28 files in `src/views/` (27 routed incl. NotFound + `IssueDetailView` embedded)
 
-**Total shared components:** 99 `.vue` files under `src/components/`
+### Setup Components
+| Component | Purpose | Details |
+|---|---|---|
+| `McpSetupPanel` | Post-install credentials | API master key + copy feedback, editable MCP port, ready-to-paste `.cursor/mcp.json` snippet, Finish → `/board` (§69) |
+
+**Total view components:** 29 files in `src/views/` (28 routed incl. NotFound + `IssueDetailView` embedded)
+
+**Total shared components:** 101 `.vue` files under `src/components/`
 
 ---
 
@@ -655,6 +661,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **GitHub sync stream** | Implemented | Real mode: `GET /issues/{id}/github-sync/stream` SSE (`connected`/`ping`/`sync`) → `IssueDetailView` refetches on events (#522, §67) |
 | **MCP tool-call stream** | Implemented | Real mode: `GET /mcp/tool-calls/stream` SSE feeds the MCP Inspector live tool-call feed (#524, §68) |
 | **Issue flag stream** | Implemented | Real mode: `GET /issues/stream` SSE (`connected`/`ping`/`issue-updated`) broadcasts `agent_working` changes to all clients; `issuesStore` subscribes and merges in place (#530) |
+| **Chat realtime (Socket.IO)** | Implemented | Real mode: `chatSocket.ts` singleton over Socket.IO (`path: '/socket.io/'`, JWT auth) — `new_message`/`messages_read`/`typing_*` events, room join/leave, reconnect resync; never connects in mock mode (#538/#540, §28) |
 
 ---
 
@@ -836,6 +843,8 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `ragApi` | `/rag/search`, `/rag/stats`, `/rag/context` (#524) | GET, POST |
 | `mcpApi` | `/mcp/servers`, `/mcp/sessions`, `/mcp/tool-calls`, `/mcp/tool-calls/stream` (#524) | GET, POST, SSE |
 | `organizationsApi` | Hardcoded base `/mock-api/mock/organizations` — **not on real backend yet** | GET, POST, PATCH, DELETE |
+| `setupApi` | `/setup/status`, `/setup/initialize` (wizard payload: admin, project, policies, `api_key`, `mcp_port`, `confirm_wipe`) — returns installed flag, credentials and master key (#543–#546, §69) | GET, POST |
+| `chatSocket` | Socket.IO singleton `io(origen, { path: '/socket.io/', auth: { token } })` for chat realtime; gated by `apiMode` (never connects in mock) (#538/#540, §28) | WS |
 | `useAgentStream` | `/issues/{id}/agent-logs/stream` | SSE |
 
 ### Mock API server (`mock-api/server.py`)
@@ -846,6 +855,8 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 
 - `/api/` → `tasker-api:8000`
 - `/mock-api/` → `mock-api:8001`
+- `/mcp/` → `tasker-api:8000/mcp` (streamable HTTP for external MCP clients, no buffering — #546, §69)
+- `location = /index.html` → `Cache-Control: no-cache` (setup wizard always sees the fresh bundle — #546)
 
 ---
 
@@ -983,11 +994,11 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 ## 27. i18n Coverage
 
 ### Locale Files
-- `en.json`: 1615 leaf keys, **77** top-level sections
-- `es.json`: 1615 leaf keys, matching structure (both balanced)
+- `en.json`: 1680 leaf keys, **78** top-level sections
+- `es.json`: 1680 leaf keys, matching structure (both balanced)
 
-### Sections (77)
-`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `boardModules`, `boardSections`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `a11y`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`, `agentStudio`, `analytics`, `sla`, `offline`, `syncQueue`, `soundEffects`, `toastTheme`, `notifPanel`, `apiMode`
+### Sections (78)
+`kanban`, `mobileNav`, `nav`, `header`, `menu`, `dashboard`, `issues`, `githubSync`, `governance`, `agent`, `components`, `policies`, `constraints`, `users`, `graph`, `codeOverlay`, `analysis`, `system`, `auth`, `common`, `dashboardStats`, `boardModules`, `boardSections`, `trendChart`, `statusDistribution`, `dailyActivity`, `avgResolution`, `statsCard`, `a11y`, `shortcuts`, `palette`, `editor`, `diff`, `hitl`, `audit`, `stream`, `tokens`, `notifications`, `agents`, `toast`, `chat`, `mcp`, `hitlCenter`, `floatingChat`, `presence`, `projects`, `sync`, `export`, `bulkActions`, `profile`, `commandPalette`, `sandbox`, `rag`, `finops`, `autoHealing`, `replay`, `pii`, `executive`, `mockStream`, `filterBuilder`, `diffPreview`, `hitlBanner`, `hitlQuickAction`, `organizations`, `governanceMatrix`, `graphExplorer`, `auditLog`, `piiSuite`, `agentStudio`, `analytics`, `sla`, `offline`, `syncQueue`, `soundEffects`, `toastTheme`, `notifPanel`, `apiMode`, `setup`
 
 ### Coverage
 - All user-visible text uses `t()`
@@ -998,6 +1009,7 @@ FastAPI endpoints under `/mock/*`: users CRUD, issues CRUD + agent-logs, compone
 - Audit trail descriptions use parameterized i18n
 - Slash commands, toasts, chat, floating chat, PII warnings translated
 - Executive, FinOps, auto-healing, replay, GitHub sync, governance, agent timer, sync status translated
+- Setup wizard credentials, policies and MCP panel translated (`setup.*`, §69)
 - HITL center, banner, and quick-action labels translated
 - FilterBuilder and diff-preview labels translated
 - Mobile nav labels translated
@@ -1407,6 +1419,7 @@ Batería que blinda #536–#540 sin servicios externos (repo fake/memoria, sin c
 | `/agents/studio` | **AgentStudio** | AgentStudioView.vue |
 | `/analytics` | **Analytics** | AnalyticsDashboardView.vue |
 | `/auth/oauth-callback` | **AuthCallback** | AuthCallbackView.vue (OAuth code exchange, error state, fallback) |
+| `/setup` | **Setup** | SetupWizardView.vue (first-run wizard outside the app shell — no sidebar/header/ticker/chat; guarded by `router/setupGuard.ts`, §69) |
 | `/:pathMatch(.*)*` | NotFound | NotFoundView.vue |
 
 ### Views without routes
@@ -1431,7 +1444,7 @@ Batería que blinda #536–#540 sin servicios externos (repo fake/memoria, sin c
 
 ### Not Implemented
 - Real backend integration is opt-in only (mock mode is the default; toggle via UserMenu → Data Source → Real switches REST calls to `/api/v1`, not all endpoints verified against the real API)
-- No WebSocket transport (SSE over HTTP only, for agent-logs and presence; other "live" views remain mock-driven)
+- Transport is mixed: chat uses a real WebSocket (Socket.IO, #538/#540) while everything else stays SSE over HTTP (agent-logs, presence, issues, github-sync, MCP tool-calls) or mock-driven; no generic WebSocket layer for the rest of the app
 - OAuth2/SSO login requires `GITHUB_*`/`GOOGLE_*` client env vars on the server (API-key login works out of the box); refresh token lives in localStorage (not an httpOnly cookie)
 - No real multi-user concurrent editing
 - No actual PII remediation (masking UI only)
@@ -1717,6 +1730,7 @@ Issue #518. First quality gate for the frontend: unit tests, E2E tests, a linter
 | **Verification** | Implemented | `npm run lint` ✓ (0 errores), `npm test` ✓ (81/81), `npm run build` ✓, `npm run test:e2e` ✓ (8/8 en dos corridas consecutivas) |
 | **Suite status (2026-09-29)** | Implemented | 167 unit tests / **22 spec files** (los 9 de #518 + `authStore`, `CreateIssueModal`, `GitHubSyncCard`, `KanbanView`, `ListView`, `KeyboardShortcutsHelp`, `MCPInspectorView`, `mcpStore`, `ragStore`, `ruleEngine`, `useFocusTrap`, `pendingFeatures`, `Sidebar`); lint 0 errores (2 warnings preexistentes `vue/no-mutating-props` en IssueDetailView), build verde, E2E 8/8 |
 | **Suite status (2026-10-01)** | Implemented | **208 unit tests / 27 spec files** (`npm test` 27/27 verdes), `npm run lint` 0 errores (2 warnings preexistentes `vue/no-mutating-props`), `npm run build` verde (`vue-tsc -b && vite build`); inventario de UI recalado contra el código el 2026-10-01 (#535, §68) |
+| **Suite status (2026-10-04)** | Implemented | **270 unit tests / 39 spec files** (`npm test`), `npm run lint` 0 errores (2 warnings preexistentes), `npm run build` verde; inventario de UI recalado contra el código (vistas 29, componentes 101, rutas 27, i18n 78/1680, pendientes 21) — backlog v5 #542–#546 (§69) |
 
 ---
 
