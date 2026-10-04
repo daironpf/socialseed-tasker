@@ -764,6 +764,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | Feature | Status | Details |
 |---|---|---|
 | **Notification store** | Implemented | `notificationsStore` with localStorage persistence |
+| **Backend persistence (MongoDB)** | Implemented | Typed `notifications` collection (`models/notification.py`) with `NotificationMongoRepository`, typed `NotificationStoreError` degradation and idempotent `{user_id, read}` + `{created_at}` indexes (#547) |
 | **Mock data** | Implemented | 12 realistic notifications across 4 categories |
 | **Categories** | Implemented | Mention, HITL, Constraint Violation, Agent Failure, SLA (`sla` category added in #516) |
 | **Read/unread state** | Implemented | Per-notification, visual distinction |

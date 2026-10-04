@@ -1,4 +1,4 @@
-"""Lazy async MongoDB (motor) client for chat persistence — issue #537.
+"""Lazy async MongoDB (motor) client for chat and notifications persistence — issues #537/#547.
 
 Safe fallback from #536: without TASKER_MONGO_URL no client is created and
 every entrypoint returns None so the rest of the API keeps working. The
@@ -75,6 +75,23 @@ async def ensure_chat_indexes() -> bool:
         return True
     except Exception as exc:
         logger.warning("chat mongo index bootstrap failed (continuing): %s", exc)
+        return False
+
+
+async def ensure_notification_indexes() -> bool:
+    """Create notifications indexes idempotently (create_index is repeatable). False when Mongo is unavailable."""
+    db = get_chat_database()
+    if db is None:
+        return False
+    try:
+        from socialseed_tasker.models.notification import NOTIFICATIONS_COLLECTION
+
+        await db[NOTIFICATIONS_COLLECTION].create_index([("user_id", 1), ("read", 1)])
+        await db[NOTIFICATIONS_COLLECTION].create_index([("created_at", -1)])
+        logger.info("notification mongo indexes ensured (notifications.user_id/read, created_at)")
+        return True
+    except Exception as exc:
+        logger.warning("notification mongo index bootstrap failed (continuing): %s", exc)
         return False
 
 

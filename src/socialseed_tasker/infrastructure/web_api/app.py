@@ -84,15 +84,18 @@ async def lifespan(app: FastAPI):
 
     mcp_session_manager = getattr(app.state, "mcp_session_manager", None)
 
-    # Chat Mongo bootstrap (issue #537): lazy client + idempotent indexes; no URL -> no-op
+    # Chat + notifications Mongo bootstrap (issues #537/#547): lazy client + idempotent
+    # indexes; no URL -> no-op
     from socialseed_tasker.infrastructure.mongo.client import (
         close_mongo,
         ensure_chat_indexes,
+        ensure_notification_indexes,
         get_mongo_client,
     )
 
     if get_mongo_client() is not None:
         await ensure_chat_indexes()
+        await ensure_notification_indexes()
 
     try:
         if mcp_session_manager is not None:
@@ -634,9 +637,14 @@ def create_app(
     logger.info("auth session store backend: %s", app.state.auth_sessions.backend)
 
     # Chat Socket.IO transport (issue #538): JWT handshake, rooms, chat events
-    from socialseed_tasker.infrastructure.mongo import ChatMongoRepository
+    from socialseed_tasker.infrastructure.mongo import (
+        ChatMongoRepository,
+        NotificationMongoRepository,
+    )
     from socialseed_tasker.infrastructure.web_api.socketio_server import ChatSocketIOServer
     app.state.chat_repository = ChatMongoRepository()
+    # Notifications repository (issue #547): model-backed access for REST (#548) and setup (#549)
+    app.state.notification_repository = NotificationMongoRepository()
     app.state.chat_socket = ChatSocketIOServer(
         repository=app.state.chat_repository,
         session_store_provider=lambda: getattr(app.state, "auth_sessions", None),
