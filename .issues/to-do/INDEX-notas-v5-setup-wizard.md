@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v5 — Épica: Flow de Onboarding & Setup Wizard Empresarial, de la instalación por CLI/Docker a la configuración guiada en la UI)
 **Created:** 2026-10-03
-**Status:** IN PROGRESS (4/5 done: #542, #543, #544, #545; pending #546)
+**Status:** DONE (5/5: #542, #543, #544, #545, #546)
 
 > `notas.md` (v5) define las issues como [Issue #1]…[Issue #5]; interpretando la carpeta
 > `.issues/done/` el siguiente número libre era **#542** (máximo actual **#541**, cerrado en
@@ -34,7 +34,7 @@
 | #543 | Endpoints `GET /setup/status` y `POST /setup/initialize` | CRITICAL | feat / backend | DONE (→ `.issues/done/`) | Issue #2 |
 | #544 | Navigation guard de instalación y estado `isInstalled` | HIGH | feat / integration | DONE (→ `.issues/done/`) | Issue #3 |
 | #545 | Componente `SetupWizardView.vue` (asistente paso a paso) | HIGH | feat / ux | DONE (→ `.issues/done/`) | Issue #4 |
-| #546 | Configuración de credenciales de IA y servidores MCP | MEDIUM | feat / enterprise | TODO | Issue #5 |
+| #546 | Configuración de credenciales de IA y servidores MCP | MEDIUM | feat / enterprise | DONE (→ `.issues/done/`) | Issue #5 |
 
 ---
 
@@ -87,7 +87,7 @@
 - [x] **#543** implemented - DONE 2026-10-03 (moved to `.issues/done/`, router `setup.py` con `GET status`/`POST initialize`, `create_user` bcrypt en `user_store`, exención middleware `/api/v1/setup/`, 11 tests nuevos, gates ruff 1011 / mypy 1153 sin regresiones / pytest 1271 + smoke live completo con reset del stack)
 - [x] **#544** implemented - DONE 2026-10-03 (moved to `.issues/done/`, `setupApi.ts` + `isInstalled`/`checkSetupStatus` en `uiStore`, guard `setupGuard.ts` encadenado a `initSession()`, ruta `/setup` placeholder, `LoginScreen` exento, i18n EN+ES, 5 tests nuevos, gates lint 0 / test 242 / build verde, smoke Playwright live con redirección `/`→`/setup`→tras initialize→`/board`)
 - [x] **#545** implemented - DONE 2026-10-03 (moved to `.issues/done/`, `SetupWizardView.vue` de 4 pasos + `postSetupInitialize()` en `setupApi.ts`, flip manual `isInstalled` + redirect `/board`, shell de `App.vue` limpio y centrado en `/setup` sin sidebar/header/ticker/chat vía `isSetupRoute`, i18n sección `setup` completa EN+ES, 6 tests nuevos, gates lint 0 / test 248 / build verde, smoke Playwright live 1/1 con DOM limpio en `/setup` → initialize 200 → chrome restaurado en `/board` y reset del stack)
-- [ ] **#546** implemented — move to `.issues/done/` with `Status: DONE`
-- [ ] Each issue: gates backend (`ruff`/`mypy`/`pytest`), `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI
+- [x] **#546** implemented - DONE 2026-10-04 (moved to `.issues/done/`, payload `api_key`/`mcp_port`/`confirm_wipe`, master key `tasker_sk_live_...` persistida en el secrets store + auth middleware con lazy reload, panel `McpSetupPanel` con key/copy, puerto y snippet `.cursor/mcp.json`, `location /mcp` en nginx, guard fail-closed 503 y 400 sin `confirm_wipe`, 9 tests nuevos, gates pytest 1282 + 3 preexistentes / ruff 1011 / mypy 1153 / lint 0 / vitest 270, smokes live `/mcp` 200+401 e initialize 403)
+- [x] Each issue: gates backend (`ruff`/`mypy`/`pytest`), `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI
 - [ ] `features.md` actualizado por issue (rutas, componentes, secciones nuevas)
-- [ ] Commit message references `#NNN`
+- [x] Commit message references `#NNN`

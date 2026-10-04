@@ -8,7 +8,7 @@ Contexto real del repo: el servidor MCP real (streamable HTTP en `/mcp` + stdio,
 
 Origen: `notas.md` → Épica Flow de Onboarding & Setup Wizard Empresarial · Issue #5 (→ #546).
 
-## Status: TODO
+## Status: DONE (2026-10-04)
 
 ## Priority: MEDIUM
 
@@ -27,11 +27,11 @@ feat / enterprise
 6. **Tests:** spec del panel (generación/copia/snippet) + test backend de los campos opcionales del payload.
 
 ## Acceptance Criteria
-- [ ] El usuario obtiene una Master API Key activa (`tasker_sk_live_...`) con botón para copiar al portapapeles al finalizar la instalación inicial
-- [ ] Se muestra un snippet de configuración listo para pegar en `.cursor/mcp.json` o `.windsurf/mcp.json`
-- [ ] El puerto del servidor MCP es configurable desde el wizard
-- [ ] `SetupPayload` acepta los campos opcionales sin romper el flujo mínimo (`admin`/`admin` de #543 sigue funcionando)
-- [ ] i18n EN+ES y gates backend/frontend sin regresiones
+- [x] El usuario obtiene una Master API Key activa (`tasker_sk_live_...`) con botón para copiar al portapapeles al finalizar la instalación inicial
+- [x] Se muestra un snippet de configuración listo para pegar en `.cursor/mcp.json` o `.windsurf/mcp.json`
+- [x] El puerto del servidor MCP es configurable desde el wizard
+- [x] `SetupPayload` acepta los campos opcionales sin romper el flujo mínimo (`admin`/`admin` de #543 sigue funcionando)
+- [x] i18n EN+ES y gates backend/frontend sin regresiones
 
 ## Files to Create
 - `frontend/src/components/setup/McpSetupPanel.vue`
