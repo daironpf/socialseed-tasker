@@ -185,3 +185,61 @@ class TestSeedAuthUsersEnv:
         assert stats == {"total": 1, "created": 1, "existing": 0}
         assert created["url"] == "postgresql://tasker:tasker@tasker-db-pg:5432/tasker"
         assert "pedro" in fake.rows
+
+
+class _FakeWipeCursor:
+    def __init__(self, tables: list[str]) -> None:
+        self._tables = tables
+        self.statements: list[str] = []
+
+    def __enter__(self) -> _FakeWipeCursor:
+        return self
+
+    def __exit__(self, *exc: object) -> bool:
+        return False
+
+    def execute(self, sql: str) -> None:
+        self.statements.append(sql)
+
+    def fetchall(self) -> list[tuple[str, ...]]:
+        return [(name,) for name in self._tables]
+
+
+class _FakeWipeConnection:
+    def __init__(self, tables: list[str]) -> None:
+        self.fake_cursor = _FakeWipeCursor(tables)
+        self.closed = False
+
+    def cursor(self) -> _FakeWipeCursor:
+        return self.fake_cursor
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class TestWipePostgresData:
+    def test_truncates_every_public_table(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from socialseed_tasker.auth.user_store import wipe_postgres_data
+
+        conn = _FakeWipeConnection(["users", "audit_log"])
+        monkeypatch.setattr(user_store_module, "get_database_url", lambda: "postgresql://fake")
+        monkeypatch.setattr(
+            user_store_module.psycopg,
+            "connect",
+            lambda url, autocommit=False: conn,
+        )
+        assert wipe_postgres_data() == 2
+        assert conn.closed is True
+        statements = conn.fake_cursor.statements
+        assert statements[0] == "SELECT tablename FROM pg_tables WHERE schemaname = 'public'"
+        assert statements[1] == 'TRUNCATE TABLE "users", "audit_log" RESTART IDENTITY CASCADE'
+
+    def test_returns_zero_without_database_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from socialseed_tasker.auth.user_store import wipe_postgres_data
+
+        def _fail_connect(*args: object, **kwargs: object) -> None:
+            raise AssertionError("connect must not be called without TASKER_DATABASE_URL")
+
+        monkeypatch.setattr(user_store_module, "get_database_url", lambda: None)
+        monkeypatch.setattr(user_store_module.psycopg, "connect", _fail_connect)
+        assert wipe_postgres_data() == 0

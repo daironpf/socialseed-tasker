@@ -66,11 +66,19 @@ async def lifespan(app: FastAPI):
     if os.getenv("TASKER_AUTH_SEED", "false").lower() == "true":
         try:
             from socialseed_tasker.auth.user_store import seed_auth_users
-            seeded = seed_auth_users()
-            if seeded is None:
-                logger.info("auth seeding skipped: TASKER_DATABASE_URL not configured")
+            from socialseed_tasker.infrastructure.web_api.routers.setup import (
+                Neo4jSetupStore,
+                _installed,
+            )
+
+            if _installed(Neo4jSetupStore()):
+                logger.info("auth seeding skipped: tasker is already installed")
             else:
-                logger.info("auth users seeded: %s", seeded)
+                seeded = seed_auth_users()
+                if seeded is None:
+                    logger.info("auth seeding skipped: TASKER_DATABASE_URL not configured")
+                else:
+                    logger.info("auth users seeded: %s", seeded)
         except Exception as exc:
             logger.warning("auth seeding failed (continuing): %s", exc)
 

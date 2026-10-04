@@ -21,12 +21,18 @@ class FakeSetupStore:
     def __init__(self) -> None:
         self.installed_flag = False
         self.fail = False
+        self.wipe_calls = 0
         self.initialized: dict[str, Any] | None = None
 
     def installed(self) -> bool:
         if self.fail:
             raise setup_api.SetupStoreError("neo4j down")
         return self.installed_flag or self.initialized is not None
+
+    def wipe(self) -> None:
+        if self.fail:
+            raise setup_api.SetupStoreError("neo4j down")
+        self.wipe_calls += 1
 
     def initialize(
         self,
@@ -71,8 +77,15 @@ def setup_env(monkeypatch: pytest.MonkeyPatch):
         return "created"
 
     monkeypatch.setattr(setup_api, "create_user", _fake_create_user)
+    pg_wipes: list[str] = []
+
+    def _fake_wipe_postgres() -> int:
+        pg_wipes.append("wipe")
+        return 1
+
+    monkeypatch.setattr(setup_api, "wipe_postgres_data", _fake_wipe_postgres)
     with TestClient(app) as client:
-        yield SimpleNamespace(client=client, store=store, user_calls=user_calls)
+        yield SimpleNamespace(client=client, store=store, user_calls=user_calls, pg_wipes=pg_wipes)
 
 
 def _payload(**overrides: Any) -> dict[str, Any]:
@@ -167,6 +180,18 @@ def test_initialize_falls_back_to_default_credentials(setup_env: SimpleNamespace
     assert setup_env.user_calls[0]["password"] == "admin"
 
 
+def test_initialize_wipes_all_stores_before_creating(setup_env: SimpleNamespace) -> None:
+    resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
+    assert resp.status_code == 200
+    assert setup_env.store.wipe_calls == 1
+    assert setup_env.pg_wipes == ["wipe"]
+    assert setup_env.store.initialized is not None
+
+    status = setup_env.client.get("/api/v1/setup/status")
+    assert status.json()["data"]["installed"] is True
+    assert setup_env.store.wipe_calls == 1
+
+
 def test_initialize_maps_all_predefined_policies(setup_env: SimpleNamespace) -> None:
     resp = setup_env.client.post(
         "/api/v1/setup/initialize",
@@ -188,6 +213,8 @@ def test_initialize_returns_403_when_already_installed(setup_env: SimpleNamespac
     resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
     assert resp.status_code == 403
     assert setup_env.store.initialized is None
+    assert setup_env.store.wipe_calls == 0
+    assert setup_env.pg_wipes == []
 
 
 def test_initialize_rejects_unknown_policy_key(setup_env: SimpleNamespace) -> None:
@@ -197,6 +224,8 @@ def test_initialize_rejects_unknown_policy_key(setup_env: SimpleNamespace) -> No
     )
     assert resp.status_code == 400
     assert setup_env.store.initialized is None
+    assert setup_env.store.wipe_calls == 0
+    assert setup_env.pg_wipes == []
 
 
 def test_initialize_requires_project_name(setup_env: SimpleNamespace) -> None:
@@ -206,6 +235,8 @@ def test_initialize_requires_project_name(setup_env: SimpleNamespace) -> None:
     )
     assert resp.status_code == 400
     assert setup_env.store.initialized is None
+    assert setup_env.store.wipe_calls == 0
+    assert setup_env.pg_wipes == []
 
 
 def test_initialize_skips_postgres_when_not_configured(
@@ -224,3 +255,4 @@ def test_initialize_fails_with_503_when_store_unavailable(setup_env: SimpleNames
     resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
     assert resp.status_code == 503
     assert setup_env.store.initialized is None
+    assert setup_env.pg_wipes == []

@@ -152,6 +152,27 @@ class PostgresUserStore:
             return "created" if cur.rowcount else "existing"
 
 
+def wipe_postgres_data() -> int:
+    """Delete every row from every table in the public schema (fresh-install wipe).
+
+    Used by ``POST /setup/initialize`` so a first run starts from a pristine
+    database even when development/seed data is present. Returns the number of
+    truncated tables, or ``0`` when TASKER_DATABASE_URL is not configured so
+    the wizard keeps working without a PostgreSQL instance.
+    """
+    database_url = get_database_url()
+    if not database_url:
+        return 0
+    with closing(psycopg.connect(database_url, autocommit=True)) as conn, conn.cursor() as cur:
+        cur.execute("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
+        tables = [str(row[0]) for row in cur.fetchall()]
+        if not tables:
+            return 0
+        quoted = ", ".join('"' + name.replace('"', '""') + '"' for name in tables)
+        cur.execute(f"TRUNCATE TABLE {quoted} RESTART IDENTITY CASCADE")
+        return len(tables)
+
+
 def create_user(
     *,
     username: str,

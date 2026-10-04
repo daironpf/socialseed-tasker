@@ -5,11 +5,13 @@
   ``POST /setup/initialize``) or the ``TASKER_INSTALLED=true`` environment
   override at boot. When Neo4j is unreachable the endpoint degrades safely and
   answers from the environment flag only.
-- ``POST /setup/initialize`` creates the administrator (PostgreSQL bcrypt via
-  :func:`create_user` plus a ``:User`` node with ``role='ADMIN'``), the root
-  ``:Project`` node and the selected governance policies linked with the
-  existing ``(Project)-[:ENFORCES]->(Policy)`` model. Returns 403 when the
-  system is already installed.
+- ``POST /setup/initialize`` first wipes every database of any data that does
+  not belong to a fresh installation (Neo4j nodes, PostgreSQL public tables,
+  MongoDB chat collections and the Redis session/cache DB), then creates the
+  administrator (PostgreSQL bcrypt via :func:`create_user` plus a ``:User``
+  node with ``role='ADMIN'``), the root ``:Project`` node and the selected
+  governance policies linked with the existing ``(Project)-[:ENFORCES]->(Policy)``
+  model. Returns 403 when the system is already installed.
 
 State is provided by :class:`Neo4jSetupStore` on ``app.state.setup_store`` so
 tests can swap it for an in-memory fake (pattern of ``chat_repository``).
@@ -17,17 +19,23 @@ tests can swap it for an in-memory fake (pattern of ``chat_repository``).
 
 from __future__ import annotations
 
+import logging
 import os
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Protocol
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
-from socialseed_tasker.auth.user_store import create_user, normalize_username
+from socialseed_tasker.auth.user_store import create_user, normalize_username, wipe_postgres_data
+from socialseed_tasker.config.storage import get_mongo_url, get_redis_url
+from socialseed_tasker.infrastructure.mongo.client import DEFAULT_CHAT_DB
 from socialseed_tasker.infrastructure.web_api.schemas import APIResponse
+
+logger = logging.getLogger(__name__)
 
 setup_router = APIRouter(tags=["setup"])
 
@@ -90,6 +98,8 @@ RETURN p.name AS name
 LIMIT 1
 """
 
+WIPE_ALL_NODES = "MATCH (n) DETACH DELETE n"
+
 
 class SetupStoreError(RuntimeError):
     """Raised when the setup state backend cannot be reached."""
@@ -99,6 +109,9 @@ class SetupStore(Protocol):
     """State backend for the install flag and first-run writes."""
 
     def installed(self) -> bool:
+        ...
+
+    def wipe(self) -> None:
         ...
 
     def initialize(
@@ -135,6 +148,15 @@ class Neo4jSetupStore:
             with self._open_session() as session:
                 result = session.run(QUERY_INITIALIZED_PROJECT)
                 return result.single() is not None
+        except SetupStoreError:
+            raise
+        except Exception as exc:
+            raise SetupStoreError(str(exc)) from exc
+
+    def wipe(self) -> None:
+        try:
+            with self._open_session() as session:
+                session.run(WIPE_ALL_NODES)
         except SetupStoreError:
             raise
         except Exception as exc:
@@ -235,6 +257,48 @@ def _installed(store: SetupStore) -> bool:
         return False
 
 
+def _wipe_mongo() -> None:
+    """Drop every chat collection so the install starts from a pristine Mongo DB."""
+    url = get_mongo_url()
+    if not url:
+        return
+    try:
+        from pymongo import MongoClient
+
+        client: Any = MongoClient(url, serverSelectionTimeoutMS=2000)
+        try:
+            db_name = (
+                os.getenv("TASKER_MONGO_DB")
+                or urlparse(url).path.lstrip("/").split("?")[0]
+                or DEFAULT_CHAT_DB
+            )
+            db = client[db_name]
+            for name in db.list_collection_names():
+                if not name.startswith("system."):
+                    db.drop_collection(name)
+        finally:
+            client.close()
+    except Exception as exc:
+        logger.warning("mongo wipe failed (continuing): %s", exc)
+
+
+def _wipe_redis() -> None:
+    """Flush the session/cache Redis DB so no stale development state survives."""
+    url = get_redis_url()
+    if not url:
+        return
+    try:
+        import redis as redis_lib
+
+        client = redis_lib.from_url(url, socket_connect_timeout=2, socket_timeout=2)
+        try:
+            client.flushdb()
+        finally:
+            client.close()
+    except Exception as exc:
+        logger.warning("redis wipe failed (continuing): %s", exc)
+
+
 def _resolve_policies(payload: SetupPayload) -> list[dict[str, Any]]:
     specs: list[dict[str, Any]] = []
     for key in payload.policies:
@@ -277,8 +341,10 @@ def setup_status(request: Request) -> APIResponse[SetupStatusResponse]:
     response_model=APIResponse[SetupInitializeResponse],
     summary="Run the first-run initialization",
     description=(
-        "Creates the administrator (PostgreSQL bcrypt + :User ADMIN node), the root :Project "
-        "and the selected governance policies; returns 403 when already installed (issue #543)."
+        "Wipes any data that does not belong to the installation (Neo4j, PostgreSQL, MongoDB chat "
+        "and Redis), then creates the administrator (PostgreSQL bcrypt + :User ADMIN node), the "
+        "root :Project and the selected governance policies; returns 403 when already installed "
+        "(issues #543/#545)."
     ),
 )
 def setup_initialize(payload: SetupPayload, request: Request) -> APIResponse[SetupInitializeResponse]:
@@ -292,6 +358,17 @@ def setup_initialize(payload: SetupPayload, request: Request) -> APIResponse[Set
     if not project_name:
         raise HTTPException(status_code=400, detail="project_name is required")
     specs = _resolve_policies(payload)
+
+    try:
+        store.wipe()
+    except SetupStoreError as exc:
+        raise HTTPException(status_code=503, detail=f"Setup state backend unavailable: {exc}") from exc
+    try:
+        wipe_postgres_data()
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"PostgreSQL wipe failed: {exc}") from exc
+    _wipe_mongo()
+    _wipe_redis()
 
     credentials = create_user(
         username=admin_username,
