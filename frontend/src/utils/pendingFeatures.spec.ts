@@ -17,7 +17,7 @@ describe('pendingFeatures', () => {
     setApiMode('real')
     expect(isPendingFeature('/finops')).toBe(true)
     expect(isRealPendingFeature('/finops')).toBe(true)
-    expect(isRealPendingFeature('/chat')).toBe(true)
+    expect(isRealPendingFeature('/hitl')).toBe(true)
   })
 
   it('only exposes the real-mode chip for pending routes', () => {

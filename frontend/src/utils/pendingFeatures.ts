@@ -30,7 +30,6 @@ export const PENDING_FEATURE_ROUTES: readonly string[] = [
   '/replay',
   '/executive',
   '/users',
-  '/chat',
   '/hitl',
   '/organization',
   '/governance-matrix',
