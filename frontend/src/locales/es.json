@@ -1857,6 +1857,62 @@
   "setup": {
     "title": "Configuracion de Tasker",
     "loading": "Preparando el asistente de instalacion...",
-    "statusError": "No se pudo verificar el estado de instalacion. La navegacion continua sin el guard de setup."
+    "statusError": "No se pudo verificar el estado de instalacion. La navegacion continua sin el guard de setup.",
+    "steps": {
+      "credentials": "Administrador",
+      "project": "Proyecto",
+      "policies": "Politicas",
+      "confirm": "Confirmar"
+    },
+    "credentials": {
+      "heading": "Cuenta de administrador",
+      "description": "Crea el primer administrador o usa los valores por defecto.",
+      "adminUser": "Usuario",
+      "adminPassword": "Contrasena",
+      "showPassword": "Mostrar contrasena",
+      "hidePassword": "Ocultar contrasena",
+      "userRequired": "El usuario es obligatorio."
+    },
+    "project": {
+      "heading": "Proyecto raiz",
+      "description": "El proyecto raiz organiza issues, componentes y gobernanza.",
+      "name": "Nombre del proyecto",
+      "summary": "Resumen del proyecto",
+      "namePlaceholder": "ej. SocialSeed Tasker",
+      "summaryPlaceholder": "De que trata este proyecto?",
+      "required": "El nombre y el resumen son obligatorios."
+    },
+    "policies": {
+      "heading": "Politicas de gobernanza",
+      "description": "Elige las politicas predefinidas y agrega tus propias reglas.",
+      "circular": "Prevenir dependencias circulares en el grafo",
+      "solutionSummary": "Exigir resumen de solucion y archivos afectados antes de cerrar un issue",
+      "humanApproval": "Aprobacion humana obligatoria para modificaciones en el Core",
+      "customTitle": "Politicas personalizadas",
+      "customPlaceholder": "ej. Cada PR requiere dos aprobaciones",
+      "addPolicy": "Agregar Politica",
+      "removePolicy": "Eliminar politica",
+      "none": "Todavia no hay politicas personalizadas."
+    },
+    "confirm": {
+      "heading": "Confirmar e inicializar",
+      "description": "Revisa la configuracion antes de crear el administrador, el proyecto y las politicas.",
+      "admin": "Administrador",
+      "project": "Proyecto",
+      "summary": "Resumen",
+      "policies": "Politicas seleccionadas",
+      "customPolicies": "Politicas personalizadas",
+      "none": "Ninguna"
+    },
+    "actions": {
+      "back": "Atras",
+      "next": "Siguiente",
+      "initialize": "Inicializar Tasker",
+      "initializing": "Inicializando..."
+    },
+    "errors": {
+      "alreadyInstalled": "Tasker ya esta instalado. Redirigiendo al tablero.",
+      "initializeFailed": "La inicializacion fallo. Intenta de nuevo."
+    }
   }
 }

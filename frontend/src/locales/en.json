@@ -1857,6 +1857,62 @@
   "setup": {
     "title": "Tasker Setup",
     "loading": "Preparing the installation wizard...",
-    "statusError": "Could not verify the installation status. Navigation continues without the setup guard."
+    "statusError": "Could not verify the installation status. Navigation continues without the setup guard.",
+    "steps": {
+      "credentials": "Administrator",
+      "project": "Project",
+      "policies": "Policies",
+      "confirm": "Confirm"
+    },
+    "credentials": {
+      "heading": "Administrator account",
+      "description": "Create the first administrator or keep the suggested defaults.",
+      "adminUser": "Username",
+      "adminPassword": "Password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "userRequired": "Username is required."
+    },
+    "project": {
+      "heading": "Root project",
+      "description": "The root project organizes issues, components and governance.",
+      "name": "Project name",
+      "summary": "Project summary",
+      "namePlaceholder": "e.g. SocialSeed Tasker",
+      "summaryPlaceholder": "What is this project about?",
+      "required": "Name and summary are required."
+    },
+    "policies": {
+      "heading": "Governance policies",
+      "description": "Pick the predefined policies and add your own rules.",
+      "circular": "Prevent circular dependencies in the graph",
+      "solutionSummary": "Require a solution summary and affected files before closing an issue",
+      "humanApproval": "Mandatory human approval for Core changes",
+      "customTitle": "Custom policies",
+      "customPlaceholder": "e.g. Every PR needs two approvals",
+      "addPolicy": "Add policy",
+      "removePolicy": "Remove policy",
+      "none": "No custom policies yet."
+    },
+    "confirm": {
+      "heading": "Confirm and initialize",
+      "description": "Review the configuration before creating the administrator, the project and the policies.",
+      "admin": "Administrator",
+      "project": "Project",
+      "summary": "Summary",
+      "policies": "Selected policies",
+      "customPolicies": "Custom policies",
+      "none": "None"
+    },
+    "actions": {
+      "back": "Back",
+      "next": "Next",
+      "initialize": "Initialize Tasker",
+      "initializing": "Initializing..."
+    },
+    "errors": {
+      "alreadyInstalled": "Tasker is already installed. Redirecting to the dashboard.",
+      "initializeFailed": "Initialization failed. Please try again."
+    }
   }
 }

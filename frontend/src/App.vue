@@ -6,21 +6,28 @@
     >
       {{ t('a11y.skipToContent') }}
     </a>
-    <Sidebar />
-    <div class="md:ml-20 flex flex-1 flex-col transition-all duration-300 pb-8">
-      <AppHeader @open-mobile-menu="mobileMenuOpen = true" />
-      <main id="main-content" tabindex="-1" class="flex-1 overflow-hidden focus:outline-none">
-        <RouterView />
-      </main>
-    </div>
-    <MobileDrawer :open="mobileMenuOpen" @close="mobileMenuOpen = false" />
-    <TeamTicker />
-    <CommandPalette ref="paletteRef" />
-    <KeyboardShortcutsHelp ref="shortcutsHelpRef" />
-    <ToastContainer />
-    <FloatingChat @openFullChat="router.push('/chat')" />
 
-    <LoginScreen v-if="showLogin" @logged-in="onLoggedIn" />
+    <main v-if="isSetupRoute" id="main-content" tabindex="-1" class="flex flex-1 flex-col focus:outline-none">
+      <RouterView />
+    </main>
+
+    <template v-else>
+      <Sidebar />
+      <div class="md:ml-20 flex flex-1 flex-col transition-all duration-300 pb-8">
+        <AppHeader @open-mobile-menu="mobileMenuOpen = true" />
+        <main id="main-content" tabindex="-1" class="flex-1 overflow-hidden focus:outline-none">
+          <RouterView />
+        </main>
+      </div>
+      <MobileDrawer :open="mobileMenuOpen" @close="mobileMenuOpen = false" />
+      <TeamTicker />
+      <CommandPalette ref="paletteRef" />
+      <KeyboardShortcutsHelp ref="shortcutsHelpRef" />
+      <FloatingChat @openFullChat="router.push('/chat')" />
+      <LoginScreen v-if="showLogin" @logged-in="onLoggedIn" />
+    </template>
+
+    <ToastContainer />
   </div>
 </template>
 
@@ -52,9 +59,9 @@ const paletteRef = ref<InstanceType<typeof CommandPalette> | null>(null)
 const shortcutsHelpRef = ref<InstanceType<typeof KeyboardShortcutsHelp> | null>(null)
 const mobileMenuOpen = ref(false)
 
-// /setup runs before any administrator exists (issue #544), so the login
-// overlay must not cover the wizard.
-const showLogin = computed(() => route.path !== '/setup' && !authStore.isAuthenticated)
+// /setup renders a bare wizard shell (no sidebar, header, ticker, chat or login).
+const isSetupRoute = computed(() => route.path === '/setup')
+const showLogin = computed(() => !authStore.isAuthenticated)
 
 function onLoggedIn() {
   window.location.reload()
