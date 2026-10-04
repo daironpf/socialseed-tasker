@@ -11,9 +11,9 @@ export function loadStudioProfiles(): AgentProfile[] {
       if (Array.isArray(parsed)) return parsed as AgentProfile[]
     }
   } catch {
-    // corrupted storage -> fall through to seeds
+    // corrupted storage -> start empty
   }
-  return seedProfiles()
+  return []
 }
 
 export function saveStudioProfiles(profiles: AgentProfile[]): void {
@@ -55,36 +55,4 @@ export function mergeStudioAgents(users: User[]): User[] {
     if (!existing.has(profile.id)) merged.push(profileToUser(profile))
   }
   return merged
-}
-
-function seedProfiles(): AgentProfile[] {
-  const now = new Date().toISOString()
-  return [
-    {
-      id: 'agent-studio-seed-1',
-      name: 'review-sentinel',
-      role: 'code-reviewer',
-      avatar: '🔍',
-      model: 'claude-3.5-sonnet',
-      systemPrompt:
-        'You are a staff code-reviewer agent. Review diffs for correctness, security and maintainability. Use code_search and test_runner to validate findings, then summarize blockers vs nits with file references.',
-      tools: ['code_search', 'fs_read', 'test_runner', 'docs_writer'],
-      limits: { maxTokensPerRun: 12000, timeoutSeconds: 180, maxRisk: 'MEDIUM' },
-      enabled: true,
-      createdAt: now,
-    },
-    {
-      id: 'agent-studio-seed-2',
-      name: 'data-guardian',
-      role: 'data-engineer',
-      avatar: '🛡️',
-      model: 'gpt-4o',
-      systemPrompt:
-        'You are a data pipeline guardian. Monitor Neo4j and warehouse health, run diagnostics with neo4j_query, open fixes via github_pr and never mutate production data without approval.',
-      tools: ['neo4j_query', 'fs_read', 'github_pr', 'web_search'],
-      limits: { maxTokensPerRun: 6000, timeoutSeconds: 90, maxRisk: 'LOW' },
-      enabled: false,
-      createdAt: now,
-    },
-  ]
 }

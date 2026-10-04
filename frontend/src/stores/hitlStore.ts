@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { isMockMode, apiMode } from '@/api/client'
 import type { HITLRequest, HITLRequestSeverity, HITLRequestStatus } from '@/types/hitl'
 
 const MOCK_DIFF_1 = `@@ -12,8 +12,12 @@
@@ -253,6 +254,12 @@ export const useHitlStore = defineStore('hitl', () => {
   const criticalCount = computed(() => pendingRequests.value.filter(r => r.severity === 'CRITICAL').length)
 
   async function fetchRequests() {
+    // Demo HITL requests only exist in mock mode; there is no real HITL API yet.
+    if (!isMockMode()) {
+      requests.value = []
+      loadedOnce = true
+      return
+    }
     if (loadedOnce && requests.value.length > 0) return
     loading.value = true
     error.value = null
@@ -266,6 +273,16 @@ export const useHitlStore = defineStore('hitl', () => {
       loading.value = false
     }
   }
+
+  // Runtime data-source switch (mock <-> real), issue #545.
+  watch(apiMode, () => {
+    if (isMockMode()) {
+      loadedOnce = false
+      void fetchRequests()
+    } else {
+      requests.value = []
+    }
+  })
 
   type ResolveAction = 'approve' | 'reject' | 'modify'
 

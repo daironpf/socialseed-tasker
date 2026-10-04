@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { isMockMode } from '@/api/client'
 import type { CodeNode, CodeEdge, CodeStructureData } from '@/types/codeGraph'
 
 const MOCK_CODE_NODES: CodeNode[] = [
@@ -52,8 +53,9 @@ export const useCodeGraphStore = defineStore('codeGraph', () => {
     error.value = null
     return new Promise((resolve) => {
       setTimeout(() => {
-        nodes.value = [...MOCK_CODE_NODES]
-        codeEdges.value = [...MOCK_CODE_EDGES]
+        // Demo structure only in mock mode; real mode stays empty (issue #545).
+        nodes.value = isMockMode() ? [...MOCK_CODE_NODES] : []
+        codeEdges.value = isMockMode() ? [...MOCK_CODE_EDGES] : []
         loading.value = false
         resolve({ nodes: nodes.value, edges: codeEdges.value })
       }, 300)

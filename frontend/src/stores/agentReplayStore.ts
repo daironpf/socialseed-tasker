@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { isMockMode, apiMode } from '@/api/client'
 import type { AgentSession, ReplayEvent } from '@/types/agentReplay'
 
 const MOCK_EVENTS: ReplayEvent[] = [
@@ -33,8 +34,9 @@ const MOCK_SESSIONS: AgentSession[] = [
 ]
 
 export const useAgentReplayStore = defineStore('agentReplay', () => {
-  const sessions = ref<AgentSession[]>([...MOCK_SESSIONS])
-  const selectedSessionId = ref<string>('session-001')
+  // Replay sessions are demo fixtures only in mock mode (issue #545).
+  const sessions = ref<AgentSession[]>(isMockMode() ? [...MOCK_SESSIONS] : [])
+  const selectedSessionId = ref<string | null>(isMockMode() ? 'session-001' : null)
   const currentTime = ref<number>(0)
   const isPlaying = ref(false)
   const playSpeed = ref<number>(1)
@@ -42,6 +44,18 @@ export const useAgentReplayStore = defineStore('agentReplay', () => {
   const error = ref<string | null>(null)
 
   let playInterval: ReturnType<typeof setInterval> | null = null
+
+  watch(apiMode, () => {
+    if (isMockMode()) {
+      sessions.value = [...MOCK_SESSIONS]
+      selectedSessionId.value = 'session-001'
+    } else {
+      stop()
+      sessions.value = []
+      selectedSessionId.value = null
+      currentTime.value = 0
+    }
+  })
 
   const selectedSession = computed(() => sessions.value.find(s => s.id === selectedSessionId.value))
 

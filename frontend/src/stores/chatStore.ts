@@ -265,9 +265,14 @@ function wireToConversation(wire: ConversationWire, me: string): Conversation {
 }
 
 export const useChatStore = defineStore('chat', () => {
-  const conversations = ref<Conversation[]>(MOCK_CONVERSATIONS.map((c) => ({ ...c })))
+  // Demo conversations only exist in mock mode; real mode hydrates from the API.
+  const conversations = ref<Conversation[]>(
+    isMockMode() ? MOCK_CONVERSATIONS.map((c) => ({ ...c })) : [],
+  )
   const messages = ref<Record<string, ChatMessage[]>>(
-    Object.fromEntries(Object.entries(MOCK_MESSAGES).map(([key, list]) => [key, [...list]])),
+    isMockMode()
+      ? Object.fromEntries(Object.entries(MOCK_MESSAGES).map(([key, list]) => [key, [...list]]))
+      : {},
   )
   const activeConversationId = ref<string | null>(null)
   const typingUsers = ref<TypingUser[]>([])
