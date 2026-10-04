@@ -21,6 +21,8 @@ class FakeSetupStore:
     def __init__(self) -> None:
         self.installed_flag = False
         self.fail = False
+        self.count_fail = False
+        self.nodes = 0
         self.wipe_calls = 0
         self.initialized: dict[str, Any] | None = None
 
@@ -28,6 +30,11 @@ class FakeSetupStore:
         if self.fail:
             raise setup_api.SetupStoreError("neo4j down")
         return self.installed_flag or self.initialized is not None
+
+    def node_count(self) -> int:
+        if self.fail or self.count_fail:
+            raise setup_api.SetupStoreError("neo4j down")
+        return self.nodes
 
     def wipe(self) -> None:
         if self.fail:
@@ -51,6 +58,29 @@ class FakeSetupStore:
             "policies": policies,
         }
         return {"projectId": "project-1"}
+
+
+class FakeSecretsStore:
+    def __init__(self) -> None:
+        self.secrets: dict[str, dict[str, Any]] = {}
+
+    def put_secret(
+        self,
+        name: str,
+        value: bytes,
+        metadata: dict[str, Any] | None = None,
+        actor: str | None = None,
+    ) -> None:
+        self.secrets[name] = {"value": value, "metadata": metadata or {}, "actor": actor}
+
+    def get_secret(self, name: str, reveal: bool = False) -> dict[str, Any]:
+        if name not in self.secrets:
+            raise KeyError(name)
+        entry = self.secrets[name]
+        result: dict[str, Any] = {"metadata": entry["metadata"], "ts": 0}
+        if reveal:
+            result["value"] = entry["value"]
+        return result
 
 
 @pytest.fixture()
@@ -84,8 +114,20 @@ def setup_env(monkeypatch: pytest.MonkeyPatch):
         return 1
 
     monkeypatch.setattr(setup_api, "wipe_postgres_data", _fake_wipe_postgres)
+    secrets_store = FakeSecretsStore()
+    fake_container = SimpleNamespace(secrets_store=secrets_store)
+    monkeypatch.setattr(
+        "socialseed_tasker.cli.wiring.build_default_container",
+        lambda: fake_container,
+    )
     with TestClient(app) as client:
-        yield SimpleNamespace(client=client, store=store, user_calls=user_calls, pg_wipes=pg_wipes)
+        yield SimpleNamespace(
+            client=client,
+            store=store,
+            user_calls=user_calls,
+            pg_wipes=pg_wipes,
+            secrets_store=secrets_store,
+        )
 
 
 def _payload(**overrides: Any) -> dict[str, Any]:
@@ -255,4 +297,114 @@ def test_initialize_fails_with_503_when_store_unavailable(setup_env: SimpleNames
     resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
     assert resp.status_code == 503
     assert setup_env.store.initialized is None
+    assert setup_env.store.wipe_calls == 0
     assert setup_env.pg_wipes == []
+
+
+def test_initialize_requires_confirm_wipe_when_system_has_data(setup_env: SimpleNamespace) -> None:
+    setup_env.store.nodes = 42
+    resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
+    assert resp.status_code == 400
+    assert "confirm_wipe" in resp.text
+    assert setup_env.store.initialized is None
+    assert setup_env.store.wipe_calls == 0
+    assert setup_env.pg_wipes == []
+
+
+def test_initialize_with_confirm_wipe_wipes_populated_system(setup_env: SimpleNamespace) -> None:
+    setup_env.store.nodes = 42
+    resp = setup_env.client.post(
+        "/api/v1/setup/initialize", json=_payload(confirm_wipe=True)
+    )
+    assert resp.status_code == 200
+    assert setup_env.store.wipe_calls == 1
+    assert setup_env.pg_wipes == ["wipe"]
+
+
+def test_initialize_fails_closed_when_node_count_unavailable(setup_env: SimpleNamespace) -> None:
+    setup_env.store.count_fail = True
+    resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
+    assert resp.status_code == 503
+    assert setup_env.store.initialized is None
+    assert setup_env.store.wipe_calls == 0
+    assert setup_env.pg_wipes == []
+
+
+def test_initialize_generates_master_api_key(setup_env: SimpleNamespace) -> None:
+    resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert data["apiKey"].startswith("tasker_sk_live_")
+    assert len(data["apiKey"]) > len("tasker_sk_live_") + 20
+    assert data["mcpPort"] == 0
+    assert setup_env.client.app.state.master_api_key == data["apiKey"]
+
+
+def test_initialize_accepts_optional_api_key_and_mcp_port(setup_env: SimpleNamespace) -> None:
+    resp = setup_env.client.post(
+        "/api/v1/setup/initialize",
+        json=_payload(api_key="tasker_sk_live_provided", mcp_port=8888),
+    )
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert data["apiKey"] == "tasker_sk_live_provided"
+    assert data["mcpPort"] == 8888
+
+
+def test_initialize_persists_master_key_in_secrets_store(setup_env: SimpleNamespace) -> None:
+    resp = setup_env.client.post(
+        "/api/v1/setup/initialize",
+        json=_payload(api_key="tasker_sk_live_persisted", mcp_port=9000),
+    )
+    assert resp.status_code == 200
+    stored = setup_env.secrets_store.secrets[setup_api.MASTER_KEY_SECRET_NAME]
+    assert stored["value"] == b"tasker_sk_live_persisted"
+    assert stored["metadata"]["mcpPort"] == 9000
+    assert stored["metadata"]["source"] == "setup"
+
+
+def test_initialize_rejects_out_of_range_mcp_port(setup_env: SimpleNamespace) -> None:
+    resp = setup_env.client.post(
+        "/api/v1/setup/initialize",
+        json=_payload(mcp_port=70000),
+    )
+    assert resp.status_code == 422
+    assert setup_env.store.initialized is None
+
+
+def test_master_api_key_authenticates_requests(setup_env: SimpleNamespace) -> None:
+    # Env API key keeps working as before.
+    resp = setup_env.client.get(
+        "/api/v1/mcp/servers", headers={"X-API-Key": "test-token"}
+    )
+    assert resp.status_code == 200
+
+    # Without any key the request is rejected.
+    resp = setup_env.client.get("/api/v1/mcp/servers")
+    assert resp.status_code == 401
+
+    # Initialize issues the master key.
+    resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
+    assert resp.status_code == 200
+    master_key = resp.json()["data"]["apiKey"]
+
+    # The in-process key authenticates agent requests (MCP X-API-Key).
+    resp = setup_env.client.get(
+        "/api/v1/mcp/servers", headers={"X-API-Key": master_key}
+    )
+    assert resp.status_code == 200
+
+    # A wrong key with the same prefix is still rejected.
+    resp = setup_env.client.get(
+        "/api/v1/mcp/servers", headers={"X-API-Key": "tasker_sk_live_wrong"}
+    )
+    assert resp.status_code == 401
+
+    # Simulate an API restart: the key is lazily reloaded from the store.
+    setup_env.client.app.state.master_api_key = None
+    setup_env.client.app.state.master_api_key_loaded = False
+    resp = setup_env.client.get(
+        "/api/v1/mcp/servers", headers={"X-API-Key": master_key}
+    )
+    assert resp.status_code == 200
+    assert setup_env.client.app.state.master_api_key == master_key

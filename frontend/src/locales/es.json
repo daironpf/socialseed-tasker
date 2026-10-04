@@ -1904,11 +1904,29 @@
       "customPolicies": "Politicas personalizadas",
       "none": "Ninguna"
     },
+    "ai": {
+      "stepTitle": "Credenciales de agentes IA (opcional)",
+      "stepDescription": "Tasker genera una clave maestra al inicializar. El puerto MCP se usa en el snippet de integracion que se muestra despues.",
+      "heading": "Credenciales de agentes IA",
+      "description": "Usa esta clave maestra para conectar agentes externos (Cursor, Claude, Windsurf) a Tasker por MCP.",
+      "keyLabel": "Clave maestra API",
+      "keyHint": "Guardala en un lugar seguro. Los agentes se autentican con ella mediante la cabecera X-API-Key.",
+      "copyKey": "Copiar clave",
+      "copiedKey": "Copiado!",
+      "portLabel": "Puerto del servidor MCP",
+      "portPlaceholder": "auto",
+      "portHint": "Dejalo vacio para usar el puerto de esta instalacion. Se usa en el snippet de abajo.",
+      "snippetTitle": "Snippet de integracion MCP",
+      "snippetHint": "Pegalo en .cursor/mcp.json o .windsurf/mcp.json",
+      "copySnippet": "Copiar snippet",
+      "copiedSnippet": "Copiado!"
+    },
     "actions": {
       "back": "Atras",
       "next": "Siguiente",
       "initialize": "Inicializar Tasker",
-      "initializing": "Inicializando..."
+      "initializing": "Inicializando...",
+      "finish": "Ir al tablero"
     },
     "errors": {
       "alreadyInstalled": "Tasker ya esta instalado. Redirigiendo al tablero.",

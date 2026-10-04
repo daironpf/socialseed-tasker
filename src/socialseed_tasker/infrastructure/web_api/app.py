@@ -227,6 +227,40 @@ def create_app(
         except Exception:
             return False
 
+    # Master API key issued by the setup wizard (issue #546): prefer the copy
+    # set in-process by /setup/initialize and lazily fall back to the secrets
+    # store so the key survives API restarts. Caches misses too.
+    def _master_key_matches(candidate: str) -> bool:
+        from socialseed_tasker.infrastructure.web_api.routers.setup import (
+            MASTER_KEY_PREFIX,
+            MASTER_KEY_SECRET_NAME,
+        )
+
+        if not candidate.startswith(MASTER_KEY_PREFIX):
+            return False
+        cached = getattr(app.state, "master_api_key", None)
+        if cached is None and not getattr(app.state, "master_api_key_loaded", False):
+            app.state.master_api_key_loaded = True
+            try:
+                from socialseed_tasker.cli.wiring import build_default_container
+
+                container: Any = build_default_container()
+                res = container.secrets_store.get_secret(
+                    MASTER_KEY_SECRET_NAME, reveal=True
+                )
+                cached = res["value"].decode("utf-8")
+                app.state.master_api_key = cached
+            except Exception:
+                cached = None
+        return cached is not None and candidate == cached
+
+    def _api_key_matches(candidate: str | None) -> bool:
+        if candidate is None:
+            return False
+        if candidate == api_key:
+            return True
+        return _master_key_matches(candidate)
+
     @app.middleware("http")
     async def api_key_auth_middleware(request: Request, call_next):
         # Skip auth if no API key configured or auth disabled in development
@@ -256,7 +290,7 @@ def create_app(
             provided_key = bearer
         # A Bearer token may be a short-lived JWT from /auth/login instead of
         # the raw API key; accept it when the signature checks out.
-        if provided_key != api_key and (bearer is None or not _verify_jwt(bearer)):
+        if not _api_key_matches(provided_key) and (bearer is None or not _verify_jwt(bearer)):
             return JSONResponse(
                 status_code=401,
                 content={"error": {"code": "UNAUTHORIZED", "message": "Invalid or missing API key"}},

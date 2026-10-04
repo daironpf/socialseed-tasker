@@ -12,6 +12,9 @@ export interface SetupInitializePayload {
   project_summary: string
   policies: string[]
   custom_policies: string[]
+  api_key: string
+  mcp_port: number
+  confirm_wipe: boolean
 }
 
 export interface SetupInitializeResult {
@@ -21,6 +24,8 @@ export interface SetupInitializeResult {
   projectId: string
   policies: string[]
   credentials: string
+  apiKey: string
+  mcpPort: number
 }
 
 export async function getSetupStatus(): Promise<SetupStatus> {

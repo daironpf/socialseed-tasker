@@ -42,6 +42,8 @@ describe('SetupWizardView', () => {
       projectId: 'p-1',
       policies: ['Prevent circular dependencies', 'Require solution summary'],
       credentials: 'created',
+      apiKey: 'tasker_sk_live_test_key',
+      mcpPort: 0,
     })
     const { wrapper, pinia } = mountComponent(SetupWizardView)
     setActivePinia(pinia)
@@ -77,7 +79,10 @@ describe('SetupWizardView', () => {
     expect(wrapper.find('[data-testid="setup-summary-custom"]').text()).toBe('None')
 
     await wrapper.find('[data-testid="setup-submit"]').trigger('click')
-    await vi.waitFor(() => expect(push).toHaveBeenCalledWith('/board'))
+    await vi.waitFor(() =>
+      expect(wrapper.find('[data-testid="setup-ai-key"]').exists()).toBe(true),
+    )
+    expect(wrapper.find('[data-testid="setup-ai-key"]').text()).toBe('tasker_sk_live_test_key')
 
     expect(setupApi.postSetupInitialize).toHaveBeenCalledTimes(1)
     expect(vi.mocked(setupApi.postSetupInitialize).mock.calls[0][0]).toEqual({
@@ -87,9 +92,41 @@ describe('SetupWizardView', () => {
       project_summary: 'Resumen del proyecto demo',
       policies: ['prevent_circular_dependencies', 'require_solution_summary'],
       custom_policies: [],
+      api_key: '',
+      mcp_port: 0,
+      confirm_wipe: true,
     })
     expect(useUiStore(pinia).isInstalled).toBe(true)
     expect(localStorage.getItem('socialseed-api-mode')).toBe('real')
+    expect(push).not.toHaveBeenCalled()
+
+    await wrapper.find('[data-testid="setup-finish"]').trigger('click')
+    expect(push).toHaveBeenCalledWith('/board')
+  })
+
+  it('sends the configured MCP port and shows it in the credentials panel', async () => {
+    vi.mocked(setupApi.postSetupInitialize).mockResolvedValue({
+      installed: true,
+      adminUsername: 'admin',
+      projectName: 'Proyecto Demo',
+      projectId: 'p-1',
+      policies: [],
+      credentials: 'created',
+      apiKey: 'tasker_sk_live_port_key',
+      mcpPort: 8888,
+    })
+    const { wrapper } = mountComponent(SetupWizardView)
+
+    await goToConfirm(wrapper)
+    await wrapper.find<HTMLInputElement>('[data-testid="setup-mcp-port"]').setValue('8888')
+    await wrapper.find('[data-testid="setup-submit"]').trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.find('[data-testid="setup-ai-key"]').exists()).toBe(true),
+    )
+
+    expect(vi.mocked(setupApi.postSetupInitialize).mock.calls[0][0].mcp_port).toBe(8888)
+    expect(wrapper.find('[data-testid="setup-mcp-snippet"]').text()).toContain(':8888/mcp')
+    expect(wrapper.find('[data-testid="setup-finish"]').exists()).toBe(true)
   })
 
   it('adds and removes custom policies', async () => {

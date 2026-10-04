@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import logging
 import os
+import secrets
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Protocol
@@ -41,6 +42,12 @@ setup_router = APIRouter(tags=["setup"])
 
 DEFAULT_ADMIN_USER = "admin"
 DEFAULT_ADMIN_PASSWORD = "admin"
+
+# Master API key issued for external agents (Cursor, Claude, Windsurf, ...).
+# Persisted in the secrets store so the auth middleware can accept it after a
+# restart (issue #546).
+MASTER_KEY_PREFIX = "tasker_sk_live_"
+MASTER_KEY_SECRET_NAME = "master_api_key"
 
 PREDEFINED_POLICIES: dict[str, dict[str, str]] = {
     "prevent_circular_dependencies": {
@@ -98,6 +105,8 @@ RETURN p.name AS name
 LIMIT 1
 """
 
+QUERY_NODE_COUNT = "MATCH (n) RETURN count(n) AS c"
+
 WIPE_ALL_NODES = "MATCH (n) DETACH DELETE n"
 
 
@@ -109,6 +118,9 @@ class SetupStore(Protocol):
     """State backend for the install flag and first-run writes."""
 
     def installed(self) -> bool:
+        ...
+
+    def node_count(self) -> int:
         ...
 
     def wipe(self) -> None:
@@ -148,6 +160,17 @@ class Neo4jSetupStore:
             with self._open_session() as session:
                 result = session.run(QUERY_INITIALIZED_PROJECT)
                 return result.single() is not None
+        except SetupStoreError:
+            raise
+        except Exception as exc:
+            raise SetupStoreError(str(exc)) from exc
+
+    def node_count(self) -> int:
+        try:
+            with self._open_session() as session:
+                result = session.run(QUERY_NODE_COUNT)
+                record = result.single()
+                return int(record["c"]) if record else 0
         except SetupStoreError:
             raise
         except Exception as exc:
@@ -225,6 +248,14 @@ class SetupPayload(CamelModel):
     project_summary: str = ""
     policies: list[str] = Field(default_factory=list)
     custom_policies: list[str] = Field(default_factory=list)
+    # Optional AI agent credentials (issue #546): an empty api_key makes the
+    # backend generate a fresh master key; mcp_port 0 means "auto" (the port
+    # of the API origin the client is connected to).
+    api_key: str = ""
+    mcp_port: int = Field(default=0, ge=0, le=65535)
+    # Explicit wipe consent: initialize refuses to wipe a populated graph
+    # unless the caller confirms (protects against accidental reinstalls).
+    confirm_wipe: bool = False
 
 
 class SetupInitializeResponse(CamelModel):
@@ -234,6 +265,8 @@ class SetupInitializeResponse(CamelModel):
     project_id: str
     policies: list[str]
     credentials: str
+    api_key: str
+    mcp_port: int
 
 
 def _env_installed() -> bool:
@@ -253,7 +286,8 @@ def _installed(store: SetupStore) -> bool:
         return True
     try:
         return bool(store.installed())
-    except SetupStoreError:
+    except SetupStoreError as exc:
+        logger.warning("setup status degraded (answering from env only): %s", exc)
         return False
 
 
@@ -324,6 +358,33 @@ def _resolve_policies(payload: SetupPayload) -> list[dict[str, Any]]:
     return specs
 
 
+def _generate_master_api_key() -> str:
+    return MASTER_KEY_PREFIX + secrets.token_urlsafe(32)
+
+
+def _persist_master_key(request: Request, api_key: str, mcp_port: int) -> None:
+    """Expose the key to this process and persist it in the secrets store.
+
+    The auth middleware accepts the key from ``app.state`` right away; the
+    secrets store copy lets it keep working after an API restart. Failures
+    degrade to the in-process key only (the installation still succeeds).
+    """
+    request.app.state.master_api_key = api_key
+    request.app.state.master_api_key_loaded = True
+    try:
+        from socialseed_tasker.cli.wiring import build_default_container
+
+        container: Any = build_default_container()
+        container.secrets_store.put_secret(
+            MASTER_KEY_SECRET_NAME,
+            api_key.encode("utf-8"),
+            metadata={"mcpPort": mcp_port, "source": "setup"},
+            actor="setup",
+        )
+    except Exception as exc:
+        logger.warning("master api key persistence failed (continuing): %s", exc)
+
+
 @setup_router.get(
     "/setup/status",
     response_model=APIResponse[SetupStatusResponse],
@@ -349,8 +410,34 @@ def setup_status(request: Request) -> APIResponse[SetupStatusResponse]:
 )
 def setup_initialize(payload: SetupPayload, request: Request) -> APIResponse[SetupInitializeResponse]:
     store = _store(request)
-    if _installed(store):
+    # Fail closed: a wipe must never run on a degraded status check. If the
+    # store cannot answer, the caller must retry instead of reinstalling.
+    try:
+        already_installed = _env_installed() or store.installed()
+    except SetupStoreError as exc:
+        raise HTTPException(
+            status_code=503, detail=f"Setup state backend unavailable: {exc}"
+        ) from exc
+    if already_installed:
         raise HTTPException(status_code=403, detail="Tasker is already installed")
+
+    # Refuse to wipe a populated system without explicit consent. This is an
+    # independent signal from the installed flag: a degraded or stale read
+    # that reports "not installed" must not silently destroy existing data.
+    try:
+        existing_nodes = store.node_count()
+    except SetupStoreError as exc:
+        raise HTTPException(
+            status_code=503, detail=f"Setup state backend unavailable: {exc}"
+        ) from exc
+    if existing_nodes > 0 and not payload.confirm_wipe:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Refusing to wipe a system with {existing_nodes} nodes: "
+                "resend with confirm_wipe=true to proceed"
+            ),
+        )
 
     admin_username = normalize_username(payload.admin_user) or DEFAULT_ADMIN_USER
     admin_password = payload.admin_password or DEFAULT_ADMIN_PASSWORD
@@ -387,6 +474,9 @@ def setup_initialize(payload: SetupPayload, request: Request) -> APIResponse[Set
     except SetupStoreError as exc:
         raise HTTPException(status_code=503, detail=f"Setup state backend unavailable: {exc}") from exc
 
+    master_api_key = payload.api_key.strip() or _generate_master_api_key()
+    _persist_master_key(request, master_api_key, payload.mcp_port)
+
     data = SetupInitializeResponse(
         installed=True,
         admin_username=admin_username,
@@ -394,5 +484,7 @@ def setup_initialize(payload: SetupPayload, request: Request) -> APIResponse[Set
         project_id=str(record.get("projectId", "")),
         policies=[str(spec["name"]) for spec in specs],
         credentials=credentials,
+        api_key=master_api_key,
+        mcp_port=payload.mcp_port,
     )
     return APIResponse[SetupInitializeResponse](data=data)

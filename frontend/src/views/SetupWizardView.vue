@@ -10,7 +10,27 @@
         {{ t(`setup.steps.${stepKeys[step - 1]}`) }}
       </p>
 
-      <ol class="mt-6 flex items-center gap-2 sm:gap-3" data-testid="setup-steps">
+      <!-- Installed: AI credentials panel with the master key and MCP snippet (issue #546) -->
+      <template v-if="completed">
+        <McpSetupPanel
+          class="mt-6"
+          :api-key="initResult?.apiKey ?? ''"
+          :mcp-port="initResult?.mcpPort ?? 0"
+        />
+        <div class="mt-8 flex justify-end">
+          <button
+            type="button"
+            data-testid="setup-finish"
+            class="rounded-lg bg-cyan-600 px-5 py-2 text-sm font-semibold text-white hover:bg-cyan-700 dark:bg-cyan-500 dark:hover:bg-cyan-600"
+            @click="finish"
+          >
+            {{ t('setup.actions.finish') }}
+          </button>
+        </div>
+      </template>
+
+      <template v-else>
+        <ol class="mt-6 flex items-center gap-2 sm:gap-3" data-testid="setup-steps">
         <li
           v-for="(key, index) in stepKeys"
           :key="key"
@@ -281,6 +301,32 @@
             </dd>
           </div>
         </dl>
+
+        <div class="mt-4 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {{ t('setup.ai.stepTitle') }}
+          </h3>
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ t('setup.ai.stepDescription') }}
+          </p>
+          <label for="setup-mcp-port" class="mb-1 mt-3 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ t('setup.ai.portLabel') }}
+          </label>
+          <input
+            id="setup-mcp-port"
+            v-model="mcpPort"
+            type="number"
+            min="0"
+            max="65535"
+            data-testid="setup-mcp-port"
+            :placeholder="t('setup.ai.portPlaceholder')"
+            :aria-describedby="'setup-mcp-port-hint'"
+            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 sm:w-48"
+          />
+          <p id="setup-mcp-port-hint" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {{ t('setup.ai.portHint') }}
+          </p>
+        </div>
       </section>
 
       <div class="mt-8 flex items-center justify-between gap-3">
@@ -326,6 +372,7 @@
           {{ submitting ? t('setup.actions.initializing') : t('setup.actions.initialize') }}
         </button>
       </div>
+      </template>
     </div>
   </div>
 </template>
@@ -334,10 +381,11 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { postSetupInitialize } from '@/api/setupApi'
+import { postSetupInitialize, type SetupInitializeResult } from '@/api/setupApi'
 import { setApiMode } from '@/api/client'
 import { useUiStore } from '@/stores/uiStore'
 import { useToast } from '@/composables/useToast'
+import McpSetupPanel from '@/components/setup/McpSetupPanel.vue'
 
 const TOTAL_STEPS = 4
 const stepKeys = ['credentials', 'project', 'policies', 'confirm'] as const
@@ -367,6 +415,10 @@ const policyState = ref<Record<string, boolean>>({
 const customDraft = ref('')
 const customPolicies = ref<string[]>([])
 const submitting = ref(false)
+// Optional MCP server port for the AI credentials step (issue #546); empty = auto.
+const mcpPort = ref('')
+const completed = ref(false)
+const initResult = ref<SetupInitializeResult | null>(null)
 
 const projectReady = computed(
   () => projectName.value.trim() !== '' && projectSummary.value.trim() !== '',
@@ -411,11 +463,22 @@ function removeCustomPolicy(index: number) {
   customPolicies.value.splice(index, 1)
 }
 
+function parsedMcpPort(): number {
+  const draft = String(mcpPort.value).trim()
+  if (draft === '') return 0
+  const value = Number(draft)
+  return Number.isInteger(value) && value >= 0 && value <= 65535 ? value : 0
+}
+
+function finish() {
+  router.push('/board')
+}
+
 async function submit() {
   if (submitting.value) return
   submitting.value = true
   try {
-    await postSetupInitialize({
+    const result = await postSetupInitialize({
       admin_user: adminUser.value.trim(),
       admin_password: adminPassword.value,
       project_name: projectName.value.trim(),
@@ -424,13 +487,18 @@ async function submit() {
         .filter((policy) => policyState.value[policy.key])
         .map((policy) => policy.key),
       custom_policies: [...customPolicies.value],
+      api_key: '',
+      mcp_port: parsedMcpPort(),
+      confirm_wipe: true,
     })
     // The guard caches isInstalled=false from the entry navigation; flip it
-    // before pushing so /board is not bounced back to /setup.
+    // before showing the credentials panel so /board is not bounced back.
     uiStore.isInstalled = true
     // A freshly installed system runs against real data only (issue #545).
     setApiMode('real')
-    router.push('/board')
+    // Issue #546: show the AI credentials panel before leaving the wizard.
+    initResult.value = result
+    completed.value = true
   } catch (err) {
     const status = (err as { status?: number }).status
     if (status === 403) {

@@ -1904,11 +1904,29 @@
       "customPolicies": "Custom policies",
       "none": "None"
     },
+    "ai": {
+      "stepTitle": "AI agent credentials (optional)",
+      "stepDescription": "A master API key is generated when Tasker initializes. The MCP port is used in the integration snippet shown afterwards.",
+      "heading": "AI agent credentials",
+      "description": "Use this master key to connect external agents (Cursor, Claude, Windsurf) to Tasker over MCP.",
+      "keyLabel": "Master API key",
+      "keyHint": "Store it in a safe place. Agents authenticate with it via the X-API-Key header.",
+      "copyKey": "Copy key",
+      "copiedKey": "Copied!",
+      "portLabel": "MCP server port",
+      "portPlaceholder": "auto",
+      "portHint": "Leave empty to use the port of this installation. Used in the snippet below.",
+      "snippetTitle": "MCP integration snippet",
+      "snippetHint": "Paste into .cursor/mcp.json or .windsurf/mcp.json",
+      "copySnippet": "Copy snippet",
+      "copiedSnippet": "Copied!"
+    },
     "actions": {
       "back": "Back",
       "next": "Next",
       "initialize": "Initialize Tasker",
-      "initializing": "Initializing..."
+      "initializing": "Initializing...",
+      "finish": "Go to dashboard"
     },
     "errors": {
       "alreadyInstalled": "Tasker is already installed. Redirecting to the dashboard.",
