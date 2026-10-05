@@ -662,7 +662,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **MCP tool-call stream** | Implemented | Real mode: `GET /mcp/tool-calls/stream` SSE feeds the MCP Inspector live tool-call feed (#524, §68) |
 | **Issue flag stream** | Implemented | Real mode: `GET /issues/stream` SSE (`connected`/`ping`/`issue-updated`) broadcasts `agent_working` changes to all clients; `issuesStore` subscribes and merges in place (#530) |
 | **Chat realtime (Socket.IO)** | Implemented | Real mode: `chatSocket.ts` singleton over Socket.IO (`path: '/socket.io/'`, JWT auth) — `new_message`/`messages_read`/`typing_*` events, room join/leave, reconnect resync; never connects in mock mode (#538/#540, §28) |
-| **Notification stream** | Implemented | Real mode: `GET /notifications/stream` SSE (`connected` + snapshot / `ping` / `notification_created`) with per-user fan-out from the JWT and `global`/`system` mirror for `channel=system` inserts (#550, §21) |
+| **Notification stream** | Implemented | Real mode: `GET /notifications/stream` SSE (`connected` + snapshot / `ping` / `notification_created`) with per-user fan-out from the JWT and `global`/`system` mirror for `channel=system` inserts; identity via header or `?access_token=` (EventSource cannot send headers) (#550/#551, §21) |
 
 ---
 
@@ -764,13 +764,14 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 
 | Feature | Status | Details |
 |---|---|---|
-| **Notification store** | Implemented | `notificationsStore` with localStorage persistence |
+| **Notification store** | Implemented | `notificationsStore` ramificado por `apiMode`: mock con 12 fixtures + localStorage; real con `GET /notifications` (hidratación), mutaciones optimistas a Mongo y stream #550 — `localStorage` solo en mock (#551) |
 | **Backend persistence (MongoDB)** | Implemented | Typed `notifications` collection (`models/notification.py`) with `NotificationMongoRepository`, typed `NotificationStoreError` degradation and idempotent `{user_id, read}` + `{created_at}` indexes (#547) |
 | **REST API** | Implemented | `/api/v1/notifications`: GET list with `read`/`category`/`limit`/`offset` filters + pagination meta, PATCH `{id}/read`, POST `mark-all-read`, DELETE `{id}`, POST `clear-all?onlyRead` — `user_id` always from the JWT (404 for foreign ids, 503 when Mongo is down) (#548) |
 | **Welcome notification (post-install)** | Implemented | `POST /setup/initialize` seeds the created admin's `WELCOME`/`INFO`/`channel=system` notification (`requiresAction`, `linkTo: "/users"`, payload literal from notas.md) through the #547 repository; Mongo wipe covers `notifications` so reinstalling leaves exactly one; degrades to a log without Mongo and skips duplicates via a `(user_id, type)` idempotency guard; returned by `GET /api/v1/notifications` on first login (#549) |
-| **Realtime stream (SSE)** | Implemented | `GET /api/v1/notifications/stream` for the JWT caller: `connected` carries the 50 newest notifications as a snapshot (best-effort `[]` when the store is down), then `notification_created` (camelCase wire) on every insert and `ping` every 15s; per-user fan-out in `RealtimeHub` (system channel mirrored to `global`/`system` topics), subscriber cleanup on close, single publication point `emit_notification_created` fed by the #549 welcome insert (#550, §18) |
+| **Realtime stream (SSE)** | Implemented | `GET /api/v1/notifications/stream` for the JWT caller: `connected` carries the 50 newest notifications as a snapshot (best-effort `[]` when the store is down), then `notification_created` (camelCase wire) on every insert and `ping` every 15s; per-user fan-out in `RealtimeHub` (system channel mirrored to `global`/`system` topics), subscriber cleanup on close, single publication point `emit_notification_created` fed by the #549 welcome insert; identity via `Authorization` header or `?access_token=` because browser `EventSource` cannot send headers (#550/#551, §18) |
+| **Store integration (real mode)** | Implemented | `notificationsApi.ts` (`fetchNotifications`/`markAsRead`/`markAllAsRead`/`deleteNotification`/`clearAll` + `normalizeNotification`); store suscribe `connectSSE('/notifications/stream', { authenticate: true })`, hidrata desde el snapshot `connected`, inserta `notification_created` con dedupe por id + sonido por preferencias, y cierra la conexión al perder la sesión o volver a mock (ciclo de vida tipo `chatStore`); ids locales `notif-` (HITL en cliente) no tocan la API (#551) |
 | **Mock data** | Implemented | 12 realistic notifications across 4 categories |
-| **Categories** | Implemented | Mention, HITL, Constraint Violation, Agent Failure, SLA (`sla` category added in #516) |
+| **Categories** | Implemented | Mention, HITL, Constraint Violation, Agent Failure, SLA + Welcome (`welcome` added in #551 for the #549 system notification) |
 | **Read/unread state** | Implemented | Per-notification, visual distinction |
 | **Requires action** | Implemented | Amber ACTION badge on actionable notifications |
 | **Mark as read** | Implemented | Click notification |
@@ -782,8 +783,8 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **Click-through** | Implemented | Navigate to linked issue (`linkTo`) |
 | **HITL click-through** | Implemented | If `hitlRequestId` set, opens HITLQuickActionModal |
 | **Auto HITL notifications** | Implemented | `ensureHitlNotifications()` creates `requiresAction` notifications for pending HITL requests |
-| **Severity groups** | Implemented | Panel groups history by criticality: Emergency (violation/agent failure/SLA) → Warning (HITL) → Info (mentions), sticky group headers with counts (#516) |
-| **Channel filter** | Implemented | Chips: All / HITL / Governance / Agent / SLA / Mentions on top of tab filters (#516) |
+| **Severity groups** | Implemented | Panel groups history by criticality: Emergency (violation/agent failure/SLA) → Warning (HITL) → Info (mentions + welcome), sticky group headers with counts (#516/#551) |
+| **Channel filter** | Implemented | Chips: All / HITL / Governance / Agent / SLA / Mentions / System on top of tab filters (#516/#551) |
 | **Bulk actions** | Implemented | Mark group read + Clear all (filtered) via `markManyRead`/`dismissMany` (#516) |
 | **Alert preferences** | Implemented | `notificationsStore.preferences`: per-channel sound on/off persisted (`socialseed-alert-prefs`), mention channel off by default (#516) |
 | **NotificationCenter** | Implemented | Teleported dropdown, click-outside close |
@@ -802,7 +803,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `policiesStore` | policies[], loading | fetchPolicies, createPolicy, updatePolicy, deletePolicy (create/update enqueue + local-apply when offline, #515) |
 | `constraintsStore` | constraints[], validationResult, hard/soft/active counts | fetchConstraints, createConstraint, updateConstraint, validateConstraints, deleteConstraint |
 | `analysisStore` | impactResult, rootCauseResults[], testFailures[] | analyzeImpact, analyzeRootCause, fetchTestFailures, clearResults |
-| `notificationsStore` | notifications[], preferences (per-channel sound), unreadCount, unreadByCategory (5 categories) | markAsRead, markAllAsRead, markManyRead, dismiss, dismissMany, setChannelSound, getFiltered, ensureHitlNotifications (addNotification triggers configured sound via `useSoundEffects`, #516) |
+| `notificationsStore` | notifications[], preferences (per-channel sound), unreadCount, unreadByCategory (6 categories), streamConnected | fetchNotifications, startStream, stopStream (real mode: hydrate + #550 SSE with query-token auth, watchers on `authStore.user`/`apiMode`), markAsRead, markAllAsRead, markManyRead, dismiss, dismissMany (optimistic + API for server ids), setChannelSound, getFiltered, ensureHitlNotifications (addNotification triggers configured sound via `useSoundEffects`, #516/#551) |
 | `chatStore` | conversations[], messages, activeConversationId, typingUsers[], searchQuery | selectConversation, sendMessage, togglePin, createConversation, simulateTyping |
 | `sandboxStore` | rules[] (localStorage drafts), selectedRule, simulationResult, graph | loadGraph (real `/graph/dependencies`), simulateRule/simulatePreview (ruleEngine), createRule, updateRule, deleteRule, promoteRule (#521, §66) |
 | `ragStore` | searchResults[], queryStats, error, metrics | Real mode: `searchRag`/`getRagStats` against `/rag/search` + `/rag/stats`; mock keeps 800ms fixtures (#524, §68) |
@@ -833,7 +834,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `mockApi.ts` | `fetch` → `/mock-api/mock/*` | issues, components, policies, users, constraints, analysis, agent-logs, dashboard-stats, health, sync-queue, admin seed/reset |
 | `authApi` | `/auth/login` (API key → JWT), `/auth/exchange` (OAuth code → session), `/auth/me`, `/auth/refresh`, `/auth/logout`, `/auth/oauth/{provider}/authorize` (github, google) | POST, GET (#519) |
 | `authSession` | In-memory access token + refresh queue, `hasValidSession()` (#519) | — |
-| `realtime` | `connectSSE` EventSource wrapper with `enabled` gate (mock mode never connects), used by streams below (#517) | SSE |
+| `realtime` | `connectSSE` EventSource wrapper with `enabled` gate (mock mode never connects), `authenticate` option appends the in-memory JWT as `?access_token=` on every (re)connect for header-less EventSource clients, used by streams below (#517/#551) | SSE |
 | `issuesApi` | `/issues`, `/issues/{id}`, `/issues/{id}/close`, `/blocked-issues` | GET, POST, PATCH, DELETE |
 | `componentsApi` | `/components`, `/components/{id}` | GET, POST, PATCH, DELETE |
 | `policiesApi` | `/policies`, `/policies/{id}` | GET, POST, PATCH, DELETE |
@@ -847,6 +848,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | `githubSyncApi` | `/issues/{id}/github-sync`, `/conflicts`, `/resolve`, `/stream` (#522) | GET, POST, SSE |
 | `ragApi` | `/rag/search`, `/rag/stats`, `/rag/context` (#524) | GET, POST |
 | `mcpApi` | `/mcp/servers`, `/mcp/sessions`, `/mcp/tool-calls`, `/mcp/tool-calls/stream` (#524) | GET, POST, SSE |
+| `notificationsApi` | `/notifications`, `/notifications/{id}`, `/notifications/{id}/read`, `/notifications/mark-all-read`, `/notifications/clear-all` (+ `normalizeNotification` wire→UI, #551) | GET, PATCH, POST, DELETE |
 | `organizationsApi` | Hardcoded base `/mock-api/mock/organizations` — **not on real backend yet** | GET, POST, PATCH, DELETE |
 | `setupApi` | `/setup/status`, `/setup/initialize` (wizard payload: admin, project, policies, `api_key`, `mcp_port`, `confirm_wipe`) — returns installed flag, credentials and master key (#543–#546, §69) | GET, POST |
 | `chatSocket` | Socket.IO singleton `io(origen, { path: '/socket.io/', auth: { token } })` for chat realtime; gated by `apiMode` (never connects in mock) (#538/#540, §28) | WS |
