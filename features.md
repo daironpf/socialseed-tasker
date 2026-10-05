@@ -662,6 +662,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **MCP tool-call stream** | Implemented | Real mode: `GET /mcp/tool-calls/stream` SSE feeds the MCP Inspector live tool-call feed (#524, §68) |
 | **Issue flag stream** | Implemented | Real mode: `GET /issues/stream` SSE (`connected`/`ping`/`issue-updated`) broadcasts `agent_working` changes to all clients; `issuesStore` subscribes and merges in place (#530) |
 | **Chat realtime (Socket.IO)** | Implemented | Real mode: `chatSocket.ts` singleton over Socket.IO (`path: '/socket.io/'`, JWT auth) — `new_message`/`messages_read`/`typing_*` events, room join/leave, reconnect resync; never connects in mock mode (#538/#540, §28) |
+| **Notification stream** | Implemented | Real mode: `GET /notifications/stream` SSE (`connected` + snapshot / `ping` / `notification_created`) with per-user fan-out from the JWT and `global`/`system` mirror for `channel=system` inserts (#550, §21) |
 
 ---
 
@@ -767,6 +768,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | **Backend persistence (MongoDB)** | Implemented | Typed `notifications` collection (`models/notification.py`) with `NotificationMongoRepository`, typed `NotificationStoreError` degradation and idempotent `{user_id, read}` + `{created_at}` indexes (#547) |
 | **REST API** | Implemented | `/api/v1/notifications`: GET list with `read`/`category`/`limit`/`offset` filters + pagination meta, PATCH `{id}/read`, POST `mark-all-read`, DELETE `{id}`, POST `clear-all?onlyRead` — `user_id` always from the JWT (404 for foreign ids, 503 when Mongo is down) (#548) |
 | **Welcome notification (post-install)** | Implemented | `POST /setup/initialize` seeds the created admin's `WELCOME`/`INFO`/`channel=system` notification (`requiresAction`, `linkTo: "/users"`, payload literal from notas.md) through the #547 repository; Mongo wipe covers `notifications` so reinstalling leaves exactly one; degrades to a log without Mongo and skips duplicates via a `(user_id, type)` idempotency guard; returned by `GET /api/v1/notifications` on first login (#549) |
+| **Realtime stream (SSE)** | Implemented | `GET /api/v1/notifications/stream` for the JWT caller: `connected` carries the 50 newest notifications as a snapshot (best-effort `[]` when the store is down), then `notification_created` (camelCase wire) on every insert and `ping` every 15s; per-user fan-out in `RealtimeHub` (system channel mirrored to `global`/`system` topics), subscriber cleanup on close, single publication point `emit_notification_created` fed by the #549 welcome insert (#550, §18) |
 | **Mock data** | Implemented | 12 realistic notifications across 4 categories |
 | **Categories** | Implemented | Mention, HITL, Constraint Violation, Agent Failure, SLA (`sla` category added in #516) |
 | **Read/unread state** | Implemented | Per-notification, visual distinction |

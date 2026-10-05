@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v6 — Épica: Sistema de Notificaciones Real en MongoDB, del modelo de datos y la API REST al stream en vivo y la integración del store)
 **Created:** 2026-10-04
-**Status:** IN PROGRESS (3/5 done: #547, #548, #549; pendientes: #550, #551)
+**Status:** IN PROGRESS (4/5 done: #547, #548, #549, #550; pendientes: #551)
 
 > `notas.md` (v6) define las issues como [Issue #1]…[Issue #5]; interpretando la carpeta
 > `.issues/done/` el siguiente número libre era **#547** (máximo actual **#546**, cerrado en
@@ -48,7 +48,7 @@
 | #547 | Modelo de datos MongoDB e infraestructura ODM para notificaciones | HIGH | feat / backend | DONE (2026-10-04) | Issue #1 |
 | #548 | API RESTful completa para notificaciones (`/api/v1/notifications`) | CRITICAL | feat / backend | DONE (2026-10-04) | Issue #2 |
 | #549 | Notificación de bienvenida del sistema al instalar/iniciar | MEDIUM | feat / integration | DONE (2026-10-04) | Issue #3 |
-| #550 | Eventos en tiempo real de notificaciones vía SSE (`/notifications/stream`) | HIGH | feat / realtime | TODO | Issue #4 |
+| #550 | Eventos en tiempo real de notificaciones vía SSE (`/notifications/stream`) | HIGH | feat / realtime | DONE (2026-10-04) | Issue #4 |
 | #551 | Integración del `notificationsStore` con la API real (`apiMode = real`) | HIGH | feat / integration | TODO | Issue #5 |
 
 ---
@@ -99,7 +99,7 @@
 - [x] **#547** implemented — move to `.issues/done/` con `Status: DONE`, `features.md` §21
 - [x] **#548** implemented — move to `.issues/done/` con `Status: DONE`, `features.md` §21 (§23 con #551)
 - [x] **#549** implemented — move to `.issues/done/`, `features.md` §21/§69
-- [ ] **#550** implemented — move to `.issues/done/`, `features.md` §18/§21
+- [x] **#550** implemented — move to `.issues/done/`, `features.md` §18/§21
 - [ ] **#551** implemented — move to `.issues/done/`, `features.md` §21/§22/§23
 - [ ] Each issue: gates backend (`ruff`/`mypy`/`pytest`), `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI
 - [ ] Move issue file to `.issues/done/` with `Status: DONE` when complete
