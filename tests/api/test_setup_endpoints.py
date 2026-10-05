@@ -1,8 +1,9 @@
-"""Tests for the setup wizard endpoints (issue #543).
+"""Tests for the setup wizard endpoints (issues #543/#549).
 
 Runs without containers or network: the Neo4j setup store is replaced by an
 in-memory fake and ``create_user`` (PostgreSQL bcrypt) is monkeypatched, the
-same pattern used by ``test_chat_endpoints.py``.
+same pattern used by ``test_chat_endpoints.py``. The welcome-notification
+flow (#549) injects a fake notifications repository (#547) on app.state.
 """
 
 from __future__ import annotations
@@ -14,7 +15,24 @@ import pytest
 from fastapi.testclient import TestClient
 
 import socialseed_tasker.infrastructure.web_api.routers.setup as setup_api
+from socialseed_tasker.auth.tokens import issue_tokens
+from socialseed_tasker.infrastructure.mongo.notification_repository import (
+    NotificationStoreError,
+)
 from socialseed_tasker.infrastructure.web_api.app import create_app
+from socialseed_tasker.models.notification import (
+    Notification,
+    NotificationSeverity,
+    NotificationType,
+)
+
+# Welcome payload literal from notas.md (issue #549), restated here so the
+# test locks the exact copy instead of reusing the production constants.
+WELCOME_TITLE = "¡Bienvenido a SocialSeed Tasker!"
+WELCOME_MESSAGE = (
+    "El sistema ha sido instalado correctamente. Te recomendamos "
+    "crear tus primeros agentes de IA y registrar usuarios en la plataforma."
+)
 
 
 class FakeSetupStore:
@@ -141,6 +159,63 @@ def _payload(**overrides: Any) -> dict[str, Any]:
     }
     body.update(overrides)
     return body
+
+
+class FakeWelcomeRepository:
+    """Minimal in-memory stand-in for NotificationMongoRepository (#547)."""
+
+    def __init__(self) -> None:
+        self.notes: dict[str, Notification] = {}
+        self.insert_calls = 0
+        self.degraded = False
+
+    def _guard(self, action: str) -> None:
+        if self.degraded:
+            raise NotificationStoreError(f"{action} unavailable")
+
+    async def list_for_user(
+        self,
+        user_id: str,
+        *,
+        read: bool | None = None,
+        notification_type: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[Notification], int]:
+        self._guard("list")
+        matched = [n for n in self.notes.values() if n.user_id == user_id]
+        if read is not None:
+            matched = [n for n in matched if n.read is read]
+        if notification_type:
+            matched = [n for n in matched if n.type.value == notification_type]
+        matched.sort(key=lambda n: n.created_at, reverse=True)
+        return matched[offset : offset + limit], len(matched)
+
+    async def insert(self, notification: Notification) -> Notification:
+        self._guard("insert")
+        self.insert_calls += 1
+        note = notification.model_copy(update={"id": f"fake-{self.insert_calls}"})
+        self.notes[note.id] = note
+        return note
+
+
+def _use_welcome_repo(setup_env: SimpleNamespace) -> FakeWelcomeRepository:
+    repository = FakeWelcomeRepository()
+    setup_env.client.app.state.notification_repository = repository
+    return repository
+
+
+def _seed_welcome(repository: FakeWelcomeRepository, note_id: str = "existing") -> None:
+    repository.notes[note_id] = Notification(
+        user_id="admin",
+        type=NotificationType.WELCOME,
+        severity=NotificationSeverity.INFO,
+        title=WELCOME_TITLE,
+        message=WELCOME_MESSAGE,
+        channel="system",
+        requires_action=True,
+        link_to="/users",
+    )
 
 
 def test_status_reports_pending_install_without_credentials(setup_env: SimpleNamespace) -> None:
@@ -408,3 +483,152 @@ def test_master_api_key_authenticates_requests(setup_env: SimpleNamespace) -> No
     )
     assert resp.status_code == 200
     assert setup_env.client.app.state.master_api_key == master_key
+
+
+def test_initialize_inserts_welcome_notification_for_admin(
+    setup_env: SimpleNamespace,
+) -> None:
+    repository = _use_welcome_repo(setup_env)
+    resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
+    assert resp.status_code == 200
+    assert repository.insert_calls == 1
+    notes = list(repository.notes.values())
+    assert len(notes) == 1
+    note = notes[0]
+    assert note.user_id == "admin"
+    assert note.type is NotificationType.WELCOME
+    assert note.severity is NotificationSeverity.INFO
+    assert note.channel == "system"
+    assert note.title == WELCOME_TITLE
+    assert note.message == WELCOME_MESSAGE
+    assert note.requires_action is True
+    assert note.link_to == "/users"
+    assert note.read is False
+
+
+def test_initialize_does_not_duplicate_existing_welcome(
+    setup_env: SimpleNamespace,
+) -> None:
+    # Idempotency guard by (user_id, type): a WELCOME already present for the
+    # admin (e.g. a rerun whose wipe did not clear the collection) is kept
+    # as-is instead of inserting a second copy (issue #549 implementation 4).
+    repository = _use_welcome_repo(setup_env)
+    _seed_welcome(repository)
+    resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
+    assert resp.status_code == 200
+    assert repository.insert_calls == 0
+    assert len(repository.notes) == 1
+
+
+def test_reinstall_with_confirm_wipe_leaves_exactly_one_welcome(
+    setup_env: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository = _use_welcome_repo(setup_env)
+    _seed_welcome(repository)
+    repository.notes["stale-mention"] = Notification(
+        user_id="admin",
+        type=NotificationType.MENTION,
+        severity=NotificationSeverity.INFO,
+        title="stale",
+        message="stale",
+        channel="mention",
+    )
+    mongo_wipes: list[str] = []
+
+    def _fake_wipe_mongo() -> None:
+        # Mirrors the real _wipe_mongo: it drops every collection of the
+        # database, notifications included (asserted by
+        # test_wipe_mongo_drops_notifications_collection).
+        mongo_wipes.append("wipe")
+        repository.notes.clear()
+
+    monkeypatch.setattr(setup_api, "_wipe_mongo", _fake_wipe_mongo)
+    setup_env.store.nodes = 42
+    resp = setup_env.client.post(
+        "/api/v1/setup/initialize", json=_payload(confirm_wipe=True)
+    )
+    assert resp.status_code == 200
+    assert mongo_wipes == ["wipe"]
+    assert len(repository.notes) == 1
+    note = next(iter(repository.notes.values()))
+    assert note.type is NotificationType.WELCOME
+    assert note.title == WELCOME_TITLE
+    assert note.user_id == "admin"
+
+
+def test_initialize_succeeds_when_notification_store_fails(
+    setup_env: SimpleNamespace,
+) -> None:
+    repository = _use_welcome_repo(setup_env)
+    repository.degraded = True
+    resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
+    assert resp.status_code == 200
+    assert setup_env.store.initialized is not None
+    assert repository.insert_calls == 0
+
+
+def test_initialize_succeeds_without_mongo_configured(
+    setup_env: SimpleNamespace,
+) -> None:
+    # No fake injected: the real repository (TASKER_MONGO_URL unset by the
+    # fixture) raises the typed NotificationStoreError, which the welcome
+    # insert must swallow so the installation still succeeds (AC #549).
+    assert setup_env.client.app.state.notification_repository is not None
+    resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
+    assert resp.status_code == 200
+    assert setup_env.store.initialized is not None
+
+
+def test_wipe_mongo_drops_notifications_collection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("TASKER_MONGO_URL", "mongodb://localhost:27017/tasker_chat")
+    dropped: list[str] = []
+
+    class _FakeDatabase:
+        def list_collection_names(self) -> list[str]:
+            return ["conversations", "messages", "notifications"]
+
+        def drop_collection(self, name: str) -> None:
+            dropped.append(name)
+
+    database = _FakeDatabase()
+
+    class _FakeMongoClient:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def __getitem__(self, name: str) -> Any:
+            assert name == "tasker_chat"
+            return database
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr("pymongo.MongoClient", _FakeMongoClient)
+    setup_api._wipe_mongo()
+    assert dropped == ["conversations", "messages", "notifications"]
+
+
+def test_first_login_lists_welcome_notification(setup_env: SimpleNamespace) -> None:
+    # AC #549: the first /api/v1/notifications payload after install
+    # (#548) includes the seeded welcome for the created admin.
+    _use_welcome_repo(setup_env)
+    resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
+    assert resp.status_code == 200
+
+    tokens = issue_tokens({"id": "admin", "username": "admin"})
+    listing = setup_env.client.get(
+        "/api/v1/notifications",
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+    )
+    assert listing.status_code == 200
+    items = listing.json()["data"]
+    assert len(items) == 1
+    welcome = items[0]
+    assert welcome["type"] == "WELCOME"
+    assert welcome["category"] == "welcome"
+    assert welcome["userId"] == "admin"
+    assert welcome["title"] == WELCOME_TITLE
+    assert welcome["linkTo"] == "/users"
+    assert welcome["requiresAction"] is True

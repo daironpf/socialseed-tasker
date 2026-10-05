@@ -7,11 +7,13 @@
   answers from the environment flag only.
 - ``POST /setup/initialize`` first wipes every database of any data that does
   not belong to a fresh installation (Neo4j nodes, PostgreSQL public tables,
-  MongoDB chat collections and the Redis session/cache DB), then creates the
-  administrator (PostgreSQL bcrypt via :func:`create_user` plus a ``:User``
-  node with ``role='ADMIN'``), the root ``:Project`` node and the selected
-  governance policies linked with the existing ``(Project)-[:ENFORCES]->(Policy)``
-  model. Returns 403 when the system is already installed.
+  MongoDB chat and notification collections and the Redis session/cache DB),
+  then creates the administrator (PostgreSQL bcrypt via :func:`create_user`
+  plus a ``:User`` node with ``role='ADMIN'``), the root ``:Project`` node and
+  the selected governance policies linked with the existing
+  ``(Project)-[:ENFORCES]->(Policy)`` model, and finally seeds the admin's
+  ``WELCOME`` notification (issue #549). Returns 403 when the system is
+  already installed.
 
 State is provided by :class:`Neo4jSetupStore` on ``app.state.setup_store`` so
 tests can swap it for an in-memory fake (pattern of ``chat_repository``).
@@ -30,11 +32,21 @@ from urllib.parse import urlparse
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
+from starlette.concurrency import run_in_threadpool
 
 from socialseed_tasker.auth.user_store import create_user, normalize_username, wipe_postgres_data
 from socialseed_tasker.config.storage import get_mongo_url, get_redis_url
 from socialseed_tasker.infrastructure.mongo.client import DEFAULT_CHAT_DB
+from socialseed_tasker.infrastructure.mongo.notification_repository import (
+    NotificationMongoRepository,
+    NotificationStoreError,
+)
 from socialseed_tasker.infrastructure.web_api.schemas import APIResponse
+from socialseed_tasker.models.notification import (
+    Notification,
+    NotificationSeverity,
+    NotificationType,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -292,7 +304,12 @@ def _installed(store: SetupStore) -> bool:
 
 
 def _wipe_mongo() -> None:
-    """Drop every chat collection so the install starts from a pristine Mongo DB."""
+    """Drop every Mongo collection so the install starts from a pristine DB.
+
+    The loop drops *all* non-system collections of the chat database —
+    including ``notifications`` (issue #549) — so every reinstall ends with
+    exactly one fresh welcome notification.
+    """
     url = get_mongo_url()
     if not url:
         return
@@ -385,6 +402,52 @@ def _persist_master_key(request: Request, api_key: str, mcp_port: int) -> None:
         logger.warning("master api key persistence failed (continuing): %s", exc)
 
 
+async def _insert_welcome_notification(request: Request, admin_username: str) -> None:
+    """Seed the admin's post-install welcome notification (issue #549).
+
+    Degrades safely: a missing/unreachable MongoDB (typed
+    :class:`NotificationStoreError`) is logged and skipped so the
+    installation still succeeds. Idempotency guard by ``(user_id, type)``:
+    an existing ``WELCOME`` for the admin is never duplicated (covers a
+    rerun whose wipe did not clear the collection).
+    """
+    repository: NotificationMongoRepository | None = getattr(
+        request.app.state, "notification_repository", None
+    )
+    if repository is None:
+        logger.warning("welcome notification skipped (continuing install): store unavailable")
+        return
+    try:
+        _, total = await repository.list_for_user(
+            admin_username,
+            notification_type=NotificationType.WELCOME.value,
+            limit=1,
+        )
+        if total > 0:
+            logger.info(
+                "welcome notification already present for %s (skipped)", admin_username
+            )
+            return
+        welcome = Notification(
+            user_id=admin_username,
+            type=NotificationType.WELCOME,
+            severity=NotificationSeverity.INFO,
+            title="¡Bienvenido a SocialSeed Tasker!",
+            message=(
+                "El sistema ha sido instalado correctamente. Te recomendamos "
+                "crear tus primeros agentes de IA y registrar usuarios en la "
+                "plataforma."
+            ),
+            channel="system",
+            requires_action=True,
+            link_to="/users",
+        )
+        await repository.insert(welcome)
+        logger.info("welcome notification inserted for %s", admin_username)
+    except NotificationStoreError as exc:
+        logger.warning("welcome notification skipped (continuing install): %s", exc)
+
+
 @setup_router.get(
     "/setup/status",
     response_model=APIResponse[SetupStatusResponse],
@@ -403,12 +466,23 @@ def setup_status(request: Request) -> APIResponse[SetupStatusResponse]:
     summary="Run the first-run initialization",
     description=(
         "Wipes any data that does not belong to the installation (Neo4j, PostgreSQL, MongoDB chat "
-        "and Redis), then creates the administrator (PostgreSQL bcrypt + :User ADMIN node), the "
-        "root :Project and the selected governance policies; returns 403 when already installed "
-        "(issues #543/#545)."
+        "and notifications, and Redis), then creates the administrator (PostgreSQL bcrypt + :User "
+        "ADMIN node), the root :Project and the selected governance policies, and seeds the admin's "
+        "WELCOME notification; returns 403 when already installed (issues #543/#545/#549)."
     ),
 )
-def setup_initialize(payload: SetupPayload, request: Request) -> APIResponse[SetupInitializeResponse]:
+async def setup_initialize(
+    payload: SetupPayload, request: Request
+) -> APIResponse[SetupInitializeResponse]:
+    # The install itself (Neo4j sync sessions, bcrypt, pymongo/redis wipes)
+    # keeps running on a worker thread exactly as before (issue #543); only
+    # the async welcome notification runs on the event loop (issue #549).
+    data = await run_in_threadpool(_perform_initialize, payload, request)
+    await _insert_welcome_notification(request, data.admin_username)
+    return APIResponse[SetupInitializeResponse](data=data)
+
+
+def _perform_initialize(payload: SetupPayload, request: Request) -> SetupInitializeResponse:
     store = _store(request)
     # Fail closed: a wipe must never run on a degraded status check. If the
     # store cannot answer, the caller must retry instead of reinstalling.
@@ -487,4 +561,4 @@ def setup_initialize(payload: SetupPayload, request: Request) -> APIResponse[Set
         api_key=master_api_key,
         mcp_port=payload.mcp_port,
     )
-    return APIResponse[SetupInitializeResponse](data=data)
+    return data
