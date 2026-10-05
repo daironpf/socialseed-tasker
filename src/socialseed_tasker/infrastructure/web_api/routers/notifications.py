@@ -11,7 +11,9 @@ Persistence goes through the Mongo repository (#547) and degrades to a typed
 ``GET /notifications/stream`` (issue #550) is the realtime companion: an SSE
 stream of ``notification_created`` events for the JWT caller, fed by the
 single publication point :func:`emit_notification_created` called from every
-insertion path (#549 welcome seed; future create endpoints).
+insertion path (#549 welcome seed; future create endpoints). Its identity
+also accepts ``?access_token=`` because browser ``EventSource`` cannot send
+headers (issue #551).
 """
 
 from __future__ import annotations
@@ -25,6 +27,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
+from socialseed_tasker.auth.tokens import verify_access
 from socialseed_tasker.infrastructure.mongo.notification_repository import (
     NotificationMongoRepository,
     NotificationStoreError,
@@ -173,6 +176,27 @@ async def list_notifications(
     )
 
 
+def _stream_user(request: Request) -> str:
+    """Caller identity for the SSE stream (issues #550/#551).
+
+    The browser ``EventSource`` used by the frontend cannot send request
+    headers, so the stream falls back to the short-lived access JWT in the
+    ``?access_token=`` query parameter when no header identity resolves. The
+    token is verified exactly like the header bearer (same ``verify_access``
+    claims), and REST endpoints keep the header-only contract.
+    """
+    try:
+        return _current_user(request)
+    except HTTPException:
+        pass
+    token = request.query_params.get("access_token")
+    if token:
+        claims = verify_access(token)
+        if claims and claims.get("sub"):
+            return str(claims["sub"])
+    raise HTTPException(status_code=401, detail="unauthorized")
+
+
 @notifications_router.get(
     "/notifications/stream",
     summary="Live notification events (SSE)",
@@ -180,12 +204,14 @@ async def list_notifications(
         "Server-Sent Events for the JWT caller: ``connected`` (carrying a "
         "snapshot of the latest notifications) is emitted first, then "
         "``notification_created`` reacts to every insertion and ``ping`` "
-        "keeps the connection warm every 15s (issue #550)."
+        "keeps the connection warm every 15s (issue #550). Accepts the JWT "
+        "via ``Authorization`` header or ``?access_token=`` for EventSource "
+        "clients (issue #551)."
     ),
 )
 async def stream_notifications(request: Request) -> StreamingResponse:
     """Per-user SSE stream: identity from the JWT, same as the REST endpoints (#548)."""
-    user_id = _current_user(request)
+    user_id = _stream_user(request)
     hub = _hub(request)
     # Subscribe before reading the snapshot so an insertion racing the query
     # is queued instead of lost (possible duplicate, never a gap); the frames

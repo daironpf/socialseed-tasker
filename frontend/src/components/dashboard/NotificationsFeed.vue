@@ -53,6 +53,7 @@ const CATEGORY_STYLES: Record<NotificationCategory, string> = {
   constraint_violation: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
   agent_failure: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
   sla: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+  welcome: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
 }
 
 const recent = computed(() =>

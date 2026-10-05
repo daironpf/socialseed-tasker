@@ -1,13 +1,18 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { AppNotification, NotificationCategory } from '@/types/notifications'
 import type { HITLRequest } from '@/types/hitl'
 import { useSoundEffects } from '@/composables/useSoundEffects'
-import { isMockMode } from '@/api/client'
+import { isMockMode, apiMode } from '@/api/client'
+import { connectSSE, type SSEHandle } from '@/api/realtime'
+import * as notificationsApi from '@/api/notificationsApi'
+import { useAuthStore } from '@/stores/authStore'
 
 const STORAGE_KEY = 'socialseed-notifications'
 const SEED_VERSION = 3
 const PREFS_KEY = 'socialseed-alert-prefs'
+/** Client-only ids (mock seeds, local HITL inserts) are never server-backed. */
+const LOCAL_ID_PREFIX = 'notif-'
 
 export interface AlertPreferences {
   channels: Record<NotificationCategory, boolean>
@@ -21,6 +26,7 @@ function loadPreferences(): AlertPreferences {
       constraint_violation: true,
       agent_failure: true,
       sla: true,
+      welcome: true,
     },
   }
   try {
@@ -57,12 +63,19 @@ function saveToStorage(notifications: AppNotification[]) {
 }
 
 function generateId(): string {
-  return `notif-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  return `${LOCAL_ID_PREFIX}${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+function isServerId(id: string): boolean {
+  return !id.startsWith(LOCAL_ID_PREFIX)
 }
 
 export const useNotificationsStore = defineStore('notifications', () => {
-  const notifications = ref<AppNotification[]>(loadFromStorage())
+  // Real mode starts empty: history lives in Mongo and is hydrated by
+  // fetchNotifications/the stream snapshot (#551).
+  const notifications = ref<AppNotification[]>(isMockMode() ? loadFromStorage() : [])
   const preferences = ref<AlertPreferences>(loadPreferences())
+  const streamConnected = ref(false)
 
   const unreadCount = computed(() => notifications.value.filter(n => !n.read).length)
 
@@ -73,6 +86,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
       constraint_violation: 0,
       agent_failure: 0,
       sla: 0,
+      welcome: 0,
     }
     for (const n of notifications.value) {
       if (!n.read) counts[n.category]++
@@ -81,21 +95,28 @@ export const useNotificationsStore = defineStore('notifications', () => {
   })
 
   function persist() {
+    // Real mode never writes localStorage: read state lives server-side.
+    if (!isMockMode()) return
     saveToStorage(notifications.value)
   }
 
-  function addNotification(data: Omit<AppNotification, 'id' | 'read' | 'createdAt'>) {
-    const notif: AppNotification = {
-      id: generateId(),
-      read: false,
-      createdAt: new Date().toISOString(),
-      ...data,
-    }
+  function insertNotification(notif: AppNotification): boolean {
+    if (notifications.value.some(n => n.id === notif.id)) return false
     notifications.value.unshift(notif)
     persist()
     if (preferences.value.channels[notif.category]) {
       useSoundEffects().playForCategory(notif.category)
     }
+    return true
+  }
+
+  function addNotification(data: Omit<AppNotification, 'id' | 'read' | 'createdAt'>) {
+    insertNotification({
+      id: generateId(),
+      read: false,
+      createdAt: new Date().toISOString(),
+      ...data,
+    })
   }
 
   function setChannelSound(category: NotificationCategory, on: boolean) {
@@ -105,9 +126,11 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   function markAsRead(id: string) {
     const n = notifications.value.find(n => n.id === id)
-    if (n) {
-      n.read = true
-      persist()
+    if (!n) return
+    n.read = true
+    persist()
+    if (!isMockMode() && isServerId(id)) {
+      void notificationsApi.markAsRead(id).catch(() => {})
     }
   }
 
@@ -116,25 +139,37 @@ export const useNotificationsStore = defineStore('notifications', () => {
       n.read = true
     }
     persist()
+    if (!isMockMode()) {
+      void notificationsApi.markAllAsRead().catch(() => {})
+    }
   }
 
   function dismiss(id: string) {
     notifications.value = notifications.value.filter(n => n.id !== id)
     persist()
+    if (!isMockMode() && isServerId(id)) {
+      void notificationsApi.deleteNotification(id).catch(() => {})
+    }
   }
 
   function markManyRead(ids: string[]) {
-    const idSet = new Set(ids)
-    for (const n of notifications.value) {
-      if (idSet.has(n.id)) n.read = true
+    for (const id of ids) {
+      markAsRead(id)
     }
-    persist()
   }
 
   function dismissMany(ids: string[]) {
     const idSet = new Set(ids)
     notifications.value = notifications.value.filter(n => !idSet.has(n.id))
     persist()
+    if (!isMockMode()) {
+      const serverIds = ids.filter(isServerId)
+      if (serverIds.length > 0) {
+        void Promise.all(serverIds.map(id => notificationsApi.deleteNotification(id))).catch(
+          () => {},
+        )
+      }
+    }
   }
 
   function getFiltered(filter: 'all' | 'unread' | 'action', category?: NotificationCategory) {
@@ -299,11 +334,122 @@ export const useNotificationsStore = defineStore('notifications', () => {
     persist()
   }
 
+  // ------------------------------------------------------------------
+  // Real mode: REST hydration + #550 SSE stream (#551)
+  // ------------------------------------------------------------------
+
+  /** Server items replace the server set; local `notif-` items (HITL) survive. */
+  function hydrate(items: AppNotification[]) {
+    const locals = notifications.value.filter(n => !isServerId(n.id))
+    const serverIds = new Set(items.map(n => n.id))
+    const merged = [...items, ...locals.filter(n => !serverIds.has(n.id))]
+    merged.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    notifications.value = merged
+    persist()
+  }
+
+  async function fetchNotifications() {
+    if (isMockMode()) {
+      seedMockNotifications()
+      return
+    }
+    try {
+      const items = await notificationsApi.fetchNotifications()
+      hydrate(items)
+    } catch {
+      // client.ts already surfaced the error toast; keep the last known list.
+    }
+  }
+
+  let sseHandle: SSEHandle | null = null
+
+  function handleStreamEvent(event: string, data: unknown) {
+    if (event === 'connected') {
+      const payload = (data ?? {}) as { snapshot?: unknown }
+      if (Array.isArray(payload.snapshot)) {
+        hydrate(
+          payload.snapshot.map(item =>
+            notificationsApi.normalizeNotification(item as Record<string, unknown>),
+          ),
+        )
+      }
+      return
+    }
+    if (event === 'notification_created') {
+      insertNotification(
+        notificationsApi.normalizeNotification((data ?? {}) as Record<string, unknown>),
+      )
+    }
+  }
+
+  function startStream() {
+    if (isMockMode() || sseHandle) return
+    sseHandle = connectSSE(
+      '/notifications/stream',
+      {
+        onEvent: handleStreamEvent,
+        onState: state => {
+          streamConnected.value = state === 'live'
+        },
+      },
+      { events: ['connected', 'notification_created', 'ping'], authenticate: true },
+    )
+  }
+
+  function stopStream() {
+    if (!sseHandle) return
+    sseHandle.close()
+    sseHandle = null
+    streamConnected.value = false
+  }
+
+  function startRealtime() {
+    // Idempotent: the auth and apiMode watchers can both fire in one flush.
+    if (sseHandle) return
+    void fetchNotifications()
+    startStream()
+  }
+
+  const authStore = useAuthStore()
+
+  // Session restored before the store exists (router guard awaits
+  // initSession): connect right away; otherwise the watcher below fires
+  // when the login lands (pattern of chatStore #540).
+  if (!isMockMode() && authStore.user) {
+    startRealtime()
+  }
+
+  watch(
+    () => authStore.user,
+    user => {
+      if (isMockMode()) return
+      if (user) {
+        startRealtime()
+      } else {
+        // Session lost: tear the stream down and drop the previous user's data.
+        stopStream()
+        notifications.value = []
+      }
+    },
+  )
+
+  watch(apiMode, () => {
+    if (isMockMode()) {
+      stopStream()
+      notifications.value = []
+      seedMockNotifications()
+    } else {
+      notifications.value = []
+      if (authStore.user) startRealtime()
+    }
+  })
+
   return {
     notifications,
     preferences,
     unreadCount,
     unreadByCategory,
+    streamConnected,
     addNotification,
     markAsRead,
     markAllAsRead,
@@ -314,5 +460,8 @@ export const useNotificationsStore = defineStore('notifications', () => {
     getFiltered,
     ensureHitlNotifications,
     seedMockNotifications,
+    fetchNotifications,
+    startStream,
+    stopStream,
   }
 })

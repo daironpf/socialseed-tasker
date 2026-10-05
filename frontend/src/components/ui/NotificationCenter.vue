@@ -148,6 +148,7 @@ const channelChips: Array<{ key: 'all' | NotificationCategory }> = [
   { key: 'agent_failure' },
   { key: 'sla' },
   { key: 'mention' },
+  { key: 'welcome' },
 ]
 
 const filteredNotifications = computed(() =>

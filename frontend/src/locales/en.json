@@ -1845,7 +1845,10 @@
       "governance": "Governance",
       "agent": "Agent",
       "sla": "SLA",
-      "mention": "Mentions"
+      "mention": "Mentions",
+      "constraint_violation": "Governance",
+      "agent_failure": "Agent",
+      "welcome": "System"
     }
   },
   "apiMode": {

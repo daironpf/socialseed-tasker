@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue'
+import { getAccessToken } from './authSession'
 
 export type RealtimeState = 'idle' | 'connecting' | 'live' | 'reconnecting' | 'offline'
 
@@ -48,6 +49,12 @@ export interface SSEOptions {
   maxAttempts?: number
   /** Named SSE events to subscribe to (plus `message`). */
   events?: string[]
+  /**
+   * Append the in-memory JWT as `?access_token=` on every (re)connect.
+   * `EventSource` cannot send the Authorization header; the backend accepts
+   * the query token on endpoints documented for it (issue #551).
+   */
+  authenticate?: boolean
 }
 
 const DEFAULT_EVENTS = ['message', 'connected', 'log', 'done', 'ping', 'viewers']
@@ -70,7 +77,7 @@ export function connectSSE(path: string, handlers: SSEHandlers, options: SSEOpti
   const eventNames = options.events ?? DEFAULT_EVENTS
 
   const apiUrl = (window as unknown as { __API_URL__?: string }).__API_URL__ || '/api/v1'
-  const url = `${apiUrl}${path.startsWith('/') ? path : `/${path}`}`
+  const baseUrl = `${apiUrl}${path.startsWith('/') ? path : `/${path}`}`
 
   const conn: Conn = { state: 'connecting' }
   connections.push(conn)
@@ -127,6 +134,11 @@ export function connectSSE(path: string, handlers: SSEHandlers, options: SSEOpti
     if (closed) return
     clearTimers()
     setState(attempt === 0 ? 'connecting' : 'reconnecting')
+    // Token is read on every attempt so reconnects never reuse an expired JWT.
+    const token = options.authenticate ? getAccessToken() : null
+    const url = token
+      ? `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}access_token=${encodeURIComponent(token)}`
+      : baseUrl
     try {
       eventSource = new EventSource(url)
     } catch {

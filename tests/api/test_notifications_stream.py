@@ -4,6 +4,7 @@ The handler is invoked directly as ``stream_notifications(Request(scope, receive
 (pattern of #524/#530) because ``TestClient.stream`` hangs on every SSE endpoint
 in this environment; only the unauthenticated 401 travels through TestClient
 (that response terminates before streaming starts). Covers: auth rejection,
+header-or-query identity (``?access_token=`` for EventSource, issue #551),
 ``connected`` + snapshot wire, reactive ``notification_created`` delivery,
 per-user isolation with global system-channel mirroring, best-effort snapshot
 degradation and subscriber cleanup on close/disconnect.
@@ -66,7 +67,7 @@ def _app(hub: RealtimeHub, repository: Any | None) -> Any:
     return SimpleNamespace(state=state)
 
 
-def _scope(user_id: str | None, app: Any) -> dict[str, Any]:
+def _scope(user_id: str | None, app: Any, query: bytes = b"") -> dict[str, Any]:
     headers: list[tuple[bytes, bytes]] = []
     if user_id is not None:
         tokens = issue_tokens({"id": user_id, "username": user_id})
@@ -81,7 +82,7 @@ def _scope(user_id: str | None, app: Any) -> dict[str, Any]:
         "scheme": "http",
         "path": "/api/v1/notifications/stream",
         "raw_path": b"/api/v1/notifications/stream",
-        "query_string": b"",
+        "query_string": query,
         "root_path": "",
         "headers": headers,
         "client": ("testclient", 50000),
@@ -138,6 +139,37 @@ async def test_stream_handler_rejects_caller_without_token() -> None:
     with pytest.raises(HTTPException) as excinfo:
         await notifications_module.stream_notifications(
             Request(_scope(None, app), _receive_alive)
+        )
+    assert excinfo.value.status_code == 401
+
+
+async def test_stream_accepts_access_token_query_param() -> None:
+    # Browser EventSource cannot send the Authorization header: the frontend
+    # appends the in-memory JWT as ?access_token= (issue #551). The query
+    # token resolves the same identity as the header bearer.
+    hub = RealtimeHub()
+    app = _app(hub, FakeNotificationRepository())
+    token = issue_tokens({"id": "alice", "username": "alice"})["access_token"]
+    resp = await notifications_module.stream_notifications(
+        Request(
+            _scope(None, app, query=f"access_token={token}".encode("ascii")),
+            _receive_alive,
+        )
+    )
+    text = await _first_frame(resp)
+    assert text.startswith("event: connected\n")
+    data = json.loads(text.split("data: ", 1)[1])
+    assert data["userId"] == "alice"
+    assert len(hub._notif_subs.get("alice", [])) == 1
+    await resp.body_iterator.aclose()
+    assert not hub._notif_subs.get("alice")
+
+
+async def test_stream_rejects_invalid_query_token() -> None:
+    app = _app(RealtimeHub(), FakeNotificationRepository())
+    with pytest.raises(HTTPException) as excinfo:
+        await notifications_module.stream_notifications(
+            Request(_scope(None, app, query=b"access_token=bogus"), _receive_alive)
         )
     assert excinfo.value.status_code == 401
 
