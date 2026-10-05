@@ -477,6 +477,7 @@ def create_app(
         auto_healing_router,
         chat_router,
         setup_router,
+        notifications_router,
     )
     from socialseed_tasker.events.routes import webhook_router as events_webhook_router
 
@@ -511,6 +512,7 @@ def create_app(
     app.include_router(auto_healing_router, prefix="/api/v1", tags=["auto-healing"])
     app.include_router(chat_router, prefix="/api/v1", tags=["chat"])
     app.include_router(setup_router, prefix="/api/v1", tags=["setup"])
+    app.include_router(notifications_router, prefix="/api/v1", tags=["notifications"])
     app.include_router(events_webhook_router, tags=["webhooks"])
 
     from socialseed_tasker.data_catalog.api import router as registry_router

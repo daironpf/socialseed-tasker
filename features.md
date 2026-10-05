@@ -765,6 +765,7 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 |---|---|---|
 | **Notification store** | Implemented | `notificationsStore` with localStorage persistence |
 | **Backend persistence (MongoDB)** | Implemented | Typed `notifications` collection (`models/notification.py`) with `NotificationMongoRepository`, typed `NotificationStoreError` degradation and idempotent `{user_id, read}` + `{created_at}` indexes (#547) |
+| **REST API** | Implemented | `/api/v1/notifications`: GET list with `read`/`category`/`limit`/`offset` filters + pagination meta, PATCH `{id}/read`, POST `mark-all-read`, DELETE `{id}`, POST `clear-all?onlyRead` — `user_id` always from the JWT (404 for foreign ids, 503 when Mongo is down) (#548) |
 | **Mock data** | Implemented | 12 realistic notifications across 4 categories |
 | **Categories** | Implemented | Mention, HITL, Constraint Violation, Agent Failure, SLA (`sla` category added in #516) |
 | **Read/unread state** | Implemented | Per-notification, visual distinction |

@@ -76,3 +76,102 @@ class NotificationMongoRepository:
         except Exception as exc:
             logger.warning("notifications get failed for %s: %s", notification_id, exc)
             raise NotificationStoreError(f"get notification failed: {exc}") from exc
+
+    async def list_for_user(
+        self,
+        user_id: str,
+        *,
+        read: bool | None = None,
+        notification_type: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[Notification], int]:
+        """Page through a user's notifications (created_at desc) plus the total count."""
+        if not user_id:
+            raise NotificationStoreError("user_id is required")
+        query: dict[str, Any] = {"user_id": user_id}
+        if read is not None:
+            query["read"] = read
+        if notification_type:
+            query["type"] = notification_type
+        try:
+            coll = self._collection()
+            total = int(await coll.count_documents(query))
+            cursor: Any = coll.find(query).sort("created_at", -1)
+            docs: Any = await cursor.skip(max(int(offset), 0)).limit(max(int(limit), 1)).to_list(
+                length=max(int(limit), 1)
+            )
+            items = [n for n in (Notification.from_document(d) for d in docs) if n is not None]
+            return items, total
+        except NotificationStoreError:
+            raise
+        except Exception as exc:
+            logger.warning("notifications list failed for %s: %s", user_id, exc)
+            raise NotificationStoreError(f"list notifications failed: {exc}") from exc
+
+    async def mark_read(self, notification_id: str, user_id: str) -> Notification | None:
+        """Set read=True on a notification owned by user_id; None when missing/foreign."""
+        if not notification_id or not user_id:
+            raise NotificationStoreError("notification_id and user_id are required")
+        try:
+            coll = self._collection()
+            query: dict[str, Any] = {"_id": _object_id(notification_id), "user_id": user_id}
+            result: Any = await coll.update_one(query, {"$set": {"read": True}})
+            if int(getattr(result, "matched_count", 0) or 0) == 0:
+                return None
+            doc: Any = await coll.find_one(query)
+            return Notification.from_document(doc) if doc else None
+        except NotificationStoreError:
+            raise
+        except Exception as exc:
+            logger.warning("notifications mark_read failed for %s: %s", notification_id, exc)
+            raise NotificationStoreError(f"mark notification read failed: {exc}") from exc
+
+    async def mark_all_read(self, user_id: str) -> int:
+        """Mark every unread notification of user_id as read; returns the matched count."""
+        if not user_id:
+            raise NotificationStoreError("user_id is required")
+        try:
+            coll = self._collection()
+            result: Any = await coll.update_many(
+                {"user_id": user_id, "read": False}, {"$set": {"read": True}}
+            )
+            return int(getattr(result, "matched_count", 0) or 0)
+        except NotificationStoreError:
+            raise
+        except Exception as exc:
+            logger.warning("notifications mark_all_read failed for %s: %s", user_id, exc)
+            raise NotificationStoreError(f"mark all read failed: {exc}") from exc
+
+    async def delete(self, notification_id: str, user_id: str) -> bool:
+        """Delete one notification owned by user_id; False when missing/foreign."""
+        if not notification_id or not user_id:
+            raise NotificationStoreError("notification_id and user_id are required")
+        try:
+            coll = self._collection()
+            result: Any = await coll.delete_one(
+                {"_id": _object_id(notification_id), "user_id": user_id}
+            )
+            return int(getattr(result, "deleted_count", 0) or 0) > 0
+        except NotificationStoreError:
+            raise
+        except Exception as exc:
+            logger.warning("notifications delete failed for %s: %s", notification_id, exc)
+            raise NotificationStoreError(f"delete notification failed: {exc}") from exc
+
+    async def clear_all(self, user_id: str, only_read: bool = False) -> int:
+        """Delete all of the user's notifications (optionally only read ones); returns the count."""
+        if not user_id:
+            raise NotificationStoreError("user_id is required")
+        query: dict[str, Any] = {"user_id": user_id}
+        if only_read:
+            query["read"] = True
+        try:
+            coll = self._collection()
+            result: Any = await coll.delete_many(query)
+            return int(getattr(result, "deleted_count", 0) or 0)
+        except NotificationStoreError:
+            raise
+        except Exception as exc:
+            logger.warning("notifications clear_all failed for %s: %s", user_id, exc)
+            raise NotificationStoreError(f"clear notifications failed: {exc}") from exc

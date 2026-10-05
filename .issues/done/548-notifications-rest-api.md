@@ -8,7 +8,7 @@ Contexto real del repo: no existe router ni endpoint de notificaciones (grep vac
 
 Origen: `notas.md` → Sistema de Notificaciones Real en MongoDB · Issue #2 (→ #548).
 
-## Status: TODO
+## Status: DONE (2026-10-04)
 
 ## Priority: CRITICAL
 
@@ -31,18 +31,26 @@ feat / backend
 5. **Tests:** `pytest` por endpoint con repo fake en memoria (patrón `FakeRepo` de #520 y los suites de #541/#543), cubriendo contrato, aislamiento por usuario, errores 404 y validación de query params.
 
 ## Acceptance Criteria
-- [ ] Los 5 endpoints responden bajo la envolvente estándar `APIResponse` (camelCase)
-- [ ] Filtrado estricto por `user_id` derivado del JWT del cliente (una petición no puede leer/borrar notificaciones ajenas)
-- [ ] Pruebas de integración con `pytest` para cada endpoint (legado + aislamiento + 404)
-- [ ] Gates backend sin regresiones (`ruff`/`mypy`/`pytest` en baseline)
+- [x] Los 5 endpoints responden bajo la envolvente estándar `APIResponse` (camelCase)
+- [x] Filtrado estricto por `user_id` derivado del JWT del cliente (una petición no puede leer/borrar notificaciones ajenas)
+- [x] Pruebas de integración con `pytest` para cada endpoint (legado + aislamiento + 404)
+- [x] Gates backend sin regresiones (`ruff` 1013 = baseline HEAD, `mypy` 1153, `pytest` 1306 passed = 1294 + 12 nuevos, 3 failed preexistentes)
 
 ## Files to Create
 - `src/socialseed_tasker/infrastructure/web_api/routers/notifications.py`
 - `tests/api/test_notifications_api.py`
 
 ## Files to Modify
-- `src/socialseed_tasker/infrastructure/web_api/routers/__init__.py` — export del `notifications_router`
-- `src/socialseed_tasker/infrastructure/web_api/routes.py` — montaje con prefix `/api/v1`
+- `src/socialseed_tasker/infrastructure/web_api/routers/__init__.py` — export del `notifications_router` (re-export explícito `as` para mypy strict)
+- `src/socialseed_tasker/infrastructure/web_api/routes.py` — re-export con `as notifications_router`
+- `src/socialseed_tasker/infrastructure/web_api/app.py` — `include_router(notifications_router, prefix="/api/v1", tags=["notifications"])` (el montaje real vive en `app.py`, no en `routes.py` como decía la issue)
+- `src/socialseed_tasker/infrastructure/mongo/notification_repository.py` — ampliado con `list_for_user`/`mark_read`/`mark_all_read`/`delete`/`clear_all` (repo de #547)
+- `tests/unit/test_notification_model.py` — fake Mongo extendido (cursor sort/skip/limit, count/update/delete) + 4 tests de las nuevas operaciones
+
+## Notes
+- Identidad: se reutiliza `_current_user` importándolo de `routers/chat.py` (misma cadena JWT → API key → OAuth cookie → `X-User-ID`), sin duplicar el resolver.
+- `meta.pagination` usa el `PaginationMeta` estándar del repo (`page`/`limit`/`total`/`has_next`/`has_prev` en snake_case) con `page = offset // limit + 1` — coherente con los query params `limit`/`offset` sin romper el contrato de otros endpoints paginados.
+- `POST /clear-all` acepta el query param opcional `onlyRead` (alias camelCase); `category` se valida contra `FRONTEND_CATEGORIES` (400 en desconocida); ids ajenos/desconocidos → 404 sin fuga de existencia; degradación Mongo → 503 tipado.
 
 ## Related Issues
 - #547 (modelo/repo Mongo que persiste), #539 (contrato `APIResponse` camelCase), #527 (JWT/sesiones), #543 (patrón router + suite de endpoints), #550 (emisión en vivo tras insertar), #551 (cliente Axios que consume la API)

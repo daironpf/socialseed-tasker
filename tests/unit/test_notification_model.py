@@ -39,11 +39,51 @@ def _matches(doc: dict[str, Any], query: dict[str, Any]) -> bool:
     return all(doc.get(key) == cond for key, cond in query.items())
 
 
+def _apply_set(doc: dict[str, Any], update: dict[str, Any]) -> None:
+    for op, fields in update.items():
+        if op == "$set":
+            doc.update(fields)
+        else:
+            raise ValueError(f"unsupported update operator: {op}")
+
+
+class FakeCursor:
+    def __init__(self, docs: list[dict[str, Any]]) -> None:
+        self._docs = list(docs)
+
+    def sort(self, key: str, direction: int = -1) -> FakeCursor:
+        self._docs.sort(key=lambda d: d.get(key), reverse=direction == -1)
+        return self
+
+    def skip(self, count: int) -> FakeCursor:
+        self._docs = self._docs[count:]
+        return self
+
+    def limit(self, count: int) -> FakeCursor:
+        self._docs = self._docs[:count]
+        return self
+
+    async def to_list(self, length: int | None = None) -> list[dict[str, Any]]:
+        if length is None:
+            return list(self._docs)
+        return self._docs[:length]
+
+
 class FakeCollection:
     def __init__(self) -> None:
         self.docs: list[dict[str, Any]] = []
         self.indexes: list[Any] = []
         self.fail_on: set[str] = set()
+
+    def find(self, query: dict[str, Any]) -> FakeCursor:
+        if "find" in self.fail_on:
+            raise RuntimeError("mongo down")
+        return FakeCursor([dict(d) for d in self.docs if _matches(d, query)])
+
+    async def count_documents(self, query: dict[str, Any]) -> int:
+        if "count_documents" in self.fail_on:
+            raise RuntimeError("mongo down")
+        return sum(1 for d in self.docs if _matches(d, query))
 
     async def find_one(self, query: dict[str, Any]) -> dict[str, Any] | None:
         if "find_one" in self.fail_on:
@@ -58,6 +98,45 @@ class FakeCollection:
         stored.setdefault("_id", ObjectId())
         self.docs.append(stored)
         return SimpleNamespace(inserted_id=stored["_id"])
+
+    async def update_one(self, query: dict[str, Any], update: dict[str, Any]) -> SimpleNamespace:
+        if "update_one" in self.fail_on:
+            raise RuntimeError("mongo down")
+        hits = [d for d in self.docs if _matches(d, query)]
+        for doc in hits[:1]:
+            _apply_set(doc, update)
+        matched = min(len(hits), 1)
+        return SimpleNamespace(matched_count=matched, modified_count=matched)
+
+    async def update_many(self, query: dict[str, Any], update: dict[str, Any]) -> SimpleNamespace:
+        if "update_many" in self.fail_on:
+            raise RuntimeError("mongo down")
+        hits = [d for d in self.docs if _matches(d, query)]
+        for doc in hits:
+            _apply_set(doc, update)
+        return SimpleNamespace(matched_count=len(hits), modified_count=len(hits))
+
+    async def delete_one(self, query: dict[str, Any]) -> SimpleNamespace:
+        if "delete_one" in self.fail_on:
+            raise RuntimeError("mongo down")
+        for index, doc in enumerate(self.docs):
+            if _matches(doc, query):
+                del self.docs[index]
+                return SimpleNamespace(deleted_count=1)
+        return SimpleNamespace(deleted_count=0)
+
+    async def delete_many(self, query: dict[str, Any]) -> SimpleNamespace:
+        if "delete_many" in self.fail_on:
+            raise RuntimeError("mongo down")
+        keep: list[dict[str, Any]] = []
+        removed = 0
+        for doc in self.docs:
+            if _matches(doc, query):
+                removed += 1
+            else:
+                keep.append(doc)
+        self.docs = keep
+        return SimpleNamespace(deleted_count=removed)
 
     async def create_index(self, keys: Any) -> str:
         self.indexes.append(keys)
@@ -263,3 +342,120 @@ def test_lifespan_bootstraps_notification_indexes(monkeypatch: pytest.MonkeyPatc
     assert resp.status_code == 200
     assert called.get("chat") is True
     assert called.get("notifications") is True
+
+
+async def _seed(repo: NotificationMongoRepository) -> dict[str, Notification]:
+    alice_hitl = await repo.insert(
+        _sample(type=NotificationType.HITL, channel="hitl",
+                created_at=datetime(2026, 1, 1, 0, 1, tzinfo=timezone.utc))
+    )
+    alice_mention = await repo.insert(
+        _sample(type=NotificationType.MENTION, channel="mention", read=True,
+                created_at=datetime(2026, 1, 1, 0, 2, tzinfo=timezone.utc))
+    )
+    alice_sla = await repo.insert(
+        _sample(type=NotificationType.SLA, channel="sla",
+                created_at=datetime(2026, 1, 1, 0, 3, tzinfo=timezone.utc))
+    )
+    bob_failure = await repo.insert(
+        _sample(user_id="bob", type=NotificationType.AGENT_FAILURE, channel="agent_failure",
+                created_at=datetime(2026, 1, 1, 0, 4, tzinfo=timezone.utc))
+    )
+    return {"a1": alice_hitl, "a2": alice_mention, "a3": alice_sla, "b1": bob_failure}
+
+
+async def test_list_for_user_filters_orders_and_paginates(
+    repo: NotificationMongoRepository, db: FakeDB
+) -> None:
+    seeded = await _seed(repo)
+
+    items, total = await repo.list_for_user("alice")
+    assert total == 3
+    assert [n.id for n in items] == [
+        seeded["a3"].id, seeded["a2"].id, seeded["a1"].id,
+    ]
+
+    items, total = await repo.list_for_user("alice", read=True)
+    assert [n.id for n in items] == [seeded["a2"].id]
+    assert total == 1
+
+    items, total = await repo.list_for_user("alice", notification_type="SLA")
+    assert [n.id for n in items] == [seeded["a3"].id]
+    assert total == 1
+
+    items, total = await repo.list_for_user("alice", limit=2, offset=0)
+    assert [n.id for n in items] == [seeded["a3"].id, seeded["a2"].id]
+    assert total == 3
+
+    items, total = await repo.list_for_user("alice", limit=2, offset=2)
+    assert [n.id for n in items] == [seeded["a1"].id]
+    assert total == 3
+
+    items, total = await repo.list_for_user("bob")
+    assert [n.id for n in items] == [seeded["b1"].id]
+    assert total == 1
+
+    db.notifications.fail_on = {"find"}
+    with pytest.raises(NotificationStoreError, match="list notifications failed"):
+        await repo.list_for_user("alice")
+
+
+async def test_mark_read_scoped_to_owner(repo: NotificationMongoRepository, db: FakeDB) -> None:
+    seeded = await _seed(repo)
+
+    updated = await repo.mark_read(seeded["a1"].id, "alice")
+    assert updated is not None
+    assert updated.read is True
+
+    assert await repo.mark_read(seeded["b1"].id, "alice") is None
+    assert await repo.mark_read(str(ObjectId()), "alice") is None
+    stored_bob = await db.notifications.find_one({"_id": ObjectId(seeded["b1"].id)})
+    assert stored_bob is not None
+    assert stored_bob["read"] is False
+
+    with pytest.raises(NotificationStoreError, match="notification_id and user_id are required"):
+        await repo.mark_read("", "alice")
+
+    db.notifications.fail_on = {"update_one"}
+    with pytest.raises(NotificationStoreError, match="mark notification read failed"):
+        await repo.mark_read(seeded["a2"].id, "alice")
+
+
+async def test_mark_all_read_counts_only_owner_unread(
+    repo: NotificationMongoRepository,
+) -> None:
+    seeded = await _seed(repo)
+    assert await repo.mark_all_read("alice") == 2
+    assert await repo.mark_all_read("alice") == 0
+
+    found = await repo.get(seeded["a1"].id)
+    assert found is not None
+    assert found.read is True
+    bob = await repo.get(seeded["b1"].id)
+    assert bob is not None
+    assert bob.read is False
+
+
+async def test_delete_and_clear_all_scoped(repo: NotificationMongoRepository, db: FakeDB) -> None:
+    seeded = await _seed(repo)
+
+    assert await repo.delete(seeded["a2"].id, "bob") is False
+    assert await repo.delete(str(ObjectId()), "alice") is False
+    with pytest.raises(NotificationStoreError, match="notification_id and user_id are required"):
+        await repo.delete("", "alice")
+
+    assert await repo.clear_all("alice", only_read=True) == 1
+    assert await repo.get(seeded["a2"].id) is None
+    assert await repo.get(seeded["a1"].id) is not None
+    assert await repo.get(seeded["b1"].id) is not None
+
+    assert await repo.delete(seeded["a1"].id, "alice") is True
+    assert await repo.get(seeded["a1"].id) is None
+
+    assert await repo.clear_all("alice") == 1
+    assert (await repo.list_for_user("alice"))[1] == 0
+    assert (await repo.list_for_user("bob"))[1] == 1
+
+    db.notifications.fail_on = {"delete_many"}
+    with pytest.raises(NotificationStoreError, match="clear notifications failed"):
+        await repo.clear_all("bob")
