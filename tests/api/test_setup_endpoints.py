@@ -20,6 +20,7 @@ from socialseed_tasker.infrastructure.mongo.notification_repository import (
     NotificationStoreError,
 )
 from socialseed_tasker.infrastructure.web_api.app import create_app
+from socialseed_tasker.infrastructure.web_api.routers.realtime import RealtimeHub
 from socialseed_tasker.models.notification import (
     Notification,
     NotificationSeverity,
@@ -504,6 +505,29 @@ def test_initialize_inserts_welcome_notification_for_admin(
     assert note.requires_action is True
     assert note.link_to == "/users"
     assert note.read is False
+
+
+def test_initialize_emits_welcome_event_to_open_stream(
+    setup_env: SimpleNamespace,
+) -> None:
+    # Issue #550: the welcome insert goes through the single publication
+    # point, so an admin with /notifications/stream already open receives
+    # notification_created reactively instead of only via polling.
+    _use_welcome_repo(setup_env)
+    hub = RealtimeHub()
+    setup_env.client.app.state.realtime_hub = hub
+    queue = hub.subscribe_notifications("admin")
+    resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
+    assert resp.status_code == 200
+    entry = queue.get_nowait()
+    assert entry["event"] == "notification_created"
+    data = entry["data"]
+    assert data["userId"] == "admin"
+    assert data["category"] == "welcome"
+    assert data["channel"] == "system"
+    assert data["title"] == WELCOME_TITLE
+    assert data["linkTo"] == "/users"
+    assert data["requiresAction"] is True
 
 
 def test_initialize_does_not_duplicate_existing_welcome(

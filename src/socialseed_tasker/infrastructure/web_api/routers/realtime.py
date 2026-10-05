@@ -15,6 +15,8 @@ The ``/issues/stream`` route itself is registered in issues.py so that it wins
 over ``GET /issues/{issue_id}``.
 
 State lives in an in-process :class:`RealtimeHub` stored on ``app.state.realtime_hub``.
+The hub also fans out ``notification_created`` events per ``user_id`` for the
+``/notifications/stream`` SSE endpoint (issue #550).
 """
 
 from __future__ import annotations
@@ -34,6 +36,8 @@ realtime_router = APIRouter()
 LOG_BUFFER_SIZE = 200
 HEARTBEAT_SECONDS = 15.0
 PRESENCE_TTL_MS = 90_000
+#: Subscriber topics that mirror system-channel notifications (issue #550).
+GLOBAL_NOTIFICATION_TOPICS: tuple[str, ...] = ("global", "system")
 
 _SSE_HEADERS = {
     "Cache-Control": "no-cache, no-transform",
@@ -70,7 +74,8 @@ def publish_issue_update(app: Any, issue_id: str, payload: dict[str, Any]) -> No
 
 
 class RealtimeHub:
-    """In-process pub/sub hub: per-issue log buffers and presence registries.
+    """In-process pub/sub hub: per-issue log buffers, presence registries and
+    per-user notification fan-out (issue #550).
 
     All methods are synchronous and run on the event loop, so a
     ``subscribe_*`` call is atomic with respect to publishers.
@@ -82,6 +87,7 @@ class RealtimeHub:
         self._presence: dict[str, dict[str, dict[str, Any]]] = {}
         self._presence_subs: dict[str, list[asyncio.Queue[list[dict[str, Any]]]]] = {}
         self._sync_subs: dict[str, list[asyncio.Queue[dict[str, Any]]]] = {}
+        self._notif_subs: dict[str, list[asyncio.Queue[dict[str, Any]]]] = {}
         self._issue_subs: list[asyncio.Queue[dict[str, Any]]] = []
 
     # --------------------------------------------------------- issue updates
@@ -115,6 +121,34 @@ class RealtimeHub:
 
     def unsubscribe_sync(self, issue_id: str, queue: asyncio.Queue[dict[str, Any]]) -> None:
         subs = self._sync_subs.get(issue_id, [])
+        if queue in subs:
+            subs.remove(queue)
+
+    # ------------------------------------------------------- notifications
+
+    def publish_notification(self, user_id: str, payload: dict[str, Any]) -> None:
+        """Deliver a ``notification_created`` event to the target user's streams.
+
+        System-channel notifications (welcome, ...) are additionally mirrored
+        to the global subscriber topics ``global``/``system`` so channel-wide
+        dashboards see them (issue #550); every other channel stays strictly
+        private to ``user_id``.
+        """
+        entry = {"event": "notification_created", "data": payload}
+        topics = [user_id]
+        if str(payload.get("channel", "")).lower() == "system":
+            topics.extend(GLOBAL_NOTIFICATION_TOPICS)
+        for topic in dict.fromkeys(topics):
+            for queue in list(self._notif_subs.get(topic, [])):
+                queue.put_nowait(entry)
+
+    def subscribe_notifications(self, user_id: str) -> asyncio.Queue[dict[str, Any]]:
+        queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
+        self._notif_subs.setdefault(user_id, []).append(queue)
+        return queue
+
+    def unsubscribe_notifications(self, user_id: str, queue: asyncio.Queue[dict[str, Any]]) -> None:
+        subs = self._notif_subs.get(user_id, [])
         if queue in subs:
             subs.remove(queue)
 

@@ -41,6 +41,9 @@ from socialseed_tasker.infrastructure.mongo.notification_repository import (
     NotificationMongoRepository,
     NotificationStoreError,
 )
+from socialseed_tasker.infrastructure.web_api.routers.notifications import (
+    emit_notification_created,
+)
 from socialseed_tasker.infrastructure.web_api.schemas import APIResponse
 from socialseed_tasker.models.notification import (
     Notification,
@@ -442,7 +445,10 @@ async def _insert_welcome_notification(request: Request, admin_username: str) ->
             requires_action=True,
             link_to="/users",
         )
-        await repository.insert(welcome)
+        stored = await repository.insert(welcome)
+        # Live tail for admins with /notifications/stream open (issue #550):
+        # the single publication point fans out the camelCase wire payload.
+        emit_notification_created(request.app, stored)
         logger.info("welcome notification inserted for %s", admin_username)
     except NotificationStoreError as exc:
         logger.warning("welcome notification skipped (continuing install): %s", exc)
