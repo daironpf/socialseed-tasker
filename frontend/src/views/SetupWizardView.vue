@@ -384,6 +384,7 @@ import { useI18n } from 'vue-i18n'
 import { postSetupInitialize, type SetupInitializeResult } from '@/api/setupApi'
 import { setApiMode } from '@/api/client'
 import { useUiStore } from '@/stores/uiStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useToast } from '@/composables/useToast'
 import McpSetupPanel from '@/components/setup/McpSetupPanel.vue'
 
@@ -399,6 +400,7 @@ const predefinedPolicies = [
 const { t } = useI18n()
 const router = useRouter()
 const uiStore = useUiStore()
+const authStore = useAuthStore()
 const toast = useToast()
 
 const step = ref(1)
@@ -496,6 +498,18 @@ async function submit() {
     uiStore.isInstalled = true
     // A freshly installed system runs against real data only (issue #545).
     setApiMode('real')
+    // notas.md #3 first-login AC: enter the dashboard already logged in so
+    // the onboarding notifications are fetched right away. Best effort: a
+    // failed login leaves the LoginScreen as the fallback.
+    try {
+      await authStore.loginWithCredentials(
+        adminUser.value.trim() || 'admin',
+        adminPassword.value || 'admin',
+      )
+    } catch {
+      // fallback: LoginScreen asks for the master key shown below
+      authStore.error = null
+    }
     // Issue #546: show the AI credentials panel before leaving the wizard.
     initResult.value = result
     completed.value = true

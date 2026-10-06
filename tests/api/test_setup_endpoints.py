@@ -34,6 +34,13 @@ WELCOME_MESSAGE = (
     "El sistema ha sido instalado correctamente. Te recomendamos "
     "crear tus primeros agentes de IA y registrar usuarios en la plataforma."
 )
+# Second onboarding notification (notas.md #3): points the admin to Users
+# to define the first agents.
+AGENT_SETUP_TITLE = "Define tus agentes en Usuarios"
+AGENT_SETUP_MESSAGE = (
+    "Ve a la sección de Usuarios para registrar a tu equipo y "
+    "definir los agentes de IA con los que trabajará Tasker."
+)
 
 
 class FakeSetupStore:
@@ -213,6 +220,21 @@ def _seed_welcome(repository: FakeWelcomeRepository, note_id: str = "existing") 
         severity=NotificationSeverity.INFO,
         title=WELCOME_TITLE,
         message=WELCOME_MESSAGE,
+        channel="system",
+        requires_action=True,
+        link_to="/users",
+    )
+
+
+def _seed_onboarding(repository: FakeWelcomeRepository) -> None:
+    """Seed both onboarding notifications (welcome + define-your-agents)."""
+    _seed_welcome(repository, note_id="existing-welcome")
+    repository.notes["existing-agent-setup"] = Notification(
+        user_id="admin",
+        type=NotificationType.WELCOME,
+        severity=NotificationSeverity.INFO,
+        title=AGENT_SETUP_TITLE,
+        message=AGENT_SETUP_MESSAGE,
         channel="system",
         requires_action=True,
         link_to="/users",
@@ -437,6 +459,7 @@ def test_initialize_persists_master_key_in_secrets_store(setup_env: SimpleNamesp
     assert stored["value"] == b"tasker_sk_live_persisted"
     assert stored["metadata"]["mcpPort"] == 9000
     assert stored["metadata"]["source"] == "setup"
+    assert stored["metadata"]["adminUsername"] == "admin"
 
 
 def test_initialize_rejects_out_of_range_mcp_port(setup_env: SimpleNamespace) -> None:
@@ -486,25 +509,65 @@ def test_master_api_key_authenticates_requests(setup_env: SimpleNamespace) -> No
     assert setup_env.client.app.state.master_api_key == master_key
 
 
-def test_initialize_inserts_welcome_notification_for_admin(
+def test_master_api_key_starts_admin_session(setup_env: SimpleNamespace) -> None:
+    # notas.md #3 first-login flow: the apiKey shown by the wizard can be
+    # exchanged for a JWT session from the LoginScreen, so a fresh browser
+    # reaches the onboarding notifications without a second credential.
+    resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
+    master_key = resp.json()["data"]["apiKey"]
+    login = setup_env.client.post("/api/v1/auth/login", json={"api_key": master_key})
+    assert login.status_code == 200
+    user = login.json()["user"]
+    assert user["username"] == "admin"
+    assert user["role"] == "ADMIN"
+
+
+def test_master_api_key_login_survives_api_restart(setup_env: SimpleNamespace) -> None:
+    # The admin username travels in the secrets-store metadata, so the login
+    # still resolves to the installed admin after a cold start.
+    resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
+    master_key = resp.json()["data"]["apiKey"]
+    state = setup_env.client.app.state
+    state.master_api_key = None
+    state.master_admin_username = None
+    state.master_api_key_loaded = False
+    login = setup_env.client.post("/api/v1/auth/login", json={"api_key": master_key})
+    assert login.status_code == 200
+    assert login.json()["user"]["username"] == "admin"
+
+
+def test_login_rejects_wrong_master_api_key(setup_env: SimpleNamespace) -> None:
+    resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
+    assert resp.status_code == 200
+    login = setup_env.client.post(
+        "/api/v1/auth/login", json={"api_key": "tasker_sk_live_not_the_key"}
+    )
+    assert login.status_code == 401
+
+
+def test_initialize_inserts_onboarding_notifications_for_admin(
     setup_env: SimpleNamespace,
 ) -> None:
     repository = _use_welcome_repo(setup_env)
     resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
     assert resp.status_code == 200
-    assert repository.insert_calls == 1
+    assert repository.insert_calls == 2
     notes = list(repository.notes.values())
-    assert len(notes) == 1
-    note = notes[0]
-    assert note.user_id == "admin"
-    assert note.type is NotificationType.WELCOME
-    assert note.severity is NotificationSeverity.INFO
-    assert note.channel == "system"
-    assert note.title == WELCOME_TITLE
-    assert note.message == WELCOME_MESSAGE
-    assert note.requires_action is True
-    assert note.link_to == "/users"
-    assert note.read is False
+    assert len(notes) == 2
+    titles = {note.title for note in notes}
+    assert titles == {WELCOME_TITLE, AGENT_SETUP_TITLE}
+    for note in notes:
+        assert note.user_id == "admin"
+        assert note.type is NotificationType.WELCOME
+        assert note.severity is NotificationSeverity.INFO
+        assert note.channel == "system"
+        assert note.requires_action is True
+        assert note.link_to == "/users"
+        assert note.read is False
+    welcome = next(n for n in notes if n.title == WELCOME_TITLE)
+    assert welcome.message == WELCOME_MESSAGE
+    agent_setup = next(n for n in notes if n.title == AGENT_SETUP_TITLE)
+    assert agent_setup.message == AGENT_SETUP_MESSAGE
 
 
 def test_initialize_emits_welcome_event_to_open_stream(
@@ -519,36 +582,55 @@ def test_initialize_emits_welcome_event_to_open_stream(
     queue = hub.subscribe_notifications("admin")
     resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
     assert resp.status_code == 200
-    entry = queue.get_nowait()
-    assert entry["event"] == "notification_created"
-    data = entry["data"]
+    entries: list[dict[str, Any]] = []
+    while not queue.empty():
+        entries.append(queue.get_nowait())
+    assert len(entries) == 2
+    assert all(entry["event"] == "notification_created" for entry in entries)
+    titles = [entry["data"]["title"] for entry in entries]
+    assert titles == [WELCOME_TITLE, AGENT_SETUP_TITLE]
+    data = entries[0]["data"]
     assert data["userId"] == "admin"
     assert data["category"] == "welcome"
     assert data["channel"] == "system"
-    assert data["title"] == WELCOME_TITLE
     assert data["linkTo"] == "/users"
     assert data["requiresAction"] is True
 
 
-def test_initialize_does_not_duplicate_existing_welcome(
+def test_initialize_does_not_duplicate_existing_onboarding(
     setup_env: SimpleNamespace,
 ) -> None:
-    # Idempotency guard by (user_id, type): a WELCOME already present for the
-    # admin (e.g. a rerun whose wipe did not clear the collection) is kept
-    # as-is instead of inserting a second copy (issue #549 implementation 4).
+    # Idempotency guard by (user_id, title): both onboarding notifications
+    # already present for the admin (e.g. a rerun whose wipe did not clear
+    # the collection) are kept as-is instead of inserting duplicates
+    # (issue #549 implementation 4, notas.md #3).
+    repository = _use_welcome_repo(setup_env)
+    _seed_onboarding(repository)
+    resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
+    assert resp.status_code == 200
+    assert repository.insert_calls == 0
+    assert len(repository.notes) == 2
+
+
+def test_initialize_inserts_only_missing_onboarding_notification(
+    setup_env: SimpleNamespace,
+) -> None:
+    # Partial state: only the welcome survived, so the rerun inserts just
+    # the missing "define your agents" notification, not a second welcome.
     repository = _use_welcome_repo(setup_env)
     _seed_welcome(repository)
     resp = setup_env.client.post("/api/v1/setup/initialize", json=_payload())
     assert resp.status_code == 200
-    assert repository.insert_calls == 0
-    assert len(repository.notes) == 1
+    assert repository.insert_calls == 1
+    titles = {note.title for note in repository.notes.values()}
+    assert titles == {WELCOME_TITLE, AGENT_SETUP_TITLE}
 
 
-def test_reinstall_with_confirm_wipe_leaves_exactly_one_welcome(
+def test_reinstall_with_confirm_wipe_seeds_onboarding_from_scratch(
     setup_env: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     repository = _use_welcome_repo(setup_env)
-    _seed_welcome(repository)
+    _seed_onboarding(repository)
     repository.notes["stale-mention"] = Notification(
         user_id="admin",
         type=NotificationType.MENTION,
@@ -573,11 +655,12 @@ def test_reinstall_with_confirm_wipe_leaves_exactly_one_welcome(
     )
     assert resp.status_code == 200
     assert mongo_wipes == ["wipe"]
-    assert len(repository.notes) == 1
-    note = next(iter(repository.notes.values()))
-    assert note.type is NotificationType.WELCOME
-    assert note.title == WELCOME_TITLE
-    assert note.user_id == "admin"
+    assert len(repository.notes) == 2
+    titles = {note.title for note in repository.notes.values()}
+    assert titles == {WELCOME_TITLE, AGENT_SETUP_TITLE}
+    for note in repository.notes.values():
+        assert note.type is NotificationType.WELCOME
+        assert note.user_id == "admin"
 
 
 def test_initialize_succeeds_when_notification_store_fails(
@@ -648,11 +731,14 @@ def test_first_login_lists_welcome_notification(setup_env: SimpleNamespace) -> N
     )
     assert listing.status_code == 200
     items = listing.json()["data"]
-    assert len(items) == 1
-    welcome = items[0]
-    assert welcome["type"] == "WELCOME"
-    assert welcome["category"] == "welcome"
-    assert welcome["userId"] == "admin"
-    assert welcome["title"] == WELCOME_TITLE
-    assert welcome["linkTo"] == "/users"
-    assert welcome["requiresAction"] is True
+    assert len(items) == 2
+    by_title = {item["title"]: item for item in items}
+    assert set(by_title) == {WELCOME_TITLE, AGENT_SETUP_TITLE}
+    for item in items:
+        assert item["type"] == "WELCOME"
+        assert item["category"] == "welcome"
+        assert item["userId"] == "admin"
+        assert item["linkTo"] == "/users"
+        assert item["requiresAction"] is True
+    assert by_title[WELCOME_TITLE]["message"] == WELCOME_MESSAGE
+    assert by_title[AGENT_SETUP_TITLE]["message"] == AGENT_SETUP_MESSAGE

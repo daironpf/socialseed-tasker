@@ -39,8 +39,10 @@ export const useAuthStore = defineStore('auth', () => {
   const busy = ref(false)
   const error = ref<string | null>(null)
 
+  // Session only: an API key on window (index.html) is not a session, so a
+  // fresh browser without login must see the LoginScreen (notas.md #3).
   const isAuthenticated = computed(
-    () => isMockMode() || !!user.value || !!storedKey.value || !!API_KEY,
+    () => isMockMode() || !!user.value || !!storedKey.value,
   )
 
   const role = computed(() => user.value?.role ?? null)
@@ -90,6 +92,25 @@ export const useAuthStore = defineStore('auth', () => {
         detail && detail.toLowerCase().includes('invalid')
           ? i18n.global.t('auth.invalidKey')
           : i18n.global.t('auth.loginFailed')
+      throw err
+    } finally {
+      busy.value = false
+    }
+  }
+
+  /** Username/password session, used by the setup wizard auto-login (notas.md #3). */
+  async function loginWithCredentials(
+    username: string,
+    password: string,
+  ): Promise<SessionUser> {
+    busy.value = true
+    error.value = null
+    try {
+      const logged = await authApi.loginWithCredentials(username, password)
+      user.value = logged
+      return logged
+    } catch (err) {
+      error.value = i18n.global.t('auth.loginFailed')
       throw err
     } finally {
       busy.value = false
@@ -203,6 +224,7 @@ export const useAuthStore = defineStore('auth', () => {
     permissions,
     initSession,
     login,
+    loginWithCredentials,
     loginOAuth,
     completeOAuth,
     logout,

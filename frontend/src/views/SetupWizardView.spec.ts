@@ -3,8 +3,10 @@ import { setActivePinia } from 'pinia'
 import { mountComponent } from '@/test/mount'
 import SetupWizardView from '@/views/SetupWizardView.vue'
 import { useUiStore } from '@/stores/uiStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useToast } from '@/composables/useToast'
 import * as setupApi from '@/api/setupApi'
+import * as authApi from '@/api/authApi'
 import { setApiMode } from '@/api/client'
 
 const push = vi.fn()
@@ -16,6 +18,17 @@ vi.mock('vue-router', () => ({
 vi.mock('@/api/setupApi', () => ({
   getSetupStatus: vi.fn(),
   postSetupInitialize: vi.fn(),
+}))
+
+vi.mock('@/api/authApi', () => ({
+  login: vi.fn(),
+  loginWithCredentials: vi.fn(),
+  restoreSession: vi.fn(),
+  logout: vi.fn(),
+  exchange: vi.fn(),
+  startOAuth: vi.fn(),
+  refresh: vi.fn(),
+  fetchMe: vi.fn(),
 }))
 
 async function goToConfirm(wrapper: ReturnType<typeof mountComponent>['wrapper']) {
@@ -32,6 +45,12 @@ describe('SetupWizardView', () => {
     push.mockReset()
     useToast().clearAll()
     setApiMode('mock')
+    vi.mocked(authApi.loginWithCredentials).mockResolvedValue({
+      id: 'u-admin',
+      username: 'admin',
+      role: 'ADMIN',
+      permissions: ['admin'],
+    })
   })
 
   it('walks the four steps with the default credentials and submits the payload', async () => {
@@ -98,6 +117,10 @@ describe('SetupWizardView', () => {
     })
     expect(useUiStore(pinia).isInstalled).toBe(true)
     expect(localStorage.getItem('socialseed-api-mode')).toBe('real')
+    // notas.md #3: the wizard logs the admin in so the onboarding
+    // notifications are fetched as soon as /board opens.
+    expect(authApi.loginWithCredentials).toHaveBeenCalledWith('admin', 'admin')
+    expect(useAuthStore(pinia).user?.username).toBe('admin')
     expect(push).not.toHaveBeenCalled()
 
     await wrapper.find('[data-testid="setup-finish"]').trigger('click')
@@ -127,6 +150,32 @@ describe('SetupWizardView', () => {
     expect(vi.mocked(setupApi.postSetupInitialize).mock.calls[0][0].mcp_port).toBe(8888)
     expect(wrapper.find('[data-testid="setup-mcp-snippet"]').text()).toContain(':8888/mcp')
     expect(wrapper.find('[data-testid="setup-finish"]').exists()).toBe(true)
+  })
+
+  it('completes the wizard even when the auto-login fails', async () => {
+    vi.mocked(setupApi.postSetupInitialize).mockResolvedValue({
+      installed: true,
+      adminUsername: 'admin',
+      projectName: 'Proyecto Demo',
+      projectId: 'p-1',
+      policies: [],
+      credentials: 'created',
+      apiKey: 'tasker_sk_live_test_key',
+      mcpPort: 0,
+    })
+    vi.mocked(authApi.loginWithCredentials).mockRejectedValue(new Error('nope'))
+    const { wrapper, pinia } = mountComponent(SetupWizardView)
+    setActivePinia(pinia)
+
+    await goToConfirm(wrapper)
+    await wrapper.find('[data-testid="setup-submit"]').trigger('click')
+    await vi.waitFor(() =>
+      expect(wrapper.find('[data-testid="setup-ai-key"]').exists()).toBe(true),
+    )
+
+    const auth = useAuthStore(pinia)
+    expect(auth.user).toBeNull()
+    expect(auth.error).toBeNull()
   })
 
   it('adds and removes custom policies', async () => {

@@ -12,7 +12,8 @@
 Password login normalizes the username (issue #526) and validates the bcrypt
 hash in ``users`` (``TASKER_DATABASE_URL``); the API-key login reuses
 :class:`InMemoryAuthProvider` (``TASKER_AUTH_USERS`` / ``auth/users.json``) so
-CLI tokens double as frontend credentials. Every JWT pair carries a ``sid``
+CLI tokens double as frontend credentials and also accepts the setup-wizard
+master key as an admin session (notas.md #3). Every JWT pair carries a ``sid``
 session id persisted under ``session:{user_id}:{session_id}`` in Redis with a
 TTL equal to the refresh lifetime; logout deletes that key and refresh fails
 once the session is gone (issue #527). OAuth requires
@@ -164,7 +165,22 @@ def _login_with_password(body: LoginRequest) -> dict[str, Any]:
     return user
 
 
-def _login_with_api_key(api_key: str) -> dict[str, Any]:
+def _login_with_api_key(api_key: str, request: Request) -> dict[str, Any]:
+    # Wizard master key (notas.md #3): the apiKey shown by the setup wizard
+    # (and stored in the secrets store) starts a full admin session so the
+    # admin can see the onboarding notifications without a second credential.
+    from socialseed_tasker.infrastructure.web_api.routers.setup import (
+        MASTER_KEY_PREFIX,
+        resolve_master_key,
+    )
+
+    if api_key.startswith(MASTER_KEY_PREFIX):
+        master_key, admin_username = resolve_master_key(request.app.state)
+        if master_key is not None and secrets.compare_digest(api_key, master_key):
+            username = admin_username or "admin"
+            return _user_payload(
+                username, _permissions_for_db_role("admin"), username=username
+            )
     provider = load_auth_provider()
     user_id = provider.verify_token(api_key)
     if user_id is None:
@@ -174,11 +190,11 @@ def _login_with_api_key(api_key: str) -> dict[str, Any]:
     return _user_payload(user_id, permissions, username=info.get("username", user_id))
 
 
-def _authenticate(body: LoginRequest) -> dict[str, Any]:
+def _authenticate(body: LoginRequest, request: Request) -> dict[str, Any]:
     if body.username is not None or body.password is not None:
         return _login_with_password(body)
     if body.api_key:
-        return _login_with_api_key(body.api_key)
+        return _login_with_api_key(body.api_key, request)
     raise HTTPException(status_code=400, detail="Provide username/password or api_key")
 
 
@@ -195,7 +211,7 @@ def login(
     request: Request,
     user_agent: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    user = _authenticate(body)
+    user = _authenticate(body, request)
     session_id = uuid.uuid4().hex
     pair = tokens.issue_tokens(user, session_id)
     _persist_session(request, user, pair, session_id, user_agent)

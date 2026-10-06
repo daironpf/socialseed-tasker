@@ -232,29 +232,17 @@ def create_app(
 
     # Master API key issued by the setup wizard (issue #546): prefer the copy
     # set in-process by /setup/initialize and lazily fall back to the secrets
-    # store so the key survives API restarts. Caches misses too.
+    # store so the key survives API restarts. Caches misses too. Shared with
+    # the /auth/login api_key branch (notas.md #3 first-login flow).
     def _master_key_matches(candidate: str) -> bool:
         from socialseed_tasker.infrastructure.web_api.routers.setup import (
             MASTER_KEY_PREFIX,
-            MASTER_KEY_SECRET_NAME,
+            resolve_master_key,
         )
 
         if not candidate.startswith(MASTER_KEY_PREFIX):
             return False
-        cached = getattr(app.state, "master_api_key", None)
-        if cached is None and not getattr(app.state, "master_api_key_loaded", False):
-            app.state.master_api_key_loaded = True
-            try:
-                from socialseed_tasker.cli.wiring import build_default_container
-
-                container: Any = build_default_container()
-                res = container.secrets_store.get_secret(
-                    MASTER_KEY_SECRET_NAME, reveal=True
-                )
-                cached = res["value"].decode("utf-8")
-                app.state.master_api_key = cached
-            except Exception:
-                cached = None
+        cached, _ = resolve_master_key(app.state)
         return cached is not None and candidate == cached
 
     def _api_key_matches(candidate: str | None) -> bool:

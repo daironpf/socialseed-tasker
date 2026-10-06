@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { applySetupGuard } from '@/router/setupGuard'
+import { resolveInitialApiMode } from '@/api/modeBootstrap'
 import { useToast } from '@/composables/useToast'
 import i18n from '@/i18n'
 
@@ -40,6 +41,9 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  // Fresh browser: probe the real backend before initSession/guard decide
+  // between mock and real (notas.md #3 first-entry fix).
+  await resolveInitialApiMode()
   const authStore = useAuthStore()
   await authStore.initSession()
   const setupDecision = await applySetupGuard(to)

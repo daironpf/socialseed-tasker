@@ -38,6 +38,16 @@ export async function login(apiKey: string): Promise<SessionUser> {
   return data.user
 }
 
+/** Username/password login (PostgreSQL bcrypt), used by the wizard auto-login (notas.md #3). */
+export async function loginWithCredentials(
+  username: string,
+  password: string,
+): Promise<SessionUser> {
+  const data = await post<AuthResponse>('/auth/login', { username, password })
+  session.applyTokens(data, data.user)
+  return data.user
+}
+
 export async function exchange(code: string): Promise<SessionUser> {
   const data = await post<AuthResponse>('/auth/exchange', { code })
   session.applyTokens(data, data.user)

@@ -10,9 +10,11 @@ import type { PolicyViolationDetail } from '@/types'
 // Resolution order: localStorage override > VITE_USE_MOCK env flag > mock.
 export type ApiMode = 'mock' | 'real'
 
+export const API_MODE_STORAGE_KEY = 'socialseed-api-mode'
+
 const env = import.meta.env as unknown as Record<string, string | undefined>
 const envMock = (env.VITE_USE_MOCK ?? 'true') !== 'false'
-const storedMode = localStorage.getItem('socialseed-api-mode')
+const storedMode = localStorage.getItem(API_MODE_STORAGE_KEY)
 
 export const apiMode = ref<ApiMode>(
   storedMode === 'real' || storedMode === 'mock'
@@ -28,7 +30,7 @@ export function isMockMode(): boolean {
 
 export function setApiMode(mode: ApiMode): void {
   apiMode.value = mode
-  localStorage.setItem('socialseed-api-mode', mode)
+  localStorage.setItem(API_MODE_STORAGE_KEY, mode)
 }
 
 const API_URL =

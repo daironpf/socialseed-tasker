@@ -7,6 +7,7 @@ import type { SessionUser } from '@/api/authSession'
 
 vi.mock('@/api/authApi', () => ({
   login: vi.fn(),
+  loginWithCredentials: vi.fn(),
   restoreSession: vi.fn(),
   logout: vi.fn(),
   exchange: vi.fn(),
@@ -92,6 +93,32 @@ describe('authStore', () => {
       expect(store.can('issue.delete')).toBe(true)
       expect(store.can('hitl.approve')).toBe(true)
       expect(localStorage.getItem('tasker_api_key')).toBe('admintoken123')
+    })
+
+    it('loginWithCredentials starts a session for the wizard auto-login', async () => {
+      vi.mocked(authApi.loginWithCredentials).mockResolvedValue(ADMIN_USER)
+      const store = useAuthStore()
+      const logged = await store.loginWithCredentials('admin', 'secret')
+      expect(authApi.loginWithCredentials).toHaveBeenCalledWith('admin', 'secret')
+      expect(logged.username).toBe('admin')
+      expect(store.user).toEqual(ADMIN_USER)
+      expect(store.isAuthenticated).toBe(true)
+      expect(store.busy).toBe(false)
+      // Credentials login must not persist a legacy api key.
+      expect(localStorage.getItem('tasker_api_key')).toBeNull()
+    })
+
+    it('loginWithCredentials surfaces the login error and rethrows', async () => {
+      vi.mocked(authApi.loginWithCredentials).mockRejectedValue(
+        Object.assign(new Error('Request failed'), {
+          response: { status: 401, data: { detail: 'Invalid username or password' } },
+        }),
+      )
+      const store = useAuthStore()
+      await expect(store.loginWithCredentials('admin', 'nope')).rejects.toThrow()
+      expect(store.user).toBeNull()
+      expect(store.error).toBe('Sign-in failed. Please try again.')
+      expect(store.busy).toBe(false)
     })
 
     it('viewer sessions are blocked from privileged routes and actions', async () => {

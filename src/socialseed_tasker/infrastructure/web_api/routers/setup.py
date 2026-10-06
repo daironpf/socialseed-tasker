@@ -12,8 +12,9 @@
   plus a ``:User`` node with ``role='ADMIN'``), the root ``:Project`` node and
   the selected governance policies linked with the existing
   ``(Project)-[:ENFORCES]->(Policy)`` model, and finally seeds the admin's
-  ``WELCOME`` notification (issue #549). Returns 403 when the system is
-  already installed.
+  onboarding notifications: the ``WELCOME`` welcome plus the pointer to
+  Users to define the first agents (issues #549 and notas.md #3). Returns
+  403 when the system is already installed.
 
 State is provided by :class:`Neo4jSetupStore` on ``app.state.setup_store`` so
 tests can swap it for an in-memory fake (pattern of ``chat_repository``).
@@ -63,6 +64,20 @@ DEFAULT_ADMIN_PASSWORD = "admin"
 # restart (issue #546).
 MASTER_KEY_PREFIX = "tasker_sk_live_"
 MASTER_KEY_SECRET_NAME = "master_api_key"
+
+# Post-install onboarding copy for the admin (notas.md #3): a welcome and a
+# second notification pointing to Users to define the first agents. Both are
+# ``WELCOME`` notifications so they share the frontend ``welcome`` category.
+WELCOME_TITLE = "¡Bienvenido a SocialSeed Tasker!"
+WELCOME_MESSAGE = (
+    "El sistema ha sido instalado correctamente. Te recomendamos "
+    "crear tus primeros agentes de IA y registrar usuarios en la plataforma."
+)
+AGENT_SETUP_TITLE = "Define tus agentes en Usuarios"
+AGENT_SETUP_MESSAGE = (
+    "Ve a la sección de Usuarios para registrar a tu equipo y "
+    "definir los agentes de IA con los que trabajará Tasker."
+)
 
 PREDEFINED_POLICIES: dict[str, dict[str, str]] = {
     "prevent_circular_dependencies": {
@@ -382,7 +397,35 @@ def _generate_master_api_key() -> str:
     return MASTER_KEY_PREFIX + secrets.token_urlsafe(32)
 
 
-def _persist_master_key(request: Request, api_key: str, mcp_port: int) -> None:
+def resolve_master_key(state: Any) -> tuple[str | None, str | None]:
+    """Return ``(master_api_key, admin_username)`` for ``app.state``.
+
+    Prefers the copy set in-process by ``/setup/initialize`` and lazily
+    falls back to the secrets store so both survive an API restart (the
+    ``adminUsername`` metadata lets the master key log in as the installed
+    admin). Caches misses too. Shared by the auth middleware and the
+    ``/auth/login`` api_key branch (notas.md #3 first-login flow).
+    """
+    key = getattr(state, "master_api_key", None)
+    username = getattr(state, "master_admin_username", None)
+    if key is None and not getattr(state, "master_api_key_loaded", False):
+        state.master_api_key_loaded = True
+        try:
+            from socialseed_tasker.cli.wiring import build_default_container
+
+            container: Any = build_default_container()
+            res = container.secrets_store.get_secret(MASTER_KEY_SECRET_NAME, reveal=True)
+            key = res["value"].decode("utf-8")
+            username = str((res.get("metadata") or {}).get("adminUsername") or "") or None
+            state.master_api_key = key
+            if username:
+                state.master_admin_username = username
+        except Exception:
+            key = None
+    return key, username
+
+
+def _persist_master_key(request: Request, api_key: str, mcp_port: int, admin_username: str) -> None:
     """Expose the key to this process and persist it in the secrets store.
 
     The auth middleware accepts the key from ``app.state`` right away; the
@@ -390,6 +433,7 @@ def _persist_master_key(request: Request, api_key: str, mcp_port: int) -> None:
     degrade to the in-process key only (the installation still succeeds).
     """
     request.app.state.master_api_key = api_key
+    request.app.state.master_admin_username = admin_username
     request.app.state.master_api_key_loaded = True
     try:
         from socialseed_tasker.cli.wiring import build_default_container
@@ -398,7 +442,11 @@ def _persist_master_key(request: Request, api_key: str, mcp_port: int) -> None:
         container.secrets_store.put_secret(
             MASTER_KEY_SECRET_NAME,
             api_key.encode("utf-8"),
-            metadata={"mcpPort": mcp_port, "source": "setup"},
+            metadata={
+                "mcpPort": mcp_port,
+                "source": "setup",
+                "adminUsername": admin_username,
+            },
             actor="setup",
         )
     except Exception as exc:
@@ -406,52 +454,72 @@ def _persist_master_key(request: Request, api_key: str, mcp_port: int) -> None:
 
 
 async def _insert_welcome_notification(request: Request, admin_username: str) -> None:
-    """Seed the admin's post-install welcome notification (issue #549).
+    """Seed the admin's post-install onboarding notifications (issue #549).
 
-    Degrades safely: a missing/unreachable MongoDB (typed
+    Seeds the welcome (notas.md #549) plus the second onboarding
+    notification pointing to Users to define the first agents (notas.md
+    #3). Degrades safely: a missing/unreachable MongoDB (typed
     :class:`NotificationStoreError`) is logged and skipped so the
-    installation still succeeds. Idempotency guard by ``(user_id, type)``:
-    an existing ``WELCOME`` for the admin is never duplicated (covers a
-    rerun whose wipe did not clear the collection).
+    installation still succeeds. Idempotency guard by ``(user_id, title)``:
+    an onboarding notification already present for the admin is never
+    duplicated (covers a rerun whose wipe did not clear the collection).
     """
     repository: NotificationMongoRepository | None = getattr(
         request.app.state, "notification_repository", None
     )
     if repository is None:
-        logger.warning("welcome notification skipped (continuing install): store unavailable")
+        logger.warning(
+            "onboarding notifications skipped (continuing install): store unavailable"
+        )
         return
     try:
-        _, total = await repository.list_for_user(
+        existing, _ = await repository.list_for_user(
             admin_username,
             notification_type=NotificationType.WELCOME.value,
-            limit=1,
+            limit=50,
         )
-        if total > 0:
-            logger.info(
-                "welcome notification already present for %s (skipped)", admin_username
-            )
-            return
-        welcome = Notification(
-            user_id=admin_username,
-            type=NotificationType.WELCOME,
-            severity=NotificationSeverity.INFO,
-            title="¡Bienvenido a SocialSeed Tasker!",
-            message=(
-                "El sistema ha sido instalado correctamente. Te recomendamos "
-                "crear tus primeros agentes de IA y registrar usuarios en la "
-                "plataforma."
+        present = {note.title for note in existing}
+        notifications = (
+            Notification(
+                user_id=admin_username,
+                type=NotificationType.WELCOME,
+                severity=NotificationSeverity.INFO,
+                title=WELCOME_TITLE,
+                message=WELCOME_MESSAGE,
+                channel="system",
+                requires_action=True,
+                link_to="/users",
             ),
-            channel="system",
-            requires_action=True,
-            link_to="/users",
+            Notification(
+                user_id=admin_username,
+                type=NotificationType.WELCOME,
+                severity=NotificationSeverity.INFO,
+                title=AGENT_SETUP_TITLE,
+                message=AGENT_SETUP_MESSAGE,
+                channel="system",
+                requires_action=True,
+                link_to="/users",
+            ),
         )
-        stored = await repository.insert(welcome)
-        # Live tail for admins with /notifications/stream open (issue #550):
-        # the single publication point fans out the camelCase wire payload.
-        emit_notification_created(request.app, stored)
-        logger.info("welcome notification inserted for %s", admin_username)
+        for notification in notifications:
+            if notification.title in present:
+                logger.info(
+                    "onboarding notification %r already present for %s (skipped)",
+                    notification.title,
+                    admin_username,
+                )
+                continue
+            stored = await repository.insert(notification)
+            # Live tail for admins with /notifications/stream open (issue #550):
+            # the single publication point fans out the camelCase wire payload.
+            emit_notification_created(request.app, stored)
+            logger.info(
+                "onboarding notification %r inserted for %s",
+                notification.title,
+                admin_username,
+            )
     except NotificationStoreError as exc:
-        logger.warning("welcome notification skipped (continuing install): %s", exc)
+        logger.warning("onboarding notifications skipped (continuing install): %s", exc)
 
 
 @setup_router.get(
@@ -474,7 +542,8 @@ def setup_status(request: Request) -> APIResponse[SetupStatusResponse]:
         "Wipes any data that does not belong to the installation (Neo4j, PostgreSQL, MongoDB chat "
         "and notifications, and Redis), then creates the administrator (PostgreSQL bcrypt + :User "
         "ADMIN node), the root :Project and the selected governance policies, and seeds the admin's "
-        "WELCOME notification; returns 403 when already installed (issues #543/#545/#549)."
+        "onboarding notifications (welcome + define your agents, notas.md #3); returns 403 when "
+        "already installed (issues #543/#545/#549)."
     ),
 )
 async def setup_initialize(
@@ -482,7 +551,7 @@ async def setup_initialize(
 ) -> APIResponse[SetupInitializeResponse]:
     # The install itself (Neo4j sync sessions, bcrypt, pymongo/redis wipes)
     # keeps running on a worker thread exactly as before (issue #543); only
-    # the async welcome notification runs on the event loop (issue #549).
+    # the async onboarding notifications run on the event loop (issue #549).
     data = await run_in_threadpool(_perform_initialize, payload, request)
     await _insert_welcome_notification(request, data.admin_username)
     return APIResponse[SetupInitializeResponse](data=data)
@@ -555,7 +624,7 @@ def _perform_initialize(payload: SetupPayload, request: Request) -> SetupInitial
         raise HTTPException(status_code=503, detail=f"Setup state backend unavailable: {exc}") from exc
 
     master_api_key = payload.api_key.strip() or _generate_master_api_key()
-    _persist_master_key(request, master_api_key, payload.mcp_port)
+    _persist_master_key(request, master_api_key, payload.mcp_port, admin_username)
 
     data = SetupInitializeResponse(
         installed=True,
