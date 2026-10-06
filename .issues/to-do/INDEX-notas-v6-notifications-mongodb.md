@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v6 — Épica: Sistema de Notificaciones Real en MongoDB, del modelo de datos y la API REST al stream en vivo y la integración del store)
 **Created:** 2026-10-04
-**Status:** DONE (5/5: #547, #548, #549, #550, #551)
+**Status:** DONE (5/5: #547, #548, #549, #550, #551) + follow-up DONE (#552)
 
 > `notas.md` (v6) define las issues como [Issue #1]…[Issue #5]; interpretando la carpeta
 > `.issues/done/` el siguiente número libre era **#547** (máximo actual **#546**, cerrado en
@@ -50,6 +50,15 @@
 | #549 | Notificación de bienvenida del sistema al instalar/iniciar | MEDIUM | feat / integration | DONE (2026-10-04) | Issue #3 |
 | #550 | Eventos en tiempo real de notificaciones vía SSE (`/notifications/stream`) | HIGH | feat / realtime | DONE (2026-10-04) | Issue #4 |
 | #551 | Integración del `notificationsStore` con la API real (`apiMode = real`) | HIGH | feat / integration | DONE (2026-10-05) | Issue #5 |
+| #552 | Onboarding de primera entrada tras instalar (2 notificaciones + probe de modo real + auto-login) | HIGH | feat / integration | DONE (2026-10-06) | Issue #3 (extendido) |
+
+> **#552 (follow-up):** el bug de primera entrada tras instalar (5 HITL de la demo mock en
+> lugar del onboarding) se diagnosticó como 3 causas encadenadas: default mock en navegador
+> nuevo (sin `VITE_USE_MOCK` en los builds), guard de `/setup` saltado en mock, y bienvenida
+> invisible por falta de sesión (`!!API_KEY` en `isAuthenticated` + sin auto-login). Amplía el
+> Issue #3 de `notas.md` a **dos** notificaciones (bienvenida + "Define tus agentes en
+> Usuarios"), añade el probe de `/health` al arrancar, auto-login tras el wizard y la master
+> key como credenciales de LoginScreen. Fichero: `.issues/done/552-post-install-onboarding-first-entry.md`.
 
 ---
 
@@ -101,6 +110,7 @@
 - [x] **#549** implemented — move to `.issues/done/`, `features.md` §21/§69
 - [x] **#550** implemented — move to `.issues/done/`, `features.md` §18/§21
 - [x] **#551** implemented — move to `.issues/done/`, `features.md` §21/§22/§23
+- [x] **#552** implemented (follow-up de #549/#551) — fichero en `.issues/done/`, `notas.md` Issue #3 ampliado, `features.md` §21/§62/§69
 - [x] Each issue: gates backend (`ruff`/`mypy`/`pytest`), `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI
 - [x] Move issue file to `.issues/done/` with `Status: DONE` when complete
 - [ ] Commit message references `#NNN`
