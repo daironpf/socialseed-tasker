@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v6 — Épica: Sistema de Notificaciones Real en MongoDB, del modelo de datos y la API REST al stream en vivo y la integración del store)
 **Created:** 2026-10-04
-**Status:** DONE (5/5: #547, #548, #549, #550, #551) + follow-up DONE (#552, #553)
+**Status:** DONE (5/5: #547, #548, #549, #550, #551) + follow-up DONE (#552, #553, #554)
 
 > `notas.md` (v6) define las issues como [Issue #1]…[Issue #5]; interpretando la carpeta
 > `.issues/done/` el siguiente número libre era **#547** (máximo actual **#546**, cerrado en
@@ -52,6 +52,7 @@
 | #551 | Integración del `notificationsStore` con la API real (`apiMode = real`) | HIGH | feat / integration | DONE (2026-10-05) | Issue #5 |
 | #552 | Onboarding de primera entrada tras instalar (2 notificaciones + probe de modo real + auto-login) | HIGH | feat / integration | DONE (2026-10-06) | Issue #3 (extendido) |
 | #553 | Detalle inline de notificaciones al hacer clic (panel + feed) | MEDIUM | feat / UX | DONE (2026-10-06) | follow-up de #551/#552 |
+| #554 | Login con usuario y contraseña en el LoginScreen (modo credentials por defecto) | MEDIUM | feat / UX | DONE (2026-10-06) | follow-up de #552 |
 
 > **#552 (follow-up):** el bug de primera entrada tras instalar (5 HITL de la demo mock en
 > lugar del onboarding) se diagnosticó como 3 causas encadenadas: default mock en navegador
@@ -68,6 +69,14 @@
 > botón "Abrir" con `linkTo`) en `NotificationItem` (panel) y `NotificationsFeed` (board);
 > HITL conserva su `HITLQuickActionModal`. Clave i18n `notifItem.open`. Fichero:
 > `.issues/done/553-notificacion-detalle-inline.md`.
+
+> **#554 (follow-up):** al desplegar #552/#553 el usuario reportó que el LoginScreen "pide
+> la clave API" sin dejar introducir usuario/contraseña. El backend ya aceptaba
+> `{username,password}` (#526, verificado en vivo con `admin/admin` → 200) y el frontend ya
+> tenía `loginWithCredentials` (#552), pero la UI solo renderizaba el campo de API key.
+> Implementa el modo **credentials por defecto** (usuario + clave → `loginWithCredentials`)
+> con conmutador al modo API key (master key #552 intacta) y OAuth sin cambios; 6 claves
+> `auth.*` EN/ES. Fichero: `.issues/done/554-login-usuario-clave-login-screen.md`.
 
 ---
 
@@ -121,6 +130,7 @@
 - [x] **#551** implemented — move to `.issues/done/`, `features.md` §21/§22/§23
 - [x] **#552** implemented (follow-up de #549/#551) — fichero en `.issues/done/`, `notas.md` Issue #3 ampliado, `features.md` §21/§62/§69
 - [x] **#553** implemented (follow-up de #551/#552) — fichero en `.issues/done/`, `features.md` §57
+- [x] **#554** implemented (follow-up de #552) — fichero en `.issues/done/`, `features.md` §64
 - [x] Each issue: gates backend (`ruff`/`mypy`/`pytest`), `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI
 - [x] Move issue file to `.issues/done/` with `Status: DONE` when complete
 - [ ] Commit message references `#NNN`

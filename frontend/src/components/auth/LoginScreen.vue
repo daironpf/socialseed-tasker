@@ -3,7 +3,7 @@
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
       <h2 class="text-xl font-bold mb-4">{{ t('auth.login') }}</h2>
       <p class="text-gray-600 dark:text-gray-400 mb-4">
-        {{ t('auth.enterApiKey') }}
+        {{ mode === 'credentials' ? t('auth.enterCredentials') : t('auth.enterApiKey') }}
       </p>
 
       <div class="flex flex-col gap-2 mb-4">
@@ -38,7 +38,9 @@
 
       <div class="flex items-center gap-3 mb-4">
         <div class="h-px flex-1 bg-gray-200 dark:bg-gray-600" />
-        <span class="text-xs uppercase text-gray-500 dark:text-gray-400">{{ t('auth.orContinue') }}</span>
+        <span class="text-xs uppercase text-gray-500 dark:text-gray-400">
+          {{ mode === 'credentials' ? t('auth.orAccount') : t('auth.orContinue') }}
+        </span>
         <div class="h-px flex-1 bg-gray-200 dark:bg-gray-600" />
       </div>
 
@@ -46,19 +48,30 @@
         {{ authStore.error }}
       </p>
 
-      <form @submit.prevent="handleLogin">
+      <form v-if="mode === 'credentials'" @submit.prevent="handleCredentialsLogin">
         <input
-          v-model="apiKey"
+          v-model="username"
+          type="text"
+          data-testid="login-username"
+          autocomplete="username"
+          :placeholder="t('auth.username')"
+          :aria-label="t('auth.username')"
+          class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 mb-2"
+        />
+        <input
+          v-model="password"
           type="password"
-          :placeholder="t('auth.apiKey')"
-          :aria-label="t('auth.apiKey')"
+          data-testid="login-password"
+          autocomplete="current-password"
+          :placeholder="t('auth.password')"
+          :aria-label="t('auth.password')"
           class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 mb-4"
         />
         <div class="flex gap-2">
           <button
             type="submit"
             data-testid="login-submit"
-            :disabled="authStore.busy"
+            :disabled="authStore.busy || !canSubmit"
             class="flex-1 bg-cyan-600 text-white py-2 px-4 rounded-lg hover:bg-cyan-700 dark:bg-cyan-500 dark:hover:bg-cyan-600 disabled:opacity-50"
           >
             {{ authStore.busy ? t('auth.connecting') : t('auth.submit') }}
@@ -72,13 +85,58 @@
             {{ t('common.close') }}
           </button>
         </div>
+        <button
+          type="button"
+          data-testid="login-toggle-apikey"
+          class="mt-3 w-full text-center text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
+          @click="mode = 'apiKey'"
+        >
+          {{ t('auth.useApiKey') }}
+        </button>
+      </form>
+
+      <form v-else @submit.prevent="handleApiKeyLogin">
+        <input
+          v-model="apiKey"
+          type="password"
+          data-testid="login-apikey"
+          :placeholder="t('auth.apiKey')"
+          :aria-label="t('auth.apiKey')"
+          class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 mb-4"
+        />
+        <div class="flex gap-2">
+          <button
+            type="submit"
+            data-testid="login-submit"
+            :disabled="authStore.busy || !canSubmit"
+            class="flex-1 bg-cyan-600 text-white py-2 px-4 rounded-lg hover:bg-cyan-700 dark:bg-cyan-500 dark:hover:bg-cyan-600 disabled:opacity-50"
+          >
+            {{ authStore.busy ? t('auth.connecting') : t('auth.submit') }}
+          </button>
+          <button
+            type="button"
+            data-testid="login-clear"
+            @click="clearAndRetry"
+            class="flex-1 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-500"
+          >
+            {{ t('common.close') }}
+          </button>
+        </div>
+        <button
+          type="button"
+          data-testid="login-toggle-credentials"
+          class="mt-3 w-full text-center text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
+          @click="mode = 'credentials'"
+        >
+          {{ t('auth.useCredentials') }}
+        </button>
       </form>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -89,9 +147,29 @@ const emit = defineEmits<{
   loggedIn: []
 }>()
 
+const mode = ref<'credentials' | 'apiKey'>('credentials')
+const username = ref('')
+const password = ref('')
 const apiKey = ref('')
 
-async function handleLogin() {
+const canSubmit = computed(() =>
+  mode.value === 'credentials'
+    ? username.value.trim() !== '' && password.value !== ''
+    : apiKey.value.trim() !== '',
+)
+
+async function handleCredentialsLogin() {
+  if (!canSubmit.value) return
+  try {
+    await authStore.loginWithCredentials(username.value.trim(), password.value)
+    emit('loggedIn')
+  } catch {
+    // Error surfaced via authStore.error.
+  }
+}
+
+async function handleApiKeyLogin() {
+  if (!canSubmit.value) return
   try {
     await authStore.login(apiKey.value)
     emit('loggedIn')
