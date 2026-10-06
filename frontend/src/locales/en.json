@@ -1831,6 +1831,9 @@
       "info": "Info"
     }
   },
+  "notifItem": {
+    "open": "Open"
+  },
   "notifPanel": {
     "groups": {
       "emergency": "Emergency",

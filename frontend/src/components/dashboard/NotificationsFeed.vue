@@ -14,7 +14,13 @@
     </div>
 
     <ul v-else class="space-y-3">
-      <li v-for="n in recent" :key="n.id" class="flex items-start gap-3">
+      <li
+        v-for="n in recent"
+        :key="n.id"
+        class="-mx-1 flex cursor-pointer items-start gap-3 rounded-md px-1 py-1 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/60"
+        :aria-expanded="expandedId === n.id"
+        @click="toggle(n)"
+      >
         <span
           class="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold"
           :class="CATEGORY_STYLES[n.category]"
@@ -28,7 +34,20 @@
           >
             {{ n.title }}
           </p>
-          <p class="truncate text-xs text-gray-500 dark:text-gray-400">{{ n.message }}</p>
+          <p class="text-xs" :class="messageClass(n)">{{ n.message }}</p>
+          <div
+            v-if="expandedId === n.id"
+            class="mt-1.5 flex items-center justify-between gap-2 border-t border-gray-100 pt-1.5 dark:border-gray-800"
+          >
+            <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ fullDate(n.createdAt) }}</span>
+            <button
+              v-if="n.linkTo"
+              class="shrink-0 rounded-md bg-blue-600 px-2 py-0.5 text-[10px] font-semibold text-white transition-colors hover:bg-blue-700"
+              @click.stop="openLink(n)"
+            >
+              {{ t('notifItem.open') }}
+            </button>
+          </div>
         </div>
         <span class="flex-shrink-0 text-[10px] text-gray-500 dark:text-gray-400">{{ timeOf(n.createdAt) }}</span>
       </li>
@@ -37,15 +56,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ModuleCard from './ModuleCard.vue'
 import { useNotificationsStore } from '@/stores/notificationsStore'
-import { CATEGORY_CONFIG, type NotificationCategory } from '@/types/notifications'
+import { CATEGORY_CONFIG, type AppNotification, type NotificationCategory } from '@/types/notifications'
 
 const { t } = useI18n()
 
 const notificationsStore = useNotificationsStore()
+const router = useRouter()
+
+const expandedId = ref<string | null>(null)
 
 const CATEGORY_STYLES: Record<NotificationCategory, string> = {
   mention: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
@@ -62,7 +85,25 @@ const recent = computed(() =>
     .slice(0, 4)
 )
 
+function toggle(n: AppNotification) {
+  expandedId.value = expandedId.value === n.id ? null : n.id
+  if (!n.read) notificationsStore.markAsRead(n.id)
+}
+
+function messageClass(n: AppNotification): string {
+  const overflow = expandedId.value === n.id ? 'whitespace-pre-wrap break-words' : 'truncate'
+  return `${overflow} text-xs text-gray-500 dark:text-gray-400`
+}
+
+function openLink(n: AppNotification) {
+  if (n.linkTo) router?.push(n.linkTo)
+}
+
 function timeOf(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+function fullDate(iso: string): string {
+  return new Date(iso).toLocaleString()
 }
 </script>

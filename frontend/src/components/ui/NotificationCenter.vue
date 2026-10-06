@@ -108,8 +108,10 @@
                 v-for="notif in group.items"
                 :key="notif.id"
                 :notification="notif"
-                @dismiss="store.dismiss"
+                :expanded="expandedId === notif.id"
+                @dismiss="dismissNotification"
                 @markRead="store.markAsRead"
+                @toggle="toggleExpanded(notif.id)"
               />
             </div>
           </div>
@@ -120,7 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useNotificationsStore } from '@/stores/notificationsStore'
 import { SEVERITY_GROUPS, type NotificationCategory, type SeverityGroup, type AppNotification } from '@/types/notifications'
@@ -132,8 +134,13 @@ const store = useNotificationsStore()
 const open = ref(false)
 const activeTab = ref<'all' | 'unread' | 'action'>('all')
 const channelFilter = ref<'all' | NotificationCategory>('all')
+const expandedId = ref<string | null>(null)
 const containerRef = ref<HTMLElement | null>(null)
 const panelRef = ref<HTMLElement | null>(null)
+
+watch(open, isOpen => {
+  if (!isOpen) expandedId.value = null
+})
 
 const tabs = computed(() => [
   { key: 'all' as const, label: t('notifications.tabs.all'), count: store.notifications.length },
@@ -178,6 +185,15 @@ const unreadCount = computed(() => store.unreadCount)
 
 function markGroupRead(group: { items: AppNotification[] }) {
   store.markManyRead(group.items.filter(n => !n.read).map(n => n.id))
+}
+
+function toggleExpanded(id: string) {
+  expandedId.value = expandedId.value === id ? null : id
+}
+
+function dismissNotification(id: string) {
+  if (expandedId.value === id) expandedId.value = null
+  store.dismiss(id)
 }
 
 function clearAll() {

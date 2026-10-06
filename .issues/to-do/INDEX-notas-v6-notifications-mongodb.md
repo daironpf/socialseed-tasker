@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v6 — Épica: Sistema de Notificaciones Real en MongoDB, del modelo de datos y la API REST al stream en vivo y la integración del store)
 **Created:** 2026-10-04
-**Status:** DONE (5/5: #547, #548, #549, #550, #551) + follow-up DONE (#552)
+**Status:** DONE (5/5: #547, #548, #549, #550, #551) + follow-up DONE (#552, #553)
 
 > `notas.md` (v6) define las issues como [Issue #1]…[Issue #5]; interpretando la carpeta
 > `.issues/done/` el siguiente número libre era **#547** (máximo actual **#546**, cerrado en
@@ -51,6 +51,7 @@
 | #550 | Eventos en tiempo real de notificaciones vía SSE (`/notifications/stream`) | HIGH | feat / realtime | DONE (2026-10-04) | Issue #4 |
 | #551 | Integración del `notificationsStore` con la API real (`apiMode = real`) | HIGH | feat / integration | DONE (2026-10-05) | Issue #5 |
 | #552 | Onboarding de primera entrada tras instalar (2 notificaciones + probe de modo real + auto-login) | HIGH | feat / integration | DONE (2026-10-06) | Issue #3 (extendido) |
+| #553 | Detalle inline de notificaciones al hacer clic (panel + feed) | MEDIUM | feat / UX | DONE (2026-10-06) | follow-up de #551/#552 |
 
 > **#552 (follow-up):** el bug de primera entrada tras instalar (5 HITL de la demo mock en
 > lugar del onboarding) se diagnosticó como 3 causas encadenadas: default mock en navegador
@@ -59,6 +60,14 @@
 > Issue #3 de `notas.md` a **dos** notificaciones (bienvenida + "Define tus agentes en
 > Usuarios"), añade el probe de `/health` al arrancar, auto-login tras el wizard y la master
 > key como credenciales de LoginScreen. Fichero: `.issues/done/552-post-install-onboarding-first-entry.md`.
+
+> **#553 (follow-up):** reportado al probar el flujo de #552 — hacer clic en una notificación
+> no mostraba su detalle: el mensaje estaba truncado a 1 línea, el clic solo navegaba a
+> `linkTo` (sin leerse nunca el texto) y el feed del board ni siquiera tenía handler de clic.
+> Implementa expansión **inline** del mensaje completo (una fila abierta a la vez, marca leída,
+> botón "Abrir" con `linkTo`) en `NotificationItem` (panel) y `NotificationsFeed` (board);
+> HITL conserva su `HITLQuickActionModal`. Clave i18n `notifItem.open`. Fichero:
+> `.issues/done/553-notificacion-detalle-inline.md`.
 
 ---
 
@@ -111,6 +120,7 @@
 - [x] **#550** implemented — move to `.issues/done/`, `features.md` §18/§21
 - [x] **#551** implemented — move to `.issues/done/`, `features.md` §21/§22/§23
 - [x] **#552** implemented (follow-up de #549/#551) — fichero en `.issues/done/`, `notas.md` Issue #3 ampliado, `features.md` §21/§62/§69
+- [x] **#553** implemented (follow-up de #551/#552) — fichero en `.issues/done/`, `features.md` §57
 - [x] Each issue: gates backend (`ruff`/`mypy`/`pytest`), `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI
 - [x] Move issue file to `.issues/done/` with `Status: DONE` when complete
 - [ ] Commit message references `#NNN`

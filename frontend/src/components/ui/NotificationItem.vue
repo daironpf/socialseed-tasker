@@ -4,6 +4,7 @@
     :class="notification.read
       ? 'bg-gray-50/50 dark:bg-gray-800/50 border-l-transparent opacity-60'
       : 'bg-blue-50 dark:bg-blue-900/20 border-l-blue-500'"
+    :aria-expanded="expanded"
     @click="handleClick"
   >
     <div
@@ -25,10 +26,23 @@
           {{ t('notifications.action') }}
         </span>
       </div>
-      <p class="mt-0.5 truncate text-xs" :class="notification.read ? 'text-gray-500 dark:text-gray-400' : 'text-gray-600 dark:text-gray-300'">{{ notification.message }}</p>
+      <p class="mt-0.5 text-xs" :class="messageClass">{{ notification.message }}</p>
       <div class="mt-1 flex items-center gap-2">
         <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ timeAgo }}</span>
         <span v-if="!notification.read" class="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+      </div>
+      <div
+        v-if="expanded"
+        class="mt-2 flex items-center justify-between gap-2 border-t border-gray-200 pt-2 dark:border-gray-700"
+      >
+        <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ fullDate }}</span>
+        <button
+          v-if="notification.linkTo"
+          class="shrink-0 rounded-md bg-blue-600 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-blue-700"
+          @click.stop="openLink"
+        >
+          {{ t('notifItem.open') }}
+        </button>
       </div>
     </div>
 
@@ -56,11 +70,13 @@ const hitlStore = useHitlStore()
 
 const props = defineProps<{
   notification: AppNotification
+  expanded?: boolean
 }>()
 
 const emit = defineEmits<{
   dismiss: [id: string]
   markRead: [id: string]
+  toggle: []
 }>()
 
 const router = useRouter()
@@ -74,6 +90,14 @@ const categoryClasses = computed(() => {
   return base + config.value.color
 })
 
+const messageClass = computed(() => {
+  const overflow = props.expanded ? 'whitespace-pre-wrap break-words' : 'truncate'
+  const color = props.notification.read
+    ? 'text-gray-500 dark:text-gray-400'
+    : 'text-gray-600 dark:text-gray-300'
+  return `${overflow} ${color}`
+})
+
 const timeAgo = computed(() => {
   const diff = Date.now() - new Date(props.notification.createdAt).getTime()
   const mins = Math.floor(diff / 60000)
@@ -85,16 +109,19 @@ const timeAgo = computed(() => {
   return t('notifications.daysAgo', { count: days })
 })
 
+const fullDate = computed(() => new Date(props.notification.createdAt).toLocaleString())
+
 function handleClick() {
-  if (!props.notification.read) {
-    emit('markRead', props.notification.id)
-  }
   if (props.notification.hitlRequestId) {
+    if (!props.notification.read) emit('markRead', props.notification.id)
     hitlStore.openQuickAction(props.notification.hitlRequestId)
     return
   }
-  if (props.notification.linkTo) {
-    router.push(props.notification.linkTo)
-  }
+  emit('toggle')
+  if (!props.notification.read) emit('markRead', props.notification.id)
+}
+
+function openLink() {
+  if (props.notification.linkTo) router?.push(props.notification.linkTo)
 }
 </script>
