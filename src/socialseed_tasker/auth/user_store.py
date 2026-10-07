@@ -466,6 +466,97 @@ class PostgresUserStore:
                 raise
         return uid
 
+    def update_human_user(
+        self,
+        *,
+        user_id: str,
+        username: str | None = None,
+        email: str | None = None,
+        role_id: str | None = None,
+        avatar: str | None = None,
+        skills: list[str] | None = None,
+        github_handle: str | None = None,
+        preferences: str | None = None,
+        is_active: bool | None = None,
+    ) -> bool:
+        """Update ``users`` + ``human_user`` + ``user_skills`` atomically (#560).
+
+        ``None`` keeps the stored value; ``skills`` (when not ``None``) fully
+        replaces the skill links. The row is never deleted nor re-inserted, so
+        ``password_hash`` survives. Returns ``False`` when the identity row does
+        not exist (router maps it to 404) and raises ``ValueError("username"|
+        "email")`` on uniqueness conflicts against *other* users (409).
+        """
+        normalized = normalize_username(username) if username else None
+        with closing(psycopg.connect(self._database_url, autocommit=False)) as conn:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT user_type FROM users WHERE id = %s", (user_id,))
+                    if cur.fetchone() is None:
+                        conn.rollback()
+                        return False
+                    if username:
+                        cur.execute(
+                            "SELECT 1 FROM users WHERE username_normalized = %s AND id <> %s",
+                            (normalized, user_id),
+                        )
+                        if cur.fetchone():
+                            raise ValueError("username")
+                    if email:
+                        cur.execute(
+                            "SELECT 1 FROM human_user WHERE email = %s AND user_id <> %s",
+                            (email, user_id),
+                        )
+                        if cur.fetchone():
+                            raise ValueError("email")
+                    if username:
+                        cur.execute(
+                            "UPDATE users SET username = %s, username_normalized = %s WHERE id = %s",
+                            (username, normalized, user_id),
+                        )
+                    assignments = [
+                        (column, value)
+                        for column, value in (
+                            ("email", email),
+                            ("role_id", role_id),
+                            ("avatar", avatar),
+                            ("github_handle", github_handle),
+                            ("preferences", preferences),
+                            ("is_active", is_active),
+                        )
+                        if value is not None
+                    ]
+                    if assignments:
+                        columns = ", ".join(f"{column} = %s" for column, _ in assignments)
+                        values = tuple(value for _, value in assignments) + (user_id,)
+                        cur.execute(f"UPDATE human_user SET {columns} WHERE user_id = %s", values)
+                    if skills is not None:
+                        cur.execute("DELETE FROM user_skills WHERE user_id = %s", (user_id,))
+                        for name in skills:
+                            slug = skill_slug(name)
+                            if not slug:
+                                continue
+                            cur.execute(
+                                "INSERT INTO skills (id, name) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                                (slug, name),
+                            )
+                            cur.execute(
+                                "INSERT INTO user_skills (user_id, skill_id) VALUES (%s, %s) "
+                                "ON CONFLICT DO NOTHING",
+                                (user_id, slug),
+                            )
+                conn.commit()
+            except psycopg.errors.UniqueViolation as exc:
+                conn.rollback()
+                constraint = getattr(getattr(exc, "diag", None), "constraint_name", None) or ""
+                if "email" in constraint:
+                    raise ValueError("email") from exc
+                raise ValueError("username") from exc
+            except Exception:
+                conn.rollback()
+                raise
+        return True
+
     def upsert_user(
         self,
         *,

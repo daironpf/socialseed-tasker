@@ -24,15 +24,16 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
-  async function updateUser(id: string, data: Partial<User>): Promise<User | null> {
+  async function updateUser(id: string, data: Partial<User>): Promise<User> {
     try {
       const updated = await api.updateUser(id, data)
       const idx = users.value.findIndex(u => u.id === id)
       if (idx !== -1) users.value[idx] = updated
+      error.value = null
       return updated
     } catch (e) {
       error.value = (e as Error).message
-      return null
+      throw e
     }
   }
 

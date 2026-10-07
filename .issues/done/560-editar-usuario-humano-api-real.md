@@ -20,7 +20,34 @@ skills}` → `PUT /users/{id}`. En modo real está **ROTO**:
 Mock de referencia (`mockApi.updateUser` → `PUT /mock/users/:id`): devuelve la entidad
 completa actualizada y la tarjeta se re-renderiza intacta.
 
-## Status: TODO
+## Status: DONE (2026-10-07)
+
+**Resolución (2026-10-07):** Implementado. `UserUpdateRequest` ampliado con
+`type/avatar/skills/model/specialization/is_active` (todo opcional: `None` mantiene el
+valor, `skills` reemplaza los enlaces, `[]` los vacía). `PostgresUserStore.
+update_human_user` hace el UPDATE **transaccional**: pre-chequeos de unicidad
+(excluyendo al propio uid → reenviar username/email propio no choca), `UPDATE users`
+(username + `username_normalized`), `UPDATE human_user` con SET dinámico (email,
+`role_id`, avatar, `github_handle`, `preferences`, `is_active`; **`password_hash` jamás
+se toca**) y `DELETE` + re-insert de `user_skills`; `UniqueViolation` en carrera →
+`ValueError` → 409; uid inexistente → `False` → 404. Router: `type != 'human'` o fila
+`user_type='agent'` → **422** `/agents/profiles (#567)`, rol fuera de la tabla `roles` →
+**422** con detalle, lectura previa sin fila → **404**, proyección Neo4j `MERGE_USER`
+best-effort (añadido `u.email = $email` a `ON MATCH`), respuesta = relectura con el
+JOIN completo (**200**). Frontend: `usersApi.updateUser` normaliza con
+`normalizeBackendUser` + `suppressErrorToast`, `usersStore.updateUser` re-lanza el
+error (ya no devuelve `null`), `EditUserModal.visibleRoles` por modo (`isMockMode()`:
+mock → dataset, real → `ADMIN/DEVELOPER/VIEWER` con append de la opción actual #556),
+`UsersView.saveUser` con toast éxito `users.updated` + 409 → `usernameTaken`/
+`emailTaken` y 422/404 → `common.error` con detalle (i18n +1 → **1696/1696**).
+
+**Verificación:** `pytest` **1414 passed** (+8: 8 PUT /users) + los mismos 3
+preexistentes; `mypy` **1136**, `ruff` **1334** sin regresiones (touched = HEAD);
+frontend `lint` 0/2, `test` **315 (45 files)** (+3), `build` OK, i18n **1696/1696**;
+**12/12 contra PostgreSQL real** (docker efímero): username+normalized, perfil completo
+con `password_hash` intacto, reemplazo de skills, catálogo conservado, lectura por JOIN,
+auto-colisión permitida, duplicados ajenos → `ValueError`, uid inexistente → `False`,
+`skills=[]` vacía enlaces.
 
 ## Priority: HIGH
 
@@ -57,16 +84,18 @@ feat / fullstack
      `type:'human'`, avatar y los botones (regresión del bug de respuesta cruda).
 
 ## Acceptance Criteria
-- [ ] `PUT /users/{id}` persiste username/normalized en `users`, perfil+rol en `human_user`
+- [x] `PUT /users/{id}` persiste username/normalized en `users`, perfil+rol en `human_user`
       y skills en `user_skills`; devuelve la fila compuesta completa
-- [ ] 404 sin usuario, 409 username/email duplicado, 422 rol inválido (nunca 500)
-- [ ] Tras guardar desde el modal, la tarjeta NO pierde badge/avatar/skills/botones
-- [ ] El select de rol muestra `ADMIN/DEVELOPER/VIEWER` en modo real conservando la opción
+- [x] 404 sin usuario, 409 username/email duplicado, 422 rol inválido (nunca 500)
+- [x] Tras guardar desde el modal, la tarjeta NO pierde badge/avatar/skills/botones
+- [x] El select de rol muestra `ADMIN/DEVELOPER/VIEWER` en modo real conservando la opción
       actual si está fuera de la lista base (#556 `visibleRoles`)
-- [ ] Toast de éxito al guardar y de error con el detalle del backend en fallos
-- [ ] **Tests**: los 5 backend + spec `usersApi` + `UsersView.spec.ts` pasan
-- [ ] Gates: backend `ruff` 1011 / `mypy` 1153 / `pytest` 1331+3; frontend `lint` 0/2 /
-      `test` 306+ (44+ files) / `build` OK / i18n 1693+1 (`users.updated`) EN/ES
+- [x] Toast de éxito al guardar y de error con el detalle del backend en fallos
+- [x] **Tests**: los 5 backend + spec `usersApi` + `UsersView.spec.ts` pasan
+- [x] Gates: backend `ruff` **1334** (= baseline, touched = HEAD) / `mypy` **1136** /
+      `pytest` **1414 passed** (+8) + los mismos 3 preexistentes; frontend `lint` 0/2 /
+      `test` **315 (45 files)** (+3) / `build` OK / i18n **1696/1696**
+      (`users.updated` EN/ES); verificación extra: **12/12** contra PostgreSQL real
 
 ## Files to Create
 - `frontend/src/views/UsersView.spec.ts`

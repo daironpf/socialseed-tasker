@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import client from '@/api/client'
-import { createUser, fetchUsers } from '@/api/usersApi'
+import { createUser, fetchUsers, updateUser } from '@/api/usersApi'
 
 vi.mock('@/api/client', () => ({
   default: {
@@ -13,6 +13,7 @@ vi.mock('@/api/client', () => ({
 
 const mockedGet = client.get as unknown as ReturnType<typeof vi.fn>
 const mockedPost = client.post as unknown as ReturnType<typeof vi.fn>
+const mockedPut = client.put as unknown as ReturnType<typeof vi.fn>
 
 describe('usersApi', () => {
   beforeEach(() => {
@@ -214,6 +215,57 @@ describe('usersApi', () => {
       createUser({ username: 'admin', email: 'a@x.com', role: 'developer' }),
     ).rejects.toMatchObject({ status: 409, message: 'username already exists' })
     expect(mockedPost).toHaveBeenCalledWith('/users', expect.anything(), {
+      suppressErrorToast: true,
+    })
+  })
+
+  it('normalizes the updated user response so the card keeps badge/avatar/skills (issue #560)', async () => {
+    mockedPut.mockResolvedValue({
+      data: {
+        data: {
+          id: 'uid-ana',
+          username: 'ana-g',
+          email: 'ana@socialseed.com',
+          role: 'ADMIN',
+          type: 'human',
+          avatar: '🦊',
+          skills: ['python', 'vue'],
+          model: null,
+          specialization: null,
+          is_active: false,
+          github_handle: 'ana-gh',
+          preferences: 'dark',
+          created_at: '2026-10-01T08:00:00Z',
+          last_login: '2026-10-06T09:30:00Z',
+        },
+      },
+    })
+
+    const updated = await updateUser('uid-ana', { username: 'ana-g', role: 'ADMIN' })
+
+    expect(mockedPut).toHaveBeenCalledWith(
+      '/users/uid-ana',
+      expect.objectContaining({ username: 'ana-g' }),
+      { suppressErrorToast: true },
+    )
+    expect(updated.id).toBe('uid-ana')
+    expect(updated.type).toBe('human')
+    expect(updated.avatar).toBe('🦊')
+    expect(updated.skills).toEqual(['python', 'vue'])
+    expect(updated.role).toBe('ADMIN')
+    expect(updated.is_active).toBe(false)
+    expect(updated.last_active).toBe('2026-10-06T09:30:00Z')
+  })
+
+  it('propagates a 409 conflict from updateUser so the view can translate it (issue #560)', async () => {
+    const conflict = Object.assign(new Error('email already exists'), { status: 409 })
+    mockedPut.mockRejectedValue(conflict)
+
+    await expect(updateUser('uid-ana', { email: 'taken@x.com' })).rejects.toMatchObject({
+      status: 409,
+      message: 'email already exists',
+    })
+    expect(mockedPut).toHaveBeenCalledWith('/users/uid-ana', expect.anything(), {
       suppressErrorToast: true,
     })
   })

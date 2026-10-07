@@ -139,6 +139,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { isMockMode } from '@/api/client'
 import type { User } from '@/types'
 
 const { t } = useI18n()
@@ -165,10 +166,14 @@ const form = ref({
 const newSkill = ref('')
 
 const BASE_ROLES = ['lead-developer', 'developer', 'designer', 'manager', 'qa']
+const REAL_ROLES = ['ADMIN', 'DEVELOPER', 'VIEWER']
 
-const visibleRoles = computed(() =>
-  BASE_ROLES.includes(form.value.role) ? BASE_ROLES : [...BASE_ROLES, form.value.role],
-)
+// Real mode offers the seeded RBAC vocabulary; mock keeps the dataset roles.
+// The user's current role is appended when it falls outside the base list (#556).
+const visibleRoles = computed(() => {
+  const base = isMockMode() ? BASE_ROLES : REAL_ROLES
+  return base.includes(form.value.role) ? base : [...base, form.value.role]
+})
 
 function roleLabel(role: string): string {
   const labels: Record<string, string> = {

@@ -3,7 +3,7 @@
 **Source:** vista maquetada `frontend/src/views/UsersView.vue` + mock
 `frontend/dataset-de-pruebas/users.json` / `issues.json` + restricciones del usuario
 **Created:** 2026-10-07
-**Status:** IN PROGRESS (2/18) — #558 DONE 2026-10-07, #559 DONE 2026-10-07
+**Status:** IN PROGRESS (3/18) — #558 DONE 2026-10-07, #559 DONE 2026-10-07, #560 DONE 2026-10-07
 **Numeración:** #558–#575 (continúa tras #557 del índice v6)
 
 ---
@@ -137,7 +137,7 @@
 
 - [x] #558 esquema normalizado + `GET /users` con joins
 - [x] #559 crear usuario humano
-- [ ] #560 editar usuario humano
+- [x] #560 editar usuario humano
 - [ ] #561 rol efectivo en RBAC
 - [ ] #562 borrado en cascada
 - [ ] #563 credencial temporal
@@ -153,7 +153,7 @@
 - [ ] #573 migración de Agent Studio a la API
 - [ ] #574 histórico de ejecuciones (`agent_runs`/`agent_run_logs`)
 - [ ] #575 workflows (biblioteca + import `.md`)
-- [ ] Cada issue: gates backend (`ruff` 1011 / `mypy` 1153 / `pytest` 1331+3),
-      `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI
+- [ ] Cada issue: gates backend (`ruff` ≤ 1334 / `mypy` ≤ 1152 / `pytest` sin nuevas
+      fallas — 3 preexistentes), `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI
 - [ ] Mover fichero a `.issues/done/` con `Status: DONE` al implementarse
 - [ ] Commit message references `#NNN`

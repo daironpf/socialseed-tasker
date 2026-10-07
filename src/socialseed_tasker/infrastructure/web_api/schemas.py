@@ -952,11 +952,21 @@ class UserCreateRequest(BaseModel):
 
 
 class UserUpdateRequest(BaseModel):
-    """Request for updating a user."""
+    """Request for updating a human user (issue #560).
+
+    Every field is optional: ``None`` keeps the stored value, ``skills`` set
+    replaces the ``user_skills`` links (``[]`` clears them).
+    """
 
     username: str | None = None
     email: str | None = None
     role: str | None = None
+    type: str | None = None
+    avatar: str | None = None
+    skills: list[str] | None = None
+    model: str | None = None
+    specialization: str | None = None
+    is_active: bool | None = None
     github_handle: str | None = None
     preferences: str | None = None
 

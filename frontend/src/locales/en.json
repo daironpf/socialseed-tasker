@@ -342,7 +342,8 @@
     "viewerRole": "Viewer",
     "lastUserGuard": "Cannot delete the last system user",
     "usernameTaken": "That username is already taken",
-    "emailTaken": "That email is already registered"
+    "emailTaken": "That email is already registered",
+    "updated": "User updated successfully"
   },
   "graph": {
     "title": "Dependency Graph",

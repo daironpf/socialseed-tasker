@@ -451,8 +451,16 @@ async function saveUser(updatedUser: User) {
   try {
     await usersStore.updateUser(updatedUser.id, updatedUser)
     closeEditUser()
-  } catch {
-    toast.error(t('common.error'))
+    toast.success(t('users.updated'))
+  } catch (e) {
+    const err = e as Error & { status?: number }
+    if (err.status === 409) {
+      toast.error(t(err.message.includes('email') ? 'users.emailTaken' : 'users.usernameTaken'))
+    } else if (err.status === 422 || err.status === 404) {
+      toast.error(`${t('common.error')}: ${err.message}`)
+    } else {
+      toast.error(t('common.error'))
+    }
   }
 }
 

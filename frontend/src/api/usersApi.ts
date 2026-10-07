@@ -34,9 +34,12 @@ export async function fetchUsers(): Promise<User[]> {
 }
 
 export async function updateUser(userId: string, userData: Partial<User>): Promise<User> {
-  const { data } = await client.put<APIResponse<User>>(`/users/${userId}`, userData)
+  // The view translates 409/422 itself, so the generic interceptor toast is muted.
+  const { data } = await client.put<APIResponse<BackendUser>>(`/users/${userId}`, userData, {
+    suppressErrorToast: true,
+  })
   if (!data.data) throw new Error('Failed to update user')
-  return data.data
+  return normalizeBackendUser(data.data)
 }
 
 export interface UserCreateRequest {

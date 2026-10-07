@@ -285,44 +285,74 @@ def list_users(
 @user_router.put(
     "/users/{user_id}",
     response_model=APIResponse[UserResponse],
+    status_code=200,
     summary="Update user",
-    description="Update user properties.",
+    description="Update a human user across users/human_user/user_skills (issue #560).",
 )
 def update_user(
     user_id: str,
     body: UserUpdateRequest,
     driver: Any = Depends(get_code_graph_driver),
 ) -> APIResponse[UserResponse]:
-    """Update a user."""
-    if not driver:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=503, detail="Neo4j not connected")
-
-    from socialseed_tasker.infrastructure.neo4j_user_repository import UserRepository
-
-    repo = UserRepository(driver)
-
-    updates = {}
-    if body.username is not None:
-        updates["username"] = body.username
-    if body.email is not None:
-        updates["email"] = body.email
+    """Update a human user profile in PostgreSQL (issue #560)."""
+    if body.type is not None and normalize_user_type(body.type) != "human":
+        raise HTTPException(
+            status_code=422,
+            detail="only human users can be updated via PUT /users/{id} (agents: /agents/profiles, issue #567)",
+        )
+    store = _pg_store()
+    role_id = None
     if body.role is not None:
-        updates["role"] = body.role
-    if body.github_handle is not None:
-        updates["github_handle"] = body.github_handle
-    if body.preferences is not None:
-        updates["preferences"] = body.preferences
-
-    try:
-        user = repo.update_user(user_id, updates)
-    except ValueError:
-        from fastapi import HTTPException
-
+        roles = store.list_role_ids()
+        role_map = {role.upper(): role for role in roles}
+        role_key = body.role.strip().upper()
+        if role_key not in role_map:
+            raise HTTPException(
+                status_code=422,
+                detail=f"invalid role: {body.role!r} (expected one of {', '.join(roles)})",
+            )
+        role_id = role_map[role_key]
+    profile = _pg_repository().get_user(user_id)
+    if not profile:
         raise HTTPException(status_code=404, detail="User not found")
+    if profile.get("type") != "human":
+        raise HTTPException(
+            status_code=422,
+            detail="only human users can be updated via PUT /users/{id} (agents: /agents/profiles, issue #567)",
+        )
+    try:
+        updated = store.update_human_user(
+            user_id=user_id,
+            username=body.username,
+            email=body.email,
+            role_id=role_id,
+            avatar=body.avatar,
+            skills=body.skills,
+            github_handle=body.github_handle,
+            preferences=body.preferences,
+            is_active=body.is_active,
+        )
+    except ValueError as exc:
+        if str(exc) in {"username", "email"}:
+            raise HTTPException(status_code=409, detail=f"{exc} already exists") from exc
+        raise
+    if not updated:
+        raise HTTPException(status_code=404, detail="User not found")
+    if driver:
+        try:
+            from socialseed_tasker.infrastructure.neo4j_user_repository import UserRepository
 
-    return APIResponse(data=_user_to_response(user), meta=Meta(request_id=None))
+            UserRepository(driver).merge_user(
+                user_id,
+                body.username or str(profile["username"]),
+                body.email if body.email is not None else profile.get("email"),
+            )
+        except Exception as exc:  # noqa: BLE001 - projection is best effort (#560)
+            logger.warning("neo4j user projection update failed: %s", exc)
+    updated_profile = _pg_repository().get_user(user_id)
+    if not updated_profile:
+        raise HTTPException(status_code=500, detail="updated user could not be read back")
+    return APIResponse(data=_profile_to_response(updated_profile), meta=Meta(request_id=None))
 
 
 @user_router.delete(

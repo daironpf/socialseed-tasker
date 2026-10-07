@@ -930,7 +930,8 @@ ON CREATE SET
     u.role = 'DEVELOPER',
     u.createdAt = $created_at
 ON MATCH SET
-    u.username = $username
+    u.username = $username,
+    u.email = $email
 RETURN u
 """
 

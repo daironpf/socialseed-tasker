@@ -410,3 +410,174 @@ def test_post_users_route_is_not_shadowed_by_project_router():
     legacy_routes = _post_routes("/api/v1/projects/users")
     assert len(legacy_routes) == 1, "legacy project-link endpoint must stay reachable"
     assert legacy_routes[0].endpoint.__module__ == "socialseed_tasker.infrastructure.web_api.routers.project"
+
+
+# ---------------------------------------------------------------------------
+# PUT /users/{id} - update over the normalized schema (issue #560)
+# ---------------------------------------------------------------------------
+
+
+def _seed_user(
+    monkeypatch: pytest.MonkeyPatch,
+    cursor: FakePgCursor,
+    *,
+    username: str = "ana",
+    email: str = "ana@x.com",
+    role: str = "viewer",
+    skills: list[str] | None = None,
+) -> str:
+    response = user_router.create_user(
+        UserCreateRequest(
+            username=username,
+            email=email,
+            role=role,
+            avatar="🦊",
+            skills=skills or ["Vue"],
+        ),
+        driver=None,
+    )
+    assert response.data.id in cursor.users
+    return response.data.id
+
+
+def test_update_user_full_profile_persisted(monkeypatch: pytest.MonkeyPatch):
+    from socialseed_tasker.auth.user_store import normalize_username
+    from socialseed_tasker.infrastructure.web_api.schemas import UserUpdateRequest
+
+    cursor = FakePgCursor()
+    _install_create(monkeypatch, cursor)
+    uid = _seed_user(monkeypatch, cursor, skills=["Vue", "Go"])
+
+    response = user_router.update_user(
+        uid,
+        UserUpdateRequest(
+            username="Ana García",
+            email="ana.g@socialseed.com",
+            role="ADMIN",
+            avatar="🧑‍💻",
+            skills=["Python"],
+        ),
+        driver=None,
+    )
+
+    user = cursor.users[uid]
+    assert user["username"] == "Ana García"
+    assert user["username_normalized"] == normalize_username("Ana García")
+    human = cursor.human[uid]
+    assert human["email"] == "ana.g@socialseed.com"
+    assert human["role_id"] == "ADMIN"
+    assert human["avatar"] == "🧑‍💻"
+    assert human["password_hash"] == ""  # never touched (#560 notes)
+    assert cursor.user_skills[uid] == {"python"}  # full replacement, not a merge
+    assert response.data.username == "Ana García"
+    assert response.data.email == "ana.g@socialseed.com"
+    assert response.data.role == "ADMIN"
+    assert response.data.avatar == "🧑‍💻"
+    assert response.data.skills == ["Python"]
+    assert response.data.type == "human"
+
+
+def test_update_user_invalid_role_422(monkeypatch: pytest.MonkeyPatch):
+    from socialseed_tasker.infrastructure.web_api.schemas import UserUpdateRequest
+
+    cursor = FakePgCursor()
+    _install_create(monkeypatch, cursor)
+    uid = _seed_user(monkeypatch, cursor)
+
+    with pytest.raises(HTTPException) as exc:
+        user_router.update_user(uid, UserUpdateRequest(role="lead-developer"), driver=None)
+
+    assert exc.value.status_code == 422
+    assert "invalid role" in str(exc.value.detail)
+    assert "VIEWER" in str(exc.value.detail)
+    assert cursor.human[uid]["role_id"] == "VIEWER"  # untouched
+
+
+def test_update_user_not_found_404(monkeypatch: pytest.MonkeyPatch):
+    from socialseed_tasker.infrastructure.web_api.schemas import UserUpdateRequest
+
+    cursor = FakePgCursor()
+    _install_create(monkeypatch, cursor)
+
+    with pytest.raises(HTTPException) as exc:
+        user_router.update_user("ghost", UserUpdateRequest(username="x"), driver=None)
+
+    assert exc.value.status_code == 404
+    assert exc.value.detail == "User not found"
+    assert cursor.users == {}
+
+
+def test_update_user_duplicate_username_409(monkeypatch: pytest.MonkeyPatch):
+    from socialseed_tasker.infrastructure.web_api.schemas import UserUpdateRequest
+
+    cursor = FakePgCursor()
+    _install_create(monkeypatch, cursor)
+    _seed_user(monkeypatch, cursor, username="ana", email="ana@x.com")
+    uid_b = _seed_user(monkeypatch, cursor, username="bea", email="bea@x.com")
+
+    with pytest.raises(HTTPException) as exc:
+        user_router.update_user(uid_b, UserUpdateRequest(username="Ana"), driver=None)
+
+    assert exc.value.status_code == 409
+    assert exc.value.detail == "username already exists"
+    assert cursor.users[uid_b]["username"] == "bea"  # rollback kept the old value
+
+
+def test_update_user_duplicate_email_409(monkeypatch: pytest.MonkeyPatch):
+    from socialseed_tasker.infrastructure.web_api.schemas import UserUpdateRequest
+
+    cursor = FakePgCursor()
+    _install_create(monkeypatch, cursor)
+    _seed_user(monkeypatch, cursor, username="ana", email="ana@x.com")
+    uid_b = _seed_user(monkeypatch, cursor, username="bea", email="bea@x.com")
+
+    with pytest.raises(HTTPException) as exc:
+        user_router.update_user(uid_b, UserUpdateRequest(email="ana@x.com"), driver=None)
+
+    assert exc.value.status_code == 409
+    assert exc.value.detail == "email already exists"
+    assert cursor.human[uid_b]["email"] == "bea@x.com"
+
+
+def test_update_user_keeps_its_own_username_and_email(monkeypatch: pytest.MonkeyPatch):
+    """Re-submitting the user's own username/email must not collide (#560)."""
+    from socialseed_tasker.infrastructure.web_api.schemas import UserUpdateRequest
+
+    cursor = FakePgCursor()
+    _install_create(monkeypatch, cursor)
+    uid = _seed_user(monkeypatch, cursor, username="ana", email="ana@x.com")
+
+    response = user_router.update_user(
+        uid,
+        UserUpdateRequest(username="ana", email="ana@x.com", avatar="🧑‍💻"),
+        driver=None,
+    )
+
+    assert response.data.username == "ana"
+    assert cursor.human[uid]["avatar"] == "🧑‍💻"
+
+
+def test_update_user_rejects_agent_type_422(monkeypatch: pytest.MonkeyPatch):
+    from socialseed_tasker.infrastructure.web_api.schemas import UserUpdateRequest
+
+    cursor = FakePgCursor()
+    _install_create(monkeypatch, cursor)
+    uid = _seed_user(monkeypatch, cursor)
+
+    with pytest.raises(HTTPException) as exc:
+        user_router.update_user(uid, UserUpdateRequest(type="agent"), driver=None)
+
+    assert exc.value.status_code == 422
+    assert "/agents/profiles" in str(exc.value.detail)
+
+
+def test_update_user_without_database_url_returns_503(monkeypatch: pytest.MonkeyPatch):
+    from socialseed_tasker.infrastructure.web_api.schemas import UserUpdateRequest
+
+    monkeypatch.setattr(user_router, "get_database_url", lambda: None)
+
+    with pytest.raises(HTTPException) as exc:
+        user_router.update_user("uid-ana", UserUpdateRequest(username="x"), driver=None)
+
+    assert exc.value.status_code == 503
+    assert "TASKER_DATABASE_URL" in str(exc.value.detail)

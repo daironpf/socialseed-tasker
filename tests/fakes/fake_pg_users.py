@@ -228,10 +228,33 @@ class FakePgCursor:
             if row is None:
                 self.rowcount = 0
             else:
-                profile_keys = ("avatar", "github_handle", "preferences", "is_active")
-                for key, value in zip(profile_keys, params[:4], strict=False):
+                set_clause = low.split(" set ", 1)[1].split(" where ", 1)[0]
+                parts: list[str] = []
+                buf, depth = "", 0
+                for char in set_clause:
+                    if char == "(":
+                        depth += 1
+                    elif char == ")":
+                        depth -= 1
+                    if char == "," and depth == 0:
+                        parts.append(buf)
+                        buf = ""
+                    else:
+                        buf += char
+                parts.append(buf)
+                columns = [part.strip().split(" =", 1)[0] for part in parts]
+                for column, value in zip(columns, params[: len(params) - 1], strict=False):
                     if value is not None:
-                        row[key] = value
+                        row[column] = value
+                self.rowcount = 1
+        elif low.startswith("update users set"):
+            username, normalized, uid = tuple(params or ())
+            row = self.users.get(str(uid))
+            if row is None:
+                self.rowcount = 0
+            else:
+                row["username"] = username
+                row["username_normalized"] = normalized
                 self.rowcount = 1
         elif low.startswith("update agents_user"):
             uid = str(params[-1])
@@ -243,6 +266,11 @@ class FakePgCursor:
                     if value is not None:
                         row[key] = value
                 self.rowcount = 1
+        elif low.startswith("delete from user_skills"):
+            uid = str(params[0])
+            existed = bool(self.user_skills.get(uid))
+            self.user_skills.pop(uid, None)
+            self.rowcount = 1 if existed else 0
         elif low.startswith("delete from users"):
             uid = str(params[0])
             existed = uid in self.users
@@ -261,10 +289,34 @@ class FakePgCursor:
             row = self.users.get(uid)
             self._next = (row["user_type"],) if row else None
         elif low.startswith("select 1 from users where username_normalized"):
-            self._next = (1,) if self._normalized_username(str(params[0])) else None
+            # Update flows append `AND id <> %s` so a user keeps its own name (#560).
+            if len(tuple(params or ())) > 1:
+                normalized, uid = str(params[0]), str(params[1])
+                self._next = (
+                    (1,)
+                    if any(
+                        row["username_normalized"] == normalized and row["id"] != uid
+                        for row in self.users.values()
+                    )
+                    else None
+                )
+            else:
+                self._next = (1,) if self._normalized_username(str(params[0])) else None
         elif low.startswith("select 1 from human_user where email"):
-            email = str(params[0])
-            self._next = (1,) if any(row.get("email") == email for row in self.human.values()) else None
+            # Update flows append `AND user_id <> %s` so a user keeps its email (#560).
+            if len(tuple(params or ())) > 1:
+                email, uid = str(params[0]), str(params[1])
+                self._next = (
+                    (1,)
+                    if any(
+                        row.get("email") == email and row.get("user_id") != uid
+                        for row in self.human.values()
+                    )
+                    else None
+                )
+            else:
+                email = str(params[0])
+                self._next = (1,) if any(row.get("email") == email for row in self.human.values()) else None
         elif low.startswith("select id from roles"):
             self._rows = [(role_id,) for role_id, _ in sorted(self.roles.items(), key=lambda kv: -kv[1])]
         elif low.startswith("select username_normalized from users"):

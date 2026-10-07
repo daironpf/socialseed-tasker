@@ -342,7 +342,8 @@
     "viewerRole": "Observador",
     "lastUserGuard": "No se puede eliminar el ultimo usuario del sistema",
     "usernameTaken": "Ese nombre de usuario ya existe",
-    "emailTaken": "Ese correo ya está registrado"
+    "emailTaken": "Ese correo ya está registrado",
+    "updated": "Usuario actualizado correctamente"
   },
   "graph": {
     "title": "Grafo de Dependencias",
