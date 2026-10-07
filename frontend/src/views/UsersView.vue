@@ -162,9 +162,10 @@
               <button
                 v-if="user.type === 'human'"
                 @click="deleteUser(user)"
-                class="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400"
-                :title="t('users.deleteUser')"
-                :aria-label="t('users.deleteUser')"
+                :disabled="isLastHuman"
+                :title="isLastHuman ? t('users.lastUserGuard') : t('users.deleteUser')"
+                :aria-label="isLastHuman ? t('users.lastUserGuard') : t('users.deleteUser')"
+                class="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-red-600 dark:hover:bg-gray-700 dark:hover:text-red-400 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -318,6 +319,7 @@ const showCreateModal = ref(false)
 
 const humans = computed(() => usersStore.humans)
 const agents = computed(() => usersStore.agents)
+const isLastHuman = computed(() => humans.value.length <= 1)
 const allIssues = computed(() => issuesStore.issues)
 
 function getUserAssignedCount(userId: string): number {
@@ -343,6 +345,9 @@ const modalTitle = computed(() => {
 
 function formatRole(role: string): string {
   const roles: Record<string, string> = {
+    ADMIN: t('users.adminRole'),
+    DEVELOPER: t('users.developer'),
+    VIEWER: t('users.viewerRole'),
     'lead-developer': t('users.leadDeveloper'),
     'developer': t('users.developer'),
     'ai-agent': t('users.aiAgentRole'),
@@ -452,20 +457,14 @@ async function saveUser(updatedUser: User) {
 }
 
 async function deleteUser(user: User) {
-  try {
-    await usersStore.deleteUser(user.id)
-  } catch {
-    toast.error(t('common.error'))
-  }
+  const ok = await usersStore.deleteUser(user.id)
+  if (!ok) toast.error(t('common.error'))
 }
 
 async function deleteAgent(user: User) {
-  try {
-    await usersStore.deleteUser(user.id)
-    closeEditAgent()
-  } catch {
-    toast.error(t('common.error'))
-  }
+  const ok = await usersStore.deleteUser(user.id)
+  if (!ok) toast.error(t('common.error'))
+  closeEditAgent()
 }
 
 async function createUser(data: { username: string; email: string; role: string; type: string; avatar: string; skills: string[] }) {

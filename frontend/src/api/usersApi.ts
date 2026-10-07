@@ -2,9 +2,33 @@ import client from './client'
 import type { APIResponse, User } from '@/types'
 import { mergeStudioAgents } from '@/utils/studioAgents'
 
+type BackendUser = Partial<User> & {
+  email?: string | null
+  created_at?: string | null
+  last_login?: string | null
+}
+
+function normalizeBackendUser(raw: BackendUser): User {
+  return {
+    id: raw.id ?? '',
+    username: raw.username ?? '',
+    email: raw.email ?? '',
+    role: raw.role ?? 'DEVELOPER',
+    type: raw.type || 'human',
+    avatar: raw.avatar || '👤',
+    model: raw.model,
+    skills: raw.skills ?? [],
+    issues_assigned: raw.issues_assigned ?? 0,
+    issues_created: raw.issues_created ?? 0,
+    last_active: raw.last_active ?? raw.last_login ?? raw.created_at ?? new Date(0).toISOString(),
+    specialization: raw.specialization,
+    is_active: raw.is_active ?? true,
+  }
+}
+
 export async function fetchUsers(): Promise<User[]> {
-  const { data } = await client.get<APIResponse<User[]>>('/users')
-  return mergeStudioAgents(data.data || [])
+  const { data } = await client.get<APIResponse<BackendUser[]>>('/users')
+  return mergeStudioAgents((data.data || []).map(normalizeBackendUser))
 }
 
 export async function updateUser(userId: string, userData: Partial<User>): Promise<User> {

@@ -312,13 +312,15 @@ def delete_user(
 ) -> APIResponse[dict]:
     """Delete a user."""
     if not driver:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=503, detail="Neo4j not connected")
 
     from socialseed_tasker.infrastructure.neo4j_user_repository import UserRepository
 
     repo = UserRepository(driver)
+
+    if len(repo.list_users(limit=2)) <= 1:
+        raise HTTPException(status_code=409, detail="Cannot delete the last user")
+
     repo.delete_user(user_id)
 
     return APIResponse(data={"status": "deleted"}, meta=Meta(request_id=None))

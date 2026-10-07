@@ -337,7 +337,10 @@
     "qa": "QA",
     "humanBadge": "Human",
     "aiBadge": "AI",
-    "aiAgentRole": "AI Agent"
+    "aiAgentRole": "AI Agent",
+    "adminRole": "Admin",
+    "viewerRole": "Viewer",
+    "lastUserGuard": "Cannot delete the last system user"
   },
   "graph": {
     "title": "Dependency Graph",

@@ -60,11 +60,7 @@
             v-model="form.role"
             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           >
-            <option value="lead-developer">{{ t('users.leadDeveloper') }}</option>
-            <option value="developer">{{ t('users.developer') }}</option>
-            <option value="designer">{{ t('users.designer') }}</option>
-            <option value="manager">{{ t('users.manager') }}</option>
-            <option value="qa">{{ t('users.qa') }}</option>
+            <option v-for="role in visibleRoles" :key="role" :value="role">{{ roleLabel(role) }}</option>
           </select>
         </div>
 
@@ -141,7 +137,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { User } from '@/types'
 
@@ -167,6 +163,26 @@ const form = ref({
 })
 
 const newSkill = ref('')
+
+const BASE_ROLES = ['lead-developer', 'developer', 'designer', 'manager', 'qa']
+
+const visibleRoles = computed(() =>
+  BASE_ROLES.includes(form.value.role) ? BASE_ROLES : [...BASE_ROLES, form.value.role],
+)
+
+function roleLabel(role: string): string {
+  const labels: Record<string, string> = {
+    ADMIN: t('users.adminRole'),
+    DEVELOPER: t('users.developer'),
+    VIEWER: t('users.viewerRole'),
+    'lead-developer': t('users.leadDeveloper'),
+    developer: t('users.developer'),
+    designer: t('users.designer'),
+    manager: t('users.manager'),
+    qa: t('users.qa'),
+  }
+  return labels[role] || role
+}
 
 const avatarOptions = ['👤', '👩‍💻', '👨‍💻', '🧑‍💻', '👩‍🔬', '👨‍🔬', '👩‍🎨', '👨‍🎨', '👩‍💼', '👨‍💼', '🧑‍💼']
 

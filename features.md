@@ -374,12 +374,12 @@ Global mounts: `Sidebar`, `AppHeader`, `MobileDrawer`, `TeamTicker`, `CommandPal
 | Feature | Status | Details |
 |---|---|---|
 | **Stats row** | Implemented | 3 cards: Total Users, Humans (blue), AI Agents (purple) |
-| **User cards grid** | Implemented | Avatar, username, email, type badge, role, model, skills, stats |
+| **User cards grid** | Implemented | Avatar, username, email, type badge, role, model, skills, stats; in **real mode** the backend profile payload is normalized in `usersApi.fetchUsers` (`type`→`human`, `avatar`→👤, `skills`→`[]`, `email` null→`''`, `last_active`←`last_login`/`created_at`, `is_active`→true) so cards render edit/delete buttons, the Human badge, a valid date and count in the Humans stat — without it the admin card showed as locked with an AI badge (#556) |
 | **Create user** | Implemented | Modal: Username*, Email*, Role, Skills, Avatar picker (11 emojis) |
 | **Create agent** | Implemented | Modal: Username*, Email*, Model select (5 models), Specialization, Skills, Avatar (8 robot emojis) |
-| **Edit user/agent** | Implemented | Dedicated modals with pre-filled fields |
-| **Delete** | Implemented | Confirm dialog for users and agents |
-| i18n | Implemented | All labels translated |
+| **Edit user/agent** | Implemented | Dedicated modals with pre-filled fields; the role `<select>` appends the current role when it is outside the base options so `ADMIN`/`VIEWER` (real mode) never renders blank (#556) |
+| **Delete** | Implemented | Human cards disable the delete button while they are the **last human** (`humans.length <= 1`, tooltip `users.lastUserGuard`) — agents are always deletable, so the guard measures humans, not the list total; server-side the API answers **409 `Cannot delete the last user`** on `DELETE /users/{id}` when Neo4j holds a single profile, and store failures raise a toast (#556) |
+| i18n | Implemented | All labels translated; `users.adminRole`/`users.viewerRole`/`users.lastUserGuard` added for real-mode roles and the delete guard (#556) |
 
 ---
 
