@@ -12,19 +12,21 @@
     </main>
 
     <template v-else>
-      <Sidebar />
-      <div class="md:ml-20 flex flex-1 flex-col transition-all duration-300 pb-8">
-        <AppHeader @open-mobile-menu="mobileMenuOpen = true" />
-        <main id="main-content" tabindex="-1" class="flex-1 overflow-hidden focus:outline-none">
-          <RouterView />
-        </main>
-      </div>
-      <MobileDrawer :open="mobileMenuOpen" @close="mobileMenuOpen = false" />
-      <TeamTicker />
-      <CommandPalette ref="paletteRef" />
-      <KeyboardShortcutsHelp ref="shortcutsHelpRef" />
-      <FloatingChat @openFullChat="router.push('/chat')" />
       <LoginScreen v-if="showLogin" @logged-in="onLoggedIn" />
+      <template v-else>
+        <Sidebar />
+        <div class="md:ml-20 flex flex-1 flex-col transition-all duration-300 pb-8">
+          <AppHeader @open-mobile-menu="mobileMenuOpen = true" />
+          <main id="main-content" tabindex="-1" class="flex-1 overflow-hidden focus:outline-none">
+            <RouterView />
+          </main>
+        </div>
+        <MobileDrawer :open="mobileMenuOpen" @close="mobileMenuOpen = false" />
+        <TeamTicker />
+        <CommandPalette ref="paletteRef" />
+        <KeyboardShortcutsHelp ref="shortcutsHelpRef" />
+        <FloatingChat @openFullChat="router.push('/chat')" />
+      </template>
     </template>
 
     <ToastContainer />

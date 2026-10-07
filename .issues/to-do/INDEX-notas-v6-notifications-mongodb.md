@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v6 — Épica: Sistema de Notificaciones Real en MongoDB, del modelo de datos y la API REST al stream en vivo y la integración del store)
 **Created:** 2026-10-04
-**Status:** DONE (5/5: #547, #548, #549, #550, #551) + follow-up DONE (#552, #553, #554, #555, #556)
+**Status:** DONE (5/5: #547, #548, #549, #550, #551) + follow-up DONE (#552, #553, #554, #555, #556, #557)
 
 > `notas.md` (v6) define las issues como [Issue #1]…[Issue #5]; interpretando la carpeta
 > `.issues/done/` el siguiente número libre era **#547** (máximo actual **#546**, cerrado en
@@ -55,6 +55,7 @@
 | #554 | Login con usuario y contraseña en el LoginScreen (modo credentials por defecto) | MEDIUM | feat / UX | DONE (2026-10-06) | follow-up de #552 |
 | #555 | `tasker setup` reconstruye imágenes siempre (fix de despliegue obsoleto) | HIGH | bug fix / infra | DONE (2026-10-06) | follow-up de #542/#552 |
 | #556 | Vista de Usuarios en modo real: normalización de la tarjeta + guard del último usuario | HIGH | bug fix / UX | DONE (2026-10-06) | follow-up de #519/#526 |
+| #557 | Login en vista limpia (sin el proyecto visible detrás) | HIGH | bug fix / UX | DONE (2026-10-06) | follow-up de #554/#552 |
 
 > **#552 (follow-up):** el bug de primera entrada tras instalar (5 HITL de la demo mock en
 > lugar del onboarding) se diagnosticó como 3 causas encadenadas: default mock en navegador
@@ -95,6 +96,13 @@
 > `users.length` fallaría porque los agentes mantendrían la cuenta): disabled en frontend con
 > `humans.length <= 1` y **409** en `DELETE /users` del backend. Fichero:
 > `.issues/done/556-vista-usuarios-normalizacion-y-guard.md`.
+
+> **#557 (follow-up):** sin sesión, el LoginScreen se mostraba como ventana flotante **encima**
+> del shell completo — el guard deja navegar a `/board` sin sesión (`rolesAllowed(undefined) →
+> true`) y el board se montaba con datos detrás del overlay. Ahora `App.vue` renderiza el login
+> **en lugar del** shell (`RouterView` no monta → cero peticiones en background) con backdrop
+> sólido (`bg-white dark:bg-gray-900`); tras login exitoso el reload pinta el board. Fichero:
+> `.issues/done/557-login-vista-limpia.md`.
 
 ---
 
@@ -151,6 +159,7 @@
 - [x] **#554** implemented (follow-up de #552) — fichero en `.issues/done/`, `features.md` §64
 - [x] **#555** implemented (follow-up de #542/#552) — fichero en `.issues/done/`, `features.md` §69
 - [x] **#556** implemented (follow-up de #519/#526) — fichero en `.issues/done/`, `features.md` §11
+- [x] **#557** implemented (follow-up de #554/#552) — fichero en `.issues/done/`, `features.md` §64
 - [x] Each issue: gates backend (`ruff`/`mypy`/`pytest`), `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI
 - [x] Move issue file to `.issues/done/` with `Status: DONE` when complete
 - [ ] Commit message references `#NNN`

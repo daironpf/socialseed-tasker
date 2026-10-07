@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-gray-900">
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
       <h2 class="text-xl font-bold mb-4">{{ t('auth.login') }}</h2>
       <p class="text-gray-600 dark:text-gray-400 mb-4">
