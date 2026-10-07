@@ -302,6 +302,10 @@ class FakePgCursor:
                 )
             else:
                 self._next = (1,) if self._normalized_username(str(params[0])) else None
+        elif low.startswith("select 1 from human_user where user_id"):
+            # has_password(): role-change revocation only for credentialed rows (#561).
+            row = self.human.get(str(params[0]))
+            self._next = (1,) if row and row.get("password_hash") else None
         elif low.startswith("select 1 from human_user where email"):
             # Update flows append `AND user_id <> %s` so a user keeps its email (#560).
             if len(tuple(params or ())) > 1:

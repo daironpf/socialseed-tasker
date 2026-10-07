@@ -3,7 +3,7 @@
 **Source:** vista maquetada `frontend/src/views/UsersView.vue` + mock
 `frontend/dataset-de-pruebas/users.json` / `issues.json` + restricciones del usuario
 **Created:** 2026-10-07
-**Status:** IN PROGRESS (3/18) — #558 DONE 2026-10-07, #559 DONE 2026-10-07, #560 DONE 2026-10-07
+**Status:** IN PROGRESS (4/18) — #558 DONE 2026-10-07, #559 DONE 2026-10-07, #560 DONE 2026-10-07, #561 DONE 2026-10-07
 **Numeración:** #558–#575 (continúa tras #557 del índice v6)
 
 ---
@@ -138,7 +138,7 @@
 - [x] #558 esquema normalizado + `GET /users` con joins
 - [x] #559 crear usuario humano
 - [x] #560 editar usuario humano
-- [ ] #561 rol efectivo en RBAC
+- [x] #561 rol efectivo en RBAC
 - [ ] #562 borrado en cascada
 - [ ] #563 credencial temporal
 - [ ] #564 `/agents/profiles` CRUD

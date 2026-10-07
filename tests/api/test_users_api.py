@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
 
 from socialseed_tasker.infrastructure.web_api.routers import user as user_router
 from socialseed_tasker.infrastructure.web_api.schemas import UserCreateRequest, UserResponse
@@ -457,6 +458,7 @@ def test_update_user_full_profile_persisted(monkeypatch: pytest.MonkeyPatch):
             avatar="🧑‍💻",
             skills=["Python"],
         ),
+        request=MagicMock(),
         driver=None,
     )
 
@@ -485,7 +487,7 @@ def test_update_user_invalid_role_422(monkeypatch: pytest.MonkeyPatch):
     uid = _seed_user(monkeypatch, cursor)
 
     with pytest.raises(HTTPException) as exc:
-        user_router.update_user(uid, UserUpdateRequest(role="lead-developer"), driver=None)
+        user_router.update_user(uid, UserUpdateRequest(role="lead-developer"), request=MagicMock(), driver=None)
 
     assert exc.value.status_code == 422
     assert "invalid role" in str(exc.value.detail)
@@ -500,7 +502,7 @@ def test_update_user_not_found_404(monkeypatch: pytest.MonkeyPatch):
     _install_create(monkeypatch, cursor)
 
     with pytest.raises(HTTPException) as exc:
-        user_router.update_user("ghost", UserUpdateRequest(username="x"), driver=None)
+        user_router.update_user("ghost", UserUpdateRequest(username="x"), request=MagicMock(), driver=None)
 
     assert exc.value.status_code == 404
     assert exc.value.detail == "User not found"
@@ -516,7 +518,7 @@ def test_update_user_duplicate_username_409(monkeypatch: pytest.MonkeyPatch):
     uid_b = _seed_user(monkeypatch, cursor, username="bea", email="bea@x.com")
 
     with pytest.raises(HTTPException) as exc:
-        user_router.update_user(uid_b, UserUpdateRequest(username="Ana"), driver=None)
+        user_router.update_user(uid_b, UserUpdateRequest(username="Ana"), request=MagicMock(), driver=None)
 
     assert exc.value.status_code == 409
     assert exc.value.detail == "username already exists"
@@ -532,7 +534,7 @@ def test_update_user_duplicate_email_409(monkeypatch: pytest.MonkeyPatch):
     uid_b = _seed_user(monkeypatch, cursor, username="bea", email="bea@x.com")
 
     with pytest.raises(HTTPException) as exc:
-        user_router.update_user(uid_b, UserUpdateRequest(email="ana@x.com"), driver=None)
+        user_router.update_user(uid_b, UserUpdateRequest(email="ana@x.com"), request=MagicMock(), driver=None)
 
     assert exc.value.status_code == 409
     assert exc.value.detail == "email already exists"
@@ -550,6 +552,7 @@ def test_update_user_keeps_its_own_username_and_email(monkeypatch: pytest.Monkey
     response = user_router.update_user(
         uid,
         UserUpdateRequest(username="ana", email="ana@x.com", avatar="🧑‍💻"),
+        request=MagicMock(),
         driver=None,
     )
 
@@ -565,7 +568,7 @@ def test_update_user_rejects_agent_type_422(monkeypatch: pytest.MonkeyPatch):
     uid = _seed_user(monkeypatch, cursor)
 
     with pytest.raises(HTTPException) as exc:
-        user_router.update_user(uid, UserUpdateRequest(type="agent"), driver=None)
+        user_router.update_user(uid, UserUpdateRequest(type="agent"), request=MagicMock(), driver=None)
 
     assert exc.value.status_code == 422
     assert "/agents/profiles" in str(exc.value.detail)
@@ -577,7 +580,115 @@ def test_update_user_without_database_url_returns_503(monkeypatch: pytest.Monkey
     monkeypatch.setattr(user_router, "get_database_url", lambda: None)
 
     with pytest.raises(HTTPException) as exc:
-        user_router.update_user("uid-ana", UserUpdateRequest(username="x"), driver=None)
+        user_router.update_user("uid-ana", UserUpdateRequest(username="x"), request=MagicMock(), driver=None)
 
     assert exc.value.status_code == 503
     assert "TASKER_DATABASE_URL" in str(exc.value.detail)
+
+
+# ---------------------------------------------------------------------------
+# PUT /users/{id} - session revocation on role change (issue #561)
+# ---------------------------------------------------------------------------
+
+
+def _install_role_env(
+    monkeypatch: pytest.MonkeyPatch,
+    cursor: FakePgCursor,
+    password: str = "sesamo",
+) -> TestClient:
+    """Full app + fake PostgreSQL and a password login reading the fake credential (#561)."""
+    from socialseed_tasker.auth.user_store import normalize_username
+    from socialseed_tasker.infrastructure.web_api.app import create_app
+
+    _install_create(monkeypatch, cursor)
+    monkeypatch.setattr(
+        "socialseed_tasker.infrastructure.web_api.routers.auth.get_database_url",
+        lambda: "postgresql://fake",
+    )
+    monkeypatch.delenv("TASKER_AUTH_ENABLED", raising=False)
+    monkeypatch.delenv("TASKER_API_KEY", raising=False)
+    monkeypatch.delenv("TASKER_REDIS_URL", raising=False)
+
+    def _fake_authenticate(_url: str, username: str, candidate: str) -> dict | None:
+        normalized = normalize_username(username)
+        for row in cursor.users.values():
+            if row["username_normalized"] != normalized:
+                continue
+            human = cursor.human.get(row["id"], {})
+            if not human.get("password_hash") or candidate != password:
+                return None
+            return {
+                "id": row["id"],
+                "username": row["username"],
+                "email": human.get("email"),
+                "role": human.get("role_id"),
+                "type": row["user_type"],
+            }
+        return None
+
+    monkeypatch.setattr(
+        "socialseed_tasker.infrastructure.web_api.routers.auth.authenticate_user",
+        _fake_authenticate,
+    )
+    return TestClient(create_app())
+
+
+def _login(client: TestClient, username: str, password: str) -> dict:
+    resp = client.post("/api/v1/auth/login", json={"username": username, "password": password})
+    assert resp.status_code == 200, resp.text
+    return resp.json()
+
+
+def test_role_change_revokes_sessions_and_new_login_has_new_role(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    cursor = FakePgCursor()
+    client = _install_role_env(monkeypatch, cursor)
+    uid = _seed_user(monkeypatch, cursor, username="boss", email="boss@x.com", role="admin")
+    cursor.human[uid]["password_hash"] = "$2b$12$fakehash"  # credentialed user (#563 pendiente)
+
+    first = _login(client, "boss", "sesamo")
+    assert first["user"]["role"] == "ADMIN"
+    assert client.app.state.auth_sessions.backend == "memory"  # degrada sin Redis (#561)
+
+    put = client.put(f"/api/v1/users/{uid}", json={"role": "DEVELOPER"})
+    assert put.status_code == 200, put.text
+    assert cursor.human[uid]["role_id"] == "DEVELOPER"
+
+    stale_access = {"Authorization": f"Bearer {first['access_token']}"}
+    refresh = client.post("/api/v1/auth/refresh", json={"refresh_token": first["refresh_token"]})
+    assert refresh.status_code == 401  # sesion y jti revocadas
+    assert client.get("/api/v1/auth/me", headers=stale_access).status_code == 401
+
+    second = _login(client, "boss", "sesamo")
+    assert second["user"]["role"] == "DEVELOPER"
+    me = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {second['access_token']}"})
+    assert me.status_code == 200
+    assert me.json()["role"] == "DEVELOPER"
+
+
+def test_role_change_without_role_field_keeps_sessions(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    client = _install_role_env(monkeypatch, cursor)
+    uid = _seed_user(monkeypatch, cursor, username="bea", email="bea@x.com", role="viewer")
+    cursor.human[uid]["password_hash"] = "$2b$12$fakehash"
+
+    first = _login(client, "bea", "sesamo")
+    refresh_token = first["refresh_token"]
+
+    put_profile = client.put(f"/api/v1/users/{uid}", json={"avatar": "🧑‍💻"})
+    assert put_profile.status_code == 200, put_profile.text
+    rotated = client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_token})
+    assert rotated.status_code == 200  # solo perfil: no revoca nada
+
+    put_same_role = client.put(f"/api/v1/users/{uid}", json={"role": "viewer"})
+    assert put_same_role.status_code == 200, put_same_role.text
+    refresh_token = rotated.json()["refresh_token"]
+    rotated = client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_token})
+    assert rotated.status_code == 200  # rol con el mismo valor: no revoca
+
+    put_other_role = client.put(f"/api/v1/users/{uid}", json={"role": "DEVELOPER"})
+    assert put_other_role.status_code == 200, put_other_role.text
+    refresh_token = rotated.json()["refresh_token"]
+    rejected = client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_token})
+    assert rejected.status_code == 401  # cambio efectivo: si revoca

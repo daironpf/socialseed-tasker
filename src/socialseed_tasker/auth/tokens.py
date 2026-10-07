@@ -153,6 +153,16 @@ def revoke(refresh_token: str) -> None:
     _ACTIVE.get(claims.get("sub", ""), set()).discard(claims.get("jti"))
 
 
+def revoke_all_for_subject(sub: str) -> None:
+    """Drop every active refresh token of a subject (issue #561).
+
+    Used when an admin changes the user's role: the next refresh finds no
+    active ``jti`` (and no Redis session), so the client is forced back to the
+    login screen which issues a fresh JWT carrying the role now in PostgreSQL.
+    """
+    _ACTIVE.pop(sub, None)
+
+
 def peek(refresh_token: str) -> dict[str, Any] | None:
     """Validate signature/expiry of a refresh token without touching the active set."""
     claims = _decode(refresh_token)

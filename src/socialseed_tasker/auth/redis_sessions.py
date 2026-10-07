@@ -81,6 +81,28 @@ class AuthSessionStore:
                 self._degrade("delete", exc)
         self._memory_delete(key)
 
+    def delete_all_for_user(self, user_id: str) -> int:
+        """Revoke every session of a user (issue #561, role change).
+
+        Scans the ``session:{user_id}:*`` keyspace in Redis (no secondary index
+        needed) or, without Redis, sweeps the in-memory dict by prefix.
+        Returns the number of sessions removed.
+        """
+        prefix = f"{SESSION_PREFIX}:{user_id}:"
+        if self._client is not None:
+            try:
+                deleted = 0
+                for key in self._client.scan_iter(match=prefix + "*"):
+                    deleted += int(self._client.delete(key))
+                return deleted
+            except Exception as exc:
+                self._degrade("delete_all_for_user", exc)
+        with self._lock:
+            keys = [key for key in self._memory if key.startswith(prefix)]
+            for key in keys:
+                self._memory.pop(key, None)
+            return len(keys)
+
     def _degrade(self, operation: str, exc: Exception) -> None:
         logger.warning("redis session %s failed (%s); degrading to in-memory store", operation, exc)
         self._client = None

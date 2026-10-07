@@ -391,6 +391,20 @@ class PostgresUserStore:
             rows = cur.fetchall()
         return [str(row[0]) for row in rows]
 
+    def has_password(self, user_id: str) -> bool:
+        """True when the human row carries a bcrypt credential (issue #561).
+
+        Users created through ``POST /users`` have an empty ``password_hash``
+        until #563, so they have no password sessions to revoke on a role
+        change; only credential-bearing accounts trigger session revocation.
+        """
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM human_user WHERE user_id = %s AND password_hash <> ''",
+                (user_id,),
+            )
+            return cur.fetchone() is not None
+
     def create_human_user(
         self,
         *,

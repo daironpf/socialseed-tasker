@@ -17,6 +17,7 @@ from socialseed_tasker.application.analyzer import (
     RootCauseAnalyzer,
     TestFailure,
 )
+from socialseed_tasker.auth import tokens
 from socialseed_tasker.auth.user_store import PostgresUserStore, normalize_user_type
 from socialseed_tasker.config.storage import get_database_url
 from socialseed_tasker.infrastructure.pg_user_repository import PgUserRepository
@@ -163,7 +164,7 @@ def _pg_store() -> PostgresUserStore:
 
 
 def _profile_to_response(profile: dict[str, Any]) -> UserResponse:
-    """Convert a composed PostgreSQL profile dict into the API response."""
+    """Compose the API response from a composed PostgreSQL profile dict."""
     return UserResponse(
         id=str(profile["id"]),
         username=profile["username"],
@@ -180,6 +181,26 @@ def _profile_to_response(profile: dict[str, Any]) -> UserResponse:
         last_login=profile.get("last_login"),
         preferences=profile.get("preferences"),
     )
+
+
+def _revoke_user_sessions(request: Request, store: PostgresUserStore, user_id: str) -> None:
+    """Force a re-login after an effective role change (issue #561).
+
+    Revokes every Redis/Memory session of the subject plus its active refresh
+    JTIs, so the next refresh fails with 401 and the login screen issues a
+    JWT carrying the role now stored in PostgreSQL. Best effort: the PUT has
+    already succeeded, so any revocation failure is only logged. Users without
+    a bcrypt credential (#563 pending) have no password sessions to revoke.
+    """
+    try:
+        if not store.has_password(user_id):
+            return
+        tokens.revoke_all_for_subject(user_id)
+        sessions = getattr(request.app.state, "auth_sessions", None)
+        if sessions is not None:
+            sessions.delete_all_for_user(user_id)
+    except Exception as exc:  # noqa: BLE001 - revocation must never break the update
+        logger.warning("session revocation for user %s failed: %s", user_id, exc)
 
 
 @user_router.post(
@@ -292,6 +313,7 @@ def list_users(
 def update_user(
     user_id: str,
     body: UserUpdateRequest,
+    request: Request,
     driver: Any = Depends(get_code_graph_driver),
 ) -> APIResponse[UserResponse]:
     """Update a human user profile in PostgreSQL (issue #560)."""
@@ -338,6 +360,8 @@ def update_user(
         raise
     if not updated:
         raise HTTPException(status_code=404, detail="User not found")
+    if role_id is not None and str(profile.get("role") or "") != role_id:
+        _revoke_user_sessions(request, store, user_id)
     if driver:
         try:
             from socialseed_tasker.infrastructure.neo4j_user_repository import UserRepository

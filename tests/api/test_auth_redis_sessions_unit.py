@@ -83,6 +83,16 @@ class TestSessionStore:
         store.save("u1", "s1", {"a": 1}, -1)
         assert store.get("u1", "s1") is None
 
+    def test_delete_all_for_user_removes_only_that_users_sessions(self, store: AuthSessionStore) -> None:
+        store.save("u1", "s1", {"n": 1}, 60)
+        store.save("u1", "s2", {"n": 2}, 60)
+        store.save("u2", "s1", {"n": 3}, 60)
+        assert store.delete_all_for_user("u1") == 2
+        assert store.get("u1", "s1") is None
+        assert store.get("u1", "s2") is None
+        assert store.get("u2", "s1") == {"n": 3}
+        assert store.delete_all_for_user("u1") == 0
+
     def test_falls_back_to_memory_when_redis_is_unreachable(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("TASKER_REDIS_URL", raising=False)
         store = AuthSessionStore(redis_url="invalid://not-redis")
@@ -114,6 +124,12 @@ class TestSessionClaims:
         refresh = tokens.peek(pair["refresh_token"])
         assert access is not None and "sid" not in access
         assert refresh is not None and "sid" not in refresh
+
+    def test_revoke_all_for_subject_drops_active_refresh_tokens(self) -> None:
+        pair = tokens.issue_tokens({"id": "u-revoke", "username": "u-revoke", "role": "VIEWER"})
+        assert tokens.verify_refresh(pair["refresh_token"]) is not None
+        tokens.revoke_all_for_subject("u-revoke")
+        assert tokens.verify_refresh(pair["refresh_token"]) is None
 
 
 class TestAuthenticateUser:
