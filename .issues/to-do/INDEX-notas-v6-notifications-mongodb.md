@@ -163,3 +163,11 @@
 - [x] Each issue: gates backend (`ruff`/`mypy`/`pytest`), `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI
 - [x] Move issue file to `.issues/done/` with `Status: DONE` when complete
 - [ ] Commit message references `#NNN`
+
+---
+
+> **Continuidad:** el siguiente backlog vive en
+> `.issues/to-do/INDEX-v7-vista-usuarios-api-real.md` (issues **#558–#575**, continúa la
+> numeración tras #557; vista de Usuarios maquetada contra API real con **PostgreSQL como
+> raíz de usuarios y modelo normalizado por tablas** — catálogos, identidad, perfiles,
+> session_logs, agent_runs y workflows).
