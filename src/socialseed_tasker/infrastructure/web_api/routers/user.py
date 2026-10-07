@@ -17,6 +17,8 @@ from socialseed_tasker.application.analyzer import (
     RootCauseAnalyzer,
     TestFailure,
 )
+from socialseed_tasker.config.storage import get_database_url
+from socialseed_tasker.infrastructure.pg_user_repository import PgUserRepository
 from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
@@ -137,6 +139,37 @@ def _user_to_response(user: "User") -> "UserResponse":  # type: ignore[valid-typ
     )
 
 
+def _pg_repository() -> PgUserRepository:
+    """PostgreSQL repository for /users reads (issue #558)."""
+    database_url = get_database_url()
+    if not database_url:
+        raise HTTPException(
+            status_code=503,
+            detail="PostgreSQL not configured: TASKER_DATABASE_URL is not set",
+        )
+    return PgUserRepository(database_url)
+
+
+def _profile_to_response(profile: dict[str, Any]) -> UserResponse:
+    """Convert a composed PostgreSQL profile dict into the API response."""
+    return UserResponse(
+        id=str(profile["id"]),
+        username=profile["username"],
+        email=profile.get("email"),
+        role=profile["role"],
+        type=profile.get("type") or "human",
+        avatar=profile.get("avatar"),
+        skills=list(profile.get("skills") or []),
+        model=profile.get("model"),
+        specialization=profile.get("specialization"),
+        is_active=bool(profile.get("is_active", True)),
+        github_handle=profile.get("github_handle"),
+        created_at=profile.get("created_at"),
+        last_login=profile.get("last_login"),
+        preferences=profile.get("preferences"),
+    )
+
+
 @user_router.post(
     "/users",
     response_model=APIResponse[UserResponse],
@@ -177,27 +210,12 @@ def create_user(
     summary="Get user by ID",
     description="Get a user by their ID.",
 )
-def get_user(
-    user_id: str,
-    driver: Any = Depends(get_code_graph_driver),
-) -> APIResponse[UserResponse]:
-    """Get a user by ID."""
-    if not driver:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=503, detail="Neo4j not connected")
-
-    from socialseed_tasker.infrastructure.neo4j_user_repository import UserRepository
-
-    repo = UserRepository(driver)
-    user = repo.get_user(user_id)
-
-    if not user:
-        from fastapi import HTTPException
-
+def get_user(user_id: str) -> APIResponse[UserResponse]:
+    """Get a user by ID (PostgreSQL profile, issue #558)."""
+    profile = _pg_repository().get_user(user_id)
+    if not profile:
         raise HTTPException(status_code=404, detail="User not found")
-
-    return APIResponse(data=_user_to_response(user), meta=Meta(request_id=None))
+    return APIResponse(data=_profile_to_response(profile), meta=Meta(request_id=None))
 
 
 @user_router.get(
@@ -206,27 +224,12 @@ def get_user(
     summary="Get user by email",
     description="Get a user by their email address.",
 )
-def get_user_by_email(
-    email: str,
-    driver: Any = Depends(get_code_graph_driver),
-) -> APIResponse[UserResponse]:
-    """Get a user by email."""
-    if not driver:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=503, detail="Neo4j not connected")
-
-    from socialseed_tasker.infrastructure.neo4j_user_repository import UserRepository
-
-    repo = UserRepository(driver)
-    user = repo.get_user_by_email(email)
-
-    if not user:
-        from fastapi import HTTPException
-
+def get_user_by_email(email: str) -> APIResponse[UserResponse]:
+    """Get a user by email (PostgreSQL profile, issue #558)."""
+    profile = _pg_repository().get_user_by_email(email)
+    if not profile:
         raise HTTPException(status_code=404, detail="User not found")
-
-    return APIResponse(data=_user_to_response(user), meta=Meta(request_id=None))
+    return APIResponse(data=_profile_to_response(profile), meta=Meta(request_id=None))
 
 
 @user_router.get(
@@ -238,21 +241,11 @@ def get_user_by_email(
 def list_users(
     role: str | None = Query(None, description="Filter by role"),
     limit: int = Query(50, ge=1, le=100),
-    driver: Any = Depends(get_code_graph_driver),
 ) -> APIResponse[list[UserResponse]]:
-    """List users."""
-    if not driver:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=503, detail="Neo4j not connected")
-
-    from socialseed_tasker.infrastructure.neo4j_user_repository import UserRepository
-
-    repo = UserRepository(driver)
-    users = repo.list_users(role=role, limit=limit)
-
+    """List users from the PostgreSQL root (issue #558)."""
+    profiles = _pg_repository().list_users(role=role, limit=limit)
     return APIResponse(
-        data=[_user_to_response(u) for u in users],
+        data=[_profile_to_response(profile) for profile in profiles],
         meta=Meta(request_id=None),
     )
 
@@ -322,6 +315,15 @@ def delete_user(
         raise HTTPException(status_code=409, detail="Cannot delete the last user")
 
     repo.delete_user(user_id)
+
+    # Best-effort: also drop the PostgreSQL row so the view stays consistent (#558);
+    # failures are logged, the Neo4j guard above remains authoritative until #562.
+    database_url = get_database_url()
+    if database_url:
+        try:
+            PgUserRepository(database_url).delete_user_row(user_id)
+        except Exception as exc:
+            logger.warning("postgres row for user %s could not be deleted: %s", user_id, exc)
 
     return APIResponse(data={"status": "deleted"}, meta=Meta(request_id=None))
 

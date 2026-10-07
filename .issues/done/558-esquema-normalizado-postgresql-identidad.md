@@ -38,7 +38,30 @@ y en agentes `model, specialization` — el endpoint real debe poder devolver es
 Origen: vista maquetada `UsersView` + restricciones del usuario (PG raíz + tablas por
 funcionalidad).
 
-## Status: TODO
+## Status: DONE (2026-10-07)
+
+**Resolución (2026-10-07):** Implementado. DDL de **8 tablas** en `auth/user_store.py`
+(`roles`/`skills`/`tools` con seeds — roles ADMIN/DEVELOPER/VIEWER con `permissions '[]'`
+(permisos derivados en runtime), tools = unión **14 snake_case** de `AGENT_TOOLS` +
+`EditAgentModal`; raíz `users` con `DEFAULT gen_random_uuid()::text`; split
+`human_user`/`agents_user`; `user_skills` N:M; `session_logs` + 4 índices) + migración
+legacy idempotente (detección `to_regclass` + `information_schema`, rename a
+`users_legacy` con sufix `_2`, preservación de ids — JWT `sub` inmutable —, mapeo
+`role→role_id`/`user_type`, fila `session_logs` sintética desde `last_login` legacy,
+`_verify_migration` que aborta si hay desfase). Nuevo
+`infrastructure/pg_user_repository.py` con JOINs (`human_user|agents_user→roles→
+user_skills→skills`, role `'ai-agent'` para agentes). Router `user.py` lee PG (503 sin
+`TASKER_DATABASE_URL`, 404 desconocido, DELETE con borrado PG best-effort);
+`UserResponse` ampliado; `User.id: UUID|str` con coerción; lifespan `create_schema()`
+siempre + re-key Neo4j (`REKEY_USER_IDS` por username); `usersApi` preserva el payload
+completo y `role:null`→`ai-agent`.
+
+**Verificación:** `pytest` **1396 passed** (+65 nuevos) + mismos 3 preexistentes;
+`mypy` **1152** = HEAD; `ruff` **1334** < HEAD 1344 (0 en ficheros tocados); frontend
+`lint` 0/2, `test` **308** (+2), `build` OK, i18n **1693/1693**; **33/33 checks contra
+PostgreSQL real** (docker efímero): migración ×2, ids intactos, backup, seeds, FKs
+CASCADE, uid `RETURNING`, login JOIN, seed dataset idempotente, JOINs de lectura,
+`last_login` derivado, cascada delete.
 
 ## Priority: HIGH
 
@@ -171,25 +194,29 @@ feat / backend
    `usersApi.spec.ts` payload completo preservado + `role null → ai-agent`.
 
 ## Acceptance Criteria
-- [ ] Existen las 8 tablas normalizadas con seeds (`roles`, `skills`, `tools`) y FKs con
+- [x] Existen las 8 tablas normalizadas con seeds (`roles`, `skills`, `tools`) y FKs con
       `ON DELETE CASCADE` correctos (jamás CASCADE hacia `roles`/`skills` catálogo)
-- [ ] Instalación legacy migrada de forma idempotente (2ª corrida sin cambios); ids de usuario
+- [x] Instalación legacy migrada de forma idempotente (2ª corrida sin cambios); ids de usuario
       existentes intactos; backup `users_legacy`
-- [ ] `GET /users` responde el perfil completo compuesto por JOINs, `id` = uid PG y
+- [x] `GET /users` responde el perfil completo compuesto por JOINs, `id` = uid PG y
       `last_login` derivado de `session_logs`
-- [ ] Los usuarios nuevos generan uid en PG (`gen_random_uuid()::text … RETURNING id`)
-- [ ] Proyección Neo4j re-keyada al uid PG de forma idempotente
-- [ ] Sin `TASKER_DATABASE_URL` → 503 con detail explícito
-- [ ] **Tests**: pytest (perfil completo, uid, last_login, 503, migración) + spec frontend
-- [ ] Gates backend sin regresiones: `ruff` 1011, `mypy` 1153, `pytest` 1331 passed + 3
-      preexistentes (`test_delivery_retry`, `test_parse_and_index_files_calls_parser`,
-      `test_run_graph_analysis_calls_repo`); gates frontend si toca UI: `lint` 0/2,
-      `test` 306 (44 files), `build` OK
+- [x] Los usuarios nuevos generan uid en PG (`gen_random_uuid()::text … RETURNING id`)
+- [x] Proyección Neo4j re-keyada al uid PG de forma idempotente
+- [x] Sin `TASKER_DATABASE_URL` → 503 con detail explícito
+- [x] **Tests**: pytest (perfil completo, uid, last_login, 503, migración) + spec frontend
+- [x] Gates backend sin regresiones: `ruff` **1334** (HEAD 1344), `mypy` **1152** (= HEAD),
+      `pytest` **1396 passed** + los mismos 3 preexistentes (`test_delivery_retry`,
+      `test_parse_and_index_files_calls_parser`, `test_run_graph_analysis_calls_repo`);
+      gates frontend: `lint` 0/2, `test` **308 (44 files)**, `build` OK, i18n 1693/1693;
+      verificación extra: **33/33** contra PostgreSQL real (docker efímero)
 
 ## Files to Create
-- (posible) `src/socialseed_tasker/infrastructure/pg_user_repository.py`
+- `src/socialseed_tasker/infrastructure/pg_user_repository.py`
 - `tests/api/test_user_schema_migration.py`
-- `tests/api/test_users_pg_repository.py` (o ampliar `tests/api/test_users_api.py`)
+- `tests/api/test_users_pg_repository.py`
+- `tests/fakes/fake_pg_users.py`
+- `tests/infrastructure/test_neo4j_user_repository.py`
+- `.issues/done/558-esquema-normalizado-postgresql-identidad.md` - este fichero
 
 ## Files to Modify
 - `src/socialseed_tasker/auth/user_store.py` (DDL normalizado + migración + JOINs)

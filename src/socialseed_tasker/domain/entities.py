@@ -3,7 +3,7 @@ from enum import Enum
 from uuid import UUID, uuid4
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, AliasChoices
+from pydantic import BaseModel, ConfigDict, Field, AliasChoices, field_validator
 
 def _now():
     return datetime.now(timezone.utc)
@@ -43,7 +43,9 @@ class UserRole(str, Enum):
 
 class User(BaseModel):
     model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
-    id: UUID = Field(default_factory=uuid4)
+    # Canonical ids come from PostgreSQL (#558): usually a UUID, but deterministic
+    # uids like the wizard admin ('admin') are plain strings.
+    id: UUID | str = Field(default_factory=uuid4)
     username: str = Field(..., min_length=1)
     email: Optional[str] = None
     role: UserRole = UserRole.DEVELOPER
@@ -51,6 +53,16 @@ class User(BaseModel):
     created_at: datetime = Field(default_factory=_now)
     last_login: Optional[datetime] = None
     preferences: Optional[str] = None
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def _coerce_id(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            try:
+                return UUID(value)
+            except ValueError:
+                return value
+        return value
 
 from .value_objects import ReasoningContext
 

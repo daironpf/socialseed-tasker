@@ -92,6 +92,71 @@ describe('usersApi', () => {
     })
   })
 
+  it('preserves the full composed backend profile (issue #558)', async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: '55aa44bb-uuid-uid',
+            username: 'ana',
+            email: 'ana@socialseed.com',
+            role: 'VIEWER',
+            type: 'human',
+            avatar: '🦊',
+            skills: ['python', 'vue'],
+            model: null,
+            specialization: null,
+            is_active: false,
+            github_handle: 'ana-gh',
+            preferences: 'dark',
+            created_at: '2026-10-01T08:00:00Z',
+            last_login: '2026-10-06T09:30:00Z',
+          },
+        ],
+      },
+    })
+
+    const [ana] = await fetchUsers()
+
+    expect(ana.id).toBe('55aa44bb-uuid-uid')
+    expect(ana.role).toBe('VIEWER')
+    expect(ana.type).toBe('human')
+    expect(ana.avatar).toBe('🦊')
+    expect(ana.skills).toEqual(['python', 'vue'])
+    expect(ana.is_active).toBe(false)
+    expect(ana.last_active).toBe('2026-10-06T09:30:00Z')
+  })
+
+  it('maps a null role on agents to ai-agent (issue #558)', async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        data: [
+          {
+            id: 'uid-agent',
+            username: 'bot-qa',
+            email: 'bot@socialseed.com',
+            role: null,
+            type: 'agent',
+            avatar: '🤖',
+            skills: ['testing'],
+            model: 'gpt-4o',
+            specialization: 'qa',
+            is_active: true,
+            created_at: '2026-10-01T08:00:00Z',
+          },
+        ],
+      },
+    })
+
+    const [agent] = await fetchUsers()
+
+    expect(agent.role).toBe('ai-agent')
+    expect(agent.type).toBe('agent')
+    expect(agent.model).toBe('gpt-4o')
+    expect(agent.specialization).toBe('qa')
+    expect(agent.skills).toEqual(['testing'])
+  })
+
   it('returns an empty list when the envelope has no data', async () => {
     mockedGet.mockResolvedValue({ data: {} })
     await expect(fetchUsers()).resolves.toEqual([])

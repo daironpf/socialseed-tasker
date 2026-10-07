@@ -82,6 +82,33 @@ async def lifespan(app: FastAPI):
         except Exception as exc:
             logger.warning("auth seeding failed (continuing): %s", exc)
 
+    # Normalized PostgreSQL schema + Neo4j (:User) re-key to the canonical PG uid (issue #558):
+    # runs even for already-installed instances (seed above is skipped there) so legacy flat
+    # tables migrate before /users reads them. Best-effort: startup never fails on DB errors.
+    from socialseed_tasker.config.storage import get_database_url as _get_database_url
+
+    _database_url = _get_database_url()
+    if _database_url:
+        try:
+            from socialseed_tasker.auth.user_store import PostgresUserStore
+
+            PostgresUserStore(_database_url).create_schema()
+        except Exception as exc:
+            logger.warning("postgres schema bootstrap failed (continuing): %s", exc)
+        try:
+            from socialseed_tasker.infrastructure.neo4j_user_repository import UserRepository
+            from socialseed_tasker.infrastructure.pg_user_repository import PgUserRepository
+
+            _driver = getattr(app.state, "driver", None)
+            if _driver is not None:
+                _rekeyed = UserRepository(_driver).rekey_user_ids(
+                    PgUserRepository(_database_url).list_identity()
+                )
+                if _rekeyed:
+                    logger.info("neo4j user projection re-keyed: %s node(s)", _rekeyed)
+        except Exception as exc:
+            logger.warning("neo4j user projection reconcile skipped: %s", exc)
+
     mcp_session_manager = getattr(app.state, "mcp_session_manager", None)
 
     # Chat + notifications Mongo bootstrap (issues #537/#547): lazy client + idempotent

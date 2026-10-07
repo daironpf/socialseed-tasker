@@ -114,6 +114,17 @@ class TestPasswordHashing:
         assert verify_password("wrong", h) is False
 
 
+class FakeUserStoreWithProfile(FakeUserStore):
+    """Fake store also recording ``upsert_profile`` calls (issue #558)."""
+
+    def __init__(self, database_url: str | None = None) -> None:
+        super().__init__(database_url)
+        self.profiles: list[dict[str, Any]] = []
+
+    def upsert_profile(self, **profile: Any) -> None:
+        self.profiles.append(profile)
+
+
 class TestSeedUsers:
     def test_seeds_dataset_with_normalized_passwords(self, tmp_path: Path) -> None:
         users_file = _write_users_file(
@@ -127,6 +138,52 @@ class TestSeedUsers:
         assert store.rows["admin"]["username"] == "Admin"
         assert verify_password("admin", store.rows["admin"]["password_hash"]) is True
         assert verify_password("juan.perez", store.rows["juan.perez"]["password_hash"]) is True
+
+    def test_enriches_profile_when_store_supports_it(self, tmp_path: Path) -> None:
+        agent = {
+            "id": "agent-1",
+            "username": "bot-qa",
+            "email": "bot@socialseed.com",
+            "role": None,
+            "type": "agent",
+            "avatar": "🤖",
+            "skills": ["testing"],
+            "model": "gpt-4o",
+            "specialization": "qa",
+            "created_at": "2026-01-15T10:00:00Z",
+        }
+        human = _dataset_user("u1", "pedro")
+        users_file = _write_users_file(tmp_path / "users.json", [human, agent])
+        store = FakeUserStoreWithProfile()
+
+        stats = seed_users(store, users_file)
+
+        assert stats == {"total": 2, "created": 2, "existing": 0}
+        assert store.profiles == [
+            {
+                "user_id": "u1",
+                "avatar": None,
+                "skills": None,
+                "model": None,
+                "specialization": None,
+            },
+            {
+                "user_id": "agent-1",
+                "avatar": "🤖",
+                "skills": ["testing"],
+                "model": "gpt-4o",
+                "specialization": "qa",
+            },
+        ]
+
+    def test_does_not_touch_profile_for_existing_users(self, tmp_path: Path) -> None:
+        users_file = _write_users_file(tmp_path / "users.json", [_dataset_user("u1", "pedro")])
+        store = FakeUserStoreWithProfile()
+
+        seed_users(store, users_file)
+        seed_users(store, users_file)
+
+        assert len(store.profiles) == 1
 
     def test_seeding_is_idempotent(self, tmp_path: Path) -> None:
         users_file = _write_users_file(

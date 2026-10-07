@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
-from uuid import UUID
 
 from socialseed_tasker.domain.entities import User, UserRole
 from socialseed_tasker.infrastructure import neo4j_queries as queries
@@ -17,16 +16,31 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _parse_role(value: Any) -> UserRole:
+    """Tolerant role parsing: unknown/legacy values fall back to DEVELOPER (#558)."""
+    try:
+        return UserRole(str(value or "").strip().upper())
+    except ValueError:
+        return UserRole.DEVELOPER
+
+
 def _node_to_user(node: dict[str, Any]) -> User:
-    """Convert a Neo4j node to a domain User."""
+    """Convert a Neo4j node to a domain User.
+
+    Ids stay tolerant after the PG uid re-key (#558): canonical PostgreSQL uids
+    are not always UUIDs (e.g. the wizard admin ``id='admin'``), so non-UUID ids
+    are kept as plain strings instead of raising.
+    """
+    created_raw: Any = node.get("createdAt") or node.get("created_at")
+    login_raw: Any = node.get("lastLogin") or node.get("last_login")
     return User(
-        id=UUID(node["id"]),
+        id=node["id"],
         username=node["username"],
         email=node.get("email"),
-        role=UserRole(node.get("role", "developer")),
+        role=_parse_role(node.get("role")),
         github_handle=node.get("githubHandle") or node.get("github_handle"),
-        created_at=datetime.fromisoformat(node.get("createdAt") or node.get("created_at", datetime.now(timezone.utc).isoformat())),
-        last_login=datetime.fromisoformat(node.get("lastLogin") or node.get("last_login")) if node.get("lastLogin") or node.get("last_login") else None,
+        created_at=datetime.fromisoformat(created_raw) if created_raw else datetime.now(timezone.utc),
+        last_login=datetime.fromisoformat(login_raw) if login_raw else None,
         preferences=node.get("preferences"),
     )
 
@@ -112,6 +126,20 @@ class UserRepository:
                 id=user_id,
                 last_login=_now_iso(),
             )
+
+    def rekey_user_ids(self, pairs: list[tuple[str, str]]) -> int:
+        """Re-point ``(:User)`` nodes at the canonical PostgreSQL uid by username (#558).
+
+        Idempotent: nodes already carrying the target uid are skipped by the
+        ``WHERE u.id <> pair.id`` guard. Returns the number of updated nodes.
+        """
+        if not pairs:
+            return 0
+        payload = [{"username": username, "id": user_id} for username, user_id in pairs]
+        with self._get_session() as session:
+            result = session.run(queries.REKEY_USER_IDS, pairs=payload)
+            record = result.single()
+            return int(record["updated"]) if record else 0
 
     def link_user_to_project(self, user_id: str, project_id: str) -> None:
         """Create (User)-[:MANAGES]->(Project) relationship."""

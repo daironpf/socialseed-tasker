@@ -914,6 +914,14 @@ SET u.lastLogin = $lastLogin
 RETURN u
 """
 
+REKEY_USER_IDS = """
+UNWIND $pairs AS pair
+MATCH (u:User {username: pair.username})
+WHERE u.id <> pair.id
+SET u.id = pair.id
+RETURN count(u) AS updated
+"""
+
 USER_MANAGES_PROJECT = """
 MATCH (u:User {id: $user_id})
 MATCH (p:Project {id: $projectId})

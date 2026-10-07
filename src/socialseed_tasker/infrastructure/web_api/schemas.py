@@ -956,12 +956,18 @@ class UserUpdateRequest(BaseModel):
 
 
 class UserResponse(BaseModel):
-    """Response for user data."""
+    """Response for user data (composed PostgreSQL profile, issue #558)."""
 
     id: str
     username: str
     email: str | None = None
     role: str
+    type: str = "human"
+    avatar: str | None = None
+    skills: list[str] = Field(default_factory=list)
+    model: str | None = None
+    specialization: str | None = None
+    is_active: bool = True
     github_handle: str | None = None
     created_at: datetime | None = None
     last_login: datetime | None = None

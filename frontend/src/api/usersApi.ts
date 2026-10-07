@@ -4,17 +4,19 @@ import { mergeStudioAgents } from '@/utils/studioAgents'
 
 type BackendUser = Partial<User> & {
   email?: string | null
+  role?: string | null
   created_at?: string | null
   last_login?: string | null
 }
 
 function normalizeBackendUser(raw: BackendUser): User {
+  const type = raw.type || 'human'
   return {
     id: raw.id ?? '',
     username: raw.username ?? '',
     email: raw.email ?? '',
-    role: raw.role ?? 'DEVELOPER',
-    type: raw.type || 'human',
+    role: raw.role ?? (type === 'agent' ? 'ai-agent' : 'DEVELOPER'),
+    type,
     avatar: raw.avatar || '👤',
     model: raw.model,
     skills: raw.skills ?? [],
