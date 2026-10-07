@@ -383,3 +383,30 @@ def test_create_user_without_database_url_returns_503(monkeypatch: pytest.Monkey
 
     assert exc.value.status_code == 503
     assert "TASKER_DATABASE_URL" in str(exc.value.detail)
+
+
+def test_post_users_route_is_not_shadowed_by_project_router():
+    """``POST /api/v1/users`` must resolve to the PG create (#559).
+
+    ``project_router`` registers its routes before ``user_router``; the legacy
+    Neo4j project-link endpoint used to occupy ``POST /users`` and shadowed it
+    (found via live smoke of #559). It now lives at ``POST /projects/users``.
+    """
+    from socialseed_tasker.infrastructure.web_api.app import create_app
+
+    app = create_app()
+
+    def _post_routes(path: str) -> list:
+        return [
+            route
+            for route in app.routes
+            if getattr(route, "path", None) == path and "POST" in (getattr(route, "methods", None) or set())
+        ]
+
+    create_routes = _post_routes("/api/v1/users")
+    assert len(create_routes) == 1, f"POST /users shadowed or duplicated: {create_routes}"
+    assert create_routes[0].endpoint.__module__ == "socialseed_tasker.infrastructure.web_api.routers.user"
+
+    legacy_routes = _post_routes("/api/v1/projects/users")
+    assert len(legacy_routes) == 1, "legacy project-link endpoint must stay reachable"
+    assert legacy_routes[0].endpoint.__module__ == "socialseed_tasker.infrastructure.web_api.routers.project"

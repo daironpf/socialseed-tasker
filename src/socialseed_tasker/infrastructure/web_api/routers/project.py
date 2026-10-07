@@ -384,11 +384,13 @@ def create_project(
 
 
 @project_router.post(
-    "/users",
+    "/projects/users",
     response_model=APIResponse[dict],
     status_code=201,
-    summary="Create a new user",
-    description="Create a new user node in the graph and link to project.",
+    summary="Create a new user node and link it to a project",
+    description="Create a new user node in the graph and link to project. "
+    "Renamed from ``/users`` because it shadowed the PostgreSQL create endpoint "
+    "registered later by ``user_router`` (issue #559).",
 )
 def create_user(
     body: UserCreateRequest,

@@ -554,7 +554,7 @@ def interactive_init_command(
                                 "role": user_role,
                                 "github_handle": github_handle,
                             }
-                            res_user = httpx.post(f"{api_url}/api/v1/users?project_id={project_node_id}", json=user_data, timeout=5.0)
+                            res_user = httpx.post(f"{api_url}/api/v1/projects/users?project_id={project_node_id}", json=user_data, timeout=5.0)
                             if res_user.status_code in (200, 201):
                                 console.print("[success]User node created and linked to project successfully![/success]")
                             else:

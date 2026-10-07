@@ -51,6 +51,21 @@ preexistentes; `mypy` **1136** ≤ 1152 (anotado `_get_session -> Any` en el rep
 dup username/email → ValueError, FK `role_id` → rollback sin filas huérfanas,
 `list_role_ids`.
 
+**Fix posterior (mismo commit, hallazgo del smoke en despliegue):** el `POST /users`
+real estaba **sombreado** — `project_router` se registra antes que `user_router`
+(`app.py` 506 < 521) y su endpoint legacy de Neo4j `POST /users?project_id=` (crea
+nodo y lo liga al proyecto) capturaba la petición → 422 `query.project_id`. Renombrado
+el legacy a **`POST /api/v1/projects/users`** (único consumidor: `cli/init_command.py`,
+actualizado) y añadido test de ruteo `test_post_users_route_is_not_shadowed_by_project_router`.
+Smoke en despliegue real: **13/13** — legacy en `/projects/users` (422 sin
+`project_id`), create 201 con uid PG + perfil + skills del JOIN, 409×2, 422 rol,
+coherencia create↔listado, segundo create → DELETE 200 (guard Neo4j pasa con 2 nodos,
+fila PG eliminada), último usuario → 409. Gates de este fix: `pytest` **1406 passed**
++ los mismos 3 preexistentes, `mypy` **1136**, `ruff` sin regresiones (project.py
+20=20, init_command.py 62=62, tests 0). Nota de datos: `skills.name` en vivo es
+minúsculo (seed + dataset mock) — el JOIN de `PgUserRepository` devuelve ese nombre
+tal cual; sin regresión respecto a `GET /users`.
+
 ## Priority: HIGH
 
 ## Component

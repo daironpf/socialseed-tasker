@@ -25,6 +25,11 @@
 >   `id='admin'` vs nodo `f5dcf582-0cd2-48e6-a900-69d8bb3c5cda`) → `POST /users` → 500
 >   (`UserRole("developer")`, enum solo `ADMIN|DEVELOPER|VIEWER`), PUT descarta
 >   `avatar/skills` y rompe la tarjeta con la respuesta cruda, DELETE deja viva la fila PG.
+> - **Colisión de rutas corregida en #559:** `project_router` se registra antes que
+>   `user_router` y su endpoint legacy `POST /users?project_id=` (crea nodo Neo4j y lo liga
+>   al proyecto) **sombreaba** el alta PG con un 422 `query.project_id` → renombrado a
+>   **`POST /api/v1/projects/users`** (único consumidor `cli/init_command.py` actualizado) +
+>   test de ruteo. El guard «último usuario» del DELETE sigue mirando Neo4j → #562.
 > - **Agentes** = endpoint dedicado **`/agents/profiles`** (decisión del usuario); filas `users`
 >   `user_type='agent'` sin credencial ni `role_id` (el `ai-agent` del mock se deriva en el
 >   front por `type`) + `agents_user` con cascada. **Agent Studio se migra a la API en #573**
