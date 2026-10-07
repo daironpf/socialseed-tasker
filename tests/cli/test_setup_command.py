@@ -131,14 +131,14 @@ def test_setup_happy_path(tmp_path, monkeypatch, out):
     assert env_file.is_file()
     up = [c for c in calls if c["command"][:3] == ["docker", "compose", "up"]]
     assert len(up) == 1
-    assert up[0]["command"] == ["docker", "compose", "up", "-d"]
+    assert up[0]["command"] == ["docker", "compose", "up", "-d", "--build"]
     assert up[0]["cwd"] == str(tmp_path)
     assert up[0]["env"]["FRONTEND_PORT"] == "19001"
     assert "http://localhost:19001/setup" in out.getvalue()
     assert "Tasker services started" in out.getvalue()
 
 
-def test_setup_dev_rebuilds_images(tmp_path, monkeypatch):
+def test_setup_always_rebuilds_images(tmp_path, monkeypatch, out):
     (tmp_path / "docker-compose.yml").write_text("services: {}\n", encoding="utf-8")
     monkeypatch.chdir(tmp_path)
     calls = []
@@ -149,6 +149,7 @@ def test_setup_dev_rebuilds_images(tmp_path, monkeypatch):
                 setup_cmd.setup_command(port=19001, dev=True)
     up = [c for c in calls if c["command"][:3] == ["docker", "compose", "up"]]
     assert up[0]["command"] == ["docker", "compose", "up", "-d", "--build"]
+    assert "--dev' is deprecated" in out.getvalue()
 
 
 def test_setup_missing_compose_file(tmp_path, monkeypatch, out):

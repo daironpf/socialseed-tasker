@@ -2,7 +2,7 @@
 
 **Source:** `notas.md` (v6 — Épica: Sistema de Notificaciones Real en MongoDB, del modelo de datos y la API REST al stream en vivo y la integración del store)
 **Created:** 2026-10-04
-**Status:** DONE (5/5: #547, #548, #549, #550, #551) + follow-up DONE (#552, #553, #554)
+**Status:** DONE (5/5: #547, #548, #549, #550, #551) + follow-up DONE (#552, #553, #554, #555)
 
 > `notas.md` (v6) define las issues como [Issue #1]…[Issue #5]; interpretando la carpeta
 > `.issues/done/` el siguiente número libre era **#547** (máximo actual **#546**, cerrado en
@@ -53,6 +53,7 @@
 | #552 | Onboarding de primera entrada tras instalar (2 notificaciones + probe de modo real + auto-login) | HIGH | feat / integration | DONE (2026-10-06) | Issue #3 (extendido) |
 | #553 | Detalle inline de notificaciones al hacer clic (panel + feed) | MEDIUM | feat / UX | DONE (2026-10-06) | follow-up de #551/#552 |
 | #554 | Login con usuario y contraseña en el LoginScreen (modo credentials por defecto) | MEDIUM | feat / UX | DONE (2026-10-06) | follow-up de #552 |
+| #555 | `tasker setup` reconstruye imágenes siempre (fix de despliegue obsoleto) | HIGH | bug fix / infra | DONE (2026-10-06) | follow-up de #542/#552 |
 
 > **#552 (follow-up):** el bug de primera entrada tras instalar (5 HITL de la demo mock en
 > lugar del onboarding) se diagnosticó como 3 causas encadenadas: default mock en navegador
@@ -77,6 +78,13 @@
 > Implementa el modo **credentials por defecto** (usuario + clave → `loginWithCredentials`)
 > con conmutador al modo API key (master key #552 intacta) y OAuth sin cambios; 6 claves
 > `auth.*` EN/ES. Fichero: `.issues/done/554-login-usuario-clave-login-screen.md`.
+
+> **#555 (follow-up):** causa raíz del despliegue obsoleto que enmascaró #552/#553 —
+> `compose_up` solo pasaba `--build` con `--dev`, así que `tasker setup` normal horneaba
+> (reutilizaba) imágenes viejas: `tasker-board` sirvió un bundle de días atrás pese a que
+> el dist local ya estaba reconstruido. Ahora `docker compose up -d --build` es **siempre**
+> (caché de Docker), `--dev` queda deprecado pero aceptado; test que fija el comportamiento.
+> Fichero: `.issues/done/555-tasker-setup-rebuild-images.md`.
 
 ---
 
@@ -131,6 +139,7 @@
 - [x] **#552** implemented (follow-up de #549/#551) — fichero en `.issues/done/`, `notas.md` Issue #3 ampliado, `features.md` §21/§62/§69
 - [x] **#553** implemented (follow-up de #551/#552) — fichero en `.issues/done/`, `features.md` §57
 - [x] **#554** implemented (follow-up de #552) — fichero en `.issues/done/`, `features.md` §64
+- [x] **#555** implemented (follow-up de #542/#552) — fichero en `.issues/done/`, `features.md` §69
 - [x] Each issue: gates backend (`ruff`/`mypy`/`pytest`), `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI
 - [x] Move issue file to `.issues/done/` with `Status: DONE` when complete
 - [ ] Commit message references `#NNN`

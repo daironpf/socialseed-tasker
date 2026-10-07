@@ -143,11 +143,15 @@ def effective_frontend_port(env_path: Path, requested_port: int) -> int:
     return resolved
 
 
-def compose_up(compose_file: Path, frontend_port: int, dev: bool) -> None:
-    """Run `docker compose up -d` (rebuilding images when *dev* is set)."""
-    command = ["docker", "compose", "up", "-d"]
-    if dev:
-        command.append("--build")
+def compose_up(compose_file: Path, frontend_port: int) -> None:
+    """Run `docker compose up -d --build`.
+
+    Images are always rebuilt (issue #555): `tasker-board` bakes `frontend/dist`
+    and `tasker-api` bakes the source at build time, so a plain `up -d` reused
+    stale images and served old bundles after a code change. Docker's layer
+    cache keeps an unchanged rebuild to seconds.
+    """
+    command = ["docker", "compose", "up", "-d", "--build"]
     env = {**os.environ, "FRONTEND_PORT": str(frontend_port)}
     try:
         result = subprocess.run(command, cwd=str(compose_file.parent), env=env)
@@ -170,11 +174,13 @@ def setup_command(
     dev: bool = typer.Option(
         False,
         "--dev",
-        help="Rebuild local images before starting (development mode)",
+        help="Deprecated: images are always rebuilt now (kept for compatibility)",
     ),
 ) -> None:
     """Start the Tasker Docker stack and print the Setup Wizard URL."""
     console.print("[info]Setting up the Tasker stack...[/info]")
+    if dev:
+        console.print("[warning]'--dev' is deprecated: images are always rebuilt now.[/warning]")
     check_docker()
     compose_file = find_compose_file()
     if compose_file is None:
@@ -184,7 +190,7 @@ def setup_command(
     env_path = ensure_env_file(compose_file.parent, port)
     frontend_port = effective_frontend_port(env_path, port)
     console.print("[info]Starting services with Docker Compose...[/info]")
-    compose_up(compose_file, frontend_port, dev)
+    compose_up(compose_file, frontend_port)
     url = f"http://localhost:{frontend_port}/setup"
     console.print(Panel(f"[bold green]{url}[/bold green]", title="Setup Wizard"))
     console.print("[success]Tasker services started.[/success]")
