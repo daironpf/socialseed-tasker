@@ -922,6 +922,18 @@ SET u.id = pair.id
 RETURN count(u) AS updated
 """
 
+MERGE_USER = """
+MERGE (u:User {id: $id})
+ON CREATE SET
+    u.username = $username,
+    u.email = $email,
+    u.role = 'DEVELOPER',
+    u.createdAt = $created_at
+ON MATCH SET
+    u.username = $username
+RETURN u
+"""
+
 USER_MANAGES_PROJECT = """
 MATCH (u:User {id: $user_id})
 MATCH (p:Project {id: $projectId})

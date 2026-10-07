@@ -51,7 +51,7 @@ class UserRepository:
     def __init__(self, driver: Any) -> None:
         self._driver = driver
 
-    def _get_session(self):
+    def _get_session(self) -> Any:
         """Get Neo4j session."""
         if hasattr(self._driver, "driver"):
             return self._driver.driver.session(database=self._driver.database)
@@ -140,6 +140,25 @@ class UserRepository:
             result = session.run(queries.REKEY_USER_IDS, pairs=payload)
             record = result.single()
             return int(record["updated"]) if record else 0
+
+    def merge_user(self, user_id: str, username: str, email: str | None) -> int:
+        """Idempotently project a PostgreSQL uid into ``(:User)`` (issue #559).
+
+        The node is created with the canonical uid from birth so future
+        relations (#569) never need a re-key. Returns 1 on create/match.
+        """
+        if not user_id:
+            return 0
+        with self._get_session() as session:
+            result = session.run(
+                queries.MERGE_USER,
+                id=user_id,
+                username=username,
+                email=email,
+                created_at=_now_iso(),
+            )
+            record = result.single()
+            return 1 if record else 0
 
     def link_user_to_project(self, user_id: str, project_id: str) -> None:
         """Create (User)-[:MANAGES]->(Project) relationship."""

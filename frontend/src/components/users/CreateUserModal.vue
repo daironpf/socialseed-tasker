@@ -82,11 +82,7 @@
             v-model="form.role"
             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           >
-            <option value="lead-developer">{{ t('users.leadDeveloper') }}</option>
-            <option value="developer">{{ t('users.developer') }}</option>
-            <option value="designer">{{ t('users.designer') }}</option>
-            <option value="manager">{{ t('users.manager') }}</option>
-            <option value="qa">{{ t('users.qa') }}</option>
+            <option v-for="r in roleOptions" :key="r.value" :value="r.value">{{ r.label }}</option>
           </select>
         </div>
 
@@ -216,6 +212,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { isMockMode } from '@/api/client'
 
 const { t } = useI18n()
 
@@ -246,6 +243,23 @@ const newSkill = ref('')
 const humanAvatars = ['👤', '👩‍💻', '👨‍💻', '🧑‍💻', '👩‍🔬', '👨‍🔬', '👩‍🎨', '👨‍🎨', '👩‍💼', '👨‍💼', '🧑‍💼']
 const agentAvatars = ['🤖', '🧠', '⚡', '🔬', '🛡️', '🎯', '🔧', '📊']
 const currentAvatarOptions = computed(() => form.value.type === 'human' ? humanAvatars : agentAvatars)
+
+// Real mode offers the seeded RBAC vocabulary; mock keeps the dataset roles (#559).
+const roleOptions = computed(() =>
+  isMockMode()
+    ? [
+        { value: 'lead-developer', label: t('users.leadDeveloper') },
+        { value: 'developer', label: t('users.developer') },
+        { value: 'designer', label: t('users.designer') },
+        { value: 'manager', label: t('users.manager') },
+        { value: 'qa', label: t('users.qa') },
+      ]
+    : [
+        { value: 'admin', label: t('users.adminRole') },
+        { value: 'developer', label: t('users.developer') },
+        { value: 'viewer', label: t('users.viewerRole') },
+      ],
+)
 
 const modelOptions = [
   { id: 'claude-3.5-sonnet', name: 'Claude 3.5 Sonnet' },

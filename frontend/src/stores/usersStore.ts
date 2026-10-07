@@ -36,14 +36,15 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
-  async function createUser(body: api.UserCreateRequest): Promise<User | null> {
+  async function createUser(body: api.UserCreateRequest): Promise<User> {
     try {
       const user = await api.createUser(body)
+      error.value = null
       users.value.push(user)
       return user
     } catch (e) {
       error.value = (e as Error).message
-      return null
+      throw e
     }
   }
 

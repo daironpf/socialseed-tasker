@@ -340,7 +340,9 @@
     "aiAgentRole": "AI Agent",
     "adminRole": "Admin",
     "viewerRole": "Viewer",
-    "lastUserGuard": "Cannot delete the last system user"
+    "lastUserGuard": "Cannot delete the last system user",
+    "usernameTaken": "That username is already taken",
+    "emailTaken": "That email is already registered"
   },
   "graph": {
     "title": "Dependency Graph",

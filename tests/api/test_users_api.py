@@ -1,4 +1,5 @@
-"""Unit tests for the /users router: delete guard (#556) and PostgreSQL reads (#558)."""
+"""Unit tests for the /users router: delete guard (#556), PostgreSQL reads (#558)
+and human creation against the normalized schema (#559)."""
 
 from __future__ import annotations
 
@@ -9,7 +10,8 @@ import pytest
 from fastapi import HTTPException
 
 from socialseed_tasker.infrastructure.web_api.routers import user as user_router
-from socialseed_tasker.infrastructure.web_api.schemas import UserResponse
+from socialseed_tasker.infrastructure.web_api.schemas import UserCreateRequest, UserResponse
+from tests.fakes.fake_pg_users import FakePgCursor, install_fake_pg
 
 HUMAN_PROFILE = {
     "id": "uid-ana",
@@ -206,3 +208,178 @@ def test_delete_without_database_url_skips_postgresql(monkeypatch: pytest.Monkey
 
     assert response.data == {"status": "deleted"}
     pg_factory.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# POST /users - creation over the normalized schema (issue #559)
+# ---------------------------------------------------------------------------
+
+
+def _install_create(monkeypatch: pytest.MonkeyPatch, cursor: FakePgCursor) -> MagicMock:
+    """Route the store to the fake SQL and the read-back to composed profiles."""
+    install_fake_pg(monkeypatch, cursor)
+    monkeypatch.setattr(user_router, "get_database_url", lambda: "postgresql://fake")
+
+    def _read(uid: str) -> dict | None:
+        user = cursor.users.get(uid)
+        if not user:
+            return None
+        human = cursor.human.get(uid, {})
+        return {
+            "id": uid,
+            "username": user["username"],
+            "type": "human",
+            "email": human.get("email"),
+            "role": human.get("role_id", "DEVELOPER"),
+            "avatar": human.get("avatar"),
+            "skills": sorted(cursor.skills[s] for s in cursor.user_skills.get(uid, set())),
+            "model": None,
+            "specialization": None,
+            "is_active": human.get("is_active", True),
+            "github_handle": human.get("github_handle"),
+            "preferences": human.get("preferences"),
+            "created_at": None,
+            "last_login": None,
+        }
+
+    pg_repo = MagicMock()
+    pg_repo.get_user.side_effect = _read
+    monkeypatch.setattr(user_router, "PgUserRepository", MagicMock(return_value=pg_repo))
+    return pg_repo
+
+
+def test_create_user_201_returns_uid_and_profile(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install_create(monkeypatch, cursor)
+
+    response = user_router.create_user(
+        UserCreateRequest(
+            username="pedro",
+            email="pedro@socialseed.com",
+            role="developer",
+            avatar="🧑‍💻",
+            skills=["Vue"],
+        ),
+        driver=None,
+    )
+
+    assert len(cursor.users) == 1
+    uid = next(iter(cursor.users))
+    assert uid.startswith("pg-gen-"), uid
+    assert cursor.users[uid]["user_type"] == "human"
+    human = cursor.human[uid]
+    assert human["role_id"] == "DEVELOPER"
+    assert human["password_hash"] == ""
+    assert human["email"] == "pedro@socialseed.com"
+    assert human["avatar"] == "🧑‍💻"
+    assert response.data.id == uid
+    assert response.data.username == "pedro"
+    assert response.data.type == "human"
+    assert response.data.role == "DEVELOPER"
+    assert response.data.avatar == "🧑‍💻"
+    assert response.data.skills == ["Vue"]
+
+
+def test_create_user_persists_skills_in_user_skills(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install_create(monkeypatch, cursor)
+
+    response = user_router.create_user(
+        UserCreateRequest(username="ana", email="ana@x.com", role="VIEWER", skills=["Vue", "Python"]),
+        driver=None,
+    )
+
+    uid = response.data.id
+    assert cursor.skills == {"vue": "Vue", "python": "Python"}
+    assert cursor.user_skills[uid] == {"vue", "python"}
+    assert response.data.role == "VIEWER"
+    assert response.data.skills == ["Python", "Vue"]
+
+
+def test_create_user_duplicate_username_409(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    cursor.users["u1"] = {
+        "id": "u1",
+        "username": "pedro",
+        "username_normalized": "pedro",
+        "user_type": "human",
+        "created_at": None,
+    }
+    _install_create(monkeypatch, cursor)
+
+    with pytest.raises(HTTPException) as exc:
+        user_router.create_user(
+            UserCreateRequest(username="Pedro", email="other@x.com", role="developer"),
+            driver=None,
+        )
+
+    assert exc.value.status_code == 409
+    assert exc.value.detail == "username already exists"
+    assert len(cursor.users) == 1
+
+
+def test_create_user_duplicate_email_409(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    cursor.users["u1"] = {
+        "id": "u1",
+        "username": "other",
+        "username_normalized": "other",
+        "user_type": "human",
+        "created_at": None,
+    }
+    cursor.human["u1"] = {"user_id": "u1", "email": "taken@x.com"}
+    _install_create(monkeypatch, cursor)
+
+    with pytest.raises(HTTPException) as exc:
+        user_router.create_user(
+            UserCreateRequest(username="pedro", email="taken@x.com", role="developer"),
+            driver=None,
+        )
+
+    assert exc.value.status_code == 409
+    assert exc.value.detail == "email already exists"
+    assert len(cursor.users) == 1
+
+
+def test_create_user_invalid_role_422(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install_create(monkeypatch, cursor)
+
+    with pytest.raises(HTTPException) as exc:
+        user_router.create_user(
+            UserCreateRequest(username="pedro", email="pedro@x.com", role="lead-developer"),
+            driver=None,
+        )
+
+    assert exc.value.status_code == 422
+    assert "invalid role" in str(exc.value.detail)
+    assert "DEVELOPER" in str(exc.value.detail)
+    assert cursor.users == {}
+
+
+def test_create_user_rejects_agent_type_422(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install_create(monkeypatch, cursor)
+
+    with pytest.raises(HTTPException) as exc:
+        user_router.create_user(
+            UserCreateRequest(username="bot", email="bot@x.com", role="developer", type="agent"),
+            driver=None,
+        )
+
+    assert exc.value.status_code == 422
+    assert "/agents/profiles" in str(exc.value.detail)
+    assert cursor.users == {}
+
+
+def test_create_user_without_database_url_returns_503(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(user_router, "get_database_url", lambda: None)
+
+    with pytest.raises(HTTPException) as exc:
+        user_router.create_user(
+            UserCreateRequest(username="pedro", email="pedro@x.com", role="developer"),
+            driver=None,
+        )
+
+    assert exc.value.status_code == 503
+    assert "TASKER_DATABASE_URL" in str(exc.value.detail)

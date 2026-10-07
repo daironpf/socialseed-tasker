@@ -936,11 +936,17 @@ class ConstraintLoadResponse(BaseModel):
 
 
 class UserCreateRequest(BaseModel):
-    """Request for creating a user."""
+    """Request for creating a human user (issue #559)."""
 
     username: str = Field(..., min_length=1)
     email: str | None = None
     role: str = "developer"
+    type: str = "human"
+    avatar: str | None = None
+    skills: list[str] = Field(default_factory=list)
+    model: str | None = None
+    specialization: str | None = None
+    is_active: bool = True
     github_handle: str | None = None
     preferences: str | None = None
 

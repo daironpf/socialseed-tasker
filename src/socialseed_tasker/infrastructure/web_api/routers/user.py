@@ -17,6 +17,7 @@ from socialseed_tasker.application.analyzer import (
     RootCauseAnalyzer,
     TestFailure,
 )
+from socialseed_tasker.auth.user_store import PostgresUserStore, normalize_user_type
 from socialseed_tasker.config.storage import get_database_url
 from socialseed_tasker.infrastructure.pg_user_repository import PgUserRepository
 from socialseed_tasker.application.actions import (
@@ -150,6 +151,17 @@ def _pg_repository() -> PgUserRepository:
     return PgUserRepository(database_url)
 
 
+def _pg_store() -> PostgresUserStore:
+    """PostgreSQL store for /users writes (issue #559)."""
+    database_url = get_database_url()
+    if not database_url:
+        raise HTTPException(
+            status_code=503,
+            detail="PostgreSQL not configured: TASKER_DATABASE_URL is not set",
+        )
+    return PostgresUserStore(database_url)
+
+
 def _profile_to_response(profile: dict[str, Any]) -> UserResponse:
     """Convert a composed PostgreSQL profile dict into the API response."""
     return UserResponse(
@@ -173,35 +185,55 @@ def _profile_to_response(profile: dict[str, Any]) -> UserResponse:
 @user_router.post(
     "/users",
     response_model=APIResponse[UserResponse],
-    summary="Create a new user",
-    description="Create a new user in the system.",
+    status_code=201,
+    summary="Create a new human user",
+    description="Create a human user in the PostgreSQL root (issue #559).",
 )
 def create_user(
     body: UserCreateRequest,
     driver: Any = Depends(get_code_graph_driver),
 ) -> APIResponse[UserResponse]:
-    """Create a new user."""
-    if not driver:
-        from fastapi import HTTPException
+    """Create a human user across ``users``/``human_user``/``user_skills`` (#559)."""
+    if normalize_user_type(body.type) != "human":
+        raise HTTPException(
+            status_code=422,
+            detail="only human users can be created via POST /users (agents: /agents/profiles, issue #564)",
+        )
+    store = _pg_store()
+    roles = store.list_role_ids()
+    role_key = body.role.strip().upper()
+    role_map = {role.upper(): role for role in roles}
+    if role_key not in role_map:
+        raise HTTPException(
+            status_code=422,
+            detail=f"invalid role: {body.role!r} (expected one of {', '.join(roles)})",
+        )
+    try:
+        uid = store.create_human_user(
+            username=body.username,
+            email=body.email,
+            role_id=role_map[role_key],
+            avatar=body.avatar,
+            skills=body.skills,
+            is_active=body.is_active,
+            github_handle=body.github_handle,
+            preferences=body.preferences,
+        )
+    except ValueError as exc:
+        if str(exc) in {"username", "email"}:
+            raise HTTPException(status_code=409, detail=f"{exc} already exists") from exc
+        raise
+    if driver:
+        try:
+            from socialseed_tasker.infrastructure.neo4j_user_repository import UserRepository
 
-        raise HTTPException(status_code=503, detail="Neo4j not connected")
-
-    from socialseed_tasker.domain.entities import User, UserRole
-
-    user = User(
-        username=body.username,
-        email=body.email,
-        role=UserRole(body.role),
-        github_handle=body.github_handle,
-        preferences=body.preferences,
-    )
-
-    from socialseed_tasker.infrastructure.neo4j_user_repository import UserRepository
-
-    repo = UserRepository(driver)
-    repo.create_user(user)
-
-    return APIResponse(data=_user_to_response(user), meta=Meta(request_id=None))
+            UserRepository(driver).merge_user(uid, body.username, body.email)
+        except Exception as exc:  # noqa: BLE001 - projection is best effort (#559)
+            logger.warning("neo4j user projection merge failed: %s", exc)
+    profile = _pg_repository().get_user(uid)
+    if not profile:
+        raise HTTPException(status_code=500, detail="created user could not be read back")
+    return APIResponse(data=_profile_to_response(profile), meta=Meta(request_id=None))
 
 
 @user_router.get(

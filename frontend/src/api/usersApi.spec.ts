@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import client from '@/api/client'
-import { fetchUsers } from '@/api/usersApi'
+import { createUser, fetchUsers } from '@/api/usersApi'
 
 vi.mock('@/api/client', () => ({
   default: {
@@ -12,6 +12,7 @@ vi.mock('@/api/client', () => ({
 }))
 
 const mockedGet = client.get as unknown as ReturnType<typeof vi.fn>
+const mockedPost = client.post as unknown as ReturnType<typeof vi.fn>
 
 describe('usersApi', () => {
   beforeEach(() => {
@@ -160,5 +161,60 @@ describe('usersApi', () => {
   it('returns an empty list when the envelope has no data', async () => {
     mockedGet.mockResolvedValue({ data: {} })
     await expect(fetchUsers()).resolves.toEqual([])
+  })
+
+  it('normalizes the created user response (issue #559)', async () => {
+    mockedPost.mockResolvedValue({
+      data: {
+        data: {
+          id: 'pg-gen-1',
+          username: 'pedro',
+          email: 'pedro@socialseed.com',
+          role: 'DEVELOPER',
+          type: 'human',
+          avatar: '🧑‍💻',
+          skills: ['vue'],
+          model: null,
+          specialization: null,
+          is_active: true,
+          created_at: '2026-10-07T18:00:00Z',
+          last_login: null,
+        },
+      },
+    })
+
+    const created = await createUser({
+      username: 'pedro',
+      email: 'pedro@socialseed.com',
+      role: 'developer',
+      type: 'human',
+      avatar: '🧑‍💻',
+      skills: ['vue'],
+    })
+
+    expect(mockedPost).toHaveBeenCalledWith(
+      '/users',
+      expect.objectContaining({ username: 'pedro' }),
+      { suppressErrorToast: true },
+    )
+    expect(created.id).toBe('pg-gen-1')
+    expect(created.type).toBe('human')
+    expect(created.avatar).toBe('🧑‍💻')
+    expect(created.skills).toEqual(['vue'])
+    expect(created.role).toBe('DEVELOPER')
+    expect(created.last_active).toBe('2026-10-07T18:00:00Z')
+    expect(created.email).toBe('pedro@socialseed.com')
+  })
+
+  it('propagates a 409 conflict so the view can translate it (issue #559)', async () => {
+    const conflict = Object.assign(new Error('username already exists'), { status: 409 })
+    mockedPost.mockRejectedValue(conflict)
+
+    await expect(
+      createUser({ username: 'admin', email: 'a@x.com', role: 'developer' }),
+    ).rejects.toMatchObject({ status: 409, message: 'username already exists' })
+    expect(mockedPost).toHaveBeenCalledWith('/users', expect.anything(), {
+      suppressErrorToast: true,
+    })
   })
 })

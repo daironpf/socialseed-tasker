@@ -340,7 +340,9 @@
     "aiAgentRole": "Agente IA",
     "adminRole": "Administrador",
     "viewerRole": "Observador",
-    "lastUserGuard": "No se puede eliminar el ultimo usuario del sistema"
+    "lastUserGuard": "No se puede eliminar el ultimo usuario del sistema",
+    "usernameTaken": "Ese nombre de usuario ya existe",
+    "emailTaken": "Ese correo ya está registrado"
   },
   "graph": {
     "title": "Grafo de Dependencias",

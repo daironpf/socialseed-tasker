@@ -38,9 +38,17 @@ class FakePgConnection:
     def __init__(self, cursor: FakePgCursor) -> None:
         self._cursor = cursor
         self.closed = False
+        self.committed = False
+        self.rolled_back = False
 
     def cursor(self) -> FakePgCursor:
         return self._cursor
+
+    def commit(self) -> None:
+        self.committed = True
+
+    def rollback(self) -> None:
+        self.rolled_back = True
 
     def close(self) -> None:
         self.closed = True
@@ -61,6 +69,7 @@ class FakePgCursor:
         self.user_skills: dict[str, set[str]] = {}
         self.session_logs: list[tuple[str, str, Any]] = []
         self.legacy_rows: list[tuple[Any, ...]] = []
+        self.roles: dict[str, int] = {"ADMIN": 3, "DEVELOPER": 2, "VIEWER": 1}
         self.rowcount = 0
         self._next: Any = None
         self._rows: list[tuple[Any, ...]] = []
@@ -102,6 +111,8 @@ class FakePgCursor:
         self._rows = []
         self.rowcount = 0
 
+        if "insert into roles" in low and params:
+            self.roles[str(params[0])] = int(params[2]) if len(params) > 2 else 0
         if low.startswith("select to_regclass"):
             table = str(params[0])
             self._next = (table,) if table in self.tables else None
@@ -126,7 +137,10 @@ class FakePgCursor:
         elif low.startswith("insert into users"):
             values = tuple(params or ())
             returning = "returning id" in low
-            if returning:
+            if len(values) == 2:
+                username, normalized = values
+                user_type, created_at, uid = "human", None, None
+            elif returning:
                 username, normalized, user_type, created_at = values
                 uid = None
             else:
@@ -149,7 +163,15 @@ class FakePgCursor:
                 self.rowcount = 1
                 self._next = (str(uid),) if returning else None
         elif low.startswith("insert into human_user"):
-            uid, email, password_hash, role_id = tuple(params or ())
+            values = tuple(params or ())
+            if len(values) >= 7:
+                # create_human_user: password hash is the '' literal, not a param (#559)
+                uid, email, role_id, avatar, github_handle, preferences, is_active = values[:7]
+                password_hash = ""
+            else:
+                uid, email, password_hash, role_id = values
+                avatar = github_handle = preferences = None
+                is_active = True
             if uid in self.human:
                 self.rowcount = 0
             else:
@@ -158,10 +180,10 @@ class FakePgCursor:
                     "email": email,
                     "password_hash": password_hash,
                     "role_id": role_id,
-                    "avatar": None,
-                    "github_handle": None,
-                    "preferences": None,
-                    "is_active": True,
+                    "avatar": avatar,
+                    "github_handle": github_handle,
+                    "preferences": preferences,
+                    "is_active": is_active,
                 }
                 self.rowcount = 1
         elif low.startswith("insert into agents_user"):
@@ -238,6 +260,13 @@ class FakePgCursor:
             uid = str(params[0])
             row = self.users.get(uid)
             self._next = (row["user_type"],) if row else None
+        elif low.startswith("select 1 from users where username_normalized"):
+            self._next = (1,) if self._normalized_username(str(params[0])) else None
+        elif low.startswith("select 1 from human_user where email"):
+            email = str(params[0])
+            self._next = (1,) if any(row.get("email") == email for row in self.human.values()) else None
+        elif low.startswith("select id from roles"):
+            self._rows = [(role_id,) for role_id, _ in sorted(self.roles.items(), key=lambda kv: -kv[1])]
         elif low.startswith("select username_normalized from users"):
             self._rows = [(row["username_normalized"],) for row in self.users.values()]
         elif low.startswith("select username, id from users"):
@@ -263,6 +292,10 @@ class FakePgCursor:
         norm = " ".join(sql.split())
         self.statements.append((norm, None))
         self.executemany_statements.append((norm, list(params_list)))
+        if "insert into roles" in norm.lower():
+            for values in params_list:
+                if values:
+                    self.roles[str(values[0])] = int(values[2]) if len(values) > 2 else 0
         self.rowcount = len(params_list)
         self._next = None
         self._rows = []

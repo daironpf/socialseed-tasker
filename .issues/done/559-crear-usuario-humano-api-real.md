@@ -24,7 +24,32 @@ Con el esquema normalizado de **#558**, el alta toca **3 tablas**: `users` (iden
 Mock de referencia (`mockApi.createUser` + `users.json`): crea el usuario con el payload
 completo (type, avatar, skills, role) y aparece en la lista tal cual.
 
-## Status: TODO
+## Status: DONE (2026-10-07)
+
+**Resolución (2026-10-07):** Implementado. `UserCreateRequest` ampliado (`type/avatar/
+skills/model/specialization/is_active`; `role` default `"developer"` validado
+case-insensitive contra la tabla `roles` → **422** con el detalle de opciones;
+`type != 'human'` → **422** apuntando a `/agents/profiles`). `PostgresUserStore.
+create_human_user` hace la alta **transaccional** en `users` (uid `RETURNING id`) +
+`human_user` (`password_hash=''` hasta #563, `role_id` FK, avatar/is_active) +
+`skills`/`user_skills` (slug), con pre-checks de unicidad → `ValueError('username'|
+'email')` → **409** `username/email already exists` (y `UniqueViolation` en carrera
+mapeado igual); rollback en cualquier fallo (FK incluida). Router: 201 + lectura de
+vuelta con el JOIN completo, proyección Neo4j best-effort `MERGE (u:User {id: <uid>})`
+(`MERGE_USER` + `UserRepository.merge_user`, nodo nace con el uid PG) y 503 sin
+`TASKER_DATABASE_URL`. Frontend: select de rol por modo (`isMockMode()`: mock →
+vocabulario dataset, real → admin/developer/viewer con labels #556), `usersApi.createUser`
+aplica `normalizeBackendUser` + `suppressErrorToast`, store re-lanza el error y
+`UsersView` traduce 409 → `users.usernameTaken`/`users.emailTaken` y 422 →
+`common.error` + detalle (i18n EN/ES +2 → 1695/1695).
+
+**Verificación:** `pytest` **1405 passed** (+9: 7 POST /users + 2 merge) + mismos 3
+preexistentes; `mypy` **1136** ≤ 1152 (anotado `_get_session -> Any` en el repo Neo4j);
+`ruff` **1334** = estado #558 (user.py 7, tests nuevos 0); frontend `lint` 0/2,
+`test` **310** (+2), `build` OK, i18n **1695/1695**; **13/13 contra PostgreSQL real**
+(docker efímero): transacción 3 tablas, uid PG, skills enlazados, JOIN de lectura,
+dup username/email → ValueError, FK `role_id` → rollback sin filas huérfanas,
+`list_role_ids`.
 
 ## Priority: HIGH
 
@@ -67,20 +92,24 @@ feat / fullstack
      `type:'human'`, avatar/skills preservados) y propaga 409.
 
 ## Acceptance Criteria
-- [ ] `POST /users` crea `users` + `human_user` + `user_skills` con uid generado por PG y
+- [x] `POST /users` crea `users` + `human_user` + `user_skills` con uid generado por PG y
       devuelve 201 con la fila compuesta completa
-- [ ] Rol inválido → **422**; username o email duplicado → **409** (nunca 500)
-- [ ] El select del modal muestra `ADMIN/DEVELOPER/VIEWER` en modo real y el vocabulario mock
+- [x] Rol inválido → **422**; username o email duplicado → **409** (nunca 500)
+- [x] El select del modal muestra `ADMIN/DEVELOPER/VIEWER` en modo real y el vocabulario mock
       en mock
-- [ ] Tras crear, la tarjeta muestra badge Humano, avatar y skills reales (respuesta
+- [x] Tras crear, la tarjeta muestra badge Humano, avatar y skills reales (respuesta
       normalizada)
-- [ ] **Tests**: los 5 backend + 2 frontend listados pasan
-- [ ] Gates: backend `ruff` 1011 / `mypy` 1153 / `pytest` 1331+3; frontend `lint` 0/2 /
-      `test` 306 (44) / `build` OK / i18n 1693+2 (`users.usernameTaken`, `users.emailTaken`)
-      EN/ES
+- [x] **Tests**: los 5 backend + 2 frontend listados pasan
+- [x] Gates: backend `ruff` **1334** (= estado #558, sin regresiones) / `mypy` **1136**
+      (≤ 1152) / `pytest` **1405 passed** + los mismos 3 preexistentes (`test_delivery_retry`,
+      `test_parse_and_index_files_calls_parser`, `test_run_graph_analysis_calls_repo`);
+      frontend `lint` 0/2 / `test` **310 (44 files)** / `build` OK / i18n **1695/1695**
+      (`users.usernameTaken`, `users.emailTaken` EN/ES); verificación extra: **13/13**
+      contra PostgreSQL real (docker efímero)
 
 ## Files to Create
-- (ninguno nuevo obligatorio; specs pueden ampliar los existentes)
+- (ninguno nuevo; specs ampliados en los existentes)
+- `.issues/done/559-crear-usuario-humano-api-real.md` - este fichero
 
 ## Files to Modify
 - `src/socialseed_tasker/infrastructure/web_api/schemas.py` (`UserCreateRequest`)

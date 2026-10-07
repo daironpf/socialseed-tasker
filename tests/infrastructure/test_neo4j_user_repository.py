@@ -104,6 +104,28 @@ class TestRekeyUserIds:
         assert UserRepository(_SilentDriver()).rekey_user_ids([("admin", "admin")]) == 0
 
 
+class TestMergeUser:
+    def test_empty_uid_skips_the_graph(self) -> None:
+        driver = _FakeDriver()
+
+        assert UserRepository(driver).merge_user("", "pedro", "p@x.com") == 0
+        assert driver.session_calls == 0
+
+    def test_merges_by_canonical_uid(self) -> None:
+        driver = _FakeDriver(updated=1)
+
+        assert UserRepository(driver).merge_user("uid-new", "pedro", "p@x.com") == 1
+        session = driver._session
+        assert session is not None and session.closed is True
+        query, params = session.calls[0]
+        assert "MERGE (u:User {id: $id})" in query
+        assert "ON CREATE SET" in query
+        assert params["id"] == "uid-new"
+        assert params["username"] == "pedro"
+        assert params["email"] == "p@x.com"
+        assert params["created_at"]
+
+
 class TestParseRole:
     def test_canonical_roles_pass_through(self) -> None:
         assert _parse_role("ADMIN") is UserRole.ADMIN

@@ -471,8 +471,15 @@ async function createUser(data: { username: string; email: string; role: string;
   try {
     await usersStore.createUser(data)
     showCreateModal.value = false
-  } catch {
-    toast.error(t('common.error'))
+  } catch (e) {
+    const err = e as Error & { status?: number }
+    if (err.status === 409) {
+      toast.error(t(err.message.includes('email') ? 'users.emailTaken' : 'users.usernameTaken'))
+    } else if (err.status === 422) {
+      toast.error(`${t('common.error')}: ${err.message}`)
+    } else {
+      toast.error(t('common.error'))
+    }
   }
 }
 
