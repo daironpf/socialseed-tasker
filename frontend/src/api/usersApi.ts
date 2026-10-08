@@ -62,5 +62,6 @@ export async function createUser(userData: UserCreateRequest): Promise<User> {
 }
 
 export async function deleteUser(userId: string): Promise<void> {
-  await client.delete(`/users/${userId}`)
+  // The view shows the backend detail itself, so the generic interceptor toast is muted (#562).
+  await client.delete(`/users/${userId}`, { suppressErrorToast: true })
 }

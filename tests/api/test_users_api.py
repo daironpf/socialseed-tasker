@@ -4,7 +4,7 @@ and human creation against the normalized schema (#559)."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
@@ -55,28 +55,162 @@ def _fake_repo(users: list[object]) -> MagicMock:
     return repo
 
 
-def test_delete_last_user_is_rejected():
-    repo = _fake_repo([object()])
-    with patch(
-        "socialseed_tasker.infrastructure.neo4j_user_repository.UserRepository",
-        return_value=repo,
-    ), pytest.raises(HTTPException) as exc:
-        user_router.delete_user("admin-profile", driver=object())
+# ---------------------------------------------------------------------------
+# DELETE /users/{id} - root delete with cascade (issue #562)
+# ---------------------------------------------------------------------------
+
+
+def _install_delete(monkeypatch: pytest.MonkeyPatch, cursor: FakePgCursor) -> MagicMock:
+    """Profile reads come from the composed fake; guard/delete run real SQL on the fake cursor."""
+    from socialseed_tasker.infrastructure.pg_user_repository import PgUserRepository as RealPgRepository
+
+    pg_repo = _install_create(monkeypatch, cursor)
+    pg_repo.count_humans.side_effect = lambda: RealPgRepository("postgresql://fake").count_humans()
+    pg_repo.delete_user_row.side_effect = lambda uid: RealPgRepository("postgresql://fake").delete_user_row(uid)
+    return pg_repo
+
+
+async def test_delete_last_human_counts_postgres_and_returns_409(monkeypatch: pytest.MonkeyPatch):
+    """The guard counts humans in the PG root, not Neo4j (#562)."""
+    cursor = FakePgCursor()
+    _install_delete(monkeypatch, cursor)
+    uid = _seed_user(monkeypatch, cursor, username="ana", email="ana@x.com")
+
+    with pytest.raises(HTTPException) as exc:
+        await user_router.delete_user(uid, request=MagicMock(), driver=object())
+
     assert exc.value.status_code == 409
     assert exc.value.detail == "Cannot delete the last user"
-    repo.list_users.assert_called_once_with(limit=2)
-    repo.delete_user.assert_not_called()
+    assert uid in cursor.users  # nothing was deleted
 
 
-def test_delete_proceeds_when_other_users_remain():
-    repo = _fake_repo([object(), object()])
+async def test_delete_agent_skips_the_human_guard(monkeypatch: pytest.MonkeyPatch):
+    """Agents are not subject to the last-human guard (#562 notes)."""
+    cursor = FakePgCursor()
+    _install_delete(monkeypatch, cursor)
+    _seed_user(monkeypatch, cursor, username="ana", email="ana@x.com")  # the only human
+    cursor.users["uid-bot"] = {
+        "id": "uid-bot",
+        "username": "bot-qa",
+        "username_normalized": "bot.qa",
+        "user_type": "agent",
+        "created_at": None,
+    }
+    cursor.agents["uid-bot"] = {"user_id": "uid-bot", "email": "bot@x.com"}
+
     with patch(
         "socialseed_tasker.infrastructure.neo4j_user_repository.UserRepository",
-        return_value=repo,
+        return_value=_fake_repo([object(), object()]),
     ):
-        response = user_router.delete_user("user-1", driver=object())
-    repo.delete_user.assert_called_once_with("user-1")
+        response = await user_router.delete_user("uid-bot", request=MagicMock(), driver=object())
+
     assert response.data == {"status": "deleted"}
+    assert "uid-bot" not in cursor.users
+
+
+async def test_delete_user_removes_postgres_credential(monkeypatch: pytest.MonkeyPatch):
+    """After DELETE the row is gone and authenticate_user can no longer match it (#562)."""
+    from socialseed_tasker.auth.user_store import authenticate_user, hash_password
+
+    cursor = FakePgCursor()
+    _install_delete(monkeypatch, cursor)
+    _seed_user(monkeypatch, cursor, username="ana", email="ana@x.com")
+    uid = _seed_user(monkeypatch, cursor, username="boss", email="boss@x.com", role="admin")
+    cursor.human[uid]["password_hash"] = hash_password("sesamo")
+
+    before = authenticate_user("postgresql://fake", "boss", "sesamo")
+    assert before is not None and before["id"] == uid
+
+    with patch(
+        "socialseed_tasker.infrastructure.neo4j_user_repository.UserRepository",
+        return_value=_fake_repo([object(), object()]),
+    ):
+        response = await user_router.delete_user(uid, request=MagicMock(), driver=object())
+
+    assert response.data == {"status": "deleted"}
+    assert uid not in cursor.users
+    assert uid not in cursor.human
+    assert authenticate_user("postgresql://fake", "boss", "sesamo") is None
+
+
+async def test_delete_proceeds_when_other_users_remain(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install_delete(monkeypatch, cursor)
+    _seed_user(monkeypatch, cursor, username="ana", email="ana@x.com")
+    uid = _seed_user(monkeypatch, cursor, username="bea", email="bea@x.com")
+    neo4j_repo = _fake_repo([object(), object()])
+
+    with patch(
+        "socialseed_tasker.infrastructure.neo4j_user_repository.UserRepository",
+        return_value=neo4j_repo,
+    ):
+        response = await user_router.delete_user(uid, request=MagicMock(), driver=object())
+
+    assert response.data == {"status": "deleted"}
+    neo4j_repo.delete_user.assert_called_once_with(uid)
+    assert uid not in cursor.users  # root row really removed, not just logged
+
+
+async def test_delete_user_cleans_projections(monkeypatch: pytest.MonkeyPatch):
+    """Neo4j + Mongo cleanups are invoked and their failures never break the 200 (#562)."""
+    cursor = FakePgCursor()
+    _install_delete(monkeypatch, cursor)
+    _seed_user(monkeypatch, cursor, username="ana", email="ana@x.com")
+    uid = _seed_user(monkeypatch, cursor, username="bea", email="bea@x.com")
+    neo4j_repo = _fake_repo([object(), object()])
+    neo4j_repo.delete_user.side_effect = RuntimeError("neo4j down")
+    mongo_factory = MagicMock()
+    mongo_factory.return_value.clear_all = AsyncMock(side_effect=RuntimeError("mongo down"))
+    monkeypatch.setattr(user_router, "NotificationMongoRepository", mongo_factory)
+
+    with patch(
+        "socialseed_tasker.infrastructure.neo4j_user_repository.UserRepository",
+        return_value=neo4j_repo,
+    ):
+        response = await user_router.delete_user(uid, request=MagicMock(), driver=object())
+
+    assert response.data == {"status": "deleted"}
+    neo4j_repo.delete_user.assert_called_once_with(uid)
+    mongo_factory.return_value.clear_all.assert_awaited_once_with(uid)
+    assert uid not in cursor.users  # the root delete is the guaranteed effect
+
+
+async def test_delete_fails_when_postgresql_fails(monkeypatch: pytest.MonkeyPatch):
+    """The root delete is authoritative: a PG failure must not look like success (#562)."""
+    cursor = FakePgCursor()
+    pg_repo = _install_delete(monkeypatch, cursor)
+    _seed_user(monkeypatch, cursor, username="ana", email="ana@x.com")
+    uid = _seed_user(monkeypatch, cursor, username="bea", email="bea@x.com")
+    pg_repo.delete_user_row.side_effect = RuntimeError("connection refused")
+
+    with pytest.raises(HTTPException) as exc:
+        await user_router.delete_user(uid, request=MagicMock(), driver=None)
+
+    assert exc.value.status_code == 500
+    assert exc.value.detail == "PostgreSQL user delete failed"
+    assert uid in cursor.users
+
+
+async def test_delete_without_database_url_returns_503(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(user_router, "get_database_url", lambda: None)
+
+    with pytest.raises(HTTPException) as exc:
+        await user_router.delete_user("uid-ana", request=MagicMock(), driver=None)
+
+    assert exc.value.status_code == 503
+    assert "TASKER_DATABASE_URL" in str(exc.value.detail)
+
+
+async def test_delete_not_found_404(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install_delete(monkeypatch, cursor)
+    _seed_user(monkeypatch, cursor, username="ana", email="ana@x.com")
+
+    with pytest.raises(HTTPException) as exc:
+        await user_router.delete_user("ghost", request=MagicMock(), driver=object())
+
+    assert exc.value.status_code == 404
+    assert exc.value.detail == "User not found"
 
 
 def test_list_users_without_database_url_returns_503(monkeypatch: pytest.MonkeyPatch):
@@ -166,51 +300,6 @@ def test_get_user_by_email_returns_profile_or_404(monkeypatch: pytest.MonkeyPatc
     assert exc.value.status_code == 404
 
 
-def test_delete_also_removes_postgresql_row(monkeypatch: pytest.MonkeyPatch):
-    neo4j_repo = _fake_repo([object(), object()])
-    pg_repo = MagicMock()
-    monkeypatch.setattr(user_router, "get_database_url", lambda: "postgresql://fake")
-    monkeypatch.setattr(user_router, "PgUserRepository", MagicMock(return_value=pg_repo))
-    with patch(
-        "socialseed_tasker.infrastructure.neo4j_user_repository.UserRepository",
-        return_value=neo4j_repo,
-    ):
-        response = user_router.delete_user("uid-ana", driver=object())
-
-    assert response.data == {"status": "deleted"}
-    pg_repo.delete_user_row.assert_called_once_with("uid-ana")
-
-
-def test_delete_succeeds_when_postgresql_fails(monkeypatch: pytest.MonkeyPatch):
-    neo4j_repo = _fake_repo([object(), object()])
-    pg_repo = MagicMock()
-    pg_repo.delete_user_row.side_effect = RuntimeError("connection refused")
-    monkeypatch.setattr(user_router, "get_database_url", lambda: "postgresql://fake")
-    monkeypatch.setattr(user_router, "PgUserRepository", MagicMock(return_value=pg_repo))
-    with patch(
-        "socialseed_tasker.infrastructure.neo4j_user_repository.UserRepository",
-        return_value=neo4j_repo,
-    ):
-        response = user_router.delete_user("uid-ana", driver=object())
-
-    assert response.data == {"status": "deleted"}
-
-
-def test_delete_without_database_url_skips_postgresql(monkeypatch: pytest.MonkeyPatch):
-    neo4j_repo = _fake_repo([object(), object()])
-    pg_factory = MagicMock()
-    monkeypatch.setattr(user_router, "get_database_url", lambda: None)
-    monkeypatch.setattr(user_router, "PgUserRepository", pg_factory)
-    with patch(
-        "socialseed_tasker.infrastructure.neo4j_user_repository.UserRepository",
-        return_value=neo4j_repo,
-    ):
-        response = user_router.delete_user("uid-ana", driver=object())
-
-    assert response.data == {"status": "deleted"}
-    pg_factory.assert_not_called()
-
-
 # ---------------------------------------------------------------------------
 # POST /users - creation over the normalized schema (issue #559)
 # ---------------------------------------------------------------------------
@@ -229,7 +318,7 @@ def _install_create(monkeypatch: pytest.MonkeyPatch, cursor: FakePgCursor) -> Ma
         return {
             "id": uid,
             "username": user["username"],
-            "type": "human",
+            "type": user.get("user_type", "human"),
             "email": human.get("email"),
             "role": human.get("role_id", "DEVELOPER"),
             "avatar": human.get("avatar"),
@@ -600,7 +689,7 @@ def _install_role_env(
     from socialseed_tasker.auth.user_store import normalize_username
     from socialseed_tasker.infrastructure.web_api.app import create_app
 
-    _install_create(monkeypatch, cursor)
+    _install_delete(monkeypatch, cursor)
     monkeypatch.setattr(
         "socialseed_tasker.infrastructure.web_api.routers.auth.get_database_url",
         lambda: "postgresql://fake",
@@ -692,3 +781,28 @@ def test_role_change_without_role_field_keeps_sessions(monkeypatch: pytest.Monke
     refresh_token = rotated.json()["refresh_token"]
     rejected = client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_token})
     assert rejected.status_code == 401  # cambio efectivo: si revoca
+
+
+def test_delete_user_revokes_sessions(monkeypatch: pytest.MonkeyPatch):
+    """DELETE kills refresh and access for the uid, unconditionally (#562)."""
+    cursor = FakePgCursor()
+    client = _install_role_env(monkeypatch, cursor)
+    mongo_factory = MagicMock()
+    mongo_factory.return_value.clear_all = AsyncMock(return_value=1)
+    monkeypatch.setattr(user_router, "NotificationMongoRepository", mongo_factory)
+    _seed_user(monkeypatch, cursor, username="ana", email="ana@x.com")  # second human, guard passes
+    uid = _seed_user(monkeypatch, cursor, username="boss", email="boss@x.com", role="admin")
+    cursor.human[uid]["password_hash"] = "$2b$12$fakehash"
+
+    first = _login(client, "boss", "sesamo")
+    access = {"Authorization": f"Bearer {first['access_token']}"}
+    assert client.get("/api/v1/auth/me", headers=access).status_code == 200
+
+    deleted = client.delete(f"/api/v1/users/{uid}")
+    assert deleted.status_code == 200, deleted.text
+
+    refresh = client.post("/api/v1/auth/refresh", json={"refresh_token": first["refresh_token"]})
+    assert refresh.status_code == 401
+    assert client.get("/api/v1/auth/me", headers=access).status_code == 401
+    relogin = client.post("/api/v1/auth/login", json={"username": "boss", "password": "sesamo"})
+    assert relogin.status_code == 401  # credential row is gone too (#562)

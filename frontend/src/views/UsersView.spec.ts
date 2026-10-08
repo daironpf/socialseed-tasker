@@ -143,3 +143,41 @@ describe('UsersView edit flow (issue #560)', () => {
     expect(toastSuccess).not.toHaveBeenCalled()
   })
 })
+
+describe('UsersView delete flow (issue #562)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(usersApi.fetchUsers).mockResolvedValue([
+      makeHuman('uid-ana', 'ana'),
+      makeHuman('uid-bea', 'bea'),
+    ])
+    vi.mocked(usersApi.deleteUser).mockResolvedValue()
+    vi.mocked(issuesApi.fetchIssues).mockResolvedValue({
+      items: [],
+      pagination: { page: 1, limit: 200, total: 0, has_next: false, has_prev: false },
+    })
+  })
+
+  it('shows the backend detail when the delete fails', async () => {
+    vi.mocked(usersApi.deleteUser).mockRejectedValue(
+      Object.assign(new Error('Cannot delete the last user'), { status: 409 }),
+    )
+
+    const wrapper = await mountView()
+    await wrapper.findAll('button[aria-label="Delete user"]')[0].trigger('click')
+    await flushPromises()
+
+    expect(toastError).toHaveBeenCalledWith('Error: Cannot delete the last user')
+    expect(useUsersStore().users).toHaveLength(2) // untouched on failure
+  })
+
+  it('removes the card when the delete succeeds', async () => {
+    const wrapper = await mountView()
+    await wrapper.findAll('button[aria-label="Delete user"]')[0].trigger('click')
+    await flushPromises()
+
+    expect(usersApi.deleteUser).toHaveBeenCalledWith('uid-ana')
+    expect(useUsersStore().users).toHaveLength(1)
+    expect(toastError).not.toHaveBeenCalled()
+  })
+})

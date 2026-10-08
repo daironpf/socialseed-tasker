@@ -465,14 +465,22 @@ async function saveUser(updatedUser: User) {
 }
 
 async function deleteUser(user: User) {
-  const ok = await usersStore.deleteUser(user.id)
-  if (!ok) toast.error(t('common.error'))
+  try {
+    await usersStore.deleteUser(user.id)
+  } catch (e) {
+    const err = e as Error & { status?: number }
+    toast.error(err.message ? `${t('common.error')}: ${err.message}` : t('common.error'))
+  }
 }
 
 async function deleteAgent(user: User) {
-  const ok = await usersStore.deleteUser(user.id)
-  if (!ok) toast.error(t('common.error'))
-  closeEditAgent()
+  try {
+    await usersStore.deleteUser(user.id)
+    closeEditAgent()
+  } catch (e) {
+    const err = e as Error & { status?: number }
+    toast.error(err.message ? `${t('common.error')}: ${err.message}` : t('common.error'))
+  }
 }
 
 async function createUser(data: { username: string; email: string; role: string; type: string; avatar: string; skills: string[] }) {

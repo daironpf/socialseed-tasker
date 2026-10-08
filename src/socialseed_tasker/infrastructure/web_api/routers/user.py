@@ -20,6 +20,7 @@ from socialseed_tasker.application.analyzer import (
 from socialseed_tasker.auth import tokens
 from socialseed_tasker.auth.user_store import PostgresUserStore, normalize_user_type
 from socialseed_tasker.config.storage import get_database_url
+from socialseed_tasker.infrastructure.mongo.notification_repository import NotificationMongoRepository
 from socialseed_tasker.infrastructure.pg_user_repository import PgUserRepository
 from socialseed_tasker.application.actions import (
     CircularDependencyError,
@@ -383,34 +384,48 @@ def update_user(
     "/users/{user_id}",
     response_model=APIResponse[dict],
     summary="Delete user",
-    description="Delete a user from the system.",
+    description="Delete a user from the PostgreSQL root with best-effort cleanup of indexed data (issue #562).",
 )
-def delete_user(
+async def delete_user(
     user_id: str,
+    request: Request,
     driver: Any = Depends(get_code_graph_driver),
 ) -> APIResponse[dict]:
-    """Delete a user."""
-    if not driver:
-        raise HTTPException(status_code=503, detail="Neo4j not connected")
-
-    from socialseed_tasker.infrastructure.neo4j_user_repository import UserRepository
-
-    repo = UserRepository(driver)
-
-    if len(repo.list_users(limit=2)) <= 1:
+    """Delete a user from the PG root; projections/notifications degrade to logs (#562)."""
+    repository = _pg_repository()
+    profile = repository.get_user(user_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="User not found")
+    if profile.get("type") == "human" and repository.count_humans() <= 1:
         raise HTTPException(status_code=409, detail="Cannot delete the last user")
-
-    repo.delete_user(user_id)
-
-    # Best-effort: also drop the PostgreSQL row so the view stays consistent (#558);
-    # failures are logged, the Neo4j guard above remains authoritative until #562.
-    database_url = get_database_url()
-    if database_url:
+    try:
+        deleted = repository.delete_user_row(user_id)
+    except Exception as exc:  # noqa: BLE001 - the root delete must never look successful
+        raise HTTPException(status_code=500, detail="PostgreSQL user delete failed") from exc
+    if not deleted:
+        raise HTTPException(status_code=404, detail="User not found")
+    # A deleted uid keeps no open session (issue #562, revocation from #561).
+    try:
+        tokens.revoke_all_for_subject(user_id)
+        sessions = getattr(request.app.state, "auth_sessions", None)
+        if sessions is not None:
+            sessions.delete_all_for_user(user_id)
+    except Exception as exc:  # noqa: BLE001 - the root row is already gone
+        logger.warning("session revocation for deleted user %s failed: %s", user_id, exc)
+    # Indexed data: best effort, the PG root delete above is the guaranteed effect.
+    if driver:
         try:
-            PgUserRepository(database_url).delete_user_row(user_id)
-        except Exception as exc:
-            logger.warning("postgres row for user %s could not be deleted: %s", user_id, exc)
+            from socialseed_tasker.infrastructure.neo4j_user_repository import UserRepository
 
+            UserRepository(driver).delete_user(user_id)
+        except Exception as exc:  # noqa: BLE001 - projection cleanup degrades to a log (#562)
+            logger.warning("neo4j projection delete for %s failed: %s", user_id, exc)
+    else:
+        logger.info("neo4j not connected; projection cleanup skipped for %s", user_id)
+    try:
+        await NotificationMongoRepository().clear_all(user_id)
+    except Exception as exc:  # noqa: BLE001 - notifications cleanup degrades to a log (#562)
+        logger.warning("notifications cleanup for %s failed: %s", user_id, exc)
     return APIResponse(data={"status": "deleted"}, meta=Meta(request_id=None))
 
 

@@ -279,6 +279,10 @@ class FakePgCursor:
             self.agents.pop(uid, None)
             self.user_skills.pop(uid, None)
             self.rowcount = 1 if existed else 0
+        elif low.startswith("select count(*) from users where user_type"):
+            # Last-user guard counts humans in the PG root (#562).
+            kind = str(params[0]) if params else "human"
+            self._next = (sum(1 for row in self.users.values() if row["user_type"] == kind),)
         elif "count(*)" in low and "not exists" in low:
             kind = "identity" if "select 1 from users u" in low else "profile"
             self._next = (self._verify_count(kind),)

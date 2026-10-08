@@ -132,6 +132,13 @@ class PgUserRepository:
             cur.execute("SELECT username, id FROM users ORDER BY username")
             return [(str(row[0]), str(row[1])) for row in cur.fetchall()]
 
+    def count_humans(self) -> int:
+        """Count human identities in the PostgreSQL root — last-user guard source (#562)."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute("SELECT count(*) FROM users WHERE user_type = 'human'")
+            row = cur.fetchone()
+            return int(row[0]) if row else 0
+
     def delete_user_row(self, user_id: str) -> bool:
         """Delete the identity row (profiles cascade); ``True`` when a row was removed."""
         with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:

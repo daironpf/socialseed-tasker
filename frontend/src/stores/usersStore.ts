@@ -49,14 +49,14 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
-  async function deleteUser(id: string): Promise<boolean> {
+  async function deleteUser(id: string): Promise<void> {
     try {
       await api.deleteUser(id)
       users.value = users.value.filter(u => u.id !== id)
-      return true
+      error.value = null
     } catch (e) {
       error.value = (e as Error).message
-      return false
+      throw e
     }
   }
 

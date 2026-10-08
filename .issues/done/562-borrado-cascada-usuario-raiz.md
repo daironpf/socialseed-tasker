@@ -15,7 +15,7 @@ Neo4j. Con la restricción **PG = raíz** esto deja dos agujeros:
 Mock de referencia: `mockApi.deleteUser` elimina la entidad de la colección y desaparece de la
 lista; en real el equivalente es que desaparezca de **la raíz** y de todo lo indexado por su id.
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: HIGH
 
@@ -54,16 +54,58 @@ feat / backend
      y los fallos no rompen el 200.
    - Frontend: spec del toast con `detail` (si se añade lógica en `UsersView.spec.ts`).
 
+## Resolution
+
+**Resuelto 2026-10-08.**
+
+- **Guard + 404 en la raíz**: `delete_user` pasa a `async def (user_id, request, driver)` y
+  primero lee el perfil con `PgUserRepository.get_user` → sin fila ⇒ **404 `User not found`**;
+  si `type == 'human'` y `PgUserRepository.count_humans() <= 1` ⇒ **409 `Cannot delete the
+  last user`** (fuente PG: `SELECT count(*) FROM users WHERE user_type = 'human'`, incluye
+  el admin sembrado; los agentes no disparan el guard — nota del issue).
+- **DELETE PG autoritativo** (decisión documentada): `delete_user_row` (rowcount) → sin fila
+  ⇒ 404 (carrera), excepción ⇒ **500 `PostgreSQL user delete failed`** —antes un fallo PG se
+  tragaba y devolvía 200—; sin `TASKER_DATABASE_URL` ⇒ **503** (el issue era ambiguo con
+  «log y continuar»; se eligió 503 por consistencia con el resto de `/users`). `human_user`,
+  `agents_user`, `user_skills` y `session_logs` caen por las FK `ON DELETE CASCADE` (#558).
+- **Revocación incondicional** (reutiliza #561): `tokens.revoke_all_for_subject(uid)` +
+  `AuthSessionStore.delete_all_for_user(uid)` en try/except best-effort (la fila raíz ya no
+  existe); el access con `sid` muere de inmediato (middleware/`me` consultan la sesión).
+- **Cascada best-effort sobre datos indexados**: Neo4j `UserRepository.delete_user` solo si
+  hay driver (sin driver ⇒ log, ya no 503) y Mongo `NotificationMongoRepository().clear_all(
+  uid)` (async); ambos dentro de try/except que degradan a log sin romper el 200.
+  `notifications` globales no se tocan (`clear_all` filtra por `user_id`).
+- **Frontend**: `usersStore.deleteUser` re-lanza el error (`Promise<void>`, patrón #559/#560),
+  `usersApi.deleteUser` mutea el toast genérico (`suppressErrorToast`, como create/update) y
+  `deleteUser`/`deleteAgent` en `UsersView` muestran ``Error: {detail}`` (fallback
+  `common.error`); `closeEditAgent()` solo se cierra en éxito. El disabled del botón sigue
+  usando `users.lastUserGuard`.
+- **Tests** (+4 netos; los 5 call sites directos pasaron a `async` + `request=MagicMock()`):
+  los 4 obligatorios — `test_delete_user_removes_postgres_credential` (bcrypt real: `authenticate_user`
+  antes → 200 → `None` y fila borrada), `test_delete_last_human_counts_postgres_and_returns_409`
+  (409 y nada borrado), `test_delete_user_revokes_sessions` (login HTTP → DELETE → refresh
+  401 + access 401 + re-login 401) y `test_delete_user_cleans_projections` (fallos Neo4j+Mongo
+  registrados y el 200 no se rompe) — más `test_delete_agent_skips_the_human_guard`,
+  `test_delete_not_found_404`, `test_delete_fails_when_postgresql_fails` (500) y
+  `test_delete_without_database_url_returns_503`, que sustituyen a los 3 tests legacy con la
+  semántica Neo4j-first. Fake `FakePgCursor`: handler `select count(*) from users where
+  user_type`; helper `_install_delete` = lectura de perfil compuesta + guard/DELETE con SQL
+  real sobre el cursor; `_read` del fake ahora respeta `user_type`. Frontend: 2 specs nuevas
+  en `UsersView.spec.ts` (detail en toast + baja de tarjeta en éxito).
+- **Gates** (2026-10-08): `ruff check .` **1334** / `mypy src` **1136** / `pytest` **1422
+  passed** + 3 preexistentes + 27 skipped; frontend `lint` 0/2 / `test` **317 (45)** /
+  `build` OK / i18n **1696/1696**.
+
 ## Acceptance Criteria
-- [ ] Tras `DELETE /users/{id}`, la fila PG no existe y **ese usuario no puede iniciar sesión**
-- [ ] El guard de último humano cuenta en **PG** y responde 409 sin borrar nada
-- [ ] Las sesiones/refresh del usuario borrado quedan revocadas (refresh → 401)
-- [ ] Proyección Neo4j y `notifications` de Mongo del id PG se limpian best-effort (degradan a
+- [x] Tras `DELETE /users/{id}`, la fila PG no existe y **ese usuario no puede iniciar sesión**
+- [x] El guard de último humano cuenta en **PG** y responde 409 sin borrar nada
+- [x] Las sesiones/refresh del usuario borrado quedan revocadas (refresh → 401)
+- [x] Proyección Neo4j y `notifications` de Mongo del id PG se limpian best-effort (degradan a
       log sin servicios)
-- [ ] 404 al borrar un id inexistente
-- [ ] **Tests**: los pytest listados + frontend pasan
-- [ ] Gates backend sin regresiones: `ruff` 1011, `mypy` 1153, `pytest` 1331+3; frontend
-      `lint` 0/2 / `test` 306+ / `build` OK si toca UI
+- [x] 404 al borrar un id inexistente
+- [x] **Tests**: los pytest listados + frontend pasan
+- [x] Gates backend sin regresiones: `ruff` 1334 / `mypy` 1136 / `pytest` 1422+3
+      preexistentes; frontend `lint` 0/2 / `test` 317 / `build` OK
 
 ## Files to Create
 - (ninguno)

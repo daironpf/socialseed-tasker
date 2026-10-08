@@ -3,7 +3,7 @@
 **Source:** vista maquetada `frontend/src/views/UsersView.vue` + mock
 `frontend/dataset-de-pruebas/users.json` / `issues.json` + restricciones del usuario
 **Created:** 2026-10-07
-**Status:** IN PROGRESS (4/18) — #558 DONE 2026-10-07, #559 DONE 2026-10-07, #560 DONE 2026-10-07, #561 DONE 2026-10-07
+**Status:** IN PROGRESS (5/18) — #558 DONE 2026-10-07, #559 DONE 2026-10-07, #560 DONE 2026-10-07, #561 DONE 2026-10-07, #562 DONE 2026-10-08
 **Numeración:** #558–#575 (continúa tras #557 del índice v6)
 
 ---
@@ -24,12 +24,14 @@
 > - **Fractura actual:** la vista lee `GET /users` desde **Neo4j** con uids distintos (admin PG
 >   `id='admin'` vs nodo `f5dcf582-0cd2-48e6-a900-69d8bb3c5cda`) → `POST /users` → 500
 >   (`UserRole("developer")`, enum solo `ADMIN|DEVELOPER|VIEWER`), PUT descarta
->   `avatar/skills` y rompe la tarjeta con la respuesta cruda, DELETE deja viva la fila PG.
+>   `avatar/skills` y rompe la tarjeta con la respuesta cruda, DELETE dejaba viva la fila PG
+>   (guard contando en Neo4j) → corregido en #562 (guard en PG, fila raíz borrada, cascada).
 > - **Colisión de rutas corregida en #559:** `project_router` se registra antes que
 >   `user_router` y su endpoint legacy `POST /users?project_id=` (crea nodo Neo4j y lo liga
 >   al proyecto) **sombreaba** el alta PG con un 422 `query.project_id` → renombrado a
 >   **`POST /api/v1/projects/users`** (único consumidor `cli/init_command.py` actualizado) +
->   test de ruteo. El guard «último usuario» del DELETE sigue mirando Neo4j → #562.
+>   test de ruteo. El guard «último usuario» del DELETE contaba en Neo4j → corregido en #562
+>   (cuenta humanos en PG).
 > - **Agentes** = endpoint dedicado **`/agents/profiles`** (decisión del usuario); filas `users`
 >   `user_type='agent'` sin credencial ni `role_id` (el `ai-agent` del mock se deriva en el
 >   front por `type`) + `agents_user` con cascada. **Agent Studio se migra a la API en #573**
@@ -139,7 +141,7 @@
 - [x] #559 crear usuario humano
 - [x] #560 editar usuario humano
 - [x] #561 rol efectivo en RBAC
-- [ ] #562 borrado en cascada
+- [x] #562 borrado en cascada
 - [ ] #563 credencial temporal
 - [ ] #564 `/agents/profiles` CRUD
 - [ ] #565 listado de agentes
