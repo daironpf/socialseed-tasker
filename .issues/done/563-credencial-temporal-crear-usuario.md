@@ -15,7 +15,7 @@ Mock de referencia: `mockApi.createUser` no maneja contraseñas (login mock es p
 lo que el contrato "password visible una vez" es **nuevo en el contrato real** y debe fijarse
 con tests.
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: MEDIUM
 
@@ -56,15 +56,49 @@ feat / fullstack
    - Frontend: spec de `usersApi`/store — la respuesta con `temporary_password` no contamina la
      tarjeta normalizada; spec del modal/panel que muestra la password y la limpia al cerrar.
 
+## Resolution
+
+**Resuelto 2026-10-08.**
+
+- **Backend**: `POST /users` (humanos) genera `secrets.token_urlsafe(12)` salvo que el body
+  traiga `password` explícito; se hashea con `hash_password` (bcrypt, coste por defecto del
+  repo) y se persiste vía el nuevo parámetro `password_hash` de `create_human_user` (el SQL
+  dejó de usar el literal `''`). `UserResponse.temporary_password` se rellena **solo** en el
+  201 (`_profile_to_response` → default `None`; el handler lo pisa únicamente cuando la
+  password es temporal); con `password` explícito se devuelve `None` y nada se refleja.
+- **Nunca en claro**: PG solo guarda el hash (`$2b$…`); `GET /users` y `GET /users/{id}`
+  devuelven `temporary_password: null` (el schema lo fija a `None` en toda lectura). Agentes:
+  fuera de este endpoint (422 ya existente, sin fila `human_user` → sin login, #564).
+- **Frontend**: `usersApi.createUser` devuelve `{ user, temporaryPassword }`
+  (`normalizeBackendUser` ignora el campo → la tarjeta no se contamina), el store reenvía el
+  resultado sin persistir el plaintext, `UsersView` abre el nuevo `TemporaryPasswordDialog`
+  (monoespaciada + copiar con Clipboard API + aviso `users.passwordOnce` + botón "Entendido"
+  que limpia el estado — no vive en el store); i18n EN/ES con 5 claves nuevas
+  (`tempPasswordTitle`, `passwordOnce`, `copy`, `copied`, `understood`).
+- **Tests** (+4 backend, +3 frontend): los 4 obligatorios —
+  `test_create_user_returns_temporary_password_and_login_works` (201 con `temporary_password`,
+  hash bcrypt ≠ claro, login real con ella → 200 y `user.id` coincide),
+  `test_create_user_password_field_overrides_temporary` (`None` + `verify_password`),
+  `test_get_users_never_returns_temporary_password` (GET by id + lista → null) y
+  `test_create_agent_has_no_credential` (agente → `authenticate_user` None con cualquier
+  password); `test_create_user_201_returns_uid_and_profile` pasó a exigir hash bcrypt y
+  `test_update_user_full_profile_persisted` compara el hash pre/post (el seed ya no es `''`).
+  Frontend: specs de `usersApi` (normalización sin contaminación + `null`) y 2 de
+  `UsersView.spec.ts` (diálogo con `data-testid`, ack lo limpia; sin temporal no se abre).
+  Helper `_install_login_env`: app completa con el `authenticate_user` real sobre el fake PG.
+- **Gates** (2026-10-08): `ruff` **1334** / `mypy` **1136** / `pytest` **1426 passed** + 3
+  preexistentes + 27 skipped; frontend `lint` 0/2 / `test` **320 (45)** / `build` OK /
+  i18n **1701/1701**.
+
 ## Acceptance Criteria
-- [ ] `POST /users` (humano) devuelve `temporary_password` y con ella el login inmediato
+- [x] `POST /users` (humano) devuelve `temporary_password` y con ella el login inmediato
       funciona (bcrypt verificado contra PG)
-- [ ] `GET /users*` **nunca** devuelve `temporary_password`; no queda en claro en PG
-- [ ] Crear con `password` explícito usa ese y no devuelve temporal; agentes → sin credencial
-- [ ] El modal muestra la contraseña una sola vez con copiar y aviso, y la limpia al confirmar
-- [ ] **Tests**: los backend + frontend listados pasan
-- [ ] Gates: backend `ruff` 1011 / `mypy` 1153 / `pytest` 1331+3; frontend `lint` 0/2 /
-      `test` 306+ / `build` OK / i18n 1693+N (`users.passwordOnce` + aviso) EN/ES
+- [x] `GET /users*` **nunca** devuelve `temporary_password`; no queda en claro en PG
+- [x] Crear con `password` explícito usa ese y no devuelve temporal; agentes → sin credencial
+- [x] El modal muestra la contraseña una sola vez con copiar y aviso, y la limpia al confirmar
+- [x] **Tests**: los backend + frontend listados pasan
+- [x] Gates: backend `ruff` 1334 / `mypy` 1136 / `pytest` 1426+3 preexistentes; frontend
+      `lint` 0/2 / `test` 320 / `build` OK / i18n 1701/1701 (`users.passwordOnce` + aviso) EN/ES
 
 ## Files to Create
 - (posible) `frontend/src/components/users/TemporaryPasswordDialog.vue`

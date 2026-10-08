@@ -3,7 +3,7 @@
 **Source:** vista maquetada `frontend/src/views/UsersView.vue` + mock
 `frontend/dataset-de-pruebas/users.json` / `issues.json` + restricciones del usuario
 **Created:** 2026-10-07
-**Status:** IN PROGRESS (5/18) — #558 DONE 2026-10-07, #559 DONE 2026-10-07, #560 DONE 2026-10-07, #561 DONE 2026-10-07, #562 DONE 2026-10-08
+**Status:** IN PROGRESS (6/18) — #558 DONE 2026-10-07, #559 DONE 2026-10-07, #560 DONE 2026-10-07, #561 DONE 2026-10-07, #562 DONE 2026-10-08, #563 DONE 2026-10-08
 **Numeración:** #558–#575 (continúa tras #557 del índice v6)
 
 ---
@@ -40,7 +40,7 @@
 >   antes.
 > - **Crear usuario genera credencial PG con password temporal visible una vez** (decisión del
 >   usuario): `temporary_password` solo en la respuesta del POST en `human_user.password_hash`
->   bcrypt, login inmediato con ella.
+>   bcrypt, login inmediato con ella — implementado en #563 (dialogo de una sola visualización).
 > - **Catálogos**: `skills`/`tools` sembrados; el frontend hoy tiene **2 listas de tools
 >   divergentes** (9 `AGENT_TOOLS` vs 8 de `EditAgentModal`) → `GET /tools` como fuente única
 >   (#572).
@@ -142,7 +142,7 @@
 - [x] #560 editar usuario humano
 - [x] #561 rol efectivo en RBAC
 - [x] #562 borrado en cascada
-- [ ] #563 credencial temporal
+- [x] #563 credencial temporal
 - [ ] #564 `/agents/profiles` CRUD
 - [ ] #565 listado de agentes
 - [ ] #566 crear agente

@@ -277,6 +277,9 @@
       @close="showCreateModal = false"
       @save="createUser"
     />
+
+    <!-- One-time temporary password of the created human (#563) -->
+    <TemporaryPasswordDialog :password="temporaryPassword" @close="temporaryPassword = null" />
   </div>
 </template>
 
@@ -288,6 +291,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import EditAgentModal from '@/components/users/EditAgentModal.vue'
 import EditUserModal from '@/components/users/EditUserModal.vue'
 import CreateUserModal from '@/components/users/CreateUserModal.vue'
+import TemporaryPasswordDialog from '@/components/users/TemporaryPasswordDialog.vue'
 import { useUsersStore } from '@/stores/usersStore'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useUiStore } from '@/stores/uiStore'
@@ -483,10 +487,13 @@ async function deleteAgent(user: User) {
   }
 }
 
+const temporaryPassword = ref<string | null>(null)
+
 async function createUser(data: { username: string; email: string; role: string; type: string; avatar: string; skills: string[] }) {
   try {
-    await usersStore.createUser(data)
+    const result = await usersStore.createUser(data)
     showCreateModal.value = false
+    if (result.temporaryPassword) temporaryPassword.value = result.temporaryPassword
   } catch (e) {
     const err = e as Error & { status?: number }
     if (err.status === 409) {

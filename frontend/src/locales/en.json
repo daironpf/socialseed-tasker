@@ -342,6 +342,11 @@
     "viewerRole": "Viewer",
     "lastUserGuard": "Cannot delete the last system user",
     "usernameTaken": "That username is already taken",
+    "tempPasswordTitle": "Temporary password",
+    "passwordOnce": "Shown only once. Copy it now and share it securely with the user.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "understood": "Got it",
     "emailTaken": "That email is already registered",
     "updated": "User updated successfully"
   },

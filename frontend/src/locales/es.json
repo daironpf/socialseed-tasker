@@ -342,6 +342,11 @@
     "viewerRole": "Observador",
     "lastUserGuard": "No se puede eliminar el ultimo usuario del sistema",
     "usernameTaken": "Ese nombre de usuario ya existe",
+    "tempPasswordTitle": "Contraseña temporal",
+    "passwordOnce": "Se muestra solo una vez. Cópiala ahora y compártela de forma segura con el usuario.",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "understood": "Entendido",
     "emailTaken": "Ese correo ya está registrado",
     "updated": "Usuario actualizado correctamente"
   },

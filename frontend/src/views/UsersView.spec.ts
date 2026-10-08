@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { mountComponent } from '@/test/mount'
 import UsersView from '@/views/UsersView.vue'
+import CreateUserModal from '@/components/users/CreateUserModal.vue'
 import { useUsersStore } from '@/stores/usersStore'
 import * as usersApi from '@/api/usersApi'
 import * as issuesApi from '@/api/issuesApi'
@@ -179,5 +180,71 @@ describe('UsersView delete flow (issue #562)', () => {
     expect(usersApi.deleteUser).toHaveBeenCalledWith('uid-ana')
     expect(useUsersStore().users).toHaveLength(1)
     expect(toastError).not.toHaveBeenCalled()
+  })
+})
+
+describe('UsersView create flow (issue #563)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(usersApi.fetchUsers).mockResolvedValue([makeHuman('uid-ana', 'ana')])
+    vi.mocked(usersApi.deleteUser).mockResolvedValue()
+    vi.mocked(issuesApi.fetchIssues).mockResolvedValue({
+      items: [],
+      pagination: { page: 1, limit: 200, total: 0, has_next: false, has_prev: false },
+    })
+  })
+
+  async function emitSave(wrapper: VueWrapper) {
+    const modal = wrapper.findComponent(CreateUserModal)
+    ;(modal.vm as unknown as { $emit: (e: string, d: unknown) => void }).$emit('save', {
+      username: 'boss',
+      email: 'boss@x.com',
+      role: 'admin',
+      type: 'human',
+      avatar: '🦊',
+      skills: [],
+    })
+    await flushPromises()
+  }
+
+  it('shows the one-time password dialog and clears it on acknowledge', async () => {
+    vi.mocked(usersApi.createUser).mockResolvedValue({
+      user: { ...makeHuman('uid-boss', 'boss'), role: 'ADMIN' },
+      temporaryPassword: 'temp-abc123',
+    })
+
+    const wrapper = await mountView()
+    await emitSave(wrapper)
+
+    expect(usersApi.createUser).toHaveBeenCalledWith(
+      expect.objectContaining({ username: 'boss' }),
+    )
+    const code = wrapper.find('[data-testid="temp-password"]')
+    expect(code.exists()).toBe(true)
+    expect(code.text()).toBe('temp-abc123')
+    expect(wrapper.text()).toContain('Shown only once. Copy it now and share it securely with the user.')
+
+    // the card is normalized: the plaintext never lands on the user object
+    const store = useUsersStore()
+    const created = store.users.find(u => u.id === 'uid-boss')
+    expect(created).toBeTruthy()
+    expect(created).not.toHaveProperty('temporary_password')
+
+    await wrapper.find('[data-testid="temp-password-ack"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-testid="temp-password"]').exists()).toBe(false)
+  })
+
+  it('does not open the dialog when the backend sends no temporary password', async () => {
+    vi.mocked(usersApi.createUser).mockResolvedValue({
+      user: makeHuman('uid-boss', 'boss'),
+      temporaryPassword: null,
+    })
+
+    const wrapper = await mountView()
+    await emitSave(wrapper)
+
+    expect(wrapper.find('[data-testid="temp-password"]').exists()).toBe(false)
+    expect(useUsersStore().users.some(u => u.id === 'uid-boss')).toBe(true)
   })
 })

@@ -164,8 +164,11 @@ class FakePgCursor:
                 self._next = (str(uid),) if returning else None
         elif low.startswith("insert into human_user"):
             values = tuple(params or ())
-            if len(values) >= 7:
-                # create_human_user: password hash is the '' literal, not a param (#559)
+            if len(values) >= 8:
+                # create_human_user with an explicit password_hash (#563)
+                uid, email, password_hash, role_id, avatar, github_handle, preferences, is_active = values[:8]
+            elif len(values) >= 7:
+                # legacy create form: password hash was the '' literal, not a param (#559)
                 uid, email, role_id, avatar, github_handle, preferences, is_active = values[:7]
                 password_hash = ""
             else:

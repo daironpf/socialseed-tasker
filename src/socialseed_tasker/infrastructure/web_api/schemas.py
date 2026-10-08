@@ -936,7 +936,7 @@ class ConstraintLoadResponse(BaseModel):
 
 
 class UserCreateRequest(BaseModel):
-    """Request for creating a human user (issue #559)."""
+    """Request for creating a human user (issue #559, temporary credential #563)."""
 
     username: str = Field(..., min_length=1)
     email: str | None = None
@@ -949,6 +949,8 @@ class UserCreateRequest(BaseModel):
     is_active: bool = True
     github_handle: str | None = None
     preferences: str | None = None
+    password: str | None = None
+    """Explicit plaintext credential; when omitted a temporary one is generated and returned once."""
 
 
 class UserUpdateRequest(BaseModel):
@@ -988,6 +990,8 @@ class UserResponse(BaseModel):
     created_at: datetime | None = None
     last_login: datetime | None = None
     preferences: str | None = None
+    temporary_password: str | None = None
+    """One-time plaintext, populated only by the POST /users 201 (issue #563); always None on reads."""
 
 
 class CommitCreateRequest(BaseModel):

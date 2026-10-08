@@ -52,13 +52,23 @@ export interface UserCreateRequest {
   specialization?: string
 }
 
-export async function createUser(userData: UserCreateRequest): Promise<User> {
+export interface CreateUserResult {
+  user: User
+  temporaryPassword: string | null
+}
+
+export async function createUser(userData: UserCreateRequest): Promise<CreateUserResult> {
   // The view translates 409/422 itself, so the generic interceptor toast is muted.
-  const { data } = await client.post<APIResponse<BackendUser>>('/users', userData, {
-    suppressErrorToast: true,
-  })
+  const { data } = await client.post<APIResponse<BackendUser & { temporary_password?: string | null }>>(
+    '/users',
+    userData,
+    { suppressErrorToast: true },
+  )
   if (!data.data) throw new Error('Failed to create user')
-  return normalizeBackendUser(data.data)
+  return {
+    user: normalizeBackendUser(data.data),
+    temporaryPassword: data.data.temporary_password ?? null,
+  }
 }
 
 export async function deleteUser(userId: string): Promise<void> {

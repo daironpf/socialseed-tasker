@@ -164,7 +164,7 @@ describe('usersApi', () => {
     await expect(fetchUsers()).resolves.toEqual([])
   })
 
-  it('normalizes the created user response (issue #559)', async () => {
+  it('normalizes the created user response (issue #559, #563)', async () => {
     mockedPost.mockResolvedValue({
       data: {
         data: {
@@ -180,6 +180,7 @@ describe('usersApi', () => {
           is_active: true,
           created_at: '2026-10-07T18:00:00Z',
           last_login: null,
+          temporary_password: 'temp-abc123',
         },
       },
     })
@@ -198,13 +199,37 @@ describe('usersApi', () => {
       expect.objectContaining({ username: 'pedro' }),
       { suppressErrorToast: true },
     )
-    expect(created.id).toBe('pg-gen-1')
-    expect(created.type).toBe('human')
-    expect(created.avatar).toBe('🧑‍💻')
-    expect(created.skills).toEqual(['vue'])
-    expect(created.role).toBe('DEVELOPER')
-    expect(created.last_active).toBe('2026-10-07T18:00:00Z')
-    expect(created.email).toBe('pedro@socialseed.com')
+    expect(created.temporaryPassword).toBe('temp-abc123')
+    expect(created.user.id).toBe('pg-gen-1')
+    expect(created.user.type).toBe('human')
+    expect(created.user.avatar).toBe('🧑‍💻')
+    expect(created.user.skills).toEqual(['vue'])
+    expect(created.user.role).toBe('DEVELOPER')
+    expect(created.user.last_active).toBe('2026-10-07T18:00:00Z')
+    expect(created.user.email).toBe('pedro@socialseed.com')
+    expect(created.user).not.toHaveProperty('temporary_password') // never contaminates the card (#563)
+  })
+
+  it('passes temporaryPassword as null when the backend sends none (issue #563)', async () => {
+    mockedPost.mockResolvedValue({
+      data: {
+        data: {
+          id: 'pg-gen-2',
+          username: 'ana',
+          email: 'ana@x.com',
+          role: 'VIEWER',
+          type: 'human',
+          avatar: '🦊',
+          skills: [],
+          temporary_password: null,
+        },
+      },
+    })
+
+    const created = await createUser({ username: 'ana', email: 'ana@x.com', role: 'viewer' })
+
+    expect(created.temporaryPassword).toBeNull()
+    expect(created.user.username).toBe('ana')
   })
 
   it('propagates a 409 conflict so the view can translate it (issue #559)', async () => {

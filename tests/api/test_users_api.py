@@ -359,7 +359,7 @@ def test_create_user_201_returns_uid_and_profile(monkeypatch: pytest.MonkeyPatch
     assert cursor.users[uid]["user_type"] == "human"
     human = cursor.human[uid]
     assert human["role_id"] == "DEVELOPER"
-    assert human["password_hash"] == ""
+    assert human["password_hash"].startswith("$2b$")  # bcrypt credential, never '' (#563)
     assert human["email"] == "pedro@socialseed.com"
     assert human["avatar"] == "🧑‍💻"
     assert response.data.id == uid
@@ -368,6 +368,11 @@ def test_create_user_201_returns_uid_and_profile(monkeypatch: pytest.MonkeyPatch
     assert response.data.role == "DEVELOPER"
     assert response.data.avatar == "🧑‍💻"
     assert response.data.skills == ["Vue"]
+    assert response.data.temporary_password  # one-time plaintext (#563)
+    from socialseed_tasker.auth.user_store import verify_password
+
+    assert verify_password(response.data.temporary_password, human["password_hash"])
+    assert human["password_hash"] != response.data.temporary_password  # never stored in clear
 
 
 def test_create_user_persists_skills_in_user_skills(monkeypatch: pytest.MonkeyPatch):
@@ -503,6 +508,118 @@ def test_post_users_route_is_not_shadowed_by_project_router():
 
 
 # ---------------------------------------------------------------------------
+# POST /users - one-time temporary credential (issue #563)
+# ---------------------------------------------------------------------------
+
+
+def _install_login_env(monkeypatch: pytest.MonkeyPatch, cursor: FakePgCursor) -> TestClient:
+    """Full app + fake PostgreSQL with the *real* bcrypt authenticate_user (#563)."""
+    from socialseed_tasker.auth import user_store as real_store
+    from socialseed_tasker.infrastructure.web_api.app import create_app
+
+    _install_delete(monkeypatch, cursor)
+    monkeypatch.setattr(
+        "socialseed_tasker.infrastructure.web_api.routers.auth.get_database_url",
+        lambda: "postgresql://fake",
+    )
+    monkeypatch.delenv("TASKER_AUTH_ENABLED", raising=False)
+    monkeypatch.delenv("TASKER_API_KEY", raising=False)
+    monkeypatch.delenv("TASKER_REDIS_URL", raising=False)
+    monkeypatch.setattr(
+        "socialseed_tasker.infrastructure.web_api.routers.auth.authenticate_user",
+        real_store.authenticate_user,
+    )
+    return TestClient(create_app())
+
+
+def test_create_user_returns_temporary_password_and_login_works(monkeypatch: pytest.MonkeyPatch):
+    """The 201 carries the one-time plaintext and it opens a real session (#563)."""
+    cursor = FakePgCursor()
+    client = _install_login_env(monkeypatch, cursor)
+
+    created = client.post(
+        "/api/v1/users",
+        json={"username": "boss", "email": "boss@x.com", "role": "admin"},
+    )
+    assert created.status_code == 201, created.text
+    data = created.json()["data"]
+    password = data["temporary_password"]
+    assert password and len(password) >= 12
+    uid = data["id"]
+    stored = cursor.human[uid]["password_hash"]
+    assert stored.startswith("$2b$") and stored != password  # hashed at rest, never in clear
+
+    login = client.post("/api/v1/auth/login", json={"username": "boss", "password": password})
+    assert login.status_code == 200, login.text
+    assert login.json()["user"]["role"] == "ADMIN"
+    assert login.json()["user"]["id"] == uid
+
+
+def test_create_user_password_field_overrides_temporary(monkeypatch: pytest.MonkeyPatch):
+    """An explicit ``password`` is used as-is and nothing is echoed back (#563)."""
+    from socialseed_tasker.auth.user_store import verify_password
+
+    cursor = FakePgCursor()
+    _install_create(monkeypatch, cursor)
+
+    response = user_router.create_user(
+        UserCreateRequest(
+            username="boss",
+            email="boss@x.com",
+            role="developer",
+            password="sesamo-custom",
+        ),
+        driver=None,
+    )
+
+    assert response.data.temporary_password is None
+    uid = response.data.id
+    assert verify_password("sesamo-custom", cursor.human[uid]["password_hash"])
+
+
+def test_get_users_never_returns_temporary_password(monkeypatch: pytest.MonkeyPatch):
+    """The plaintext lives only in the POST 201; every read answers None (#563)."""
+    cursor = FakePgCursor()
+    client = _install_login_env(monkeypatch, cursor)
+
+    created = client.post(
+        "/api/v1/users",
+        json={"username": "ana", "email": "ana@x.com", "role": "viewer"},
+    )
+    assert created.status_code == 201, created.text
+    assert created.json()["data"]["temporary_password"]
+    uid = created.json()["data"]["id"]
+
+    fetched = client.get(f"/api/v1/users/{uid}")
+    assert fetched.status_code == 200
+    assert fetched.json()["data"]["temporary_password"] is None
+
+    listed = client.get("/api/v1/users")
+    assert listed.status_code == 200
+    for item in listed.json().get("data") or []:
+        assert item["temporary_password"] is None
+
+
+def test_create_agent_has_no_credential(monkeypatch: pytest.MonkeyPatch):
+    """Agents have no human_user row, so no password can ever authenticate (#563/#564)."""
+    from socialseed_tasker.auth.user_store import authenticate_user
+
+    cursor = FakePgCursor()
+    install_fake_pg(monkeypatch, cursor)
+    cursor.users["uid-bot"] = {
+        "id": "uid-bot",
+        "username": "bot-qa",
+        "username_normalized": "bot.qa",
+        "user_type": "agent",
+        "created_at": None,
+    }
+    cursor.agents["uid-bot"] = {"user_id": "uid-bot", "email": "bot@x.com"}
+
+    assert authenticate_user("postgresql://fake", "bot-qa", "sesamo") is None
+    assert authenticate_user("postgresql://fake", "bot-qa", "") is None
+
+
+# ---------------------------------------------------------------------------
 # PUT /users/{id} - update over the normalized schema (issue #560)
 # ---------------------------------------------------------------------------
 
@@ -537,6 +654,7 @@ def test_update_user_full_profile_persisted(monkeypatch: pytest.MonkeyPatch):
     cursor = FakePgCursor()
     _install_create(monkeypatch, cursor)
     uid = _seed_user(monkeypatch, cursor, skills=["Vue", "Go"])
+    password_hash_before = cursor.human[uid]["password_hash"]
 
     response = user_router.update_user(
         uid,
@@ -558,7 +676,7 @@ def test_update_user_full_profile_persisted(monkeypatch: pytest.MonkeyPatch):
     assert human["email"] == "ana.g@socialseed.com"
     assert human["role_id"] == "ADMIN"
     assert human["avatar"] == "🧑‍💻"
-    assert human["password_hash"] == ""  # never touched (#560 notes)
+    assert human["password_hash"] == password_hash_before  # never touched (#560 notes, #563 seed)
     assert cursor.user_skills[uid] == {"python"}  # full replacement, not a merge
     assert response.data.username == "Ana García"
     assert response.data.email == "ana.g@socialseed.com"
