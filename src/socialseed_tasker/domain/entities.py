@@ -141,6 +141,8 @@ class Issue(BaseModel):
     status: IssueStatus = IssueStatus.OPEN
     priority: IssuePriority = IssuePriority.MEDIUM
     component_id: UUID = Field(...)
+    assignee: str | None = None
+    created_by: str | None = None
     labels: list[str] = Field(default_factory=list)
     dependencies: list[UUID] = Field(default_factory=list)
     blocks: list[UUID] = Field(default_factory=list)

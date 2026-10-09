@@ -460,6 +460,11 @@ class IssueCreateRequest(BaseModel):
         description="Architectural rules this issue must comply with",
         examples=["no-sql-in-graph-module"],
     )
+    assignee: str | None = Field(
+        None,
+        description="PG uid of the user assigned to this issue (optional, issue #569)",
+        examples=["550e8400-e29b-41d4-a716-446655440000"],
+    )
 
 
 class IssueUpdateRequest(BaseModel):
@@ -491,6 +496,10 @@ class IssueUpdateRequest(BaseModel):
     task_checklist: dict[str, bool] | None = Field(
         None,
         description="Interactive checklist state keyed by normalized TODO item text",
+    )
+    assignee: str | None = Field(
+        None,
+        description="PG uid to assign; explicit null unassigns (issue #569)",
     )
 
 
@@ -735,6 +744,8 @@ class IssueResponse(BaseModel):
     manifest_files: list[str] = Field(default_factory=list)
     manifest_notes: list[str] = Field(default_factory=list)
     task_checklist: dict[str, bool] = Field(default_factory=dict)
+    assignee: str | None = None
+    created_by: str | None = None
     github_sync: GitHubSyncResponse | None = None
 
 

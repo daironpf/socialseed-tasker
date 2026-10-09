@@ -36,6 +36,8 @@ class IssueRepositoryMixin:
                 status=issue.status.value,
                 priority=issue.priority.value,
                 componentId=str(issue.component_id),
+                assignee=issue.assignee,
+                createdBy=issue.created_by,
                 labels=issue.labels,
                 dependencies=[str(d) for d in issue.dependencies],
                 blocks=[str(b) for b in issue.blocks],
@@ -53,6 +55,12 @@ class IssueRepositoryMixin:
                 manifestFiles=issue.manifest_files,
                 manifestNotes=issue.manifest_notes,
             )
+            if issue.assignee:
+                session.run(
+                    queries.USER_ASSIGNED_TO_ISSUE,
+                    user_id=issue.assignee,
+                    issue_id=str(issue.id),
+                )
 
             # Index for RAG (Native in Graph)
             embedding_service = get_embedding_service()
@@ -94,6 +102,19 @@ class IssueRepositoryMixin:
             if record is None:
                 raise ValueError(f"Issue {issue_id} not found")
             issue = _node_to_issue(record["i"])
+
+            # Graph index for the assignment: create/refresh the ASSIGNED_TO
+            # relationship on assign, drop every link on unassign (#569).
+            if "assignee" in camel_updates:
+                new_assignee = camel_updates.get("assignee")
+                if new_assignee:
+                    session.run(
+                        queries.USER_ASSIGNED_TO_ISSUE,
+                        user_id=new_assignee,
+                        issue_id=issue_id,
+                    )
+                else:
+                    session.run(queries.UNLINK_ASSIGNED_FROM_ISSUE, issue_id=issue_id)
 
             # Index for RAG (Native in Graph)
             embedding_service = get_embedding_service()

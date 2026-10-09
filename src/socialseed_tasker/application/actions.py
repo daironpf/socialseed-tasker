@@ -487,6 +487,8 @@ def create_issue_action(
     priority: str = "MEDIUM",
     labels: list[str] | None = None,
     architectural_constraints: list[str] | None = None,
+    assignee: str | None = None,
+    created_by: str | None = None,
 ) -> tuple[Issue, list[str]]:
     """Create a new issue after validating inputs.
 
@@ -540,6 +542,8 @@ def create_issue_action(
         component_id=component_id,
         labels=labels or [],
         architectural_constraints=architectural_constraints or [],
+        assignee=assignee,
+        created_by=created_by,
     )
     issue = repository.create_issue(issue)
 

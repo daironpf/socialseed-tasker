@@ -121,6 +121,7 @@ from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     convert_domain_issue_to_api_response as _issue_to_response,
     convert_domain_component_to_api_response as _component_to_response,
 )
+from socialseed_tasker.infrastructure.web_api.routers.chat import _resolve_user
 from socialseed_tasker.application.github_sync import (
     issue_snapshot,
     now_iso,
@@ -161,6 +162,7 @@ issues_router = APIRouter()
 )
 def create_issue(
     body: IssueCreateRequest,
+    request: Request,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[IssueResponse]:
     """Create a new issue.
@@ -240,6 +242,8 @@ def create_issue(
         priority=body.priority,
         labels=body.labels,
         architectural_constraints=body.architectural_constraints,
+        assignee=body.assignee,
+        created_by=_resolve_user(request),
     )
     _dq_pipeline.run_post_ingest(body.model_dump(), record_id=str(issue.id))
     return APIResponse(
@@ -352,6 +356,8 @@ def list_issues(
     title: str | None = Query(None, description="Filter by exact issue title"),
     page: int = Query(1, ge=1, description="Page number (starts at 1, default: 1)"),
     limit: int = Query(50, ge=1, le=100, description="Items per page (default: 50, max: 100)"),
+    assignee: str | None = Query(None, description="Filter by assigned user id (PG uid)"),
+    created_by: str | None = Query(None, description="Filter by creating user id (PG uid)"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     comp = component or component_id
@@ -359,6 +365,10 @@ def list_issues(
     all_issues = repo.list_issues(component_id=comp, statuses=status_list, project=project)
     if title:
         all_issues = [i for i in all_issues if i.title == title]
+    if assignee:
+        all_issues = [i for i in all_issues if i.assignee == assignee]
+    if created_by:
+        all_issues = [i for i in all_issues if i.created_by == created_by]
     total = len(all_issues)
     start = (page - 1) * limit
     end = start + limit

@@ -171,6 +171,8 @@ def convert_domain_issue_to_api_response(domain_issue: Issue) -> IssueResponse:
             }
             for c in domain_issue.comments
         ],
+        assignee=domain_issue.assignee,
+        created_by=domain_issue.created_by,
         github_sync=github_sync,
     )
 

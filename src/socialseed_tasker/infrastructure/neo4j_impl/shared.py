@@ -109,6 +109,8 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
         status=IssueStatus(data.get("status", "OPEN")),
         priority=data.get("priority", "MEDIUM"),
         component_id=_to_uuid(data.get("componentId") or data.get("component_id")) or UUID(int=0),
+        assignee=data.get("assignee"),
+        created_by=data.get("createdBy") or data.get("created_by"),
         labels=data.get("labels", []),
         dependencies=_to_uuid_list(data.get("dependencies", [])),
         blocks=_to_uuid_list(data.get("blocks", [])),

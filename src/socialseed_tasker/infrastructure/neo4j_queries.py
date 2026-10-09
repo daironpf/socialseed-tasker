@@ -463,6 +463,8 @@ CREATE (i:Issue {
     status: $status,
     priority: $priority,
     componentId: $componentId,
+    assignee: $assignee,
+    createdBy: $createdBy,
     labels: $labels,
     dependencies: $dependencies,
     blocks: $blocks,
@@ -954,6 +956,11 @@ MATCH (u:User {id: $user_id})
 MATCH (i:Issue {id: $issue_id})
 MERGE (u)-[:ASSIGNED_TO]->(i)
 RETURN u, i
+"""
+
+UNLINK_ASSIGNED_FROM_ISSUE = """
+MATCH (:User)-[r:ASSIGNED_TO]->(i:Issue {id: $issue_id})
+DELETE r
 """
 
 USER_AUTHORED_COMMIT = """

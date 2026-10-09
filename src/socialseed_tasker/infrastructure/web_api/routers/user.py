@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import secrets
-from typing import Any, TYPE_CHECKING
+from typing import Annotated, Any, TYPE_CHECKING
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Body, HTTPException
@@ -111,6 +111,7 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     CommitResponse,
     CommitStatsResponse,
 )
+from socialseed_tasker.infrastructure.web_api.routers.chat import _current_user
 from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     retrieve_neo4j_code_graph_driver as get_code_graph_driver,
     get_repository_provider as get_repo,
@@ -462,3 +463,93 @@ def update_user_last_login(
     repo.update_last_login(user_id)
 
     return APIResponse(data={"status": "updated"}, meta=Meta(request_id=None))
+
+
+# ---------------------------------------------------------------------------
+# Per-user issue views (issue #569)
+# ---------------------------------------------------------------------------
+
+_USER_ISSUE_KINDS = ("assigned", "created", "completed")
+
+
+def _issue_kind_belongs(issue: Issue, user_id: str, kind: str) -> bool:
+    """View semantics shared by /issues and /issue-stats (issue #569).
+
+    assigned: assignee match and not CLOSED; created: created_by match and
+    not CLOSED; completed: assigned or created match and CLOSED.
+    """
+    status = getattr(issue.status, "value", issue.status)
+    is_closed = status == IssueStatus.CLOSED.value
+    is_assigned = issue.assignee == user_id
+    is_created = issue.created_by == user_id
+    if kind == "assigned":
+        return is_assigned and not is_closed
+    if kind == "created":
+        return is_created and not is_closed
+    return (is_assigned or is_created) and is_closed
+
+
+def _require_user_exists(user_id: str) -> None:
+    """404 unless the uid exists in the PostgreSQL root (issue #569)."""
+    if not _pg_repository().get_user(user_id):
+        raise HTTPException(status_code=404, detail="User not found")
+
+
+@user_router.get(
+    "/users/{user_id}/issues",
+    response_model=APIResponse[list[IssueResponse]],
+    summary="List issues for a user",
+    description=(
+        "Issues of a user with the Users-view semantics (issue #569): `assigned` "
+        "= assignee match and not CLOSED, `created` = created_by match and not "
+        "CLOSED, `completed` = assigned or created match and CLOSED. Requires an "
+        "authenticated caller (401) and a user in the PG root (404)."
+    ),
+    responses={
+        401: {"description": "Missing or invalid token"},
+        404: {"description": "User not found in the PG root"},
+        422: {"description": "Unknown kind"},
+    },
+)
+def get_user_issues(
+    user_id: str,
+    request: Request,
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
+    kind: str = Query(..., description="assigned | created | completed"),
+) -> APIResponse[list[IssueResponse]]:
+    """Issues of a user by kind (kind validated manually for a 422, #569)."""
+    _current_user(request)
+    if kind not in _USER_ISSUE_KINDS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"invalid kind: {kind!r} (expected {'|'.join(_USER_ISSUE_KINDS)})",
+        )
+    _require_user_exists(user_id)
+    issues = [i for i in repo.list_issues() if _issue_kind_belongs(i, user_id, kind)]
+    return APIResponse(data=[_issue_to_response(i) for i in issues], meta=Meta(request_id=None))
+
+
+@user_router.get(
+    "/users/{user_id}/issue-stats",
+    response_model=APIResponse[dict[str, Any]],
+    summary="Issue counters for a user",
+    description="`{assigned, created, completed}` counters for the user card (issue #569).",
+    responses={
+        401: {"description": "Missing or invalid token"},
+        404: {"description": "User not found in the PG root"},
+    },
+)
+def get_user_issue_stats(
+    user_id: str,
+    request: Request,
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
+) -> APIResponse[dict[str, Any]]:
+    """Three counters for the card, same semantics as GET /users/{id}/issues (#569)."""
+    _current_user(request)
+    _require_user_exists(user_id)
+    issues = repo.list_issues()
+    stats = {
+        kind: sum(1 for issue in issues if _issue_kind_belongs(issue, user_id, kind))
+        for kind in _USER_ISSUE_KINDS
+    }
+    return APIResponse(data=stats, meta=Meta(request_id=None))
