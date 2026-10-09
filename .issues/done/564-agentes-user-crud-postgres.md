@@ -29,7 +29,7 @@ role:'ai-agent', type:'agent', avatar, created_at, last_active, issues_assigned,
 issues_created, skills[], model, specialization` + `EditAgentModal` emite además
 `temperature, systemPrompt, tools, writeAccess, limits`.
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: HIGH
 
@@ -72,15 +72,16 @@ feat / backend
    `test_agent_profile_no_login_with_missing_credential`, `test_agent_profiles_503_without_database_url`.
 
 ## Acceptance Criteria
-- [ ] `GET/POST/PUT/DELETE /agents/profiles` funcionan sobre `users` + `agents_user` con uid
+- [x] `GET/POST/PUT/DELETE /agents/profiles` funcionan sobre `users` + `agents_user` con uid
       generado por la raíz
-- [ ] `tools` desconocida → 422; username duplicado → 409; sin database → 503
-- [ ] El registro de rutas no colisiona con `/agents/{agent_id}` (test explícito)
-- [ ] Los agentes no pueden iniciar sesión (sin fila `human_user`/credencial)
-- [ ] `DELETE /users/{id}` de un agente limpia `agents_user`/`user_skills` por `CASCADE` (y
+- [x] `tools` desconocida → 422; username duplicado → 409; sin database → 503
+- [x] El registro de rutas no colisiona con `/agents/{agent_id}` (test explícito)
+- [x] Los agentes no pueden iniciar sesión (sin fila `human_user`/credencial)
+- [x] `DELETE /users/{id}` de un agente limpia `agents_user`/`user_skills` por `CASCADE` (y
       el guard de humanos no aplica a los agentes)
-- [ ] **Tests**: los pytest listados pasan
-- [ ] Gates backend sin regresiones: `ruff` 1011, `mypy` 1153, `pytest` 1331+3
+- [x] **Tests**: los pytest listados pasan
+- [x] Gates backend sin regresiones: `ruff` 1334, `mypy` 1136, `pytest` 1437 (+11, 3
+      preexistentes documentados)
 
 ## Files to Create
 - `src/socialseed_tasker/infrastructure/web_api/routers/agent_profiles.py`
@@ -105,3 +106,29 @@ feat / backend
 - #558 (esquema + `agents_user` + catálogo `tools`), #559/#560 (humanos en `/users`), #562
   (borrado en cascada), #565 (listado en la vista), #566-#568 (alta/edición/borrado desde la
   vista), #572 (catálogos skills/tools API+UI), #573 (migración del Studio)
+
+## Resolution
+
+Implementado 2026-10-08 (commit pendiente de `si`):
+
+- **Store** `PostgresAgentProfileStore` (`auth/user_store.py`): CRUD transaccional sobre
+  `users` + `agents_user` + `user_skills`; uid generado por PG (`RETURNING id`,
+  `user_type='agent'`); `tools` validadas contra el catálogo (`ValueError('tool:<slug>')`);
+  JSONB pasados como texto con cast explícito `::jsonb`; update parcial con `None` = keep
+  (lectura previa de los valores actuales); skills con reemplazo total; `delete_profile` con
+  guard `WHERE user_type='agent'` (nunca toca humanos, que van por `DELETE /users` #562).
+- **Router** `routers/agent_profiles.py`: `GET/GET{id}/POST/PUT/DELETE /agents/profiles`
+  con `APIResponse`; 404 sin fila (get/update/delete), 409 username duplicado, 422 tool
+  desconocida o username vacío, 503 sin `TASKER_DATABASE_URL`. `role` siempre `null` (el
+  front deriva `ai-agent`), `type='agent'`.
+- **app.py**: `include_router(agent_profiles_router)` **antes** de `agent_router` (test
+  `test_agent_profile_route_registered_before_agent_id` fija el orden).
+- **Fake** `FakePgCursor`: `self.tools` catalog; insert/update `agents_user` completos (11
+  params) sin romper la forma legada de 2/4; `delete from users` con detección del literal
+  `'agent'`; handlers de `select 1 from users where id`, `select 1 from tools where id`,
+  snapshot JSONB del update, fila de perfil `users ⨝ agents_user` y join de skills.
+- **Tests** `tests/api/test_agent_profiles_api.py` (11): los 9 obligatorios del issue +
+  `test_delete_agent_profile_never_touches_humans` y
+  `test_create_agent_profile_duplicate_username_409`.
+- Frontend intacto (migración del Studio = #573). Gates: ruff 1334 / mypy 1136 /
+  pytest 1437 (+11; los 3 fallos son los preexistentes documentados).

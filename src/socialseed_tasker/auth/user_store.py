@@ -15,7 +15,7 @@ import re
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 import bcrypt
 import psycopg
@@ -694,6 +694,296 @@ class PostgresUserStore:
                     "INSERT INTO user_skills (user_id, skill_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
                     (user_id, slug),
                 )
+
+
+_AGENT_PROFILE_ROW_SQL = """
+SELECT u.id, u.username, u.created_at,
+       a.email, a.avatar, a.model, a.specialization, a.temperature,
+       a.system_prompt, a.tools, a.write_access, a.limits, a.enabled, a.last_used_at
+FROM users u JOIN agents_user a ON a.user_id = u.id
+"""
+
+
+def _as_json_list(value: Any) -> list[str]:
+    """Normalize a JSONB column (parsed list or text) into a list of strings."""
+    if value is None:
+        return []
+    if isinstance(value, str):
+        value = json.loads(value)
+    return [str(item) for item in value or []]
+
+
+def _as_json_dict(value: Any) -> dict[str, Any] | None:
+    """Normalize a JSONB column (parsed dict or text) into a dict."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return cast("dict[str, Any]", json.loads(value))
+    return dict(value)
+
+
+class PostgresAgentProfileStore:
+    """CRUD over ``users`` + ``agents_user`` + ``user_skills`` (issue #564).
+
+    Agent identities live in the PG root with ``user_type='agent'``, a
+    PostgreSQL-generated uid and no credential or RBAC role rows. ``tools``
+    are validated against the ``tools`` catalog (#558/#572) and JSONB
+    columns are passed as text with an explicit ``::jsonb`` cast.
+    """
+
+    def __init__(self, database_url: str) -> None:
+        self._database_url = database_url
+
+    def list_profiles(self) -> list[dict[str, Any]]:
+        """All agent profiles ordered by username."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute(f"{_AGENT_PROFILE_ROW_SQL} ORDER BY u.username")
+            rows = cur.fetchall()
+            skills = self._load_skills(cur)
+        return [self._row_to_profile(row, skills) for row in rows]
+
+    def get_profile(self, user_id: str) -> dict[str, Any] | None:
+        """Single agent profile composed from ``users`` + ``agents_user``."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute(f"{_AGENT_PROFILE_ROW_SQL} WHERE u.id = %s AND u.user_type = 'agent'", (user_id,))
+            row = cur.fetchone()
+            if row is None:
+                return None
+            return self._row_to_profile(row, self._load_skills(cur))
+
+    @staticmethod
+    def _load_skills(cur: Any) -> dict[str, list[str]]:
+        cur.execute("SELECT us.user_id, s.name FROM user_skills us JOIN skills s ON s.id = us.skill_id")
+        linked: dict[str, list[str]] = {}
+        for uid, name in cur.fetchall():
+            linked.setdefault(str(uid), []).append(str(name))
+        return linked
+
+    @staticmethod
+    def _row_to_profile(row: Any, skills: dict[str, list[str]]) -> dict[str, Any]:
+        return {
+            "id": str(row[0]),
+            "username": row[1],
+            "created_at": row[2],
+            "email": row[3],
+            "avatar": row[4],
+            "model": row[5],
+            "specialization": row[6],
+            "temperature": row[7],
+            "system_prompt": row[8],
+            "tools": _as_json_list(row[9]),
+            "write_access": _as_json_list(row[10]),
+            "limits": _as_json_dict(row[11]),
+            "enabled": bool(row[12]),
+            "last_used_at": row[13],
+            "skills": skills.get(str(row[0]), []),
+        }
+
+    @staticmethod
+    def _validate_tools(cur: Any, tools: list[str] | None) -> list[str]:
+        """Raise ``ValueError('tool:<slug>')`` for slugs missing from the catalog."""
+        validated: list[str] = []
+        for tool in tools or []:
+            cur.execute("SELECT 1 FROM tools WHERE id = %s", (tool,))
+            if cur.fetchone() is None:
+                raise ValueError(f"tool:{tool}")
+            validated.append(tool)
+        return validated
+
+    @staticmethod
+    def _write_skills(cur: Any, user_id: str, skills: list[str]) -> None:
+        for name in skills:
+            slug = skill_slug(name)
+            if not slug:
+                continue
+            cur.execute(
+                "INSERT INTO skills (id, name) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                (slug, name),
+            )
+            cur.execute(
+                "INSERT INTO user_skills (user_id, skill_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                (user_id, slug),
+            )
+
+    def create_profile(
+        self,
+        *,
+        username: str,
+        email: str | None = None,
+        avatar: str | None = None,
+        model: str | None = None,
+        specialization: str | None = None,
+        temperature: float | None = None,
+        system_prompt: str | None = None,
+        tools: list[str] | None = None,
+        write_access: list[str] | None = None,
+        limits: dict[str, Any] | None = None,
+        skills: list[str] | None = None,
+        enabled: bool = True,
+    ) -> str:
+        """Insert ``users`` + ``agents_user`` + ``user_skills`` atomically.
+
+        The uid is generated by PostgreSQL (``RETURNING id``); agents carry no
+        credential and no role. Raises ``ValueError('tool:<slug>')`` when a
+        tool is not in the catalog and ``ValueError('username')`` on
+        uniqueness conflicts (mapped to 409/422 by the router, issue #564).
+        """
+        normalized = normalize_username(username)
+        with closing(psycopg.connect(self._database_url, autocommit=False)) as conn:
+            try:
+                with conn.cursor() as cur:
+                    validated_tools = self._validate_tools(cur, tools)
+                    cur.execute("SELECT 1 FROM users WHERE username_normalized = %s", (normalized,))
+                    if cur.fetchone():
+                        raise ValueError("username")
+                    cur.execute(
+                        """
+                        INSERT INTO users (username, username_normalized, user_type, created_at)
+                        VALUES (%s, %s, 'agent', now())
+                        RETURNING id
+                        """,
+                        (username, normalized),
+                    )
+                    row = cur.fetchone()
+                    if row is None:
+                        raise ValueError("username")
+                    uid = str(row[0])
+                    cur.execute(
+                        """
+                        INSERT INTO agents_user (
+                            user_id, email, avatar, model, specialization, temperature,
+                            system_prompt, tools, write_access, limits, enabled
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb, %s)
+                        """,
+                        (
+                            uid,
+                            email,
+                            avatar,
+                            model,
+                            specialization,
+                            temperature,
+                            system_prompt,
+                            json.dumps(validated_tools or []),
+                            json.dumps(write_access or []),
+                            json.dumps(limits) if limits is not None else None,
+                            enabled,
+                        ),
+                    )
+                    self._write_skills(cur, uid, skills or [])
+                conn.commit()
+            except psycopg.errors.UniqueViolation as exc:
+                conn.rollback()
+                raise ValueError("username") from exc
+            except Exception:
+                conn.rollback()
+                raise
+        return uid
+
+    def update_profile(
+        self,
+        user_id: str,
+        *,
+        username: str | None = None,
+        email: str | None = None,
+        avatar: str | None = None,
+        model: str | None = None,
+        specialization: str | None = None,
+        temperature: float | None = None,
+        system_prompt: str | None = None,
+        tools: list[str] | None = None,
+        write_access: list[str] | None = None,
+        limits: dict[str, Any] | None = None,
+        skills: list[str] | None = None,
+        enabled: bool | None = None,
+    ) -> None:
+        """Partial update: ``None`` keeps the stored value, provided lists replace.
+
+        Raises ``LookupError`` when the agent row is missing (404),
+        ``ValueError('tool:<slug>')`` for unknown tools and
+        ``ValueError('username')`` on uniqueness conflicts (409).
+        """
+        normalized = normalize_username(username) if username is not None else None
+        with closing(psycopg.connect(self._database_url, autocommit=False)) as conn:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT 1 FROM users WHERE id = %s AND user_type = 'agent'", (user_id,))
+                    if cur.fetchone() is None:
+                        raise LookupError("agent profile not found")
+                    if normalized is not None:
+                        cur.execute(
+                            "SELECT 1 FROM users WHERE username_normalized = %s AND id <> %s",
+                            (normalized, user_id),
+                        )
+                        if cur.fetchone():
+                            raise ValueError("username")
+                    validated_tools = self._validate_tools(cur, tools)
+                    cur.execute(
+                        """
+                        SELECT email, avatar, model, specialization, temperature,
+                               system_prompt, tools, write_access, limits, enabled
+                        FROM agents_user WHERE user_id = %s
+                        """,
+                        (user_id,),
+                    )
+                    current = cur.fetchone()
+                    if current is None:
+                        raise LookupError("agent profile not found")
+                    (
+                        cur_email, cur_avatar, cur_model, cur_specialization,
+                        cur_temperature, cur_prompt, cur_tools, cur_write,
+                        cur_limits, cur_enabled,
+                    ) = current
+                    next_tools = validated_tools if tools is not None else _as_json_list(cur_tools)
+                    next_write = write_access if write_access is not None else _as_json_list(cur_write)
+                    next_limits = limits if limits is not None else _as_json_dict(cur_limits)
+                    cur.execute(
+                        """
+                        UPDATE agents_user SET
+                            email = %s, avatar = %s, model = %s, specialization = %s,
+                            temperature = %s, system_prompt = %s,
+                            tools = %s::jsonb, write_access = %s::jsonb,
+                            limits = %s::jsonb, enabled = %s
+                        WHERE user_id = %s
+                        """,
+                        (
+                            email if email is not None else cur_email,
+                            avatar if avatar is not None else cur_avatar,
+                            model if model is not None else cur_model,
+                            specialization if specialization is not None else cur_specialization,
+                            temperature if temperature is not None else cur_temperature,
+                            system_prompt if system_prompt is not None else cur_prompt,
+                            json.dumps(next_tools),
+                            json.dumps(next_write),
+                            json.dumps(next_limits) if next_limits is not None else None,
+                            enabled if enabled is not None else cur_enabled,
+                            user_id,
+                        ),
+                    )
+                    if normalized is not None:
+                        cur.execute(
+                            "UPDATE users SET username = %s, username_normalized = %s WHERE id = %s",
+                            (username, normalized, user_id),
+                        )
+                    if skills is not None:
+                        cur.execute("DELETE FROM user_skills WHERE user_id = %s", (user_id,))
+                        self._write_skills(cur, user_id, skills)
+                conn.commit()
+            except psycopg.errors.UniqueViolation as exc:
+                conn.rollback()
+                raise ValueError("username") from exc
+            except Exception:
+                conn.rollback()
+                raise
+
+    def delete_profile(self, user_id: str) -> bool:
+        """Cascade-delete the agent identity row (``agents_user``/``user_skills``).
+
+        The ``user_type = 'agent'`` guard never touches human rows; humans are
+        deleted through ``DELETE /users/{id}`` (issue #562).
+        """
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM users WHERE id = %s AND user_type = 'agent'", (user_id,))
+            return bool(cur.rowcount)
 
 
 def wipe_postgres_data() -> int:

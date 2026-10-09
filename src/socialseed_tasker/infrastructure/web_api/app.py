@@ -496,6 +496,10 @@ def create_app(
     )
     from socialseed_tasker.events.routes import webhook_router as events_webhook_router
 
+    # #564: must be registered before agent_router so /agents/profiles is not
+    # swallowed by the /agents/{agent_id} path parameter of agent.py.
+    from socialseed_tasker.infrastructure.web_api.routers.agent_profiles import agent_profiles_router
+
     app.include_router(issues_router, prefix="/api/v1", tags=["issues"])
     app.include_router(dependencies_router, prefix="/api/v1", tags=["dependencies"])
     app.include_router(components_router, prefix="/api/v1", tags=["components"])
@@ -506,6 +510,7 @@ def create_app(
     app.include_router(project_router, prefix="/api/v1", tags=["projects"])
     app.include_router(policy_router, prefix="/api/v1", tags=["policies"])
     app.include_router(policy_rel_router, prefix="/api/v1", tags=["policy-relationships"])
+    app.include_router(agent_profiles_router, prefix="/api/v1", tags=["agent-profiles"])
     app.include_router(agent_router, prefix="/api/v1", tags=["agents"])
     app.include_router(sync_router, prefix="/api/v1", tags=["sync"])
     app.include_router(webhook_router, prefix="/api/v1", tags=["webhooks"])

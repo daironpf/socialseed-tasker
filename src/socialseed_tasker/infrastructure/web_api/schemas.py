@@ -994,6 +994,70 @@ class UserResponse(BaseModel):
     """One-time plaintext, populated only by the POST /users 201 (issue #563); always None on reads."""
 
 
+class AgentProfileCreate(BaseModel):
+    """Request for creating an agent profile on /agents/profiles (issue #564)."""
+
+    username: str = Field(..., min_length=1)
+    email: str | None = None
+    avatar: str | None = None
+    model: str | None = None
+    specialization: str | None = None
+    temperature: float | None = None
+    system_prompt: str | None = None
+    tools: list[str] = Field(default_factory=list)
+    write_access: list[str] = Field(default_factory=list)
+    limits: dict[str, Any] | None = None
+    skills: list[str] = Field(default_factory=list)
+    enabled: bool = True
+
+
+class AgentProfileUpdate(BaseModel):
+    """Request for updating an agent profile (issue #564).
+
+    Every field is optional: ``None`` keeps the stored value; ``tools``/
+    ``write_access``/``skills`` set replaces the stored list (``[]`` clears).
+    """
+
+    username: str | None = None
+    email: str | None = None
+    avatar: str | None = None
+    model: str | None = None
+    specialization: str | None = None
+    temperature: float | None = None
+    system_prompt: str | None = None
+    tools: list[str] | None = None
+    write_access: list[str] | None = None
+    limits: dict[str, Any] | None = None
+    skills: list[str] | None = None
+    enabled: bool | None = None
+
+
+class AgentProfileResponse(BaseModel):
+    """Response for an agent profile (issue #564).
+
+    ``role`` is always None: agent identities have no RBAC role and the
+    frontend derives ``'ai-agent'`` from ``type``.
+    """
+
+    id: str
+    username: str
+    email: str | None = None
+    role: str | None = None
+    type: str = "agent"
+    avatar: str | None = None
+    model: str | None = None
+    specialization: str | None = None
+    temperature: float | None = None
+    system_prompt: str | None = None
+    tools: list[str] = Field(default_factory=list)
+    write_access: list[str] = Field(default_factory=list)
+    limits: dict[str, Any] | None = None
+    enabled: bool = True
+    skills: list[str] = Field(default_factory=list)
+    created_at: datetime | None = None
+    last_used_at: datetime | None = None
+
+
 class CommitCreateRequest(BaseModel):
     """Request for creating a commit."""
 

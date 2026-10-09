@@ -70,6 +70,7 @@ class FakePgCursor:
         self.session_logs: list[tuple[str, str, Any]] = []
         self.legacy_rows: list[tuple[Any, ...]] = []
         self.roles: dict[str, int] = {"ADMIN": 3, "DEVELOPER": 2, "VIEWER": 1}
+        self.tools: dict[str, str] = {}
         self.rowcount = 0
         self._next: Any = None
         self._rows: list[tuple[Any, ...]] = []
@@ -100,6 +101,27 @@ class FakePgCursor:
             1
             for row in self.legacy_rows
             if row[0] not in self.human and row[0] not in self.agents
+        )
+
+    def _agent_profile_row(self, uid: str) -> tuple[Any, ...]:
+        """Compose the ``_AGENT_PROFILE_ROW_SQL`` tuple for one agent (#564)."""
+        user = self.users[uid]
+        profile = self.agents[uid]
+        return (
+            uid,
+            user["username"],
+            user.get("created_at"),
+            profile.get("email"),
+            profile.get("avatar"),
+            profile.get("model"),
+            profile.get("specialization"),
+            profile.get("temperature"),
+            profile.get("system_prompt"),
+            profile.get("tools", "[]"),
+            profile.get("write_access", "[]"),
+            profile.get("limits"),
+            profile.get("enabled", True),
+            profile.get("last_used_at"),
         )
 
     # -- execute ------------------------------------------------------------
@@ -139,7 +161,8 @@ class FakePgCursor:
             returning = "returning id" in low
             if len(values) == 2:
                 username, normalized = values
-                user_type, created_at, uid = "human", None, None
+                # The literal lives in the SQL (#559 humans, #564 agents).
+                user_type, created_at, uid = ("agent" if "'agent'" in low else "human"), None, None
             elif returning:
                 username, normalized, user_type, created_at = values
                 uid = None
@@ -190,19 +213,45 @@ class FakePgCursor:
                 }
                 self.rowcount = 1
         elif low.startswith("insert into agents_user"):
-            uid, email = tuple(params or ())
-            if uid in self.agents:
-                self.rowcount = 0
+            values = tuple(params or ())
+            if len(values) >= 11:
+                # Full agent profile insert (#564): 11 positional columns.
+                (
+                    uid, email, avatar, model, specialization, temperature,
+                    system_prompt, tools, write_access, limits, enabled,
+                ) = values[:11]
+                if uid in self.agents:
+                    self.rowcount = 0
+                else:
+                    self.agents[str(uid)] = {
+                        "user_id": str(uid),
+                        "email": email,
+                        "avatar": avatar,
+                        "model": model,
+                        "specialization": specialization,
+                        "temperature": temperature,
+                        "system_prompt": system_prompt,
+                        "tools": tools,
+                        "write_access": write_access,
+                        "limits": limits,
+                        "enabled": enabled,
+                        "last_used_at": None,
+                    }
+                    self.rowcount = 1
             else:
-                self.agents[str(uid)] = {
-                    "user_id": str(uid),
-                    "email": email,
-                    "avatar": None,
-                    "model": None,
-                    "specialization": None,
-                    "enabled": True,
-                }
-                self.rowcount = 1
+                uid, email = values
+                if uid in self.agents:
+                    self.rowcount = 0
+                else:
+                    self.agents[str(uid)] = {
+                        "user_id": str(uid),
+                        "email": email,
+                        "avatar": None,
+                        "model": None,
+                        "specialization": None,
+                        "enabled": True,
+                    }
+                    self.rowcount = 1
         elif low.startswith("insert into skills"):
             slug, name = tuple(params or ())
             if slug in self.skills or name in self.skills.values():
@@ -260,12 +309,34 @@ class FakePgCursor:
                 row["username_normalized"] = normalized
                 self.rowcount = 1
         elif low.startswith("update agents_user"):
-            uid = str(params[-1])
+            values = tuple(params or ())
+            uid = str(values[-1])
             row = self.agents.get(uid)
             if row is None:
                 self.rowcount = 0
+            elif len(values) >= 11:
+                # Full profile update (#564): 10 columns + user_id.
+                (
+                    email, avatar, model, specialization, temperature,
+                    system_prompt, tools, write_access, limits, enabled,
+                ) = values[:10]
+                row.update(
+                    {
+                        "email": email,
+                        "avatar": avatar,
+                        "model": model,
+                        "specialization": specialization,
+                        "temperature": temperature,
+                        "system_prompt": system_prompt,
+                        "tools": tools,
+                        "write_access": write_access,
+                        "limits": limits,
+                        "enabled": enabled,
+                    }
+                )
+                self.rowcount = 1
             else:
-                for key, value in zip(("avatar", "model", "specialization"), params[:3], strict=False):
+                for key, value in zip(("avatar", "model", "specialization"), values[:3], strict=False):
                     if value is not None:
                         row[key] = value
                 self.rowcount = 1
@@ -275,12 +346,18 @@ class FakePgCursor:
             self.user_skills.pop(uid, None)
             self.rowcount = 1 if existed else 0
         elif low.startswith("delete from users"):
-            uid = str(params[0])
-            existed = uid in self.users
-            self.users.pop(uid, None)
-            self.human.pop(uid, None)
-            self.agents.pop(uid, None)
-            self.user_skills.pop(uid, None)
+            values = tuple(params or ())
+            uid = str(values[0])
+            row = self.users.get(uid)
+            # #564 guards agent deletes with user_type='agent' (literal or param, never touches humans).
+            wants_agent = (len(values) > 1 and str(values[1]) == "agent") or "'agent'" in low
+            # #564 guards agent deletes with user_type='agent' (never touches humans).
+            existed = row is not None and (not wants_agent or row.get("user_type") == "agent")
+            if existed:
+                self.users.pop(uid, None)
+                self.human.pop(uid, None)
+                self.agents.pop(uid, None)
+                self.user_skills.pop(uid, None)
             self.rowcount = 1 if existed else 0
         elif low.startswith("select count(*) from users where user_type"):
             # Last-user guard counts humans in the PG root (#562).
@@ -335,6 +412,48 @@ class FakePgCursor:
         elif low.startswith("select username, id from users"):
             self._rows = [
                 (row["username"], row["id"]) for row in sorted(self.users.values(), key=lambda r: r["username"])
+            ]
+        elif low.startswith("select 1 from users where id"):
+            row = self.users.get(str(params[0]))
+            ok = row is not None and (len(tuple(params or ())) < 2 or row["user_type"] == str(params[1]))
+            self._next = (1,) if ok else None
+        elif low.startswith("select 1 from tools where id"):
+            # Tool catalog validation for agent profiles (#564).
+            self._next = (1,) if str(params[0]) in self.tools else None
+        elif low.startswith("select email, avatar, model, specialization"):
+            # update_profile keeps JSONB values it must not overwrite (#564).
+            row = self.agents.get(str(params[0]))
+            if row is None:
+                self._next = None
+            else:
+                self._next = (
+                    row.get("email"),
+                    row.get("avatar"),
+                    row.get("model"),
+                    row.get("specialization"),
+                    row.get("temperature"),
+                    row.get("system_prompt"),
+                    row.get("tools"),
+                    row.get("write_access"),
+                    row.get("limits"),
+                    row.get("enabled", True),
+                )
+        elif low.startswith("select u.id, u.username, u.created_at, a."):
+            # Agent profile read over users ⨝ agents_user (#564).
+            if "where u.id" in low:
+                uid = str(params[0])
+                self._next = self._agent_profile_row(uid) if uid in self.agents else None
+            else:
+                ordered = sorted(
+                    self.agents,
+                    key=lambda key: str(self.users.get(key, {}).get("username", "")),
+                )
+                self._rows = [self._agent_profile_row(uid) for uid in ordered]
+        elif low.startswith("select us.user_id, s.name"):
+            self._rows = [
+                (uid, self.skills.get(slug, slug))
+                for uid, slugs in sorted(self.user_skills.items())
+                for slug in sorted(slugs)
             ]
         elif "from users u" in low:
             normalized = str(params[0])
