@@ -47,6 +47,9 @@ export function mergeStudioAgents(users: User[]): User[] {
   const studioIds = new Set(profiles.map(p => p.id))
   const withoutStudio = users.filter(u => !u.id.startsWith('agent-studio-') || studioIds.has(u.id))
   const merged = withoutStudio.map(u => {
+    // PG ids are never overwritten by a studio profile (#565): only
+    // `agent-studio-*` cards are replaced with their latest local version.
+    if (!u.id.startsWith('agent-studio-')) return u
     const profile = profiles.find(p => p.id === u.id)
     return profile ? profileToUser(profile) : u
   })

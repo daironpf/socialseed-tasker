@@ -1,6 +1,5 @@
 import client from './client'
 import type { APIResponse, User } from '@/types'
-import { mergeStudioAgents } from '@/utils/studioAgents'
 
 type BackendUser = Partial<User> & {
   email?: string | null
@@ -29,8 +28,10 @@ function normalizeBackendUser(raw: BackendUser): User {
 }
 
 export async function fetchUsers(): Promise<User[]> {
+  // The studio-local merge moved to the store, which also unions the
+  // /agents/profiles collection (#565).
   const { data } = await client.get<APIResponse<BackendUser[]>>('/users')
-  return mergeStudioAgents((data.data || []).map(normalizeBackendUser))
+  return (data.data || []).map(normalizeBackendUser)
 }
 
 export async function updateUser(userId: string, userData: Partial<User>): Promise<User> {

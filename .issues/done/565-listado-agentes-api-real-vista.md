@@ -19,7 +19,7 @@ pero la normalización debe seguir tolerando payload mixto (mock sí mezcla agen
 Mock de referencia: `mockApi.listUsers` devuelve humanos **y** agentes en una sola colección
 (la vista no distingue origen) — en real el store simula esa colección unificada.
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: HIGH
 
@@ -54,14 +54,14 @@ feat / fullstack
      modo mock no llama a `/agents/profiles`.
 
 ## Acceptance Criteria
-- [ ] La lista de la vista muestra humanos (PG), agentes de `/agents/profiles` (PG) y locales
+- [x] La lista de la vista muestra humanos (PG), agentes de `/agents/profiles` (PG) y locales
       `agent-studio-*` sin duplicados por id
-- [ ] Modo mock intacto: solo datos del mock, sin llamadas nuevas
-- [ ] 503/error de `/agents/profiles` no impide ver los humanos
-- [ ] El contador "agentes" incluye los perfiles del endpoint
-- [ ] **Tests**: `agentProfilesApi.spec.ts` + spec de combinación del store pasan
-- [ ] Gates frontend: `lint` 0 errors / 2 warnings, `test` 306+ (44+ files), `build` OK,
-      i18n sin cambios o 1693+ si se añade clave
+- [x] Modo mock intacto: solo datos del mock, sin llamadas nuevas
+- [x] 503/error de `/agents/profiles` no impide ver los humanos
+- [x] El contador "agentes" incluye los perfiles del endpoint
+- [x] **Tests**: `agentProfilesApi.spec.ts` + spec de combinación del store pasan
+- [x] Gates frontend: `lint` 0 errors / 2 warnings, `test` 334 (47 files), `build` OK,
+      i18n sin cambios (1701/1701)
 
 ## Files to Create
 - `frontend/src/api/agentProfilesApi.ts`
@@ -80,3 +80,29 @@ feat / fullstack
 ## Related Issues
 - #558 (humanos PG), #564 (endpoint de perfiles), #566-#568 (escrituras), #547/#549 (patrón de
   api client/`APIResponse`), Agent Studio migración (opcional, fuera de este lote)
+
+## Resolution
+
+Implementado 2026-10-08 (commit pendiente de `si`):
+
+- **Nuevo** `frontend/src/api/agentProfilesApi.ts`: `fetchAgentProfiles()` con unwrap del
+  envelope `APIResponse` y `normalizeAgentProfile()` (shape `User` de la tarjeta: `type='agent'`,
+  `role null` → `'ai-agent'`, `enabled` → `is_active`, `last_used_at ?? created_at` →
+  `last_active`); más el scaffolding de escritura `createAgentProfile`/`updateAgentProfile`/
+  `deleteAgentProfile` (payload snake_case, `suppressErrorToast` — las usarán #566–#568).
+  La lista se pide con `suppressErrorToast` porque el store degrada a humanos.
+- **`usersStore.fetchUsers`**: en real `Promise.allSettled([fetchUsers → mergeStudioAgents,
+  fetchAgentProfiles])`; si fallan los humanos ⇒ `error` como antes; si fallan los perfiles
+  (503 sin DB) ⇒ `console.warn` y la lista queda humanos + locales; merge final con dedupe
+  por id (los perfiles no pisan ids existentes). En **mock solo mock** (sin llamada nueva).
+- **Movido** `mergeStudioAgents` de `usersApi.fetchUsers` al store (el store orquesta las tres
+  fuentes, como pide el issue) y reforzado en `utils/studioAgents.ts`: un perfil studio solo
+  reemplaza ids con prefijo `agent-studio-` y nunca añade duplicados de ids PG.
+- Stats sin cambios de vista: `agents`/`activeAgents` salen de `store.users`, que ya contiene
+  los perfiles del endpoint.
+- **Tests**: `agentProfilesApi.spec.ts` (7: envelope/normalización, defaults, 503, 404,
+  create/update/delete) + `stores/usersStore.spec.ts` (6: combinación con locales, dedupe,
+  fallo profiles ⇒ humanos OK, fallo /users ⇒ error, mock sin llamada nueva, stats) +
+  `studioAgents.spec.ts` +1 (id PG no pisado). 28 specs verdes en los 4 ficheros.
+- Gates frontend: `lint` 0/2, `test` 334 (47 files, +14), `build` OK, i18n 1701/1701 sin
+  cambios. Sin tocar backend.

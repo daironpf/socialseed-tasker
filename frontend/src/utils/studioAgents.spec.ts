@@ -70,4 +70,21 @@ describe('studioAgents', () => {
     const users = [makeUser('u-1')]
     expect(mergeStudioAgents(users)).toEqual(users)
   })
+
+  it('never lets a studio profile overwrite a PG id (#565)', () => {
+    saveStudioProfiles([makeProfile('pg-agent-uuid')])
+    const pgAgent: User = {
+      ...makeUser('pg-agent-uuid'),
+      type: 'agent',
+      username: 'bot-qa-from-pg',
+      avatar: '🤖',
+    }
+
+    const merged = mergeStudioAgents([pgAgent])
+
+    // No replacement and no duplicate append: the PG card stays authoritative.
+    expect(merged).toHaveLength(1)
+    expect(merged[0].username).toBe('bot-qa-from-pg')
+    expect(merged[0].avatar).toBe('🤖')
+  })
 })

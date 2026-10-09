@@ -1,6 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as api from '@/api/usersApi'
+import { fetchAgentProfiles } from '@/api/agentProfilesApi'
+import { isMockMode } from '@/api/client'
+import { mergeStudioAgents } from '@/utils/studioAgents'
 import type { User } from '@/types'
 
 export const useUsersStore = defineStore('users', () => {
@@ -16,7 +19,32 @@ export const useUsersStore = defineStore('users', () => {
     loading.value = true
     error.value = null
     try {
-      users.value = await api.fetchUsers()
+      if (isMockMode()) {
+        // Mock owns its whole collection (#565): no /agents/profiles call in mock mode.
+        users.value = mergeStudioAgents(await api.fetchUsers())
+        return
+      }
+      const [humansResult, profilesResult] = await Promise.allSettled([
+        api.fetchUsers().then(mergeStudioAgents),
+        fetchAgentProfiles(),
+      ])
+      if (humansResult.status === 'rejected') throw humansResult.reason
+      const humansList = humansResult.value
+      if (profilesResult.status === 'rejected') {
+        // A 503 (no database) must never hide the humans (#565).
+        console.warn('agent profiles unavailable, showing humans only:', profilesResult.reason)
+        users.value = humansList
+        return
+      }
+      const seen = new Set(humansList.map(u => u.id))
+      const merged = [...humansList]
+      for (const profile of profilesResult.value) {
+        if (!seen.has(profile.id)) {
+          seen.add(profile.id)
+          merged.push(profile)
+        }
+      }
+      users.value = merged
     } catch (e) {
       error.value = (e as Error).message
     } finally {
