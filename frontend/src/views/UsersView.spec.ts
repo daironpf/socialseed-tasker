@@ -40,6 +40,7 @@ vi.mock('@/api/issuesApi', () => ({
     fetchAgentProfiles: vi.fn(),
     createAgentProfile: vi.fn(),
     updateAgentProfile: vi.fn(),
+    deleteAgentProfile: vi.fn(),
   }))
 
 function makeHuman(id: string, username: string): User {

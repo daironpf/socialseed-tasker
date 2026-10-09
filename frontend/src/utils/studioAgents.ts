@@ -77,6 +77,11 @@ export function applyStudioUpdate(data: StudioAgentUpdate): User {
   return profileToUser(merged)
 }
 
+/** Remove an agent-studio-* profile from localStorage (no network, #568). */
+export function removeStudioProfile(id: string): void {
+  saveStudioProfiles(loadStudioProfiles().filter(p => p.id !== id))
+}
+
 export function mergeStudioAgents(users: User[]): User[] {
   const profiles = loadStudioProfiles()
   if (!profiles.length) return users

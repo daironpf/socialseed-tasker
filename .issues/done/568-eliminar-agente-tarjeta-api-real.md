@@ -16,7 +16,7 @@ DELETE CASCADE`** (esquema #558/#564).
 
 Mock de referencia: `mockApi.deleteUser` elimina la entidad y desaparece de la lista.
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: MEDIUM
 
@@ -48,15 +48,15 @@ feat / fullstack
      "loguearse" (ya era imposible por falta de credencial).
 
 ## Acceptance Criteria
-- [ ] Borrar una tarjeta IA en real llama a `DELETE /agents/profiles/{id}` y la fila `users`
+- [x] Borrar una tarjeta IA en real llama a `DELETE /agents/profiles/{id}` y la fila `users`
       asociada desaparece de la raíz (`agents_user` limpia por cascada)
-- [ ] El guard de último humano **nunca** bloquea el borrado de agentes (pero sigue bloqueando
+- [x] El guard de último humano **nunca** bloquea el borrado de agentes (pero sigue bloqueando
       el de humanos, #562)
-- [ ] Los agentes locales se borran de localStorage sin llamadas de red
-- [ ] 404/503 → toast con detalle y la tarjeta no se retira
-- [ ] **Tests**: spec frontend `deleteAgent` + test backend de cascada `users`/`agents_user`
+- [x] Los agentes locales se borran de localStorage sin llamadas de red
+- [x] 404/503 → toast con detalle y la tarjeta no se retira
+- [x] **Tests**: spec frontend `deleteAgent` + test backend de cascada `users`/`agents_user`
       pasan
-- [ ] Gates: backend `ruff` 1011 / `mypy` 1153 / `pytest` 1331+3; frontend `lint` 0/2 /
+- [x] Gates: backend `ruff` 1011 / `mypy` 1153 / `pytest` 1331+3; frontend `lint` 0/2 /
       `test` 306+ / `build` OK
 
 ## Files to Create
@@ -79,3 +79,34 @@ feat / fullstack
 ## Related Issues
 - #556 (guard 409 y borrado de humanos), #562 (borrado raíz en cascada), #564/#565 (endpoint y
   api de perfiles), #567 (edición paralela)
+
+## Resolution
+
+Implementado 2026-10-09 (commit pendiente de `si`):
+
+- **Solo frontend** — el backend ya lo traía #564: `test_delete_agent_profile_removes_users_and_agents_user_rows`
+  y `test_delete_agent_profile_never_touches_humans` existen desde esa issue (suite
+  `tests/api/test_agent_profiles_api.py` 11/11 OK) y el `DELETE` es transaccional con
+  cascada FK a `agents_user`/`user_skills` verificada en vivo en el smoke de #564.
+- **`usersStore.deleteAgent(user)`** con la ramificación de #567: id `agent-studio-*` →
+  `removeStudioProfile()` (nuevo en `utils/studioAgents.ts`: filter+save sobre
+  `agent-studio-v1`, sin red) · mock mode → `api.deleteUser` (la colección mock es dueña de
+  sus entidades, #566) · real → `deleteAgentProfile(id)` → `DELETE /agents/profiles/{id}` →
+  éxito ⇒ tarjeta fuera del store. Humanos **nunca** entran aquí: la plantilla ya despacha
+  por `v-if="user.type"` (humano → `deleteUser` con guard 409 de #562 y botón
+  `disabled=isLastHuman`; agente → `deleteAgent`, botón siempre habilitado).
+- **Errores**: el store relanza sin mutar la lista; en **404** dispara `fetchUsers()` antes
+  de registrar el error (mismo orden que #567 — `fetchUsers` limpia `error` al arrancar) y
+  la vista pinta `common.error: detail` (404/503 con detalle, fallback `common.error`),
+  cerrando `EditAgentModal` solo en éxito.
+- **Sin modal de confirmación**: no figura en los AC y el borrado de humanos tampoco lo
+  tiene (consistencia de la vista); el AC "los agentes siempre se pueden borrar" se cumple
+  porque el botón de tarjeta agente no aplica el guard `isLastHuman`.
+- **Tests** (+5 en `usersStore.spec`, describe `usersStore.deleteAgent (issue #568)`):
+  id PG → `deleteAgentProfile` y tarjeta retirada; `agent-studio-*` → localStorage vaciado
+  sin tocar APIs (incluso en mock); rama mock → `api.deleteUser`; 404 → rechaza, tarjeta
+  intacta y refetch; humano → `deleteUser` relanza el 409 con la tarjeta intacta
+  (no-regresión #562/#556). `UsersView.spec` añade `deleteAgentProfile` a la factory.
+- Gates: backend sin cambios (ruff 1334 / mypy 1136 / pytest 1437 baselines intactos) +
+  suite `test_agent_profiles_api.py` 11/11; frontend `lint` 0/2, `test` 350 (47 files, +5),
+  `build` OK, i18n sin cambios (1702/1702).

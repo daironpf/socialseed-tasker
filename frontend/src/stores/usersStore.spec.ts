@@ -2,7 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useUsersStore } from '@/stores/usersStore'
 import * as usersApi from '@/api/usersApi'
-import { createAgentProfile, fetchAgentProfiles, updateAgentProfile } from '@/api/agentProfilesApi'
+import {
+  createAgentProfile,
+  deleteAgentProfile,
+  fetchAgentProfiles,
+  updateAgentProfile,
+} from '@/api/agentProfilesApi'
 import { isMockMode } from '@/api/client'
 import { loadStudioProfiles, saveStudioProfiles } from '@/utils/studioAgents'
 import type { AgentProfile } from '@/types/agentStudio'
@@ -19,6 +24,7 @@ vi.mock('@/api/agentProfilesApi', () => ({
   fetchAgentProfiles: vi.fn(),
   createAgentProfile: vi.fn(),
   updateAgentProfile: vi.fn(),
+  deleteAgentProfile: vi.fn(),
 }))
 
 vi.mock('@/api/client', () => ({
@@ -30,6 +36,7 @@ const mockedFetchUsers = vi.mocked(usersApi.fetchUsers)
 const mockedFetchProfiles = vi.mocked(fetchAgentProfiles)
 const mockedCreateProfile = vi.mocked(createAgentProfile)
 const mockedUpdateProfile = vi.mocked(updateAgentProfile)
+const mockedDeleteProfile = vi.mocked(deleteAgentProfile)
 const mockedUpdateUser = vi.mocked(usersApi.updateUser)
 const mockedIsMockMode = vi.mocked(isMockMode)
 
@@ -398,5 +405,99 @@ describe('usersStore.editUser (issue #567)', () => {
     expect(store.users[0].model).toBe('gpt-4o') // card untouched
     expect(store.error).toBe('Agent profile not found')
     expect(mockedFetchUsers).toHaveBeenCalled() // stale card triggers a refetch
+  })
+})
+
+describe('usersStore.deleteAgent (issue #568)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.removeItem(LS_KEY)
+    mockedIsMockMode.mockReturnValue(false)
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    localStorage.removeItem(LS_KEY)
+    vi.restoreAllMocks()
+  })
+
+  it('deletes a PG agent through DELETE /agents/profiles/{id} and removes the card', async () => {
+    const store = useUsersStore()
+    store.users.push(makeProfile('pg-agent-1', 'bot-qa'))
+    mockedDeleteProfile.mockResolvedValue(undefined)
+
+    await store.deleteAgent(makeProfile('pg-agent-1', 'bot-qa'))
+
+    expect(mockedDeleteProfile).toHaveBeenCalledTimes(1)
+    expect(mockedDeleteProfile).toHaveBeenCalledWith('pg-agent-1')
+    expect(usersApi.deleteUser).not.toHaveBeenCalled()
+    expect(store.users).toHaveLength(0)
+    expect(store.error).toBeNull()
+  })
+
+  it('removes agent-studio-* from localStorage without any network call (even in mock)', async () => {
+    mockedIsMockMode.mockReturnValue(true)
+    saveStudioProfiles([makeStudioProfile('agent-studio-1')])
+    const store = useUsersStore()
+    store.users.push(makeProfile('agent-studio-1', 'agent-studio-1'))
+
+    await store.deleteAgent(makeProfile('agent-studio-1', 'agent-studio-1'))
+
+    expect(mockedDeleteProfile).not.toHaveBeenCalled()
+    expect(usersApi.deleteUser).not.toHaveBeenCalled()
+    expect(loadStudioProfiles()).toHaveLength(0)
+    expect(store.users).toHaveLength(0)
+    expect(store.error).toBeNull()
+  })
+
+  it('in mock mode deletes agents through the mock collection (owns its entities, #566)', async () => {
+    mockedIsMockMode.mockReturnValue(true)
+    const store = useUsersStore()
+    store.users.push(makeProfile('mock-bot-1', 'mock-bot'))
+    vi.mocked(usersApi.deleteUser).mockResolvedValue(undefined)
+
+    await store.deleteAgent(makeProfile('mock-bot-1', 'mock-bot'))
+
+    expect(usersApi.deleteUser).toHaveBeenCalledTimes(1)
+    expect(usersApi.deleteUser).toHaveBeenCalledWith('mock-bot-1')
+    expect(mockedDeleteProfile).not.toHaveBeenCalled()
+    expect(store.users).toHaveLength(0)
+  })
+
+  it('propagates a 404 without removing the card and refetches the list', async () => {
+    const card = makeProfile('pg-agent-1', 'bot-qa')
+    const store = useUsersStore()
+    store.users.push(card)
+    mockedDeleteProfile.mockRejectedValue(
+      Object.assign(new Error('Agent profile not found'), { status: 404 }),
+    )
+    mockedFetchUsers.mockReturnValue(new Promise<User[]>(() => {}))
+    mockedFetchProfiles.mockReturnValue(new Promise<User[]>(() => {}))
+
+    await expect(store.deleteAgent(card)).rejects.toMatchObject({
+      status: 404,
+      message: 'Agent profile not found',
+    })
+
+    expect(store.users).toHaveLength(1) // card untouched
+    expect(store.error).toBe('Agent profile not found')
+    expect(mockedFetchUsers).toHaveBeenCalled() // stale card triggers a refetch
+  })
+
+  it('keeps humans on deleteUser with the 409 guard — no-regression of #562/#556', async () => {
+    const human = makeHuman('u-1', 'ana')
+    const store = useUsersStore()
+    store.users.push(human)
+    vi.mocked(usersApi.deleteUser).mockRejectedValue(
+      Object.assign(new Error('Cannot delete the last human'), { status: 409 }),
+    )
+
+    await expect(store.deleteUser('u-1')).rejects.toMatchObject({ status: 409 })
+
+    expect(usersApi.deleteUser).toHaveBeenCalledTimes(1)
+    expect(mockedDeleteProfile).not.toHaveBeenCalled()
+    expect(store.users).toHaveLength(1) // guard kept the card
+    expect(store.error).toBe('Cannot delete the last human')
   })
 })

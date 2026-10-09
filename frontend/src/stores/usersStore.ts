@@ -3,12 +3,13 @@ import { ref, computed } from 'vue'
 import * as api from '@/api/usersApi'
 import {
   createAgentProfile,
+  deleteAgentProfile,
   fetchAgentProfiles,
   updateAgentProfile,
   type AgentProfilePayload,
 } from '@/api/agentProfilesApi'
 import { isMockMode } from '@/api/client'
-import { applyStudioUpdate, mergeStudioAgents } from '@/utils/studioAgents'
+import { applyStudioUpdate, mergeStudioAgents, removeStudioProfile } from '@/utils/studioAgents'
 import type { User } from '@/types'
 
 export const useUsersStore = defineStore('users', () => {
@@ -171,6 +172,32 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
+  /**
+   * Delete an agent card (#568): `agent-studio-*` only clears localStorage,
+   * mock mode goes through the mock collection (it owns its entities, #566)
+   * and endpoint agents hit DELETE /agents/profiles/{id} — the human
+   * "last guard" (#562) never applies here. A 404 (already deleted upstream)
+   * refreshes the list; on any error the card stays put.
+   */
+  async function deleteAgent(user: User): Promise<void> {
+    try {
+      if (user.id.startsWith('agent-studio-')) {
+        removeStudioProfile(user.id)
+      } else if (isMockMode()) {
+        await api.deleteUser(user.id)
+      } else {
+        await deleteAgentProfile(user.id)
+      }
+      users.value = users.value.filter(u => u.id !== user.id)
+      error.value = null
+    } catch (e) {
+      // fetchUsers() clears `error` synchronously: kick it off first (#567/#568).
+      if ((e as { status?: number }).status === 404) void fetchUsers()
+      error.value = (e as Error).message
+      throw e
+    }
+  }
+
   return {
     users,
     loading,
@@ -183,6 +210,7 @@ export const useUsersStore = defineStore('users', () => {
     createUser,
     createAgent,
     editUser,
+    deleteAgent,
     deleteUser,
   }
 })

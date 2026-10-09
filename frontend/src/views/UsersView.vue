@@ -486,7 +486,7 @@ async function deleteUser(user: User) {
 
 async function deleteAgent(user: User) {
   try {
-    await usersStore.deleteUser(user.id)
+    await usersStore.deleteAgent(user)
     closeEditAgent()
   } catch (e) {
     const err = e as Error & { status?: number }
