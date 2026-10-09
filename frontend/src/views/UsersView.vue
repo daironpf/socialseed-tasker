@@ -432,14 +432,21 @@ function closeEditAgent() {
   editingAgent.value = null
 }
 
-async function saveAgent(updatedAgent: Record<string, any>) {
-  try {
-    await usersStore.updateUser(updatedAgent.id, updatedAgent as User)
-    closeEditAgent()
-  } catch {
-    toast.error(t('common.error'))
+  async function saveAgent(updatedAgent: Record<string, any>) {
+    try {
+      await usersStore.editUser(updatedAgent as User & { id: string })
+      closeEditAgent()
+    } catch (e) {
+      const err = e as Error & { status?: number }
+      if (err.status === 409) {
+        toast.error(t(err.message.includes('email') ? 'users.emailTaken' : 'users.usernameTaken'))
+      } else if (err.status === 422 || err.status === 404) {
+        toast.error(`${t('common.error')}: ${err.message}`)
+      } else {
+        toast.error(t('common.error'))
+      }
+    }
   }
-}
 
 function openEditUser(user: User) {
   editingUser.value = { ...user }

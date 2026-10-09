@@ -364,7 +364,8 @@ function close() {
 }
 
 function save() {
+  // Only emit: the parent (UsersView) closes the modal after a successful
+  // save so errors keep the form open (#566/#567).
   emit('save', { ...form.value })
-  close()
 }
 </script>

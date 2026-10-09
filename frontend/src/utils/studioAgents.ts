@@ -38,7 +38,43 @@ export function profileToUser(profile: AgentProfile): User {
     issues_created: 0,
     last_active: profile.lastUsedAt ?? profile.createdAt,
     is_active: profile.enabled,
+    system_prompt: profile.systemPrompt,
   }
+}
+
+/** Editable subset of EditAgentModal's emitted form (#567). */
+export interface StudioAgentUpdate {
+  id: string
+  username?: string
+  avatar?: string
+  model?: string
+  system_prompt?: string
+  skills?: string[]
+  tools?: string[]
+}
+
+/**
+ * Persist an agent-studio-* edit into localStorage (no network) and return
+ * the refreshed card. Throws when the profile no longer exists locally.
+ */
+export function applyStudioUpdate(data: StudioAgentUpdate): User {
+  const profiles = loadStudioProfiles()
+  const idx = profiles.findIndex(p => p.id === data.id)
+  if (idx === -1) throw new Error('Agent profile not found')
+  const current = profiles[idx]
+  const merged: AgentProfile = { ...current }
+  if (data.username) merged.name = data.username
+  if (data.avatar) merged.avatar = data.avatar
+  if (data.model) merged.model = data.model
+  if (data.system_prompt !== undefined) merged.systemPrompt = data.system_prompt
+  if (data.skills || data.tools) {
+    // The card maps profile.tools -> skills, so skill edits land back in
+    // tools; newly toggled tools are merged in (#567).
+    merged.tools = [...new Set([...(data.skills ?? []), ...(data.tools ?? [])])]
+  }
+  profiles[idx] = merged
+  saveStudioProfiles(profiles)
+  return profileToUser(merged)
 }
 
 export function mergeStudioAgents(users: User[]): User[] {

@@ -44,7 +44,7 @@ export interface AgentProfilePayload {
  * `'ai-agent'`, and `enabled` maps onto `is_active`.
  */
 export function normalizeAgentProfile(raw: BackendAgentProfile): User {
-  return {
+  const card: User = {
     id: raw.id,
     username: raw.username ?? '',
     email: raw.email ?? '',
@@ -59,6 +59,13 @@ export function normalizeAgentProfile(raw: BackendAgentProfile): User {
     specialization: raw.specialization ?? undefined,
     is_active: raw.enabled ?? true,
   }
+  // Assigned only when present: an absent key keeps EditAgentModal defaults
+  // (an explicit `undefined` would override them on spread, #567).
+  if (raw.system_prompt != null) card.system_prompt = raw.system_prompt
+  if (raw.temperature != null) card.temperature = raw.temperature
+  if (raw.tools) card.tools = [...raw.tools]
+  if (raw.write_access) card.write_access = [...raw.write_access]
+  return card
 }
 
 export async function fetchAgentProfiles(): Promise<User[]> {

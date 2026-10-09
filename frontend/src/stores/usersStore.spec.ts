@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useUsersStore } from '@/stores/usersStore'
 import * as usersApi from '@/api/usersApi'
-import { createAgentProfile, fetchAgentProfiles } from '@/api/agentProfilesApi'
+import { createAgentProfile, fetchAgentProfiles, updateAgentProfile } from '@/api/agentProfilesApi'
 import { isMockMode } from '@/api/client'
-import { saveStudioProfiles } from '@/utils/studioAgents'
+import { loadStudioProfiles, saveStudioProfiles } from '@/utils/studioAgents'
 import type { AgentProfile } from '@/types/agentStudio'
 import type { User } from '@/types'
 
@@ -18,6 +18,7 @@ vi.mock('@/api/usersApi', () => ({
 vi.mock('@/api/agentProfilesApi', () => ({
   fetchAgentProfiles: vi.fn(),
   createAgentProfile: vi.fn(),
+  updateAgentProfile: vi.fn(),
 }))
 
 vi.mock('@/api/client', () => ({
@@ -28,6 +29,8 @@ const LS_KEY = 'agent-studio-v1'
 const mockedFetchUsers = vi.mocked(usersApi.fetchUsers)
 const mockedFetchProfiles = vi.mocked(fetchAgentProfiles)
 const mockedCreateProfile = vi.mocked(createAgentProfile)
+const mockedUpdateProfile = vi.mocked(updateAgentProfile)
+const mockedUpdateUser = vi.mocked(usersApi.updateUser)
 const mockedIsMockMode = vi.mocked(isMockMode)
 
 function makeHuman(id: string, username: string): User {
@@ -259,5 +262,141 @@ describe('usersStore.createAgent (issue #566)', () => {
     )
     expect(created.id).toBe('agent-studio-new')
     expect(store.users.map(u => u.id)).toEqual(['agent-studio-new'])
+  })
+})
+
+describe('usersStore.editUser (issue #567)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.removeItem(LS_KEY)
+    mockedIsMockMode.mockReturnValue(false)
+    mockedFetchUsers.mockResolvedValue([])
+    mockedFetchProfiles.mockResolvedValue([])
+  })
+
+  afterEach(() => {
+    localStorage.removeItem(LS_KEY)
+  })
+
+  it('routes an endpoint agent to PUT /agents/profiles/{id} with the contract payload only', async () => {
+    const card = makeProfile('pg-agent-1', 'bot-qa')
+    const store = useUsersStore()
+    store.users.push(card)
+    const resolved = { ...card, model: 'claude-3', system_prompt: 'New prompt' }
+    mockedUpdateProfile.mockResolvedValue(resolved)
+
+    const modalPayload = {
+      ...card,
+      model: 'claude-3',
+      system_prompt: 'New prompt',
+      temperature: 0.3,
+      tools: ['fs_read'],
+      write_access: ['issues'],
+      skills: ['testing', 'pytest'],
+    }
+    const updated = await store.editUser(modalPayload)
+
+    expect(mockedUpdateProfile).toHaveBeenCalledTimes(1)
+    expect(mockedUpdateProfile).toHaveBeenCalledWith('pg-agent-1', {
+      username: 'bot-qa',
+      email: 'bot-qa@socialseed.com',
+      avatar: '🤖',
+      model: 'claude-3',
+      specialization: 'qa',
+      temperature: 0.3,
+      system_prompt: 'New prompt',
+      tools: ['fs_read'],
+      write_access: ['issues'],
+      skills: ['testing', 'pytest'],
+    })
+    expect(usersApi.updateUser).not.toHaveBeenCalled()
+    expect(updated.model).toBe('claude-3')
+    expect(updated.type).toBe('agent')
+    expect(store.users[0]).toEqual(updated) // normalized response replaces the card (#556)
+    expect(store.error).toBeNull()
+  })
+
+  it('persists an agent-studio-* edit in localStorage without touching any API (even in mock)', async () => {
+    mockedIsMockMode.mockReturnValue(true)
+    saveStudioProfiles([makeStudioProfile('agent-studio-1')])
+    const store = useUsersStore()
+    store.users.push({ ...makeProfile('agent-studio-1', 'agent-studio-1'), role: 'developer' })
+
+    const updated = await store.editUser({
+      id: 'agent-studio-1',
+      type: 'agent',
+      username: 'renamed-bot',
+      avatar: '🎭',
+      model: 'llama-3',
+      system_prompt: 'New prompt',
+      skills: ['fs_read'],
+      tools: [],
+    })
+
+    expect(mockedUpdateProfile).not.toHaveBeenCalled()
+    expect(usersApi.updateUser).not.toHaveBeenCalled()
+    const [saved] = loadStudioProfiles()
+    expect(saved).toMatchObject({
+      id: 'agent-studio-1',
+      name: 'renamed-bot',
+      avatar: '🎭',
+      model: 'llama-3',
+      systemPrompt: 'New prompt',
+      tools: ['fs_read'],
+    })
+    expect(updated.username).toBe('renamed-bot')
+    expect(updated.system_prompt).toBe('New prompt')
+    expect(store.users[0]).toEqual(updated)
+  })
+
+  it('keeps humans on updateUser (/users/{id}) — no-regression of #560', async () => {
+    const human = makeHuman('u-1', 'ana')
+    const store = useUsersStore()
+    store.users.push(human)
+    mockedUpdateUser.mockResolvedValue({ ...human, username: 'ana-g' })
+
+    await store.editUser({ ...human, username: 'ana-g' })
+
+    expect(mockedUpdateUser).toHaveBeenCalledTimes(1)
+    expect(mockedUpdateUser).toHaveBeenCalledWith('u-1', expect.objectContaining({ username: 'ana-g' }))
+    expect(mockedUpdateProfile).not.toHaveBeenCalled()
+    expect(store.users[0].username).toBe('ana-g')
+  })
+
+  it('in mock mode updates agents through the mock collection (owns its entities, #566)', async () => {
+    mockedIsMockMode.mockReturnValue(true)
+    const card = { ...makeProfile('agent-9', 'mock-bot') }
+    const store = useUsersStore()
+    store.users.push(card)
+    mockedUpdateUser.mockResolvedValue({ ...card, model: 'gpt-4-turbo' })
+
+    await store.editUser({ ...card, model: 'gpt-4-turbo' })
+
+    expect(mockedUpdateUser).toHaveBeenCalledTimes(1)
+    expect(mockedUpdateProfile).not.toHaveBeenCalled()
+    expect(store.users[0].model).toBe('gpt-4-turbo')
+  })
+
+  it('propagates a 404 without mutating the card and refetches the list', async () => {
+    const card = makeProfile('pg-agent-1', 'bot-qa')
+    const store = useUsersStore()
+    store.users.push(card)
+    mockedUpdateProfile.mockRejectedValue(
+      Object.assign(new Error('Agent profile not found'), { status: 404 }),
+    )
+    // Pending fetch: the refetch must be triggered but must not blank the
+    // list before the assertions run.
+    mockedFetchUsers.mockReturnValue(new Promise<User[]>(() => {}))
+    mockedFetchProfiles.mockReturnValue(new Promise<User[]>(() => {}))
+
+    await expect(store.editUser({ ...card, model: 'claude-3' })).rejects.toMatchObject({
+      status: 404,
+      message: 'Agent profile not found',
+    })
+
+    expect(store.users[0].model).toBe('gpt-4o') // card untouched
+    expect(store.error).toBe('Agent profile not found')
+    expect(mockedFetchUsers).toHaveBeenCalled() // stale card triggers a refetch
   })
 })

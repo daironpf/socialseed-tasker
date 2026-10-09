@@ -4,10 +4,11 @@ import * as api from '@/api/usersApi'
 import {
   createAgentProfile,
   fetchAgentProfiles,
+  updateAgentProfile,
   type AgentProfilePayload,
 } from '@/api/agentProfilesApi'
 import { isMockMode } from '@/api/client'
-import { mergeStudioAgents } from '@/utils/studioAgents'
+import { applyStudioUpdate, mergeStudioAgents } from '@/utils/studioAgents'
 import type { User } from '@/types'
 
 export const useUsersStore = defineStore('users', () => {
@@ -120,6 +121,56 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
+  function toProfilePayload(data: Partial<User>): AgentProfilePayload {
+    const payload: AgentProfilePayload = {}
+    if (data.username !== undefined) payload.username = data.username
+    if (data.email !== undefined) payload.email = data.email
+    if (data.avatar !== undefined) payload.avatar = data.avatar
+    if (data.model !== undefined) payload.model = data.model
+    if (data.specialization !== undefined) payload.specialization = data.specialization
+    if (data.temperature !== undefined) payload.temperature = data.temperature
+    if (data.system_prompt !== undefined) payload.system_prompt = data.system_prompt
+    if (data.tools !== undefined) payload.tools = data.tools
+    if (data.write_access !== undefined) payload.write_access = data.write_access
+    if (data.skills !== undefined) payload.skills = data.skills
+    return payload
+  }
+
+  /**
+   * Single dispatch for card edits (#567): `agent-studio-*` persists in
+   * localStorage, endpoint agents go to PUT /agents/profiles/{id} (mock mode
+   * keeps its whole collection in /users, like createAgent in #566) and
+   * humans stay on /users/{id} (#560). A 404 (profile deleted upstream)
+   * refreshes the list so the stale card disappears.
+   */
+  async function editUser(data: Partial<User> & { id: string }): Promise<User> {
+    try {
+      let updated: User
+      if (data.id.startsWith('agent-studio-')) {
+        updated = applyStudioUpdate(data)
+      } else if (isMockMode()) {
+        updated = await api.updateUser(data.id, data)
+      } else if (
+        data.type === 'agent' ||
+        users.value.find(u => u.id === data.id)?.type === 'agent'
+      ) {
+        updated = await updateAgentProfile(data.id, toProfilePayload(data))
+      } else {
+        updated = await api.updateUser(data.id, data)
+      }
+      const idx = users.value.findIndex(u => u.id === data.id)
+      if (idx !== -1) users.value[idx] = updated
+      error.value = null
+      return updated
+    } catch (e) {
+      // fetchUsers() clears `error` synchronously, so kick it off first and
+      // record the failure afterwards (404 -> stale card triggers a refetch).
+      if ((e as { status?: number }).status === 404) void fetchUsers()
+      error.value = (e as Error).message
+      throw e
+    }
+  }
+
   return {
     users,
     loading,
@@ -131,6 +182,7 @@ export const useUsersStore = defineStore('users', () => {
     updateUser,
     createUser,
     createAgent,
+    editUser,
     deleteUser,
   }
 })

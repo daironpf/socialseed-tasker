@@ -398,4 +398,10 @@ export interface User {
   last_active: string
   specialization?: string
   is_active?: boolean
+  // Agent-editable fields carried on the card so EditAgentModal round-trips
+  // them on PUT /agents/profiles/{id} (#567); omitted when unknown.
+  system_prompt?: string
+  temperature?: number
+  tools?: string[]
+  write_access?: string[]
 }
