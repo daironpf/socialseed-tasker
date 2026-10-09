@@ -301,6 +301,7 @@
     "editAgent": "Edit agent",
     "editUser": "Edit user",
     "deleteUser": "Delete user",
+    "deleteAgent": "Delete agent",
     "deleteConfirm": "Delete user",
     "noSkills": "No skills",
     "newUserTitle": "New User",

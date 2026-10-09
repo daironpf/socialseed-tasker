@@ -210,7 +210,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { isMockMode } from '@/api/client'
 
@@ -220,7 +220,7 @@ interface Props {
   show: boolean
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'save', data: { username: string; email: string; role: string; type: string; avatar: string; skills: string[]; model?: string; specialization?: string; system_prompt?: string }): void
@@ -237,6 +237,19 @@ const form = ref({
   specialization: '',
   system_prompt: '',
 })
+
+function resetForm() {
+  form.value = { username: '', email: '', role: 'developer', type: 'human', avatar: '👤', skills: [], model: '', specialization: '', system_prompt: '' }
+}
+
+// Fresh form on every open: `save()` only emits, the parent closes the modal
+// once the API answers 201 (#566 - on 409/422/503 it stays open for fixing).
+watch(
+  () => props.show,
+  visible => {
+    if (visible) resetForm()
+  },
+)
 
 const newSkill = ref('')
 
@@ -293,8 +306,8 @@ function close() {
 }
 
 function save() {
+  // Only emit: the parent (UsersView) closes the modal after a successful
+  // API response so a 409/422/503 keeps the form open (#566).
   emit('save', { ...form.value })
-  form.value = { username: '', email: '', role: 'developer', type: 'human', avatar: '👤', skills: [], model: '', specialization: '', system_prompt: '' }
-  close()
 }
 </script>

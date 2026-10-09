@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { mountComponent } from '@/test/mount'
 import UsersView from '@/views/UsersView.vue'
@@ -6,6 +6,8 @@ import CreateUserModal from '@/components/users/CreateUserModal.vue'
 import { useUsersStore } from '@/stores/usersStore'
 import * as usersApi from '@/api/usersApi'
 import * as issuesApi from '@/api/issuesApi'
+import { createAgentProfile, fetchAgentProfiles } from '@/api/agentProfilesApi'
+import { apiMode } from '@/api/client'
 import type { User } from '@/types'
 
 const { toastSuccess, toastError } = vi.hoisted(() => ({
@@ -32,6 +34,11 @@ vi.mock('@/api/usersApi', () => ({
 vi.mock('@/api/issuesApi', () => ({
   fetchIssues: vi.fn(),
   fetchIssue: vi.fn(),
+}))
+
+vi.mock('@/api/agentProfilesApi', () => ({
+  fetchAgentProfiles: vi.fn(),
+  createAgentProfile: vi.fn(),
 }))
 
 function makeHuman(id: string, username: string): User {
@@ -246,5 +253,126 @@ describe('UsersView create flow (issue #563)', () => {
 
     expect(wrapper.find('[data-testid="temp-password"]').exists()).toBe(false)
     expect(useUsersStore().users.some(u => u.id === 'uid-boss')).toBe(true)
+  })
+})
+
+describe('UsersView create agent flow (issue #566)', () => {
+  let previousMode: typeof apiMode.value
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    previousMode = apiMode.value
+    apiMode.value = 'real'
+    vi.mocked(usersApi.fetchUsers).mockResolvedValue([makeHuman('uid-ana', 'ana')])
+    vi.mocked(fetchAgentProfiles).mockResolvedValue([])
+    vi.mocked(issuesApi.fetchIssues).mockResolvedValue({
+      items: [],
+      pagination: { page: 1, limit: 200, total: 0, has_next: false, has_prev: false },
+    })
+  })
+
+  afterEach(() => {
+    apiMode.value = previousMode
+  })
+
+  async function openCreateModal(wrapper: VueWrapper) {
+    const openButton = wrapper.findAll('button').find(b => b.text() === '+ New User')
+    expect(openButton).toBeTruthy()
+    await openButton!.trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findComponent(CreateUserModal).props('show')).toBe(true)
+  }
+
+  async function emitAgentSave(wrapper: VueWrapper) {
+    const modal = wrapper.findComponent(CreateUserModal)
+    ;(modal.vm as unknown as { $emit: (e: string, d: unknown) => void }).$emit('save', {
+      username: 'bot-qa',
+      email: 'bot@socialseed.com',
+      role: 'developer',
+      type: 'agent',
+      avatar: '🤖',
+      skills: ['Testing'],
+      model: 'gpt-4o',
+      specialization: 'testing',
+      system_prompt: 'You are a QA bot.',
+    })
+    return flushPromises()
+  }
+
+  it('routes the agent tab to POST /agents/profiles without the temporary-password dialog', async () => {
+    vi.mocked(createAgentProfile).mockResolvedValue({
+      ...makeHuman('pg-agent-1', 'bot-qa'),
+      type: 'agent',
+      role: 'ai-agent',
+      model: 'gpt-4o',
+      specialization: 'testing',
+      avatar: '🤖',
+    })
+
+    const wrapper = await mountView()
+    await openCreateModal(wrapper)
+    await emitAgentSave(wrapper)
+
+    expect(createAgentProfile).toHaveBeenCalledWith({
+      username: 'bot-qa',
+      email: 'bot@socialseed.com',
+      avatar: '🤖',
+      model: 'gpt-4o',
+      specialization: 'testing',
+      system_prompt: 'You are a QA bot.',
+      skills: ['Testing'],
+    })
+    expect(usersApi.createUser).not.toHaveBeenCalled()
+
+    const store = useUsersStore()
+    const card = store.users.find(u => u.id === 'pg-agent-1')
+    expect(card).toBeTruthy()
+    expect(card).toMatchObject({ type: 'agent', role: 'ai-agent', model: 'gpt-4o' })
+    expect(wrapper.find('[data-testid="temp-password"]').exists()).toBe(false)
+
+    // modal closes only on success (#566)
+    expect(wrapper.findComponent(CreateUserModal).props('show')).toBe(false)
+  })
+
+  it('keeps the modal open and toasts the backend detail on a 409 duplicate', async () => {
+    vi.mocked(createAgentProfile).mockRejectedValue(
+      Object.assign(new Error('username already exists'), { status: 409 }),
+    )
+
+    const wrapper = await mountView()
+    await openCreateModal(wrapper)
+    await emitAgentSave(wrapper)
+
+    expect(toastError).toHaveBeenCalledWith('That username is already taken')
+    expect(wrapper.findComponent(CreateUserModal).props('show')).toBe(true) // stays open (#566)
+    expect(useUsersStore().users.some(u => u.type === 'agent')).toBe(false)
+  })
+
+  it('keeps humans on createUser and agents on createAgent (branch by type)', async () => {
+    vi.mocked(usersApi.createUser).mockResolvedValue({
+      user: makeHuman('uid-new', 'nuevo'),
+      temporaryPassword: null,
+    })
+    vi.mocked(createAgentProfile).mockResolvedValue({
+      ...makeHuman('pg-agent-1', 'bot-qa'),
+      type: 'agent',
+      role: 'ai-agent',
+    })
+
+    const wrapper = await mountView()
+    await openCreateModal(wrapper)
+    const modal = wrapper.findComponent(CreateUserModal)
+    const emit = (data: unknown) =>
+      (modal.vm as unknown as { $emit: (e: string, d: unknown) => void }).$emit('save', data)
+
+    emit({ username: 'nuevo', email: 'n@x.com', role: 'viewer', type: 'human', avatar: '🦊', skills: [] })
+    await flushPromises()
+    expect(usersApi.createUser).toHaveBeenCalledTimes(1)
+    expect(createAgentProfile).not.toHaveBeenCalled()
+
+    emit({ username: 'bot-qa', email: 'b@x.com', role: 'developer', type: 'agent', avatar: '🤖', skills: [], model: 'gpt-4o' })
+    await flushPromises()
+    expect(createAgentProfile).toHaveBeenCalledTimes(1)
+    expect(usersApi.createUser).toHaveBeenCalledTimes(1) // still just the human
   })
 })

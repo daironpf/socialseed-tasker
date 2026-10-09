@@ -489,11 +489,25 @@ async function deleteAgent(user: User) {
 
 const temporaryPassword = ref<string | null>(null)
 
-async function createUser(data: { username: string; email: string; role: string; type: string; avatar: string; skills: string[] }) {
+async function createUser(data: { username: string; email: string; role: string; type: string; avatar: string; skills: string[]; model?: string; specialization?: string; system_prompt?: string }) {
   try {
-    const result = await usersStore.createUser(data)
+    if (data.type === 'agent') {
+      // Dedicated endpoint (#564): no credential, so no temporary-password dialog (#566).
+      await usersStore.createAgent({
+        username: data.username,
+        email: data.email,
+        avatar: data.avatar,
+        model: data.model || null,
+        specialization: data.specialization || null,
+        system_prompt: data.system_prompt || null,
+        skills: data.skills,
+      })
+    } else {
+      const result = await usersStore.createUser(data)
+      if (result.temporaryPassword) temporaryPassword.value = result.temporaryPassword
+    }
+    // Close only on success: on 409/422/503 the modal stays open (#566).
     showCreateModal.value = false
-    if (result.temporaryPassword) temporaryPassword.value = result.temporaryPassword
   } catch (e) {
     const err = e as Error & { status?: number }
     if (err.status === 409) {

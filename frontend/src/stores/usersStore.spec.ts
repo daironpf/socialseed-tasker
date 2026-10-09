@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useUsersStore } from '@/stores/usersStore'
 import * as usersApi from '@/api/usersApi'
-import { fetchAgentProfiles } from '@/api/agentProfilesApi'
+import { createAgentProfile, fetchAgentProfiles } from '@/api/agentProfilesApi'
 import { isMockMode } from '@/api/client'
 import { saveStudioProfiles } from '@/utils/studioAgents'
 import type { AgentProfile } from '@/types/agentStudio'
@@ -17,6 +17,7 @@ vi.mock('@/api/usersApi', () => ({
 
 vi.mock('@/api/agentProfilesApi', () => ({
   fetchAgentProfiles: vi.fn(),
+  createAgentProfile: vi.fn(),
 }))
 
 vi.mock('@/api/client', () => ({
@@ -26,6 +27,7 @@ vi.mock('@/api/client', () => ({
 const LS_KEY = 'agent-studio-v1'
 const mockedFetchUsers = vi.mocked(usersApi.fetchUsers)
 const mockedFetchProfiles = vi.mocked(fetchAgentProfiles)
+const mockedCreateProfile = vi.mocked(createAgentProfile)
 const mockedIsMockMode = vi.mocked(isMockMode)
 
 function makeHuman(id: string, username: string): User {
@@ -172,5 +174,90 @@ describe('usersStore.fetchUsers (issue #565)', () => {
     expect(store.users).toHaveLength(3)
     expect(store.agents).toHaveLength(2)
     expect(store.activeAgents).toHaveLength(2)
+  })
+})
+
+describe('usersStore.createAgent (issue #566)', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    localStorage.removeItem(LS_KEY)
+    mockedIsMockMode.mockReturnValue(false)
+  })
+
+  afterEach(() => {
+    localStorage.removeItem(LS_KEY)
+  })
+
+  const MODAL_PAYLOAD = {
+    username: 'bot-qa',
+    email: 'bot@socialseed.com',
+    avatar: '🤖',
+    model: 'gpt-4o',
+    specialization: 'testing',
+    system_prompt: 'You are a QA bot.',
+    skills: ['Testing', 'Pytest'],
+  }
+
+  it('posts the modal payload to /agents/profiles and pushes the normalized card', async () => {
+    mockedCreateProfile.mockResolvedValue(makeProfile('pg-agent-1', 'bot-qa'))
+
+    const store = useUsersStore()
+    const created = await store.createAgent(MODAL_PAYLOAD)
+
+    expect(mockedCreateProfile).toHaveBeenCalledWith(MODAL_PAYLOAD)
+    expect(mockedCreateProfile).toHaveBeenCalledTimes(1)
+    // The card is the normalized shape, never the raw backend payload (#556/#566)
+    expect(created).toEqual(
+      expect.objectContaining({
+        id: 'pg-agent-1',
+        username: 'bot-qa',
+        type: 'agent',
+        role: 'ai-agent',
+        avatar: '🤖',
+        model: 'gpt-4o',
+        specialization: 'qa',
+        skills: ['testing'],
+        is_active: true,
+      }),
+    )
+    expect(created).not.toHaveProperty('system_prompt')
+    expect(created).not.toHaveProperty('temporary_password')
+    expect(store.users).toHaveLength(1)
+    expect(store.users[0]).toEqual(created) // deep-equal: Vue wraps the pushed object in a reactive proxy
+    expect(store.error).toBeNull()
+  })
+
+  it('propagates a 409 duplicate username without touching the list', async () => {
+    mockedCreateProfile.mockRejectedValue(
+      Object.assign(new Error('username already exists'), { status: 409 }),
+    )
+
+    const store = useUsersStore()
+    await expect(store.createAgent(MODAL_PAYLOAD)).rejects.toMatchObject({
+      status: 409,
+      message: 'username already exists',
+    })
+    expect(store.users).toEqual([])
+    expect(store.error).toBe('username already exists')
+  })
+
+  it('in mock mode creates through the mock collection instead of the profiles API', async () => {
+    mockedIsMockMode.mockReturnValue(true)
+    mockedCreateProfile.mockResolvedValue(makeProfile('pg-agent-1', 'bot-qa'))
+    vi.mocked(usersApi.createUser).mockResolvedValue({
+      user: { ...makeProfile('agent-studio-new', 'bot-qa'), id: 'agent-studio-new' },
+      temporaryPassword: null,
+    })
+
+    const store = useUsersStore()
+    const created = await store.createAgent(MODAL_PAYLOAD)
+
+    expect(mockedCreateProfile).not.toHaveBeenCalled()
+    expect(usersApi.createUser).toHaveBeenCalledWith(
+      expect.objectContaining({ username: 'bot-qa', type: 'agent', role: 'ai-agent' }),
+    )
+    expect(created.id).toBe('agent-studio-new')
+    expect(store.users.map(u => u.id)).toEqual(['agent-studio-new'])
   })
 })

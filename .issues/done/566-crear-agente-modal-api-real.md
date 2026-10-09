@@ -13,7 +13,7 @@ rompe la tarjeta igual que #556/#559 (badge, avatar, skills).
 Mock de referencia: `mockApi.createUser` con `type:'agent'` crea la entidad y aparece en la
 lista con `role:'ai-agent'`, model, specialization y skills.
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: HIGH
 
@@ -45,14 +45,14 @@ feat / fullstack
      cubre el POST; aquí solo se exige que el front use ese contrato.
 
 ## Acceptance Criteria
-- [ ] Crear con pestaña Agente en real llama a `POST /agents/profiles` con el payload completo
+- [x] Crear con pestaña Agente en real llama a `POST /agents/profiles` con el payload completo
       del modal y la tarjeta aparece con `type:'agent'`, model, specialization y skills
-- [ ] La respuesta se normaliza al shape de la vista (no crudo) — regresión de #556 evitada
-- [ ] El diálogo de password temporal (#563) **no** se abre al crear agentes
-- [ ] 409/422/503 → toast con el detalle del backend; modal se cierra solo en éxito
-- [ ] **Tests**: spec de `createAgent` + ramificado por tipo pasan
-- [ ] Gates frontend: `lint` 0/2, `test` 306+ (44+), `build` OK, i18n 1693+ (claves nuevas
-      EN/ES solo si se añaden)
+- [x] La respuesta se normaliza al shape de la vista (no crudo) — regresión de #556 evitada
+- [x] El diálogo de password temporal (#563) **no** se abre al crear agentes
+- [x] 409/422/503 → toast con el detalle del backend; modal se cierra solo en éxito
+- [x] **Tests**: spec de `createAgent` + ramificado por tipo pasan
+- [x] Gates frontend: `lint` 0/2, `test` 340 (47 files), `build` OK, i18n 1702 (+clave
+      `users.deleteAgent` EN/ES, preexistente sin definir)
 
 ## Files to Create
 - (posible) `frontend/src/stores/usersStore.spec.ts` (si no existe)
@@ -75,3 +75,30 @@ feat / fullstack
 ## Related Issues
 - #564 (endpoint), #565 (api + store de listado), #559/#563 (flujo humano paralelo),
   #556 (bug de respuesta cruda)
+
+## Resolution
+
+Implementado 2026-10-08 (commit pendiente de `si`):
+
+- **`usersStore.createAgent(body)`**: en real llama `createAgentProfile()` con el payload
+  snake_case del modal (`username/email/avatar/model/specialization/system_prompt/skills`;
+  `''` → `null`), empuja la **respuesta normalizada** (`User` con `type:'agent'`,
+  `role:'ai-agent'`, `is_active` ← `enabled`, id PG — nunca crudo, sin
+  `temporary_password`) y re-lanza el error con `error` del store; en **mock** delega en
+  `api.createUser({...type:'agent', role:'ai-agent'})` (la colección mock sigue siendo
+  autónoma, sin llamada nueva).
+- **Vista**: `createUser()` ramifica por `data.type === 'agent'` → `createAgent` (sin
+  diálogo de password temporal), humano → `createUser` (#563 intacto); `showCreateModal`
+  se pone a `false` **solo tras el 201** — en 409/422/503 el modal sigue abierto con sus
+  toasts (`users.usernameTaken`/`users.emailTaken`, `common.error + detail` en 422,
+  `common.error` en 503).
+- **Modal**: `save()` ya solo emite (antes cerraba y reseteaba siempre); el form se resetea
+  en `watch(show → open)` para que cada alta empiece limpio.
+- **i18n**: clave `users.deleteAgent` EN/ES añadida (existía el uso en el botón de borrado
+  de tarjeta IA pero no la clave — el render de agentes en tests la delataba).
+- **Tests** (+6): `usersStore.spec` describe #566 (payload alineado con el modal + tarjeta
+  normalizada sin campos crudos, 409 sin tocar la lista, rama mock sin tocar
+  `createAgentProfile`) y `UsersView.spec` describe #566 (ramal agente → `createAgentProfile`
+  con payload completo y sin diálogo temporal + cierre en éxito, 409 mantiene el modal abierto
+  con toast, ramificado humano/agente por `type`).
+- Gates frontend: `lint` 0/2, `test` 340 (47 files, +6), `build` OK, i18n 1702/1702.

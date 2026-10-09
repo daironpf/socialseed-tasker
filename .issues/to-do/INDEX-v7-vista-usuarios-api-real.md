@@ -3,7 +3,7 @@
 **Source:** vista maquetada `frontend/src/views/UsersView.vue` + mock
 `frontend/dataset-de-pruebas/users.json` / `issues.json` + restricciones del usuario
 **Created:** 2026-10-07
-**Status:** IN PROGRESS (8/18) — #558 DONE 2026-10-07, #559 DONE 2026-10-07, #560 DONE 2026-10-07, #561 DONE 2026-10-07, #562 DONE 2026-10-08, #563 DONE 2026-10-08, #564 DONE 2026-10-08, #565 DONE 2026-10-08
+**Status:** IN PROGRESS (9/18) — #558 DONE 2026-10-07, #559 DONE 2026-10-07, #560 DONE 2026-10-07, #561 DONE 2026-10-07, #562 DONE 2026-10-08, #563 DONE 2026-10-08, #564 DONE 2026-10-08, #565 DONE 2026-10-08, #566 DONE 2026-10-08
 **Numeración:** #558–#575 (continúa tras #557 del índice v6)
 
 ---
@@ -145,7 +145,7 @@
 - [x] #563 credencial temporal
 - [x] #564 `/agents/profiles` CRUD
 - [x] #565 listado de agentes
-- [ ] #566 crear agente
+- [x] #566 crear agente
 - [ ] #567 editar agente
 - [ ] #568 eliminar agente
 - [ ] #569 issues por uid + endpoints por usuario

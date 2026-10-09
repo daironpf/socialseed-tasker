@@ -1,7 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as api from '@/api/usersApi'
-import { fetchAgentProfiles } from '@/api/agentProfilesApi'
+import {
+  createAgentProfile,
+  fetchAgentProfiles,
+  type AgentProfilePayload,
+} from '@/api/agentProfilesApi'
 import { isMockMode } from '@/api/client'
 import { mergeStudioAgents } from '@/utils/studioAgents'
 import type { User } from '@/types'
@@ -77,6 +81,34 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
+  /**
+   * Create an agent card through POST /agents/profiles (#566): the 201 is
+   * normalized to the `User` shape (never raw), so the card keeps badge,
+   * avatar and skills. Agents have no credential, so there is no temporary
+   * password to show. In mock mode the mock collection owns its entities.
+   */
+  async function createAgent(body: AgentProfilePayload): Promise<User> {
+    try {
+      let created: User
+      if (isMockMode()) {
+        const result = await api.createUser({
+          ...body,
+          type: 'agent',
+          role: 'ai-agent',
+        } as unknown as api.UserCreateRequest)
+        created = result.user
+      } else {
+        created = await createAgentProfile(body)
+      }
+      error.value = null
+      users.value.push(created)
+      return created
+    } catch (e) {
+      error.value = (e as Error).message
+      throw e
+    }
+  }
+
   async function deleteUser(id: string): Promise<void> {
     try {
       await api.deleteUser(id)
@@ -98,6 +130,7 @@ export const useUsersStore = defineStore('users', () => {
     fetchUsers,
     updateUser,
     createUser,
+    createAgent,
     deleteUser,
   }
 })
