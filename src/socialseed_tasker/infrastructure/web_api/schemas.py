@@ -1005,6 +1005,29 @@ class UserResponse(BaseModel):
     """One-time plaintext, populated only by the POST /users 201 (issue #563); always None on reads."""
 
 
+class SkillCatalogItem(BaseModel):
+    """One row of the skills catalog (issue #572).
+
+    ``id`` is the slug; forms may submit free skill names that the backend
+    upserts into the catalog on save (#559/#560).
+    """
+
+    id: str
+    name: str
+
+
+class ToolCatalogItem(BaseModel):
+    """One row of the tools catalog (issue #572).
+
+    Canonical snake_case slugs (seed #558); unknown slugs are rejected with
+    422 by ``/agents/profiles`` (#564).
+    """
+
+    id: str
+    name: str
+    description: str | None = None
+
+
 class AgentProfileCreate(BaseModel):
     """Request for creating an agent profile on /agents/profiles (issue #564)."""
 

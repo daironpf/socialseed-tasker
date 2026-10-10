@@ -413,6 +413,30 @@ class PostgresUserStore:
             rows = cur.fetchall()
         return [str(row[0]) for row in rows]
 
+    def list_skills(self) -> list[dict[str, Any]]:
+        """Full skills catalog ordered by name (issue #572).
+
+        The catalog holds the #558 seed plus every skill upserted by the
+        user/agent forms (#559/#560/#566), so the frontend pickers always
+        offer a single source of truth while keeping free values.
+        """
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute("SELECT id, name FROM skills ORDER BY name")
+            rows = cur.fetchall()
+        return [{"id": str(row[0]), "name": row[1]} for row in rows]
+
+    def list_tools(self) -> list[dict[str, Any]]:
+        """Full tools catalog ordered by name (issue #572).
+
+        Canonical snake_case slugs seeded by #558 (union of the two
+        divergent frontend lists); ``/agents/profiles`` validates against
+        this same catalog with 422 (#564).
+        """
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute("SELECT id, name, description FROM tools ORDER BY name")
+            rows = cur.fetchall()
+        return [{"id": str(row[0]), "name": row[1], "description": row[2]} for row in rows]
+
     def has_password(self, user_id: str) -> bool:
         """True when the human row carries a bcrypt credential (issue #561).
 

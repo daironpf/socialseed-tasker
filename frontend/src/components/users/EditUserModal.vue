@@ -88,9 +88,13 @@
               v-model="newSkill"
               @keyup.enter="addSkill"
               type="text"
+              list="skills-catalog-edit"
               :placeholder="t('users.addSkill')"
               class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
+            <datalist id="skills-catalog-edit">
+              <option v-for="s in skillSuggestions" :key="s.id" :value="s.name" />
+            </datalist>
             <button
               @click="addSkill"
               class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
@@ -140,6 +144,7 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { isMockMode } from '@/api/client'
+import { fetchSkills, type SkillCatalogItem } from '@/api/catalogsApi'
 import type { User } from '@/types'
 
 const { t } = useI18n()
@@ -202,6 +207,23 @@ watch(() => props.user, (user) => {
     }
   }
 }, { immediate: true })
+
+// Datalist suggestions from GET /skills in real mode; free values stay
+// allowed because the backend upserts them on save (#572).
+const skillSuggestions = ref<SkillCatalogItem[]>([])
+
+async function loadSkillSuggestions() {
+  if (isMockMode()) return
+  try {
+    skillSuggestions.value = await fetchSkills()
+  } catch {
+    // Picker degrades to free text without suggestions (#572).
+  }
+}
+
+watch(() => props.show, visible => {
+  if (visible) loadSkillSuggestions()
+})
 
 function addSkill() {
   const skill = newSkill.value.trim()

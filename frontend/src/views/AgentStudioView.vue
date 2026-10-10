@@ -87,7 +87,7 @@
           <span class="mb-1 block text-[11px] font-semibold uppercase text-gray-500 dark:text-gray-400">{{ t('agentStudio.builder.tools') }}</span>
           <div class="flex flex-wrap gap-1.5">
             <label
-              v-for="tool in AGENT_TOOLS"
+              v-for="tool in toolOptions"
               :key="tool"
               class="flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium"
               :class="form.tools.includes(tool)
@@ -179,17 +179,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAgentStudioStore } from '@/stores/agentStudioStore'
 import { AGENT_MODELS, AGENT_TOOLS, DEFAULT_LIMITS } from '@/types/agentStudio'
 import type { AgentProfile } from '@/types/agentStudio'
+import { isMockMode } from '@/api/client'
+import { fetchTools } from '@/api/catalogsApi'
 import AgentPromptEditor from '@/components/agents/AgentPromptEditor.vue'
 import AgentSandboxTester from '@/components/agents/AgentSandboxTester.vue'
 import AgentLibrary from '@/components/agents/AgentLibrary.vue'
 
 const { t } = useI18n()
 const store = useAgentStudioStore()
+
+// Canonical slugs from GET /tools in real mode; AGENT_TOOLS stays as the
+// mock/local fallback (#572 - one list ends the divergence).
+const toolOptions = ref<string[]>([...AGENT_TOOLS])
+
+async function loadTools() {
+  if (isMockMode()) return
+  try {
+    const tools = await fetchTools()
+    if (tools.length) toolOptions.value = tools.map(tool => tool.id)
+  } catch {
+    // Builder degrades to AGENT_TOOLS (#572).
+  }
+}
+
+onMounted(loadTools)
 
 const editingId = ref<string | null>(null)
 

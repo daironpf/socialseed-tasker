@@ -245,6 +245,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { isMockMode } from '@/api/client'
+import { fetchTools } from '@/api/catalogsApi'
+import { AGENT_TOOLS } from '@/types/agentStudio'
 
 const { t } = useI18n()
 
@@ -303,10 +306,23 @@ const models = [
   { value: 'llama-3', label: 'Llama 3' },
 ]
 
-const availableTools = [
-  'git-tools', 'neo4j-query', 'test-runner', 'file-manager',
-  'web-search', 'api-caller', 'code-analyzer', 'doc-writer',
-]
+// Canonical slugs: GET /tools in real mode, AGENT_TOOLS as local fallback in
+// mock mode or when the catalog is down (#572 - end of the divergent lists).
+const availableTools = ref<string[]>([...AGENT_TOOLS])
+
+async function loadTools() {
+  if (isMockMode()) return
+  try {
+    const tools = await fetchTools()
+    if (tools.length) availableTools.value = tools.map(tool => tool.id)
+  } catch {
+    // Picker degrades to AGENT_TOOLS; the payload keeps canonical slugs (#572).
+  }
+}
+
+watch(() => props.show, visible => {
+  if (visible) loadTools()
+}, { immediate: true })
 
 const availableFolders = [
   'src/', 'tests/', 'docs/', 'config/', 'scripts/', 'migrations/', 'mock-api/',

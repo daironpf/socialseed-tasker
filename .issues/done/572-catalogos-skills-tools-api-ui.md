@@ -16,7 +16,42 @@ expone ni los consume. Hoy el frontend tiene:
 
 Origen: decisión del usuario "catálogo tools como roles/skills" (pregunta del plan v7).
 
-## Status: TODO
+## Status: DONE
+
+## Resolution
+
+Implementado 2026-10-10.
+
+**Backend**
+- `auth/user_store.py`: `PostgresUserStore.list_skills()` / `list_tools()` (SELECT
+  `ORDER BY name`).
+- `schemas.py`: `SkillCatalogItem {id, name}` y `ToolCatalogItem {id, name, description}`.
+- Router nuevo `routers/catalogs.py` (`GET /skills`, `GET /tools` → `APIResponse`+`Meta`;
+  503 con `CatalogsUnavailable` si no hay `TASKER_DATABASE_URL`, patrón de #564);
+  registrado en `routers/__init__.py` y `app.py` (`/api/v1`, tag `catalogs`).
+- Validación de tools ya estaba (422 slug desconocido, #564); upsert de skills ya estaba
+  (#559/#560) — no se tocó.
+
+**Frontend**
+- Nuevo `api/catalogsApi.ts`: `fetchSkills()`/`fetchTools()`, unwrap del envoltorio,
+  cache módulo-level TTL 60s + `resetCatalogsCache()`, `suppressErrorToast: true`
+  (degradación silenciosa; nunca cachea errores).
+- `EditAgentModal.vue`: la constante kebab de 8 tools divergente se sustituye por un ref
+  cargado desde `GET /tools` en real (watch `show`, immediate); `AGENT_TOOLS` es el
+  fallback en mock/503 → fin de la divergencia de listas. Payload con slugs canónicos.
+- `AgentStudioView.vue`: checkboxes `v-for="tool in toolOptions"` desde `GET /tools` en
+  real (onMounted); `AGENT_TOOLS` como fallback.
+- `CreateUserModal.vue`/`EditUserModal.vue`: `list=`+`<datalist>` sobre el input de
+  skills (`skills-catalog-create`/`-edit`) con `GET /skills` en real; valor libre
+  permitido (upsert en backend).
+
+**Tests**: backend `tests/api/test_catalogs_api.py` (6: skills/tools/empty/seeds-slug/503/
+unknown-skill-upsert); frontend `catalogsApi.spec.ts` (7: unwrap, cache, 503, no-cache-de-
+errores) + `EditAgentModal.spec.ts` (4: pinta desde endpoint + payload, mock usa
+constantes, degrade a AGENT_TOOLS, llamada por apertura).
+
+**Gates**: ruff 1251 (neutral) / mypy 1133 / pytest 1459+3 preexistentes+27 skipped;
+lint 0/2 / test 367 (49 files) / build OK / i18n 1703/1703.
 
 ## Priority: MEDIUM
 
@@ -55,15 +90,15 @@ feat / fullstack
      constantes locales.
 
 ## Acceptance Criteria
-- [ ] `GET /skills` y `GET /tools` devuelven los catálogos desde PG (503 sin database)
-- [ ] `EditAgentModal` y el builder del Studio renderizan sus tools desde `GET /tools` en real
+- [x] `GET /skills` y `GET /tools` devuelven los catálogos desde PG (503 sin database)
+- [x] `EditAgentModal` y el builder del Studio renderizan sus tools desde `GET /tools` en real
       (fallback a constantes en mock) — **una sola lista**, fin de la divergencia
-- [ ] Los formularios de usuario ofrecen autocomplete de skills desde `GET /skills`
+- [x] Los formularios de usuario ofrecen autocomplete de skills desde `GET /skills`
       manteniendo valor libre (upsert en backend)
-- [ ] Tools desconocidas → 422 en `/agents/profiles` (contrato #564)
-- [ ] **Tests**: los pytest + specs listados pasan
-- [ ] Gates: backend `ruff` 1011 / `mypy` 1153 / `pytest` 1331+3; frontend `lint` 0/2 /
-      `test` 306+ (44+ files) / `build` OK / i18n 1693+ (claves EN/ES solo si se añaden)
+- [x] Tools desconocidas → 422 en `/agents/profiles` (contrato #564)
+- [x] **Tests**: los pytest + specs listados pasan
+- [x] Gates: backend `ruff` 1251 (neutral) / `mypy` 1133 / `pytest` 1459+3 preexistentes;
+      frontend `lint` 0/2 / `test` 367 (49 files) / `build` OK / i18n 1703/1703
 
 ## Files to Create
 - `frontend/src/api/catalogsApi.ts` + `catalogsApi.spec.ts`

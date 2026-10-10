@@ -146,9 +146,13 @@
               v-model="newSkill"
               @keyup.enter="addSkill"
               type="text"
+              list="skills-catalog-create"
               :placeholder="t('users.addSkill')"
               class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
+            <datalist id="skills-catalog-create">
+              <option v-for="s in skillSuggestions" :key="s.id" :value="s.name" />
+            </datalist>
             <button
               @click="addSkill"
               class="rounded-lg px-3 py-2 text-sm font-medium text-white"
@@ -213,6 +217,7 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { isMockMode } from '@/api/client'
+import { fetchSkills, type SkillCatalogItem } from '@/api/catalogsApi'
 
 const { t } = useI18n()
 
@@ -244,10 +249,26 @@ function resetForm() {
 
 // Fresh form on every open: `save()` only emits, the parent closes the modal
 // once the API answers 201 (#566 - on 409/422/503 it stays open for fixing).
+// The skills datalist suggestions come from GET /skills in real mode; free
+// values stay allowed because the backend upserts them on save (#572).
+const skillSuggestions = ref<SkillCatalogItem[]>([])
+
+async function loadSkillSuggestions() {
+  if (isMockMode()) return
+  try {
+    skillSuggestions.value = await fetchSkills()
+  } catch {
+    // Picker degrades to free text without suggestions (#572).
+  }
+}
+
 watch(
   () => props.show,
   visible => {
-    if (visible) resetForm()
+    if (visible) {
+      resetForm()
+      loadSkillSuggestions()
+    }
   },
 )
 
