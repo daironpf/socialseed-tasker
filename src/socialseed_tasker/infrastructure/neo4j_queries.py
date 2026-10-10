@@ -910,12 +910,6 @@ ORDER BY u.username
 LIMIT $limit
 """
 
-UPDATE_LAST_LOGIN = """
-MATCH (u:User {id: $id})
-SET u.lastLogin = $lastLogin
-RETURN u
-"""
-
 REKEY_USER_IDS = """
 UNWIND $pairs AS pair
 MATCH (u:User {username: pair.username})

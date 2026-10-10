@@ -23,6 +23,7 @@ from socialseed_tasker.auth.user_store import PostgresUserStore, hash_password, 
 from socialseed_tasker.config.storage import get_database_url
 from socialseed_tasker.infrastructure.mongo.notification_repository import NotificationMongoRepository
 from socialseed_tasker.infrastructure.pg_user_repository import PgUserRepository
+from socialseed_tasker.infrastructure.web_api.routers.auth import record_logout_event
 from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
@@ -204,6 +205,8 @@ def _revoke_user_sessions(request: Request, store: PostgresUserStore, user_id: s
             sessions.delete_all_for_user(user_id)
     except Exception as exc:  # noqa: BLE001 - revocation must never break the update
         logger.warning("session revocation for user %s failed: %s", user_id, exc)
+    else:
+        record_logout_event(request, user_id)  # best-effort audit (#571)
 
 
 @user_router.post(
@@ -439,30 +442,6 @@ async def delete_user(
     except Exception as exc:  # noqa: BLE001 - notifications cleanup degrades to a log (#562)
         logger.warning("notifications cleanup for %s failed: %s", user_id, exc)
     return APIResponse(data={"status": "deleted"}, meta=Meta(request_id=None))
-
-
-@user_router.post(
-    "/users/{user_id}/last-login",
-    response_model=APIResponse[dict],
-    summary="Update last login",
-    description="Update the last login timestamp for a user.",
-)
-def update_user_last_login(
-    user_id: str,
-    driver: Any = Depends(get_code_graph_driver),
-) -> APIResponse[dict]:
-    """Update last login timestamp."""
-    if not driver:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=503, detail="Neo4j not connected")
-
-    from socialseed_tasker.infrastructure.neo4j_user_repository import UserRepository
-
-    repo = UserRepository(driver)
-    repo.update_last_login(user_id)
-
-    return APIResponse(data={"status": "updated"}, meta=Meta(request_id=None))
 
 
 # ---------------------------------------------------------------------------

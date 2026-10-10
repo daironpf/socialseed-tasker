@@ -118,15 +118,6 @@ class UserRepository:
             result = session.run(queries.LIST_USERS, role=role, limit=limit)
             return [_node_to_user(r["u"]) for r in result]
 
-    def update_last_login(self, user_id: str) -> None:
-        """Update the last login timestamp."""
-        with self._get_session() as session:
-            session.run(
-                queries.UPDATE_LAST_LOGIN,
-                id=user_id,
-                last_login=_now_iso(),
-            )
-
     def rekey_user_ids(self, pairs: list[tuple[str, str]]) -> int:
         """Re-point ``(:User)`` nodes at the canonical PostgreSQL uid by username (#558).
 

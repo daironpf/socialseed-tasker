@@ -16,7 +16,10 @@ CLI tokens double as frontend credentials and also accepts the setup-wizard
 master key as an admin session (notas.md #3). Every JWT pair carries a ``sid``
 session id persisted under ``session:{user_id}:{session_id}`` in Redis with a
 TTL equal to the refresh lifetime; logout deletes that key and refresh fails
-once the session is gone (issue #527). OAuth requires
+once the session is gone (issue #527). Password logins also write a
+best-effort ``session_logs(event='login')`` audit row in PostgreSQL and
+session revocations write ``event='logout'`` (issue #571), which is what
+``GET /users`` derives ``last_login`` from. OAuth requires
 ``TASKER_{GITHUB,GOOGLE}_CLIENT_ID/SECRET``.
 """
 
@@ -24,6 +27,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import logging
 import os
 import secrets
 import time
@@ -39,8 +43,10 @@ from pydantic import BaseModel
 from socialseed_tasker.auth import tokens
 from socialseed_tasker.auth.auth import load_auth_provider
 from socialseed_tasker.auth.redis_sessions import AuthSessionStore
-from socialseed_tasker.auth.user_store import authenticate_user
+from socialseed_tasker.auth.user_store import authenticate_user, record_session_event
 from socialseed_tasker.config.storage import get_database_url
+
+logger = logging.getLogger(__name__)
 
 auth_router = APIRouter()
 
@@ -143,7 +149,32 @@ def _persist_session(
     _session_store(request).save(str(user["id"]), session_id, payload, tokens.REFRESH_TTL)
 
 
-def _login_with_password(body: LoginRequest) -> dict[str, Any]:
+def client_ip(request: Request) -> str | None:
+    """Best-effort client IP: first ``X-Forwarded-For`` hop, else the socket peer (#571)."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip() or None
+    return request.client.host if request.client else None
+
+
+def record_logout_event(request: Request, user_id: str) -> None:
+    """Best-effort ``session_logs(event='logout')`` row when a session is revoked (#571)."""
+    database_url = get_database_url()
+    if not database_url or not user_id:
+        return
+    try:
+        record_session_event(
+            database_url,
+            user_id,
+            "logout",
+            ip=client_ip(request),
+            user_agent=request.headers.get("user-agent"),
+        )
+    except Exception as exc:  # noqa: BLE001 - the audit row must never break the revocation
+        logger.warning("session log insert for user %s failed: %s", user_id, exc)
+
+
+def _login_with_password(body: LoginRequest, request: Request) -> dict[str, Any]:
     if not body.username or not body.password:
         raise HTTPException(status_code=400, detail="Both username and password are required")
     database_url = get_database_url()
@@ -162,6 +193,16 @@ def _login_with_password(body: LoginRequest) -> dict[str, Any]:
     )
     if record.get("email"):
         user["email"] = record["email"]
+    try:
+        record_session_event(
+            database_url,
+            str(record["id"]),
+            "login",
+            ip=client_ip(request),
+            user_agent=request.headers.get("user-agent"),
+        )
+    except Exception as exc:  # noqa: BLE001 - best effort (#571): the credential is the source of truth
+        logger.warning("session log insert for user %s failed: %s", record["id"], exc)
     return user
 
 
@@ -192,7 +233,7 @@ def _login_with_api_key(api_key: str, request: Request) -> dict[str, Any]:
 
 def _authenticate(body: LoginRequest, request: Request) -> dict[str, Any]:
     if body.username is not None or body.password is not None:
-        return _login_with_password(body)
+        return _login_with_password(body, request)
     if body.api_key:
         return _login_with_api_key(body.api_key, request)
     raise HTTPException(status_code=400, detail="Provide username/password or api_key")
@@ -253,12 +294,16 @@ def logout(
         claims = tokens.peek(body.refresh_token)
         tokens.revoke(body.refresh_token)
         if claims is not None and claims.get("sid"):
-            _session_store(request).delete(str(claims.get("sub", "")), str(claims["sid"]))
+            sub = str(claims.get("sub", ""))
+            _session_store(request).delete(sub, str(claims["sid"]))
+            record_logout_event(request, sub)
             return {"ok": True}
     if authorization and authorization.startswith("Bearer "):
         access = tokens.verify_access(authorization[7:])
         if access is not None and access.get("sid"):
-            _session_store(request).delete(str(access.get("sub", "")), str(access["sid"]))
+            sub = str(access.get("sub", ""))
+            _session_store(request).delete(sub, str(access["sid"]))
+            record_logout_event(request, sub)
     return {"ok": True}
 
 

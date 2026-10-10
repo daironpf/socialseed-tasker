@@ -268,6 +268,35 @@ def test_list_users_forwards_role_filter(monkeypatch: pytest.MonkeyPatch):
     pg_repo.list_users.assert_called_once_with(role="ai-agent", limit=5)
 
 
+def test_get_users_last_login_derived_from_session_logs(monkeypatch: pytest.MonkeyPatch):
+    """GET /users surfaces the last_login derived from session_logs logins (#571).
+
+    The real SQL derives it as MAX(session_logs.created_at) WHERE event='login'
+    (asserted in test_users_pg_repository.py); here the composed profile value
+    must survive the router response untouched.
+    """
+    latest = datetime(2026, 10, 9, 7, 45, tzinfo=timezone.utc)
+    pg_repo = MagicMock()
+    pg_repo.list_users.return_value = [{**HUMAN_PROFILE, "last_login": latest}]
+    monkeypatch.setattr(user_router, "get_database_url", lambda: "postgresql://fake")
+    monkeypatch.setattr(user_router, "PgUserRepository", MagicMock(return_value=pg_repo))
+
+    response = user_router.list_users(role=None, limit=10)
+
+    (human,) = response.data
+    assert human.last_login == latest
+
+
+def test_last_login_endpoint_removed():
+    """The orphan POST /users/{id}/last-login mockup endpoint is gone (#571)."""
+    from socialseed_tasker.infrastructure.web_api.app import create_app
+
+    client = TestClient(create_app())
+    response = client.post("/api/v1/users/uid-ana/last-login", json={})
+
+    assert response.status_code in (404, 405)
+
+
 def test_get_user_returns_profile_or_404(monkeypatch: pytest.MonkeyPatch):
     pg_repo = MagicMock()
     pg_repo.get_user.side_effect = lambda user_id: HUMAN_PROFILE if user_id == "uid-ana" else None

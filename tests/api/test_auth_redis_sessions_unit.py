@@ -178,6 +178,76 @@ class TestPasswordLogin:
         assert client.post("/api/v1/auth/login", json={"password": "manolo"}).status_code == 400
 
 
+class TestSessionLogAudit:
+    """session_logs audit rows written on login/logout (issue #571)."""
+
+    @staticmethod
+    def _install_recorder(monkeypatch: pytest.MonkeyPatch) -> list[tuple[Any, ...]]:
+        recorded: list[tuple[Any, ...]] = []
+
+        def _record(
+            _url: str,
+            user_id: str,
+            event: str,
+            *,
+            ip: str | None = None,
+            user_agent: str | None = None,
+        ) -> None:
+            recorded.append((user_id, event, ip, user_agent))
+
+        monkeypatch.setattr(
+            "socialseed_tasker.infrastructure.web_api.routers.auth.record_session_event",
+            _record,
+        )
+        return recorded
+
+    def test_login_writes_session_log(
+        self, client: TestClient, pg_login: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        recorded = self._install_recorder(monkeypatch)
+
+        _login(
+            client,
+            headers={"User-Agent": "pytest-agent", "X-Forwarded-For": "10.9.8.7"},
+            username="Manolo",
+            password="manolo",
+        )
+
+        assert recorded == [("manolo", "login", "10.9.8.7", "pytest-agent")]
+
+    def test_login_succeeds_if_session_log_insert_fails(
+        self, client: TestClient, pg_login: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        def _boom(*_args: Any, **_kwargs: Any) -> None:
+            raise RuntimeError("session_logs unavailable")
+
+        monkeypatch.setattr(
+            "socialseed_tasker.infrastructure.web_api.routers.auth.record_session_event",
+            _boom,
+        )
+
+        data = _login(client, username="manolo", password="manolo")
+
+        assert data["token_type"] == "bearer"
+        assert data["user"]["id"] == "manolo"
+
+    def test_logout_writes_session_log(
+        self, client: TestClient, pg_login: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        recorded = self._install_recorder(monkeypatch)
+        data = _login(client, username="manolo", password="manolo")
+
+        out = client.post(
+            "/api/v1/auth/logout",
+            json={"refresh_token": data["refresh_token"]},
+            headers={"User-Agent": "pytest-agent"},
+        )
+
+        assert out.status_code == 200
+        assert ("manolo", "login", "testclient", "testclient") in recorded
+        assert ("manolo", "logout", "testclient", "pytest-agent") in recorded
+
+
 class TestApiKeyLogin:
     def test_api_key_login_still_works(self, client: TestClient) -> None:
         data = _login(client, api_key="k-alice")

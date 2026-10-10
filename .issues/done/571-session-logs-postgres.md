@@ -24,7 +24,7 @@ sesiones queda durable (antes: solo `last_login` congelado). El refresh/oaut no 
 
 Origen: restricción del usuario "una tabla para los logs de sesión" del modelo normalizado.
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: LOW
 
@@ -59,15 +59,15 @@ feat / backend
    - `test_last_login_endpoint_removed` (404/405).
 
 ## Acceptance Criteria
-- [ ] Cada login con credenciales inserta `session_logs(event='login')` con uid PG, ip y
+- [x] Cada login con credenciales inserta `session_logs(event='login')` con uid PG, ip y
       user-agent (o NULL)
-- [ ] `GET /users.last_login` se **deriva** de `session_logs` (sin columna `last_login` en
+- [x] `GET /users.last_login` se **deriva** de `session_logs` (sin columna `last_login` en
       `users`/`human_user`)
-- [ ] Un fallo al escribir el log no rompe el login (best-effort + log)
-- [ ] El endpoint huérfano `POST /users/{id}/last-login` queda retirado
-- [ ] Si #561 está hecha: las revocaciones registran `event='logout'`
-- [ ] **Tests**: los pytest listados pasan
-- [ ] Gates backend sin regresiones: `ruff` 1011, `mypy` 1153, `pytest` 1331+3
+- [x] Un fallo al escribir el log no rompe el login (best-effort + log)
+- [x] El endpoint huérfano `POST /users/{id}/last-login` queda retirado
+- [x] Si #561 está hecha: las revocaciones registran `event='logout'`
+- [x] **Tests**: los pytest listados pasan
+- [x] Gates backend sin regresiones: `ruff` 1011, `mypy` 1153, `pytest` 1331+3
 
 ## Files to Create
 - (ninguno)
@@ -91,3 +91,31 @@ feat / backend
 ## Related Issues
 - #558 (DDL de `session_logs` + derivación en `GET /users`), #561 (revocación → logout),
   #527/#519 (login credentials), #574 (runs de agentes, aparte)
+
+## Resolution
+
+Implementado 2026-10-10 (commit pendiente de `si`), solo backend:
+
+- **`auth/user_store.py`**: `record_session_event(database_url, user_id, event, *, ip,
+  user_agent)` — INSERT best-effort en `session_logs` (patrón `authenticate_user`). La
+  subquery de derivación `MAX(created_at) WHERE event='login'` ya existía en
+  `pg_user_repository` desde #558 (AC2 verificado, sin cambios).
+- **`routers/auth.py`**: helpers `client_ip(request)` (primer hop de `X-Forwarded-For`,
+  si no `request.client.host`) y `record_logout_event(request, user_id)`;
+  `_login_with_password` inserta `session_logs(event='login', ip, user_agent)` tras
+  autenticar (solo credenciales PG — api-key/master-key/OAuth/refresh no generan fila);
+  `POST /auth/logout` registra `event='logout'` en ambas rutas de revocación. Ambos
+  inserts son best-effort (`try/except` + `logger.warning`; el login proceeds igual).
+- **`routers/user.py`**: `_revoke_user_sessions` (#561) registra `event='logout'` en su
+  rama `else` (solo si la revocación no lanzó y `has_password` es true); **retirado el
+  endpoint huérfano** `POST /users/{user_id}/last-login`.
+- **Neo4j**: código muerto eliminado — `UserRepository.update_last_login` +
+  `queries.UPDATE_LAST_LOGIN` (único consumidor: el endpoint retirado).
+- **Tests** (5 nuevos, 4 obligatorios): `test_login_writes_session_log` (uid+ip+ua),
+  `test_login_succeeds_if_session_log_insert_fails` (200 con store caído),
+  `test_logout_writes_session_log`, `test_get_users_last_login_derived_from_session_logs`
+  (router preserva el `last_login` compuesto; el SQL real se asserta en
+  `test_users_pg_repository`), `test_last_login_endpoint_removed` (404 vía
+  `TestClient(create_app())`).
+- **Gates**: ruff 1334→1333 (el endpoint retirado borró un B008), mypy 1136→1133,
+  pytest 1448→**1453** + 3 preexistentes + 27 skip. Sin regresiones.

@@ -215,6 +215,28 @@ def authenticate_user(database_url: str, username: str, password: str) -> dict[s
     }
 
 
+def record_session_event(
+    database_url: str,
+    user_id: str,
+    event: str,
+    *,
+    ip: str | None = None,
+    user_agent: str | None = None,
+) -> None:
+    """Insert an audit row into ``session_logs`` (issue #571).
+
+    ``event`` is ``'login'`` (credential login, issue #571) or ``'logout'``
+    (session revocation, issue #561/#571). Callers treat this as best-effort:
+    the credential (or an already successful role change) is the source of
+    truth, so a failure here is only logged and never breaks the flow.
+    """
+    with closing(psycopg.connect(database_url, autocommit=True)) as conn, conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO session_logs (user_id, event, ip, user_agent) VALUES (%s, %s, %s, %s)",
+            (user_id, event, ip, user_agent),
+        )
+
+
 class UserSeedStore(Protocol):
     """Credential store port implemented by PostgreSQL and by test fakes."""
 
