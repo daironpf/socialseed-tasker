@@ -9,6 +9,7 @@ import {
   type AgentProfilePayload,
 } from '@/api/agentProfilesApi'
 import { isMockMode } from '@/api/client'
+import { fetchUserIssueStats, type UserIssueStats } from '@/api/userIssuesApi'
 import { applyStudioUpdate, mergeStudioAgents, removeStudioProfile } from '@/utils/studioAgents'
 import type { User } from '@/types'
 
@@ -16,10 +17,20 @@ export const useUsersStore = defineStore('users', () => {
   const users = ref<User[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const issueStatsByUser = ref<Record<string, UserIssueStats>>({})
 
   const humans = computed(() => users.value.filter(u => u.type === 'human'))
   const agents = computed(() => users.value.filter(u => u.type === 'agent'))
   const activeAgents = computed(() => agents.value.filter(a => a.is_active))
+
+  // Stats are cached per id (#570): drop the entries of users that vanished
+  // on a refetch so a deleted card never keeps a ghost counter.
+  function pruneIssueStats() {
+    const live = new Set(users.value.map(u => u.id))
+    for (const id of Object.keys(issueStatsByUser.value)) {
+      if (!live.has(id)) delete issueStatsByUser.value[id]
+    }
+  }
 
   async function fetchUsers() {
     loading.value = true
@@ -28,6 +39,7 @@ export const useUsersStore = defineStore('users', () => {
       if (isMockMode()) {
         // Mock owns its whole collection (#565): no /agents/profiles call in mock mode.
         users.value = mergeStudioAgents(await api.fetchUsers())
+        pruneIssueStats()
         return
       }
       const [humansResult, profilesResult] = await Promise.allSettled([
@@ -40,6 +52,7 @@ export const useUsersStore = defineStore('users', () => {
         // A 503 (no database) must never hide the humans (#565).
         console.warn('agent profiles unavailable, showing humans only:', profilesResult.reason)
         users.value = humansList
+        pruneIssueStats()
         return
       }
       const seen = new Set(humansList.map(u => u.id))
@@ -51,11 +64,36 @@ export const useUsersStore = defineStore('users', () => {
         }
       }
       users.value = merged
+      pruneIssueStats()
     } catch (e) {
       error.value = (e as Error).message
     } finally {
       loading.value = false
     }
+  }
+
+  /**
+   * Card counters from GET /users/{id}/issue-stats (#570), fetched in bulk at
+   * mount and cached per id. Mock mode has no such endpoint, so the view keeps
+   * its client-side calculation. Studio-local cards (`agent-studio-*`) never
+   * exist in the PG root and are skipped (their 404 would only refetch the
+   * same list); any other 404 means the user was deleted upstream -> one
+   * refetch, and every failure drops the cache entry so the card degrades to
+   * the "—" placeholder instead of a broken count.
+   */
+  async function fetchAllIssueStats(): Promise<void> {
+    if (isMockMode()) return
+    const targets = users.value.filter(u => !u.id.startsWith('agent-studio-'))
+    await Promise.all(
+      targets.map(async (user) => {
+        try {
+          issueStatsByUser.value[user.id] = await fetchUserIssueStats(user.id)
+        } catch (e) {
+          delete issueStatsByUser.value[user.id]
+          if ((e as { status?: number }).status === 404) void fetchUsers()
+        }
+      }),
+    )
   }
 
   async function updateUser(id: string, data: Partial<User>): Promise<User> {
@@ -202,10 +240,12 @@ export const useUsersStore = defineStore('users', () => {
     users,
     loading,
     error,
+    issueStatsByUser,
     humans,
     agents,
     activeAgents,
     fetchUsers,
+    fetchAllIssueStats,
     updateUser,
     createUser,
     createAgent,

@@ -181,7 +181,7 @@
     <div
       v-if="showIssuesModal"
       class="fixed inset-0 z-40 bg-black/50 flex items-center justify-center"
-      @click.self="showIssuesModal = false"
+      @click.self="closeIssuesModal"
       role="dialog"
       aria-modal="true"
     >
@@ -218,6 +218,22 @@
         <div class="overflow-y-auto max-h-[60vh] p-4">
           <div v-if="loadingIssues" class="flex items-center justify-center py-8">
             <LoadingSpinner />
+          </div>
+          <div
+            v-else-if="issuesModalError"
+            data-testid="issues-modal-error"
+            class="text-center py-8"
+          >
+            <p class="text-sm text-red-600 dark:text-red-400">
+              {{ t('common.error') }}: {{ issuesModalError }}
+            </p>
+            <button
+              data-testid="issues-modal-retry"
+              class="mt-3 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+              @click="retryIssuesModal"
+            >
+              {{ t('common.retry') }}
+            </button>
           </div>
           <div v-else-if="modalIssues.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
             {{ t('common.noData') }}
@@ -296,6 +312,8 @@ import { useUsersStore } from '@/stores/usersStore'
 import { useIssuesStore } from '@/stores/issuesStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useToast } from '@/composables/useToast'
+import { isMockMode } from '@/api/client'
+import { fetchUserIssues } from '@/api/userIssuesApi'
 import type { User, Issue } from '@/types'
 
 const { t } = useI18n()
@@ -311,7 +329,12 @@ const showIssuesModal = ref(false)
 const selectedUser = ref<User | null>(null)
 const modalIssues = ref<Issue[]>([])
 const loadingIssues = ref(false)
+const issuesModalError = ref<string | null>(null)
 const modalType = ref<'assigned' | 'created' | 'completed'>('assigned')
+// Monotonic token: closing/switching the modal invalidates the in-flight
+// request, so a late response never paints a stale list (#570 — the client
+// has no AbortController pattern to cancel at the transport layer).
+let modalRequest = 0
 
 const showEditModal = ref(false)
 const editingAgent = ref<User | null>(null)
@@ -326,16 +349,30 @@ const agents = computed(() => usersStore.agents)
 const isLastHuman = computed(() => humans.value.length <= 1)
 const allIssues = computed(() => issuesStore.issues)
 
-function getUserAssignedCount(userId: string): number {
-  return allIssues.value.filter(i => i.assignee === userId && i.status !== 'CLOSED').length
+function getUserAssignedCount(userId: string): number | string {
+  if (isMockMode()) {
+    return allIssues.value.filter(i => i.assignee === userId && i.status !== 'CLOSED').length
+  }
+  const stats = usersStore.issueStatsByUser[userId]
+  return stats ? stats.assigned : '—'
 }
 
-function getUserCreatedCount(userId: string): number {
-  return allIssues.value.filter(i => i.created_by === userId && i.status !== 'CLOSED').length
+function getUserCreatedCount(userId: string): number | string {
+  if (isMockMode()) {
+    return allIssues.value.filter(i => i.created_by === userId && i.status !== 'CLOSED').length
+  }
+  const stats = usersStore.issueStatsByUser[userId]
+  return stats ? stats.created : '—'
 }
 
-function getUserCompletedCount(userId: string): number {
-  return allIssues.value.filter(i => (i.assignee === userId || i.created_by === userId) && i.status === 'CLOSED').length
+function getUserCompletedCount(userId: string): number | string {
+  if (isMockMode()) {
+    return allIssues.value.filter(
+      i => (i.assignee === userId || i.created_by === userId) && i.status === 'CLOSED',
+    ).length
+  }
+  const stats = usersStore.issueStatsByUser[userId]
+  return stats ? stats.completed : '—'
 }
 
 const modalTitle = computed(() => {
@@ -395,31 +432,53 @@ async function openIssuesModal(user: User, type: 'assigned' | 'created' | 'compl
   selectedUser.value = user
   modalType.value = type
   showIssuesModal.value = true
+  modalIssues.value = []
+  issuesModalError.value = null
   loadingIssues.value = true
-  
+  const request = ++modalRequest
+
   try {
-    if (allIssues.value.length === 0) {
-      await issuesStore.fetchIssues(1, 200)
-    }
-    const issues = allIssues.value
-    if (type === 'assigned') {
-      modalIssues.value = issues.filter(issue => issue.assignee === user.id && issue.status !== 'CLOSED')
-    } else if (type === 'created') {
-      modalIssues.value = issues.filter(issue => issue.created_by === user.id && issue.status !== 'CLOSED')
+    if (isMockMode()) {
+      // The mock has no /users/{id}/issues (#570): keep the client filter.
+      if (allIssues.value.length === 0) {
+        await issuesStore.fetchIssues(1, 200)
+      }
+      if (request !== modalRequest) return
+      const issues = allIssues.value
+      if (type === 'assigned') {
+        modalIssues.value = issues.filter(issue => issue.assignee === user.id && issue.status !== 'CLOSED')
+      } else if (type === 'created') {
+        modalIssues.value = issues.filter(issue => issue.created_by === user.id && issue.status !== 'CLOSED')
+      } else {
+        modalIssues.value = issues.filter(issue => (issue.assignee === user.id || issue.created_by === user.id) && issue.status === 'CLOSED')
+      }
     } else {
-      modalIssues.value = issues.filter(issue => (issue.assignee === user.id || issue.created_by === user.id) && issue.status === 'CLOSED')
+      const issues = await fetchUserIssues(user.id, type)
+      if (request !== modalRequest) return
+      modalIssues.value = issues
     }
-  } catch {
+  } catch (e) {
+    if (request !== modalRequest) return
     modalIssues.value = []
+    issuesModalError.value = (e as Error).message || 'Unknown error'
+    // 404: the user vanished upstream, refresh the list (#570).
+    if ((e as { status?: number }).status === 404) void usersStore.fetchUsers()
   } finally {
-    loadingIssues.value = false
+    if (request === modalRequest) loadingIssues.value = false
   }
 }
 
+function retryIssuesModal() {
+  if (selectedUser.value) void openIssuesModal(selectedUser.value, modalType.value)
+}
+
 function closeIssuesModal() {
+  modalRequest++ // invalidate any in-flight response (#570)
   showIssuesModal.value = false
   selectedUser.value = null
   modalIssues.value = []
+  issuesModalError.value = null
+  loadingIssues.value = false
 }
 
 function openEditAgent(user: User) {
@@ -528,6 +587,14 @@ async function createUser(data: { username: string; email: string; role: string;
 }
 
 onMounted(async () => {
-  await Promise.all([usersStore.fetchUsers(), issuesStore.fetchIssues(1, 200)])
+  await Promise.all([
+    usersStore.fetchUsers().then(() => {
+      // Real mode: the card counters come from /users/{id}/issue-stats (#570).
+      if (!isMockMode()) return usersStore.fetchAllIssueStats()
+    }),
+    // The mock keeps its global list: it powers both the counters and the
+    // modal filters, and has no /users/{id}/issue-stats endpoint.
+    isMockMode() ? issuesStore.fetchIssues(1, 200) : Promise.resolve(),
+  ])
 })
 </script>

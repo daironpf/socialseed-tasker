@@ -517,7 +517,8 @@
     "noData": "No hay datos disponibles",
     "textEditor": "Editor de texto",
     "pendingDev": "Funcionalidad pendiente de desarrollo",
-    "underConstruction": "En construccion"
+    "underConstruction": "En construccion",
+    "retry": "Reintentar"
   },
   "dashboardStats": {
     "totalIssues": "Total Issues",

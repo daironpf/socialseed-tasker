@@ -3,7 +3,7 @@
 **Source:** vista maquetada `frontend/src/views/UsersView.vue` + mock
 `frontend/dataset-de-pruebas/users.json` / `issues.json` + restricciones del usuario
 **Created:** 2026-10-07
-**Status:** IN PROGRESS (12/18) — #558 DONE 2026-10-07, #559 DONE 2026-10-07, #560 DONE 2026-10-07, #561 DONE 2026-10-07, #562 DONE 2026-10-08, #563 DONE 2026-10-08, #564 DONE 2026-10-08, #565 DONE 2026-10-08, #566 DONE 2026-10-09, #567 DONE 2026-10-09, #568 DONE 2026-10-09, #569 DONE 2026-10-09
+**Status:** IN PROGRESS (13/18) — #558 DONE 2026-10-07, #559 DONE 2026-10-07, #560 DONE 2026-10-07, #561 DONE 2026-10-07, #562 DONE 2026-10-08, #563 DONE 2026-10-08, #564 DONE 2026-10-08, #565 DONE 2026-10-08, #566 DONE 2026-10-09, #567 DONE 2026-10-09, #568 DONE 2026-10-09, #569 DONE 2026-10-09, #570 DONE 2026-10-10
 **Numeración:** #558–#575 (continúa tras #557 del índice v6)
 
 ---
@@ -149,7 +149,7 @@
 - [x] #567 editar agente
 - [x] #568 eliminar agente
 - [x] #569 issues por uid + endpoints por usuario
-- [ ] #570 contadores y modal
+- [x] #570 contadores y modal
 - [ ] #571 `session_logs` + `last_login` derivado
 - [ ] #572 catálogos skills/tools
 - [ ] #573 migración de Agent Studio a la API

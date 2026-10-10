@@ -6,9 +6,10 @@ import CreateUserModal from '@/components/users/CreateUserModal.vue'
 import { useUsersStore } from '@/stores/usersStore'
 import * as usersApi from '@/api/usersApi'
 import * as issuesApi from '@/api/issuesApi'
+import { fetchUserIssueStats, fetchUserIssues } from '@/api/userIssuesApi'
 import { createAgentProfile, fetchAgentProfiles } from '@/api/agentProfilesApi'
 import { apiMode } from '@/api/client'
-import type { User } from '@/types'
+import { IssuePriority, IssueStatus, type Issue, type User } from '@/types'
 
 const { toastSuccess, toastError } = vi.hoisted(() => ({
   toastSuccess: vi.fn(),
@@ -36,6 +37,11 @@ vi.mock('@/api/issuesApi', () => ({
   fetchIssue: vi.fn(),
 }))
 
+vi.mock('@/api/userIssuesApi', () => ({
+  fetchUserIssueStats: vi.fn(),
+  fetchUserIssues: vi.fn(),
+}))
+
   vi.mock('@/api/agentProfilesApi', () => ({
     fetchAgentProfiles: vi.fn(),
     createAgentProfile: vi.fn(),
@@ -56,6 +62,27 @@ function makeHuman(id: string, username: string): User {
     issues_created: 0,
     last_active: '2026-10-01T08:00:00Z',
     is_active: true,
+  }
+}
+
+function makeIssue(overrides: Partial<Issue> = {}): Issue {
+  return {
+    id: 'ISS-1',
+    title: 'Implement API',
+    description: '',
+    status: IssueStatus.OPEN,
+    priority: IssuePriority.MEDIUM,
+    component_id: 'comp-1',
+    project_id: 'socialseed-tasker',
+    labels: [],
+    dependencies: [],
+    blocks: [],
+    affects: [],
+    created_at: '2026-10-01T00:00:00Z',
+    updated_at: '2026-10-01T00:00:00Z',
+    closed_at: null,
+    architectural_constraints: [],
+    ...overrides,
   }
 }
 
@@ -376,5 +403,138 @@ describe('UsersView create agent flow (issue #566)', () => {
     await flushPromises()
     expect(createAgentProfile).toHaveBeenCalledTimes(1)
     expect(usersApi.createUser).toHaveBeenCalledTimes(1) // still just the human
+  })
+})
+
+describe('UsersView user issues (issue #570)', () => {
+  let previousMode: typeof apiMode.value
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    previousMode = apiMode.value
+    apiMode.value = 'real'
+    vi.mocked(usersApi.fetchUsers).mockResolvedValue([makeHuman('uid-ana', 'ana')])
+    vi.mocked(fetchAgentProfiles).mockResolvedValue([])
+    vi.mocked(fetchUserIssueStats).mockResolvedValue({ assigned: 2, created: 1, completed: 3 })
+    vi.mocked(fetchUserIssues).mockResolvedValue([])
+    vi.mocked(issuesApi.fetchIssues).mockResolvedValue({
+      items: [],
+      pagination: { page: 1, limit: 200, total: 0, has_next: false, has_prev: false },
+    })
+  })
+
+  afterEach(() => {
+    apiMode.value = previousMode
+  })
+
+  function counterValues(wrapper: VueWrapper): string[] {
+    return wrapper.findAll('.grid.grid-cols-3 .text-lg').map(el => el.text())
+  }
+
+  it('renders the three card counters from issue-stats without the global list', async () => {
+    const wrapper = await mountView()
+
+    expect(fetchUserIssueStats).toHaveBeenCalledWith('uid-ana')
+    expect(counterValues(wrapper)).toEqual(['2', '1', '3'])
+    // AC: the view no longer downloads the whole list (it used to 422 on le=100)
+    expect(issuesApi.fetchIssues).not.toHaveBeenCalled()
+  })
+
+  it('keeps the card intact with placeholder counters when issue-stats fails', async () => {
+    vi.mocked(fetchUserIssueStats).mockRejectedValue(
+      Object.assign(new Error('Service unavailable'), { status: 503 }),
+    )
+
+    const wrapper = await mountView()
+
+    expect(wrapper.text()).toContain('ana') // same card, no exception
+    expect(counterValues(wrapper)).toEqual(['—', '—', '—'])
+    expect(wrapper.text()).toContain('Human') // badges and layout unchanged
+  })
+
+  it('refetches the users when issue-stats answers 404', async () => {
+    vi.mocked(usersApi.fetchUsers).mockResolvedValue([
+      makeHuman('uid-ana', 'ana'),
+      makeHuman('uid-bea', 'bea'),
+    ])
+    vi.mocked(fetchUserIssueStats).mockImplementation(async id => {
+      if (id === 'uid-bea') throw Object.assign(new Error('User not found'), { status: 404 })
+      return { assigned: 2, created: 1, completed: 3 }
+    })
+
+    const wrapper = await mountView()
+
+    expect(usersApi.fetchUsers).toHaveBeenCalledTimes(2)
+    expect(counterValues(wrapper)).toEqual(['2', '1', '3', '—', '—', '—'])
+  })
+
+  it('opens the modal against /users/{id}/issues and paints the list', async () => {
+    vi.mocked(fetchUserIssues).mockResolvedValue([
+      makeIssue({ id: 'ISS-7', title: 'Fix login bug', assignee: 'uid-ana' }),
+    ])
+
+    const wrapper = await mountView()
+    await wrapper.findAll('.grid.grid-cols-3 button')[0].trigger('click')
+    await flushPromises()
+
+    expect(fetchUserIssues).toHaveBeenCalledWith('uid-ana', 'assigned')
+    expect(wrapper.text()).toContain('Fix login bug')
+  })
+
+  it('shows an error state with retry when /users/{id}/issues fails', async () => {
+    vi.mocked(fetchUserIssues).mockRejectedValueOnce(
+      Object.assign(new Error('Service unavailable'), { status: 503 }),
+    )
+
+    const wrapper = await mountView()
+    await wrapper.findAll('.grid.grid-cols-3 button')[0].trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="issues-modal-error"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Service unavailable')
+
+    vi.mocked(fetchUserIssues).mockResolvedValue([
+      makeIssue({ id: 'ISS-8', title: 'Retried issue', assignee: 'uid-ana' }),
+    ])
+    await wrapper.find('[data-testid="issues-modal-retry"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="issues-modal-error"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Retried issue')
+  })
+
+  it('keeps the mock calculation and never calls the new endpoints (mock mode)', async () => {
+    apiMode.value = 'mock'
+    vi.mocked(issuesApi.fetchIssues).mockResolvedValue({
+      items: [
+        makeIssue({ id: 'ISS-1', title: 'Mock assigned', assignee: 'uid-ana' }),
+        makeIssue({
+          id: 'ISS-2',
+          title: 'Mock closed',
+          assignee: 'uid-ana',
+          created_by: 'uid-ana',
+          status: IssueStatus.CLOSED,
+        }),
+        makeIssue({
+          id: 'ISS-3',
+          title: 'Mock other',
+          assignee: 'uid-bea',
+          status: IssueStatus.IN_PROGRESS,
+        }),
+      ],
+      pagination: { page: 1, limit: 200, total: 3, has_next: false, has_prev: false },
+    })
+
+    const wrapper = await mountView()
+
+    expect(fetchUserIssueStats).not.toHaveBeenCalled()
+    expect(counterValues(wrapper)).toEqual(['1', '0', '1'])
+
+    await wrapper.findAll('.grid.grid-cols-3 button')[0].trigger('click')
+    await flushPromises()
+
+    expect(fetchUserIssues).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Mock assigned')
+    expect(wrapper.text()).not.toContain('Mock closed')
   })
 })
