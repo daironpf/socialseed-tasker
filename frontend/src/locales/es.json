@@ -1684,6 +1684,7 @@
     "title": "Estudio de Agentes",
     "subtitle": "Crea, prueba y gestiona agentes personalizados",
     "activeCount": "{count} activos",
+    "imported": "{count} perfiles locales del Studio importados en la base de datos",
     "new": "Nuevo agente",
     "builder": {
       "title": "Constructor de Agentes",

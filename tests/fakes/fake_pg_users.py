@@ -314,12 +314,12 @@ class FakePgCursor:
             row = self.agents.get(uid)
             if row is None:
                 self.rowcount = 0
-            elif len(values) >= 11:
-                # Full profile update (#564): 10 columns + user_id.
+            elif len(values) >= 12:
+                # Full profile update (#564 + last_used_at, #573): 11 columns + user_id.
                 (
                     email, avatar, model, specialization, temperature,
-                    system_prompt, tools, write_access, limits, enabled,
-                ) = values[:10]
+                    system_prompt, tools, write_access, limits, enabled, last_used_at,
+                ) = values[:11]
                 row.update(
                     {
                         "email": email,
@@ -332,6 +332,7 @@ class FakePgCursor:
                         "write_access": write_access,
                         "limits": limits,
                         "enabled": enabled,
+                        "last_used_at": last_used_at,
                     }
                 )
                 self.rowcount = 1
@@ -421,7 +422,7 @@ class FakePgCursor:
             # Tool catalog validation for agent profiles (#564).
             self._next = (1,) if str(params[0]) in self.tools else None
         elif low.startswith("select email, avatar, model, specialization"):
-            # update_profile keeps JSONB values it must not overwrite (#564).
+            # update_profile keeps JSONB values it must not overwrite (#564/#573).
             row = self.agents.get(str(params[0]))
             if row is None:
                 self._next = None
@@ -437,6 +438,7 @@ class FakePgCursor:
                     row.get("write_access"),
                     row.get("limits"),
                     row.get("enabled", True),
+                    row.get("last_used_at"),
                 )
         elif low.startswith("select u.id, u.username, u.created_at, a."):
             # Agent profile read over users ⨝ agents_user (#564).

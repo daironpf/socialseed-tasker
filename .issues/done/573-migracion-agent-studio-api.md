@@ -14,7 +14,49 @@ pasa a usar la API real** — el perfil YA existe como `users(user_type='agent')
 consumidor. `pendingFeatures.ts:37` marca `/agents/studio` como feature pendiente en modo
 real → esta issue lo habilita.
 
-## Status: TODO
+## Status: DONE
+
+## Resolution
+
+Implementado 2026-10-10.
+
+**Backend** (soporte para `markUsed`):
+- `AgentProfileUpdate` gana `last_used_at: datetime | None` (`schemas.py`); `update_profile`
+  (`auth/user_store.py`) lo lee en el pre-SELECT y lo escribe en el UPDATE (None = keep);
+  el router lo reenvía. Test nuevo `test_update_agent_profile_last_used_at` (persiste y
+  sobrevive a updates parciales posteriores). `FakePgCursor` actualizado (SELECT 11-tuple,
+  UPDATE 12 valores).
+
+**Frontend**:
+- `agentProfilesApi.ts`: `fetchAgentProfilesRaw()`/`createAgentProfileRaw()` (las variantes
+  card normalizan y pierden `limits`/`last_used_at`, que el Studio necesita) +
+  `AgentProfilePayload.last_used_at`.
+- `studioAgents.ts`: `backendProfileToStudio`/`studioProfileToPayload` (el `role` libre del
+  Studio viaja en `specialization`, agents no tienen RBAC), `wasStudioImported`/
+  `markStudioImported` (flag `agent-studio-v1-imported`).
+- `agentStudioStore.ts`: `loadProfiles()` (real → `GET /agents/profiles` + importación
+  única previa; mock → localStorage); `saveProfile`/`cloneProfile`/`toggleEnabled`/
+  `removeProfile`/`markUsed` async con rama `isMockMode()` (mock = localStorage sin red;
+  real = POST/PUT/DELETE, toast de error y `refreshUsers()`); importación idempotente:
+  un POST por perfil local `agent-studio-*`, flag marcado, clave legada vaciada, aviso
+  `agentStudio.imported` EN/ES; si la API falla, degrada a la copia local.
+- `AgentStudioView.vue`: `save()` async, `onMounted` llama `store.loadProfiles()`,
+  `onSandboxUsed` → `void store.markUsed` (sandbox intacto por diseño).
+- `pendingFeatures.ts`: `/agents/studio` fuera de la lista (badge y chip "Under
+  construction" retirados en ambos modos).
+- i18n: `agentStudio.imported` EN/ES.
+- Notas añadidas en #567/#568 (done): la rama `agent-studio-*` queda como fallback solo
+  para perfiles legados no importados.
+
+**Tests**: `agentStudioStore.spec.ts` (14: mapeo, create/update/toggle/remove/clone/markUsed
+sobre API en real, errores sin mutar, mock local sin red, importación única + flag + fallo
+parcial no bloquea).
+
+**Gates**: ruff 1251 (neutral) / mypy idéntico al baseline / pytest 1460+3 preexistentes+27
+skipped; lint 0/2 / test 381 (50 files) / build OK / i18n 1704/1704.
+
+**Nota live**: la importación se dispara al abrir el Studio (`AgentStudioView.onMounted`);
+hasta entonces los perfiles legados siguen sirviendo la rama local de #567/#568.
 
 ## Priority: HIGH
 
@@ -52,16 +94,17 @@ feat / fullstack
    - Ampliar `studioAgents.spec.ts` si cambia el contrato de merge.
 
 ## Acceptance Criteria
-- [ ] En modo real, crear/editar/clonar/activar/eliminar en Studio persiste en
+- [x] En modo real, crear/editar/clonar/activar/eliminar en Studio persiste en
       `/agents/profiles` (PG) y sobrevive a recargar el navegador
-- [ ] Importación única de los perfiles `agent-studio-*` existentes (idempotente, con aviso)
-- [ ] Modo mock intacto: localStorage sigue funcionando sin llamadas de red
-- [ ] La tarjeta del agente importado aparece en la vista de Usuarios con uid PG
-- [ ] Sandbox del Studio sin cambios funcionales
-- [ ] **Tests**: spec de `agentStudioStore` + importación pasan
-- [ ] Gates frontend: `lint` 0 errors / 2 warnings, `test` 306+ (44+ files), `build` OK,
-      i18n 1693+N EN/ES (aviso de importación)
-- [ ] `pendingFeatures` deja de marcar `/agents/studio` en real (si aplica tras la migración)
+- [x] Importación única de los perfiles `agent-studio-*` existentes (idempotente, con aviso)
+- [x] Modo mock intacto: localStorage sigue funcionando sin llamadas de red
+- [x] La tarjeta del agente importado aparece en la vista de Usuarios con uid PG
+      (`refreshUsers()` + refetch de UsersView al montar)
+- [x] Sandbox del Studio sin cambios funcionales (`markUsed` best-effort tras `@used`)
+- [x] **Tests**: spec de `agentStudioStore` + importación pasan (14/14)
+- [x] Gates frontend: `lint` 0/2, `test` 381 (50 files), `build` OK, i18n 1704/1704
+      (`agentStudio.imported` EN/ES); backend pytest 1460+3 preexistentes
+- [x] `pendingFeatures` deja de marcar `/agents/studio`
 
 ## Files to Create
 - `frontend/src/stores/agentStudioStore.spec.ts`

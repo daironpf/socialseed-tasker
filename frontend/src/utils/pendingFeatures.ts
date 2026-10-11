@@ -34,7 +34,6 @@ export const PENDING_FEATURE_ROUTES: readonly string[] = [
   '/organization',
   '/governance-matrix',
   '/audit-log',
-  '/agents/studio',
   '/graph',
   '/analysis',
   '/analytics',

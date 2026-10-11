@@ -941,6 +941,7 @@ class PostgresAgentProfileStore:
         limits: dict[str, Any] | None = None,
         skills: list[str] | None = None,
         enabled: bool | None = None,
+        last_used_at: datetime | None = None,
     ) -> None:
         """Partial update: ``None`` keeps the stored value, provided lists replace.
 
@@ -966,7 +967,8 @@ class PostgresAgentProfileStore:
                     cur.execute(
                         """
                         SELECT email, avatar, model, specialization, temperature,
-                               system_prompt, tools, write_access, limits, enabled
+                               system_prompt, tools, write_access, limits, enabled,
+                               last_used_at
                         FROM agents_user WHERE user_id = %s
                         """,
                         (user_id,),
@@ -977,7 +979,7 @@ class PostgresAgentProfileStore:
                     (
                         cur_email, cur_avatar, cur_model, cur_specialization,
                         cur_temperature, cur_prompt, cur_tools, cur_write,
-                        cur_limits, cur_enabled,
+                        cur_limits, cur_enabled, cur_last_used,
                     ) = current
                     next_tools = validated_tools if tools is not None else _as_json_list(cur_tools)
                     next_write = write_access if write_access is not None else _as_json_list(cur_write)
@@ -988,7 +990,7 @@ class PostgresAgentProfileStore:
                             email = %s, avatar = %s, model = %s, specialization = %s,
                             temperature = %s, system_prompt = %s,
                             tools = %s::jsonb, write_access = %s::jsonb,
-                            limits = %s::jsonb, enabled = %s
+                            limits = %s::jsonb, enabled = %s, last_used_at = %s
                         WHERE user_id = %s
                         """,
                         (
@@ -1002,6 +1004,7 @@ class PostgresAgentProfileStore:
                             json.dumps(next_write),
                             json.dumps(next_limits) if next_limits is not None else None,
                             enabled if enabled is not None else cur_enabled,
+                            last_used_at if last_used_at is not None else cur_last_used,
                             user_id,
                         ),
                     )

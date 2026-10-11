@@ -1684,6 +1684,7 @@
     "title": "Agent Studio",
     "subtitle": "Build, test and manage custom agents",
     "activeCount": "{count} active",
+    "imported": "Imported {count} local Studio profiles to the database",
     "new": "New agent",
     "builder": {
       "title": "Agent Builder",

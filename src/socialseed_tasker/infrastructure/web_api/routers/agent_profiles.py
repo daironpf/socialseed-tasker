@@ -158,6 +158,7 @@ def update_agent_profile(agent_id: str, body: AgentProfileUpdate) -> APIResponse
             limits=body.limits,
             skills=body.skills,
             enabled=body.enabled,
+            last_used_at=body.last_used_at,
         )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail="Agent profile not found") from exc

@@ -207,7 +207,12 @@ async function loadTools() {
   }
 }
 
-onMounted(loadTools)
+onMounted(() => {
+  // Real mode loads the library from /agents/profiles (and imports any legacy
+  // local profiles once); mock just reloads localStorage (#573).
+  void store.loadProfiles()
+  void loadTools()
+})
 
 const editingId = ref<string | null>(null)
 
@@ -282,9 +287,9 @@ function toggleTool(tool: string) {
   else form.tools.push(tool)
 }
 
-function save() {
+async function save() {
   if (!canSave.value) return
-  const saved = store.saveProfile(
+  const saved = await store.saveProfile(
     {
       name: form.name,
       role: form.role,
@@ -301,6 +306,6 @@ function save() {
 }
 
 function onSandboxUsed() {
-  if (editingId.value) store.markUsed(editingId.value)
+  if (editingId.value) void store.markUsed(editingId.value)
 }
 </script>

@@ -1050,6 +1050,7 @@ class AgentProfileUpdate(BaseModel):
 
     Every field is optional: ``None`` keeps the stored value; ``tools``/
     ``write_access``/``skills`` set replaces the stored list (``[]`` clears).
+    ``last_used_at`` lets the Studio record usage (#573).
     """
 
     username: str | None = None
@@ -1064,6 +1065,7 @@ class AgentProfileUpdate(BaseModel):
     limits: dict[str, Any] | None = None
     skills: list[str] | None = None
     enabled: bool | None = None
+    last_used_at: datetime | None = None
 
 
 class AgentProfileResponse(BaseModel):

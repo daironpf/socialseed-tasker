@@ -110,3 +110,6 @@ Implementado 2026-10-09 (commit pendiente de `si`):
 - Gates: backend sin cambios (ruff 1334 / mypy 1136 / pytest 1437 baselines intactos) +
   suite `test_agent_profiles_api.py` 11/11; frontend `lint` 0/2, `test` 350 (47 files, +5),
   `build` OK, i18n sin cambios (1702/1702).
+- **Nota #573**: la rama `agent-studio-*` de `removeStudioProfile` queda como fallback solo
+  para perfiles legados no importados — tras la migración del Studio (#573) los perfiles
+  importados tienen uid PG y su borrado de tarjeta ya va por `DELETE /agents/profiles/{id}`.

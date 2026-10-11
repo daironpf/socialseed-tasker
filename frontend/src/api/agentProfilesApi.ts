@@ -36,6 +36,7 @@ export interface AgentProfilePayload {
   limits?: Record<string, unknown> | null
   skills?: string[]
   enabled?: boolean
+  last_used_at?: string | null
 }
 
 /**
@@ -76,12 +77,25 @@ export async function fetchAgentProfiles(): Promise<User[]> {
   return (data.data || []).map(normalizeAgentProfile)
 }
 
+/** Un-normalized list for the Studio (#573): cards drop `limits`/`last_used_at`. */
+export async function fetchAgentProfilesRaw(): Promise<BackendAgentProfile[]> {
+  const { data } = await client.get<APIResponse<BackendAgentProfile[]>>('/agents/profiles', {
+    suppressErrorToast: true,
+  })
+  return data.data || []
+}
+
 export async function createAgentProfile(payload: AgentProfilePayload): Promise<User> {
+  return normalizeAgentProfile(await createAgentProfileRaw(payload))
+}
+
+/** Create and return the raw backend profile for the Studio (#573). */
+export async function createAgentProfileRaw(payload: AgentProfilePayload): Promise<BackendAgentProfile> {
   const { data } = await client.post<APIResponse<BackendAgentProfile>>('/agents/profiles', payload, {
     suppressErrorToast: true,
   })
   if (!data.data) throw new Error('Failed to create agent profile')
-  return normalizeAgentProfile(data.data)
+  return data.data
 }
 
 export async function updateAgentProfile(id: string, payload: AgentProfilePayload): Promise<User> {

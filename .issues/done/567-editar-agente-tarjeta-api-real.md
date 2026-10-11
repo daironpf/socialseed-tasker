@@ -115,3 +115,6 @@ Implementado 2026-10-09 (commit pendiente de `si`):
   respuesta normalizada; studio en localStorage sin tocar APIs (en modo mock); humano sigue
   en `updateUser`; rama mock para agentes no-studio; 404 propagado sin mutar + refetch.
 - Gates: `lint` 0/2, `test` 345 (47 files), `build` OK, i18n 1702/1702.
+- **Nota #573**: la rama `agent-studio-*` de `applyStudioUpdate` queda como fallback solo para
+  perfiles legados no importados — tras la migración del Studio a la API (#573) los perfiles
+  importados tienen uid PG y su edición de tarjeta ya va por `PUT /agents/profiles/{id}`.

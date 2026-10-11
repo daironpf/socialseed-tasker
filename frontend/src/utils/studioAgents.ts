@@ -1,7 +1,10 @@
-import type { AgentProfile } from '@/types/agentStudio'
+import type { AgentProfile, AgentLimits } from '@/types/agentStudio'
 import type { User } from '@/types'
+import { DEFAULT_LIMITS } from '@/types/agentStudio'
+import type { AgentProfilePayload, BackendAgentProfile } from '@/api/agentProfilesApi'
 
 const LS_KEY = 'agent-studio-v1'
+const IMPORTED_FLAG_KEY = 'agent-studio-v1-imported'
 
 export function loadStudioProfiles(): AgentProfile[] {
   try {
@@ -99,4 +102,73 @@ export function mergeStudioAgents(users: User[]): User[] {
     if (!existing.has(profile.id)) merged.push(profileToUser(profile))
   }
   return merged
+}
+
+// ---------------------------------------------------------------------------
+// Real-mode mappers: Studio shape <-> /agents/profiles backend (issue #573)
+// ---------------------------------------------------------------------------
+
+/** The Studio's free-text `role` rides on `specialization` (agents have no RBAC role). */
+export function backendProfileToStudio(raw: BackendAgentProfile): AgentProfile {
+  const stored = (raw.limits ?? {}) as Partial<Record<keyof AgentLimits, unknown>>
+  const limits: AgentLimits = {
+    maxTokensPerRun: typeof stored.maxTokensPerRun === 'number'
+      ? stored.maxTokensPerRun
+      : DEFAULT_LIMITS.maxTokensPerRun,
+    timeoutSeconds: typeof stored.timeoutSeconds === 'number'
+      ? stored.timeoutSeconds
+      : DEFAULT_LIMITS.timeoutSeconds,
+    maxRisk: stored.maxRisk === 'LOW' || stored.maxRisk === 'MEDIUM' || stored.maxRisk === 'HIGH'
+      ? stored.maxRisk
+      : DEFAULT_LIMITS.maxRisk,
+  }
+  const profile: AgentProfile = {
+    id: raw.id,
+    name: raw.username,
+    role: raw.specialization ?? 'agent',
+    avatar: raw.avatar || '🤖',
+    model: raw.model || 'gpt-4o',
+    systemPrompt: raw.system_prompt ?? '',
+    tools: raw.tools ? [...raw.tools] : [],
+    limits,
+    enabled: raw.enabled ?? true,
+    createdAt: raw.created_at ?? new Date().toISOString(),
+  }
+  if (raw.last_used_at) profile.lastUsedAt = raw.last_used_at
+  return profile
+}
+
+export function studioProfileToPayload(
+  profile: Pick<
+    AgentProfile,
+    'name' | 'role' | 'avatar' | 'model' | 'systemPrompt' | 'tools' | 'limits' | 'enabled'
+  >,
+): AgentProfilePayload {
+  return {
+    username: profile.name,
+    avatar: profile.avatar,
+    model: profile.model,
+    specialization: profile.role,
+    system_prompt: profile.systemPrompt,
+    tools: [...profile.tools],
+    limits: { ...profile.limits },
+    enabled: profile.enabled,
+  }
+}
+
+/** One-time local import is done (#573): the legacy key must not be re-read. */
+export function wasStudioImported(): boolean {
+  try {
+    return localStorage.getItem(IMPORTED_FLAG_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function markStudioImported(): void {
+  try {
+    localStorage.setItem(IMPORTED_FLAG_KEY, '1')
+  } catch {
+    // storage unavailable: the next load retries the (idempotent) import
+  }
 }

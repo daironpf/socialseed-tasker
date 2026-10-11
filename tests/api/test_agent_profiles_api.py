@@ -8,6 +8,8 @@ registered before ``agent.py`` so ``/agents/profiles`` never falls into the
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import pytest
 from fastapi import HTTPException
 
@@ -175,6 +177,26 @@ def test_update_agent_profile(monkeypatch: pytest.MonkeyPatch):
             _create_second.data.id, AgentProfileUpdate(username="bot-qa-2")
         )
     assert duplicate.value.status_code == 409
+
+
+def test_update_agent_profile_last_used_at(monkeypatch: pytest.MonkeyPatch):
+    """The Studio records usage through PUT last_used_at (issue #573)."""
+    cursor = FakePgCursor()
+    _install_agent_env(monkeypatch, cursor)
+    uid = _create_agent().data.id
+
+    used_at = datetime(2026, 10, 10, 12, 0, 0, tzinfo=timezone.utc)
+    response = agent_profiles.update_agent_profile(
+        uid, AgentProfileUpdate(last_used_at=used_at)
+    )
+
+    assert response.data.last_used_at is not None
+    assert cursor.agents[uid]["last_used_at"] == used_at
+
+    # None keeps the stored timestamp on later partial updates
+    agent_profiles.update_agent_profile(uid, AgentProfileUpdate(model="gpt-4o-mini"))
+    assert cursor.agents[uid]["last_used_at"] == used_at
+    assert agent_profiles.get_agent_profile(uid).data.model == "gpt-4o-mini"
 
 
 # ---------------------------------------------------------------------------
