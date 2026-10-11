@@ -1259,6 +1259,10 @@ def start_agent_work(
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e)) from e
     publish_issue_update(request.app, issue_id, _agent_flag_payload(updated_issue))
+    # #574: best-effort open of a persistent run (no-op for non-PG agent ids).
+    from socialseed_tasker.infrastructure.web_api.routers.agent_runs import open_run_best_effort
+
+    open_run_best_effort(body.agent_id, issue_id=issue_id)
     return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
 
 
@@ -1283,6 +1287,10 @@ def finish_agent_work(
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e)) from e
     publish_issue_update(request.app, issue_id, _agent_flag_payload(updated_issue))
+    # #574: best-effort close of the agent's open run as completed.
+    from socialseed_tasker.infrastructure.web_api.routers.agent_runs import close_run_best_effort
+
+    close_run_best_effort(body.agent_id, issue_id=issue_id, status="completed")
     return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
 
 
@@ -1339,6 +1347,10 @@ def stop_agent_toggle(
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e)) from e
     publish_issue_update(request.app, issue_id, _agent_flag_payload(updated_issue))
+    # #574: kill switch closes the open run as cancelled.
+    from socialseed_tasker.infrastructure.web_api.routers.agent_runs import close_run_best_effort
+
+    close_run_best_effort(agent_id, issue_id=issue_id, status="cancelled")
     return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
 
 

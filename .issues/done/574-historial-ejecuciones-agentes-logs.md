@@ -20,7 +20,7 @@ paso a paso. Es **greenfield** (tabla nueva; los tipos ya están tipados en el f
 Alcance deliberado: **la tabla es para histórico**; el streaming SSE en memoria (#517/#472)
 sigue como está para realtime (la tabla se alimenta al cerrar run o por flush periódico).
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: MEDIUM
 
@@ -86,15 +86,16 @@ feat / fullstack
      (`agentRunsApi.spec.ts`).
 
 ## Acceptance Criteria
-- [ ] Tablas `agent_runs`/`agent_run_logs` creadas con índices y cascada desde `users`
-- [ ] CRUD/lectura de runs y logs vía API (503 sin database, 404/422 validados)
-- [ ] El stream de logs por issue sigue funcionando en realtime **y** persiste best-effort en
+- [x] Tablas `agent_runs`/`agent_run_logs` creadas con índices y cascada desde `users`
+- [x] CRUD/lectura de runs y logs vía API (503 sin database, 404/422 validados)
+- [x] El stream de logs por issue sigue funcionando en realtime **y** persiste best-effort en
       la tabla (un reinicio no pierde el histórico ya cerrado)
-- [ ] El Studio muestra el historial de ejecuciones del agente con detalle de logs
-- [ ] Borrar un agente limpia sus runs (cascada)
-- [ ] **Tests**: los pytest + specs listados pasan
-- [ ] Gates: backend `ruff` 1011 / `mypy` 1153 / `pytest` 1331+3; frontend `lint` 0/2 /
-      `test` 306+ (44+) / `build` OK / i18n 1693+N EN/ES
+- [x] El Studio muestra el historial de ejecuciones del agente con detalle de logs
+- [x] Borrar un agente limpia sus runs (cascada)
+- [x] **Tests**: los pytest + specs listados pasan
+- [x] Gates: backend `ruff` delta 0 (1251 preexistentes) / `mypy` delta 0 en ficheros nuevos /
+      `pytest` 1475+3 preexistentes+27 skipped; frontend `lint` 0/2 / `test` 395 / `build` OK /
+      i18n 1719/1719 EN+ES
 
 ## Files to Create
 - `src/socialseed_tasker/infrastructure/web_api/routers/agent_runs.py`
@@ -122,3 +123,40 @@ feat / fullstack
 ## Related Issues
 - #517/#472 (SSE realtime, se conserva), #573 (Studio que consume el historial), #558 (patrón
   de esquema/repo), #564 (uid del agente), #571 (`session_logs`, aparte)
+
+## Resolution
+
+**DONE 2026-10-11.** Implementación greenfield completa:
+
+- **DDL** (`auth/user_store.py`): `AGENT_RUNS_DDL` + `AGENT_RUN_LOGS_DDL` idempotentes con
+  `CREATE TABLE IF NOT EXISTS` en `create_schema`, cascada `agent_runs → users(id)` y
+  `agent_run_logs → agent_runs(id)`, índice `ix_agent_runs_agent_started`; `issue_id` es
+  texto Neo4j sin FK (los issues no viven en PG).
+- **Store** (`PostgresAgentProfileStore`, dominio agente): `create_run`, `ensure_running_run`
+  (reutiliza el run abierto o lo crea), `close_open_run` (calcula `duration_ms` con
+  `extract(epoch…)`), `append_run_log` (seq incremental + `metadata::jsonb`), `update_run`
+  (parcial), `list_runs`, `list_run_logs`, `delete_run`. JSONB con el patrón del repo
+  (texto + cast, no `psycopg.Json`).
+- **Router** `routers/agent_runs.py`: `POST/GET /agents/{agent_id}/runs` (404 agente
+  desconocido, `limit` 1–200), `POST/GET /runs/{run_id}/logs` (404 run), `PATCH /runs/{run_id}`
+  (status validado por `Literal` → 422), `DELETE /runs/{run_id}`; 503 sin
+  `TASKER_DATABASE_URL`. Sin colisión con `agent.py`: `/agents/{id}/runs` es una plantilla de
+  sufijo distinto a `/agents/{id}/heartbeat` y `/agents/{id}/specialists`.
+- **Alimentación best-effort**: `POST /issues/{id}/agent-logs` (realtime.py) llama
+  `append_agent_log_best_effort` — usa `payload.agent_id` si viene; sin él o con cualquier
+  fallo PG el SSE queda intacto (helper nunca propaga). `agent/start` abre run
+  (`open_run_best_effort`), `agent/finish` cierra como `completed` y el kill switch
+  `/stop-agent` como `cancelled` (issues.py); ids no-PG como `manual` son no-op.
+- **Frontend**: `api/agentRunsApi.ts` (6 funciones + tipos), panel
+  `components/agents/AgentRunHistoryPanel.vue` (lista con badge de estado/duración/tokens,
+  expandir → logs por seq, estados loading/vacío/error+retry) montado en `AgentStudioView`
+  bajo la Library con selector de agente (solo modo real; oculto en mock). i18n
+  `agentStudio.runs.*` EN/ES.
+- **Tests**: 17 pytest en `tests/api/test_agent_runs_api.py` (CRUD, 404/422/503, cascada al
+  borrar agente, flush best-effort con y sin `agent_id`, helper inexplota-bajo-PG,
+  ciclo open/close) sobre `FakePgCursor` extendido con estado `runs`/`run_logs`; 8 specs
+  `agentRunsApi.spec.ts` + 6 specs `AgentRunHistoryPanel.spec.ts`.
+- **Gates**: ruff delta 0 (97 preexistentes en ficheros tocados), mypy 0 en ficheros nuevos,
+  pytest 1475+3 preexistentes+27 skipped; frontend lint 0/2 (warnings preexistentes),
+  test 395 (52 files), build OK, i18n 1719/1719.
+- Smoke en vivo pendiente de `si` (despliegue `tasker-api` + `tasker-board`).

@@ -1745,6 +1745,25 @@
       "never": "never",
       "edit": "Edit",
       "clone": "Clone"
+    },
+    "runs": {
+      "title": "Execution history",
+      "agentLabel": "History agent",
+      "selectAgent": "Select an agent to view its run history.",
+      "loading": "Loading…",
+      "empty": "No runs recorded yet.",
+      "emptyLogs": "No logs for this run.",
+      "error": "Could not load the run history.",
+      "logsError": "Could not load the run logs.",
+      "retry": "Retry",
+      "durationMs": "{ms} ms",
+      "tokens": "{count} tokens",
+      "status": {
+        "running": "RUNNING",
+        "completed": "COMPLETED",
+        "failed": "FAILED",
+        "cancelled": "CANCELLED"
+      }
     }
   },
   "analytics": {

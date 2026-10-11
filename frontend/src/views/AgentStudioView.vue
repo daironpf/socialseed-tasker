@@ -175,11 +175,29 @@
       @toggle="store.toggleEnabled($event)"
       @remove="store.removeProfile($event)"
     />
+
+    <!-- Run history (#574): persistent executions from PostgreSQL. -->
+    <div v-if="!isMockMode() && store.profiles.length" class="space-y-3">
+      <label class="block">
+        <span class="mb-1 block text-[11px] font-semibold uppercase text-gray-500 dark:text-gray-400">
+          {{ t('agentStudio.runs.agentLabel') }}
+        </span>
+        <select
+          v-model="runsAgentId"
+          class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 focus:border-sky-400 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+        >
+          <option v-for="profile in store.profiles" :key="profile.id" :value="profile.id">
+            {{ profile.avatar }} {{ profile.name }}
+          </option>
+        </select>
+      </label>
+      <AgentRunHistoryPanel :agent-id="runsAgentId" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAgentStudioStore } from '@/stores/agentStudioStore'
 import { AGENT_MODELS, AGENT_TOOLS, DEFAULT_LIMITS } from '@/types/agentStudio'
@@ -189,6 +207,7 @@ import { fetchTools } from '@/api/catalogsApi'
 import AgentPromptEditor from '@/components/agents/AgentPromptEditor.vue'
 import AgentSandboxTester from '@/components/agents/AgentSandboxTester.vue'
 import AgentLibrary from '@/components/agents/AgentLibrary.vue'
+import AgentRunHistoryPanel from '@/components/agents/AgentRunHistoryPanel.vue'
 
 const { t } = useI18n()
 const store = useAgentStudioStore()
@@ -213,6 +232,19 @@ onMounted(() => {
   void store.loadProfiles()
   void loadTools()
 })
+
+// Run history (#574) defaults to the first profile of the library.
+const runsAgentId = ref('')
+watch(
+  () => store.profiles,
+  profiles => {
+    if (!runsAgentId.value && profiles.length) runsAgentId.value = profiles[0].id
+    if (runsAgentId.value && !profiles.some(p => p.id === runsAgentId.value)) {
+      runsAgentId.value = profiles[0]?.id ?? ''
+    }
+  },
+  { immediate: true, deep: true },
+)
 
 const editingId = ref<string | null>(null)
 

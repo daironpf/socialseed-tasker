@@ -268,6 +268,11 @@ async def get_agent_logs(issue_id: str, request: Request) -> dict[str, Any]:
 async def publish_agent_log(issue_id: str, payload: dict[str, Any], request: Request) -> dict[str, Any]:
     hub = _hub(request)
     entry = hub.append_log(issue_id, payload)
+    # #574: best-effort flush into agent_runs; the SSE ring buffer stays
+    # authoritative for live streaming and never depends on PostgreSQL.
+    from socialseed_tasker.infrastructure.web_api.routers.agent_runs import append_agent_log_best_effort
+
+    append_agent_log_best_effort(issue_id, payload)
     return {"data": entry}
 
 

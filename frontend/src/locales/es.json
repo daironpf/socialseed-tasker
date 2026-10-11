@@ -1745,6 +1745,25 @@
       "never": "nunca",
       "edit": "Editar",
       "clone": "Clonar"
+    },
+    "runs": {
+      "title": "Historial de ejecuciones",
+      "agentLabel": "Agente del historial",
+      "selectAgent": "Selecciona un agente para ver su historial de ejecuciones.",
+      "loading": "Cargando…",
+      "empty": "Sin ejecuciones registradas todavía.",
+      "emptyLogs": "Sin logs para esta ejecución.",
+      "error": "No se pudo cargar el historial de ejecuciones.",
+      "logsError": "No se pudo cargar los logs de la ejecución.",
+      "retry": "Reintentar",
+      "durationMs": "{ms} ms",
+      "tokens": "{count} tokens",
+      "status": {
+        "running": "EN CURSO",
+        "completed": "COMPLETADA",
+        "failed": "FALLIDA",
+        "cancelled": "CANCELADA"
+      }
     }
   },
   "analytics": {

@@ -7,7 +7,7 @@ and consistent envelope formatting.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, Literal, TypeVar
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -1188,3 +1188,62 @@ class PolicyResponse(BaseModel):
     is_active: bool
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
+
+AgentRunStatus = Literal["running", "completed", "failed", "cancelled"]
+
+AgentRunLogType = Literal["reasoning", "progress", "files", "debt", "tool_call", "error", "violation"]
+
+
+class AgentRunCreate(BaseModel):
+    """Request to open a persistent agent run (issue #574)."""
+
+    issue_id: str | None = None
+    model: str | None = None
+
+
+class AgentRunUpdate(BaseModel):
+    """Partial update of an agent run (issue #574)."""
+
+    status: AgentRunStatus | None = None
+    finished_at: datetime | None = None
+    total_tokens: int | None = None
+    total_tool_calls: int | None = None
+    duration_ms: int | None = None
+    summary: str | None = None
+    model: str | None = None
+
+
+class AgentRunResponse(BaseModel):
+    """Response for a persistent agent run (issue #574)."""
+
+    id: str
+    agent_id: str
+    issue_id: str | None = None
+    status: AgentRunStatus
+    model: str | None = None
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    total_tokens: int | None = None
+    total_tool_calls: int | None = None
+    duration_ms: int | None = None
+    summary: str | None = None
+
+
+class AgentRunLogCreate(BaseModel):
+    """Request to append a log entry to a run (issue #574)."""
+
+    type: AgentRunLogType = "progress"
+    content_markdown: str | None = None
+    metadata: dict[str, Any] | None = None
+
+
+class AgentRunLogResponse(BaseModel):
+    """Response for a persistent agent run log entry (issue #574)."""
+
+    run_id: str
+    seq: int
+    timestamp: datetime | None = None
+    type: AgentRunLogType
+    content_markdown: str | None = None
+    metadata: dict[str, Any] | None = None

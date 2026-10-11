@@ -9,7 +9,9 @@ minimal fetch-all fake for the read repository.
 
 from __future__ import annotations
 
+import contextlib
 import re
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import psycopg
@@ -18,6 +20,39 @@ import pytest
 _CREATE_TABLE = re.compile(r"CREATE TABLE IF NOT EXISTS (\w+)\s*\(", re.IGNORECASE)
 _COLUMN_LINE = re.compile(r"^\s+(\w+)\s+(?:TEXT|INT|BOOLEAN|TIMESTAMPTZ|JSONB|DOUBLE|SERIAL)\b", re.MULTILINE)
 _RENAME = re.compile(r'ALTER TABLE (\w+) RENAME TO "([^"]+)"', re.IGNORECASE)
+
+_RUN_TS_BASE = datetime(2026, 1, 1, 8, 0, 0, tzinfo=timezone.utc)
+_RUN_COLUMNS = (
+    "id",
+    "agent_id",
+    "issue_id",
+    "status",
+    "model",
+    "started_at",
+    "finished_at",
+    "total_tokens",
+    "total_tool_calls",
+    "duration_ms",
+    "summary",
+)
+_LOG_COLUMNS = ("run_id", "seq", "timestamp", "type", "content_markdown", "metadata")
+
+
+def _split_set_clause(set_clause: str) -> list[str]:
+    parts: list[str] = []
+    buf, depth = "", 0
+    for char in set_clause:
+        if char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+        if char == "," and depth == 0:
+            parts.append(buf)
+            buf = ""
+        else:
+            buf += char
+    parts.append(buf)
+    return [part.strip().split(" =", 1)[0] for part in parts]
 
 
 def _create_table_parts(sql: str) -> tuple[str, set[str]] | None:
@@ -71,6 +106,8 @@ class FakePgCursor:
         self.legacy_rows: list[tuple[Any, ...]] = []
         self.roles: dict[str, int] = {"ADMIN": 3, "DEVELOPER": 2, "VIEWER": 1}
         self.tools: dict[str, str] = {}
+        self.runs: dict[str, dict[str, Any]] = {}
+        self.run_logs: dict[str, list[dict[str, Any]]] = {}
         self.rowcount = 0
         self._next: Any = None
         self._rows: list[tuple[Any, ...]] = []
@@ -123,6 +160,37 @@ class FakePgCursor:
             profile.get("enabled", True),
             profile.get("last_used_at"),
         )
+
+    def _run_tuple(self, run: dict[str, Any]) -> tuple[Any, ...]:
+        return tuple(run.get(column) for column in _RUN_COLUMNS)
+
+    def _new_run(self, agent_id: str, issue_id: Any, model: Any, *, returning_full: bool) -> None:
+        self._generated += 1
+        run_id = f"run-{self._generated}"
+        self._runs_insert(run_id, agent_id, issue_id, model)
+        run = self.runs[run_id]
+        self.rowcount = 1
+        if returning_full:
+            self._next = self._run_tuple(run)
+        else:
+            self._next = (run_id,)
+
+    def _runs_insert(self, run_id: str, agent_id: str, issue_id: Any, model: Any) -> None:
+        started = _RUN_TS_BASE + timedelta(seconds=len(self.runs))
+        self.runs[run_id] = {
+            "id": run_id,
+            "agent_id": agent_id,
+            "issue_id": issue_id,
+            "status": "running",
+            "model": model,
+            "started_at": started,
+            "finished_at": None,
+            "total_tokens": None,
+            "total_tool_calls": None,
+            "duration_ms": None,
+            "summary": None,
+        }
+        self.run_logs.setdefault(run_id, [])
 
     # -- execute ------------------------------------------------------------
     def execute(self, sql: str, params: tuple[Any, ...] | None = None) -> None:
@@ -274,6 +342,102 @@ class FakePgCursor:
             else:
                 self.session_logs.append((uid, "login", created_at))
                 self.rowcount = 1
+        elif low.startswith("insert into agent_runs"):
+            agent_id, issue_id, model = str(params[0]), params[1], params[2]
+            self._new_run(agent_id, issue_id, model, returning_full="returning id, agent_id" in low)
+        elif low.startswith("insert into agent_run_logs"):
+            run_id, seq, log_type, content, metadata = (
+                str(params[0]),
+                int(params[1]),
+                str(params[2]),
+                params[3],
+                params[4],
+            )
+            if isinstance(metadata, str):
+                import json as _json
+
+                with contextlib.suppress(ValueError):
+                    metadata = _json.loads(metadata)
+            self.run_logs.setdefault(run_id, []).append(
+                {
+                    "run_id": run_id,
+                    "seq": seq,
+                    "timestamp": _RUN_TS_BASE + timedelta(seconds=seq),
+                    "type": log_type,
+                    "content_markdown": content,
+                    "metadata": metadata,
+                }
+            )
+            self.rowcount = 1
+            self._next = (_RUN_TS_BASE + timedelta(seconds=seq),)
+        elif low.startswith("update agent_runs set") and "finished_at = now()" in low:
+            # close_open_run (#574): status + finished_at + summary + duration_ms.
+            values = tuple(params or ())
+            status, summary, agent_id = str(values[0]), values[1], str(values[2])
+            issue_id = values[3] if len(values) > 3 else None
+            matched = 0
+            for run in self.runs.values():
+                if run["agent_id"] != agent_id or run["status"] != "running":
+                    continue
+                if len(values) > 3 and run["issue_id"] != issue_id:
+                    continue
+                run["status"] = status
+                run["finished_at"] = _RUN_TS_BASE + timedelta(minutes=5)
+                if summary is not None:
+                    run["summary"] = summary
+                run["duration_ms"] = 300000
+                matched += 1
+            self.rowcount = matched
+        elif low.startswith("update agent_runs set"):
+            # update_run (#574): dynamic partial update ending in WHERE id = %s.
+            values = tuple(params or ())
+            run_id = str(values[-1])
+            run = self.runs.get(run_id)
+            if run is None:
+                self.rowcount = 0
+            else:
+                set_clause = low.split(" set ", 1)[1].split(" where ", 1)[0]
+                columns = _split_set_clause(set_clause)
+                for column, value in zip(columns, values[: len(values) - 1], strict=False):
+                    if value is not None:
+                        run[column] = value
+                self.rowcount = 1
+        elif low.startswith("delete from agent_runs"):
+            run_id = str(params[0])
+            existed = run_id in self.runs
+            self.runs.pop(run_id, None)
+            self.run_logs.pop(run_id, None)
+            self.rowcount = 1 if existed else 0
+        elif low.startswith("select id from agent_runs"):
+            # ensure_running_run picks the newest open run for the agent (#574).
+            agent_id = str(params[0])
+            open_runs = [
+                run
+                for run in self.runs.values()
+                if run["agent_id"] == agent_id and run["status"] == "running"
+            ]
+            open_runs.sort(key=lambda run: run["started_at"], reverse=True)
+            self._next = (open_runs[0]["id"],) if open_runs else None
+        elif low.startswith("select coalesce(max(seq)"):
+            run_id = str(params[0])
+            self._next = (len(self.run_logs.get(run_id, [])) + 1,)
+        elif low.startswith("select 1 from agent_runs where id"):
+            self._next = (1,) if str(params[0]) in self.runs else None
+        elif low.startswith("select id, agent_id, issue_id, status"):
+            if "where agent_id" in low:
+                agent_id, limit = str(params[0]), int(params[1])
+                runs = [run for run in self.runs.values() if run["agent_id"] == agent_id]
+                runs.sort(key=lambda run: run["started_at"], reverse=True)
+                self._rows = [self._run_tuple(run) for run in runs[:limit]]
+            else:
+                run = self.runs.get(str(params[0]))
+                self._next = self._run_tuple(run) if run else None
+        elif low.startswith("select run_id, seq, timestamp"):
+            run_id = str(params[0])
+            self._rows = [
+                tuple(entry.get(column) for column in _LOG_COLUMNS)
+                for entry in sorted(self.run_logs.get(run_id, []), key=lambda entry: entry["seq"])
+            ]
         elif low.startswith("update human_user"):
             uid = str(params[-1])
             row = self.human.get(uid)
@@ -359,6 +523,10 @@ class FakePgCursor:
                 self.human.pop(uid, None)
                 self.agents.pop(uid, None)
                 self.user_skills.pop(uid, None)
+                # agent_runs.agent_id ON DELETE CASCADE (#574).
+                for run_id in [key for key, run in self.runs.items() if run["agent_id"] == uid]:
+                    self.runs.pop(run_id, None)
+                    self.run_logs.pop(run_id, None)
             self.rowcount = 1 if existed else 0
         elif low.startswith("select count(*) from users where user_type"):
             # Last-user guard counts humans in the PG root (#562).

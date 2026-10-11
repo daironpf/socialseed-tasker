@@ -139,11 +139,42 @@ CREATE TABLE IF NOT EXISTS session_logs (
 )
 """
 
+AGENT_RUNS_DDL = """
+CREATE TABLE IF NOT EXISTS agent_runs (
+    id               TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    agent_id         TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    issue_id         TEXT,
+    status           TEXT NOT NULL CHECK (status IN ('running','completed','failed','cancelled')),
+    model            TEXT,
+    started_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    finished_at      TIMESTAMPTZ,
+    total_tokens     INT,
+    total_tool_calls INT,
+    duration_ms      INT,
+    summary          TEXT
+)
+"""
+
+AGENT_RUN_LOGS_DDL = """
+CREATE TABLE IF NOT EXISTS agent_run_logs (
+    run_id           TEXT NOT NULL REFERENCES agent_runs(id) ON DELETE CASCADE,
+    seq              INT NOT NULL,
+    timestamp        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    type             TEXT NOT NULL CHECK (type IN (
+        'reasoning','progress','files','debt','tool_call','error','violation'
+    )),
+    content_markdown TEXT,
+    metadata         JSONB,
+    PRIMARY KEY (run_id, seq)
+)
+"""
+
 INDEX_DDL: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS ix_users_user_type ON users (user_type)",
     "CREATE INDEX IF NOT EXISTS ix_human_user_role ON human_user (role_id)",
     "CREATE INDEX IF NOT EXISTS ix_user_skills_skill ON user_skills (skill_id)",
     "CREATE INDEX IF NOT EXISTS ix_session_logs_user_created ON session_logs (user_id, created_at DESC)",
+    "CREATE INDEX IF NOT EXISTS ix_agent_runs_agent_started ON agent_runs (agent_id, started_at DESC)",
 )
 
 
@@ -283,7 +314,14 @@ class PostgresUserStore:
                 TOOLS_SEED,
             )
             legacy_backup = self._prepare_users_table(cur)
-            for ddl in (HUMAN_USER_DDL, AGENTS_USER_DDL, USER_SKILLS_DDL, SESSION_LOGS_DDL):
+            for ddl in (
+                HUMAN_USER_DDL,
+                AGENTS_USER_DDL,
+                USER_SKILLS_DDL,
+                SESSION_LOGS_DDL,
+                AGENT_RUNS_DDL,
+                AGENT_RUN_LOGS_DDL,
+            ):
                 cur.execute(ddl)
             for ddl in INDEX_DDL:
                 cur.execute(ddl)
@@ -1032,6 +1070,196 @@ class PostgresAgentProfileStore:
         """
         with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
             cur.execute("DELETE FROM users WHERE id = %s AND user_type = 'agent'", (user_id,))
+            return bool(cur.rowcount)
+
+    # ------------------------------------------------------------------
+    # Agent runs (issue #574): persistent history of agent executions.
+    # ------------------------------------------------------------------
+
+    _RUN_ROW_SQL = (
+        "id, agent_id, issue_id, status, model, started_at, finished_at, "
+        "total_tokens, total_tool_calls, duration_ms, summary"
+    )
+
+    @staticmethod
+    def _run_row(row: Any) -> dict[str, Any]:
+        return {
+            "id": row[0],
+            "agent_id": row[1],
+            "issue_id": row[2],
+            "status": row[3],
+            "model": row[4],
+            "started_at": row[5].isoformat() if row[5] is not None else None,
+            "finished_at": row[6].isoformat() if row[6] is not None else None,
+            "total_tokens": row[7],
+            "total_tool_calls": row[8],
+            "duration_ms": row[9],
+            "summary": row[10],
+        }
+
+    def _agent_exists(self, cur: Any, agent_id: str, as_agent: bool = True) -> bool:
+        cur.execute("SELECT 1 FROM users WHERE id = %s", (agent_id,))
+        if cur.fetchone() is None:
+            return False
+        if not as_agent:
+            return True
+        cur.execute("SELECT 1 FROM users WHERE id = %s AND user_type = 'agent'", (agent_id,))
+        return cur.fetchone() is not None
+
+    def create_run(self, agent_id: str, *, issue_id: str | None = None, model: str | None = None) -> dict[str, Any]:
+        """Create a ``running`` run for an agent; raises ``LookupError`` when the agent is missing."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            if not self._agent_exists(cur, agent_id):
+                raise LookupError(f"agent not found: {agent_id}")
+            cur.execute(
+                "INSERT INTO agent_runs (agent_id, issue_id, status, model) "
+                f"VALUES (%s, %s, 'running', %s) RETURNING {self._RUN_ROW_SQL}",
+                (agent_id, issue_id, model),
+            )
+            return self._run_row(cur.fetchone())
+
+    def ensure_running_run(self, agent_id: str, *, issue_id: str | None = None, model: str | None = None) -> str | None:
+        """Return the id of an open ``running`` run (creating one as needed).
+
+        Best-effort companion of :meth:`create_run` used by the realtime log
+        flush (issue #574): returns ``None`` instead of raising when the agent
+        does not exist so non-persisted flows degrade silently.
+        """
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            if not self._agent_exists(cur, agent_id):
+                return None
+            cur.execute(
+                "SELECT id FROM agent_runs WHERE agent_id = %s AND status = 'running' "
+                "ORDER BY started_at DESC LIMIT 1",
+                (agent_id,),
+            )
+            row = cur.fetchone()
+            if row is not None:
+                return str(row[0])
+            cur.execute(
+                "INSERT INTO agent_runs (agent_id, issue_id, status, model) "
+                "VALUES (%s, %s, 'running', %s) RETURNING id",
+                (agent_id, issue_id, model),
+            )
+            row = cur.fetchone()
+            if row is None:
+                raise RuntimeError("agent_runs INSERT RETURNING id produced no row")
+            return str(row[0])
+
+    def close_open_run(
+        self,
+        agent_id: str,
+        *,
+        issue_id: str | None = None,
+        status: str = "completed",
+        summary: str | None = None,
+    ) -> bool:
+        """Close the agent's open ``running`` run (optionally scoped to an issue)."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            if issue_id is not None:
+                cur.execute(
+                    "UPDATE agent_runs SET status = %s, finished_at = now(), summary = COALESCE(%s, summary), "
+                    "duration_ms = CAST(extract(epoch FROM (now() - started_at)) * 1000 AS INT) "
+                    "WHERE agent_id = %s AND status = 'running' AND issue_id = %s",
+                    (status, summary, agent_id, issue_id),
+                )
+            else:
+                cur.execute(
+                    "UPDATE agent_runs SET status = %s, finished_at = now(), summary = COALESCE(%s, summary), "
+                    "duration_ms = CAST(extract(epoch FROM (now() - started_at)) * 1000 AS INT) "
+                    "WHERE agent_id = %s AND status = 'running'",
+                    (status, summary, agent_id),
+                )
+            return bool(cur.rowcount)
+
+    def append_run_log(
+        self,
+        run_id: str,
+        *,
+        type: str,
+        content_markdown: str | None = None,
+        metadata: Any = None,
+    ) -> dict[str, Any]:
+        """Append a log entry to a run; raises ``LookupError`` when the run is missing."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM agent_runs WHERE id = %s", (run_id,))
+            if cur.fetchone() is None:
+                raise LookupError(f"run not found: {run_id}")
+            cur.execute("SELECT COALESCE(MAX(seq), 0) + 1 FROM agent_run_logs WHERE run_id = %s", (run_id,))
+            seq_row = cur.fetchone()
+            seq = int(seq_row[0]) if seq_row else 1
+            metadata_text = json.dumps(metadata) if metadata is not None else None
+            cur.execute(
+                "INSERT INTO agent_run_logs (run_id, seq, type, content_markdown, metadata) "
+                "VALUES (%s, %s, %s, %s, %s::jsonb) RETURNING timestamp",
+                (run_id, seq, type, content_markdown, metadata_text),
+            )
+            row = cur.fetchone()
+            timestamp = row[0] if row else None
+            return {
+                "run_id": run_id,
+                "seq": seq,
+                "timestamp": timestamp.isoformat() if timestamp is not None else None,
+                "type": type,
+                "content_markdown": content_markdown,
+                "metadata": metadata,
+            }
+
+    def update_run(self, run_id: str, **fields: Any) -> dict[str, Any]:
+        """Partially update a run; raises ``LookupError`` when the run is missing."""
+        allowed = {"status", "finished_at", "total_tokens", "total_tool_calls", "duration_ms", "summary", "model"}
+        assignments = {key: value for key, value in fields.items() if key in allowed and value is not None}
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM agent_runs WHERE id = %s", (run_id,))
+            if cur.fetchone() is None:
+                raise LookupError(f"run not found: {run_id}")
+            if assignments:
+                set_clause = ", ".join(f"{key} = %s" for key in assignments)
+                cur.execute(f"UPDATE agent_runs SET {set_clause} WHERE id = %s", (*assignments.values(), run_id))
+            cur.execute(
+                f"SELECT {self._RUN_ROW_SQL} FROM agent_runs WHERE id = %s",
+                (run_id,),
+            )
+            return self._run_row(cur.fetchone())
+
+    def list_runs(self, agent_id: str, *, limit: int = 50) -> list[dict[str, Any]]:
+        """List an agent's runs, newest first; raises ``LookupError`` when the agent is missing."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            if not self._agent_exists(cur, agent_id):
+                raise LookupError(f"agent not found: {agent_id}")
+            cur.execute(
+                f"SELECT {self._RUN_ROW_SQL} FROM agent_runs WHERE agent_id = %s ORDER BY started_at DESC LIMIT %s",
+                (agent_id, limit),
+            )
+            return [self._run_row(row) for row in cur.fetchall()]
+
+    def list_run_logs(self, run_id: str) -> list[dict[str, Any]]:
+        """List a run's log entries ordered by ``seq``; raises ``LookupError`` when the run is missing."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM agent_runs WHERE id = %s", (run_id,))
+            if cur.fetchone() is None:
+                raise LookupError(f"run not found: {run_id}")
+            cur.execute(
+                "SELECT run_id, seq, timestamp, type, content_markdown, metadata FROM agent_run_logs "
+                "WHERE run_id = %s ORDER BY seq",
+                (run_id,),
+            )
+            return [
+                {
+                    "run_id": row[0],
+                    "seq": row[1],
+                    "timestamp": row[2].isoformat() if row[2] is not None else None,
+                    "type": row[3],
+                    "content_markdown": row[4],
+                    "metadata": row[5],
+                }
+                for row in cur.fetchall()
+            ]
+
+    def delete_run(self, run_id: str) -> bool:
+        """Delete a run (logs cascade); returns whether the run existed."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM agent_runs WHERE id = %s", (run_id,))
             return bool(cur.rowcount)
 
 

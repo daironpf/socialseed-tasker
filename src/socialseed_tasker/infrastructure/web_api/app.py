@@ -503,6 +503,10 @@ def create_app(
     # #572: seeded catalogs consumed by the frontend pickers.
     from socialseed_tasker.infrastructure.web_api.routers.catalogs import catalogs_router
 
+    # #574: persistent agent run history; /agents/{id}/runs and /runs/{id}
+    # templates are distinct from agent.py's suffixes (heartbeat/specialists).
+    from socialseed_tasker.infrastructure.web_api.routers.agent_runs import agent_runs_router
+
     app.include_router(issues_router, prefix="/api/v1", tags=["issues"])
     app.include_router(dependencies_router, prefix="/api/v1", tags=["dependencies"])
     app.include_router(components_router, prefix="/api/v1", tags=["components"])
@@ -516,6 +520,7 @@ def create_app(
     app.include_router(agent_profiles_router, prefix="/api/v1", tags=["agent-profiles"])
     app.include_router(catalogs_router, prefix="/api/v1", tags=["catalogs"])
     app.include_router(agent_router, prefix="/api/v1", tags=["agents"])
+    app.include_router(agent_runs_router, prefix="/api/v1", tags=["agent-runs"])
     app.include_router(sync_router, prefix="/api/v1", tags=["sync"])
     app.include_router(webhook_router, prefix="/api/v1", tags=["webhooks"])
     app.include_router(admin_router, prefix="/api/v1", tags=["admin"])
