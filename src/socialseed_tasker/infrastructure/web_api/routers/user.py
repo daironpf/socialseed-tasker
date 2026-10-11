@@ -107,6 +107,8 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     TestFailureWebhookResponse,
     UserCreateRequest,
     UserResponse,
+    UserSkillAssignRequest,
+    UserSkillResponse,
     UserUpdateRequest,
     CommitCreateRequest,
     CommitResponse,
@@ -393,6 +395,64 @@ def update_user(
     if not updated_profile:
         raise HTTPException(status_code=500, detail="updated user could not be read back")
     return APIResponse(data=_profile_to_response(updated_profile), meta=Meta(request_id=None))
+
+
+@user_router.get(
+    "/users/{user_id}/skills",
+    response_model=APIResponse[list[UserSkillResponse]],
+    summary="List user skills",
+    description="List the skills assigned to one user from user_skills (issue #576).",
+)
+def list_user_skills(user_id: str) -> APIResponse[list[UserSkillResponse]]:
+    """Skills assigned to a user; 404 when the user does not exist (#576)."""
+    assignments = _pg_store().list_user_skills(user_id)
+    if assignments is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return APIResponse(
+        data=[
+            UserSkillResponse(user_id=user_id, skill_id=item["skill_id"], name=item["name"])
+            for item in assignments
+        ],
+        meta=Meta(request_id=None),
+    )
+
+
+@user_router.post(
+    "/users/{user_id}/skills",
+    response_model=APIResponse[UserSkillResponse],
+    status_code=201,
+    summary="Assign a skill to a user",
+    description="Find-or-create the catalog skill by name and link it to the user (issue #576).",
+)
+def assign_user_skill(user_id: str, body: UserSkillAssignRequest) -> APIResponse[UserSkillResponse]:
+    """Assign a skill by name (creates the catalog row when new); 404 user (#576)."""
+    try:
+        assignment = _pg_store().add_user_skill(user_id, body.name)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=f"invalid skill name: {body.name!r}") from exc
+    if assignment is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return APIResponse(
+        data=UserSkillResponse(
+            user_id=assignment["user_id"],
+            skill_id=assignment["skill_id"],
+            name=assignment["name"],
+        ),
+        meta=Meta(request_id=None),
+    )
+
+
+@user_router.delete(
+    "/users/{user_id}/skills/{skill_id}",
+    response_model=APIResponse[bool],
+    summary="Unassign a skill from a user",
+    description="Remove one user_skills row; the catalog entry is kept (issue #576).",
+)
+def unassign_user_skill(user_id: str, skill_id: str) -> APIResponse[bool]:
+    """Remove one assignment; 404 when the user or the link does not exist (#576)."""
+    if not _pg_store().remove_user_skill(user_id, skill_id):
+        raise HTTPException(status_code=404, detail="User or skill assignment not found")
+    return APIResponse(data=True, meta=Meta(request_id=None))
 
 
 @user_router.delete(

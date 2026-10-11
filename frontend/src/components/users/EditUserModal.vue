@@ -77,7 +77,8 @@
               {{ skill }}
               <button
                 @click="removeSkill(skill)"
-                class="ml-1 hover:text-blue-900 dark:hover:text-blue-200"
+                :disabled="skillsBusy"
+                class="ml-1 hover:text-blue-900 disabled:opacity-50 dark:hover:text-blue-200"
               >
                 ×
               </button>
@@ -90,18 +91,24 @@
               type="text"
               list="skills-catalog-edit"
               :placeholder="t('users.addSkill')"
-              class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              :disabled="skillsBusy"
+              class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
             <datalist id="skills-catalog-edit">
               <option v-for="s in skillSuggestions" :key="s.id" :value="s.name" />
             </datalist>
             <button
               @click="addSkill"
-              class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              :disabled="skillsBusy || !newSkill.trim()"
+              class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
               +
             </button>
           </div>
+          <p class="mt-1 text-[11px] text-gray-400 dark:text-gray-500">{{ t('users.skillNewHint') }}</p>
+          <p v-if="skillsError" class="mt-1 text-[11px] text-rose-600 dark:text-rose-400">
+            {{ skillsErrorText }}
+          </p>
         </div>
 
         <div>
@@ -144,7 +151,8 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { isMockMode } from '@/api/client'
-import { fetchSkills, type SkillCatalogItem } from '@/api/catalogsApi'
+import { fetchSkills, resetCatalogsCache, type SkillCatalogItem } from '@/api/catalogsApi'
+import { addUserSkill, removeUserSkill, fetchUserSkills, type UserSkill } from '@/api/userSkillsApi'
 import type { User } from '@/types'
 
 const { t } = useI18n()
@@ -221,19 +229,79 @@ async function loadSkillSuggestions() {
   }
 }
 
-watch(() => props.show, visible => {
-  if (visible) loadSkillSuggestions()
-})
+// Real mode manages skills directly against /users/{id}/skills (#576): the
+// chips read from user_skills, + assigns (find-or-create by name) and ×
+// unlinks immediately, so no full PUT replace is needed. Mock keeps the
+// local chips applied on save via the in-memory store.
+const skillsBusy = ref(false)
+const skillsError = ref<'add' | 'remove' | null>(null)
+const assignedSkills = ref<UserSkill[]>([])
 
-function addSkill() {
+const skillsErrorText = computed(() =>
+  skillsError.value === 'remove' ? t('users.skillRemoveError') : t('users.skillAddError'),
+)
+
+async function loadAssignedSkills() {
+  if (isMockMode() || !props.user) return
+  try {
+    assignedSkills.value = await fetchUserSkills(props.user.id)
+    form.value.skills = assignedSkills.value.map(item => item.name)
+  } catch {
+    // Degrade to the card's skills already copied into the form.
+  }
+}
+
+watch(() => props.show, visible => {
+  if (visible) {
+    loadSkillSuggestions()
+    void loadAssignedSkills()
+  }
+}, { immediate: true })
+
+async function addSkill() {
   const skill = newSkill.value.trim()
-  if (skill && !form.value.skills.includes(skill)) {
+  if (!skill) return
+  if (!isMockMode() && props.user) {
+    skillsBusy.value = true
+    skillsError.value = null
+    try {
+      const item = await addUserSkill(props.user.id, skill)
+      if (!assignedSkills.value.some(entry => entry.skill_id === item.skill_id)) {
+        assignedSkills.value.push(item)
+      }
+      form.value.skills = assignedSkills.value.map(entry => entry.name).sort((a, b) => a.localeCompare(b))
+      newSkill.value = ''
+      resetCatalogsCache()
+      void loadSkillSuggestions()
+    } catch {
+      skillsError.value = 'add'
+    } finally {
+      skillsBusy.value = false
+    }
+    return
+  }
+  if (!form.value.skills.includes(skill)) {
     form.value.skills.push(skill)
     newSkill.value = ''
   }
 }
 
-function removeSkill(skill: string) {
+async function removeSkill(skill: string) {
+  if (!isMockMode() && props.user) {
+    skillsBusy.value = true
+    skillsError.value = null
+    try {
+      const item = assignedSkills.value.find(entry => entry.name === skill)
+      if (item) await removeUserSkill(props.user.id, item.skill_id)
+      assignedSkills.value = assignedSkills.value.filter(entry => entry.name !== skill)
+      form.value.skills = form.value.skills.filter(s => s !== skill)
+    } catch {
+      skillsError.value = 'remove'
+    } finally {
+      skillsBusy.value = false
+    }
+    return
+  }
   form.value.skills = form.value.skills.filter(s => s !== skill)
 }
 

@@ -570,10 +570,21 @@ class FakePgCursor:
                         row[key] = value
                 self.rowcount = 1
         elif low.startswith("delete from user_skills"):
-            uid = str(params[0])
-            existed = bool(self.user_skills.get(uid))
-            self.user_skills.pop(uid, None)
-            self.rowcount = 1 if existed else 0
+            if "and skill_id" in low:
+                # Single assignment removal (#576).
+                uid, slug = str(params[0]), str(params[1])
+                linked = self.user_skills.get(uid, set())
+                existed = slug in linked
+                if existed:
+                    linked.discard(slug)
+                    if not linked:
+                        self.user_skills.pop(uid, None)
+                self.rowcount = 1 if existed else 0
+            else:
+                uid = str(params[0])
+                existed = bool(self.user_skills.get(uid))
+                self.user_skills.pop(uid, None)
+                self.rowcount = 1 if existed else 0
         elif low.startswith("delete from users"):
             values = tuple(params or ())
             uid = str(values[0])
@@ -657,6 +668,32 @@ class FakePgCursor:
         elif low.startswith("select 1 from tools where id"):
             # Tool catalog validation for agent profiles (#564).
             self._next = (1,) if str(params[0]) in self.tools else None
+        elif low.startswith("select 1 from skills where"):
+            # Duplicate check on explicit catalog creation (#576).
+            values = tuple(params or ())
+            slug, name = str(values[0]), str(values[1])
+            self._next = (1,) if (slug in self.skills or name in self.skills.values()) else None
+        elif low.startswith("select id, name from skills"):
+            # Catalog read (#572 list) and duplicate checks (#576 create_skill).
+            if "where" in low:
+                values = tuple(params or ())
+                slug, name = str(values[0]), str(values[1])
+                exists = slug in self.skills or name in self.skills.values()
+                self._next = (slug, name) if exists else None
+            else:
+                self._rows = [
+                    (slug, self.skills[slug])
+                    for slug in sorted(self.skills, key=lambda key: self.skills[key])
+                ]
+        elif low.startswith("select us.skill_id, s.name"):
+            # Assigned skills of one user ordered by name (#576).
+            uid = str(params[0])
+            rows = [
+                (slug, self.skills.get(slug, slug))
+                for slug in sorted(self.user_skills.get(uid, set()))
+            ]
+            rows.sort(key=lambda row: row[1])
+            self._rows = rows
         elif low.startswith("select email, avatar, model, specialization"):
             # update_profile keeps JSONB values it must not overwrite (#564/#573).
             row = self.agents.get(str(params[0]))

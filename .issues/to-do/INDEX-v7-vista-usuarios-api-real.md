@@ -3,8 +3,8 @@
 **Source:** vista maquetada `frontend/src/views/UsersView.vue` + mock
 `frontend/dataset-de-pruebas/users.json` / `issues.json` + restricciones del usuario
 **Created:** 2026-10-07
-**Status:** DONE (18/18) — #558 DONE 2026-10-07, #559 DONE 2026-10-07, #560 DONE 2026-10-07, #561 DONE 2026-10-07, #562 DONE 2026-10-08, #563 DONE 2026-10-08, #564 DONE 2026-10-08, #565 DONE 2026-10-08, #566 DONE 2026-10-09, #567 DONE 2026-10-09, #568 DONE 2026-10-09, #569 DONE 2026-10-09, #570 DONE 2026-10-10, #571 DONE 2026-10-10, #572 DONE 2026-10-10, #573 DONE 2026-10-10, #574 DONE 2026-10-11, #575 DONE 2026-10-11
-**Numeración:** #558–#575 (continúa tras #557 del índice v6)
+**Status:** DONE (19/19) — #558 DONE 2026-10-07, #559 DONE 2026-10-07, #560 DONE 2026-10-07, #561 DONE 2026-10-07, #562 DONE 2026-10-08, #563 DONE 2026-10-08, #564 DONE 2026-10-08, #565 DONE 2026-10-08, #566 DONE 2026-10-09, #567 DONE 2026-10-09, #568 DONE 2026-10-09, #569 DONE 2026-10-09, #570 DONE 2026-10-10, #571 DONE 2026-10-10, #572 DONE 2026-10-10, #573 DONE 2026-10-10, #574 DONE 2026-10-11, #575 DONE 2026-10-11, #576 DONE 2026-10-11
+**Numeración:** #558–#576 (continúa tras #557 del índice v6)
 
 ---
 
@@ -77,6 +77,7 @@
 | 573 | `573-migracion-agent-studio-api.md` | Migración de Agent Studio a la API — builder sobre `/agents/profiles` | HIGH | feat/fullstack | #564, #565 |
 | 574 | `574-historial-ejecuciones-agentes-logs.md` | Histórico de ejecuciones de agentes en PostgreSQL — `agent_runs` + `agent_run_logs` | MEDIUM | feat/fullstack | #564, #573 |
 | 575 | `575-workflows-biblioteca-postgres.md` | Workflows en PostgreSQL — biblioteca de definiciones con importación de `.agent/workflows/*.md` | MEDIUM | feat/fullstack | #558, #573 |
+| 576 | `576-gestion-skills-usuario-humano.md` | Gestión de skills de usuarios humanos — alta/baja granular desde el modal de edición + catálogo en PostgreSQL | MEDIUM | feat/fullstack | #558, #560, #572 |
 
 ---
 
@@ -155,6 +156,7 @@
 - [x] #573 migración de Agent Studio a la API
 - [x] #574 histórico de ejecuciones (`agent_runs`/`agent_run_logs`)
 - [x] #575 workflows (biblioteca + import `.md`)
+- [x] #576 gestión de skills de humanos (endpoints granulares + modal)
 - [ ] Cada issue: gates backend (`ruff` ≤ 1333 / `mypy` ≤ 1133 / `pytest` sin nuevas
       fallas — 3 preexistentes), `lint`/`test`/`build` si aplica UI, i18n EN+ES si aplica UI
 - [ ] Mover fichero a `.issues/done/` con `Status: DONE` al implementarse

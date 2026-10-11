@@ -480,6 +480,101 @@ class PostgresUserStore:
             rows = cur.fetchall()
         return [{"id": str(row[0]), "name": row[1]} for row in rows]
 
+    def create_skill(self, name: str) -> dict[str, str]:
+        """Insert one skill into the catalog (human skills work, issue #576).
+
+        The id is the slugified name (``'CI/CD' -> 'ci-cd'``); raises
+        ``ValueError("skill")`` when the slug (or the display name) is taken
+        and ``ValueError("name")`` when the name slugifies to nothing.
+        """
+        clean = str(name).strip()
+        if not clean:
+            raise ValueError("name")
+        slug = skill_slug(clean)
+        with closing(psycopg.connect(self._database_url, autocommit=False)) as conn:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT 1 FROM skills WHERE id = %s OR name = %s", (slug, clean))
+                    if cur.fetchone() is not None:
+                        conn.rollback()
+                        raise ValueError("skill")
+                    cur.execute("INSERT INTO skills (id, name) VALUES (%s, %s)", (slug, clean))
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+        return {"id": slug, "name": clean}
+
+    def list_user_skills(self, user_id: str) -> list[dict[str, str]] | None:
+        """Assigned skills of one user ordered by name (issue #576).
+
+        Returns ``None`` when the identity row does not exist (router 404) so
+        the caller can tell "no skills" apart from "no user".
+        """
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM users WHERE id = %s", (user_id,))
+            if cur.fetchone() is None:
+                return None
+            cur.execute(
+                "SELECT us.skill_id, s.name FROM user_skills us "
+                "JOIN skills s ON s.id = us.skill_id WHERE us.user_id = %s ORDER BY s.name",
+                (user_id,),
+            )
+            rows = cur.fetchall()
+        return [{"skill_id": str(row[0]), "name": row[1]} for row in rows]
+
+    def add_user_skill(self, user_id: str, name: str) -> dict[str, str] | None:
+        """Find-or-create the catalog skill and link it to the user (issue #576).
+
+        Idempotent: re-assigning an existing skill is a no-op that still
+        returns the assignment. Returns ``None`` when the user does not exist
+        (router 404); raises ``ValueError("name")`` on an empty/invalid name.
+        """
+        clean = str(name).strip()
+        if not clean:
+            raise ValueError("name")
+        slug = skill_slug(clean)
+        with closing(psycopg.connect(self._database_url, autocommit=False)) as conn:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT 1 FROM users WHERE id = %s", (user_id,))
+                    if cur.fetchone() is None:
+                        conn.rollback()
+                        return None
+                    cur.execute(
+                        "INSERT INTO skills (id, name) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                        (slug, clean),
+                    )
+                    cur.execute(
+                        "INSERT INTO user_skills (user_id, skill_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                        (user_id, slug),
+                    )
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+        return {"user_id": user_id, "skill_id": slug, "name": clean}
+
+    def remove_user_skill(self, user_id: str, skill_id: str) -> bool:
+        """Unlink one skill from the user (issue #576).
+
+        Returns ``False`` when the user or the assignment does not exist
+        (router 404); the catalog row is never touched, only ``user_skills``.
+        """
+        with closing(psycopg.connect(self._database_url, autocommit=False)) as conn:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "DELETE FROM user_skills WHERE user_id = %s AND skill_id = %s",
+                        (user_id, skill_id),
+                    )
+                    deleted = bool(cur.rowcount)
+                conn.commit()
+                return deleted
+            except Exception:
+                conn.rollback()
+                raise
+
     def list_tools(self) -> list[dict[str, Any]]:
         """Full tools catalog ordered by name (issue #572).
 

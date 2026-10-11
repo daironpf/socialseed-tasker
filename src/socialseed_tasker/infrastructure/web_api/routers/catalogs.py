@@ -18,6 +18,7 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     APIResponse,
     Meta,
     SkillCatalogItem,
+    SkillCreateRequest,
     ToolCatalogItem,
 )
 
@@ -48,6 +49,24 @@ def list_skills() -> APIResponse[list[SkillCatalogItem]]:
         data=[SkillCatalogItem(id=item["id"], name=item["name"]) for item in items],
         meta=Meta(request_id=None),
     )
+
+
+@catalogs_router.post(
+    "/skills",
+    response_model=APIResponse[SkillCatalogItem],
+    status_code=201,
+    summary="Create a skills catalog entry",
+    description="Insert one skill into the catalog by name (slug id); 409 when taken (issue #576).",
+)
+def create_skill(body: SkillCreateRequest) -> APIResponse[SkillCatalogItem]:
+    """Create a catalog skill; 409 on duplicate slug/name, 422 on empty name (#576)."""
+    try:
+        item = _pg_store().create_skill(body.name)
+    except ValueError as exc:
+        if str(exc) == "skill":
+            raise HTTPException(status_code=409, detail="skill already exists") from exc
+        raise HTTPException(status_code=422, detail=f"invalid skill name: {body.name!r}") from exc
+    return APIResponse(data=SkillCatalogItem(id=item["id"], name=item["name"]), meta=Meta(request_id=None))
 
 
 @catalogs_router.get(

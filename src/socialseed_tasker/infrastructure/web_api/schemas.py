@@ -1028,6 +1028,30 @@ class ToolCatalogItem(BaseModel):
     description: str | None = None
 
 
+class SkillCreateRequest(BaseModel):
+    """Request to insert one skill into the catalog (issue #576)."""
+
+    name: str = Field(..., min_length=1, max_length=80)
+
+
+class UserSkillAssignRequest(BaseModel):
+    """Request to assign a skill to a user by name (issue #576).
+
+    The backend find-or-creates the catalog row (slugified name), so this is
+    also the "add a new skill from the same window" path.
+    """
+
+    name: str = Field(..., min_length=1, max_length=80)
+
+
+class UserSkillResponse(BaseModel):
+    """One user↔skill assignment (issue #576)."""
+
+    user_id: str
+    skill_id: str
+    name: str
+
+
 class AgentProfileCreate(BaseModel):
     """Request for creating an agent profile on /agents/profiles (issue #564)."""
 
