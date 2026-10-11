@@ -1764,6 +1764,37 @@
         "failed": "FALLIDA",
         "cancelled": "CANCELADA"
       }
+    },
+    "workflows": {
+      "title": "Biblioteca de workflows",
+      "filterAll": "Todos los workflows",
+      "filterBuiltin": "Integrados",
+      "filterCustom": "Personalizados",
+      "new": "Nuevo workflow",
+      "loading": "Cargando…",
+      "empty": "Sin workflows todavía.",
+      "error": "No se pudo cargar la biblioteca de workflows.",
+      "retry": "Reintentar",
+      "slug": "Slug",
+      "name": "Nombre",
+      "description": "Descripción",
+      "content": "Contenido Markdown",
+      "create": "Crear",
+      "save": "Guardar",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "noContent": "Este workflow no tiene contenido markdown.",
+      "created": "Workflow creado.",
+      "updated": "Workflow actualizado.",
+      "deleted": "Workflow eliminado.",
+      "conflict": "Slug ya en uso o el workflow es integrado (no editable).",
+      "invalid": "Workflow inválido: revisa el formato del slug y los campos obligatorios.",
+      "saveError": "No se pudo guardar el workflow.",
+      "deleteError": "No se pudo eliminar el workflow.",
+      "source": {
+        "builtin": "Integrado",
+        "custom": "Personalizado"
+      }
     }
   },
   "analytics": {

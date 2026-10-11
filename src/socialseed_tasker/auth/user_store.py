@@ -169,12 +169,28 @@ CREATE TABLE IF NOT EXISTS agent_run_logs (
 )
 """
 
+WORKFLOWS_DDL = """
+CREATE TABLE IF NOT EXISTS workflows (
+    id          TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    slug        TEXT NOT NULL UNIQUE,
+    name        TEXT NOT NULL,
+    description TEXT,
+    content_md  TEXT,
+    steps       JSONB,
+    source      TEXT NOT NULL DEFAULT 'custom' CHECK (source IN ('builtin','custom')),
+    created_by  TEXT REFERENCES users(id) ON DELETE SET NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ
+)
+"""
+
 INDEX_DDL: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS ix_users_user_type ON users (user_type)",
     "CREATE INDEX IF NOT EXISTS ix_human_user_role ON human_user (role_id)",
     "CREATE INDEX IF NOT EXISTS ix_user_skills_skill ON user_skills (skill_id)",
     "CREATE INDEX IF NOT EXISTS ix_session_logs_user_created ON session_logs (user_id, created_at DESC)",
     "CREATE INDEX IF NOT EXISTS ix_agent_runs_agent_started ON agent_runs (agent_id, started_at DESC)",
+    "CREATE INDEX IF NOT EXISTS ix_workflows_source ON workflows (source)",
 )
 
 
@@ -321,6 +337,7 @@ class PostgresUserStore:
                 SESSION_LOGS_DDL,
                 AGENT_RUNS_DDL,
                 AGENT_RUN_LOGS_DDL,
+                WORKFLOWS_DDL,
             ):
                 cur.execute(ddl)
             for ddl in INDEX_DDL:
@@ -1261,6 +1278,157 @@ class PostgresAgentProfileStore:
         with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
             cur.execute("DELETE FROM agent_runs WHERE id = %s", (run_id,))
             return bool(cur.rowcount)
+
+
+class PostgresWorkflowStore:
+    """CRUD over the ``workflows`` library (issue #575).
+
+    ``builtin`` rows are imported from the packaged ``.md`` definitions and are
+    read-only for the API; ``custom`` rows belong to the creating user
+    (``created_by`` PG uid, ``ON DELETE SET NULL`` keeps the workflow when the
+    user is removed).
+    """
+
+    _ROW_SQL = "slug, name, description, source, created_by, created_at, updated_at"
+    _FULL_ROW_SQL = _ROW_SQL + ", content_md, steps"
+
+    def __init__(self, database_url: str) -> None:
+        self._database_url = database_url
+
+    @staticmethod
+    def _row(row: Any, full: bool = False) -> dict[str, Any]:
+        base = {
+            "slug": row[0],
+            "name": row[1],
+            "description": row[2],
+            "source": row[3],
+            "created_by": row[4],
+            "created_at": row[5].isoformat() if row[5] is not None else None,
+            "updated_at": row[6].isoformat() if row[6] is not None else None,
+        }
+        if full:
+            base["content_md"] = row[7]
+            base["steps"] = row[8]
+        return base
+
+    def list_workflows(self, source: str | None = None) -> list[dict[str, Any]]:
+        """All workflows (slug, name, description, source, created_at) ordered by slug."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            if source:
+                cur.execute(
+                    f"SELECT {self._ROW_SQL} FROM workflows WHERE source = %s ORDER BY slug",
+                    (source,),
+                )
+            else:
+                cur.execute(f"SELECT {self._ROW_SQL} FROM workflows ORDER BY slug")
+            return [self._row(row) for row in cur.fetchall()]
+
+    def get_workflow(self, slug: str) -> dict[str, Any] | None:
+        """Full definition (content_md + steps) of one workflow."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute(f"SELECT {self._FULL_ROW_SQL} FROM workflows WHERE slug = %s", (slug,))
+            row = cur.fetchone()
+            return self._row(row, full=True) if row else None
+
+    def create_workflow(
+        self,
+        *,
+        slug: str,
+        name: str,
+        description: str | None = None,
+        content_md: str | None = None,
+        steps: Any = None,
+        source: str = "custom",
+        created_by: str | None = None,
+    ) -> dict[str, Any]:
+        """Insert a workflow; raises ``ValueError("slug")`` when the slug is taken."""
+        steps_text = json.dumps(steps) if steps is not None else None
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO workflows (slug, name, description, content_md, steps, source, created_by) "
+                "VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s) ON CONFLICT (slug) DO NOTHING",
+                (slug, name, description, content_md, steps_text, source, created_by),
+            )
+            if not cur.rowcount:
+                raise ValueError("slug")
+            cur.execute(f"SELECT {self._FULL_ROW_SQL} FROM workflows WHERE slug = %s", (slug,))
+            row = cur.fetchone()
+            if row is None:
+                raise RuntimeError("workflow INSERT produced no row")
+            return self._row(row, full=True)
+
+    def update_workflow(
+        self,
+        slug: str,
+        *,
+        name: str | None = None,
+        description: str | None = None,
+        content_md: str | None = None,
+        steps: Any = None,
+    ) -> dict[str, Any]:
+        """Partially update a custom workflow.
+
+        Raises ``LookupError`` when missing and ``PermissionError`` for builtin
+        rows (read-only, issue #575).
+        """
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute("SELECT source FROM workflows WHERE slug = %s", (slug,))
+            row = cur.fetchone()
+            if row is None:
+                raise LookupError(f"workflow not found: {slug}")
+            if str(row[0]) == "builtin":
+                raise PermissionError("builtin workflow")
+            assignments: dict[str, Any] = {}
+            if name is not None:
+                assignments["name"] = name
+            if description is not None:
+                assignments["description"] = description
+            if content_md is not None:
+                assignments["content_md"] = content_md
+            if steps is not None:
+                assignments["steps"] = json.dumps(steps)
+            if assignments:
+                set_parts = [f"{key} = %s" for key in assignments]
+                if "steps" in assignments:
+                    set_parts = [part + "::jsonb" if part.startswith("steps") else part for part in set_parts]
+                cur.execute(
+                    f"UPDATE workflows SET {', '.join(set_parts)}, updated_at = now() WHERE slug = %s",
+                    (*assignments.values(), slug),
+                )
+            cur.execute(f"SELECT {self._FULL_ROW_SQL} FROM workflows WHERE slug = %s", (slug,))
+            updated = cur.fetchone()
+            if updated is None:
+                raise LookupError(f"workflow not found: {slug}")
+            return self._row(updated, full=True)
+
+    def delete_workflow(self, slug: str) -> bool:
+        """Delete a custom workflow; builtin rows raise ``PermissionError``."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute("SELECT source FROM workflows WHERE slug = %s", (slug,))
+            row = cur.fetchone()
+            if row is None:
+                return False
+            if str(row[0]) == "builtin":
+                raise PermissionError("builtin workflow")
+            cur.execute("DELETE FROM workflows WHERE slug = %s", (slug,))
+            return bool(cur.rowcount)
+
+    def seed_builtin(self, entries: list[dict[str, Any]]) -> int:
+        """Insert builtin definitions with ``ON CONFLICT (slug) DO NOTHING``.
+
+        Never overwrites an existing row (user edits of custom rows and prior
+        imports survive). Returns the number of newly inserted rows.
+        """
+        inserted = 0
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            for entry in entries:
+                cur.execute(
+                    "INSERT INTO workflows (slug, name, description, content_md, source) "
+                    "VALUES (%s, %s, %s, %s, 'builtin') ON CONFLICT (slug) DO NOTHING",
+                    (entry["slug"], entry["name"], entry.get("description"), entry.get("content_md")),
+                )
+                inserted += cur.rowcount
+        return inserted
 
 
 def wipe_postgres_data() -> int:

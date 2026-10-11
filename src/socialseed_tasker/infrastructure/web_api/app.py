@@ -95,6 +95,19 @@ async def lifespan(app: FastAPI):
             PostgresUserStore(_database_url).create_schema()
         except Exception as exc:
             logger.warning("postgres schema bootstrap failed (continuing): %s", exc)
+        # #575: builtin workflow definitions (idempotent ON CONFLICT DO NOTHING).
+        try:
+            from socialseed_tasker.infrastructure.web_api.workflows_seed import (
+                seed_workflows,
+                workflows_seed_enabled,
+            )
+
+            if workflows_seed_enabled():
+                seeded_workflows = seed_workflows(_database_url)
+                if seeded_workflows:
+                    logger.info("workflows seeded: %s", seeded_workflows)
+        except Exception as exc:
+            logger.warning("workflows seeding failed (continuing): %s", exc)
         try:
             from socialseed_tasker.infrastructure.neo4j_user_repository import UserRepository
             from socialseed_tasker.infrastructure.pg_user_repository import PgUserRepository
@@ -507,6 +520,9 @@ def create_app(
     # templates are distinct from agent.py's suffixes (heartbeat/specialists).
     from socialseed_tasker.infrastructure.web_api.routers.agent_runs import agent_runs_router
 
+    # #575: workflow definition library (builtin .md imports + custom rows).
+    from socialseed_tasker.infrastructure.web_api.routers.workflows import workflows_router
+
     app.include_router(issues_router, prefix="/api/v1", tags=["issues"])
     app.include_router(dependencies_router, prefix="/api/v1", tags=["dependencies"])
     app.include_router(components_router, prefix="/api/v1", tags=["components"])
@@ -521,6 +537,7 @@ def create_app(
     app.include_router(catalogs_router, prefix="/api/v1", tags=["catalogs"])
     app.include_router(agent_router, prefix="/api/v1", tags=["agents"])
     app.include_router(agent_runs_router, prefix="/api/v1", tags=["agent-runs"])
+    app.include_router(workflows_router, prefix="/api/v1", tags=["workflows"])
     app.include_router(sync_router, prefix="/api/v1", tags=["sync"])
     app.include_router(webhook_router, prefix="/api/v1", tags=["webhooks"])
     app.include_router(admin_router, prefix="/api/v1", tags=["admin"])

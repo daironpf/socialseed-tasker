@@ -193,6 +193,9 @@
       </label>
       <AgentRunHistoryPanel :agent-id="runsAgentId" />
     </div>
+
+    <!-- Workflow library (#575): builtin .md definitions + custom rows from PostgreSQL. -->
+    <WorkflowLibrary v-if="!isMockMode()" />
   </div>
 </template>
 
@@ -208,6 +211,7 @@ import AgentPromptEditor from '@/components/agents/AgentPromptEditor.vue'
 import AgentSandboxTester from '@/components/agents/AgentSandboxTester.vue'
 import AgentLibrary from '@/components/agents/AgentLibrary.vue'
 import AgentRunHistoryPanel from '@/components/agents/AgentRunHistoryPanel.vue'
+import WorkflowLibrary from '@/components/agents/WorkflowLibrary.vue'
 
 const { t } = useI18n()
 const store = useAgentStudioStore()

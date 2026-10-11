@@ -36,6 +36,8 @@ _RUN_COLUMNS = (
     "summary",
 )
 _LOG_COLUMNS = ("run_id", "seq", "timestamp", "type", "content_markdown", "metadata")
+_WORKFLOW_COLUMNS = ("slug", "name", "description", "source", "created_by", "created_at", "updated_at")
+_WORKFLOW_FULL_COLUMNS = _WORKFLOW_COLUMNS + ("content_md", "steps")
 
 
 def _split_set_clause(set_clause: str) -> list[str]:
@@ -108,6 +110,7 @@ class FakePgCursor:
         self.tools: dict[str, str] = {}
         self.runs: dict[str, dict[str, Any]] = {}
         self.run_logs: dict[str, list[dict[str, Any]]] = {}
+        self.workflows: dict[str, dict[str, Any]] = {}
         self.rowcount = 0
         self._next: Any = None
         self._rows: list[tuple[Any, ...]] = []
@@ -163,6 +166,10 @@ class FakePgCursor:
 
     def _run_tuple(self, run: dict[str, Any]) -> tuple[Any, ...]:
         return tuple(run.get(column) for column in _RUN_COLUMNS)
+
+    def _workflow_tuple(self, wf: dict[str, Any], full: bool) -> tuple[Any, ...]:
+        columns = _WORKFLOW_FULL_COLUMNS if full else _WORKFLOW_COLUMNS
+        return tuple(wf.get(column) for column in columns)
 
     def _new_run(self, agent_id: str, issue_id: Any, model: Any, *, returning_full: bool) -> None:
         self._generated += 1
@@ -438,6 +445,63 @@ class FakePgCursor:
                 tuple(entry.get(column) for column in _LOG_COLUMNS)
                 for entry in sorted(self.run_logs.get(run_id, []), key=lambda entry: entry["seq"])
             ]
+        elif low.startswith("insert into workflows"):
+            values = tuple(params or ())
+            if len(values) == 4:
+                # seed_builtin: source is the 'builtin' literal in the SQL.
+                slug, name, description, content_md = values
+                source, created_by = "builtin", None
+            else:
+                slug, name, description, content_md, _steps_text, source, created_by = values
+            if str(slug) in self.workflows:
+                self.rowcount = 0
+            else:
+                self.workflows[str(slug)] = {
+                    "slug": str(slug),
+                    "name": name,
+                    "description": description,
+                    "source": source,
+                    "created_by": created_by,
+                    "created_at": _RUN_TS_BASE,
+                    "updated_at": None,
+                    "content_md": content_md,
+                    "steps": None,
+                }
+                self.rowcount = 1
+        elif low.startswith("select source from workflows"):
+            wf = self.workflows.get(str(params[0]))
+            self._next = (wf["source"],) if wf else None
+        elif low.startswith("select slug, name, description, source"):
+            full = "content_md" in low
+            if "where slug" in low:
+                wf = self.workflows.get(str(params[0]))
+                self._next = self._workflow_tuple(wf, full=True) if wf else None
+            elif "where source" in low:
+                source = str(params[0])
+                rows = [wf for wf in self.workflows.values() if wf["source"] == source]
+                rows.sort(key=lambda wf: wf["slug"])
+                self._rows = [self._workflow_tuple(wf, full=full) for wf in rows]
+            else:
+                rows = sorted(self.workflows.values(), key=lambda wf: wf["slug"])
+                self._rows = [self._workflow_tuple(wf, full=full) for wf in rows]
+        elif low.startswith("update workflows set"):
+            slug = str(params[-1])
+            wf = self.workflows.get(slug)
+            if wf is None:
+                self.rowcount = 0
+            else:
+                set_clause = low.split(" set ", 1)[1].split(" where ", 1)[0]
+                columns = [c.removesuffix("::jsonb") for c in _split_set_clause(set_clause) if c != "updated_at"]
+                for column, value in zip(columns, params[: len(params) - 1], strict=False):
+                    if value is not None:
+                        wf[column] = value
+                wf["updated_at"] = _RUN_TS_BASE.replace(minute=30)
+                self.rowcount = 1
+        elif low.startswith("delete from workflows"):
+            slug = str(params[0])
+            existed = slug in self.workflows
+            self.workflows.pop(slug, None)
+            self.rowcount = 1 if existed else 0
         elif low.startswith("update human_user"):
             uid = str(params[-1])
             row = self.human.get(uid)
@@ -527,6 +591,10 @@ class FakePgCursor:
                 for run_id in [key for key, run in self.runs.items() if run["agent_id"] == uid]:
                     self.runs.pop(run_id, None)
                     self.run_logs.pop(run_id, None)
+                # workflows.created_by ON DELETE SET NULL (#575).
+                for wf in self.workflows.values():
+                    if wf.get("created_by") == uid:
+                        wf["created_by"] = None
             self.rowcount = 1 if existed else 0
         elif low.startswith("select count(*) from users where user_type"):
             # Last-user guard counts humans in the PG root (#562).

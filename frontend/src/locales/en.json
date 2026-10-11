@@ -1764,6 +1764,37 @@
         "failed": "FAILED",
         "cancelled": "CANCELLED"
       }
+    },
+    "workflows": {
+      "title": "Workflow library",
+      "filterAll": "All workflows",
+      "filterBuiltin": "Builtin",
+      "filterCustom": "Custom",
+      "new": "New workflow",
+      "loading": "Loading…",
+      "empty": "No workflows yet.",
+      "error": "Could not load the workflow library.",
+      "retry": "Retry",
+      "slug": "Slug",
+      "name": "Name",
+      "description": "Description",
+      "content": "Markdown content",
+      "create": "Create",
+      "save": "Save",
+      "edit": "Edit",
+      "delete": "Delete",
+      "noContent": "This workflow has no markdown content.",
+      "created": "Workflow created.",
+      "updated": "Workflow updated.",
+      "deleted": "Workflow deleted.",
+      "conflict": "Slug already taken or the workflow is builtin.",
+      "invalid": "Invalid workflow: check the slug format and required fields.",
+      "saveError": "Could not save the workflow.",
+      "deleteError": "Could not delete the workflow.",
+      "source": {
+        "builtin": "Builtin",
+        "custom": "Custom"
+      }
     }
   },
   "analytics": {

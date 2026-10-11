@@ -18,7 +18,7 @@ workflows desde la app (junto al Studio). Alcance de este issue: **biblioteca de
 definiciones** (almacenar y leer) — **no** un motor de ejecución (ese sería otro ciclo: hoy
 el "workflow engine" más cercano es auto-healing con runs en JSON).
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: MEDIUM
 
@@ -73,16 +73,16 @@ feat / fullstack
    - Frontend: spec de `workflowsApi` + spec del visor (lista, detalle, 409 en builtin).
 
 ## Acceptance Criteria
-- [ ] Tabla `workflows` con slug único, `created_by` = uid PG y cascada
+- [x] Tabla `workflows` con slug único, `created_by` = uid PG y cascada
       `SET NULL` (borrar usuario no borra el workflow)
-- [ ] Los 14 `.agent/workflows/*.md` (o los de `assets/templates`) importados como
+- [x] Los 14 `.agent/workflows/*.md` (o los de `assets/templates`) importados como
       `builtin` de forma idempotente
-- [ ] CRUD de workflows custom con auth (`created_by` desde JWT); builtin protegidos (409)
-- [ ] Visor en el Studio: lista + lectura del markdown; crear/editar custom
-- [ ] 503 sin `TASKER_DATABASE_URL`; 404 slug inexistente
-- [ ] **Tests**: los pytest + specs listados pasan
-- [ ] Gates: backend `ruff` 1011 / `mypy` 1153 / `pytest` 1331+3; frontend `lint` 0/2 /
-      `test` 306+ (44+) / `build` OK / i18n 1693+N EN/ES
+- [x] CRUD de workflows custom con auth (`created_by` desde JWT); builtin protegidos (409)
+- [x] Visor en el Studio: lista + lectura del markdown; crear/editar custom
+- [x] 503 sin `TASKER_DATABASE_URL`; 404 slug inexistente
+- [x] **Tests**: los pytest + specs listados pasan
+- [x] Gates: backend `ruff` 1251+0 / `mypy` 0 nuevos / `pytest` 1491+3; frontend `lint` 0/2 /
+      `test` 413 (54 files) / `build` OK / i18n 1746/1746 EN/ES
 
 ## Files to Create
 - `src/socialseed_tasker/infrastructure/web_api/routers/workflows.py`
@@ -108,3 +108,39 @@ feat / fullstack
 ## Related Issues
 - #558 (patrón de esquema/seed), #569 (`created_by` desde JWT), #573 (Studio donde se
   integra el visor), #574 (runs, aparte), #520 (auto-healing runs en JSON, no unificar)
+
+## Resolution
+
+Implementado como **biblioteca de definiciones** (sin motor de ejecución, fuera de alcance).
+
+**Backend**
+- `user_store.py`: `WORKFLOWS_DDL` idempotente (slug UNIQUE, `source CHECK`, `created_by
+  TEXT REFERENCES users(id) ON DELETE SET NULL`, `steps JSONB`), índice
+  `ix_workflows_source`, clase dedicada `PostgresWorkflowStore` (list/get/create con
+  ON CONFLICT DO NOTHING → `ValueError` = 409; update/delete con guard
+  `PermissionError` builtin = 409 / `LookupError` missing = 404; `seed_builtin`).
+- `workflows_seed.py`: parsea `# Workflow: <Name>` + primer párrafo (280 chars), fuentes
+  `TASKER_WORKFLOWS_DIR` o `cwd/.agent/workflows` primero y luego `assets/templates/workflows`
+  (5 en la imagen Docker, 14 en dev), flag `TASKER_WORKFLOWS_SEED` (default true), seed
+  idempotente en el lifespan de `app.py` tras `create_schema` (try/except best-effort).
+- `routers/workflows.py`: `GET /workflows?source=` (Literal → 422), `GET /workflows/{slug}`
+  (404), `POST` (201, `created_by` = uid del JWT vía `chat._resolve_user`, slug regex → 422,
+  dup → 409), `PUT`/`DELETE` (builtin 409, missing 404), 503 sin `TASKER_DATABASE_URL`.
+- `schemas.py`: `WorkflowCreate` (slug pattern), `WorkflowUpdate`, `WorkflowResponse`
+  (`content_md`/`steps` solo en lectura completa; el listado va sin ellos).
+
+**Frontend**
+- `workflowsApi.ts` (fetchWorkflows con filtro source, fetchWorkflow, create, update, delete)
+  + spec; `WorkflowLibrary.vue`: lista con badges builtin/custom, lector con
+  `MarkdownRenderer`, form create/edit (slug+name+description+markdown, slug disabled al
+  editar), delete solo custom, estados loading/empty/error+retry, conflict 409 y 422
+  traducidos; sección en `AgentStudioView` solo en modo real; i18n `agentStudio.workflows.*`
+  EN/ES (27 claves).
+
+**Tests**: 14 pytest (`test_workflows_api.py`, incluye seed idempotente, created_by,
+guards builtin 409, 404, 503, SET NULL al borrar el creador) + 18 specs (9 api + 9
+componente). `FakePgCursor` extendido con estado `workflows` y handlers SQL.
+
+**Notas**: en la imagen Docker solo hay 5 workflows (`.agent/` no se copia; los 14 están
+en dev, AC permite "o los de assets"). La columna `steps` queda lista para el futuro
+motor de ejecución.

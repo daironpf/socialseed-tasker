@@ -1247,3 +1247,45 @@ class AgentRunLogResponse(BaseModel):
     type: AgentRunLogType
     content_markdown: str | None = None
     metadata: dict[str, Any] | None = None
+
+
+WorkflowSource = Literal["builtin", "custom"]
+
+_WORKFLOW_SLUG_PATTERN = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
+
+
+class WorkflowCreate(BaseModel):
+    """Request to create a custom workflow (issue #575)."""
+
+    slug: str = Field(..., min_length=2, max_length=80, pattern=_WORKFLOW_SLUG_PATTERN)
+    name: str = Field(..., min_length=1, max_length=120)
+    description: str | None = Field(None, max_length=500)
+    content_md: str | None = None
+    steps: list[Any] | dict[str, Any] | None = None
+
+
+class WorkflowUpdate(BaseModel):
+    """Partial update of a custom workflow (issue #575); None keeps the stored value."""
+
+    name: str | None = Field(None, min_length=1, max_length=120)
+    description: str | None = Field(None, max_length=500)
+    content_md: str | None = None
+    steps: list[Any] | dict[str, Any] | None = None
+
+
+class WorkflowResponse(BaseModel):
+    """Response for a workflow definition (issue #575).
+
+    ``content_md``/``steps`` are only present on the full read
+    (``GET /workflows/{slug}`` and mutations); the list endpoint omits them.
+    """
+
+    slug: str
+    name: str
+    description: str | None = None
+    source: WorkflowSource
+    created_by: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    content_md: str | None = None
+    steps: list[Any] | dict[str, Any] | None = None
