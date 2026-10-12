@@ -146,21 +146,32 @@
               v-model="newSkill"
               @keyup.enter="addSkill"
               type="text"
-              list="skills-catalog-create"
               :placeholder="t('users.addSkill')"
               class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
-            <datalist id="skills-catalog-create">
-              <option v-for="s in skillSuggestions" :key="s.id" :value="s.name" />
-            </datalist>
             <button
-              @click="addSkill"
+              type="button"
+              :aria-label="t('users.addSkills')"
+              @click="pickerOpen = true"
               class="rounded-lg px-3 py-2 text-sm font-medium text-white"
               :class="form.type === 'human' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-purple-600 hover:bg-purple-700'"
             >
               +
             </button>
           </div>
+          <div v-if="skillPicker.length" class="mt-2 flex flex-wrap items-center gap-1.5">
+            <span class="text-[11px] text-gray-400 dark:text-gray-500">{{ t('users.skillSuggestions') }}:</span>
+            <button
+              v-for="s in skillPicker"
+              :key="s.id"
+              type="button"
+              @click="pickSkill(s)"
+              class="rounded-full border border-gray-200 px-2 py-0.5 text-[11px] text-gray-600 hover:border-blue-400 hover:text-blue-600 dark:border-gray-600 dark:text-gray-300 dark:hover:border-blue-500 dark:hover:text-blue-400"
+            >
+              + {{ s.name }}
+            </button>
+          </div>
+          <p v-if="form.type === 'human'" class="mt-1 text-[11px] text-gray-400 dark:text-gray-500">{{ t('users.skillNewHint') }}</p>
         </div>
 
         <div>
@@ -210,6 +221,15 @@
         </button>
       </div>
     </div>
+
+    <!-- Floating multi-select picker opened by "+" (issue #577) -->
+    <SkillPickerModal
+      :show="pickerOpen"
+      :mode="form.type"
+      :selected="form.skills"
+      @close="pickerOpen = false"
+      @apply="names => (form.skills = names)"
+    />
   </div>
 </template>
 
@@ -218,6 +238,8 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { isMockMode } from '@/api/client'
 import { fetchSkills, type SkillCatalogItem } from '@/api/catalogsApi'
+import { useUsersStore } from '@/stores/usersStore'
+import SkillPickerModal from '@/components/users/SkillPickerModal.vue'
 
 const { t } = useI18n()
 
@@ -245,13 +267,18 @@ const form = ref({
 
 function resetForm() {
   form.value = { username: '', email: '', role: 'developer', type: 'human', avatar: '👤', skills: [], model: '', specialization: '', system_prompt: '' }
+  pickerOpen.value = false
 }
 
 // Fresh form on every open: `save()` only emits, the parent closes the modal
 // once the API answers 201 (#566 - on 409/422/503 it stays open for fixing).
-// The skills datalist suggestions come from GET /skills in real mode; free
+// Skill picker (#576 UX fix): the native <datalist> never opens on the "+"
+// button, only while typing in the input, so the catalog is rendered as
+// visible clickable chips instead. Real mode reads GET /skills; mock derives
+// the vocabulary from the skills already present on the mock users. Free
 // values stay allowed because the backend upserts them on save (#572).
 const skillSuggestions = ref<SkillCatalogItem[]>([])
+const usersStore = useUsersStore()
 
 async function loadSkillSuggestions() {
   if (isMockMode()) return
@@ -260,6 +287,23 @@ async function loadSkillSuggestions() {
   } catch {
     // Picker degrades to free text without suggestions (#572).
   }
+}
+
+const skillPicker = computed(() => {
+  const taken = new Set(form.value.skills.map(s => s.toLowerCase()))
+  const query = newSkill.value.trim().toLowerCase()
+  const pool = isMockMode()
+    ? Array.from(new Set(usersStore.users.flatMap(u => u.skills))).map(name => ({ id: name.toLowerCase(), name }))
+    : skillSuggestions.value.map(s => ({ id: s.id, name: s.name }))
+  return pool
+    .filter(s => !taken.has(s.name.toLowerCase()))
+    .filter(s => !query || s.name.toLowerCase().includes(query))
+    .slice(0, 12)
+})
+
+function pickSkill(s: { id: string; name: string }) {
+  newSkill.value = s.name
+  addSkill()
 }
 
 watch(
@@ -273,6 +317,7 @@ watch(
 )
 
 const newSkill = ref('')
+const pickerOpen = ref(false)
 
 const humanAvatars = ['👤', '👩‍💻', '👨‍💻', '🧑‍💻', '👩‍🔬', '👨‍🔬', '👩‍🎨', '👨‍🎨', '👩‍💼', '👨‍💼', '🧑‍💼']
 const agentAvatars = ['🤖', '🧠', '⚡', '🔬', '🛡️', '🎯', '🔧', '📊']

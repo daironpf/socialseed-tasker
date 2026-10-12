@@ -8,6 +8,7 @@ import pytest
 
 from socialseed_tasker.auth import user_store as user_store_module
 from socialseed_tasker.auth.user_store import (
+    SKILLS_SEED,
     PostgresUserStore,
     authenticate_user,
     hash_password,
@@ -148,6 +149,31 @@ class TestCreateSchema:
         role_seeds = [seq for sql, seq in cursor.executemany_statements if "INSERT INTO roles" in sql]
         assert len(role_seeds) == 2
         assert all("ON CONFLICT" in sql for sql, _ in cursor.executemany_statements)
+
+    def test_seeds_the_skills_catalog_with_the_starter_vocabulary(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The 10 starter skills reach `skills` on every boot so the pickers
+        open with options on a fresh database (#576); ON CONFLICT keeps user
+        created skills untouched."""
+        cursor = FakePgCursor()
+        store = _store(monkeypatch, cursor)
+
+        store.create_schema()
+        store.create_schema()
+
+        skill_statements = [
+            (sql, seq) for sql, seq in cursor.executemany_statements if "INSERT INTO skills" in sql
+        ]
+        assert len(skill_statements) == 2  # recorded on every run (idempotent via ON CONFLICT)
+        for sql, _ in skill_statements:
+            assert "ON CONFLICT (id) DO NOTHING" in sql
+        seeded = skill_statements[0][1]
+        assert {row[0] for row in seeded} == {slug for slug, _ in SKILLS_SEED}
+        assert len(seeded) == 10
+        # slugs must match skill_slug(name) so manual and seeded ids never collide
+        for slug, name in seeded:
+            assert slug == skill_slug(name)
 
 
 class TestLegacyMigration:
@@ -387,9 +413,12 @@ class TestUpsertProfile:
         assert cursor.human["u1"]["github_handle"] == "pedro-gh"
         assert cursor.agents["bot"]["model"] == "gpt-4o"
         assert cursor.agents["bot"]["specialization"] == "qa"
-        assert cursor.skills == {"vue": "Vue", "python": "Python", "testing": "Testing"}
+        # #577: humans keep skills/user_skills; agents write their own tables.
+        assert cursor.skills == {"vue": "Vue", "python": "Python"}
         assert cursor.user_skills["u1"] == {"vue", "python"}
-        assert cursor.user_skills["bot"] == {"testing"}
+        assert "bot" not in cursor.user_skills
+        assert cursor.agent_skills == {"testing": {"name": "Testing", "behavior": ""}}
+        assert cursor.agent_user_skills["bot"] == {"testing"}
 
     def test_unknown_user_is_ignored(self, monkeypatch: pytest.MonkeyPatch) -> None:
         cursor = FakePgCursor()

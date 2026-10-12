@@ -138,15 +138,10 @@
             </span>
           </div>
           <div class="flex gap-2">
-            <input
-              v-model="newSkill"
-              @keyup.enter="addSkill"
-              type="text"
-              :placeholder="t('agents.addSkill')"
-              class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            />
             <button
-              @click="addSkill"
+              type="button"
+              :aria-label="t('agents.addSkills')"
+              @click="pickerOpen = true"
               class="rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-700"
             >
               +
@@ -239,6 +234,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Floating multi-select picker opened by "+" (issue #577): agent skills
+         come from agent_skills (name + behavior), never from the human catalog. -->
+    <SkillPickerModal
+      :show="pickerOpen"
+      mode="agent"
+      :selected="form.skills"
+      @close="pickerOpen = false"
+      @apply="names => (form.skills = names)"
+    />
   </div>
 </template>
 
@@ -248,6 +253,7 @@ import { useI18n } from 'vue-i18n'
 import { isMockMode } from '@/api/client'
 import { fetchTools } from '@/api/catalogsApi'
 import { AGENT_TOOLS } from '@/types/agentStudio'
+import SkillPickerModal from '@/components/users/SkillPickerModal.vue'
 
 const { t } = useI18n()
 
@@ -295,7 +301,7 @@ const defaultForm: AgentForm = {
 }
 
 const form = ref<AgentForm>({ ...defaultForm })
-const newSkill = ref('')
+const pickerOpen = ref(false)
 
 const models = [
   { value: 'claude-3.5-sonnet', label: 'Claude 3.5 Sonnet' },
@@ -350,14 +356,6 @@ watch(() => props.agent, (agent) => {
     form.value = { ...defaultForm }
   }
 }, { immediate: true })
-
-function addSkill() {
-  const skill = newSkill.value.trim()
-  if (skill && !form.value.skills.includes(skill)) {
-    form.value.skills.push(skill)
-    newSkill.value = ''
-  }
-}
 
 function removeSkill(skill: string) {
   form.value.skills = form.value.skills.filter(s => s !== skill)

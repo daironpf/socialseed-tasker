@@ -78,8 +78,12 @@ class TestListUsers:
         for fragment in (
             "LEFT JOIN human_user h ON h.user_id = u.id",
             "LEFT JOIN agents_user a ON a.user_id = u.id",
-            "LEFT JOIN user_skills us ON us.user_id = u.id",
-            "LEFT JOIN skills sk ON sk.id = us.skill_id",
+            # #577: skills are read per user type (agents vs humans).
+            "u.user_type = 'agent'",
+            "agent_user_skills aus",
+            "agent_skills ask",
+            "user_skills us",
+            "skills sk",
             "MAX(s.created_at)",
             "s.event = 'login'",
             "GROUP BY u.id, h.user_id, a.user_id",

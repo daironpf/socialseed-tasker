@@ -1045,11 +1045,33 @@ class UserSkillAssignRequest(BaseModel):
 
 
 class UserSkillResponse(BaseModel):
-    """One user↔skill assignment (issue #576)."""
+    """One userskill assignment (issue #576)."""
 
     user_id: str
     skill_id: str
     name: str
+
+
+class AgentSkillResponse(BaseModel):
+    """One agent skill: name + the large behavior text (#577)."""
+
+    id: str
+    name: str
+    behavior: str = ""
+
+
+class AgentSkillCreateRequest(BaseModel):
+    """Request to insert one agent skill into its own catalog (issue #577)."""
+
+    name: str = Field(..., min_length=1, max_length=80)
+    behavior: str = Field("", max_length=20000)
+
+
+class AgentSkillUpdateRequest(BaseModel):
+    """Partial update of an agent skill; omitted fields keep their value (#577)."""
+
+    name: str | None = Field(None, min_length=1, max_length=80)
+    behavior: str | None = Field(None, max_length=20000)
 
 
 class AgentProfileCreate(BaseModel):

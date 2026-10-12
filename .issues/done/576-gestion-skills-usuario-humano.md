@@ -95,4 +95,18 @@ Implementado el 2026-10-11. Backend: store + schemas + 4 endpoints (3 en `user.p
 handlers de skills). Frontend: `userSkillsApi.ts` (+ spec), gestión directa en
 `EditUserModal.vue` (real: GET/POST/DELETE; mock: local), 3 claves i18n EN/ES (+ spec).
 Gates: pytest 1503 passed + 3 preexistentes; frontend 427/57 tests, lint 0/2, build OK,
-i18n 1751/1751; ruff/mypy sin delta. Pendiente: commit + despliegue (esperando `si`).
+i18n 1751/1751; ruff/mypy sin delta.
+
+Follow-ups (2026-10-12):
+- **UX del picker**: el `<datalist>` nativo no se abría al pulsar `+` (solo al escribir en
+  el input) → sustituido por **chips visibles y clicables** del catálogo en
+  `CreateUserModal` y `EditUserModal` (real: `GET /skills`, hasta 12, filtra al escribir y
+  excluye asignadas; mock: vocabulario derivado de los usuarios del dataset; nueva clave
+  `users.skillSuggestions`).
+- **Seed del catálogo**: `SKILLS_SEED` (10 skills: Python, TypeScript, Vue, Docker,
+  PostgreSQL, Neo4j, Git, Testing, CI/CD, Kubernetes) insertado en `create_schema()`
+  con `ON CONFLICT DO NOTHING` → el picker abre con opciones en base fresca
+  (`test_seeds_the_skills_catalog_with_the_starter_vocabulary`).
+
+Commit base: `4af67a7` (desplegado). Follow-ups pendientes de commit + despliegue
+(esperando `si`).

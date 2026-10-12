@@ -41,6 +41,27 @@ describe('CreateUserModal', () => {
     expect(wrapper.find('h2').text()).toBe('Create AI Agent')
   })
 
+  it('renders the catalog skills as clickable chips and adds them without typing (#576 picker fix)', async () => {
+    vi.mocked(fetchSkills).mockResolvedValue([
+      { id: 'python', name: 'Python' },
+      { id: 'vue', name: 'Vue' },
+    ])
+    const { wrapper } = mountComponent(CreateUserModal, { props: { show: false } })
+    await wrapper.setProps({ show: true })
+    await flushPromises()
+
+    // The native datalist never opened on "+"; the picker chips are always visible.
+    expect(wrapper.find('datalist').exists()).toBe(false)
+    const pythonChip = wrapper.findAll('button').find(b => b.text() === '+ Python')
+    expect(pythonChip).toBeDefined()
+
+    await pythonChip!.trigger('click')
+    await flushPromises()
+
+    const chips = wrapper.findAll('span')
+    expect(chips.some(s => s.text().includes('Python') && !s.text().includes('+'))).toBe(true)
+  })
+
   it('resets to human and reopens after the parent closes it', async () => {
     const { wrapper } = mountComponent(CreateUserModal, { props: { show: true } })
     await flushPromises()
@@ -54,5 +75,29 @@ describe('CreateUserModal', () => {
     await flushPromises()
     expect(wrapper.find('.fixed').exists()).toBe(true)
     expect(wrapper.find('h2').text()).toBe('New User')
+  })
+
+  it('opens the floating picker on "+" and applies the selection (issue #577)', async () => {
+    vi.mocked(fetchSkills).mockResolvedValue([
+      { id: 'python', name: 'Python' },
+      { id: 'vue', name: 'Vue' },
+    ])
+    const { wrapper } = mountComponent(CreateUserModal, { props: { show: false } })
+    await wrapper.setProps({ show: true })
+    await flushPromises()
+
+    await wrapper.findAll('button').find(b => b.attributes('aria-label') === 'Add skills')!.trigger('click')
+    await flushPromises()
+
+    const boxes = wrapper.findAll('input[type="checkbox"]')
+    expect(boxes).toHaveLength(2)
+    await boxes[0].setValue(true)
+    await wrapper.findAll('button').find(b => b.text() === 'Apply')!.trigger('click')
+    await flushPromises()
+
+    // The picker closed and the chip is selected without typing.
+    expect(wrapper.find('input[placeholder="Search skills..."]').exists()).toBe(false)
+    const chips = wrapper.findAll('span')
+    expect(chips.some(s => s.text().includes('Python') && !s.text().includes('+'))).toBe(true)
   })
 })

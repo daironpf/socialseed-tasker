@@ -516,6 +516,9 @@ def create_app(
     # #572: seeded catalogs consumed by the frontend pickers.
     from socialseed_tasker.infrastructure.web_api.routers.catalogs import catalogs_router
 
+    # #577: agent skills catalog (name + behavior) read by the floating picker.
+    from socialseed_tasker.infrastructure.web_api.routers.agent_skills import agent_skills_router
+
     # #574: persistent agent run history; /agents/{id}/runs and /runs/{id}
     # templates are distinct from agent.py's suffixes (heartbeat/specialists).
     from socialseed_tasker.infrastructure.web_api.routers.agent_runs import agent_runs_router
@@ -535,6 +538,7 @@ def create_app(
     app.include_router(policy_rel_router, prefix="/api/v1", tags=["policy-relationships"])
     app.include_router(agent_profiles_router, prefix="/api/v1", tags=["agent-profiles"])
     app.include_router(catalogs_router, prefix="/api/v1", tags=["catalogs"])
+    app.include_router(agent_skills_router, prefix="/api/v1", tags=["agent-skills"])
     app.include_router(agent_router, prefix="/api/v1", tags=["agents"])
     app.include_router(agent_runs_router, prefix="/api/v1", tags=["agent-runs"])
     app.include_router(workflows_router, prefix="/api/v1", tags=["workflows"])

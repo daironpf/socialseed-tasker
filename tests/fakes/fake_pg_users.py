@@ -104,6 +104,8 @@ class FakePgCursor:
         self.agents: dict[str, dict[str, Any]] = {}
         self.skills: dict[str, str] = {}
         self.user_skills: dict[str, set[str]] = {}
+        self.agent_skills: dict[str, dict[str, str]] = {}
+        self.agent_user_skills: dict[str, set[str]] = {}
         self.session_logs: list[tuple[str, str, Any]] = []
         self.legacy_rows: list[tuple[Any, ...]] = []
         self.roles: dict[str, int] = {"ADMIN": 3, "DEVELOPER": 2, "VIEWER": 1}
@@ -334,6 +336,52 @@ class FakePgCursor:
             else:
                 self.skills[str(slug)] = str(name)
                 self.rowcount = 1
+        elif low.startswith("insert into agent_skills"):
+            if "select distinct on" in low:
+                # #577 migration: copy agent rows out of the shared catalog.
+                count = 0
+                for uid, slugs in self.user_skills.items():
+                    if self.users.get(uid, {}).get("user_type") != "agent":
+                        continue
+                    for slug in slugs:
+                        if slug not in self.agent_skills:
+                            self.agent_skills[slug] = {
+                                "name": self.skills.get(slug, slug),
+                                "behavior": "",
+                            }
+                            count += 1
+                self.rowcount = count
+            else:
+                values = tuple(params or ())
+                slug = str(values[0])
+                name = str(values[1])
+                behavior = str(values[2]) if len(values) > 2 else ""
+                if slug in self.agent_skills:
+                    self.rowcount = 0
+                else:
+                    self.agent_skills[slug] = {"name": name, "behavior": behavior}
+                    self.rowcount = 1
+        elif low.startswith("insert into agent_user_skills"):
+            if "select" in low:
+                # #577 migration: move agent assignments to the new table.
+                count = 0
+                for uid, slugs in self.user_skills.items():
+                    if self.users.get(uid, {}).get("user_type") != "agent":
+                        continue
+                    linked = self.agent_user_skills.setdefault(uid, set())
+                    for slug in slugs:
+                        if slug not in linked:
+                            linked.add(slug)
+                            count += 1
+                self.rowcount = count
+            else:
+                uid, slug = str(params[0]), str(params[1])
+                linked = self.agent_user_skills.setdefault(str(uid), set())
+                if str(slug) in linked:
+                    self.rowcount = 0
+                else:
+                    linked.add(str(slug))
+                    self.rowcount = 1
         elif low.startswith("insert into user_skills"):
             uid, slug = tuple(params or ())
             linked = self.user_skills.setdefault(str(uid), set())
@@ -569,8 +617,27 @@ class FakePgCursor:
                     if value is not None:
                         row[key] = value
                 self.rowcount = 1
+        elif low.startswith("delete from agent_skills"):
+            slug = str(params[0])
+            existed = self.agent_skills.pop(slug, None) is not None
+            for linked in self.agent_user_skills.values():
+                linked.discard(slug)
+            self.rowcount = 1 if existed else 0
+        elif low.startswith("delete from agent_user_skills"):
+            uid = str(params[0])
+            existed = bool(self.agent_user_skills.get(uid))
+            self.agent_user_skills.pop(uid, None)
+            self.rowcount = 1 if existed else 0
         elif low.startswith("delete from user_skills"):
-            if "and skill_id" in low:
+            if "using users" in low:
+                # #577 migration: drop the old links of agent users.
+                count = 0
+                for uid in list(self.user_skills):
+                    if self.users.get(uid, {}).get("user_type") == "agent":
+                        self.user_skills.pop(uid, None)
+                        count += 1
+                self.rowcount = count
+            elif "and skill_id" in low:
                 # Single assignment removal (#576).
                 uid, slug = str(params[0]), str(params[1])
                 linked = self.user_skills.get(uid, set())
@@ -598,6 +665,7 @@ class FakePgCursor:
                 self.human.pop(uid, None)
                 self.agents.pop(uid, None)
                 self.user_skills.pop(uid, None)
+                self.agent_user_skills.pop(uid, None)
                 # agent_runs.agent_id ON DELETE CASCADE (#574).
                 for run_id in [key for key, run in self.runs.items() if run["agent_id"] == uid]:
                     self.runs.pop(run_id, None)
@@ -694,6 +762,29 @@ class FakePgCursor:
             ]
             rows.sort(key=lambda row: row[1])
             self._rows = rows
+        elif low.startswith("select 1 from agent_skills where"):
+            # Catalog duplicate checks (#577): create (id OR name) / rename (name AND id <>).
+            values = tuple(str(value) for value in (params or ()))
+            if "and id <>" in low:
+                name, slug = values[0], values[1]
+                exists = any(
+                    key != slug and row["name"] == name
+                    for key, row in self.agent_skills.items()
+                )
+            else:
+                slug, name = values[0], values[1]
+                exists = slug in self.agent_skills or any(
+                    row["name"] == name for row in self.agent_skills.values()
+                )
+            self._next = (1,) if exists else None
+        elif low.startswith("select name, behavior from agent_skills"):
+            row = self.agent_skills.get(str(params[0]))
+            self._next = (row["name"], row["behavior"]) if row else None
+        elif low.startswith("select id, name, behavior from agent_skills"):
+            self._rows = [
+                (slug, row["name"], row["behavior"])
+                for slug, row in sorted(self.agent_skills.items(), key=lambda kv: kv[1]["name"])
+            ]
         elif low.startswith("select email, avatar, model, specialization"):
             # update_profile keeps JSONB values it must not overwrite (#564/#573).
             row = self.agents.get(str(params[0]))
@@ -730,6 +821,20 @@ class FakePgCursor:
                 for uid, slugs in sorted(self.user_skills.items())
                 for slug in sorted(slugs)
             ]
+        elif low.startswith("select aus.user_id, s.name"):
+            # Skills of every agent for profile reads (#577).
+            self._rows = [
+                (uid, self.agent_skills.get(slug, {}).get("name", slug))
+                for uid, slugs in sorted(self.agent_user_skills.items())
+                for slug in sorted(slugs)
+            ]
+        elif low.startswith("update agent_skills set"):
+            name, behavior, slug = str(params[0]), str(params[1]), str(params[2])
+            if slug in self.agent_skills:
+                self.agent_skills[slug] = {"name": name, "behavior": behavior}
+                self.rowcount = 1
+            else:
+                self.rowcount = 0
         elif "from users u" in low:
             normalized = str(params[0])
             for row in self.users.values():

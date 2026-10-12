@@ -56,6 +56,78 @@ TOOLS_SEED: tuple[tuple[str, str, str], ...] = (
     ("doc_writer", "Document writer", "Author documents"),
 )
 
+# Starter vocabulary for the skills catalog so the pickers in the user modals
+# (#572/#576) open with options on a fresh database; slugs match skill_slug().
+SKILLS_SEED: tuple[tuple[str, str], ...] = (
+    ("python", "Python"),
+    ("typescript", "TypeScript"),
+    ("vue", "Vue"),
+    ("docker", "Docker"),
+    ("postgresql", "PostgreSQL"),
+    ("neo4j", "Neo4j"),
+    ("git", "Git"),
+    ("testing", "Testing"),
+    ("ci-cd", "CI/CD"),
+    ("kubernetes", "Kubernetes"),
+)
+
+# Starter agent skills with their adoption behavior (#577): name + the large
+# text describing how the agent must behave once the skill is selected.
+AGENT_SKILLS_SEED: tuple[tuple[str, str, str], ...] = (
+    (
+        "code-reviewer",
+        "Code Reviewer",
+        "You are a meticulous code reviewer. When reviewing any change, first understand "
+        "the intent of the code and its surrounding context before judging individual "
+        "lines. Prioritize correctness over style: look for logic errors, off-by-one "
+        "mistakes, unhandled edge cases, race conditions, and security issues such as "
+        "injection, unsafe deserialization, or leaked secrets. Then evaluate readability: "
+        "naming, structure, duplication, and whether the code follows the conventions of "
+        "the surrounding codebase. Always ground every comment in the actual code — cite "
+        "the file and the line — and explain *why* something is a problem, not only *that* "
+        "it is one. Suggest concrete fixes, but keep them proportional: never propose a "
+        "rewrite when a small change will do. Separate blocking issues from nitpicks, and "
+        "call out what was done well. Close with a clear verdict: approve, approve with "
+        "minor comments, or request changes — plus the top three actions you would take "
+        "next.",
+    ),
+    (
+        "docs-writer",
+        "Documentation Writer",
+        "You are a technical documentation writer. When asked to document anything, write "
+        "for the reader who will use the software, not for its author: start from the task "
+        "they are trying to accomplish and lead with the shortest path to success. Keep "
+        "sentences short and active, prefer concrete examples over abstract descriptions, "
+        "and never leave a code sample untested-looking — it must be copy-pasteable and "
+        "complete. Document what exists today, not what is planned; mark anything "
+        "uncertain explicitly. Mirror the structure, tone, and heading conventions of the "
+        "existing documentation of the project so the result feels native. Every reference "
+        "to a file, command, flag, or API must be verified against the codebase before you "
+        "write it. Prefer diagrams in mermaid when relationships are hard to follow in "
+        "prose. When something is deprecated or dangerous, say so early and plainly. End "
+        "every document with how to verify the reader understood it: a checklist, a smoke "
+        "test, or a next-step.",
+    ),
+    (
+        "security-analyst",
+        "Security Analyst",
+        "You are a defensive-minded security analyst. When examining any change, request, "
+        "or piece of data, assume it may be hostile until proven otherwise. Trace how "
+        "untrusted input travels through the system: where it enters, what transforms it "
+        "undergoes, and where it is executed, rendered, or stored — injection, path "
+        "traversal, SSRF, and privilege boundaries deserve first-class attention. Check "
+        "authentication and authorization on every new route: who may call it, with what "
+        "role, and whether the check happens server-side. Look for secrets committed in "
+        "code, logs, or configuration, and for credentials that are logged, echoed, or "
+        "returned in responses. Review dependency and supply-chain risk for any new "
+        "package: whether it is actually needed and what it can reach. Report findings in "
+        "severity order with a clear impact statement, the exact location, and a minimal "
+        "reproduction or proof; propose the smallest fix that closes the hole and a "
+        "regression test that would catch it again. Never recommend security-through-"
+        "obscurity, and never dismiss a finding without evidence.",
+    ),
+)
+
 ROLES_DDL = """
 CREATE TABLE IF NOT EXISTS roles (
     id          TEXT PRIMARY KEY,
@@ -124,6 +196,25 @@ USER_SKILLS_DDL = """
 CREATE TABLE IF NOT EXISTS user_skills (
     user_id  TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     skill_id TEXT NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, skill_id)
+)
+"""
+
+# Agent skills live in their own tables (#577): every entry carries a name plus
+# a large `behavior` text describing how an agent must act to adopt the skill.
+# Agents are linked through `agent_user_skills`; humans keep `skills`+`user_skills`.
+AGENT_SKILLS_DDL = """
+CREATE TABLE IF NOT EXISTS agent_skills (
+    id       TEXT PRIMARY KEY,
+    name     TEXT NOT NULL UNIQUE,
+    behavior TEXT NOT NULL DEFAULT ''
+)
+"""
+
+AGENT_USER_SKILLS_DDL = """
+CREATE TABLE IF NOT EXISTS agent_user_skills (
+    user_id  TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    skill_id TEXT NOT NULL REFERENCES agent_skills(id) ON DELETE CASCADE,
     PRIMARY KEY (user_id, skill_id)
 )
 """
@@ -329,11 +420,17 @@ class PostgresUserStore:
                 "INSERT INTO tools (id, name, description) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING",
                 TOOLS_SEED,
             )
+            cur.executemany(
+                "INSERT INTO skills (id, name) VALUES (%s, %s) ON CONFLICT (id) DO NOTHING",
+                SKILLS_SEED,
+            )
             legacy_backup = self._prepare_users_table(cur)
             for ddl in (
                 HUMAN_USER_DDL,
                 AGENTS_USER_DDL,
                 USER_SKILLS_DDL,
+                AGENT_SKILLS_DDL,
+                AGENT_USER_SKILLS_DDL,
                 SESSION_LOGS_DDL,
                 AGENT_RUNS_DDL,
                 AGENT_RUN_LOGS_DDL,
@@ -344,6 +441,39 @@ class PostgresUserStore:
                 cur.execute(ddl)
             if legacy_backup:
                 self._migrate_legacy_users(cur, legacy_backup)
+            # Seeded after AGENT_SKILLS_DDL above: name + behavior vocabulary (#577).
+            cur.executemany(
+                "INSERT INTO agent_skills (id, name, behavior) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING",
+                AGENT_SKILLS_SEED,
+            )
+            # #577: split agent skills out of the shared human catalog. Idempotent:
+            # copy missing catalog rows, move the assignments, drop the old links.
+            cur.execute(
+                """
+                INSERT INTO agent_skills (id, name, behavior)
+                SELECT DISTINCT ON (sk.id) sk.id, sk.name, ''
+                FROM user_skills us
+                JOIN skills sk ON sk.id = us.skill_id
+                JOIN users u ON u.id = us.user_id AND u.user_type = 'agent'
+                ON CONFLICT DO NOTHING
+                """
+            )
+            cur.execute(
+                """
+                INSERT INTO agent_user_skills (user_id, skill_id)
+                SELECT us.user_id, us.skill_id
+                FROM user_skills us
+                JOIN users u ON u.id = us.user_id AND u.user_type = 'agent'
+                ON CONFLICT DO NOTHING
+                """
+            )
+            cur.execute(
+                """
+                DELETE FROM user_skills us
+                USING users u
+                WHERE u.id = us.user_id AND u.user_type = 'agent'
+                """
+            )
 
     @staticmethod
     def _table_exists(cur: Any, table: str) -> bool:
@@ -504,6 +634,92 @@ class PostgresUserStore:
                 conn.rollback()
                 raise
         return {"id": slug, "name": clean}
+
+    # ------------------------------------------------------------------
+    # Agent skills catalog (issue #577): name + behavior text.
+    # ------------------------------------------------------------------
+
+    def list_agent_skills(self) -> list[dict[str, Any]]:
+        """Full agent skills catalog ordered by name (issue #577)."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute("SELECT id, name, behavior FROM agent_skills ORDER BY name")
+            rows = cur.fetchall()
+        return [{"id": str(row[0]), "name": row[1], "behavior": row[2] or ""} for row in rows]
+
+    def create_agent_skill(self, name: str, behavior: str = "") -> dict[str, str]:
+        """Insert one agent skill (name + behavior, issue #577).
+
+        The id is the slugified name; raises ``ValueError("skill")`` when the
+        slug or display name is taken and ``ValueError("name")`` when the name
+        slugifies to nothing.
+        """
+        clean = str(name).strip()
+        if not clean:
+            raise ValueError("name")
+        slug = skill_slug(clean)
+        with closing(psycopg.connect(self._database_url, autocommit=False)) as conn:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT 1 FROM agent_skills WHERE id = %s OR name = %s", (slug, clean))
+                    if cur.fetchone() is not None:
+                        conn.rollback()
+                        raise ValueError("skill")
+                    cur.execute(
+                        "INSERT INTO agent_skills (id, name, behavior) VALUES (%s, %s, %s)",
+                        (slug, clean, behavior or ""),
+                    )
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+        return {"id": slug, "name": clean, "behavior": behavior or ""}
+
+    def update_agent_skill(
+        self, skill_id: str, *, name: str | None = None, behavior: str | None = None
+    ) -> dict[str, str]:
+        """Rename/rewrite the behavior of an agent skill (issue #577).
+
+        Raises ``LookupError`` when the id is unknown (404) and
+        ``ValueError("skill")`` when the new name collides (409).
+        """
+        clean = str(name).strip() if name is not None else None
+        if name is not None and not clean:
+            raise ValueError("name")
+        with closing(psycopg.connect(self._database_url, autocommit=False)) as conn:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT name, behavior FROM agent_skills WHERE id = %s", (skill_id,))
+                    row = cur.fetchone()
+                    if row is None:
+                        conn.rollback()
+                        raise LookupError("agent skill not found")
+                    next_name = clean if clean is not None else row[0]
+                    next_behavior = behavior if behavior is not None else (row[1] or "")
+                    if clean is not None and skill_slug(clean) != skill_id:
+                        # Renaming to a different slug: keep the id stable so
+                        # existing assignments survive; only the name changes.
+                        cur.execute(
+                            "SELECT 1 FROM agent_skills WHERE name = %s AND id <> %s",
+                            (next_name, skill_id),
+                        )
+                        if cur.fetchone() is not None:
+                            conn.rollback()
+                            raise ValueError("skill")
+                    cur.execute(
+                        "UPDATE agent_skills SET name = %s, behavior = %s WHERE id = %s",
+                        (next_name, next_behavior, skill_id),
+                    )
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+        return {"id": skill_id, "name": next_name, "behavior": next_behavior}
+
+    def delete_agent_skill(self, skill_id: str) -> bool:
+        """Delete one catalog row; assignments cascade (issue #577)."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM agent_skills WHERE id = %s", (skill_id,))
+            return bool(cur.rowcount)
 
     def list_user_skills(self, user_id: str) -> list[dict[str, str]] | None:
         """Assigned skills of one user ordered by name (issue #576).
@@ -882,14 +1098,25 @@ class PostgresUserStore:
                 )
             for name in skills or []:
                 slug = skill_slug(name)
-                cur.execute(
-                    "INSERT INTO skills (id, name) VALUES (%s, %s) ON CONFLICT DO NOTHING",
-                    (slug, name),
-                )
-                cur.execute(
-                    "INSERT INTO user_skills (user_id, skill_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
-                    (user_id, slug),
-                )
+                if row[0] == AGENT_USER_TYPE:
+                    # #577: agents read from their own catalog/assignments.
+                    cur.execute(
+                        "INSERT INTO agent_skills (id, name, behavior) VALUES (%s, %s, '') ON CONFLICT DO NOTHING",
+                        (slug, name),
+                    )
+                    cur.execute(
+                        "INSERT INTO agent_user_skills (user_id, skill_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                        (user_id, slug),
+                    )
+                else:
+                    cur.execute(
+                        "INSERT INTO skills (id, name) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                        (slug, name),
+                    )
+                    cur.execute(
+                        "INSERT INTO user_skills (user_id, skill_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                        (user_id, slug),
+                    )
 
 
 _AGENT_PROFILE_ROW_SQL = """
@@ -919,7 +1146,7 @@ def _as_json_dict(value: Any) -> dict[str, Any] | None:
 
 
 class PostgresAgentProfileStore:
-    """CRUD over ``users`` + ``agents_user`` + ``user_skills`` (issue #564).
+    """CRUD over ``users`` + ``agents_user`` + ``agent_user_skills`` (issues #564/#577).
 
     Agent identities live in the PG root with ``user_type='agent'``, a
     PostgreSQL-generated uid and no credential or RBAC role rows. ``tools``
@@ -949,7 +1176,9 @@ class PostgresAgentProfileStore:
 
     @staticmethod
     def _load_skills(cur: Any) -> dict[str, list[str]]:
-        cur.execute("SELECT us.user_id, s.name FROM user_skills us JOIN skills s ON s.id = us.skill_id")
+        cur.execute(
+            "SELECT aus.user_id, s.name FROM agent_user_skills aus JOIN agent_skills s ON s.id = aus.skill_id"
+        )
         linked: dict[str, list[str]] = {}
         for uid, name in cur.fetchall():
             linked.setdefault(str(uid), []).append(str(name))
@@ -988,16 +1217,21 @@ class PostgresAgentProfileStore:
 
     @staticmethod
     def _write_skills(cur: Any, user_id: str, skills: list[str]) -> None:
+        """Replace-style insert of agent skills into the agent catalog (#577).
+
+        Unknown names create an ``agent_skills`` row with an empty ``behavior``
+        (the picker's "new skill" path fills it in through ``POST /agent-skills``).
+        """
         for name in skills:
             slug = skill_slug(name)
             if not slug:
                 continue
             cur.execute(
-                "INSERT INTO skills (id, name) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                "INSERT INTO agent_skills (id, name, behavior) VALUES (%s, %s, '') ON CONFLICT DO NOTHING",
                 (slug, name),
             )
             cur.execute(
-                "INSERT INTO user_skills (user_id, skill_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                "INSERT INTO agent_user_skills (user_id, skill_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
                 (user_id, slug),
             )
 
@@ -1017,7 +1251,7 @@ class PostgresAgentProfileStore:
         skills: list[str] | None = None,
         enabled: bool = True,
     ) -> str:
-        """Insert ``users`` + ``agents_user`` + ``user_skills`` atomically.
+        """Insert ``users`` + ``agents_user`` + ``agent_user_skills`` atomically.
 
         The uid is generated by PostgreSQL (``RETURNING id``); agents carry no
         credential and no role. Raises ``ValueError('tool:<slug>')`` when a
@@ -1164,7 +1398,7 @@ class PostgresAgentProfileStore:
                             (username, normalized, user_id),
                         )
                     if skills is not None:
-                        cur.execute("DELETE FROM user_skills WHERE user_id = %s", (user_id,))
+                        cur.execute("DELETE FROM agent_user_skills WHERE user_id = %s", (user_id,))
                         self._write_skills(cur, user_id, skills)
                 conn.commit()
             except psycopg.errors.UniqueViolation as exc:
@@ -1175,7 +1409,7 @@ class PostgresAgentProfileStore:
                 raise
 
     def delete_profile(self, user_id: str) -> bool:
-        """Cascade-delete the agent identity row (``agents_user``/``user_skills``).
+        """Cascade-delete the agent identity row (``agents_user``/``agent_user_skills``).
 
         The ``user_type = 'agent'`` guard never touches human rows; humans are
         deleted through ``DELETE /users/{id}`` (issue #562).

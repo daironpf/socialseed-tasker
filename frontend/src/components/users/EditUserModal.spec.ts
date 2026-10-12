@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { mountComponent } from '@/test/mount'
 import EditUserModal from '@/components/users/EditUserModal.vue'
-import { resetCatalogsCache } from '@/api/catalogsApi'
+import { fetchSkills, resetCatalogsCache } from '@/api/catalogsApi'
 import { fetchUserSkills, addUserSkill, removeUserSkill } from '@/api/userSkillsApi'
 import type { User } from '@/types'
 
@@ -61,7 +61,7 @@ describe('EditUserModal — skills management (issue #576)', () => {
     expect(text).toContain('Vue')
   })
 
-  it('assigns a new skill through POST and refreshes the datalist (find-or-create)', async () => {
+  it('assigns a new skill through POST on Enter and refreshes the catalog chips', async () => {
     vi.mocked(addUserSkill).mockResolvedValue({
       user_id: 'uid-ana',
       skill_id: 'kubernetes',
@@ -70,9 +70,9 @@ describe('EditUserModal — skills management (issue #576)', () => {
     const { wrapper } = mountModal()
     await flushPromises()
 
-    const input = wrapper.find('input[list="skills-catalog-edit"]')
+    const input = wrapper.find('input[placeholder="Add skill..."]')
     await input.setValue('Kubernetes')
-    await wrapper.findAll('button').find(b => b.text() === '+')!.trigger('click')
+    await input.trigger('keyup.enter')
     await flushPromises()
 
     expect(addUserSkill).toHaveBeenCalledWith('uid-ana', 'Kubernetes')
@@ -99,11 +99,59 @@ describe('EditUserModal — skills management (issue #576)', () => {
     const { wrapper } = mountModal()
     await flushPromises()
 
-    await wrapper.find('input[list="skills-catalog-edit"]').setValue('Docker')
-    await wrapper.findAll('button').find(b => b.text() === '+')!.trigger('click')
+    const input = wrapper.find('input[placeholder="Add skill..."]')
+    await input.setValue('Docker')
+    await input.trigger('keyup.enter')
     await flushPromises()
 
     expect(wrapper.text()).toContain('Could not add the skill. Try again.')
+    expect((input.element as HTMLInputElement).value).toBe('Docker')
+  })
+
+  it('renders the catalog as visible clickable chips and assigns on click (#576 picker fix)', async () => {
+    vi.mocked(fetchSkills).mockResolvedValue([
+      { id: 'python', name: 'Python' },
+      { id: 'go', name: 'Go' },
+      { id: 'docker', name: 'Docker' },
+    ])
+    vi.mocked(addUserSkill).mockResolvedValue({
+      user_id: 'uid-ana',
+      skill_id: 'go',
+      name: 'Go',
+    })
+    const { wrapper } = mountModal()
+    await flushPromises()
+
+    // Python is already assigned -> excluded; Go/Docker visible without typing.
+    const labels = wrapper.text()
+    expect(labels).toContain('Catalog')
+    expect(labels).toContain('Go')
+    expect(labels).toContain('Docker')
+    expect(labels).not.toContain('+ Python')
+
+    const goChip = wrapper.findAll('button').find(b => b.text() === '+ Go')
+    expect(goChip).toBeDefined()
+    await goChip!.trigger('click')
+    await flushPromises()
+
+    expect(addUserSkill).toHaveBeenCalledWith('uid-ana', 'Go')
+    expect(wrapper.text()).toContain('Go')
+  })
+
+  it('filters the catalog chips by what is typed in the input', async () => {
+    vi.mocked(fetchSkills).mockResolvedValue([
+      { id: 'go', name: 'Go' },
+      { id: 'docker', name: 'Docker' },
+      { id: 'kubernetes', name: 'Kubernetes' },
+    ])
+    const { wrapper } = mountModal()
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="Add skill..."]').setValue('dock')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Docker')
+    expect(wrapper.text()).not.toContain('Kubernetes')
   })
 
   it('keeps the mock-mode local chips (no API calls) for the in-memory store', async () => {
@@ -114,8 +162,9 @@ describe('EditUserModal — skills management (issue #576)', () => {
     // loadAssignedSkills is skipped in mock mode
     expect(fetchUserSkills).not.toHaveBeenCalled()
 
-    await wrapper.find('input[list="skills-catalog-edit"]').setValue('Local Skill')
-    await wrapper.findAll('button').find(b => b.text() === '+')!.trigger('click')
+    const input = wrapper.find('input[placeholder="Add skill..."]')
+    await input.setValue('Local Skill')
+    await input.trigger('keyup.enter')
     await flushPromises()
 
     expect(addUserSkill).not.toHaveBeenCalled()
@@ -141,5 +190,61 @@ describe('EditUserModal — skills management (issue #576)', () => {
       username: 'ana',
       skills: ['Python', 'Vue'],
     })
+  })
+
+  it('opens the floating picker on "+" and applies only the delta (#577)', async () => {
+    vi.mocked(fetchSkills).mockResolvedValue([
+      { id: 'python', name: 'Python' },
+      { id: 'vue', name: 'Vue' },
+      { id: 'go', name: 'Go' },
+    ])
+    vi.mocked(addUserSkill).mockResolvedValue({
+      user_id: 'uid-ana',
+      skill_id: 'go',
+      name: 'Go',
+    })
+    vi.mocked(removeUserSkill).mockResolvedValue(undefined)
+    const { wrapper } = mountModal()
+    await flushPromises()
+
+    await wrapper.findAll('button').find(b => b.attributes('aria-label') === 'Add skills')!.trigger('click')
+    await flushPromises()
+
+    // The picker lists the human catalog with the assignment pre-checked.
+    const boxes = wrapper.findAll('input[type="checkbox"]')
+    expect(boxes).toHaveLength(3)
+    expect((boxes[0].element as HTMLInputElement).checked).toBe(true)
+    expect((boxes[1].element as HTMLInputElement).checked).toBe(true)
+
+    await boxes[1].setValue(false) // unlink Vue
+    await boxes[2].setValue(true) // link Go
+    await wrapper.findAll('button').find(b => b.text() === 'Apply')!.trigger('click')
+    await flushPromises()
+
+    expect(addUserSkill).toHaveBeenCalledTimes(1)
+    expect(addUserSkill).toHaveBeenCalledWith('uid-ana', 'Go')
+    expect(removeUserSkill).toHaveBeenCalledTimes(1)
+    expect(removeUserSkill).toHaveBeenCalledWith('uid-ana', 'vue')
+    // Assigned chips (spans): Go in, Vue out. The catalog row may offer
+    // "+ Vue" again because it is no longer assigned — that is not a chip.
+    const chips = wrapper.findAll('span')
+    expect(chips.some(s => s.text().includes('Go') && !s.text().includes('+'))).toBe(true)
+    expect(chips.some(s => s.text().includes('Vue') && !s.text().includes('+'))).toBe(false)
+  })
+
+  it('keeps the picker selection local in mock mode (no skill endpoints)', async () => {
+    mockState.mockMode = true
+    const { wrapper } = mountModal()
+    await flushPromises()
+
+    await wrapper.findAll('button').find(b => b.attributes('aria-label') === 'Add skills')!.trigger('click')
+    await wrapper.find('input[placeholder="Type a custom skill name..."]').setValue('Rust')
+    await wrapper.findAll('button').find(b => b.text() === 'Add')!.trigger('click')
+    await wrapper.findAll('button').find(b => b.text() === 'Apply')!.trigger('click')
+    await flushPromises()
+
+    expect(addUserSkill).not.toHaveBeenCalled()
+    expect(removeUserSkill).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Rust')
   })
 })

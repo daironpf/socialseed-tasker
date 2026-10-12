@@ -89,20 +89,31 @@
               v-model="newSkill"
               @keyup.enter="addSkill"
               type="text"
-              list="skills-catalog-edit"
               :placeholder="t('users.addSkill')"
               :disabled="skillsBusy"
               class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
-            <datalist id="skills-catalog-edit">
-              <option v-for="s in skillSuggestions" :key="s.id" :value="s.name" />
-            </datalist>
             <button
-              @click="addSkill"
-              :disabled="skillsBusy || !newSkill.trim()"
+              type="button"
+              :aria-label="t('users.addSkills')"
+              :disabled="skillsBusy"
+              @click="pickerOpen = true"
               class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
               +
+            </button>
+          </div>
+          <div v-if="skillPicker.length" class="mt-2 flex flex-wrap items-center gap-1.5">
+            <span class="text-[11px] text-gray-400 dark:text-gray-500">{{ t('users.skillSuggestions') }}:</span>
+            <button
+              v-for="s in skillPicker"
+              :key="s.id"
+              type="button"
+              @click="pickSkill(s)"
+              :disabled="skillsBusy"
+              class="rounded-full border border-gray-200 px-2 py-0.5 text-[11px] text-gray-600 hover:border-blue-400 hover:text-blue-600 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:border-blue-500 dark:hover:text-blue-400"
+            >
+              + {{ s.name }}
             </button>
           </div>
           <p class="mt-1 text-[11px] text-gray-400 dark:text-gray-500">{{ t('users.skillNewHint') }}</p>
@@ -144,6 +155,15 @@
         </button>
       </div>
     </div>
+
+    <!-- Floating multi-select picker opened by "+" (issue #577) -->
+    <SkillPickerModal
+      :show="pickerOpen"
+      mode="human"
+      :selected="form.skills"
+      @close="pickerOpen = false"
+      @apply="applyPickedSkills"
+    />
   </div>
 </template>
 
@@ -153,6 +173,8 @@ import { useI18n } from 'vue-i18n'
 import { isMockMode } from '@/api/client'
 import { fetchSkills, resetCatalogsCache, type SkillCatalogItem } from '@/api/catalogsApi'
 import { addUserSkill, removeUserSkill, fetchUserSkills, type UserSkill } from '@/api/userSkillsApi'
+import SkillPickerModal from '@/components/users/SkillPickerModal.vue'
+import { useUsersStore } from '@/stores/usersStore'
 import type { User } from '@/types'
 
 const { t } = useI18n()
@@ -177,6 +199,7 @@ const form = ref({
 })
 
 const newSkill = ref('')
+const pickerOpen = ref(false)
 
 const BASE_ROLES = ['lead-developer', 'developer', 'designer', 'manager', 'qa']
 const REAL_ROLES = ['ADMIN', 'DEVELOPER', 'VIEWER']
@@ -216,9 +239,12 @@ watch(() => props.user, (user) => {
   }
 }, { immediate: true })
 
-// Datalist suggestions from GET /skills in real mode; free values stay
-// allowed because the backend upserts them on save (#572).
+// Skill picker (#576 UX fix): the native <datalist> never opens on the "+"
+// button, only while typing in the input, so the catalog is rendered as
+// visible clickable chips instead. Real mode reads GET /skills; mock derives
+// the vocabulary from the skills already present on the mock users.
 const skillSuggestions = ref<SkillCatalogItem[]>([])
+const usersStore = useUsersStore()
 
 async function loadSkillSuggestions() {
   if (isMockMode()) return
@@ -227,6 +253,23 @@ async function loadSkillSuggestions() {
   } catch {
     // Picker degrades to free text without suggestions (#572).
   }
+}
+
+const skillPicker = computed(() => {
+  const taken = new Set(form.value.skills.map(s => s.toLowerCase()))
+  const query = newSkill.value.trim().toLowerCase()
+  const pool = isMockMode()
+    ? Array.from(new Set(usersStore.users.flatMap(u => u.skills))).map(name => ({ id: name.toLowerCase(), name }))
+    : skillSuggestions.value.map(s => ({ id: s.id, name: s.name }))
+  return pool
+    .filter(s => !taken.has(s.name.toLowerCase()))
+    .filter(s => !query || s.name.toLowerCase().includes(query))
+    .slice(0, 12)
+})
+
+function pickSkill(s: { id: string; name: string }) {
+  newSkill.value = s.name
+  void addSkill()
 }
 
 // Real mode manages skills directly against /users/{id}/skills (#576): the
@@ -303,6 +346,54 @@ async function removeSkill(skill: string) {
     return
   }
   form.value.skills = form.value.skills.filter(s => s !== skill)
+}
+
+// Apply the selection coming from the floating picker (#577): only the delta
+// travels to POST/DELETE /users/{id}/skills, so untouched assignments never
+// move. Mock keeps the local chips applied on save.
+async function applyPickedSkills(names: string[]) {
+  if (isMockMode() || !props.user) {
+    form.value.skills = names
+    return
+  }
+  const current = [...form.value.skills]
+  const nextLower = new Set(names.map(name => name.toLowerCase()))
+  const added = names.filter(name => !current.some(entry => entry.toLowerCase() === name.toLowerCase()))
+  const removed = current.filter(entry => !nextLower.has(entry.toLowerCase()))
+
+  skillsBusy.value = true
+  skillsError.value = null
+  try {
+    for (const name of added) {
+      const item = await addUserSkill(props.user.id, name)
+      if (!assignedSkills.value.some(entry => entry.skill_id === item.skill_id)) {
+        assignedSkills.value.push(item)
+      }
+    }
+  } catch {
+    skillsError.value = 'add'
+  }
+  if (!skillsError.value) {
+    try {
+      for (const name of removed) {
+        const item = assignedSkills.value.find(
+          entry => entry.name.toLowerCase() === name.toLowerCase(),
+        )
+        if (item) {
+          await removeUserSkill(props.user.id, item.skill_id)
+          assignedSkills.value = assignedSkills.value.filter(entry => entry.skill_id !== item.skill_id)
+        }
+      }
+    } catch {
+      skillsError.value = 'remove'
+    }
+  }
+  // Rebuild from the assignments the server actually holds (partial failures
+  // revert the chips that were not applied) and refresh the catalog chips.
+  form.value.skills = assignedSkills.value.map(entry => entry.name).sort((a, b) => a.localeCompare(b))
+  resetCatalogsCache()
+  void loadSkillSuggestions()
+  skillsBusy.value = false
 }
 
 function close() {

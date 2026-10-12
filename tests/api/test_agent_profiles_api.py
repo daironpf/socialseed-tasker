@@ -99,7 +99,9 @@ def test_create_agent_profile_201_returns_uid(monkeypatch: pytest.MonkeyPatch):
     assert response.data.write_access == ["issues"]
     assert response.data.limits == {"max_tokens": 4000}
     assert sorted(response.data.skills) == ["Pytest", "Testing"]
-    assert cursor.user_skills[uid] == {"testing", "pytest"}
+    # #577: agent assignments live in agent_user_skills, never in user_skills.
+    assert cursor.agent_user_skills[uid] == {"testing", "pytest"}
+    assert uid not in cursor.user_skills
 
 
 def test_create_agent_profile_unknown_tool_422(monkeypatch: pytest.MonkeyPatch):
@@ -163,7 +165,7 @@ def test_update_agent_profile(monkeypatch: pytest.MonkeyPatch):
     assert response.data.limits == {"max_tokens": 4000}
     assert cursor.users[uid]["username"] == "bot-qa-2"
     assert cursor.agents[uid]["model"] == "claude-3"
-    assert cursor.user_skills[uid] == {"refactor"}
+    assert cursor.agent_user_skills[uid] == {"refactor"}  # #577 replace on agent tables
 
     with pytest.raises(HTTPException) as not_found:
         agent_profiles.update_agent_profile("missing-uid", AgentProfileUpdate(model="x"))

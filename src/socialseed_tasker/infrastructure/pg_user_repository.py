@@ -1,9 +1,11 @@
 """Read repository over the normalized PostgreSQL user model (issue #558).
 
 PostgreSQL is the root of users: ``GET /users`` composes each profile from
-``users`` joined with ``human_user``/``agents_user`` and ``user_skills``/``skills``,
-deriving ``last_login`` from ``session_logs`` and the response ``role`` from
-``roles.id`` for humans (agents fall back to the derived ``ai-agent`` alias).
+``users`` joined with ``human_user``/``agents_user``, deriving ``last_login``
+from ``session_logs`` and the response ``role`` from ``roles.id`` for humans
+(agents fall back to the derived ``ai-agent`` alias). Skills are read per
+user type (#577): humans from ``user_skills``/``skills``, agents from
+``agent_user_skills``/``agent_skills`` (name + behavior catalog).
 """
 
 from __future__ import annotations
@@ -22,12 +24,20 @@ SELECT u.id, u.username, u.user_type, u.created_at,
        a.email, a.avatar, a.model, a.specialization, a.enabled,
        (SELECT MAX(s.created_at) FROM session_logs s
          WHERE s.user_id = u.id AND s.event = 'login') AS last_login,
-       COALESCE(array_agg(sk.name ORDER BY sk.name) FILTER (WHERE sk.id IS NOT NULL), '{}') AS skills
+       COALESCE(
+         CASE WHEN u.user_type = 'agent'
+           THEN (SELECT array_agg(ask.name ORDER BY ask.name)
+                 FROM agent_user_skills aus
+                 JOIN agent_skills ask ON ask.id = aus.skill_id
+                 WHERE aus.user_id = u.id)
+           ELSE (SELECT array_agg(sk.name ORDER BY sk.name)
+                 FROM user_skills us
+                 JOIN skills sk ON sk.id = us.skill_id
+                 WHERE us.user_id = u.id)
+         END, '{}') AS skills
 FROM users u
 LEFT JOIN human_user h ON h.user_id = u.id
 LEFT JOIN agents_user a ON a.user_id = u.id
-LEFT JOIN user_skills us ON us.user_id = u.id
-LEFT JOIN skills sk ON sk.id = us.skill_id
 """
 
 _LIST_TAIL = """

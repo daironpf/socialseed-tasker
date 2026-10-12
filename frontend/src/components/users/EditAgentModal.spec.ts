@@ -2,12 +2,19 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { mountComponent } from '@/test/mount'
 import EditAgentModal from '@/components/users/EditAgentModal.vue'
-import { fetchTools } from '@/api/catalogsApi'
+import { fetchTools, fetchSkills } from '@/api/catalogsApi'
+import { fetchAgentSkills } from '@/api/agentSkillsApi'
 import { apiMode } from '@/api/client'
 import { AGENT_TOOLS } from '@/types/agentStudio'
 
 vi.mock('@/api/catalogsApi', () => ({
   fetchTools: vi.fn(),
+  fetchSkills: vi.fn().mockResolvedValue([]),
+  resetCatalogsCache: vi.fn(),
+}))
+vi.mock('@/api/agentSkillsApi', () => ({
+  fetchAgentSkills: vi.fn().mockResolvedValue([]),
+  createAgentSkill: vi.fn(),
 }))
 
 const CATALOG = [
@@ -115,5 +122,40 @@ describe('EditAgentModal tools catalog (issue #572)', () => {
     await flushPromises()
 
     expect(fetchTools).toHaveBeenCalledTimes(2)
+  })
+
+  it('replaces the skills through the floating agent picker (issue #577)', async () => {
+    apiMode.value = 'real'
+    vi.mocked(fetchAgentSkills).mockResolvedValue([
+      { id: 'code-reviewer', name: 'Code Reviewer', behavior: 'Review carefully.' },
+      { id: 'docs-writer', name: 'Docs Writer', behavior: 'Write clear docs.' },
+    ])
+
+    const { wrapper } = mountComponent(EditAgentModal, {
+      props: { show: true, agent: AGENT },
+    })
+    await flushPromises()
+
+    // The free-text skill input is gone: only "+" opens the picker.
+    expect(wrapper.find('input[placeholder="Add skill..."]').exists()).toBe(false)
+    await wrapper.findAll('button').find(b => b.attributes('aria-label') === 'Add skills')!.trigger('click')
+    await flushPromises()
+
+    expect(fetchAgentSkills).toHaveBeenCalledTimes(1)
+    expect(fetchSkills).not.toHaveBeenCalled() // never the human catalog
+    const boxes = wrapper.findAll('input[type="checkbox"]')
+    expect(boxes).toHaveLength(2)
+
+    await boxes[0].setValue(true)
+    await wrapper.findAll('button').find(b => b.text() === 'Apply')!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Code Reviewer')
+    const save = wrapper.findAll('button').find(b => b.text() === 'Save Changes')
+    await save!.trigger('click')
+
+    expect(wrapper.emitted('save')![0][0]).toMatchObject({
+      skills: ['testing', 'Code Reviewer'],
+    })
   })
 })
