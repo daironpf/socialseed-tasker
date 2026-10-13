@@ -818,6 +818,7 @@ def create_app(
 
     # Rate limiter wiring
     from socialseed_tasker.infrastructure.memory_rate_limiter import MemoryRateLimiter
+    from socialseed_tasker.infrastructure.web_api.rate_limit import BURST, USER_PER_MIN
     try:
         from socialseed_tasker.infrastructure.redis_rate_limiter import RedisRateLimiter
         _REDIS_AVAILABLE = True
@@ -826,11 +827,13 @@ def create_app(
     _rate_redis_url = os.getenv("TASKER_REDIS_URL")
     if _rate_redis_url and _REDIS_AVAILABLE:
         try:
-            app.state.rate_limiter = RedisRateLimiter(_rate_redis_url)
+            app.state.rate_limiter = RedisRateLimiter(
+                _rate_redis_url, rate_per_min=USER_PER_MIN, burst=BURST
+            )
         except Exception:
-            app.state.rate_limiter = MemoryRateLimiter()
+            app.state.rate_limiter = MemoryRateLimiter(rate_per_min=USER_PER_MIN, burst=BURST)
     else:
-        app.state.rate_limiter = MemoryRateLimiter()
+        app.state.rate_limiter = MemoryRateLimiter(rate_per_min=USER_PER_MIN, burst=BURST)
     # Register rate-limit middleware
     from socialseed_tasker.infrastructure.web_api.rate_limit import RateLimitMiddleware
     app.add_middleware(RateLimitMiddleware)

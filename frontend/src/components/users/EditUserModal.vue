@@ -401,12 +401,14 @@ function close() {
 }
 
 function save() {
+  // Only emit: the parent (UsersView) closes the modal after a successful
+  // save so errors keep the form open (#566/#567). Closing unconditionally
+  // here hid failed saves (e.g. a 429) behind an already-dismissed window.
   if (props.user) {
     emit('save', {
       ...props.user,
       ...form.value,
     })
   }
-  close()
 }
 </script>

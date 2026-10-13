@@ -190,6 +190,9 @@ describe('EditUserModal — skills management (issue #576)', () => {
       username: 'ana',
       skills: ['Python', 'Vue'],
     })
+    // The modal must not close itself: the parent closes it only after a
+    // successful save, so a failed PUT keeps the form open (#566 pattern).
+    expect(wrapper.emitted('close')).toBeUndefined()
   })
 
   it('opens the floating picker on "+" and applies only the delta (#577)', async () => {

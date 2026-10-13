@@ -3,6 +3,7 @@ import { flushPromises, type VueWrapper } from '@vue/test-utils'
 import { mountComponent } from '@/test/mount'
 import UsersView from '@/views/UsersView.vue'
 import CreateUserModal from '@/components/users/CreateUserModal.vue'
+import EditUserModal from '@/components/users/EditUserModal.vue'
 import { useUsersStore } from '@/stores/usersStore'
 import * as usersApi from '@/api/usersApi'
 import * as issuesApi from '@/api/issuesApi'
@@ -139,6 +140,8 @@ describe('UsersView edit flow (issue #560)', () => {
     expect(store.users[0].username).toBe('ana-g')
     expect(store.users[0].type).toBe('human')
     expect(toastSuccess).toHaveBeenCalledWith('User updated successfully')
+    // the parent closes the edit modal only after the save succeeds
+    expect(wrapper.findComponent(EditUserModal).props('show')).toBe(false)
 
     // The regression from #556: a raw response must not strip the card.
     expect(wrapper.text()).toContain('ana-g')
@@ -162,6 +165,22 @@ describe('UsersView edit flow (issue #560)', () => {
     expect(toastError).toHaveBeenCalledWith('That username is already taken')
     expect(toastSuccess).not.toHaveBeenCalled()
     expect(useUsersStore().users[0].username).toBe('ana') // untouched on failure
+    // a failed save must keep the form open so the user can retry (#566)
+    expect(wrapper.findComponent(EditUserModal).props('show')).toBe(true)
+  })
+
+  it('keeps the card and the modal open when the save fails with 429 (rate limit)', async () => {
+    vi.mocked(usersApi.updateUser).mockRejectedValue(
+      Object.assign(new Error('Request failed with status code 429'), { status: 429 }),
+    )
+
+    const wrapper = await mountView()
+    await openEditAndSave(wrapper, 'ana-g')
+
+    expect(toastError).toHaveBeenCalledWith('Error') // common.error, generic branch
+    expect(toastSuccess).not.toHaveBeenCalled()
+    expect(useUsersStore().users[0].username).toBe('ana') // card untouched
+    expect(wrapper.findComponent(EditUserModal).props('show')).toBe(true) // stays open for retry
   })
 
   it('shows the backend detail when the backend answers 422', async () => {

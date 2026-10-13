@@ -283,7 +283,7 @@ realClient.interceptors.response.use(
       error.message ||
       'Unknown error occurred'
     const original = error.config as
-      | ({ url?: string; __retried?: boolean } & Record<string, unknown>)
+      | ({ url?: string; __retried?: boolean; __rateLimitedRetried?: boolean } & Record<string, unknown>)
       | undefined
     const isAuthPath = (original?.url || '').startsWith('/auth/')
 
@@ -296,6 +296,19 @@ realClient.interceptors.response.use(
       }
       window.dispatchEvent(new CustomEvent('auth:unauthorized'))
       return Promise.reject(new Error(message))
+    }
+
+    // Rate limited: the API token bucket rejects before any side effect, so
+    // waiting out Retry-After and replaying once is safe. Without this the
+    // boot burst drained the bucket and a "Save changes" PUT failed with a
+    // generic toast while the modal had already closed (stale user cards).
+    if (error.response?.status === 429 && original && !original.__rateLimitedRetried) {
+      original.__rateLimitedRetried = true
+      const header = error.response.headers?.['retry-after'] ?? error.response.headers?.['Retry-After']
+      const retryAfter = Number(header)
+      const waitMs = Math.min(retryAfter > 0 ? retryAfter * 1000 : 1000, 3000)
+      await new Promise((resolve) => setTimeout(resolve, waitMs))
+      return realClient(original as never)
     }
 
     if (error.response?.status === 401) {
