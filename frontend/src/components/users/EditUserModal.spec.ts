@@ -41,84 +41,75 @@ function mountModal(user: User = ana) {
   })
 }
 
-describe('EditUserModal — skills management (issue #576)', () => {
+function chipSpans(wrapper: ReturnType<typeof mountModal>['wrapper']) {
+  return wrapper.findAll('span').filter(s => !s.text().includes('+'))
+}
+
+describe('EditUserModal — skills stay local until Save changes (#576 follow-up)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockState.mockMode = false
-    vi.mocked(fetchUserSkills).mockResolvedValue([
-      { user_id: 'uid-ana', skill_id: 'python', name: 'Python' },
-      { user_id: 'uid-ana', skill_id: 'vue', name: 'Vue' },
-    ])
   })
 
-  it('loads the assigned skills from GET /users/{id}/skills on open', async () => {
+  it('renders the skills from the user prop without requesting them', async () => {
     const { wrapper } = mountModal()
     await flushPromises()
 
-    expect(fetchUserSkills).toHaveBeenCalledWith('uid-ana')
+    expect(fetchUserSkills).not.toHaveBeenCalled()
     const text = wrapper.text()
     expect(text).toContain('Python')
     expect(text).toContain('Vue')
   })
 
-  it('assigns a new skill through POST on Enter and refreshes the catalog chips', async () => {
-    vi.mocked(addUserSkill).mockResolvedValue({
-      user_id: 'uid-ana',
-      skill_id: 'kubernetes',
-      name: 'Kubernetes',
-    })
+  it('adds a skill instantly on Enter without any API call', async () => {
     const { wrapper } = mountModal()
     await flushPromises()
 
     const input = wrapper.find('input[placeholder="Add skill..."]')
     await input.setValue('Kubernetes')
     await input.trigger('keyup.enter')
-    await flushPromises()
 
-    expect(addUserSkill).toHaveBeenCalledWith('uid-ana', 'Kubernetes')
-    expect(resetCatalogsCache).toHaveBeenCalled()
+    // No flushPromises on purpose: the chip must be there right away.
     expect(wrapper.text()).toContain('Kubernetes')
     expect((input.element as HTMLInputElement).value).toBe('')
+    expect(addUserSkill).not.toHaveBeenCalled()
+    expect(removeUserSkill).not.toHaveBeenCalled()
+    expect(fetchUserSkills).not.toHaveBeenCalled()
+    expect(resetCatalogsCache).not.toHaveBeenCalled()
   })
 
-  it('unlinks a skill on × without deleting the catalog row', async () => {
-    vi.mocked(removeUserSkill).mockResolvedValue(undefined)
+  it('removes a chip instantly on × without any API call', async () => {
     const { wrapper } = mountModal()
     await flushPromises()
 
     const vueChip = wrapper.findAll('span').find(s => s.text().includes('Vue'))
     await vueChip!.find('button').trigger('click')
-    await flushPromises()
 
-    expect(removeUserSkill).toHaveBeenCalledWith('uid-ana', 'vue')
     expect(wrapper.text()).not.toContain('Vue')
+    expect(removeUserSkill).not.toHaveBeenCalled()
+    expect(fetchUserSkills).not.toHaveBeenCalled()
   })
 
-  it('shows an inline error when add fails and keeps the input value', async () => {
-    vi.mocked(addUserSkill).mockRejectedValue(new Error('boom'))
+  it('ignores a duplicate skill regardless of case', async () => {
     const { wrapper } = mountModal()
     await flushPromises()
 
     const input = wrapper.find('input[placeholder="Add skill..."]')
-    await input.setValue('Docker')
+    await input.setValue('python')
     await input.trigger('keyup.enter')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Could not add the skill. Try again.')
-    expect((input.element as HTMLInputElement).value).toBe('Docker')
+    const pythonChips = wrapper.findAll('span').filter(s => s.text().includes('Python'))
+    expect(pythonChips).toHaveLength(1)
+    expect(addUserSkill).not.toHaveBeenCalled()
   })
 
-  it('renders the catalog as visible clickable chips and assigns on click (#576 picker fix)', async () => {
+  it('assigns from the catalog chips locally (#576 picker fix)', async () => {
     vi.mocked(fetchSkills).mockResolvedValue([
       { id: 'python', name: 'Python' },
       { id: 'go', name: 'Go' },
       { id: 'docker', name: 'Docker' },
     ])
-    vi.mocked(addUserSkill).mockResolvedValue({
-      user_id: 'uid-ana',
-      skill_id: 'go',
-      name: 'Go',
-    })
     const { wrapper } = mountModal()
     await flushPromises()
 
@@ -132,10 +123,10 @@ describe('EditUserModal — skills management (issue #576)', () => {
     const goChip = wrapper.findAll('button').find(b => b.text() === '+ Go')
     expect(goChip).toBeDefined()
     await goChip!.trigger('click')
-    await flushPromises()
 
-    expect(addUserSkill).toHaveBeenCalledWith('uid-ana', 'Go')
     expect(wrapper.text()).toContain('Go')
+    expect(addUserSkill).not.toHaveBeenCalled()
+    expect(resetCatalogsCache).not.toHaveBeenCalled()
   })
 
   it('filters the catalog chips by what is typed in the input', async () => {
@@ -159,7 +150,7 @@ describe('EditUserModal — skills management (issue #576)', () => {
     const { wrapper } = mountModal()
     await flushPromises()
 
-    // loadAssignedSkills is skipped in mock mode
+    // loadAssignedSkills is gone: nothing requests the skills in mock mode.
     expect(fetchUserSkills).not.toHaveBeenCalled()
 
     const input = wrapper.find('input[placeholder="Add skill..."]')
@@ -177,9 +168,13 @@ describe('EditUserModal — skills management (issue #576)', () => {
     expect(wrapper.text()).not.toContain('Local Skill')
   })
 
-  it('emits save with the form data including the current skill chips', async () => {
+  it('emits save with the form data including locally added skills', async () => {
     const { wrapper } = mountModal()
     await flushPromises()
+
+    const input = wrapper.find('input[placeholder="Add skill..."]')
+    await input.setValue('Kubernetes')
+    await input.trigger('keyup.enter')
 
     await wrapper.findAll('button').find(b => b.text() === 'Save changes')!.trigger('click')
 
@@ -188,25 +183,24 @@ describe('EditUserModal — skills management (issue #576)', () => {
     expect(saveEvents[0][0]).toMatchObject({
       id: 'uid-ana',
       username: 'ana',
-      skills: ['Python', 'Vue'],
+      skills: ['Python', 'Vue', 'Kubernetes'],
     })
+    // Saving invalidates the catalog cache: the PUT upserts catalog rows.
+    expect(resetCatalogsCache).toHaveBeenCalledTimes(1)
+    // Still no per-skill endpoints: everything went through the save payload.
+    expect(addUserSkill).not.toHaveBeenCalled()
+    expect(removeUserSkill).not.toHaveBeenCalled()
     // The modal must not close itself: the parent closes it only after a
     // successful save, so a failed PUT keeps the form open (#566 pattern).
     expect(wrapper.emitted('close')).toBeUndefined()
   })
 
-  it('opens the floating picker on "+" and applies only the delta (#577)', async () => {
+  it('applies the floating picker selection locally (#577)', async () => {
     vi.mocked(fetchSkills).mockResolvedValue([
       { id: 'python', name: 'Python' },
       { id: 'vue', name: 'Vue' },
       { id: 'go', name: 'Go' },
     ])
-    vi.mocked(addUserSkill).mockResolvedValue({
-      user_id: 'uid-ana',
-      skill_id: 'go',
-      name: 'Go',
-    })
-    vi.mocked(removeUserSkill).mockResolvedValue(undefined)
     const { wrapper } = mountModal()
     await flushPromises()
 
@@ -224,13 +218,11 @@ describe('EditUserModal — skills management (issue #576)', () => {
     await wrapper.findAll('button').find(b => b.text() === 'Apply')!.trigger('click')
     await flushPromises()
 
-    expect(addUserSkill).toHaveBeenCalledTimes(1)
-    expect(addUserSkill).toHaveBeenCalledWith('uid-ana', 'Go')
-    expect(removeUserSkill).toHaveBeenCalledTimes(1)
-    expect(removeUserSkill).toHaveBeenCalledWith('uid-ana', 'vue')
+    expect(addUserSkill).not.toHaveBeenCalled()
+    expect(removeUserSkill).not.toHaveBeenCalled()
     // Assigned chips (spans): Go in, Vue out. The catalog row may offer
     // "+ Vue" again because it is no longer assigned — that is not a chip.
-    const chips = wrapper.findAll('span')
+    const chips = chipSpans(wrapper)
     expect(chips.some(s => s.text().includes('Go') && !s.text().includes('+'))).toBe(true)
     expect(chips.some(s => s.text().includes('Vue') && !s.text().includes('+'))).toBe(false)
   })

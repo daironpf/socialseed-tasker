@@ -77,8 +77,7 @@
               {{ skill }}
               <button
                 @click="removeSkill(skill)"
-                :disabled="skillsBusy"
-                class="ml-1 hover:text-blue-900 disabled:opacity-50 dark:hover:text-blue-200"
+                class="ml-1 hover:text-blue-900 dark:hover:text-blue-200"
               >
                 ×
               </button>
@@ -90,15 +89,13 @@
               @keyup.enter="addSkill"
               type="text"
               :placeholder="t('users.addSkill')"
-              :disabled="skillsBusy"
-              class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
             <button
               type="button"
               :aria-label="t('users.addSkills')"
-              :disabled="skillsBusy"
               @click="pickerOpen = true"
-              class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
               +
             </button>
@@ -110,16 +107,12 @@
               :key="s.id"
               type="button"
               @click="pickSkill(s)"
-              :disabled="skillsBusy"
-              class="rounded-full border border-gray-200 px-2 py-0.5 text-[11px] text-gray-600 hover:border-blue-400 hover:text-blue-600 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:border-blue-500 dark:hover:text-blue-400"
+              class="rounded-full border border-gray-200 px-2 py-0.5 text-[11px] text-gray-600 hover:border-blue-400 hover:text-blue-600 dark:border-gray-600 dark:text-gray-300 dark:hover:border-blue-500 dark:hover:text-blue-400"
             >
               + {{ s.name }}
             </button>
           </div>
           <p class="mt-1 text-[11px] text-gray-400 dark:text-gray-500">{{ t('users.skillNewHint') }}</p>
-          <p v-if="skillsError" class="mt-1 text-[11px] text-rose-600 dark:text-rose-400">
-            {{ skillsErrorText }}
-          </p>
         </div>
 
         <div>
@@ -172,7 +165,6 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { isMockMode } from '@/api/client'
 import { fetchSkills, resetCatalogsCache, type SkillCatalogItem } from '@/api/catalogsApi'
-import { addUserSkill, removeUserSkill, fetchUserSkills, type UserSkill } from '@/api/userSkillsApi'
 import SkillPickerModal from '@/components/users/SkillPickerModal.vue'
 import { useUsersStore } from '@/stores/usersStore'
 import type { User } from '@/types'
@@ -269,131 +261,37 @@ const skillPicker = computed(() => {
 
 function pickSkill(s: { id: string; name: string }) {
   newSkill.value = s.name
-  void addSkill()
+  addSkill()
 }
 
-// Real mode manages skills directly against /users/{id}/skills (#576): the
-// chips read from user_skills, + assigns (find-or-create by name) and ×
-// unlinks immediately, so no full PUT replace is needed. Mock keeps the
-// local chips applied on save via the in-memory store.
-const skillsBusy = ref(false)
-const skillsError = ref<'add' | 'remove' | null>(null)
-const assignedSkills = ref<UserSkill[]>([])
-
-const skillsErrorText = computed(() =>
-  skillsError.value === 'remove' ? t('users.skillRemoveError') : t('users.skillAddError'),
-)
-
-async function loadAssignedSkills() {
-  if (isMockMode() || !props.user) return
-  try {
-    assignedSkills.value = await fetchUserSkills(props.user.id)
-    form.value.skills = assignedSkills.value.map(item => item.name)
-  } catch {
-    // Degrade to the card's skills already copied into the form.
-  }
-}
-
+// Skills are pure form state: chips appear instantly and nothing touches
+// /users/{id}/skills. The whole list travels with "Save changes", whose
+// PUT /users/{id} replaces user_skills in one transaction (#576 follow-up).
+// Mock mode shares this same local path.
 watch(() => props.show, visible => {
   if (visible) {
     loadSkillSuggestions()
-    void loadAssignedSkills()
   }
 }, { immediate: true })
 
-async function addSkill() {
+function addSkill() {
   const skill = newSkill.value.trim()
   if (!skill) return
-  if (!isMockMode() && props.user) {
-    skillsBusy.value = true
-    skillsError.value = null
-    try {
-      const item = await addUserSkill(props.user.id, skill)
-      if (!assignedSkills.value.some(entry => entry.skill_id === item.skill_id)) {
-        assignedSkills.value.push(item)
-      }
-      form.value.skills = assignedSkills.value.map(entry => entry.name).sort((a, b) => a.localeCompare(b))
-      newSkill.value = ''
-      resetCatalogsCache()
-      void loadSkillSuggestions()
-    } catch {
-      skillsError.value = 'add'
-    } finally {
-      skillsBusy.value = false
-    }
-    return
-  }
-  if (!form.value.skills.includes(skill)) {
+  const taken = form.value.skills.some(entry => entry.toLowerCase() === skill.toLowerCase())
+  if (!taken) {
     form.value.skills.push(skill)
-    newSkill.value = ''
   }
+  newSkill.value = ''
 }
 
-async function removeSkill(skill: string) {
-  if (!isMockMode() && props.user) {
-    skillsBusy.value = true
-    skillsError.value = null
-    try {
-      const item = assignedSkills.value.find(entry => entry.name === skill)
-      if (item) await removeUserSkill(props.user.id, item.skill_id)
-      assignedSkills.value = assignedSkills.value.filter(entry => entry.name !== skill)
-      form.value.skills = form.value.skills.filter(s => s !== skill)
-    } catch {
-      skillsError.value = 'remove'
-    } finally {
-      skillsBusy.value = false
-    }
-    return
-  }
+function removeSkill(skill: string) {
   form.value.skills = form.value.skills.filter(s => s !== skill)
 }
 
-// Apply the selection coming from the floating picker (#577): only the delta
-// travels to POST/DELETE /users/{id}/skills, so untouched assignments never
-// move. Mock keeps the local chips applied on save.
-async function applyPickedSkills(names: string[]) {
-  if (isMockMode() || !props.user) {
-    form.value.skills = names
-    return
-  }
-  const current = [...form.value.skills]
-  const nextLower = new Set(names.map(name => name.toLowerCase()))
-  const added = names.filter(name => !current.some(entry => entry.toLowerCase() === name.toLowerCase()))
-  const removed = current.filter(entry => !nextLower.has(entry.toLowerCase()))
-
-  skillsBusy.value = true
-  skillsError.value = null
-  try {
-    for (const name of added) {
-      const item = await addUserSkill(props.user.id, name)
-      if (!assignedSkills.value.some(entry => entry.skill_id === item.skill_id)) {
-        assignedSkills.value.push(item)
-      }
-    }
-  } catch {
-    skillsError.value = 'add'
-  }
-  if (!skillsError.value) {
-    try {
-      for (const name of removed) {
-        const item = assignedSkills.value.find(
-          entry => entry.name.toLowerCase() === name.toLowerCase(),
-        )
-        if (item) {
-          await removeUserSkill(props.user.id, item.skill_id)
-          assignedSkills.value = assignedSkills.value.filter(entry => entry.skill_id !== item.skill_id)
-        }
-      }
-    } catch {
-      skillsError.value = 'remove'
-    }
-  }
-  // Rebuild from the assignments the server actually holds (partial failures
-  // revert the chips that were not applied) and refresh the catalog chips.
-  form.value.skills = assignedSkills.value.map(entry => entry.name).sort((a, b) => a.localeCompare(b))
-  resetCatalogsCache()
-  void loadSkillSuggestions()
-  skillsBusy.value = false
+// Apply the selection coming from the floating picker (#577): local only,
+// applied together with the rest of the form on "Save changes".
+function applyPickedSkills(names: string[]) {
+  form.value.skills = names
 }
 
 function close() {
@@ -405,6 +303,9 @@ function save() {
   // save so errors keep the form open (#566/#567). Closing unconditionally
   // here hid failed saves (e.g. a 429) behind an already-dismissed window.
   if (props.user) {
+    // The PUT upserts catalog rows for free-text skills, so the cached
+    // GET /skills must not serve a stale vocabulary after this save.
+    resetCatalogsCache()
     emit('save', {
       ...props.user,
       ...form.value,
