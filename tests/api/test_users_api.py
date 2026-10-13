@@ -465,6 +465,25 @@ def test_create_user_duplicate_email_409(monkeypatch: pytest.MonkeyPatch):
     assert len(cursor.users) == 1
 
 
+def test_create_user_empty_email_stored_as_null(monkeypatch: pytest.MonkeyPatch):
+    """``""`` (create form without email) must store NULL: a second no-email user
+    used to collide on ``UNIQUE (human_user.email)`` once the first stored ``""``."""
+    cursor = FakePgCursor()
+    _install_create(monkeypatch, cursor)
+
+    first = user_router.create_user(
+        UserCreateRequest(username="uno", email="", role="developer"),
+        driver=None,
+    )
+    second = user_router.create_user(
+        UserCreateRequest(username="dos", email="", role="developer"),
+        driver=None,
+    )
+
+    assert cursor.human[first.data.id]["email"] is None
+    assert cursor.human[second.data.id]["email"] is None
+
+
 def test_create_user_invalid_role_422(monkeypatch: pytest.MonkeyPatch):
     cursor = FakePgCursor()
     _install_create(monkeypatch, cursor)
@@ -775,6 +794,24 @@ def test_update_user_duplicate_email_409(monkeypatch: pytest.MonkeyPatch):
     assert exc.value.status_code == 409
     assert exc.value.detail == "email already exists"
     assert cursor.human[uid_b]["email"] == "bea@x.com"
+
+
+def test_update_user_empty_email_keeps_stored_value(monkeypatch: pytest.MonkeyPatch):
+    """``PUT {email: ""}`` (the client's normalization of a null email) must keep
+    the stored value instead of writing ``""``, which collided with other empty
+    emails under ``UNIQUE (human_user.email)`` (409)."""
+    from socialseed_tasker.infrastructure.web_api.schemas import UserUpdateRequest
+
+    cursor = FakePgCursor()
+    _install_create(monkeypatch, cursor)
+    uid = _seed_user(monkeypatch, cursor, username="ana", email="ana@x.com")
+
+    response = user_router.update_user(
+        uid, UserUpdateRequest(email=""), request=MagicMock(), driver=None
+    )
+
+    assert response.data.email == "ana@x.com"
+    assert cursor.human[uid]["email"] == "ana@x.com"
 
 
 def test_update_user_keeps_its_own_username_and_email(monkeypatch: pytest.MonkeyPatch):

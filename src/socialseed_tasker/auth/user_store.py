@@ -836,8 +836,10 @@ class PostgresUserStore:
         is the bcrypt digest persisted in ``human_user`` (#563); the empty
         string means "no login possible". Returns the new uid. Raises
         ``ValueError("username"|"email")`` on uniqueness conflicts (mapped to
-        409 by the router, issue #559).
+        409 by the router, issue #559). ``""`` is stored as a NULL email so
+        several no-email users cannot collide on ``UNIQUE (email)``.
         """
+        email = email or None
         normalized = normalize_username(username)
         with closing(psycopg.connect(self._database_url, autocommit=False)) as conn:
             try:
@@ -918,12 +920,14 @@ class PostgresUserStore:
     ) -> bool:
         """Update ``users`` + ``human_user`` + ``user_skills`` atomically (#560).
 
-        ``None`` keeps the stored value; ``skills`` (when not ``None``) fully
+        ``None`` (or ``""``, which the API clients send when the profile has no
+        email) keeps the stored value; ``skills`` (when not ``None``) fully
         replaces the skill links. The row is never deleted nor re-inserted, so
         ``password_hash`` survives. Returns ``False`` when the identity row does
         not exist (router maps it to 404) and raises ``ValueError("username"|
         "email")`` on uniqueness conflicts against *other* users (409).
         """
+        email = email or None
         normalized = normalize_username(username) if username else None
         with closing(psycopg.connect(self._database_url, autocommit=False)) as conn:
             try:
