@@ -25,7 +25,7 @@ integration:
 	$(PY) -m pip install -e ".[dev]"
 	$(DEV_COMPOSE) up -d
 	./scripts/wait-for-service.sh http://localhost:7474 60
-	pytest -q -m integration
+	TASKER_INTEGRATION=1 pytest -q -m integration
 
 example-run:
 	$(PY) -m pip install -e ".[dev]"
