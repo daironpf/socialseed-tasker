@@ -20,7 +20,7 @@ services:
       - neo4j-data:/var/lib/neo4j/data
     healthcheck:
       test: [ "CMD-SHELL", "echo 'RETURN 1' | cypher-shell -u neo4j -p ${TASKER_NEO4J_PASSWORD:-neoSocial} || exit 1" ]
-      interval: 10s
+      interval: 30s
       timeout: 10s
       retries: 30
     networks:
@@ -43,7 +43,7 @@ services:
       - pg-data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U tasker -d tasker" ]
-      interval: 10s
+      interval: 30s
       timeout: 5s
       retries: 10
     networks:
@@ -59,7 +59,7 @@ services:
       - redis-data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
-      interval: 10s
+      interval: 30s
       timeout: 5s
       retries: 10
     networks:
@@ -74,7 +74,7 @@ services:
       - mongo-data:/data/db
     healthcheck:
       test: [ "CMD-SHELL", "mongosh --quiet --eval \"db.adminCommand('ping')\" || exit 1" ]
-      interval: 10s
+      interval: 30s
       timeout: 5s
       retries: 10
     networks:
