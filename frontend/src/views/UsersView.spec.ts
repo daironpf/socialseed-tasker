@@ -330,6 +330,44 @@ describe('UsersView create flow (issue #563)', () => {
     expect(wrapper.find('[data-testid="temp-password"]').exists()).toBe(false)
     expect(useUsersStore().users.some(u => u.id === 'uid-boss')).toBe(true)
   })
+
+  it('hides the create modal right away and shows the saving overlay while the POST runs', async () => {
+    type CreateUserResult = Awaited<ReturnType<typeof usersApi.createUser>>
+    let resolvePost!: (value: CreateUserResult) => void
+    vi.mocked(usersApi.createUser).mockImplementation(
+      () => new Promise<CreateUserResult>(resolve => { resolvePost = resolve }),
+    )
+
+    const wrapper = await mountView()
+    await wrapper.findAll('button').find(b => b.text() === '+ New User')!.trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findComponent(CreateUserModal).props('show')).toBe(true)
+
+    const modal = wrapper.findComponent(CreateUserModal)
+    ;(modal.vm as unknown as { $emit: (e: string, d: unknown) => void }).$emit('save', {
+      username: 'boss',
+      email: 'boss@x.com',
+      role: 'admin',
+      type: 'human',
+      avatar: '🦊',
+      skills: [],
+    })
+    await wrapper.vm.$nextTick()
+
+    // While the request is in flight: modal gone, overlay visible, no dialog yet.
+    expect(wrapper.findComponent(CreateUserModal).props('show')).toBe(false)
+    expect(wrapper.text()).toContain('Creating user...')
+    expect(wrapper.find('[data-testid="temp-password"]').exists()).toBe(false)
+
+    resolvePost({
+      user: { ...makeHuman('uid-boss', 'boss'), role: 'ADMIN' },
+      temporaryPassword: 'temp-abc123',
+    } as CreateUserResult)
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Creating user...')
+    expect(wrapper.find('[data-testid="temp-password"]').exists()).toBe(true)
+  })
 })
 
 describe('UsersView create agent flow (issue #566)', () => {
@@ -420,7 +458,9 @@ describe('UsersView create agent flow (issue #566)', () => {
     await emitAgentSave(wrapper)
 
     expect(toastError).toHaveBeenCalledWith('That username is already taken')
-    expect(wrapper.findComponent(CreateUserModal).props('show')).toBe(true) // stays open (#566)
+    expect(wrapper.findComponent(CreateUserModal).props('show')).toBe(true) // reopens (#566)
+    // the typed draft comes back with the reopened modal (#566)
+    expect(wrapper.findComponent(CreateUserModal).props('initial')).toMatchObject({ username: 'bot-qa' })
     expect(useUsersStore().users.some(u => u.type === 'agent')).toBe(false)
   })
 

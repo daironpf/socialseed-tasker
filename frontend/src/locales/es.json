@@ -339,6 +339,7 @@
     "systemPromptPlaceholder": "Instrucciones para el agente...",
     "saveChanges": "Guardar cambios",
     "saving": "Guardando cambios...",
+    "creating": "Creando usuario...",
     "leadDeveloper": "Lead Developer",
     "developer": "Developer",
     "designer": "Designer",

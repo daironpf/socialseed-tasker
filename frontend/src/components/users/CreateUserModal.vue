@@ -243,14 +243,29 @@ import SkillPickerModal from '@/components/users/SkillPickerModal.vue'
 
 const { t } = useI18n()
 
+interface CreateUserData {
+  username: string
+  email: string
+  role: string
+  type: string
+  avatar: string
+  skills: string[]
+  model?: string
+  specialization?: string
+  system_prompt?: string
+}
+
 interface Props {
   show: boolean
+  /** Draft kept by the parent after a failed create hides this modal first;
+   *  reopening restores every typed field (#566). */
+  initial?: CreateUserData | null
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'save', data: { username: string; email: string; role: string; type: string; avatar: string; skills: string[]; model?: string; specialization?: string; system_prompt?: string }): void
+  (e: 'save', data: CreateUserData): void
 }>()
 
 const form = ref({
@@ -270,8 +285,9 @@ function resetForm() {
   pickerOpen.value = false
 }
 
-// Fresh form on every open: `save()` only emits, the parent closes the modal
-// once the API answers 201 (#566 - on 409/422/503 it stays open for fixing).
+// The parent hides this modal on the create click and reports the POST
+// through a saving overlay; a failure reopens it with `initial` (the draft),
+// otherwise every open starts fresh (#566 - 409/422/503 keep the typed data).
 // Skill picker (#576 UX fix): the native <datalist> never opens on the "+"
 // button, only while typing in the input, so the catalog is rendered as
 // visible clickable chips instead. Real mode reads GET /skills; mock derives
@@ -311,6 +327,20 @@ watch(
   visible => {
     if (visible) {
       resetForm()
+      const draft = props.initial
+      if (draft) {
+        form.value = {
+          username: draft.username,
+          email: draft.email,
+          role: draft.role,
+          type: draft.type as 'human' | 'agent',
+          avatar: draft.avatar,
+          skills: [...draft.skills],
+          model: draft.model ?? '',
+          specialization: draft.specialization ?? '',
+          system_prompt: draft.system_prompt ?? '',
+        }
+      }
       loadSkillSuggestions()
     }
   },
@@ -372,8 +402,9 @@ function close() {
 }
 
 function save() {
-  // Only emit: the parent (UsersView) closes the modal after a successful
-  // API response so a 409/422/503 keeps the form open (#566).
+  // Only emit: the parent (UsersView) hides this modal immediately and shows
+  // a saving overlay while the POST runs; on failure it reopens with the
+  // draft so nothing typed is lost (#566 pattern).
   emit('save', { ...form.value })
 }
 </script>

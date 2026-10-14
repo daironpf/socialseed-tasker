@@ -290,23 +290,26 @@
     <!-- Create User Modal -->
     <CreateUserModal
       :show="showCreateModal"
-      @close="showCreateModal = false"
+      :initial="createDraft"
+      @close="closeCreate"
       @save="createUser"
     />
 
     <!-- One-time temporary password of the created human (#563) -->
     <TemporaryPasswordDialog :password="temporaryPassword" @close="temporaryPassword = null" />
 
-    <!-- Saving overlay: the edit modal hides on click while the PUT runs, so
-         the view never looks frozen during a save. -->
+    <!-- Saving overlay: edit and create modals hide on click while their
+         request runs, so the view never looks frozen during a save. -->
     <div
-      v-if="savingUser"
+      v-if="savingUser || creatingUser"
       role="status"
       aria-live="polite"
       class="fixed inset-0 z-[90] flex flex-col items-center justify-center gap-3 bg-black/50"
     >
       <LoadingSpinner />
-      <p class="text-sm font-medium text-white">{{ t('users.saving') }}</p>
+      <p class="text-sm font-medium text-white">
+        {{ creatingUser ? t('users.creating') : t('users.saving') }}
+      </p>
     </div>
   </div>
 </template>
@@ -355,7 +358,26 @@ const showEditUserModal = ref(false)
 const editingUser = ref<User | null>(null)
 const savingUser = ref(false)
 
+type CreateUserData = {
+  username: string
+  email: string
+  role: string
+  type: string
+  avatar: string
+  skills: string[]
+  model?: string
+  specialization?: string
+  system_prompt?: string
+}
+
 const showCreateModal = ref(false)
+const creatingUser = ref(false)
+const createDraft = ref<CreateUserData | null>(null)
+
+function closeCreate() {
+  showCreateModal.value = false
+  createDraft.value = null
+}
 
 const humans = computed(() => usersStore.humans)
 const agents = computed(() => usersStore.agents)
@@ -577,7 +599,12 @@ async function deleteAgent(user: User) {
 
 const temporaryPassword = ref<string | null>(null)
 
-async function createUser(data: { username: string; email: string; role: string; type: string; avatar: string; skills: string[]; model?: string; specialization?: string; system_prompt?: string }) {
+async function createUser(data: CreateUserData) {
+  // Same contract as saveUser: hide the modal right away, report progress
+  // through the overlay, and reopen with the draft when the POST fails so a
+  // 409/422/503 never loses what the user typed (#566).
+  showCreateModal.value = false
+  creatingUser.value = true
   try {
     if (data.type === 'agent') {
       // Dedicated endpoint (#564): no credential, so no temporary-password dialog (#566).
@@ -594,8 +621,7 @@ async function createUser(data: { username: string; email: string; role: string;
       const result = await usersStore.createUser(data)
       if (result.temporaryPassword) temporaryPassword.value = result.temporaryPassword
     }
-    // Close only on success: on 409/422/503 the modal stays open (#566).
-    showCreateModal.value = false
+    createDraft.value = null
   } catch (e) {
     const err = e as Error & { status?: number }
     if (err.status === 409) {
@@ -605,6 +631,10 @@ async function createUser(data: { username: string; email: string; role: string;
     } else {
       toast.error(t('common.error'))
     }
+    createDraft.value = data
+    showCreateModal.value = true
+  } finally {
+    creatingUser.value = false
   }
 }
 
