@@ -154,6 +154,34 @@ describe('UsersView edit flow (issue #560)', () => {
     expect(badges).toHaveLength(2)
   })
 
+  it('hides the modal right away and shows the saving overlay while the PUT runs', async () => {
+    let resolvePut!: (user: User) => void
+    vi.mocked(usersApi.updateUser).mockImplementation(
+      () => new Promise<User>(resolve => { resolvePut = resolve }),
+    )
+
+    const wrapper = await mountView()
+
+    await wrapper.findAll('button[aria-label="Edit user"]')[0].trigger('click')
+    await wrapper.vm.$nextTick()
+    const save = wrapper.findAll('button').find(b => b.text() === 'Save changes')
+    expect(save).toBeTruthy()
+    await save!.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    // While the request is in flight: modal gone, overlay visible, no toast yet.
+    expect(wrapper.findComponent(EditUserModal).props('show')).toBe(false)
+    expect(wrapper.text()).toContain('Saving changes...')
+    expect(toastSuccess).not.toHaveBeenCalled()
+
+    resolvePut({ ...makeHuman('uid-ana', 'ana'), username: 'ana-g' })
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Saving changes...')
+    expect(toastSuccess).toHaveBeenCalledWith('User updated successfully')
+    expect(wrapper.findComponent(EditUserModal).props('show')).toBe(false)
+  })
+
   it('translates a 409 conflict into the username toast', async () => {
     vi.mocked(usersApi.updateUser).mockRejectedValue(
       Object.assign(new Error('username already exists'), { status: 409 }),

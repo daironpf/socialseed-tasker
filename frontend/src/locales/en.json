@@ -338,6 +338,7 @@
     "systemPrompt": "System Prompt",
     "systemPromptPlaceholder": "Instructions for the agent...",
     "saveChanges": "Save changes",
+    "saving": "Saving changes...",
     "leadDeveloper": "Lead Developer",
     "developer": "Developer",
     "designer": "Designer",

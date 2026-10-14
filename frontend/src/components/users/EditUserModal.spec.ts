@@ -190,8 +190,8 @@ describe('EditUserModal — skills stay local until Save changes (#576 follow-up
     // Still no per-skill endpoints: everything went through the save payload.
     expect(addUserSkill).not.toHaveBeenCalled()
     expect(removeUserSkill).not.toHaveBeenCalled()
-    // The modal must not close itself: the parent closes it only after a
-    // successful save, so a failed PUT keeps the form open (#566 pattern).
+    // The modal must not close itself: the parent hides it on save and
+    // reopens the draft if the PUT fails (#566 pattern).
     expect(wrapper.emitted('close')).toBeUndefined()
   })
 

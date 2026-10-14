@@ -296,6 +296,18 @@
 
     <!-- One-time temporary password of the created human (#563) -->
     <TemporaryPasswordDialog :password="temporaryPassword" @close="temporaryPassword = null" />
+
+    <!-- Saving overlay: the edit modal hides on click while the PUT runs, so
+         the view never looks frozen during a save. -->
+    <div
+      v-if="savingUser"
+      role="status"
+      aria-live="polite"
+      class="fixed inset-0 z-[90] flex flex-col items-center justify-center gap-3 bg-black/50"
+    >
+      <LoadingSpinner />
+      <p class="text-sm font-medium text-white">{{ t('users.saving') }}</p>
+    </div>
   </div>
 </template>
 
@@ -341,6 +353,7 @@ const editingAgent = ref<User | null>(null)
 
 const showEditUserModal = ref(false)
 const editingUser = ref<User | null>(null)
+const savingUser = ref(false)
 
 const showCreateModal = ref(false)
 
@@ -518,9 +531,14 @@ function closeEditUser() {
 }
 
 async function saveUser(updatedUser: User) {
+  // Close the modal right away and report progress through the saving
+  // overlay: the draft is kept in editingUser, so a failed PUT reopens the
+  // form with every edit intact (#566 still holds: errors never lose data).
+  showEditUserModal.value = false
+  savingUser.value = true
   try {
     await usersStore.updateUser(updatedUser.id, updatedUser)
-    closeEditUser()
+    editingUser.value = null
     toast.success(t('users.updated'))
   } catch (e) {
     const err = e as Error & { status?: number }
@@ -531,6 +549,10 @@ async function saveUser(updatedUser: User) {
     } else {
       toast.error(t('common.error'))
     }
+    editingUser.value = updatedUser
+    showEditUserModal.value = true
+  } finally {
+    savingUser.value = false
   }
 }
 

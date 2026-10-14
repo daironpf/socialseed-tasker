@@ -299,9 +299,9 @@ function close() {
 }
 
 function save() {
-  // Only emit: the parent (UsersView) closes the modal after a successful
-  // save so errors keep the form open (#566/#567). Closing unconditionally
-  // here hid failed saves (e.g. a 429) behind an already-dismissed window.
+  // Only emit: the parent (UsersView) hides this modal immediately and shows
+  // a saving overlay while the PUT runs; on failure it reopens the form with
+  // this draft so no edit is lost (#566 pattern).
   if (props.user) {
     // The PUT upserts catalog rows for free-text skills, so the cached
     // GET /skills must not serve a stale vocabulary after this save.
