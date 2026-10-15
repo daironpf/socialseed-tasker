@@ -625,3 +625,63 @@ describe('UsersView user issues (issue #570)', () => {
     expect(wrapper.text()).not.toContain('Mock closed')
   })
 })
+
+describe('UsersView pagination', () => {
+  let previousMode: typeof apiMode.value
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    previousMode = apiMode.value
+    apiMode.value = 'real'
+    const humans = Array.from({ length: 13 }, (_, i) => makeHuman(`uid-p${i + 1}`, `user${i + 1}`))
+    vi.mocked(usersApi.fetchUsers).mockResolvedValue(humans)
+    vi.mocked(fetchAgentProfiles).mockResolvedValue([])
+    vi.mocked(fetchUserIssueStats).mockResolvedValue({ assigned: 0, created: 0, completed: 0 })
+    vi.mocked(issuesApi.fetchIssues).mockResolvedValue({
+      items: [],
+      pagination: { page: 1, limit: 200, total: 0, has_next: false, has_prev: false },
+    })
+  })
+
+  afterEach(() => {
+    apiMode.value = previousMode
+  })
+
+  it('slices the grid into pages and moves between them', async () => {
+    const wrapper = await mountView()
+
+    expect(wrapper.findAll('button[aria-label="Edit user"]').length).toBe(12)
+    expect(wrapper.text()).toContain('Page 1 of 2')
+
+    const prev = wrapper.findAll('button').find(b => b.text() === 'Previous')
+    const next = wrapper.findAll('button').find(b => b.text() === 'Next')
+    expect(prev).toBeTruthy()
+    expect(next).toBeTruthy()
+    expect(prev!.attributes('disabled')).toBeDefined()
+    expect(next!.attributes('disabled')).toBeUndefined()
+
+    await next!.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.findAll('button[aria-label="Edit user"]').length).toBe(1)
+    expect(wrapper.text()).toContain('Page 2 of 2')
+    const prev2 = wrapper.findAll('button').find(b => b.text() === 'Previous')
+    expect(prev2!.attributes('disabled')).toBeUndefined()
+
+    await prev2!.trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findAll('button[aria-label="Edit user"]').length).toBe(12)
+    expect(wrapper.text()).toContain('Page 1 of 2')
+  })
+
+  it('hides the controls while everything fits on a single page', async () => {
+    vi.mocked(usersApi.fetchUsers).mockResolvedValue([makeHuman('uid-ana', 'ana')])
+
+    const wrapper = await mountView()
+
+    expect(wrapper.findAll('button[aria-label="Edit user"]').length).toBe(1)
+    expect(wrapper.findAll('button').find(b => b.text() === 'Previous')).toBeUndefined()
+    expect(wrapper.findAll('button').find(b => b.text() === 'Next')).toBeUndefined()
+    expect(wrapper.text()).not.toContain('Page 1 of 1')
+  })
+})

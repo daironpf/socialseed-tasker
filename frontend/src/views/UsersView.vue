@@ -44,7 +44,7 @@
       <!-- Users Grid -->
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <div
-          v-for="user in usersStore.users"
+          v-for="user in pagedUsers"
           :key="user.id"
           class="rounded-xl border border-gray-200 bg-white p-5 transition-shadow hover:shadow-lg dark:border-gray-700 dark:bg-gray-800"
         >
@@ -173,6 +173,29 @@
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Pagination (client-side slice of the full store list) -->
+      <div v-if="totalPages > 1" class="mt-6 flex items-center justify-between">
+        <span class="text-xs text-gray-500 dark:text-gray-400">
+          {{ t('users.page', { page, total: totalPages }) }}
+        </span>
+        <div class="flex gap-2">
+          <button
+            class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            :disabled="page <= 1"
+            @click="page--"
+          >
+            {{ t('users.prevPage') }}
+          </button>
+          <button
+            class="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            :disabled="page >= totalPages"
+            @click="page++"
+          >
+            {{ t('users.nextPage') }}
+          </button>
         </div>
       </div>
     </div>
@@ -315,7 +338,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
@@ -383,6 +406,24 @@ const humans = computed(() => usersStore.humans)
 const agents = computed(() => usersStore.agents)
 const isLastHuman = computed(() => humans.value.length <= 1)
 const allIssues = computed(() => issuesStore.issues)
+
+// Client-side pagination: the store still holds every user so the stat
+// counters, pickers and last-human guard keep working; only the grid is
+// sliced (12 = full rows on the 3/4-column layout).
+const PAGE_SIZE = 12
+const page = ref(1)
+const totalPages = computed(() => Math.max(1, Math.ceil(usersStore.users.length / PAGE_SIZE)))
+const pagedUsers = computed(() => {
+  const start = (page.value - 1) * PAGE_SIZE
+  return usersStore.users.slice(start, start + PAGE_SIZE)
+})
+// Deleting the last card of the last page would leave an empty grid.
+watch(
+  () => usersStore.users.length,
+  () => {
+    if (page.value > totalPages.value) page.value = totalPages.value
+  },
+)
 
 function getUserAssignedCount(userId: string): number | string {
   if (isMockMode()) {
