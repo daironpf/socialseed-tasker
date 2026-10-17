@@ -6,15 +6,33 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 
 ## [Unreleased]
 
-### Fixed
-- Unicode encoding error on Windows: `tasker init` now handles UTF-8 characters correctly without manual `chcp 65001` configuration
-- Interactive input piping: `tasker init` now supports `--project-name` and `--mode` flags for non-interactive initialization
-- Force flag behavior: `tasker init --force` no longer asks for confirmation when overwriting existing `.agent/` directory
-
 ### Added
+- [#559-#563] User management against the real API: human create/edit/delete with normalized schemas, one-time temporary password with immediate login, session revocation on role change, cascade delete of the Postgres root with its sessions
+- [#564-#568] Agent profiles CRUD on `/agents/profiles`: listing with merged sources plus create, edit and delete from the user cards
+- [#569-#570] Per-user issue stats: `assignee`/`created_by` by uid, `GET /users/{id}/issues` endpoints, counters and issues modal per card, 404-aware list refresh
+- [#571] Session logs on Postgres, written on login and logout
+- [#572] `GET /skills` and `GET /tools` catalogs, with pickers in the UI
+- [#573] Agent Studio persistence on `/agents/profiles` with one-time profile import
+- [#574] Agent runs history on Postgres with best-effort flush
+- [#575] Workflow definitions library on Postgres with `.md` import
+- [#576-#577] Granular human skills management and floating skill picker for agents in the modals
+- Frontend test suite: 60 Vitest suites (453 tests) under `frontend/src/**`, running in `frontend-ci` next to the Playwright e2e suite
+- Opt-in live-infra integration gate (`TASKER_INTEGRATION=1`) so routine gates no longer wipe the real Neo4j
 - `_setup_windows_encoding()` function in `init_command.py` for automatic UTF-8 setup on Windows
 - `--project-name` / `-pn` flag for non-interactive project name configuration
 - `--mode` / `-m` flag for non-interactive connection mode selection (direct/api/full)
+
+### Changed
+- Users grid paginated client-side (12 per page) with "Page X of Y" and Previous/Next controls
+- Local-first forms: skills stay local in the edit and create modals until "Save changes"; save and create hide the modal immediately behind a loading overlay and reopen it with the typed draft when the request fails
+- Docker healthchecks interval raised from 10s to 30s (lower CPU, about 40s cold start after `docker compose up -d`)
+- Rate limiter limits documented; the UI retries on 429 responses
+
+### Fixed
+- Empty email treated as null on user create/update so it no longer collides with the unique constraint
+- Unicode encoding error on Windows: `tasker init` now handles UTF-8 characters correctly without manual `chcp 65001` configuration
+- Interactive input piping: `tasker init` now supports `--project-name` and `--mode` flags for non-interactive initialization
+- Force flag behavior: `tasker init --force` no longer asks for confirmation when overwriting existing `.agent/` directory
 
 ## [v1.0.2] - 2026-06-30
 

@@ -9,13 +9,15 @@ frontend turns it into a board you actually want to work in — with AI agents w
 same governance rules as humans: they plan, you approve (HITL), policies veto, and an audit
 log remembers everything.
 
-**What's already built** is not a prototype sketch — it's the result of **514 resolved issues**:
-~28,500 lines of typed frontend (78 components, 27 views, 24 stores, full EN/ES i18n), a real
+**What's already built** is not a prototype sketch — it's the result of **580 resolved issues**:
+~44,000 lines of typed frontend (105 components, 29 views, 37 stores, 453 Vitest tests, full EN/ES i18n), a real
 backend with code-as-graph analysis (tree-sitter), RAG-style reasoning, secrets management and
-a CLI, plus a complete mock dataset so the whole UI runs standalone in one command.
+a CLI, user/agent management already wired end-to-end against the real API (users, agent
+profiles, skills catalogs, runs and workflows on Postgres), plus a complete mock dataset so
+the whole UI runs standalone in one command.
 
-**Where it's headed** is documented in [Roadmap](#roadmap) — end-to-end wiring to the real
-backend, a frontend test suite, and turning the simulated agents into real LLM-backed ones.
+**Where it's headed** is documented in [Roadmap](#roadmap) — finishing the real-backend wiring
+for the remaining views and turning the simulated agents into real LLM-backed ones.
 
 ---
 
@@ -63,7 +65,8 @@ Open **http://127.0.0.1:19001** and you're in.
 | **Real API** | http://127.0.0.1:8888 | FastAPI + Neo4j (optional for UI) |
 | **Neo4j Browser** | http://127.0.0.1:7474 | login `neo4j` / `neoSocial` |
 
-The UI runs in **mock mode** (`USE_MOCK = true` in `frontend/src/api/client.ts`): every CRUD
+The UI runs in **mock mode** by default (resolution order: user-menu toggle / localStorage
+`socialseed-api-mode` > `VITE_USE_MOCK` env > mock): every CRUD
 operation round-trips through the mock API and persists to
 `frontend/dataset-de-pruebas/*.json` — no database needed to explore.
 
@@ -116,7 +119,7 @@ pip install -e .
 TASKER_API_PORT=8000 python -m socialseed_tasker.infrastructure.web_api
 # PowerShell: $env:TASKER_API_PORT="8000"; python -m socialseed_tasker.infrastructure.web_api
 
-# 3. Point the UI at it: set USE_MOCK = false in frontend/src/api/client.ts
+# 3. Point the UI at it: flip the Mock/Real toggle in the user menu (or build with VITE_USE_MOCK=false)
 #    then start the frontend (Option B)
 ```
 
@@ -131,24 +134,25 @@ dependencies on first boot.
 socialseed-tasker/
 ├── frontend/                  # Vue 3 + TypeScript + Vite + Tailwind
 │   ├── src/
-│   │   ├── views/             # 27 pages (Board, Graph, HITL, Studio…)
-│   │   ├── components/        # 78 reusable components
-│   │   ├── stores/            # 24 Pinia stores
+│   │   ├── views/             # 29 pages (Board, Graph, HITL, Studio…)
+│   │   ├── components/        # 105 reusable components
+│   │   ├── stores/            # 37 Pinia stores
 │   │   ├── composables/       # useToast, useSoundEffects, useExport…
 │   │   ├── api/               # client.ts (axios) + mockApi.ts (fetch)
-│   │   ├── locales/           # i18n: en.json / es.json (~1,415 keys)
-│   │   └── types/             # shared TypeScript contracts
+│   │   ├── locales/           # i18n: en.json / es.json (~1,780 keys)
+│   │   ├── types/             # shared TypeScript contracts
+│   │   └── **/*.spec.ts       # Vitest suites (60 files, 453 tests)
 │   └── dataset-de-pruebas/    # mock dataset (live JSON persistence)
 ├── src/socialseed_tasker/     # Python backend (FastAPI, hexagonal-ish)
 │   ├── cli/                   # `tasker` CLI (typer + rich)
 │   ├── infrastructure/        # web_api (FastAPI), repos (Neo4j)
 │   └── application/           # use cases, container/DI
-├── tests/                     # 146 pytest files (unit, integration, e2e, contracts)
+├── tests/                     # 161 pytest files (unit, integration, e2e, contracts)
 ├── .github/workflows/         # CI: lint, mypy, pytest (3.10–3.12), release, security
 ├── mock-api/server.py         # standalone mock backend for the UI
-├── docker-compose.yml         # 4 services: db, api, board, mock-api
+├── docker-compose.yml         # 7 services: neo4j, postgres, redis, mongo, api, board, mock-api
 ├── features.md                # living feature inventory (68 sections)
-└── .issues/                   # issue tracker: to-do/ + done/ (515 closed)
+└── .issues/                   # issue tracker: to-do/ + done/ (580 closed)
 ```
 
 ---
@@ -162,6 +166,7 @@ socialseed-tasker/
 | **Governance** | Policies & sandboxed testing, constraint validation, governance matrix (agent × risk), audit log (hash-chained), SLA metrics |
 | **Human in the loop** | HITL command center, global approval banner, quick-action modal with diff & impact preview, notification click-through |
 | **AI agents** | Agent Studio (builder + prompt validation + sandbox + library), agent replay, MCP inspector, kill switch & live timer, FinOps (token costs, ROI, budgets, caps) |
+| **Users & agents** | Real-API-backed management of humans and AI agents: create with one-time temporary password, edit/delete from the card, per-user issue counters & issues modal, skills catalogs with pickers, Agent Studio persistence, runs history, workflows library, client-side pagination, local-first forms with save overlays |
 | **Resilience** | Auto-healing pipeline monitor, offline-first sync queue with conflict resolution, network mode simulator (online/degraded/offline) |
 | **Collaboration** | Chat with agents & users, floating chat widget, presence avatars, typing indicators, mentions |
 | **Reports** | Executive dashboard, analytics dashboard (MTTR, healing rate, budget), report exporter (PDF / PNG / JSON), CSV/JSON export everywhere |
@@ -229,7 +234,7 @@ files — perfect for demos and UI work) and the **real API** (FastAPI → repos
 Neo4j, with domain use cases, tree-sitter code analysis and a Typer CLI). In Docker, nginx
 inside the frontend container proxies `/api/` and `/mock-api/` to the sibling services, so the
 browser only ever talks to one origin. Both backends expose the same shapes, which is why
-flipping `USE_MOCK` is the only thing needed to move between them.
+flipping the API mode (user-menu toggle or `VITE_USE_MOCK`) is the only thing needed to move between them.
 
 ---
 
@@ -237,21 +242,18 @@ flipping `USE_MOCK` is the only thing needed to move between them.
 
 Where this is going next, roughly in order:
 
-1. **Real backend end-to-end** — finish wiring the UI against the real API as the default
-   (seeded Neo4j, parity gaps closed), keeping the mock as an instant-demo switch.
-2. **UI test suite** — the backend already ships 146 pytest files (unit, integration, e2e,
-   contracts) behind a GitHub Actions pipeline (ruff/black/mypy/pytest across Python
-   3.10–3.12); the frontend has none. Add Vitest component tests and a few Playwright smoke
-   flows for the board, graph and HITL journeys.
-3. **Performance pass** — split the heavy chunks (elk/cytoscape/GraphView are >500 kB each),
+1. **Real backend end-to-end** — finish wiring the UI against the real API: users, agent profiles, skills/tools catalogs,
+   agent runs, workflows and session logs already talk to it (Postgres-backed); next is
+   board/graph/HITL parity on seeded Neo4j, keeping the mock as an instant-demo switch.
+2. **Performance pass** — split the heavy chunks (elk/cytoscape/GraphView are >500 kB each),
    virtualize long lists, lazy-load diagram libraries per view.
-4. **Realtime everywhere** — promote the mocked SSE/event stream to actual WebSocket
+3. **Realtime everywhere** — promote the mocked SSE/event stream to actual WebSocket
    channels for presence, audit tail and agent logs.
-5. **Real LLMs in Agent Studio** — swap the deterministic sandbox simulator for actual
+4. **Real LLMs in Agent Studio** — swap the deterministic sandbox simulator for actual
    model providers behind the same prompt/tool/limit contracts.
-6. **Offline v2** — upgrade the localStorage sync queue to IndexedDB with background retry
+5. **Offline v2** — upgrade the localStorage sync queue to IndexedDB with background retry
    and background sync (PWA installable shell).
-7. **GitHub two-way sync** — push issues to GitHub and reconcile inbound webhooks.
+6. **GitHub two-way sync** — push issues to GitHub and reconcile inbound webhooks.
 
 ---
 
@@ -262,7 +264,7 @@ Where this is going next, roughly in order:
 | Frontend | Vue 3.5 · TypeScript · Vite 6 · Tailwind 3 · Pinia · vue-i18n · vis-network |
 | Backend | Python 3.10+ · FastAPI · Neo4j 5 · Typer CLI · tree-sitter · pydantic |
 | Mock | FastAPI + JSON dataset (drop-in replacement, read/write) |
-| Tooling | Frontend gate: `vue-tsc -b && vite build` · Backend CI: ruff, black, isort, mypy, pytest (GitHub Actions) |
+| Tooling | Frontend gate: Vitest (453 tests) + `vue-tsc -b && vite build` · Backend CI: ruff, black, isort, mypy, pytest (GitHub Actions) |
 
 ```bash
 cd frontend && npm run build   # type-check + production bundle (frontend's quality gate)
@@ -305,12 +307,12 @@ the `git checkout` restore above.)
 | Blank page / `Unexpected token '<'` | Mock API down — start it (Option B, terminal 1) or `docker compose up -d mock-api` |
 | Port already in use | Ensure no stale containers: `docker compose ps`, `docker ps -a` |
 | Data not saving locally | `DATA_DIR` must point to `frontend/dataset-de-pruebas` |
-| Switching to real API | Set `USE_MOCK = false` in `frontend/src/api/client.ts` and rebuild; local dev needs the API on `:8000`, Docker routes `/api/` automatically via nginx |
+| Switching to real API | Use the Mock/Real toggle in the user menu (persists in localStorage) or build with `VITE_USE_MOCK=false`; local dev needs the API on `:8000`, Docker routes `/api/` automatically via nginx |
 | i18n missing keys | `en.json` and `es.json` must stay structurally in sync |
 
 ---
 
 <p align="center">
-  <b>SocialSeed Tasker v1.0.5</b> · 514 issues resolved · Apache-2.0<br/>
+  <b>SocialSeed Tasker v1.0.5</b> · 580 issues resolved · Apache-2.0<br/>
   Built by <a href="https://github.com/daironpf">Dairon Pérez Frías</a>
 </p>
