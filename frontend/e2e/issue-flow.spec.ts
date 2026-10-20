@@ -19,7 +19,7 @@ test.describe('issue flow', () => {
     await expect(card).toBeVisible()
 
     await card.click()
-    const closeDetail = page.getByLabel('Close')
+    const closeDetail = page.getByLabel('Close', { exact: true })
     await expect(closeDetail).toBeVisible()
     const detailPanel = page.locator('.fixed.inset-y-0.right-0')
     await expect(detailPanel.locator('input').first()).toHaveValue(title)
