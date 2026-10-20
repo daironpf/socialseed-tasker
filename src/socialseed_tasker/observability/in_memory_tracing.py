@@ -1,4 +1,5 @@
-# src/socialseed_tasker/observability/test_exporter.py
+# src/socialseed_tasker/observability/in_memory_tracing.py
+# In-memory OpenTelemetry helpers (kept out of test collection on purpose).
 from __future__ import annotations
 from typing import List
 from opentelemetry.sdk.trace import TracerProvider, ReadableSpan

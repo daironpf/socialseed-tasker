@@ -29,8 +29,18 @@ def test_delivery_retries(tmp_path):
     t.start()
     worker.start()
     did = worker.enqueue_delivery(f"http://localhost:{port}/", '{"x":1}')
-    time.sleep(1.0)
     key = "webhook:delivery:" + did
-    raw = storage.get(key)
-    assert raw is None or b'"status": "success"' in raw or b'"status":"success"' in raw
-    worker.stop()
+    # The worker loop polls every 1s and the backoff doubles; local
+    # localhost connect latency can add a couple of seconds per attempt, so
+    # wait for the retry to land instead of sampling at a fixed instant.
+    try:
+        deadline = time.time() + 15.0
+        raw = None
+        while time.time() < deadline:
+            raw = storage.get(key)
+            if raw is None or b'"status": "success"' in raw or b'"status":"success"' in raw:
+                break
+            time.sleep(0.05)
+        assert raw is None or b'"status": "success"' in raw or b'"status":"success"' in raw
+    finally:
+        worker.stop()

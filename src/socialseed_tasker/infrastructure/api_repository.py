@@ -450,6 +450,15 @@ class ApiTaskRepository(TaskRepositoryInterface):
             return data.get("items", data.get("data", []))
         return []
 
+    def get_deployment_by_commit(self, commit_sha: str) -> dict[str, Any] | None:
+        data = self.client.request("GET", f"{_API}/deployments/by-commit/{commit_sha}")
+        if data is None:
+            return None
+        if isinstance(data, dict):
+            inner = data.get("data")
+            return inner if isinstance(inner, dict) else data
+        return None
+
     def create_deployment(self, deployment: Any) -> None:
         self.client.request("POST", f"{_API}/deployments", json=_to_dict(deployment))
 

@@ -375,6 +375,9 @@ class TaskRepositoryInterface(Protocol):
     def get_issue_deployments(self, issue_id: str) -> list[dict]:
         """Get all deployments for an issue."""
 
+    def get_deployment_by_commit(self, commit_sha: str) -> dict[str, Any] | None:
+        """Get a single deployment by its commit SHA."""
+
     def create_deployment(self, deployment) -> None:
         """Record a new deployment."""
 

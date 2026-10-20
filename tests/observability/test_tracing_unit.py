@@ -1,5 +1,5 @@
 # tests/observability/test_tracing_unit.py
-from socialseed_tasker.observability.test_exporter import InMemoryTracing
+from socialseed_tasker.observability.in_memory_tracing import InMemoryTracing
 
 def test_in_memory_tracing_captures_spans():
     mem = InMemoryTracing()

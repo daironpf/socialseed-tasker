@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 
 from socialseed_tasker.application.actions import TaskRepositoryInterface
 from socialseed_tasker.application.constraints import Constraint, ConstraintCategory, ConstraintLevel
-from socialseed_tasker.domain.entities import Component, Issue, IssuePriority, IssueStatus
+from socialseed_tasker.domain.entities import Component, Deployment, Issue, IssuePriority, IssueStatus
 from socialseed_tasker.infrastructure.web_api.app import create_app
 
 
@@ -26,6 +26,43 @@ class MockRepository(TaskRepositoryInterface):
         self._dependencies: dict[str, set[str]] = {}
         self._constraints: dict[str, Constraint] = {}
         self._labels: dict[str, set[str]] = {}
+        self._deployments: list[Deployment] = []
+
+    # -- deployments ------------------------------------------------------------
+
+    def create_deployment(self, deployment: Deployment) -> None:
+        self._deployments.append(deployment)
+
+    def get_deployments(self, environment_name: str | None = None, limit: int = 50) -> list[dict]:
+        items = self._deployments
+        if environment_name:
+            items = [d for d in items if d.environment_name.value == environment_name]
+        return [self._deployment_dict(d) for d in items[-limit:]]
+
+    def get_issue_deployments(self, issue_id: str) -> list[dict]:
+        return [
+            self._deployment_dict(d)
+            for d in self._deployments
+            if issue_id in [str(i) for i in d.issue_ids]
+        ]
+
+    def get_deployment_by_commit(self, commit_sha: str) -> dict | None:
+        for d in self._deployments:
+            if d.commit_sha == commit_sha:
+                return self._deployment_dict(d)
+        return None
+
+    @staticmethod
+    def _deployment_dict(d: Deployment) -> dict[str, Any]:
+        return {
+            "id": str(d.id),
+            "commit_sha": d.commit_sha,
+            "environment_name": d.environment_name.value,
+            "deployed_at": d.deployed_at.isoformat(),
+            "issue_ids": [str(i) for i in d.issue_ids],
+            "channel": d.channel,
+            "deployed_by": d.deployed_by,
+        }
 
     def create_issue(self, issue: Issue) -> Issue:
         self._issues[str(issue.id)] = issue

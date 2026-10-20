@@ -130,9 +130,29 @@ class TestDeploymentEndpoints:
         resp = client.get("/api/v1/deployments?env=PROD")
         assert resp.status_code == 200
 
-    def test_get_deployment_by_commit(self, client):
+    def test_get_deployment_by_commit(self, client, component_id):
         """Test getting deployment by commit SHA."""
-        pytest.skip("MockRepository missing get_deployment_by_commit method - requires repository update")
+        issue_resp = client.post(
+            "/api/v1/issues",
+            json={"title": "Deploy by commit", "component_id": component_id},
+        )
+        issue_id = issue_resp.json()["data"]["id"]
+        commit_sha = "abc123def456abc123def456abc123def456abcd"
+        client.post(
+            "/api/v1/deployments",
+            json={
+                "commit_sha": commit_sha,
+                "environment": "PROD",
+                "issue_ids": [issue_id],
+                "deployed_by": "github-actions",
+            },
+        )
+        resp = client.get(f"/api/v1/deployments/by-commit/{commit_sha}")
+        assert resp.status_code == 200
+        assert resp.json()["data"]["commit_sha"] == commit_sha
+
+        missing = client.get("/api/v1/deployments/by-commit/does-not-exist")
+        assert missing.status_code == 404
 
     def test_get_issue_deployments(self, client, component_id):
         """Test getting deployments for an issue."""
