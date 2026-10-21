@@ -124,7 +124,7 @@ ON CREATE SET p.id = $id, p.description = $description, p.severity = $severity,
     p.is_active = true, p.createdAt = $now, p.updatedAt = $now
 ON MATCH SET p.updatedAt = $now
 WITH p
-MATCH (proj:Project {id: $projectId})
+MATCH (proj:Project {id: $project_id})
 MERGE (proj)-[:ENFORCES]->(p)
 """
 
@@ -244,7 +244,7 @@ class Neo4jSetupStore:
                 for spec in policies:
                     session.run(
                         UPSERT_POLICY_LINK,
-                        projectId=project_id,
+                        project_id=project_id,
                         id=str(uuid.uuid4()),
                         name=spec["name"],
                         description=spec.get("description", ""),

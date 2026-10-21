@@ -84,10 +84,10 @@ def test_create_epic_sends_iso_created_at_and_updated_at() -> None:
     repo.create_epic(epic)
 
     query, params = driver.calls[0]
-    assert "createdAt: $createdAt" in query
-    assert "updatedAt: $updatedAt" in query
-    assert params["createdAt"] == epic.created_at.isoformat()
-    assert params["updatedAt"] == epic.updated_at.isoformat()
+    assert "createdAt: $created_at" in query
+    assert "updatedAt: $updated_at" in query
+    assert params["created_at"] == epic.created_at.isoformat()
+    assert params["updated_at"] == epic.updated_at.isoformat()
     assert params["name"] == "Epic A"
     assert params["status"] == "OPEN"
 
@@ -99,10 +99,10 @@ def test_create_objective_sends_iso_created_at_and_updated_at() -> None:
     repo.create_objective(objective)
 
     query, params = driver.calls[0]
-    assert "createdAt: $createdAt" in query
-    assert "updatedAt: $updatedAt" in query
-    assert params["createdAt"] == objective.created_at.isoformat()
-    assert params["updatedAt"] == objective.updated_at.isoformat()
+    assert "createdAt: $created_at" in query
+    assert "updatedAt: $updated_at" in query
+    assert params["created_at"] == objective.created_at.isoformat()
+    assert params["updated_at"] == objective.updated_at.isoformat()
     assert params["quarter"] == "2026Q4"
     assert params["status"] == "OPEN"
 
@@ -122,8 +122,8 @@ def test_get_epic_roundtrip_after_create() -> None:
                     "description": params["description"],
                     "objective_id": None,
                     "status": params["status"],
-                    "createdAt": params["createdAt"],
-                    "updatedAt": params["updatedAt"],
+                    "createdAt": params["created_at"],
+                    "updatedAt": params["updated_at"],
                 }
             }
         ]
@@ -152,8 +152,8 @@ def test_get_objective_roundtrip_after_create() -> None:
                     "description": params["description"],
                     "status": params["status"],
                     "quarter": params["quarter"],
-                    "createdAt": params["createdAt"],
-                    "updatedAt": params["updatedAt"],
+                    "createdAt": params["created_at"],
+                    "updatedAt": params["updated_at"],
                 }
             }
         ]
@@ -194,13 +194,13 @@ def test_update_epic_sets_fields_and_renews_updated_at() -> None:
     assert len(driver.calls) == 1
     query, params = driver.calls[0]
     assert "SET" in query
-    assert "e.updatedAt = $updatedAt" in query
+    assert "e.updatedAt = $updated_at" in query
     assert "e.name = $name" in query
     assert "e.status = $status" in query
     assert params["id"] == "epic-1"
     assert params["name"] == "New name"
     assert params["status"] == "IN_PROGRESS"
-    assert params["updatedAt"].endswith("+00:00")
+    assert params["updated_at"].endswith("+00:00")
 
 
 def test_update_epic_drops_protected_and_unknown_keys() -> None:
@@ -246,13 +246,13 @@ def test_update_objective_sets_fields_and_renews_updated_at() -> None:
     assert len(driver.calls) == 1
     query, params = driver.calls[0]
     assert "SET" in query
-    assert "o.updatedAt = $updatedAt" in query
+    assert "o.updatedAt = $updated_at" in query
     assert "o.quarter = $quarter" in query
     assert "o.status = $status" in query
     assert params["id"] == "obj-1"
     assert params["quarter"] == "2026Q2"
     assert params["status"] == "COMPLETED"
-    assert params["updatedAt"].endswith("+00:00")
+    assert params["updated_at"].endswith("+00:00")
 
 
 def test_update_objective_drops_protected_and_unknown_keys() -> None:

@@ -174,7 +174,7 @@ def register_agent(
                 role=body.role,
                 status="idle",
                 capabilities=", ".join(body.capabilities) if body.capabilities else "",
-                createdAt=agent_data["created_at"],
+                created_at=agent_data["created_at"],
             )
             
             project_id_to_assign = assigned_project_id
@@ -191,8 +191,8 @@ def register_agent(
             if project_id_to_assign:
                 session.run(
                     neo4j_queries.PROJECT_ASSIGN_AGENT,
-                    projectId=project_id_to_assign,
-                    agentId=body.agent_id,
+                    project_id=project_id_to_assign,
+                    agent_id=body.agent_id,
                 )
                 assigned_project_id = project_id_to_assign
 

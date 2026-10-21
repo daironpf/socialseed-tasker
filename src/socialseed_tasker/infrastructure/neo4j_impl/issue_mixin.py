@@ -35,25 +35,25 @@ class IssueRepositoryMixin:
                 description=issue.description,
                 status=issue.status.value,
                 priority=issue.priority.value,
-                componentId=str(issue.component_id),
+                component_id=str(issue.component_id),
                 assignee=issue.assignee,
-                createdBy=issue.created_by,
+                created_by=issue.created_by,
                 labels=issue.labels,
                 dependencies=[str(d) for d in issue.dependencies],
                 blocks=[str(b) for b in issue.blocks],
                 affects=[str(a) for a in issue.affects],
-                createdAt=issue.created_at.isoformat(),
-                updatedAt=issue.updated_at.isoformat(),
-                closedAt=issue.closed_at.isoformat() if issue.closed_at else None,
-                architecturalConstraints=issue.architectural_constraints,
-                agentWorking=issue.agent_working,
-                agentStartedAt=issue.agent_started_at.isoformat() if issue.agent_started_at else None,
-                agentFinishedAt=issue.agent_finished_at.isoformat() if issue.agent_finished_at else None,
-                agentId=issue.agent_id,
-                reasoningLogs=json.dumps(reasoning_logs_data),
-                manifestTodo=issue.manifest_todo,
-                manifestFiles=issue.manifest_files,
-                manifestNotes=issue.manifest_notes,
+                created_at=issue.created_at.isoformat(),
+                updated_at=issue.updated_at.isoformat(),
+                closed_at=issue.closed_at.isoformat() if issue.closed_at else None,
+                architectural_constraints=issue.architectural_constraints,
+                agent_working=issue.agent_working,
+                agent_started_at=issue.agent_started_at.isoformat() if issue.agent_started_at else None,
+                agent_finished_at=issue.agent_finished_at.isoformat() if issue.agent_finished_at else None,
+                agent_id=issue.agent_id,
+                reasoning_logs=json.dumps(reasoning_logs_data),
+                manifest_todo=issue.manifest_todo,
+                manifest_files=issue.manifest_files,
+                manifest_notes=issue.manifest_notes,
             )
             if issue.assignee:
                 session.run(
@@ -96,7 +96,7 @@ class IssueRepositoryMixin:
                 queries.UPDATE_ISSUE,
                 id=issue_id,
                 updates=camel_updates,
-                updatedAt=_now_iso(),
+                updated_at=_now_iso(),
             )
             record = result.single()
             if record is None:
@@ -138,9 +138,9 @@ class IssueRepositoryMixin:
             result = session.run(
                 queries.CLOSE_ISSUE,
                 id=issue_id,
-                closedAt=_now_iso(),
-                updatedAt=_now_iso(),
-                commitSha=commit_sha,
+                closed_at=_now_iso(),
+                updated_at=_now_iso(),
+                commit_sha=commit_sha,
                 resolution=resolution,
             )
             record = result.single()
@@ -174,7 +174,7 @@ class IssueRepositoryMixin:
         with _session(self._driver) as session:
             result = session.run(
                 queries.LIST_ISSUES,
-                componentId=component_id,
+                component_id=component_id,
                 statuses=statuses or [],
                 project=project,
             )
@@ -254,7 +254,7 @@ class IssueRepositoryMixin:
                 queries.ISSUE_AFFECTS_SYMBOL,
                 issue_id=issue_id,
                 symbol_id=symbol_id,
-                closedAt=datetime.now(timezone.utc).isoformat(),
+                closed_at=datetime.now(timezone.utc).isoformat(),
             )
 
     def get_affected_symbols(self, issue_id: str) -> list[dict[str, Any]]:
@@ -306,11 +306,11 @@ class IssueRepositoryMixin:
             if component_id:
                 result = session.run(
                     """
-                    MATCH (i:Issue {title: $title, componentId: $componentId})
+                    MATCH (i:Issue {title: $title, componentId: $component_id})
                     RETURN i
                     """,
                     title=title,
-                    componentId=component_id,
+                    component_id=component_id,
                 )
             else:
                 result = session.run(
@@ -390,7 +390,7 @@ class IssueRepositoryMixin:
                 queries.UPDATE_ISSUE,
                 id=issue_id,
                 updates={"reasoningLogs": json.dumps(existing_logs)},
-                updatedAt=_now_iso(),
+                updated_at=_now_iso(),
             )
             updated_record = update_result.single()
             if updated_record is None:
@@ -437,7 +437,7 @@ class IssueRepositoryMixin:
                 queries.UPDATE_ISSUE,
                 id=issue_id,
                 updates={"comments": json.dumps(existing)},
-                updatedAt=_now_iso(),
+                updated_at=_now_iso(),
             )
             updated_record = update_result.single()
             if updated_record is None:
@@ -473,7 +473,7 @@ class IssueRepositoryMixin:
                 queries.UPDATE_ISSUE,
                 id=issue_id,
                 updates={"manifestTodo": todo},
-                updatedAt=_now_iso(),
+                updated_at=_now_iso(),
             )
             updated_record = update_result.single()
             if updated_record is None:
@@ -495,7 +495,7 @@ class IssueRepositoryMixin:
                 queries.UPDATE_ISSUE,
                 id=issue_id,
                 updates={"manifestFiles": files},
-                updatedAt=_now_iso(),
+                updated_at=_now_iso(),
             )
             updated_record = update_result.single()
             if updated_record is None:
@@ -517,7 +517,7 @@ class IssueRepositoryMixin:
                 queries.UPDATE_ISSUE,
                 id=issue_id,
                 updates={"manifestNotes": notes},
-                updatedAt=_now_iso(),
+                updated_at=_now_iso(),
             )
             updated_record = update_result.single()
             if updated_record is None:
@@ -565,7 +565,7 @@ class IssueRepositoryMixin:
                     "agentStartedAt": _now_iso(),
                     "agentId": agent_id,
                 },
-                updatedAt=_now_iso(),
+                updated_at=_now_iso(),
             )
             updated_record = update_result.single()
             if updated_record is None:
@@ -595,7 +595,7 @@ class IssueRepositoryMixin:
                     "agentFinishedAt": _now_iso(),
                     "agentFinishedBy": agent_id,
                 },
-                updatedAt=_now_iso(),
+                updated_at=_now_iso(),
             )
             updated_record = update_result.single()
             if updated_record is None:

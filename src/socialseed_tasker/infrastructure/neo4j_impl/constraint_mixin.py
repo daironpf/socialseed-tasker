@@ -34,8 +34,8 @@ class ConstraintRepositoryMixin:
                     required: $required,
                     description: $description,
                     status: $status,
-                    createdAt: $createdAt,
-                    updatedAt: $updatedAt
+                    createdAt: $created_at,
+                    updatedAt: $updated_at
                 })
                 """,
                 id=str(constraint.id),
@@ -51,8 +51,8 @@ class ConstraintRepositoryMixin:
                 required=constraint.required,
                 description=constraint.description,
                 status=constraint.status.value,
-                createdAt=constraint.created_at.isoformat(),
-                updatedAt=constraint.updated_at.isoformat(),
+                created_at=constraint.created_at.isoformat(),
+                updated_at=constraint.updated_at.isoformat(),
             )
 
     def list_constraints(self, category: str | None = None) -> list[Constraint]:
@@ -139,7 +139,7 @@ class ConstraintRepositoryMixin:
                 set_clauses.append(f"c.{key} = ${key}")
                 params[key] = value
 
-            set_clauses.append("c.updatedAt = $updatedAt")
+            set_clauses.append("c.updatedAt = $updated_at")
             params["updatedAt"] = datetime.now(timezone.utc).isoformat()
 
             query = f"MATCH (c:Constraint {{id: $id}}) SET {', '.join(set_clauses)} RETURN c"

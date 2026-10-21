@@ -23,10 +23,10 @@ REASONING_QUERIES = {
         MERGE (r:ReasoningNode {id: $id})
         SET r.thought = $thought,
             r.confidence = $confidence,
-            r.alternativesConsidered = $alternativesConsidered,
-            r.rejectedReasons = $rejectedReasons,
+            r.alternativesConsidered = $alternatives_considered,
+            r.rejectedReasons = $rejected_reasons,
             r.decision = $decision,
-            r.decisionType = $decisionType,
+            r.decisionType = $decision_type,
             r.createdAt = timestamp()
         WITH r, i
         MERGE (a:Agent {id: $agent_id})

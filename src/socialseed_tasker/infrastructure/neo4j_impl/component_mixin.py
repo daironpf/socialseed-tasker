@@ -21,9 +21,9 @@ class ComponentRepositoryMixin:
                     name: $name,
                     description: $description,
                     project: $project,
-                    projectId: $projectId,
-                    createdAt: $createdAt,
-                    updatedAt: $updatedAt
+                    projectId: $project_id,
+                    createdAt: $created_at,
+                    updatedAt: $updated_at
                 })
                 WITH c
                 OPTIONAL MATCH (proj:Project)
@@ -42,9 +42,9 @@ class ComponentRepositoryMixin:
                 name=component.name,
                 description=component.description,
                 project=component.project,
-                projectId=str(component.project_id) if component.project_id else None,
-                createdAt=component.created_at.isoformat(),
-                updatedAt=component.updated_at.isoformat(),
+                project_id=str(component.project_id) if component.project_id else None,
+                created_at=component.created_at.isoformat(),
+                updated_at=component.updated_at.isoformat(),
                 labels=component.labels if hasattr(component, "labels") else [],
                 now=datetime.now(timezone.utc).isoformat(),
             )
@@ -104,20 +104,20 @@ class ComponentRepositoryMixin:
             "name": project_data["name"],
             "slug": project_data.get("slug", project_data["name"]),
             "description": project_data.get("description", ""),
-            "repositoryUrl": project_data.get("repositoryUrl"),
-            "basePackage": project_data.get("basePackage"),
+            "repository_url": project_data.get("repositoryUrl"),
+            "base_package": project_data.get("basePackage"),
             "visibility": project_data.get("visibility", "PUBLIC"),
             "status": project_data.get("status", "DEVELOPMENT"),
-            "techStack": project_data.get("techStack", []),
-            "mainStack": project_data.get("mainStack", []),
-            "architectureStyle": project_data.get("architectureStyle", "api-first"),
+            "tech_stack": project_data.get("techStack", []),
+            "main_stack": project_data.get("mainStack", []),
+            "architecture_style": project_data.get("architectureStyle", "api-first"),
             "version": project_data.get("version", "0.1.0"),
-            "conventionsUrl": project_data.get("conventionsUrl"),
-            "conventionsRules": project_data.get("conventionsRules"),
-            "lastFullScan": now,
-            "globalStatus": project_data.get("globalStatus", "DEVELOPMENT"),
-            "createdAt": now,
-            "updatedAt": now,
+            "conventions_url": project_data.get("conventionsUrl"),
+            "conventions_rules": project_data.get("conventionsRules"),
+            "last_full_scan": now,
+            "global_status": project_data.get("globalStatus", "DEVELOPMENT"),
+            "created_at": now,
+            "updated_at": now,
         }
         with _session(self._driver) as session:
             result = session.run(queries.CREATE_PROJECT, params)
@@ -159,20 +159,20 @@ class ComponentRepositoryMixin:
             "name": name,
             "slug": slug,
             "description": description,
-            "repositoryUrl": repositoryUrl,
-            "basePackage": basePackage,
+            "repository_url": repositoryUrl,
+            "base_package": basePackage,
             "visibility": visibility,
             "status": status,
-            "techStack": techStack or [],
-            "mainStack": mainStack or [],
-            "architectureStyle": architectureStyle,
+            "tech_stack": techStack or [],
+            "main_stack": mainStack or [],
+            "architecture_style": architectureStyle,
             "version": version,
-            "conventionsUrl": conventionsUrl,
-            "conventionsRules": conventionsRules,
-            "lastFullScan": lastFullScan,
-            "globalStatus": globalStatus,
-            "createdAt": now,
-            "updatedAt": now,
+            "conventions_url": conventionsUrl,
+            "conventions_rules": conventionsRules,
+            "last_full_scan": lastFullScan,
+            "global_status": globalStatus,
+            "created_at": now,
+            "updated_at": now,
         }
         with _session(self._driver) as session:
             result = session.run(queries.CREATE_PROJECT, params)
@@ -210,7 +210,7 @@ class ComponentRepositoryMixin:
                 queries.UPDATE_COMPONENT,
                 id=componentId,
                 updates=camel_updates,
-                updatedAt=_now_iso(),
+                updated_at=_now_iso(),
             )
             record = result.single()
             if record is None:
@@ -225,7 +225,7 @@ class ComponentRepositoryMixin:
         with _session(self._driver) as session:
             session.run(
                 queries.ADD_COMPONENT_DEPENDENCY,
-                componentId=componentId,
+                component_id=componentId,
                 depends_on_id=depends_on_id,
             )
 
@@ -233,7 +233,7 @@ class ComponentRepositoryMixin:
         with _session(self._driver) as session:
             session.run(
                 queries.REMOVE_COMPONENT_DEPENDENCY,
-                componentId=componentId,
+                component_id=componentId,
                 depends_on_id=depends_on_id,
             )
 
@@ -241,7 +241,7 @@ class ComponentRepositoryMixin:
         with _session(self._driver) as session:
             result = session.run(
                 queries.GET_COMPONENT_DEPENDENCIES,
-                componentId=componentId,
+                component_id=componentId,
             )
             return [_node_to_component(r["dep"]) for r in result]
 
@@ -249,6 +249,6 @@ class ComponentRepositoryMixin:
         with _session(self._driver) as session:
             result = session.run(
                 queries.GET_COMPONENT_DEPENDENTS,
-                componentId=componentId,
+                component_id=componentId,
             )
             return [_node_to_component(r["dependent"]) for r in result]

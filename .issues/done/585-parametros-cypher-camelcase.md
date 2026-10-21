@@ -34,7 +34,7 @@ junto a `$agentId` camel (`neo4j_queries.py:1162-1174`) — nunca hubo convenci�
 Endpoints que sí van bien (control): `GET /policies/component/{id}` → 200,
 `POST /policies/{id}/link/project/{project_id}` → 200 (ahí los nombres coinciden).
 
-## Status: OPEN
+## Status: DONE
 
 ## Priority: HIGH
 

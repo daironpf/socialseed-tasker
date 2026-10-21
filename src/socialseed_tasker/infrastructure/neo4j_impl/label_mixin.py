@@ -27,8 +27,8 @@ class LabelRepositoryMixin:
                     name=label.get("name", ""),
                     color=label.get("color", ""),
                     description=label.get("description", ""),
-                    createdAt=datetime.now(timezone.utc).isoformat(),
-                    updatedAt=datetime.now(timezone.utc).isoformat(),
+                    created_at=datetime.now(timezone.utc).isoformat(),
+                    updated_at=datetime.now(timezone.utc).isoformat(),
                 )
                 synced += 1
 

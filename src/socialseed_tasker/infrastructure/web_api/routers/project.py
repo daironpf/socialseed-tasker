@@ -270,7 +270,7 @@ def get_project_by_id(
     db = driver.database if hasattr(driver, "database") else "neo4j"
 
     with actual_driver.session(database=db) as session:
-        result = session.run(queries.GET_PROJECT_BY_ID, projectId=project_id)
+        result = session.run(queries.GET_PROJECT_BY_ID, project_id=project_id)
         record = result.single()
 
         if not record:
@@ -364,20 +364,20 @@ def create_project(
             slug=slug,
             name=body.name,
             description=body.description,
-            repositoryUrl=body.repositoryUrl,
-            basePackage=body.basePackage,
+            repository_url=body.repositoryUrl,
+            base_package=body.basePackage,
             visibility=body.visibility,
             status=body.status,
-            techStack=body.techStack,
-            mainStack=body.mainStack,
-            architectureStyle=body.architectureStyle,
+            tech_stack=body.techStack,
+            main_stack=body.mainStack,
+            architecture_style=body.architectureStyle,
             version=body.version,
-            conventionsUrl=body.conventionsUrl,
-            conventionsRules=body.conventionsRules,
-            lastFullScan=now,
-            globalStatus=body.globalStatus,
-            createdAt=now,
-            updatedAt=now,
+            conventions_url=body.conventionsUrl,
+            conventions_rules=body.conventionsRules,
+            last_full_scan=now,
+            global_status=body.globalStatus,
+            created_at=now,
+            updated_at=now,
         )
     
     return APIResponse(data={"status": "created", "id": project_id}, meta=Meta(request_id=None))

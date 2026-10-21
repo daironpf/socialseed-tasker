@@ -23,8 +23,8 @@ class EpicRepositoryMixin:
                 description=epic.description,
                 objective_id=str(epic.objective_id) if epic.objective_id else None,
                 status=epic.status.value,
-                createdAt=epic.created_at.isoformat(),
-                updatedAt=epic.updated_at.isoformat(),
+                created_at=epic.created_at.isoformat(),
+                updated_at=epic.updated_at.isoformat(),
             )
 
     def get_epic(self, epicId: str) -> Epic | None:
@@ -67,15 +67,15 @@ class EpicRepositoryMixin:
 
     def link_issue_to_epic(self, issue_id: str, epicId: str) -> None:
         with _session(self._driver) as session:
-            session.run(queries.LINK_ISSUE_TO_EPIC, issue_id=issue_id, epicId=epicId)
+            session.run(queries.LINK_ISSUE_TO_EPIC, issue_id=issue_id, epic_id=epicId)
 
     def update_epic(self, epicId: str, updates: dict) -> None:
         safe_updates = {k: v for k, v in updates.items() if k in _EPIC_UPDATABLE_FIELDS}
         if not safe_updates:
             return
         with _session(self._driver) as session:
-            params = {"id": epicId, "updatedAt": datetime.now(timezone.utc).isoformat()}
-            set_clauses = ["e.updatedAt = $updatedAt"]
+            params = {"id": epicId, "updated_at": datetime.now(timezone.utc).isoformat()}
+            set_clauses = ["e.updatedAt = $updated_at"]
 
             for key, value in safe_updates.items():
                 set_clauses.append(f"e.{key} = ${key}")
@@ -93,8 +93,8 @@ class EpicRepositoryMixin:
                 description=objective.description,
                 status=objective.status.value,
                 quarter=objective.quarter,
-                createdAt=objective.created_at.isoformat(),
-                updatedAt=objective.updated_at.isoformat(),
+                created_at=objective.created_at.isoformat(),
+                updated_at=objective.updated_at.isoformat(),
             )
 
     def get_objective(self, objective_id: str) -> Objective | None:
@@ -137,15 +137,15 @@ class EpicRepositoryMixin:
 
     def link_epic_to_objective(self, epicId: str, objective_id: str) -> None:
         with _session(self._driver) as session:
-            session.run(queries.LINK_EPIC_TO_OBJECTIVE, epicId=epicId, objective_id=objective_id)
+            session.run(queries.LINK_EPIC_TO_OBJECTIVE, epic_id=epicId, objective_id=objective_id)
 
     def update_objective(self, objective_id: str, updates: dict) -> None:
         safe_updates = {k: v for k, v in updates.items() if k in _OBJECTIVE_UPDATABLE_FIELDS}
         if not safe_updates:
             return
         with _session(self._driver) as session:
-            params = {"id": objective_id, "updatedAt": datetime.now(timezone.utc).isoformat()}
-            set_clauses = ["o.updatedAt = $updatedAt"]
+            params = {"id": objective_id, "updated_at": datetime.now(timezone.utc).isoformat()}
+            set_clauses = ["o.updatedAt = $updated_at"]
 
             for key, value in safe_updates.items():
                 set_clauses.append(f"o.{key} = ${key}")
