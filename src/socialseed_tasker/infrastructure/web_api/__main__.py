@@ -11,6 +11,9 @@ from socialseed_tasker.infrastructure.web_api.app import create_app
 
 def main() -> None:
     """Run the API server."""
+    from socialseed_tasker.observability.logging import configure_root_logger
+
+    configure_root_logger()
     container = Container.from_env()
     repository = container.get_repository()
     neo4j_driver = container.get_driver()

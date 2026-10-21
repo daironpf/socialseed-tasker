@@ -1195,13 +1195,22 @@ def create_app(
 
     @app.exception_handler(Exception)
     async def generic_error_handler(request: Request, exc: Exception) -> JSONResponse:
+        request_id = str(uuid.uuid4())
         exc_name = type(exc).__name__
+        logger.exception(
+            "unhandled error on %s %s (request_id=%s, exception=%s)",
+            request.method,
+            request.url.path,
+            request_id,
+            exc_name,
+        )
         if exc_name in ("ServiceUnavailable", "Neo4jError", "SessionExpired"):
             return JSONResponse(
                 status_code=503,
                 content=_error_response(
                     "DATABASE_CONNECTION_ERROR",
                     f"Database connection failed: {exc}",
+                    request_id=request_id,
                 ),
             )
         return JSONResponse(
@@ -1210,6 +1219,7 @@ def create_app(
                 "INTERNAL_ERROR",
                 "An unexpected error occurred",
                 {"detail": str(exc) if app.debug else None},
+                request_id=request_id,
             ),
         )
 
@@ -1268,7 +1278,12 @@ def create_app(
     return app
 
 
-def _error_response(code: str, message: str, details: dict[str, Any] | None = None) -> dict[str, Any]:
+def _error_response(
+    code: str,
+    message: str,
+    details: dict[str, Any] | None = None,
+    request_id: str | None = None,
+) -> dict[str, Any]:
     """Build a consistent error response envelope."""
     return {
         "data": None,
@@ -1279,6 +1294,6 @@ def _error_response(code: str, message: str, details: dict[str, Any] | None = No
         },
         "meta": {
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "request_id": str(uuid.uuid4()),
+            "request_id": request_id or str(uuid.uuid4()),
         },
     }

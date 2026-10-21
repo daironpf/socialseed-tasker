@@ -3,7 +3,7 @@
 **Fuente:** campaña de pruebas del API desplegado (`tasker-api` en `127.0.0.1:8888`,
 imagen reconstruida a `7cbfc5b`), 2026-10-20/21.
 **Created:** 2026-10-21
-**Status:** OPEN (1/20 implementadas — issues **#578–#597** en `.issues/to-do/`)
+**Status:** OPEN (2/20 implementadas — issues **#578–#597** en `.issues/to-do/`)
 
 > **Continuidad:** siguiente número libre tras **#577** (máximo en `.issues/done/`,
 > cerrado el 2026-10-12), por lo que esta auditoría numeró **#578–#597**.
@@ -47,7 +47,7 @@ imagen reconstruida a `7cbfc5b`), 2026-10-20/21.
 | #591 | `GET /ai/similar-issues/{id}` → 500 (`Unknown function 'apoc.algo.similarity'`) | MEDIUM | bug fix / backend + infra | OPEN |
 | #592 | Notificaciones con id no-ObjectId → 503 "store unavailable" en vez de 404 | MEDIUM | bug fix / backend | OPEN |
 | #593 | 403 permanente en `/admin/tenants` y `POST /data-quality/rules` (RBAC solo por env `TASKER_AUTH_USERS`) | MEDIUM | bug fix / config | OPEN |
-| #594 | Los 500 no dejan traceback en `docker logs` (handler sin `logger.exception`) | HIGH | bug fix / backend | OPEN |
+| #594 | Los 500 no dejan traceback en `docker logs` (handler sin `logger.exception`) | HIGH | bug fix / backend | DONE  |
 | #595 | OpenAPI sin `requestBody` documentado + `affects` con cuerpo string crudo | MEDIUM | bug fix / docs-backend | OPEN |
 | #596 | Faltan `DELETE`: `skills`, `mcp/servers`, `chat/conversations` | MEDIUM | feat / backend | OPEN |
 | #597 | `GET /auth/login` (sin `/api/v1`) → TIMEOUT contra proxy OAuth `:4180` | LOW | bug fix / config | OPEN |

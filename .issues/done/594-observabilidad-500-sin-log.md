@@ -27,7 +27,7 @@ Dos deficiencias:
 Efecto: cada bug de la auditoría costó 15-30 min de repro dirigida en lugar de leer
 una línea de log. Cualquier error futuro en producción es igual de invisible.
 
-## Status: OPEN
+## Status: DONE
 
 ## Priority: HIGH
 
@@ -58,12 +58,12 @@ bug fix / backend
    - `test_http_exception_4xx_not_logged_as_error`.
 
 ## Acceptance Criteria
-- [ ] Provocar un 500 (p.ej. cualquier bug de #578-#586 sin fix) deja el **traceback
+- [x] Provocar un 500 (p.ej. cualquier bug de #578-#586 sin fix) deja el **traceback
       completo** en `docker logs tasker-api` con el `request_id` de la respuesta
-- [ ] El cliente sigue recibiendo `INTERNAL_ERROR` sin internos filtrados
-- [ ] Los 4xx controlados no ensucian el log como errores
-- [ ] La visibilidad no depende de `app.debug=True` manual
-- [ ] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
+- [x] El cliente sigue recibiendo `INTERNAL_ERROR` sin internos filtrados
+- [x] Los 4xx controlados no ensucian el log como errores
+- [x] La visibilidad no depende de `app.debug=True` manual
+- [x] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
 
 ## Files to Modify
 - `src/socialseed_tasker/infrastructure/web_api/app.py` (handler ~1196, logger)
@@ -81,3 +81,27 @@ bug fix / backend
 - Los logs JSON del repo ya tienen estructura (`timestamp/level/logger/message`) — el
   traceback debe viajar dentro de `message` (multi-línea) o como campo propio, sin
   romper el parseo.
+
+## Resolution (2026-10-21)
+
+- `observability/logging.py` `JsonFormatter`: antes descartaba `exc_info` (pop en
+  la lista de extras) - ahora emite `exception` (traceback completo vía
+  `formatException`) y `stack` como campos propios del JSON, sin romper el parseo.
+- `app.py` `generic_error_handler`: `logger.exception("unhandled error on %s %s
+  (request_id=%s, exception=%s)", method, path, rid, exc_name)` en todas las ramas
+  (500 genérico y 503 de base de datos). El `request_id` generado se inyecta en
+  `meta.request_id` del envelope via `_error_response(..., request_id=...)` ->
+  mismo id en la respuesta del cliente y en el log (correlacion).
+- El cliente sigue recibiendo `INTERNAL_ERROR` con `detail: null` (solo se filtra
+  el interno si `app.debug`); los handlers 4xx siguen sin loguear (sin ruido).
+- `web_api/__main__.py`: `configure_root_logger()` explicito al arrancar el
+  servidor (antes solo dependia de imports laterales tipo `get_logger`).
+- Tests nuevos `tests/api/test_error_logging.py` (5): envelope sin internos,
+  traceback+request_id en caplog, JsonFormatter->campo exception, 404 y ValueError
+  4xx no generan registros ERROR.
+- Gates: ruff 1004 (sin delta), mypy 1128 (baseline 1129, sin delta negativo),
+  pytest 1520 passed / 62 skipped / 0 failed (+5).
+- Verificado en vivo (tasker-api reconstruida): PATCH /epics/{id} con body vacio
+  (bug #579 sin fix) -> 500 con `detail: null` y, en `docker logs`, registro JSON
+  ERROR con el mismo request_id, `exception=CypherSyntaxError` y traceback de
+  ~20KB que incluye el frame `epic_mixin`. Epic sonda borrado (entorno en 0).

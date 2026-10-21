@@ -21,6 +21,10 @@ class JsonFormatter(logging.Formatter):
             extras.pop(k, None)
         if extras:
             payload.update(extras)
+        if record.exc_info:
+            payload["exception"] = self.formatException(record.exc_info)
+        if record.stack_info:
+            payload["stack"] = self.formatStack(record.stack_info)
         return json.dumps(payload, ensure_ascii=False)
 
 
