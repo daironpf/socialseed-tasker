@@ -30,7 +30,7 @@ Relacionado: `POST /commits/{sha}/link/agent/{agent_id}` también da 500 en el s
 run4, pero por otra causa (parámetro `$agentId` vs `agent_id=`) → está cubierto en
 **#585**.
 
-## Status: OPEN
+## Status: DONE
 
 ## Priority: MEDIUM
 
@@ -59,13 +59,13 @@ bug fix / backend
      recibe `session.run`.
 
 ## Acceptance Criteria
-- [ ] `POST /api/v1/commits` con sha/mensaje/autor → 2xx (ya no 500) y `GET
+- [x] `POST /api/v1/commits` con sha/mensaje/autor → 2xx (ya no 500) y `GET
       /api/v1/commits` lo lista; `GET /commits/{sha}` lo devuelve
-- [ ] El nodo en Neo4j tiene las propiedades con los nombres que espera
+- [x] El nodo en Neo4j tiene las propiedades con los nombres que espera
       `_node_to_commit` al leer (roundtrip completo)
-- [ ] Ningún acceso camelCase a atributos Pydantic en `neo4j_commit_repository.py`
+- [x] Ningún acceso camelCase a atributos Pydantic en `neo4j_commit_repository.py`
       (revisión completa del fichero, no solo la línea 55)
-- [ ] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
+- [x] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
 
 ## Files to Modify
 - `src/socialseed_tasker/infrastructure/neo4j_commit_repository.py` (líneas 48-64)
@@ -83,3 +83,32 @@ bug fix / backend
   "author_name":"t"}'` → 500.
 - El smoke de auditoría ya generaba sha únicos (`BODY_OVERRIDE` de `smoke_real.py`) y
   aun así recibía 500 — no es problema de duplicado.
+
+## Resolution (2026-10-21)
+
+- `neo4j_commit_repository.py create_commit`: los 4 accesos camelCase pasaron a
+  snake_case (`author_name`, `author_email`, `is_ai_generated`, `files_changed`).
+  Los params ya eran snake y la query `CREATE_COMMIT` los mapea a props camel
+  (`authorName: $author_name`) - alineado con la lectura `_node_to_commit`.
+- **Segundo crash latente encontrado en la auditoria exigida por el AC**:
+  `routers/commit.py _commit_to_response` (usado por POST, GET /commits/{sha} y
+  GET /commits) leia `commit.authorName/authorEmail/isAiGenerated/filesChanged`
+  - sin arreglarlo, el POST seguia en 500 incluso tras fix del repo. Corregido a
+  snake_case (4 accesos, lineas 130-139).
+- Auditoria completa de ambos ficheros: ningun otro acceso camelCase a atributos
+  Pydantic (los `node.get("authorName")` del path de lectura son correctos).
+- El router construye `Commit` con kwargs alias camelCase (`authorName=`...) -
+  valido gracias a `populate_by_name=True`/`alias_generator` de la entidad; se
+  dejo tal cual (no es bug) para no tocar mas del necesario.
+- POST /commits responde **200** (la ruta no fija status_code; el AC pedia 2xx).
+- Tests `tests/api/test_commit_roundtrip.py` (3): contrato de kwargs snake de
+  `session.run` con driver grabador, roundtrip API completo POST -> GET sha ->
+  GET lista -> DELETE -> 404 con driver fake que emula CREATE_COMMIT, y 404 de
+  commit inexistente.
+- Gates: ruff 1004 (sin delta; test limpio), mypy **1128 -> 1124** (`--no-incremental`,
+  el fix elimina 4 attr-defined), pytest 1536 passed / 62 skipped / 0 failed (+3).
+- Verificado en vivo (tasker-api reconstruida): POST /commits -> 200 con datos,
+  GET /commits/{sha} y GET /commits -> 200 roundtrip completo, DELETE -> 200 y
+  GET posterior -> 404; nodo en Neo4j con props camelCase (`authorName`,
+  `authorEmail`, `isAiGenerated`, `filesChanged`); `docker logs` con 0 registros
+  ERROR. Commits de prueba borrados (0).

@@ -52,14 +52,14 @@ class CommitRepository:
                 queries.CREATE_COMMIT,
                 sha=commit.sha,
                 message=commit.message,
-                author_name=commit.authorName,
-                author_email=commit.authorEmail,
+                author_name=commit.author_name,
+                author_email=commit.author_email,
                 timestamp=commit.timestamp.isoformat(),
-                is_ai_generated=commit.isAiGenerated,
+                is_ai_generated=commit.is_ai_generated,
                 branch=commit.branch,
                 additions=commit.additions,
                 deletions=commit.deletions,
-                files_changed=commit.filesChanged,
+                files_changed=commit.files_changed,
             )
 
     def get_commit(self, sha: str) -> Commit | None:
