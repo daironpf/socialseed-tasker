@@ -1,25 +1,30 @@
 import { test, expect } from '@playwright/test'
+import { m, useEnglishLocale } from './helpers'
 
 test.describe('issue flow', () => {
+  test.beforeEach(async ({ page }) => {
+    await useEnglishLocale(page)
+  })
+
   test('creates an issue, opens it from the Kanban board and closes the detail panel', async ({ page }) => {
     await page.goto('/kanban')
-    await expect(page.getByRole('main').getByRole('heading', { name: 'Kanban Board' })).toBeVisible()
+    await expect(page.getByRole('main').getByRole('heading', { name: m('header.kanban') })).toBeVisible()
 
     const title = `E2E test issue ${Date.now()}`
-    await page.getByRole('button', { name: '+ New Issue' }).click()
-    await expect(page.getByRole('heading', { name: 'Create Issue' })).toBeVisible()
+    await page.getByRole('button', { name: m('issues.newIssue') }).click()
+    await expect(page.getByRole('heading', { name: m('issues.createIssue') })).toBeVisible()
 
     const form = page.locator('form')
     await form.locator('input').first().fill(title)
     await form.locator('select').nth(1).selectOption({ index: 1 })
-    await form.getByRole('button', { name: 'Create', exact: true }).click()
+    await form.getByRole('button', { name: m('issues.create'), exact: true }).click()
 
-    await expect(page.getByRole('heading', { name: 'Create Issue' })).toBeHidden()
+    await expect(page.getByRole('heading', { name: m('issues.createIssue') })).toBeHidden()
     const card = page.getByText(title, { exact: true })
     await expect(card).toBeVisible()
 
     await card.click()
-    const closeDetail = page.getByLabel('Close', { exact: true })
+    const closeDetail = page.getByLabel(m('issues.close'), { exact: true })
     await expect(closeDetail).toBeVisible()
     const detailPanel = page.locator('.fixed.inset-y-0.right-0')
     await expect(detailPanel.locator('input').first()).toHaveValue(title)
@@ -31,18 +36,18 @@ test.describe('issue flow', () => {
 
   test('lists existing issues on the board overview', async ({ page }) => {
     await page.goto('/board')
-    await expect(page.getByText('Overview', { exact: true })).toBeVisible()
+    await expect(page.getByText(m('boardSections.overview'), { exact: true })).toBeVisible()
     await expect(page.getByRole('main')).toContainText(/\d/)
   })
 
   test('moves an issue between Kanban columns with drag and drop', async ({ page }) => {
     await page.goto('/kanban')
-    await expect(page.getByRole('main').getByRole('heading', { name: 'Kanban Board' })).toBeVisible()
+    await expect(page.getByRole('main').getByRole('heading', { name: m('header.kanban') })).toBeVisible()
 
     const column = (name: string) =>
       page.getByRole('main').getByRole('heading', { name, exact: true }).locator('xpath=../..')
-    const openColumn = column('Open')
-    const blockedColumn = column('Blocked')
+    const openColumn = column(m('issues.open'))
+    const blockedColumn = column(m('issues.blocked'))
 
     const openBefore = await openColumn.locator('[draggable="true"]').count()
     const blockedBefore = await blockedColumn.locator('[draggable="true"]').count()

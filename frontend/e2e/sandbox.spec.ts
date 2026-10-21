@@ -1,14 +1,19 @@
 import { test, expect } from '@playwright/test'
+import { m, numberMessage, useEnglishLocale } from './helpers'
 
 test.describe('policy sandbox', () => {
+  test.beforeEach(async ({ page }) => {
+    await useEnglishLocale(page)
+  })
+
   test('runs a simulation from the rules list and shows the result', async ({ page }) => {
     await page.goto('/sandbox')
-    await expect(page.getByRole('main').getByRole('heading', { name: 'Policy Sandbox' })).toBeVisible()
+    await expect(page.getByRole('main').getByRole('heading', { name: m('sandbox.title') })).toBeVisible()
 
-    await page.getByLabel('Simulate').first().click()
+    await page.getByLabel(m('sandbox.simulate')).first().click()
 
-    await expect(page.getByRole('heading', { name: 'Simulation Result' })).toBeVisible()
-    await expect(page.getByText(/\d+\s+edges checked/)).toBeVisible()
-    await expect(page.getByText(/\d+\s+violations found/)).toBeVisible()
+    await expect(page.getByRole('heading', { name: m('sandbox.simulationResult') })).toBeVisible()
+    await expect(page.getByText(numberMessage('sandbox.edgesChecked'))).toBeVisible()
+    await expect(page.getByText(numberMessage('sandbox.violationsFound'))).toBeVisible()
   })
 })

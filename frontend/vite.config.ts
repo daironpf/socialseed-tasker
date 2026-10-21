@@ -22,7 +22,9 @@ export default defineConfig({
         ws: true,
       },
       '/mock-api': {
-        target: 'http://localhost:8001',
+        // Overridable so e2e can target a dedicated mock-api instance
+        // instead of the demo server on 8001 (docker compose).
+        target: process.env.MOCK_API_TARGET || 'http://localhost:8001',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/mock-api/, ''),
       },
