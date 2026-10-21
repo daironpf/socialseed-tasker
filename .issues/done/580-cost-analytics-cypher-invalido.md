@@ -41,7 +41,7 @@ multiplicar `hours * rate[tier]`.
 Los routers consumidores viven en `infrastructure/web_api/routers/cost_analytics.py`
 (`/cost-per-component` en la línea 127 y compañía).
 
-## Status: OPEN
+## Status: DONE
 
 ## Priority: MEDIUM
 
@@ -71,13 +71,13 @@ bug fix / backend
    "las queries compilan en Neo4j" con driver real de test, o fixtures de records).
 
 ## Acceptance Criteria
-- [ ] `GET /cost-summary`, `/cost-per-component`, `/cost-per-epic`, `/cost-per-project`
+- [x] `GET /cost-summary`, `/cost-per-component`, `/cost-per-epic`, `/cost-per-project`
       → 200 (con el grafo vacío: totales en 0 / listas vacías), ya no 500
-- [ ] Las 5 sentencias de `neo4j_queries.py` (690-741) ejecutan sin
+- [x] Las 5 sentencias de `neo4j_queries.py` (690-741) ejecutan sin
       `CypherSyntaxError`/`CypherTypeError` en el Neo4j real (`cypher-shell`)
-- [ ] El cálculo usa `HourlyRateTier` de `domain/value_objects.py` como fuente de
-      verdad de tarifas (sin números mágicos duplicados si es viable)
-- [ ] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
+- [x] El cálculo usa `HourlyRateTier` de `domain/value_objects.py` como fuente
+      de verdad de tarifas (sin números mágicos duplicados si es viable)
+- [x] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
 
 ## Files to Modify
 - `src/socialseed_tasker/infrastructure/neo4j_queries.py` (líneas 690-741)
@@ -94,3 +94,10 @@ bug fix / backend
   test-token'` → 500 con `CypherSyntaxError` en el detalle (vía debug) y envelope
   `INTERNAL_ERROR` en producción.
 - Verificado in-process el 2026-10-21 con `app.debug=True` dentro de `tasker-api`.
+- **Fix**: `CASE tier WHEN '<tier>' THEN <rate>` (simple CASE sobre la variable,
+  no literal string), sin el `COLLECT({hours, tier})` que descartaba `hours`
+  antes del `SUM`, y la tarifa generada desde `HOURLY_RATES` en
+  `domain/value_objects.py` (una sola fuente de verdad, `_TIER_RATE_CASE`).
+  Las 4 queries (no 5: la línea 695 era la segunda cláusula de
+  `GET_COST_PER_COMPONENT`) se ejecutan OK en Neo4j real vía bolt y los 4
+  endpoints responden 200 en vivo (summary con ceros, listas `[]`).
