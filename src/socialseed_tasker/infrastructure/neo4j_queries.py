@@ -835,8 +835,8 @@ RETURN i, f
 
 FIND_ISSUES_AFFECTING_FILE = """
 MATCH (i:Issue)-[r:AFFECTS]->(f:CodeFile)
-WHERE f.path CONTAINS $file_path OR f.name = $file_path
-WHERE i.status = 'CLOSED'
+WHERE (f.path CONTAINS $file_path OR f.name = $file_path)
+  AND i.status = 'CLOSED'
 RETURN i.id as issue_id, i.title as title, f.path as file_path, r.closed_at as closed_at
 ORDER BY r.closed_at DESC
 LIMIT toInteger($limit)

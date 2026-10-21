@@ -19,7 +19,16 @@ from socialseed_tasker.domain.entities import (
 
 @contextmanager
 def _session(driver: Any) -> Iterator[Any]:
-    with driver.driver.session(database=driver.database) as session:
+    """Open a Neo4j session from either shape of driver object.
+
+    Accepts a wrapper exposing ``.driver``/``.database`` (``Neo4jDriver`` from
+    app state) or a raw Bolt/Graph driver (as unwrapped for code-graph
+    endpoints), mirroring the normalization already used in
+    ``neo4j_commit_repository``/``project.py``.
+    """
+    inner = driver.driver if hasattr(driver, "driver") else driver
+    database = driver.database if hasattr(driver, "database") else "neo4j"
+    with inner.session(database=database) as session:
         yield session
 
 

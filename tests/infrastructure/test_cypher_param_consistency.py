@@ -140,3 +140,78 @@ def test_query_params_match_call_site_kwargs() -> None:
                 mismatches.append(f"{rel}:{node.lineno}: {qname} missing {missing}")
 
     assert mismatches == [], "query $params vs call-site kwargs mismatch:\n" + "\n".join(mismatches)
+
+
+# ---------------------------------------------------------------------------
+# Cypher validity guards (issues #582/#583): syntax Neo4j rejects at runtime
+# ---------------------------------------------------------------------------
+
+HOP_PARAM = re.compile(r"\[[^\]]*\.\.\$\w")
+DOUBLE_WHERE = re.compile(r"WHERE\b[^\n]*\n\s*WHERE\b")
+
+
+def test_no_parameters_in_relationship_hop_ranges() -> None:
+    """Neo4j rejects ``[:R*1..$param]`` — hop ranges must be literal integers."""
+    offenders: list[str] = []
+    for py_file in sorted(SRC.rglob("*.py")):
+        text = py_file.read_text(encoding="utf-8")
+        for m in HOP_PARAM.finditer(text):
+            line = text[: m.start()].count("\n") + 1
+            offenders.append(f"{py_file.relative_to(SRC)}:{line} {m.group(0)}")
+    assert offenders == [], "parameter in relationship hop range:\n" + "\n".join(offenders)
+
+
+def test_no_consecutive_where_clauses_in_query_strings() -> None:
+    """Cypher allows one WHERE per MATCH — a second one is a syntax error."""
+    offenders: list[str] = []
+    for py_file in sorted(SRC.rglob("*.py")):
+        text = py_file.read_text(encoding="utf-8")
+        for m in re.finditer(r'"""(.*?)"""', text, re.S):
+            if DOUBLE_WHERE.search(m.group(1)):
+                line = text[: m.start()].count("\n") + 1
+                offenders.append(f"{py_file.relative_to(SRC)}:{line}")
+    assert offenders == [], "consecutive WHERE clauses:\n" + "\n".join(offenders)
+
+
+def test_transitive_callers_query_uses_literal_hops() -> None:
+    """``get_transitive_callers`` must interpolate clamped int hops, never a param."""
+    from socialseed_tasker.infrastructure.neo4j_code_graph_repository import (
+        CodeGraphRepository,
+    )
+
+    captured: list[tuple[str, dict]] = []
+
+    class _Result:
+        def single(self):
+            return None
+
+        def __iter__(self):
+            return iter([])
+
+    class _Session:
+        def run(self, query, *args, **kwargs):
+            params: dict = {}
+            for arg in args:
+                if isinstance(arg, dict):
+                    params.update(arg)
+            params.update(kwargs)
+            captured.append((query, params))
+            return _Result()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    class _Driver:
+        def session(self, database=None):
+            return _Session()
+
+    repo = CodeGraphRepository(_Driver())
+    assert repo.get_transitive_callers("sym", depth=3) == []
+    assert len(captured) == 1
+    query, params = captured[0]
+    assert "*1..3]" in query.replace(" ", ""), query
+    assert "$depth" not in query, query
+    assert params == {"symbol_id": "sym"}, params

@@ -3,7 +3,7 @@
 **Fuente:** campaña de pruebas del API desplegado (`tasker-api` en `127.0.0.1:8888`,
 imagen reconstruida a `7cbfc5b`), 2026-10-20/21.
 **Created:** 2026-10-21
-**Status:** OPEN (5/20 implementadas — issues **#578–#597** en `.issues/to-do/`)
+**Status:** OPEN (7/20 implementadas — issues **#578–#597** en `.issues/to-do/`)
 
 > **Continuidad:** siguiente número libre tras **#577** (máximo en `.issues/done/`,
 > cerrado el 2026-10-12), por lo que esta auditoría numeró **#578–#597**.
@@ -35,8 +35,8 @@ imagen reconstruida a `7cbfc5b`), 2026-10-20/21.
 | #579 | `PATCH /epics`/`/objectives` con body sin campos → 500 (Cypher `SET` vacío) | MEDIUM | bug fix / backend | DONE  |
 | #580 | Los 4 `cost-*` → 500 (Cypher inválido: `WHEN 'JUNIOR'`, `hours` sin definir) | MEDIUM | bug fix / backend | OPEN |
 | #581 | `GET /secrets/audit` → 500 (ruta sombreada por `/secrets/{name}`) | MEDIUM | bug fix / backend | OPEN |
-| #582 | `GET /code-graph/files`/`symbols` → 500 (`NameError: driver`) | MEDIUM | bug fix / backend | OPEN |
-| #583 | Code graph → 500 (`'BoltDriver' has no attribute 'driver'`) | MEDIUM | bug fix / backend | OPEN |
+| #582 | `GET /code-graph/files`/`symbols` → 500 (`NameError: driver`) | MEDIUM | bug fix / backend | DONE  |
+| #583 | Code graph → 500 (`'BoltDriver' has no attribute 'driver'`) | MEDIUM | bug fix / backend | DONE  |
 | #584 | `POST /commits` → 500 (`authorName` inexistente en el modelo) | MEDIUM | bug fix / backend | DONE  |
 | #585 | 10 endpoints → 500 por parámetros Cypher mal enlazados (`$projectId` vs `project_id=`…) | HIGH | bug fix / backend | DONE  |
 | #586 | `PATCH /issues/{id}/manifest/todo` → 500 (lista de maps como propiedad Neo4j) | MEDIUM | bug fix / backend | OPEN |

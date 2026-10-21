@@ -334,16 +334,18 @@ class CodeGraphRepository:
 
     def get_transitive_callers(self, symbol_id: str, depth: int = 3) -> list[dict[str, Any]]:
         """Get all symbols that call this symbol (transitive closure)."""
+        # Neo4j rejects parameters in relationship hop ranges (``*1..$depth``),
+        # so the internal depth is interpolated as a clamped literal integer.
+        hops = max(1, min(int(depth), 10))
         with _session(self._driver) as session:
             result = session.run(
-                """
-                MATCH (caller:CodeSymbol)-[:CALLS*1..$depth]->(s:CodeSymbol {id: $symbol_id})
-                RETURN DISTINCT caller.id as id, caller.name as name, caller.symbol_type as symbol_type,
-                       length((caller)-[:CALLS*1..]->(s)) as depth
+                f"""
+                MATCH path = (caller:CodeSymbol)-[:CALLS*1..{hops}]->(s:CodeSymbol {{id: $symbol_id}})
+                RETURN caller.id as id, caller.name as name, caller.symbol_type as symbol_type,
+                       min(length(path)) as depth
                 ORDER BY depth
                 """,
                 symbol_id=symbol_id,
-                depth=depth,
             )
             return [
                 {"id": r["id"], "name": r["name"], "symbol_type": r["symbol_type"], "depth": r["depth"]}

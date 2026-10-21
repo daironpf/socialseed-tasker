@@ -31,7 +31,7 @@ Como Python resuelve `driver` en tiempo de ejecución, el fallo solo salta con e
 endpoint invocado (y en dev sin driver habría dado el mismo NameError, no el guard
 `if not driver` que el autor pretendía).
 
-## Status: OPEN
+## Status: DONE
 
 ## Priority: MEDIUM
 

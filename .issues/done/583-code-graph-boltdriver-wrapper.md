@@ -37,7 +37,7 @@ Ya existe precedente de normalización en el repo: `routers/project.py:533-534` 
 `driver.driver if hasattr(driver, "driver") else driver` y
 `driver.database if hasattr(...) else "neo4j"`.
 
-## Status: OPEN
+## Status: DONE
 
 ## Priority: MEDIUM
 
@@ -94,3 +94,11 @@ bug fix / backend
   test-token'` → 500. En proceso sin Neo4j → 200 con guard: el test debe cubrir la
   rama con driver.
 - Verificado in-process 2026-10-21 dentro de `tasker-api` (imagen `7cbfc5b`).
+- **Bugs Cypher adicionales hallados en vivo** durante la verificación de la
+  aceptación (también corregidos en este issue): `FIND_ISSUES_AFFECTING_FILE`
+  tenía dos `WHERE` consecutivos (`CypherSyntaxError: Invalid input 'WHERE'` →
+  `/code-graph/issues/{path}` → 500) y `get_transitive_callers` usaba
+  `[:CALLS*1..$depth]` (Neo4j rechaza parámetros en rangos de hop) +
+  `length(List<Path>)` (Neo4j 5 exige `length(Path)`) →
+  `POST /code-graph/analyze/impact` → 500. Regresión fijada por tests de
+  patrones en `test_cypher_param_consistency.py`.

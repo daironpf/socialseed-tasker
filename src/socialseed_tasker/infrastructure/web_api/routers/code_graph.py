@@ -165,6 +165,7 @@ async def code_graph_scan(
 async def code_graph_files(
     limit: int = Query(50, ge=1, le=500),
     language: str | None = Query(None),
+    driver: Any = Depends(get_code_graph_driver),
 ) -> dict[str, Any]:
     """List files in the code graph."""
     if not driver:
@@ -186,6 +187,7 @@ async def code_graph_symbols(
     name: str | None = Query(None),
     symbol_type: str | None = Query(None),
     limit: int = Query(50, ge=1, le=100),
+    driver: Any = Depends(get_code_graph_driver),
 ) -> dict[str, Any]:
     """Find symbols by name in the code graph."""
     from socialseed_tasker.domain.code_analysis_entities import SymbolType
