@@ -31,7 +31,7 @@ no en el modelo de dominio — de ahí el choque. Los GET funcionan porque leen 
 
 Mismo patrón que `POST /commits` (#584) y que la familia de parámetros Cypher (#585).
 
-## Status: OPEN
+## Status: DONE
 
 ## Priority: HIGH
 
@@ -65,13 +65,13 @@ bug fix / backend
      `createdAt`/`updatedAt` como strings ISO (contrato de la query CREATE_EPIC).
 
 ## Acceptance Criteria
-- [ ] `POST /api/v1/epics` con `{"name": ...}` → 2xx (ya no 500) y el epic aparece en
+- [x] `POST /api/v1/epics` con `{"name": ...}` → 2xx (ya no 500) y el epic aparece en
       `GET /epics` y `GET /epics/{id}`
-- [ ] `POST /api/v1/objectives` con `{"name": ...}` → 2xx y aparece en `GET /objectives`
-- [ ] Los nodos creados tienen `createdAt`/`updatedAt` en Neo4j (la query
+- [x] `POST /api/v1/objectives` con `{"name": ...}` → 2xx y aparece en `GET /objectives`
+- [x] Los nodos creados tienen `createdAt`/`updatedAt` en Neo4j (la query
       `CREATE_EPIC`/`CREATE_OBJECTIVE` recibe strings ISO)
-- [ ] Sin accesos `camelCase` a atributos Pydantic en `epic_mixin.py`
-- [ ] Gates: `ruff check src/` sin delta, `mypy src/` sin delta, `pytest -q` sin nuevas
+- [x] Sin accesos `camelCase` a atributos Pydantic en `epic_mixin.py`
+- [x] Gates: `ruff check src/` sin delta, `mypy src/` sin delta, `pytest -q` sin nuevas
       fallas (los tests nuevos pasan)
 
 ## Files to Modify
@@ -92,3 +92,17 @@ bug fix / backend
 - Tras crear epics/objectives en pruebas, limpiarlos (DELETE /epics, DELETE /objectives
   o Cypher) — el entorno real se dejó limpio tras la auditoría (#588 explica por qué
   borrar policies a mano).
+
+## Resolution (2026-10-21)
+
+- Fix en `epic_mixin.py:23-24` y `90-91`: accesos a `created_at`/`updated_at`
+  (snake_case). Auditoría completa del mixin: no quedan accesos camelCase a
+  atributos Pydantic. El router no necesita cambios (los `default_factory=_now` de
+  las entidades poblan las fechas siempre).
+- Tests nuevos `tests/unit/test_epic_objective_repo.py` (5 tests): contrato de
+  params ISO en `session.run` + roundtrip create→get con driver grabador.
+- Gates: ruff 1004 (sin delta), mypy 1133→1129 (el fix elimina 4 `attr-defined`),
+  pytest 1515 passed / 62 skipped / 0 failed (+5).
+- Verificado en vivo contra `tasker-api` reconstruida: POST /epics y /objectives →
+  201, GET roundtrip 200, nodos en Neo4j con `createdAt`/`updatedAt` ISO; datos de
+  prueba borrados (entorno en 0 epics/objectives).

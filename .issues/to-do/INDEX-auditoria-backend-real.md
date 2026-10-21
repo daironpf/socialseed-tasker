@@ -3,7 +3,7 @@
 **Fuente:** campaña de pruebas del API desplegado (`tasker-api` en `127.0.0.1:8888`,
 imagen reconstruida a `7cbfc5b`), 2026-10-20/21.
 **Created:** 2026-10-21
-**Status:** OPEN (0/20 implementadas — issues **#578–#597** en `.issues/to-do/`)
+**Status:** OPEN (1/20 implementadas — issues **#578–#597** en `.issues/to-do/`)
 
 > **Continuidad:** siguiente número libre tras **#577** (máximo en `.issues/done/`,
 > cerrado el 2026-10-12), por lo que esta auditoría numeró **#578–#597**.
@@ -31,7 +31,7 @@ imagen reconstruida a `7cbfc5b`), 2026-10-20/21.
 
 | # | Issue | Priority | Type | Status |
 |---|---|---|---|---|
-| #578 | `POST /epics` y `/objectives` → 500 (`createdAt` inexistente en el modelo) | HIGH | bug fix / backend | OPEN |
+| #578 | `POST /epics` y `/objectives` → 500 (`createdAt` inexistente en el modelo) | HIGH | bug fix / backend | DONE  |
 | #579 | `PATCH /epics`/`/objectives` con body sin campos → 500 (Cypher `SET` vacío) | MEDIUM | bug fix / backend | OPEN |
 | #580 | Los 4 `cost-*` → 500 (Cypher inválido: `WHEN 'JUNIOR'`, `hours` sin definir) | MEDIUM | bug fix / backend | OPEN |
 | #581 | `GET /secrets/audit` → 500 (ruta sombreada por `/secrets/{name}`) | MEDIUM | bug fix / backend | OPEN |

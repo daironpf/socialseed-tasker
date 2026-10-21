@@ -20,8 +20,8 @@ class EpicRepositoryMixin:
                 description=epic.description,
                 objective_id=str(epic.objective_id) if epic.objective_id else None,
                 status=epic.status.value,
-                createdAt=epic.createdAt.isoformat(),
-                updatedAt=epic.updatedAt.isoformat(),
+                createdAt=epic.created_at.isoformat(),
+                updatedAt=epic.updated_at.isoformat(),
             )
 
     def get_epic(self, epicId: str) -> Epic | None:
@@ -87,8 +87,8 @@ class EpicRepositoryMixin:
                 description=objective.description,
                 status=objective.status.value,
                 quarter=objective.quarter,
-                createdAt=objective.createdAt.isoformat(),
-                updatedAt=objective.updatedAt.isoformat(),
+                createdAt=objective.created_at.isoformat(),
+                updatedAt=objective.updated_at.isoformat(),
             )
 
     def get_objective(self, objective_id: str) -> Objective | None:
