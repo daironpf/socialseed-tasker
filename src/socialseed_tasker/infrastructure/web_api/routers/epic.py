@@ -210,6 +210,8 @@ def update_epic(
     body: dict,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
+    if not body:
+        raise HTTPException(status_code=422, detail="empty update: provide at least one field")
     repo.update_epic(epic_id, body)
     return APIResponse(data={"updated": epic_id}, meta=Meta(request_id=None))
 

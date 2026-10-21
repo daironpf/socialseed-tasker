@@ -7,6 +7,9 @@ from socialseed_tasker.domain.entities import Epic, EpicStatus, Objective, Objec
 from socialseed_tasker.infrastructure import neo4j_queries as queries
 from socialseed_tasker.infrastructure.neo4j_impl.shared import _session
 
+_EPIC_UPDATABLE_FIELDS = frozenset({"name", "description", "objective_id", "status"})
+_OBJECTIVE_UPDATABLE_FIELDS = frozenset({"name", "description", "status", "quarter"})
+
 
 class EpicRepositoryMixin:
     """Epic and Objective CRUD operations."""
@@ -67,11 +70,14 @@ class EpicRepositoryMixin:
             session.run(queries.LINK_ISSUE_TO_EPIC, issue_id=issue_id, epicId=epicId)
 
     def update_epic(self, epicId: str, updates: dict) -> None:
+        safe_updates = {k: v for k, v in updates.items() if k in _EPIC_UPDATABLE_FIELDS}
+        if not safe_updates:
+            return
         with _session(self._driver) as session:
-            set_clauses = []
             params = {"id": epicId, "updatedAt": datetime.now(timezone.utc).isoformat()}
+            set_clauses = ["e.updatedAt = $updatedAt"]
 
-            for key, value in updates.items():
+            for key, value in safe_updates.items():
                 set_clauses.append(f"e.{key} = ${key}")
                 params[key] = value
 
@@ -134,11 +140,14 @@ class EpicRepositoryMixin:
             session.run(queries.LINK_EPIC_TO_OBJECTIVE, epicId=epicId, objective_id=objective_id)
 
     def update_objective(self, objective_id: str, updates: dict) -> None:
+        safe_updates = {k: v for k, v in updates.items() if k in _OBJECTIVE_UPDATABLE_FIELDS}
+        if not safe_updates:
+            return
         with _session(self._driver) as session:
-            set_clauses = []
             params = {"id": objective_id, "updatedAt": datetime.now(timezone.utc).isoformat()}
+            set_clauses = ["o.updatedAt = $updatedAt"]
 
-            for key, value in updates.items():
+            for key, value in safe_updates.items():
                 set_clauses.append(f"o.{key} = ${key}")
                 params[key] = value
 

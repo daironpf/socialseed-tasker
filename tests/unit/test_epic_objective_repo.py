@@ -171,3 +171,107 @@ def test_list_epics_and_objectives_do_not_crash_on_empty() -> None:
     repo, _ = _repo()
     assert repo.list_epics() == []
     assert repo.list_objectives() == []
+
+
+# ---------------------------------------------------------------------------
+# update_epic / update_objective (issue #579): empty SET, updatedAt, key safety
+# ---------------------------------------------------------------------------
+
+
+def test_update_epic_with_empty_updates_runs_no_query() -> None:
+    repo, driver = _repo()
+
+    repo.update_epic("epic-1", {})
+
+    assert driver.calls == []
+
+
+def test_update_epic_sets_fields_and_renews_updated_at() -> None:
+    repo, driver = _repo()
+
+    repo.update_epic("epic-1", {"name": "New name", "status": "IN_PROGRESS"})
+
+    assert len(driver.calls) == 1
+    query, params = driver.calls[0]
+    assert "SET" in query
+    assert "e.updatedAt = $updatedAt" in query
+    assert "e.name = $name" in query
+    assert "e.status = $status" in query
+    assert params["id"] == "epic-1"
+    assert params["name"] == "New name"
+    assert params["status"] == "IN_PROGRESS"
+    assert params["updatedAt"].endswith("+00:00")
+
+
+def test_update_epic_drops_protected_and_unknown_keys() -> None:
+    repo, driver = _repo()
+
+    repo.update_epic(
+        "epic-1",
+        {"name": "ok", "id": "evil", "createdAt": "evil", "status = 'x": "evil", "foo": 1},
+    )
+
+    assert len(driver.calls) == 1
+    query, params = driver.calls[0]
+    assert "e.name = $name" in query
+    assert "e.id" not in query
+    assert "e.createdAt" not in query
+    assert "foo" not in query
+    assert params["id"] == "epic-1"
+    assert "createdAt" not in params
+    assert "foo" not in params
+
+
+def test_update_epic_with_only_invalid_keys_runs_no_query() -> None:
+    repo, driver = _repo()
+
+    repo.update_epic("epic-1", {"id": "evil", "createdAt": "evil"})
+
+    assert driver.calls == []
+
+
+def test_update_objective_with_empty_updates_runs_no_query() -> None:
+    repo, driver = _repo()
+
+    repo.update_objective("obj-1", {})
+
+    assert driver.calls == []
+
+
+def test_update_objective_sets_fields_and_renews_updated_at() -> None:
+    repo, driver = _repo()
+
+    repo.update_objective("obj-1", {"quarter": "2026Q2", "status": "COMPLETED"})
+
+    assert len(driver.calls) == 1
+    query, params = driver.calls[0]
+    assert "SET" in query
+    assert "o.updatedAt = $updatedAt" in query
+    assert "o.quarter = $quarter" in query
+    assert "o.status = $status" in query
+    assert params["id"] == "obj-1"
+    assert params["quarter"] == "2026Q2"
+    assert params["status"] == "COMPLETED"
+    assert params["updatedAt"].endswith("+00:00")
+
+
+def test_update_objective_drops_protected_and_unknown_keys() -> None:
+    repo, driver = _repo()
+
+    repo.update_objective("obj-1", {"name": "ok", "id": "evil", "objective_id": "evil", "foo": 1})
+
+    assert len(driver.calls) == 1
+    query, params = driver.calls[0]
+    assert "o.name = $name" in query
+    assert "o.id" not in query
+    assert "foo" not in query
+    assert params["id"] == "obj-1"
+    assert "foo" not in params
+
+
+def test_update_objective_with_only_invalid_keys_runs_no_query() -> None:
+    repo, driver = _repo()
+
+    repo.update_objective("obj-1", {"id": "evil", "foo": 1})
+
+    assert driver.calls == []

@@ -41,7 +41,7 @@ Este era precisamente el body que mandaba el smoke de la auditoría (el OpenAPI 
 documenta `requestBody` → se manda `{}`, ver #595): `PATCH /epics/{id}` y
 `PATCH /objectives/{id}` figuraban como ERR en la corrida run4.
 
-## Status: OPEN
+## Status: DONE
 
 ## Priority: MEDIUM
 
@@ -70,14 +70,14 @@ bug fix / backend
    - Ídem para objectives.
 
 ## Acceptance Criteria
-- [ ] `PATCH /api/v1/epics/{id}` con `{}` → 422 controlado o 2xx con `updatedAt`
+- [x] `PATCH /api/v1/epics/{id}` con `{}` → 422 controlado o 2xx con `updatedAt`
       actualizado (**nunca 500**)
-- [ ] `PATCH /api/v1/epics/{id}` con campos reales → 200 y los cambios persisten en
+- [x] `PATCH /api/v1/epics/{id}` con campos reales → 200 y los cambios persisten en
       Neo4j
-- [ ] `updatedAt` se renueva en toda actualización (hoy se envía el param y no se usa)
-- [ ] `update_objective` cubierto con el mismo arreglo (verificado, no asumido)
-- [ ] Las claves de `updates` no se interpolan a pelo en la query Cypher
-- [ ] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
+- [x] `updatedAt` se renueva en toda actualización (hoy se envía el param y no se usa)
+- [x] `update_objective` cubierto con el mismo arreglo (verificado, no asumido)
+- [x] Las claves de `updates` no se interpolan a pelo en la query Cypher
+- [x] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
 
 ## Files to Modify
 - `src/socialseed_tasker/infrastructure/neo4j_impl/epic_mixin.py` (líneas 69-79 y 136+)
@@ -96,3 +96,35 @@ bug fix / backend
 - Ojo: PATCH sobre un id inexistente devuelve 200 hoy (el MATCH no casa y no hay
   error) — decidir si se pasa a 404 en esta misma issue o queda fuera de alcance
   (documentarlo en los AC).
+
+## Resolution (2026-10-21)
+
+- **Contrato decidido**: body vacio en PATCH -> **422** (`HTTPException`, envelope
+  `detail` estandar del repo) en `routers/epic.py` y `routers/objective.py` antes
+  de tocar el repositorio. Body sin campos -> el cliente ve un error controlado,
+  nunca un 500 de Cypher.
+- **Mixin con defensa en profundidad** (`epic_mixin.py` `update_epic` /
+  `update_objective`): allowlist de campos actualizables por entidad (Epic:
+  `name/description/objective_id/status`; Objective: `name/description/status/
+  quarter`). Claves fuera de la allowlist se descartan - sin interpolacion a pelo
+  (AC de inyeccion) y ademas impide sobreescribir `id`/`createdAt` desde el body.
+- Si tras filtrar no queda nada (updates vacio o solo claves invalidas) el mixin
+  **no ejecuta ninguna query** -> imposible construir `SET  RETURN` invalido.
+- `updatedAt` se anade SIEMPRE a las clausulas SET cuando hay updates reales
+  (antes solo estaba en params y jamas se escribia).
+- Fuera de alcance documentado: PATCH sobre id inexistente sigue devolviendo 200
+  (MATCH no casa -> no-op silencioso); body con solo claves desconocidas -> 200
+  sin efecto (el mixin las descarta). Ambos quedan pendientes si se quiere un
+  contrato 404/422 estricto.
+- Tests: `tests/unit/test_epic_objective_repo.py` (+8: vacio no query, SET con
+  updatedAt, claves protegidas/desconocidas descartadas, solo invalidas -> no
+  query; epic e objective) y `tests/api/test_epic_objective_patch.py` (5: 422 en
+  vacio sin llamar al repo, 200 con campos, sin body -> 422).
+- Gates: ruff 1004 (sin delta; tests nuevos limpios), mypy 1128 = 1128 verificado
+  con `--no-incremental` (el 1129 puntual era ruido de cache incremental),
+  pytest 1533 passed / 62 skipped / 0 failed (+13).
+- Verificado en vivo (tasker-api reconstruida): PATCH epic/objective con `{}` ->
+  **422**; con campos -> 200 y GET devuelve los cambios; Cypher confirma
+  `createdAt != updatedAt`, `id`/`createdAt` intactos pese a los keys trampa
+  (`id:"evil-id"`, `createdAt:"evil"` jamas escritos); `docker logs` sin ningun
+  registro ERROR por estos 4 PATCH (junto a #594). Nodos borrados (0/0).
