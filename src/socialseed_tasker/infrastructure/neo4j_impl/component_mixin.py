@@ -102,7 +102,8 @@ class ComponentRepositoryMixin:
         params = {
             "id": project_id,
             "name": project_data["name"],
-            "slug": project_data.get("slug", project_data["name"]),
+            "slug": project_data.get("slug")
+            or project_data["name"].strip().lower().replace(" ", "-"),
             "description": project_data.get("description", ""),
             "repository_url": project_data.get("repositoryUrl"),
             "base_package": project_data.get("basePackage"),

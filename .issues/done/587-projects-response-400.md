@@ -30,7 +30,7 @@ O sea: falta **normalización en el mapper de proyecto → respuesta** (y de pas
 proyecto debería nacer con slug o con un fallback). Mientras tanto cualquier lectura
 del listado cae entera (un solo nodo malo hunde la respuesta 200 → 400).
 
-## Status: OPEN
+## Status: DONE
 
 ## Priority: MEDIUM
 
@@ -65,12 +65,12 @@ bug fix / backend
    - Test con el shape real del nodo (fixture con `neo4j.time.DateTime`).
 
 ## Acceptance Criteria
-- [ ] `GET /api/v1/projects/all` → 200 con la lista de proyectos (hoy 400)
-- [ ] `GET /api/v1/projects/current` → 200 con el proyecto activo
-- [ ] `ProjectResponse` no recibe `None` en `slug` ni tipos del driver en fechas
+- [x] `GET /api/v1/projects/all` → 200 con la lista de proyectos (hoy 400)
+- [x] `GET /api/v1/projects/current` → 200 con el proyecto activo
+- [x] `ProjectResponse` no recibe `None` en `slug` ni tipos del driver en fechas
       (o el schema lo admite y lo documenta)
-- [ ] Un nodo proyecto mal formado no tumba el listado completo
-- [ ] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
+- [x] Un nodo proyecto mal formado no tumba el listado completo
+- [x] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
 
 ## Files to Modify
 - `src/socialseed_tasker/infrastructure/web_api/routers/project.py` (construcción de
@@ -90,3 +90,13 @@ bug fix / backend
 - El segundo error de validación del mensaje viene truncado en el envelope — en la
   repro con debug se confirma el par (`slug` + `createdAt`); al implementar, mirar el
   traceback completo con `app.debug=True` para no parchear solo el primero.
+- **Fix (c)+(b) recomendados en la issue**: mapper único
+  `_project_node_to_response` en `routers/project.py` usado por `all`/`current`/
+  `by-id` — slug con fallback `slugify(name)`, fechas vía `to_native()` → ISO,
+  defaults para campos `str` nulos, y skip+log por nodo malformado en el listado
+  (un nodo corrupto ya no hunde la respuesta). Altas: `setup.CREATE_ROOT_PROJECT`
+  ahora escribe `slug` (`ON CREATE`, `coalesce` en `ON MATCH`) y
+  `component_mixin.create_project` no puede guardar `slug=None`. Nodo existente
+  (slug NULL) queda cubierto por el fallback — sin backfill de la BD.
+  En vivo: `/projects/all`, `/projects/current` e `/projects/{id}` → 200 con
+  `slug:"socialseed"` y `createdAt:"2026-10-13T15:57:09.504000+00:00"`.

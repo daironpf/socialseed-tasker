@@ -111,8 +111,8 @@ ON MATCH SET u.role = 'ADMIN'
 
 CREATE_ROOT_PROJECT = """
 MERGE (p:Project {name: $name})
-ON CREATE SET p.id = $id, p.summary = $summary, p.initialized_at = datetime(), p.createdAt = $now
-ON MATCH SET p.id = coalesce(p.id, $id), p.summary = $summary,
+ON CREATE SET p.id = $id, p.slug = $slug, p.summary = $summary, p.initialized_at = datetime(), p.createdAt = $now
+ON MATCH SET p.id = coalesce(p.id, $id), p.slug = coalesce(p.slug, $slug), p.summary = $summary,
     p.initialized_at = coalesce(p.initialized_at, datetime())
 RETURN p.id AS id
 """
@@ -237,6 +237,7 @@ class Neo4jSetupStore:
                     CREATE_ROOT_PROJECT,
                     id=generated_project_id,
                     name=project_name,
+                    slug=project_name.strip().lower().replace(" ", "-"),
                     summary=project_summary,
                     now=now,
                 ).single()

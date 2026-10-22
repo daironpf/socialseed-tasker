@@ -124,6 +124,45 @@ logger = logging.getLogger(__name__)
 project_router = APIRouter()
 
 
+def _slugify_project_name(name: str) -> str:
+    return name.strip().lower().replace(" ", "-")
+
+
+def _iso_timestamp(value: Any) -> str | None:
+    if value is None:
+        return None
+    to_native = getattr(value, "to_native", None)
+    if callable(to_native):
+        value = to_native()
+    isoformat = getattr(value, "isoformat", None)
+    if callable(isoformat):
+        result: str = isoformat()
+        return result
+    return str(value)
+
+
+def _project_node_to_response(p: Any) -> ProjectResponse:
+    name = p.get("name") or ""
+    return ProjectResponse(
+        id=p.get("id") or "",
+        name=name,
+        slug=p.get("slug") or _slugify_project_name(name or str(p.get("id") or "")),
+        description=p.get("description") or "",
+        repositoryUrl=p.get("repositoryUrl") or "",
+        basePackage=p.get("basePackage") or "",
+        visibility=p.get("visibility") or "PUBLIC",
+        status=p.get("status") or "DEVELOPMENT",
+        techStack=p.get("techStack") or [],
+        mainStack=p.get("mainStack") or [],
+        architectureStyle=p.get("architectureStyle") or "api-first",
+        version=p.get("version") or "0.1.0",
+        conventionsUrl=p.get("conventionsUrl") or "",
+        globalStatus=p.get("globalStatus") or "DEVELOPMENT",
+        createdAt=_iso_timestamp(p.get("createdAt")),
+        updatedAt=_iso_timestamp(p.get("updatedAt")),
+    )
+
+
 @project_router.get(
     "/projects",
     response_model=APIResponse[list[str]],
@@ -166,26 +205,10 @@ def list_all_projects_detailed(
         result = session.run(queries.LIST_PROJECT_NODES)
         projects = []
         for record in result:
-            p = record["p"]
-            project_data = {
-                "id": p.get("id"),
-                "name": p.get("name"),
-                "slug": p.get("slug"),
-                "description": p.get("description", ""),
-                "repositoryUrl": p.get("repositoryUrl", ""),
-                "basePackage": p.get("basePackage", ""),
-                "visibility": p.get("visibility", "PUBLIC"),
-                "status": p.get("status", "DEVELOPMENT"),
-                "techStack": p.get("techStack", []),
-                "mainStack": p.get("mainStack", []),
-                "architectureStyle": p.get("architectureStyle", "api-first"),
-                "version": p.get("version", "0.1.0"),
-                "conventionsUrl": p.get("conventionsUrl", ""),
-                "globalStatus": p.get("globalStatus", "DEVELOPMENT"),
-                "createdAt": p.get("createdAt"),
-                "updatedAt": p.get("updatedAt"),
-            }
-            projects.append(ProjectResponse(**project_data))
+            try:
+                projects.append(_project_node_to_response(record["p"]))
+            except Exception as exc:
+                logger.warning("skipping malformed project node: %s", exc)
         return APIResponse(data=projects, meta=Meta(request_id=None))
 
 
@@ -221,26 +244,7 @@ def get_current_project(
         if not record:
             return APIResponse(data=None, meta=Meta(request_id=None))
 
-        p = record["p"]
-        project_data = {
-            "id": p.get("id"),
-            "name": p.get("name"),
-            "slug": p.get("slug"),
-            "description": p.get("description", ""),
-            "repositoryUrl": p.get("repositoryUrl", ""),
-            "basePackage": p.get("basePackage", ""),
-            "visibility": p.get("visibility", "PUBLIC"),
-            "status": p.get("status", "DEVELOPMENT"),
-            "techStack": p.get("techStack", []),
-            "mainStack": p.get("mainStack", []),
-            "architectureStyle": p.get("architectureStyle", "api-first"),
-            "version": p.get("version", "0.1.0"),
-            "conventionsUrl": p.get("conventionsUrl", ""),
-            "globalStatus": p.get("globalStatus", "DEVELOPMENT"),
-            "createdAt": p.get("createdAt"),
-            "updatedAt": p.get("updatedAt"),
-        }
-        return APIResponse(data=ProjectResponse(**project_data), meta=Meta(request_id=None))
+        return APIResponse(data=_project_node_to_response(record["p"]), meta=Meta(request_id=None))
 
 
 @project_router.get(
@@ -280,26 +284,7 @@ def get_project_by_id(
         if not record:
             return APIResponse(data=None, meta=Meta(request_id=None))
 
-        p = record["p"]
-        project_data = {
-            "id": p.get("id"),
-            "name": p.get("name"),
-            "slug": p.get("slug"),
-            "description": p.get("description", ""),
-            "repositoryUrl": p.get("repositoryUrl", ""),
-            "basePackage": p.get("basePackage", ""),
-            "visibility": p.get("visibility", "PUBLIC"),
-            "status": p.get("status", "DEVELOPMENT"),
-            "techStack": p.get("techStack", []),
-            "mainStack": p.get("mainStack", []),
-            "architectureStyle": p.get("architectureStyle", "api-first"),
-            "version": p.get("version", "0.1.0"),
-            "conventionsUrl": p.get("conventionsUrl", ""),
-            "globalStatus": p.get("globalStatus", "DEVELOPMENT"),
-            "createdAt": p.get("createdAt"),
-            "updatedAt": p.get("updatedAt"),
-        }
-        return APIResponse(data=ProjectResponse(**project_data), meta=Meta(request_id=None))
+        return APIResponse(data=_project_node_to_response(record["p"]), meta=Meta(request_id=None))
 
 
 @project_router.post(
@@ -350,7 +335,8 @@ def create_project(
                         "project": {
                             "id": p.get("id"),
                             "name": p.get("name"),
-                            "slug": p.get("slug"),
+                            "slug": p.get("slug")
+                            or _slugify_project_name(p.get("name") or ""),
                         }
                     },
                     meta=Meta(request_id=None),
