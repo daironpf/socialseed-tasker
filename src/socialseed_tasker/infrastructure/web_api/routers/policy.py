@@ -114,6 +114,9 @@ from socialseed_tasker.infrastructure.web_api.routers.helpers import (
     construct_paginated_api_response as _paginated,
 )
 
+if TYPE_CHECKING:
+    from socialseed_tasker.application.policy import Policy
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -336,6 +339,25 @@ def create_policy(
     )
 
 
+def _policy_to_response(p: Policy) -> PolicyResponse:
+    return PolicyResponse(
+        id=str(p.id),
+        name=p.name,
+        description=p.description,
+        rules=[
+            {"rule_type": r.rule_type.value, "from_pattern": r.from_pattern, "to_pattern": r.to_pattern}
+            for r in p.rules
+        ],
+        target_scope=p.target_scope.value,
+        logic_definition=p.logic_definition,
+        remediation_strategy=p.remediation_strategy,
+        autofix_template=p.autofix_template,
+        is_active=p.is_active,
+        created_at=p.created_at,
+        updated_at=p.updated_at,
+    )
+
+
 @policy_router.get(
     "/policies",
     response_model=APIResponse[list[PolicyResponse]],
@@ -347,36 +369,18 @@ def list_policies(
     name: str = None,
 ) -> APIResponse[list[PolicyResponse]]:
     from socialseed_tasker.infrastructure.neo4j_policy_repository import PolicyRepository
-    
+
     driver = request.app.state.driver
     policy_repo = PolicyRepository(driver)
-    
+
     if name:
         policy = policy_repo.get_policy_by_name(name)
         policies = [policy] if policy else []
     else:
         policies = policy_repo.list_policies()
-        
+
     return APIResponse(
-        data=[
-            PolicyResponse(
-                id=str(p.id),
-                name=p.name,
-                description=p.description,
-                rules=[
-                    {"rule_type": r.rule_type.value, "from_pattern": r.from_pattern, "to_pattern": r.to_pattern}
-                    for r in p.rules
-                ],
-                target_scope=p.target_scope.value,
-                logic_definition=p.logic_definition,
-                remediation_strategy=p.remediation_strategy,
-                autofix_template=p.autofix_template,
-                is_active=p.is_active,
-                created_at=p.created_at,
-                updated_at=p.updated_at,
-            )
-            for p in policies
-        ],
+        data=[_policy_to_response(p) for p in policies],
         meta=Meta(request_id=None),
     )
 
@@ -387,41 +391,41 @@ def list_policies(
     summary="Get a policy",
     description="Get a policy by ID.",
 )
-def get_policy(policy_id: str) -> APIResponse[PolicyResponse]:
+def get_policy(policy_id: str, request: Request) -> APIResponse[PolicyResponse]:
+    from socialseed_tasker.infrastructure.neo4j_policy_repository import PolicyRepository
 
-    policies = _policy_engine.get("policies", [])
-    for p in policies:
-        if str(p.id) == policy_id:
-            return APIResponse(
-                data=PolicyResponse(
-                    id=str(p.id),
-                    name=p.name,
-                    description=p.description,
-                    rules=[
-                        {"rule_type": r.rule_type.value, "from_pattern": r.from_pattern, "to_pattern": r.to_pattern}
-                        for r in p.rules
-                    ],
-                    is_active=p.is_active,
-                    created_at=p.created_at,
-                    updated_at=p.updated_at,
-                ),
-                meta=Meta(request_id=None),
-            )
+    driver = getattr(request.app.state, "driver", None)
+    if driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
 
-    from fastapi import HTTPException
+    policy = PolicyRepository(driver).get_policy(policy_id)
+    if policy is None:
+        raise HTTPException(status_code=404, detail=f"Policy {policy_id} not found")
 
-    raise HTTPException(status_code=404, detail=f"Policy {policy_id} not found")
+    return APIResponse(data=_policy_to_response(policy), meta=Meta(request_id=None))
 
 
 @policy_router.delete(
     "/policies/{policy_id}",
     response_model=APIResponse[dict],
     summary="Delete a policy",
-    description="Delete a policy by ID.",
+    description="Delete a policy by ID from Neo4j. Returns 404 if it does not exist.",
 )
-def delete_policy(policy_id: str) -> APIResponse[dict]:
-    policies = _policy_engine.get("policies", [])
-    _policy_engine["policies"] = [p for p in policies if str(p.id) != policy_id]
+def delete_policy(policy_id: str, request: Request) -> APIResponse[dict]:
+    from socialseed_tasker.infrastructure.neo4j_policy_repository import PolicyRepository
+    from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
+
+    driver = getattr(request.app.state, "driver", None)
+    if driver is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+
+    policy_repo = PolicyRepository(driver)
+    if policy_repo.get_policy(policy_id) is None:
+        raise HTTPException(status_code=404, detail=f"Policy {policy_id} not found")
+
+    policy_repo.delete_policy(policy_id)
+    RAGRepository(driver).delete_by_source("policy", policy_id)
+
     return APIResponse(data={"deleted": policy_id}, meta=Meta(request_id=None))
 
 

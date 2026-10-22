@@ -3,7 +3,7 @@
 **Fuente:** campaña de pruebas del API desplegado (`tasker-api` en `127.0.0.1:8888`,
 imagen reconstruida a `7cbfc5b`), 2026-10-20/21.
 **Created:** 2026-10-21
-**Status:** OPEN (11/20 implementadas — issues **#578–#597** en `.issues/to-do/`)
+**Status:** OPEN (12/20 implementadas — issues **#578–#597** en `.issues/to-do/`)
 
 > **Continuidad:** siguiente número libre tras **#577** (máximo en `.issues/done/`,
 > cerrado el 2026-10-12), por lo que esta auditoría numeró **#578–#597**.
@@ -41,7 +41,7 @@ imagen reconstruida a `7cbfc5b`), 2026-10-20/21.
 | #585 | 10 endpoints → 500 por parámetros Cypher mal enlazados (`$projectId` vs `project_id=`…) | HIGH | bug fix / backend | DONE  |
 | #586 | `PATCH /issues/{id}/manifest/todo` → 500 (lista de maps como propiedad Neo4j) | MEDIUM | bug fix / backend | DONE  |
 | #587 | `GET /projects/all` y `/current` → 400 (`ProjectResponse.slug=None` + fechas) | MEDIUM | bug fix / backend | DONE  |
-| #588 | `DELETE /policies/{id}` → 200 pero no borra (borra en caché en memoria) | HIGH | bug fix / backend | OPEN |
+| #588 | `DELETE /policies/{id}` → 200 pero no borra (borra en caché en memoria) | HIGH | bug fix / backend | DONE  |
 | #589 | `POST /labels/sync` → 500 `Illegal header value b'token '` sin `GITHUB_TOKEN` | MEDIUM | bug fix / backend | OPEN |
 | #590 | `POST /ai/.../embed` → 500 con `{"detail":"400: OPENAI_API_KEY not configured"}` | MEDIUM | bug fix / backend | OPEN |
 | #591 | `GET /ai/similar-issues/{id}` → 500 (`Unknown function 'apoc.algo.similarity'`) | MEDIUM | bug fix / backend + infra | OPEN |

@@ -36,7 +36,7 @@ Neo4j.
 Además el endpoint ni siquiera valida existencia: borrado de un id inexistente → 200
 igual.
 
-## Status: OPEN
+## Status: DONE (commit pendiente)
 
 ## Priority: HIGH
 
@@ -67,14 +67,14 @@ bug fix / backend
    - `test_delete_policy_503_without_driver`.
 
 ## Acceptance Criteria
-- [ ] `DELETE /api/v1/policies/{id}` → 200 y la policy desaparece de
+- [x] `DELETE /api/v1/policies/{id}` → 200 y la policy desaparece de
       `GET /policies` **y** del grafo (`cypher-shell`: `MATCH (p:Policy) RETURN count(*)`
       → 0 tras borrar la única)
-- [ ] Id inexistente → 404 (ya no 200)
-- [ ] El embedding RAG asociado (si el alta lo creó) queda limpio también
-- [ ] `validate`/`dry-run` siguen funcionando tras el cambio (el engine en memoria no
+- [x] Id inexistente → 404 (ya no 200)
+- [x] El embedding RAG asociado (si el alta lo creó) queda limpio también
+- [x] `validate`/`dry-run` siguen funcionando tras el cambio (el engine en memoria no
       se rompe)
-- [ ] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
+- [x] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
 
 ## Files to Modify
 - `src/socialseed_tasker/infrastructure/web_api/routers/policy.py` (líneas 416-425)
@@ -90,3 +90,42 @@ bug fix / backend
   repetir este flujo como test.
 - El patrón correcto ya existe en el mismo router: `create_policy` (línea 271) sí escribe
   en Neo4j con `PolicyRepository(driver)` — el delete debe hablar con el mismo repo.
+
+### Resolución (2026-10-22)
+
+**Fix** en `routers/policy.py`:
+
+- `delete_policy`: ya no toca `_policy_engine` — ahora recibe `Request`, obtiene el
+  driver de `app.state.driver` (503 si `None`, patrón del resto de routers),
+  `PolicyRepository.get_policy` para validar existencia (id inexistente → **404**,
+  ya no 200 fantasma), `PolicyRepository.delete_policy` (query ya existente
+  `DELETE_POLICY` = `MATCH (p:Policy {id: $id}) DETACH DELETE p` en
+  `neo4j_policy_repository.py:115`) y finalmente
+  `RAGRepository.delete_by_source("policy", id)` para retirar embeddings RAG
+  (el alta usa `create_native_embedding` que guarda `n.embedding` en el propio
+  nodo — el `DETACH DELETE` lo elimina; `delete_by_source` cubre además
+  `RAGEmbedding` separados si existieran).
+- `get_policy`: descubrimiento durante la investigación — la issue afirmaba que leía
+  Neo4j pero en realidad **también leía el dict muerto `_policy_engine`** (siempre
+  vacío → `GET /policies/{id}` devolvía 404 para toda policy existente). Corregido
+  para leer `PolicyRepository` (503/404/200 coherente con `list_policies`), de modo
+  que el borrado sea observable vía `GET /policies/{id}` y no solo vía el listado.
+  Helper `_policy_to_response` compartido con `list_policies` (refactor puro).
+- `_policy_engine` queda intacto para `dry_run_policy` (policy.py) y
+  `dependencies.py` (enforcement de `add_dependency`) — tests
+  `tests/unit/test_max_depth_write_time.py` que lo pueblan siguen verdes.
+
+**Tests** `tests/api/test_delete_policy_roundtrip.py` (4, fake driver emulando
+`CREATE_POLICY`/`GET_POLICY`/`LIST_POLICIES`/`DELETE_POLICY`/`delete_by_source`):
+roundtrip crear → GET by id 200 → DELETE 200 → nodo fuera del store → lista vacía →
+GET by id 404; id inexistente → 404; limpieza de `RAGEmbedding` por `sourceType`;
+503 sin driver.
+
+**Verificación en vivo** (tasker-api reconstruido, 2026-10-22): 12/12 checks —
+login, POST 201 (id `3c49f207-…`), GET by id 200, lista lo contiene, nodo en grafo,
+DELETE 200 con `deleted` correcto, lista ya sin él, GET by id 404, DELETE
+inexistente 404, nodos 5 → 5, 0 `Policy` y 0 `RAGEmbedding{sourceType:'policy'}`
+en el grafo, `docker logs` sin ERROR/Traceback.
+
+**Gates**: `ruff check policy.py` 11 (HEAD 14, delta −3; test fichero limpio),
+`mypy src/` 1120 = baseline, `pytest -q` **1591 passed / 62 skipped / 0 failed**.
