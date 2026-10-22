@@ -283,8 +283,12 @@ async def test_insert_and_read_document(repo: NotificationMongoRepository, db: F
 async def test_get_validates_id(repo: NotificationMongoRepository) -> None:
     with pytest.raises(NotificationStoreError, match="notification_id is required"):
         await repo.get("")
-    with pytest.raises(NotificationStoreError, match="invalid document id"):
-        await repo.get("not-an-object-id")
+    # Malformed ids are bad input, not store failures: they degrade to
+    # "not found" semantics (404 at the router), never NotificationStoreError
+    # (which the router maps to a misleading 503) — issue #592.
+    assert await repo.get("not-an-object-id") is None
+    assert await repo.mark_read("not-an-object-id", "alice") is None
+    assert await repo.delete("not-an-object-id", "alice") is False
 
 
 async def test_not_configured_operations_raise(mongo_off: None) -> None:

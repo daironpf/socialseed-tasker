@@ -21,13 +21,19 @@ class NotificationStoreError(Exception):
     """Notifications MongoDB operation failed or persistence is not configured."""
 
 
-def _object_id(value: str) -> Any:
+def _object_id_or_none(value: str) -> Any | None:
+    """Parse a Mongo ObjectId; None when the id format is malformed (#592).
+
+    A malformed id is bad client input, not a store failure: callers treat it
+    as "not found" (404) instead of degrading to NotificationStoreError (503).
+    """
     from bson import ObjectId
+    from bson.errors import InvalidId
 
     try:
         return ObjectId(value)
-    except Exception as exc:
-        raise NotificationStoreError(f"invalid document id: {value}") from exc
+    except InvalidId:
+        return None
 
 
 class NotificationMongoRepository:
@@ -67,9 +73,13 @@ class NotificationMongoRepository:
         """Fetch one notification by id; None when it does not exist."""
         if not notification_id:
             raise NotificationStoreError("notification_id is required")
+        oid = _object_id_or_none(notification_id)
+        if oid is None:
+            logger.info("notifications get: malformed id treated as not found: %s", notification_id)
+            return None
         try:
             coll = self._collection()
-            doc: Any = await coll.find_one({"_id": _object_id(notification_id)})
+            doc: Any = await coll.find_one({"_id": oid})
             return Notification.from_document(doc) if doc else None
         except NotificationStoreError:
             raise
@@ -113,9 +123,13 @@ class NotificationMongoRepository:
         """Set read=True on a notification owned by user_id; None when missing/foreign."""
         if not notification_id or not user_id:
             raise NotificationStoreError("notification_id and user_id are required")
+        oid = _object_id_or_none(notification_id)
+        if oid is None:
+            logger.info("notifications mark_read: malformed id treated as not found: %s", notification_id)
+            return None
         try:
             coll = self._collection()
-            query: dict[str, Any] = {"_id": _object_id(notification_id), "user_id": user_id}
+            query: dict[str, Any] = {"_id": oid, "user_id": user_id}
             result: Any = await coll.update_one(query, {"$set": {"read": True}})
             if int(getattr(result, "matched_count", 0) or 0) == 0:
                 return None
@@ -147,11 +161,13 @@ class NotificationMongoRepository:
         """Delete one notification owned by user_id; False when missing/foreign."""
         if not notification_id or not user_id:
             raise NotificationStoreError("notification_id and user_id are required")
+        oid = _object_id_or_none(notification_id)
+        if oid is None:
+            logger.info("notifications delete: malformed id treated as not found: %s", notification_id)
+            return False
         try:
             coll = self._collection()
-            result: Any = await coll.delete_one(
-                {"_id": _object_id(notification_id), "user_id": user_id}
-            )
+            result: Any = await coll.delete_one({"_id": oid, "user_id": user_id})
             return int(getattr(result, "deleted_count", 0) or 0) > 0
         except NotificationStoreError:
             raise
