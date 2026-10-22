@@ -68,6 +68,26 @@ def _json_obj(raw: Any) -> dict[str, Any] | None:
     return None
 
 
+def _parse_manifest_todo(raw: Any) -> list[dict[str, Any]]:
+    """Parse a ``manifestTodo`` property into a list of TODO item dicts.
+
+    Stored as a JSON string (Neo4j properties cannot hold maps); tolerates a
+    legacy plain list and drops non-dict entries so the API contract
+    (``list[dict]``) always holds.
+    """
+    if raw is None:
+        return []
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+        except (ValueError, TypeError):
+            return []
+        raw = parsed
+    if isinstance(raw, list):
+        return [item for item in raw if isinstance(item, dict)]
+    return []
+
+
 def _node_to_issue(node: dict[str, Any]) -> Issue:
     """Convert a Neo4j node to a domain Issue."""
     data = dict(node)
@@ -134,7 +154,7 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
         agent_id=data.get("agentId") or data.get("agent_id"),
         reasoning_logs=reasoningLogs,
         comments=comments_list,
-        manifest_todo=data.get("manifestTodo", []),
+        manifest_todo=_parse_manifest_todo(data.get("manifestTodo")),
         manifest_files=data.get("manifestFiles", []),
         manifest_notes=data.get("manifestNotes", []),
         task_checklist=_json_obj(

@@ -158,7 +158,7 @@ class Issue(BaseModel):
     locked_until: Optional[datetime] = None
     reasoning_logs: list[ReasoningLogEntry] = Field(default_factory=list)
     comments: list[CommentEntry] = Field(default_factory=list)
-    manifest_todo: list[dict[str, str]] = Field(default_factory=list)
+    manifest_todo: list[dict[str, Any]] = Field(default_factory=list)
     manifest_files: list[str] = Field(default_factory=list)
     manifest_notes: list[str] = Field(default_factory=list)
     task_checklist: dict[str, bool] = Field(default_factory=dict)

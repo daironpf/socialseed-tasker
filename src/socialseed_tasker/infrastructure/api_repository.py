@@ -360,7 +360,7 @@ class ApiTaskRepository(TaskRepositoryInterface):
 
     # -- Manifest ---------------------------------------------------------------
 
-    def update_manifest_todo(self, issue_id: str, todo: list[dict[str, str]]) -> Issue:
+    def update_manifest_todo(self, issue_id: str, todo: list[dict[str, Any]]) -> Issue:
         data = self.client.request("PATCH", f"{_API}/issues/{issue_id}/manifest/todo", json={"todo": todo})
         return _parse_issue(data)
 

@@ -252,7 +252,7 @@ class ManifestNotesRequest(BaseModel):
 class ManifestResponse(BaseModel):
     """Agent progress manifest in API responses."""
 
-    todo: list[dict[str, str]] = Field(default_factory=list)
+    todo: list[dict[str, Any]] = Field(default_factory=list)
     files: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 
@@ -740,7 +740,7 @@ class IssueResponse(BaseModel):
     agent_id: str | None = None
     reasoning_logs: list[ReasoningLogEntryResponse] = Field(default_factory=list)
     comments: list[CommentResponse] = Field(default_factory=list)
-    manifest_todo: list[dict[str, str]] = Field(default_factory=list)
+    manifest_todo: list[dict[str, Any]] = Field(default_factory=list)
     manifest_files: list[str] = Field(default_factory=list)
     manifest_notes: list[str] = Field(default_factory=list)
     task_checklist: dict[str, bool] = Field(default_factory=dict)

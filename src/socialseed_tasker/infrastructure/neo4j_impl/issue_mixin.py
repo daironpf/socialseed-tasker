@@ -9,7 +9,7 @@ from uuid import uuid4
 from socialseed_tasker.domain.entities import Issue
 from socialseed_tasker.infrastructure.embedding_service import get_embedding_service
 from socialseed_tasker.infrastructure import neo4j_queries as queries
-from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_issue, _now_iso, _session, _to_uuid_list, _to_camel
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_issue, _now_iso, _parse_manifest_todo, _session, _to_uuid_list, _to_camel
 
 
 class IssueRepositoryMixin:
@@ -51,7 +51,7 @@ class IssueRepositoryMixin:
                 agent_finished_at=issue.agent_finished_at.isoformat() if issue.agent_finished_at else None,
                 agent_id=issue.agent_id,
                 reasoning_logs=json.dumps(reasoning_logs_data),
-                manifest_todo=issue.manifest_todo,
+                manifest_todo=json.dumps(issue.manifest_todo) if issue.manifest_todo else [],
                 manifest_files=issue.manifest_files,
                 manifest_notes=issue.manifest_notes,
             )
@@ -458,8 +458,12 @@ class IssueRepositoryMixin:
 
     # -- Manifest ---------------------------------------------------------------
 
-    def update_manifest_todo(self, issue_id: str, todo: list[dict[str, str]]) -> Issue:
-        """Update the manifest TODO list for an issue."""
+    def update_manifest_todo(self, issue_id: str, todo: list[dict[str, Any]]) -> Issue:
+        """Update the manifest TODO list for an issue.
+
+        The list is stored as a JSON string: Neo4j properties only accept
+        primitives, never maps (issue #586).
+        """
         with _session(self._driver) as session:
             result = session.run(
                 queries.GET_ISSUE,
@@ -472,7 +476,7 @@ class IssueRepositoryMixin:
             update_result = session.run(
                 queries.UPDATE_ISSUE,
                 id=issue_id,
-                updates={"manifestTodo": todo},
+                updates={"manifestTodo": json.dumps(todo)},
                 updated_at=_now_iso(),
             )
             updated_record = update_result.single()
@@ -535,7 +539,7 @@ class IssueRepositoryMixin:
             if record is None:
                 raise ValueError(f"Issue {issue_id} not found")
             return {
-                "todo": record["i"].get("manifestTodo", []),
+                "todo": _parse_manifest_todo(record["i"].get("manifestTodo")),
                 "files": record["i"].get("manifestFiles", []),
                 "notes": record["i"].get("manifestNotes", []),
             }

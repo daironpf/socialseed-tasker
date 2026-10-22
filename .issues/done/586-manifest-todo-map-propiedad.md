@@ -38,7 +38,7 @@ como propiedades → `CypherTypeError` → 500. Dos defectos extra en la misma l
 - La serialización a string (necesaria para caber en una propiedad) simplemente no se
   hace: falta un `json.dumps(...)` en el guardar y un `json.loads(...)` al leer.
 
-## Status: OPEN
+## Status: DONE
 
 ## Priority: MEDIUM
 
@@ -69,13 +69,13 @@ bug fix / backend
    - Test con issue inexistente → 404 (comportamiento actual correcto: ya se vió 404).
 
 ## Acceptance Criteria
-- [ ] `PATCH /issues/{id}/manifest/todo` con `{"todo":[{"task","completed"}]}` e issue
+- [x] `PATCH /issues/{id}/manifest/todo` con `{"todo":[{"task","completed"}]}` e issue
       real → 2xx (ya no `CypherTypeError`/500)
-- [ ] Roundtrip: el `GET` de la issue devuelve los items con `completed` como bool
-- [ ] La propiedad almacenada es primitiva (string JSON o array de strings), nunca un
+- [x] Roundtrip: el `GET` de la issue devuelve los items con `completed` como bool
+- [x] La propiedad almacenada es primitiva (string JSON o array de strings), nunca un
       map
-- [ ] Issue inexistente → 404 (sin cambios)
-- [ ] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
+- [x] Issue inexistente → 404 (sin cambios)
+- [x] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
 
 ## Files to Modify
 - `src/socialseed_tasker/infrastructure/web_api/routers/issues.py` (línea 1125)
@@ -94,3 +94,28 @@ bug fix / backend
 - Los hermanos `manifest/files` y `manifest/notes` (issues.py:1130, 1154) guardan
   `list[str]`/`str` — comprobar al implementar que no repiten el bug de los maps
   (`files` es array de strings: primitivo permitido, debería estar bien).
+- **Fix (2026-10-22):**
+  - `routers/issues.py`: `completed` se pasa como **bool** real (adiós a
+    `str(False)` → `"False"`).
+  - `neo4j_impl/issue_mixin.py::update_manifest_todo`: serializa con
+    `json.dumps(todo)` → propiedad string primitiva; `create_issue` hace lo mismo si
+    `manifest_todo` no está vacío (antes pasaba la lista cruda también al crear).
+  - Lectura simétrica: helper `_parse_manifest_todo` en `neo4j_impl/shared.py`
+    (`json.loads` tolerante, admite lista legada y filtra no-dicts) usado por
+    `_node_to_issue` y `get_manifest`.
+  - Tipos: `manifest_todo` / `ManifestResponse.todo` → `list[dict[str, Any]]`
+    (domain `entities`, `schemas`, firmas en `actions`/`api_repository`/`issue_mixin`)
+    — el contrato request (`ManifestTodoItem.completed: bool`) no se tocó.
+- **Tests:** `tests/api/test_manifest_todo_roundtrip.py` (4): roundtrip PATCH→GET
+  con bools + assert de propiedad primitiva (`isinstance(str)` + `json.loads`),
+  `completed True` como bool, issue inexistente → 404, variantes del parser.
+- **Gates:** ruff src **1002** (=), fichero de tests nuevo limpio (los 247 de
+  `ruff check tests` son preexistentes — idénticos con el fichero excluido),
+  mypy **1120** (=, verificado contra HEAD vía `git stash`), pytest
+  **1587 passed / 62 skipped / 0 failed**.
+- **Verificación en vivo** (rebuild + force-recreate, 2026-10-22): **0 fallos** —
+  PATCH → 200 con roundtrip bool en PATCH/GET issue/GET manifest, propiedad
+  `i.manifestTodo` **str** en Neo4j (primitiva), PATCH inexistente → 404, DELETE de
+  limpieza, nodos 5→5, `docker logs tasker-api` sin ERROR/Traceback/CypherTypeError.
+- **Hermandad confirmada:** `manifest/files` y `manifest/notes` guardan arrays de
+  strings (primitivos) — no repiten el bug; sin cambios.

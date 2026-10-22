@@ -1122,7 +1122,7 @@ def update_manifest_todo(
     if issue is None:
         raise IssueNotFoundError(issue_id)
 
-    todo_list = [{"task": item.task, "completed": str(item.completed)} for item in body.todo]
+    todo_list = [{"task": item.task, "completed": item.completed} for item in body.todo]
     updated_issue = repo.update_manifest_todo(issue_id, todo_list)
     return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
 

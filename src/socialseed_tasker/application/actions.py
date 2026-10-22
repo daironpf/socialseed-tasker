@@ -339,7 +339,7 @@ class TaskRepositoryInterface(Protocol):
     def get_comments(self, issue_id: str) -> list[dict[str, Any]]:
         """Get all comments for an issue."""
 
-    def update_manifest_todo(self, issue_id: str, todo: list[dict[str, str]]) -> Issue:
+    def update_manifest_todo(self, issue_id: str, todo: list[dict[str, Any]]) -> Issue:
         """Update the manifest TODO list for an issue."""
 
     def update_manifest_files(self, issue_id: str, files: list[str]) -> Issue:
