@@ -44,6 +44,15 @@ def api_put_secret(
     return {"status": "ok"}
 
 
+@secrets_router.get("/api/v1/secrets/audit")
+def api_get_audit(
+    container=Depends(_get_container),
+) -> dict:
+    raw = container.storage.get("secrets:audit") or b"[]"
+    arr = json.loads(raw.decode("utf-8")) if raw else []
+    return {"status": "ok", "audit": arr}
+
+
 @secrets_router.get("/api/v1/secrets/{name}")
 def api_get_secret_meta(
     name: str,
@@ -51,7 +60,7 @@ def api_get_secret_meta(
 ) -> dict:
     try:
         res = container.secrets_store.get_secret(name, reveal=False)
-    except KeyError:
+    except (KeyError, ValueError):
         raise HTTPException(status_code=404, detail="not found")
     return {
         "status": "ok",
@@ -67,7 +76,7 @@ def api_get_secret_value(
 ) -> dict:
     try:
         res = container.secrets_store.get_secret(name, reveal=True)
-    except KeyError:
+    except (KeyError, ValueError):
         raise HTTPException(status_code=404, detail="not found")
     return {
         "status": "ok",
@@ -108,12 +117,3 @@ def api_run_rotate(
         raise HTTPException(status_code=400, detail="missing rotation_id")
     res = container.secrets_rotator.run_rotation(rid)
     return {"status": "ok", "result": res}
-
-
-@secrets_router.get("/api/v1/secrets/audit")
-def api_get_audit(
-    container=Depends(_get_container),
-) -> dict:
-    raw = container.storage.get("secrets:audit") or b"[]"
-    arr = json.loads(raw.decode("utf-8")) if raw else []
-    return {"status": "ok", "audit": arr}

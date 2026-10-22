@@ -28,7 +28,7 @@ AttributeError: 'list' object has no attribute 'get'
    (`src/socialseed_tasker/secrets/core.py:59-70`), pero el valor almacenado en la
    clave de auditoría es un **JSON array** → `'list' object has no attribute 'get'`.
 
-## Status: OPEN
+## Status: DONE
 
 ## Priority: MEDIUM
 
@@ -58,12 +58,12 @@ bug fix / backend
      revés).
 
 ## Acceptance Criteria
-- [ ] `GET /api/v1/secrets/audit` → 200 con `{"status":"ok","audit":[...]}` (lista de
+- [x] `GET /api/v1/secrets/audit` → 200 con `{"status":"ok","audit":[...]}` (lista de
       eventos de auditoría)
-- [ ] `GET /api/v1/secrets/{nombre-real}` sigue resolviendo al handler de metadatos
+- [x] `GET /api/v1/secrets/{nombre-real}` sigue resolviendo al handler de metadatos
       (sin regresión)
-- [ ] Un secreto/clave con JSON no-dict no produce `AttributeError` → error tipado
-- [ ] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
+- [x] Un secreto/clave con JSON no-dict no produce `AttributeError` → error tipado
+- [x] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
 
 ## Files to Modify
 - `src/socialseed_tasker/infrastructure/web_api/routers/secrets.py` (orden de
@@ -80,3 +80,11 @@ bug fix / backend
   test-token'` → 500.
 - Verificado in-process 2026-10-21 con `app.debug=True` (el traceback identifica el
   handler por su línea exacta, no por el status).
+- **Fix**: ruta literal `GET /secrets/audit` movida **antes** del template
+  `GET /secrets/{name}` (las literales primero en FastAPI); `get_secret` valida
+  `isinstance(entry, dict)` y lanza `ValueError` claro; los dos handlers GET de
+  `{name}` capturan `(KeyError, ValueError)` → 404. Repasadas el resto de
+  literales del router: `POST /rotate` y `POST /rotate/run` no compiten (otro
+  método/ruta) y `GET /{name}/value` añade segmentos (no lo captura `/{name}`).
+  En vivo: `/secrets/audit` → 200 con eventos reales, `/secrets/nope-xyz` y
+  `/secrets/nope-xyz/value` → 404 (handler template intacto).

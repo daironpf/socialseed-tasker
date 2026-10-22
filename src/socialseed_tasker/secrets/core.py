@@ -56,7 +56,12 @@ class SecretsStore:
         raw = self.storage.get(self._key(name))
         if not raw:
             raise KeyError("secret not found")
-        entry: dict = json.loads(raw.decode("utf-8"))
+        entry = json.loads(raw.decode("utf-8"))
+        if not isinstance(entry, dict):
+            raise ValueError(
+                f"secret '{name}' has unexpected storage format: "
+                f"expected JSON object, got {type(entry).__name__}"
+            )
         if reveal:
             enc = base64.b64decode(entry["value"].encode("utf-8"))
             val = decrypt(enc)
