@@ -147,15 +147,24 @@ def sync_labels(
 ) -> APIResponse[dict]:
     from socialseed_tasker.infrastructure.github_adapter import GitHubAdapter
 
-    try:
-        adapter = GitHubAdapter()
-        synced = repo.sync_labels_from_github(adapter)
-        adapter.close()
-        return APIResponse(data={"synced": synced}, meta=Meta(request_id=None))
-    except Exception as e:
-        from fastapi import HTTPException
+    if repo is None or not hasattr(repo, "sync_labels_from_github"):
+        raise HTTPException(status_code=503, detail="Neo4j not available")
 
+    adapter = GitHubAdapter()
+    try:
+        if not adapter.has_token:
+            raise HTTPException(
+                status_code=503,
+                detail="GITHUB_TOKEN_NOT_CONFIGURED: set GITHUB_TOKEN to sync labels from GitHub",
+            )
+        synced = repo.sync_labels_from_github(adapter)
+        return APIResponse(data={"synced": synced}, meta=Meta(request_id=None))
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        adapter.close()
 
 
 @label_router.get(

@@ -99,18 +99,23 @@ class GitHubAdapter:
         from socialseed_tasker.application.secret_manager import get_secret_manager
 
         sm = get_secret_manager()
-        self._token = token or sm.get_github_token(repo or "") or os.environ.get("GITHUB_TOKEN", "")
+        resolved = token or sm.get_github_token(repo or "") or os.environ.get("GITHUB_TOKEN", "")
+        self._token = resolved.strip()
         self._repo = repo or os.environ.get("GITHUB_REPO", "")
         self._api_url = api_url or os.environ.get("GITHUB_API_URL", "https://api.github.com")
         self._rate_limiter = RateLimiter()
-        self._client = httpx.Client(
-            headers={
-                "Authorization": f"token {self._token}",
-                "Accept": "application/vnd.github.v3+json",
-                "User-Agent": "socialseed-tasker",
-            },
-            timeout=30.0,
-        )
+        headers = {
+            "Accept": "application/vnd.github.v3+json",
+            "User-Agent": "socialseed-tasker",
+        }
+        if self._token:
+            headers["Authorization"] = f"token {self._token}"
+        self._client = httpx.Client(headers=headers, timeout=30.0)
+
+    @property
+    def has_token(self) -> bool:
+        """Whether a GitHub token is available (repository may still be unset)."""
+        return bool(self._token)
 
     @property
     def is_configured(self) -> bool:

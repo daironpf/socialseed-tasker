@@ -31,7 +31,7 @@ genérico. De fondo hay dos warnings/diagnósticos ignorados:
 O sea: la ausencia de configuración de terceros se reporta como **bug interno 500** en
 lugar de un estado controlado.
 
-## Status: OPEN
+## Status: DONE (commit pendiente)
 
 ## Priority: MEDIUM
 
@@ -61,12 +61,12 @@ bug fix / backend
      inyectado.
 
 ## Acceptance Criteria
-- [ ] `POST /api/v1/labels/sync` sin `GITHUB_TOKEN` → 503/400 con código claro, ya no
+- [x] `POST /api/v1/labels/sync` sin `GITHUB_TOKEN` → 503/400 con código claro, ya no
       500 `Illegal header value`
-- [ ] Sin repositorio/driver → 503 con el patrón del resto (no `AttributeError`)
-- [ ] Con token presente, la sincronización no se rompe por el guard (regresión happy
+- [x] Sin repositorio/driver → 503 con el patrón del resto (no `AttributeError`)
+- [x] Con token presente, la sincronización no se rompe por el guard (regresión happy
       path cubierta por test con cliente fake)
-- [ ] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
+- [x] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
 
 ## Files to Modify
 - `src/socialseed_tasker/infrastructure/web_api/routers/labels.py` (handler de sync,
@@ -83,3 +83,36 @@ bug fix / backend
   test-token'` → 500 `{"detail":"Illegal header value b'token '"}`.
 - El stack real **no** define `GITHUB_TOKEN` (decisión de config: añadirla a compose
   es otra issue — aquí se arregla que la ausencia no rompa).
+
+### Resolución (2026-10-22)
+
+**Fix** (3 ficheros):
+
+- `routers/labels.py::sync_labels`: guard de repo primero
+  (`repo is None or not hasattr(repo, "sync_labels_from_github")` → 503
+  `Neo4j not available`, patrón del resto); luego `GitHubAdapter()` + guard de token
+  (`adapter.has_token` → 503
+  `GITHUB_TOKEN_NOT_CONFIGURED: set GITHUB_TOKEN to sync labels from GitHub`);
+  `except HTTPException: raise` para que los guards no se re-envuelvan en 500 (el
+  bug exacto de la familia #590); `adapter.close()` en `finally`.
+- `infrastructure/github_adapter.py`: token resuelto con `.strip()` (espacios en
+  blanco cuentan como ausente), cabecera `Authorization` solo se monta si hay token
+  (ya no puede existir `token ""` ilegal para httpx) y propiedad pública `has_token`.
+- `infrastructure/github_mirror.py`: misma cabecera defensiva + strip (mismo bug
+  latente en los endpoints `mirror-root-cause`/`mirror-impact` de `issues.py`).
+
+**Tests** `tests/api/test_labels_sync_degradation.py` (5): sin token → 503 con
+`GITHUB_TOKEN_NOT_CONFIGURED` y sin `Illegal header`; repo sin el método → 503
+`Neo4j not available`; happy path con token fake → 200 `{"synced":7}` con
+`Authorization` correcto; adapter sin token omite `Authorization`; token solo
+espacios → ausente.
+
+**Verificación en vivo** (tasker-api reconstruido, 2026-10-22): 7/7 —
+`POST /labels/sync` → **503** (ya no 500) con `GITHUB_TOKEN_NOT_CONFIGURED`,
+sin `Illegal header`, `GET /labels` → 200, nodos 5 → 5, `docker logs` sin
+ERROR/Traceback. (Happy path solo cubierto por test: el stack real no tiene token
+— decisión de config fuera de alcance.)
+
+**Gates**: ruff en los 3 ficheros 5 = HEAD (test fichero limpio), `mypy src/` 1119
+(baseline 1120, −1), `pytest -q` **1596 passed / 62 skipped / 0 failed** (incluye
+`test_sync_labels` existente, que ya admitía 503).

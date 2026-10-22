@@ -19,17 +19,16 @@ class GitHubMirroringService:
         token: str | None = None,
         repo: str | None = None,
     ) -> None:
-        self._token = token or os.environ.get("GITHUB_TOKEN", "")
+        self._token = (token or os.environ.get("GITHUB_TOKEN", "")).strip()
         self._repo = repo or os.environ.get("GITHUB_REPO", "")
         self._api_url = "https://api.github.com"
-        self._client = httpx.Client(
-            headers={
-                "Authorization": f"token {self._token}",
-                "Accept": "application/vnd.github.v3+json",
-                "User-Agent": "socialseed-tasker",
-            },
-            timeout=30.0,
-        )
+        headers = {
+            "Accept": "application/vnd.github.v3+json",
+            "User-Agent": "socialseed-tasker",
+        }
+        if self._token:
+            headers["Authorization"] = f"token {self._token}"
+        self._client = httpx.Client(headers=headers, timeout=30.0)
 
     def post_comment(self, issue_number: int, body: str) -> dict:
         """Post a comment to a GitHub issue."""
