@@ -17,6 +17,10 @@ class EmbeddingError(Exception):
     """Embedding generation failed."""
 
 
+class AIServiceNotConfiguredError(Exception):
+    """AI/embedding provider is not configured for this deployment."""
+
+
 class StorageError(Exception):
     """Storage operation failed."""
 

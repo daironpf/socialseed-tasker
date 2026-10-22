@@ -33,7 +33,7 @@ from socialseed_tasker.application.actions import (
     OpenDependenciesError,
     PolicyViolationError,
 )
-from socialseed_tasker.application.exceptions import GraphPortError
+from socialseed_tasker.application.exceptions import AIServiceNotConfiguredError, GraphPortError
 
 if TYPE_CHECKING:
     from socialseed_tasker.application.actions import TaskRepositoryInterface
@@ -1152,6 +1152,13 @@ def create_app(
         return JSONResponse(
             status_code=503,
             content=_error_response("DATABASE_CONNECTION_ERROR", str(exc)),
+        )
+
+    @app.exception_handler(AIServiceNotConfiguredError)
+    async def ai_not_configured_handler(request: Request, exc: AIServiceNotConfiguredError) -> JSONResponse:
+        return JSONResponse(
+            status_code=503,
+            content=_error_response("AI_NOT_CONFIGURED", str(exc)),
         )
 
     @app.exception_handler(ValueError)

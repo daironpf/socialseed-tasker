@@ -188,46 +188,41 @@ def generate_issue_embedding(
     force: bool = Query(False, description="Force regenerate existing embedding"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[dict]:
-    try:
-        import os
+    import os
 
-        openai_api_key = os.environ.get("OPENAI_API_KEY", "")
-        if not openai_api_key:
-            from fastapi import HTTPException
+    from socialseed_tasker.application.exceptions import AIServiceNotConfiguredError
 
-            raise HTTPException(status_code=400, detail="OPENAI_API_KEY not configured")
-
-        issue = repo.get_issue(issue_id)
-        if issue is None:
-            from fastapi import HTTPException
-
-            raise HTTPException(status_code=404, detail="Issue not found")
-
-        if issue.description_embedding and not force:
-            return APIResponse(
-                data={"issue_id": issue_id, "embedding_exists": True},
-                meta=Meta(request_id=None),
-            )
-
-        text = issue.description or issue.title
-        from openai import OpenAI
-
-        client = OpenAI(api_key=openai_api_key)
-        response = client.embeddings.create(
-            model="text-embedding-ada-002",
-            input=text,
+    openai_api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    if not openai_api_key:
+        raise AIServiceNotConfiguredError(
+            "OPENAI_API_KEY not configured; set it to generate issue embeddings"
         )
-        embedding = response.data[0].embedding
-        repo.update_issue_embedding(issue_id, embedding)
 
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise HTTPException(status_code=404, detail="Issue not found")
+
+    if issue.description_embedding and not force:
         return APIResponse(
             data={"issue_id": issue_id, "embedding_exists": True},
             meta=Meta(request_id=None),
         )
-    except Exception as e:
-        from fastapi import HTTPException
 
-        raise HTTPException(status_code=500, detail=str(e))
+    text = issue.description or issue.title
+    from openai import OpenAI
+
+    client = OpenAI(api_key=openai_api_key)
+    response = client.embeddings.create(
+        model="text-embedding-ada-002",
+        input=text,
+    )
+    embedding = response.data[0].embedding
+    repo.update_issue_embedding(issue_id, embedding)
+
+    return APIResponse(
+        data={"issue_id": issue_id, "embedding_exists": True},
+        meta=Meta(request_id=None),
+    )
 
 
 @ai_search_router.post(
