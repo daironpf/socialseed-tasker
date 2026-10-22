@@ -173,7 +173,17 @@ def find_similar_issues(
     limit: int = Query(10, ge=1, le=50, description="Maximum results"),
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[list]:
-    results = repo.find_similar_issues(issue_id, threshold=threshold, limit=limit)
+    from neo4j.exceptions import CypherSyntaxError
+
+    if repo is None:
+        raise HTTPException(status_code=503, detail="Neo4j not available")
+    try:
+        results = repo.find_similar_issues(issue_id, threshold=threshold, limit=limit)
+    except CypherSyntaxError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"CYPHER_QUERY_UNAVAILABLE: similarity query cannot run on this Neo4j ({exc})",
+        ) from exc
     return APIResponse(data=results, meta=Meta(request_id=None))
 
 

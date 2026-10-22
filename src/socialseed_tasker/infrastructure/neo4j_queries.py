@@ -782,9 +782,18 @@ RETURN i
 # ---------------------------------------------------------------------------
 
 SEARCH_BY_EMBEDDING = """
+WITH $embedding AS emb
+WHERE emb IS NOT NULL AND size(emb) > 0
+WITH emb, sqrt(reduce(s = 0.0, v IN emb | s + v * v)) AS query_norm
 MATCH (i:Issue)
 WHERE i.descriptionEmbedding IS NOT NULL
-WITH i, apoc.algo.similarity(i.descriptionEmbedding, $embedding, 'cosine') AS score
+  AND size(i.descriptionEmbedding) = size(emb)
+  AND query_norm > 0
+WITH i, query_norm,
+  reduce(dot = 0.0, idx IN range(0, size(emb) - 1) | dot + i.descriptionEmbedding[idx] * emb[idx]) AS dot,
+  sqrt(reduce(s = 0.0, v IN i.descriptionEmbedding | s + v * v)) AS norm
+WHERE norm > 0
+WITH i, dot / (norm * query_norm) AS score
 WHERE score > $threshold
 RETURN i.id AS issue_id, i.title AS title, score
 ORDER BY score DESC
@@ -794,10 +803,22 @@ LIMIT $limit
 FIND_SIMILAR_ISSUES = """
 MATCH (i:Issue {id: $issue_id})
 WHERE i.descriptionEmbedding IS NOT NULL
+  AND size(i.descriptionEmbedding) > 0
 WITH i
 MATCH (other:Issue)
-WHERE other.id <> i.id AND other.descriptionEmbedding IS NOT NULL
-WITH other, apoc.algo.similarity(i.descriptionEmbedding, other.descriptionEmbedding, 'cosine') AS score
+WHERE other.id <> i.id
+  AND other.descriptionEmbedding IS NOT NULL
+  AND size(other.descriptionEmbedding) = size(i.descriptionEmbedding)
+WITH i, other,
+  reduce(
+    dot = 0.0,
+    idx IN range(0, size(i.descriptionEmbedding) - 1) |
+    dot + i.descriptionEmbedding[idx] * other.descriptionEmbedding[idx]
+  ) AS dot,
+  sqrt(reduce(s = 0.0, v IN i.descriptionEmbedding | s + v * v)) AS norm_i,
+  sqrt(reduce(s = 0.0, v IN other.descriptionEmbedding | s + v * v)) AS norm_other
+WHERE norm_i > 0 AND norm_other > 0
+WITH other, dot / (norm_i * norm_other) AS score
 WHERE score > $threshold
 RETURN other.id AS issue_id, other.title AS title, score
 ORDER BY score DESC
