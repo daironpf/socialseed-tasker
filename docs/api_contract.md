@@ -357,6 +357,21 @@ Returns all code symbols affected by this issue.
 
 **Response:** `200 OK` (array of symbols)
 
+### Remove Symbol Relationship
+
+```http
+DELETE /api/v1/issues/{issue_id}/affects
+Content-Type: application/json
+
+{
+  "symbol_id": "symbol-123"
+}
+```
+
+Removes an AFFECTS relationship between an issue and a code symbol.
+
+**Response:** `200 OK`
+
 ### Get Issues Affecting Symbol
 
 ```http

@@ -175,11 +175,9 @@ def test_issue_affects_endpoints_with_real_issue(
 ) -> None:
     client, driver = smoke_env
     path = f"/api/v1/issues/{ISSUE_ID}/affects"
-    _assert_ok(client.post(path, json="sym-585"), driver, "POST affects")
+    _assert_ok(client.post(path, json={"symbol_id": "sym-585"}), driver, "POST affects")
     _assert_ok(client.get(path), driver, "GET affects")
-    resp = client.request(
-        "DELETE", path, content='"sym-585"', headers={"Content-Type": "application/json"}
-    )
+    resp = client.request("DELETE", path, json={"symbol_id": "sym-585"})
     _assert_ok(resp, driver, "DELETE affects")
     assert driver.calls, "no Cypher reached Neo4j for the affects flow"
 
@@ -188,6 +186,6 @@ def test_issue_affects_unknown_issue_is_404(
     smoke_env: tuple[TestClient, _ValidatingDriver],
 ) -> None:
     client, driver = smoke_env
-    resp = client.post(f"/api/v1/issues/{MISSING}/affects", json="sym-585")
+    resp = client.post(f"/api/v1/issues/{MISSING}/affects", json={"symbol_id": "sym-585"})
     _assert_ok(resp, driver, "POST affects unknown")
     assert resp.status_code == 404

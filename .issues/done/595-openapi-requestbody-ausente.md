@@ -25,7 +25,7 @@ Diagnóstico en run4: el smoke marcó ERR/422 en varias rutas precisamente por e
 cegera entre OpenAPI y validación real (p.ej. `PATCH manifest/todo` mandando lo que el
 schema decía sin `requestBody` declarado).
 
-## Status: OPEN
+## Status: DONE (commit pendiente)
 
 ## Priority: MEDIUM
 
@@ -58,14 +58,14 @@ bug fix / docs-backend
      equivocado.
 
 ## Acceptance Criteria
-- [ ] `GET /openapi.json`: todos los endpoints de escritura con body obligatorio
+- [x] `GET /openapi.json`: todos los endpoints de escritura con body obligatorio
       declaran `requestBody` con schema real (lista completa auditada)
-- [ ] El smoke/clientes auto-generados producen bodies válidos para epics/objectives
+- [x] El smoke/clientes auto-generados producen bodies válidos para epics/objectives
       (ya no `{}` silencioso → #579 deja de tener client que lo provoque)
-- [ ] `POST|DELETE /issues/{id}/affects`: contrato elegido (objeto `symbol_id` o
+- [x] `POST|DELETE /issues/{id}/affects`: contrato elegido (objeto `symbol_id` o
       string documentado) y test que lo fije
-- [ ] Call-sites del repo (CLI) actualizados si cambia el contrato
-- [ ] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
+- [x] Call-sites del repo (CLI) actualizados si cambia el contrato
+- [x] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
 
 ## Files to Modify
 - `src/socialseed_tasker/infrastructure/web_api/schemas.py` (modelos que faltan)
@@ -83,3 +83,62 @@ bug fix / docs-backend
   de `affects` con body string vs objeto (2026-10-21, TestClient en contenedor).
 - El smoke debe rehacerse tras este fix: hoy su generator de bodies es una
   aproximación a partir de OpenAPI incompleto.
+
+### Resolución (2026-10-22)
+
+**Inventario real (diferente al descrito)**: con `app.openapi()` vivo, 79/79 rutas
+con body param de FastAPI ya declaraban `requestBody`; el agujero eran (a)
+handlers que leen el body a mano con `await request.body()` sin declarar nada
+(`POST /admin/flags`, `POST /privacy/export`, `POST /privacy/delete`,
+`POST /models/{name}/infer`, `POST /webhooks/github`) y (b) endpoints que sí
+declaraban pero con `body: dict` genérico sin campos (epics x3, objectives x3,
+secrets x3, `POST /deployments`). `registry-schemas` no existe en el código
+actual (N/A); chat-messages ya usaba modelos tipados.
+
+**Fix 1 — modelos Pydantic nuevos en `schemas.py`** (defaults espejo de los
+antiguos `body.get(...)`: documentacion/validacion, no logica):
+`FlagSetRequest`, `PrivacyExportRequest`/`PrivacyDeleteRequest`,
+`EpicCreateRequest`/`EpicUpdateRequest`/`EpicLinkIssuesRequest`,
+`ObjectiveCreateRequest`/`ObjectiveUpdateRequest`/`ObjectiveLinkEpicsRequest`,
+`SecretPutRequest`/`SecretRotateScheduleRequest`/`SecretRotateRunRequest`,
+`DeploymentCreateRequest`, `SymbolLinkRequest`. Los UPDATE llevan
+`extra="allow"` + `model_dump(exclude_none=True)` para preservar el passthrough
+al mixin y el 422 "empty update" de #579. `POST /models/{name}/infer` reutiliza
+`ml.schemas.InferenceRequest` (ya existia). `POST /webhooks/github` (lee bytes
+crudos para HMAC) declara `requestBody` via `openapi_extra` sin tocar el
+handler. `POST /admin/flags` conserva el 400 "missing name" (lo fija
+`test_api_set_flag_missing_name`) → `name` opcional en su modelo.
+
+**Fix 2 — `affects` → Opcion A (objeto)**: `add_affects_symbol` /
+`remove_affects_symbol` en `routers/dependencies.py` reciben ahora
+`payload: SymbolLinkRequest`. Auditoria de call-sites:
+`infrastructure/api_repository.py:148,168` YA enviaba
+`json={"symbol_id": ...}` — estaba roto contra el validador viejo (422 latente)
+y ahora cuadra; `docs/api_contract.md` ya documentaba el objeto (se anadio la
+seccion DELETE que faltaba); **el CLI NO llama a estas rutas** (el `--affects`
+de `issue_commands.py` es otra cosa); unico consumidor del string era
+`tests/api/test_cypher_param_smoke.py`, actualizado al objeto.
+
+**Tests**: nuevo `tests/api/test_openapi_contract.py` (25): loop global
+`route.dependant.body_params` → exige `requestBody` en `app.openapi()`
+(regresion); parametrizado sobre los 16 (metodo, path) auditados → `$ref` a
+schema nombrado presente en components; `SymbolLinkRequest` exige `symbol_id`;
+affects con spy repo (objeto → 200 con efecto, string → 422, `{}` → 422,
+issue inexistente → 404); `POST /epics {}` → 400 de validacion de dominio del
+Epic (nombre min_length=1 — comportamiento preexistente preservado).
+
+**Verificacion en vivo** (tasker-api reconstruido, 2026-10-22): 18/18 —
+openapi.json con los 16 `$ref` nombrados + `SymbolLinkRequest` requerido;
+affects objeto → 404 ISSUE_NOT_FOUND (validacion pasa) y string → 422 en
+POST y DELETE; `POST /epics` modelo tipado → 201 con GET/DELETE de limpieza;
+flags con JWT admin → 200 con nombre y 400 sin nombre; infer `{}` → 400
+"missing features or key" (modelo aceptado); secrets put+rotate → 200 con
+borrado de limpieza; nodos Neo4j 5 → 5; `docker logs` sin ERROR/Traceback.
+Fuera de alcance vivo: privacy (sus handlers usan solo `verify_token`
+estatico → inalcanzables con JWT, gap de auth distinto ya visto en #593;
+cubierto por openapi + unit) y `POST /deployments` (crea nodos; solo
+openapi + unit).
+
+**Gates**: ruff (9 ficheros) HEAD 101 → 97 (delta −4), `mypy src/` 1102
+(HEAD 1110, −8), `pytest -q` **1647 passed / 62 skipped / 0 failed**
+(+25 tests nuevos).

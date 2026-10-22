@@ -34,6 +34,12 @@ from socialseed_tasker.application.actions import (
     PolicyViolationError,
 )
 from socialseed_tasker.application.exceptions import AIServiceNotConfiguredError, GraphPortError
+from socialseed_tasker.infrastructure.web_api.schemas import (
+    FlagSetRequest,
+    PrivacyDeleteRequest,
+    PrivacyExportRequest,
+)
+from socialseed_tasker.ml.schemas import InferenceRequest
 
 if TYPE_CHECKING:
     from socialseed_tasker.application.actions import TaskRepositoryInterface
@@ -927,17 +933,14 @@ def create_app(
         return {"status": "ok", "name": name, "value": v}
 
     @app.post("/api/v1/admin/flags")
-    async def api_set_flag(request: Request):
+    async def api_set_flag(body: FlagSetRequest, request: Request):
         from fastapi import HTTPException
-        import json as _json
         container = _require_admin(request)
         if container is None:
             from socialseed_tasker.cli.wiring import build_default_container
             container = build_default_container()
-        raw = await request.body()
-        body = _json.loads(raw.decode("utf-8")) if raw else {}
-        name = body.get("name")
-        value = body.get("value")
+        name = body.name
+        value = body.value
         if not name:
             raise HTTPException(status_code=400, detail="missing name")
         container.runtime_config.set(name, value)
@@ -955,20 +958,17 @@ def create_app(
 
     # Privacy / GDPR endpoints
     @app.post("/api/v1/privacy/export")
-    async def api_privacy_export(request: Request):
+    async def api_privacy_export(body: PrivacyExportRequest, request: Request):
         from fastapi import HTTPException
         from socialseed_tasker.auth.auth import load_auth_provider
         from socialseed_tasker.cli.wiring import build_default_container
-        import json as _json
         auth = request.headers.get("authorization", "")
         user_id = None
         if auth.lower().startswith("bearer "):
             user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
         if not user_id:
             raise HTTPException(status_code=403, detail="forbidden")
-        raw = await request.body()
-        body = _json.loads(raw.decode("utf-8")) if raw else {}
-        subject = body.get("subject_id")
+        subject = body.subject_id
         if not subject:
             raise HTTPException(status_code=400, detail="missing subject_id")
         container = build_default_container()
@@ -978,7 +978,7 @@ def create_app(
         return {"status": "ok", "export_path": path}
 
     @app.post("/api/v1/privacy/delete")
-    async def api_privacy_delete(request: Request):
+    async def api_privacy_delete(body: PrivacyDeleteRequest, request: Request):
         from fastapi import HTTPException
         from socialseed_tasker.auth.auth import load_auth_provider
         from socialseed_tasker.cli.wiring import build_default_container
@@ -990,10 +990,8 @@ def create_app(
             user_id = load_auth_provider().verify_token(auth.split(" ", 1)[1])
         if not user_id:
             raise HTTPException(status_code=403, detail="forbidden")
-        raw_body = await request.body()
-        body = _json.loads(raw_body.decode("utf-8")) if raw_body else {}
-        subject = body.get("subject_id")
-        dry = body.get("dry_run", True)
+        subject = body.subject_id
+        dry = body.dry_run
         if not subject:
             raise HTTPException(status_code=400, detail="missing subject_id")
         container = build_default_container()
@@ -1043,15 +1041,11 @@ def create_app(
 
     # ML inference endpoint
     @app.post("/api/v1/models/{model_name}/infer")
-    async def api_model_infer(model_name: str, request: Request):
+    async def api_model_infer(model_name: str, req: InferenceRequest):
         from fastapi import HTTPException
         from socialseed_tasker.cli.wiring import build_default_container
-        from socialseed_tasker.ml.schemas import InferenceRequest
         import json as _json, time as _time
         container = build_default_container()
-        raw = await request.body()
-        body = _json.loads(raw.decode("utf-8")) if raw else {}
-        req = InferenceRequest(**body)
         fs = container.feature_store
         features = {}
         if req.key:

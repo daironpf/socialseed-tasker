@@ -5,9 +5,14 @@ import json
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from socialseed_tasker.cli.wiring import build_default_container
+from socialseed_tasker.infrastructure.web_api.schemas import (
+    SecretPutRequest,
+    SecretRotateRunRequest,
+    SecretRotateScheduleRequest,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,12 +34,12 @@ def _check_permission(
 
 @secrets_router.post("/api/v1/secrets")
 def api_put_secret(
-    req: dict = Body(...),
+    req: SecretPutRequest,
     container=Depends(_get_container),
 ) -> dict:
-    name = req.get("name")
-    val_b64 = req.get("value")
-    meta = req.get("metadata", {})
+    name = req.name
+    val_b64 = req.value
+    meta = req.metadata
     if not name or not val_b64:
         raise HTTPException(status_code=400, detail="missing name or value")
     val = base64.b64decode(val_b64.encode("utf-8"))
@@ -95,12 +100,12 @@ def api_delete_secret(
 
 @secrets_router.post("/api/v1/secrets/rotate")
 def api_schedule_rotate(
-    req: dict = Body(...),
+    req: SecretRotateScheduleRequest,
     container=Depends(_get_container),
 ) -> dict:
-    name = req.get("name")
-    interval = int(req.get("interval_seconds", 3600))
-    policy = req.get("policy", {})
+    name = req.name
+    interval = req.interval_seconds
+    policy = req.policy
     rid = container.secrets_rotator.schedule_rotation(
         name, interval, policy
     )
@@ -109,10 +114,10 @@ def api_schedule_rotate(
 
 @secrets_router.post("/api/v1/secrets/rotate/run")
 def api_run_rotate(
-    req: dict = Body(...),
+    req: SecretRotateRunRequest,
     container=Depends(_get_container),
 ) -> dict:
-    rid = req.get("rotation_id")
+    rid = req.rotation_id
     if not rid:
         raise HTTPException(status_code=400, detail="missing rotation_id")
     res = container.secrets_rotator.run_rotation(rid)

@@ -71,6 +71,9 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     DependencyGraphResponse,
     DependencyRequest,
     DependencyResponse,
+    EpicCreateRequest,
+    EpicLinkIssuesRequest,
+    EpicUpdateRequest,
     GitHubWebhookLogResponse,
     GitHubWebhookTestResponse,
     ImpactAnalysisResponse,
@@ -131,17 +134,17 @@ epic_router = APIRouter()
     description="Create a new epic to group related issues.",
 )
 def create_epic(
-    body: dict,
+    body: EpicCreateRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     from uuid import uuid4
 
     epic = Epic(
         id=uuid4(),
-        name=body.get("name", ""),
-        description=body.get("description", ""),
-        objective_id=body.get("objective_id"),
-        status=EpicStatus(body.get("status", "OPEN")),
+        name=body.name,
+        description=body.description,
+        objective_id=body.objective_id,
+        status=EpicStatus(body.status),
     )
     repo.create_epic(epic)
     return APIResponse(
@@ -207,12 +210,13 @@ def delete_epic(epic_id: str, repo: TaskRepositoryInterface = Depends(get_repo))
 )
 def update_epic(
     epic_id: str,
-    body: dict,
+    body: EpicUpdateRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
-    if not body:
+    updates = body.model_dump(exclude_none=True)
+    if not updates:
         raise HTTPException(status_code=422, detail="empty update: provide at least one field")
-    repo.update_epic(epic_id, body)
+    repo.update_epic(epic_id, updates)
     return APIResponse(data={"updated": epic_id}, meta=Meta(request_id=None))
 
 
@@ -224,11 +228,11 @@ def update_epic(
 )
 def link_issues_to_epic(
     epic_id: str,
-    body: dict,
+    body: EpicLinkIssuesRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
 
-    issue_ids = body.get("issue_ids", [])
+    issue_ids = body.issue_ids
     for issue_id in issue_ids:
         repo.link_issue_to_epic(issue_id, epic_id)
     return APIResponse(

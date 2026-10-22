@@ -9,7 +9,7 @@ import logging
 from typing import Any, TYPE_CHECKING
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, Body, HTTPException
+from fastapi import APIRouter, Depends, Query, Request, HTTPException
 
 from socialseed_tasker.application.analyzer import (
     ComponentImpactAnalysis,
@@ -95,6 +95,7 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     ProjectResponse,
     ReasoningLogEntryRequest,
     ReasoningLogEntryResponse,
+    SymbolLinkRequest,
     TestFailureRequest,
     TestFailureWebhookRequest,
     TestFailureWebhookResponse,
@@ -383,14 +384,14 @@ def list_workable_issues(
 )
 def add_affects_symbol(
     issue_id: str,
-    symbol_id: str = Body(..., description="The CodeSymbol ID to link"),
+    payload: SymbolLinkRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
-    repo.add_affects_symbol(issue_id, symbol_id)
-    return APIResponse(data={"status": "linked", "issue_id": issue_id, "symbol_id": symbol_id}, meta=Meta(request_id=None))
+    repo.add_affects_symbol(issue_id, payload.symbol_id)
+    return APIResponse(data={"status": "linked", "issue_id": issue_id, "symbol_id": payload.symbol_id}, meta=Meta(request_id=None))
 
 
 @dependencies_router.get(
@@ -418,14 +419,14 @@ def get_affected_symbols(
 )
 def remove_affects_symbol(
     issue_id: str,
-    symbol_id: str = Body(..., description="The CodeSymbol ID to unlink"),
+    payload: SymbolLinkRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
-    repo.remove_affects_symbol(issue_id, symbol_id)
-    return APIResponse(data={"status": "unlinked", "issue_id": issue_id, "symbol_id": symbol_id}, meta=Meta(request_id=None))
+    repo.remove_affects_symbol(issue_id, payload.symbol_id)
+    return APIResponse(data={"status": "unlinked", "issue_id": issue_id, "symbol_id": payload.symbol_id}, meta=Meta(request_id=None))
 
 
 @dependencies_router.get(

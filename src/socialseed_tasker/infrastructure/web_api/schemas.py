@@ -1335,3 +1335,128 @@ class WorkflowResponse(BaseModel):
     updated_at: datetime | None = None
     content_md: str | None = None
     steps: list[Any] | dict[str, Any] | None = None
+
+
+# ---------------------------------------------------------------------------
+# Request models for write endpoints that previously documented no schema
+# (issue #595). Field defaults mirror the old ``body.get(...)`` fallbacks so
+# the change is documentation/validation only, not behavioural.
+# ---------------------------------------------------------------------------
+
+
+class FlagSetRequest(BaseModel):
+    """Body for ``POST /api/v1/admin/flags`` (issue #595)."""
+
+    name: str | None = Field(None, description="Flag name (required; 400 if missing)")
+    value: Any = Field(None, description="Flag value (any JSON type)")
+
+
+class PrivacyExportRequest(BaseModel):
+    """Body for ``POST /api/v1/privacy/export`` (issue #595)."""
+
+    subject_id: str = Field(..., description="Data-subject identifier to export")
+
+
+class PrivacyDeleteRequest(BaseModel):
+    """Body for ``POST /api/v1/privacy/delete`` (issue #595)."""
+
+    subject_id: str = Field(..., description="Data-subject identifier to delete")
+    dry_run: bool = Field(True, description="Report what would be deleted without doing it")
+
+
+class EpicCreateRequest(BaseModel):
+    """Body for ``POST /api/v1/epics`` (issue #595)."""
+
+    name: str = ""
+    description: str = ""
+    objective_id: str | None = None
+    status: str = "OPEN"
+
+
+class EpicUpdateRequest(BaseModel):
+    """Body for ``PATCH /api/v1/epics/{epic_id}`` (issue #595).
+
+    Extra keys are passed through to the repository allowlist, and an update
+    with no effective fields is rejected with 422 by the router.
+    """
+
+    model_config = {"extra": "allow"}
+
+    name: str | None = None
+    description: str | None = None
+    objective_id: str | None = None
+    status: str | None = None
+
+
+class EpicLinkIssuesRequest(BaseModel):
+    """Body for ``POST /api/v1/epics/{epic_id}/issues`` (issue #595)."""
+
+    issue_ids: list[str] = Field(default_factory=list)
+
+
+class ObjectiveCreateRequest(BaseModel):
+    """Body for ``POST /api/v1/objectives`` (issue #595)."""
+
+    name: str = ""
+    description: str = ""
+    status: str = "OPEN"
+    quarter: str = ""
+
+
+class ObjectiveUpdateRequest(BaseModel):
+    """Body for ``PATCH /api/v1/objectives/{objective_id}`` (issue #595)."""
+
+    model_config = {"extra": "allow"}
+
+    name: str | None = None
+    description: str | None = None
+    status: str | None = None
+    quarter: str | None = None
+
+
+class ObjectiveLinkEpicsRequest(BaseModel):
+    """Body for ``POST /api/v1/objectives/{objective_id}/epics`` (issue #595)."""
+
+    epic_ids: list[str] = Field(default_factory=list)
+
+
+class SecretPutRequest(BaseModel):
+    """Body for ``POST /api/v1/secrets`` (issue #595)."""
+
+    name: str | None = Field(None, description="Secret name (400 if missing/empty)")
+    value: str | None = Field(None, description="Base64-encoded secret value")
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class SecretRotateScheduleRequest(BaseModel):
+    """Body for ``POST /api/v1/secrets/rotate`` (issue #595)."""
+
+    name: str | None = None
+    interval_seconds: int = 3600
+    policy: dict[str, Any] = Field(default_factory=dict)
+
+
+class SecretRotateRunRequest(BaseModel):
+    """Body for ``POST /api/v1/secrets/rotate/run`` (issue #595)."""
+
+    rotation_id: str | None = Field(None, description="Scheduled rotation id (400 if missing)")
+
+
+class DeploymentCreateRequest(BaseModel):
+    """Body for ``POST /api/v1/deployments`` (issue #595)."""
+
+    commit_sha: str = Field("", description="Deployed commit SHA (400 if empty)")
+    environment: str = "DEV"
+    issue_ids: list[str] = Field(default_factory=list)
+    channel: str = "webhook"
+    deployed_by: str = "ci-cd"
+
+
+class SymbolLinkRequest(BaseModel):
+    """Body for ``POST|DELETE /api/v1/issues/{issue_id}/affects`` (issue #595).
+
+    The old contract expected a raw JSON string; the object form is what the
+    rest of the API (and the repo's own ``api_repository`` client) uses.
+    """
+
+    symbol_id: str = Field(..., description="The CodeSymbol ID to link or unlink")

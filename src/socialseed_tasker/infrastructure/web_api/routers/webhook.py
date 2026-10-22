@@ -71,6 +71,7 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     DependencyGraphResponse,
     DependencyRequest,
     DependencyResponse,
+    DeploymentCreateRequest,
     GitHubWebhookLogResponse,
     GitHubWebhookTestResponse,
     ImpactAnalysisResponse,
@@ -130,7 +131,7 @@ webhook_router = APIRouter()
     description="Webhook endpoint to receive deployment events from CI/CD systems.",
 )
 def receive_deployment(
-    body: dict,
+    body: DeploymentCreateRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
     request: Request = None,
 ) -> APIResponse[dict]:
@@ -139,11 +140,11 @@ def receive_deployment(
 
     from socialseed_tasker.domain.entities import Deployment, DeploymentEnvironment
 
-    commit_sha = body.get("commit_sha", "")
-    environment = body.get("environment", "DEV")
-    issue_ids = body.get("issue_ids", [])
-    channel = body.get("channel", "webhook")
-    deployed_by = body.get("deployed_by", "ci-cd")
+    commit_sha = body.commit_sha
+    environment = body.environment
+    issue_ids = body.issue_ids
+    channel = body.channel
+    deployed_by = body.deployed_by
 
     if not commit_sha:
         from fastapi import HTTPException
@@ -338,6 +339,16 @@ _github_webhook_logs: list[dict] = []
     response_model=APIResponse[dict],
     summary="Receive GitHub webhook events",
     description="Receive real-time updates from GitHub (issues, comments, labels, milestones).",
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "description": (
+                "Raw GitHub event payload (X-Hub-Signature-256 is verified "
+                "over the exact bytes, so the handler reads the body directly)."
+            ),
+            "content": {"application/json": {"schema": {"type": "object"}}},
+        }
+    },
 )
 async def receive_github_webhook(
     repo: TaskRepositoryInterface = Depends(get_repo),

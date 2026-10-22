@@ -83,6 +83,9 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     ManifestResponse,
     ManifestTodoRequest,
     Meta,
+    ObjectiveCreateRequest,
+    ObjectiveLinkEpicsRequest,
+    ObjectiveUpdateRequest,
     PaginatedResponse,
     PaginationMeta,
     PolicyCreateRequest,
@@ -131,17 +134,17 @@ objective_router = APIRouter()
     description="Create a new objective (OKR).",
 )
 def create_objective(
-    body: dict,
+    body: ObjectiveCreateRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     from uuid import uuid4
 
     objective = Objective(
         id=uuid4(),
-        name=body.get("name", ""),
-        description=body.get("description", ""),
-        status=ObjectiveStatus(body.get("status", "OPEN")),
-        quarter=body.get("quarter", ""),
+        name=body.name,
+        description=body.description,
+        status=ObjectiveStatus(body.status),
+        quarter=body.quarter,
     )
     repo.create_objective(objective)
     return APIResponse(
@@ -207,12 +210,13 @@ def delete_objective(objective_id: str, repo: TaskRepositoryInterface = Depends(
 )
 def update_objective(
     objective_id: str,
-    body: dict,
+    body: ObjectiveUpdateRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
-    if not body:
+    updates = body.model_dump(exclude_none=True)
+    if not updates:
         raise HTTPException(status_code=422, detail="empty update: provide at least one field")
-    repo.update_objective(objective_id, body)
+    repo.update_objective(objective_id, updates)
     return APIResponse(data={"updated": objective_id}, meta=Meta(request_id=None))
 
 
@@ -224,11 +228,11 @@ def update_objective(
 )
 def link_epics_to_objective(
     objective_id: str,
-    body: dict,
+    body: ObjectiveLinkEpicsRequest,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ):
 
-    epic_ids = body.get("epic_ids", [])
+    epic_ids = body.epic_ids
     for epic_id in epic_ids:
         repo.link_epic_to_objective(epic_id, objective_id)
     return APIResponse(
