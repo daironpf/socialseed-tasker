@@ -1,30 +1,19 @@
 from __future__ import annotations
+
 import json
-from fastapi import APIRouter, HTTPException, Request
-from socialseed_tasker.data_quality.serializers import RuleSpec
+
+from fastapi import APIRouter, Request
+
+from socialseed_tasker.auth.permissions import require_permission
 from socialseed_tasker.cli.wiring import build_default_container
-from socialseed_tasker.auth.auth import load_auth_provider
+from socialseed_tasker.data_quality.serializers import RuleSpec
 
 router = APIRouter(prefix="/api/v1/data-quality", tags=["data-quality"])
-
-def _get_user_id(request: Request) -> str | None:
-    auth = request.headers.get("authorization", "")
-    if auth.lower().startswith("bearer "):
-        try:
-            return load_auth_provider().verify_token(auth.split(" ", 1)[1])
-        except Exception:
-            pass
-    return None
-
-def _require_admin(request: Request, container) -> None:
-    user_id = _get_user_id(request)
-    if not user_id or not container.rbac.has_permission(user_id, "admin"):
-        raise HTTPException(status_code=403, detail="forbidden")
 
 @router.post("/rules")
 def create_rule(spec: RuleSpec, request: Request):
     container = build_default_container()
-    _require_admin(request, container)
+    require_permission(request, "admin", container)
     container.rule_registry.add(spec.model_dump())
     return {"status": "ok", "rule": spec.model_dump()}
 
