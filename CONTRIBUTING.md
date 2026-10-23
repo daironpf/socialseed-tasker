@@ -47,8 +47,8 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# 3. Spin up Neo4j via Docker (service is named tasker-db)
-docker compose up -d tasker-db
+# 3. Spin up Neo4j via Docker (service is named tasker-db-neo4j)
+docker compose up -d tasker-db-neo4j
 
 # 4. Run tests to ensure everything is green
 pytest

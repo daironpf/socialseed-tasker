@@ -112,7 +112,7 @@ so edits hot-reload instantly.
 
 ```bash
 # 1. Neo4j only, via Docker
-docker compose up -d tasker-db
+docker compose up -d tasker-db-neo4j
 
 # 2. Install + run the real API on port 8000 (matches the Vite proxy)
 pip install -e .

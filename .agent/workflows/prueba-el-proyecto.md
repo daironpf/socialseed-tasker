@@ -267,7 +267,7 @@ tasker dependency chain <issue-n-id>
 #### G. Inyección de Fallas (Chaos & Resiliencia)
 ```bash
 # 1. Simular caída de base de datos Neo4j
-cd real-test && docker compose stop tasker-db && cd ..
+cd real-test && docker compose stop tasker-db-neo4j && cd ..
 
 # 2. Ejecutar comando CLI y verificar manejo de excepciones
 cd real-test && tasker issue list
@@ -275,7 +275,7 @@ cd real-test && tasker issue list
 # Confirmar que el exit code de la CLI sea diferente de 0.
 
 # 3. Restaurar servicio
-cd real-test && docker compose start tasker-db && cd ..
+cd real-test && docker compose start tasker-db-neo4j && cd ..
 ```
 
 #### H. Verificaciones DX y Códigos de Retorno
@@ -549,7 +549,7 @@ cd real-test && tasker issue list
 curl http://localhost:8888/api/v1/components
 
 # Ver Neo4j data (cypher-shell)
-docker exec -it tasker-db cypher-shell -u neo4j -p neoSocial
+docker exec -it tasker-db-neo4j cypher-shell -u neo4j -p neoSocial
 
 # When done later, run:
 cd real-test && docker compose --profile api down -v --remove-orphans

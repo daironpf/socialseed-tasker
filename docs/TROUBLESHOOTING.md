@@ -316,7 +316,7 @@ A: Use Docker Compose as defined in the project
 **Q: How do I backup data?**
 A: Use Neo4j backup:
 ```bash
-docker compose exec tasker-db neo4j-admin database dump neo4j --to-path=/backup
+docker compose exec tasker-db-neo4j neo4j-admin database dump neo4j --to-path=/backup
 ```
 
 **Q: How do I monitor?**
@@ -357,5 +357,5 @@ curl http://localhost:8000/api/v1/code-graph/stats
 curl http://localhost:8000/api/v1/agents
 
 # Neo4j queries
-docker compose exec tasker-db cypher-shell -u neo4j -p neoSocial "MATCH (n) RETURN count(n)"
+docker compose exec tasker-db-neo4j cypher-shell -u neo4j -p neoSocial "MATCH (n) RETURN count(n)"
 ```

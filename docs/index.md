@@ -60,7 +60,7 @@ TASKER_MODE=api tasker component list
 ### Set Up Direct Mode (Local Development)
 ```bash
 # 1. Start database
-docker compose up -d tasker-db
+docker compose up -d tasker-db-neo4j
 sleep 5
 
 # 2. Configure

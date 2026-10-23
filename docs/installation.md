@@ -125,7 +125,7 @@ For direct Neo4j connection during development:
 
 ```bash
 # Start only the database
-docker compose up -d tasker-db
+docker compose up -d tasker-db-neo4j
 
 # Wait for Neo4j to initialize
 sleep 5
@@ -343,7 +343,7 @@ pip install -r requirements.txt  # Install all deps
 docker compose ps
 
 # Start it
-docker compose up -d tasker-db
+docker compose up -d tasker-db-neo4j
 
 # Wait for startup
 sleep 10
@@ -389,7 +389,7 @@ docker compose ps
 
 # Output should show:
 # NAME              STATUS
-# tasker-db         Up 2 minutes
+# tasker-db-neo4j         Up 2 minutes
 # tasker-api        Up 1 minute (if --profile api)
 # tasker-board      Up 1 minute (if --profile full)
 ```
@@ -398,7 +398,7 @@ docker compose ps
 
 ```bash
 # Database logs
-docker compose logs tasker-db -f
+docker compose logs tasker-db-neo4j -f
 
 # API logs
 docker compose logs tasker-api -f

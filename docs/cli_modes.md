@@ -240,7 +240,7 @@ curl http://localhost:8888/health
 
 | Service | Profile | Purpose |
 |---------|---------|---------|
-| `tasker-db` | *(none)* | Neo4j database (always runs) |
+| `tasker-db-neo4j` | *(none)* | Neo4j database (always runs) |
 | `tasker-api` | `api`, `full` | FastAPI backend |
 | `tasker-board` | `full` | Frontend UI (optional) |
 

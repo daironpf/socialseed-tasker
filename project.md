@@ -331,7 +331,7 @@ TASKER_RATE_LIMIT_ENABLED # false
 ### docker-compose.yml
 ```yaml
 services:
-  tasker-db:      # Neo4j
+  tasker-db-neo4j:      # Neo4j
   tasker-api:     # FastAPI
   tasker-board:  # Vue Kanban
 ```

@@ -199,7 +199,7 @@ cd real-test && ./venv/Scripts/tasker.exe issue list
 curl http://localhost:8000/api/v1/components
 
 # Ver Neo4j data (cypher-shell)
-docker exec -it tasker-db cypher-shell -u neo4j -p neoSocial
+docker exec -it tasker-db-neo4j cypher-shell -u neo4j -p neoSocial
 
 # When done later, run:
 cd real-test/tasker && docker-compose down -v --remove-orphans

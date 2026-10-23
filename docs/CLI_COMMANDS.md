@@ -457,7 +457,7 @@ tasker restart --force
 ### Docker Compose (Alternative)
 ```bash
 # Start Neo4j only
-cd .agent && docker compose up -d tasker-db
+cd .agent && docker compose up -d tasker-db-neo4j
 
 # Start all services
 cd .agent && docker compose up -d

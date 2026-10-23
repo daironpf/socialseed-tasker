@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile.graphviz
     environment:
       TASKER_GRAPHVIZ_PORT: "8082"
-      TASKER_NEO4J_URI: bolt://tasker-db:7687
+      TASKER_NEO4J_URI: bolt://tasker-db-neo4j:7687
       TASKER_NEO4J_USERNAME: neo4j
       TASKER_NEO4J_PASSWORD: neoSocial
     ports:
@@ -14,7 +14,7 @@ services:
     networks:
       - tasker-net
     depends_on:
-      tasker-db:
+      tasker-db-neo4j:
         condition: service_healthy
 
 networks:

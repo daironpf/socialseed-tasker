@@ -31,7 +31,7 @@ pip install -r requirements.txt
 
 ```bash
 # Start Neo4j database (required for Direct mode)
-docker compose up -d tasker-db
+docker compose up -d tasker-db-neo4j
 
 # Start database + API server (for API mode)
 docker compose --profile api up -d
@@ -143,7 +143,7 @@ tasker component list  # YAML file loading is skipped, env vars used
 **Solution:**
 ```bash
 # Start database
-docker compose up -d tasker-db
+docker compose up -d tasker-db-neo4j
 
 # Wait a few seconds for it to initialize
 sleep 5
@@ -341,7 +341,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Start database
-        run: docker compose up -d tasker-db
+        run: docker compose up -d tasker-db-neo4j
       - name: Wait for database
         run: sleep 10
       - name: Run tests

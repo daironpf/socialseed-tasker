@@ -12,8 +12,8 @@ imagen reconstruida a `7cbfc5b`), 2026-10-20/21.
 
 ## Contexto y metodología
 
-- **Stack probado en vivo:** `tasker-api` (8888), `tasker-board` (19001), `tasker-db`
-  (neo4j 5.26 community), `tasker-db-pg`, `tasker-db-mongo`, `tasker-redis`.
+- **Stack probado en vivo:** `tasker-api` (8888), `tasker-board` (19001), `tasker-db-neo4j`
+  (neo4j 5.26 community), `tasker-db-pg`, `tasker-db-mongo`, `tasker-db-redis`.
   Auth real (`TASKER_AUTH_ENABLED=true`, `X-API-Key`/Bearer + JWT vía
   `POST /api/v1/auth/login`), rate limit 60/min por IP.
 - **Corrida run4** (`results4.json`, 294 rutas): **PASS 154, GRACE 64, 4XX 30, ERR 38,

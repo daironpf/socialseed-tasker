@@ -56,7 +56,7 @@ docker compose ps
 docker compose logs -f tasker-api
 
 # View Neo4j logs
-docker compose logs -f tasker-db
+docker compose logs -f tasker-db-neo4j
 ```
 
 ## Neo4j Configuration (Docker)

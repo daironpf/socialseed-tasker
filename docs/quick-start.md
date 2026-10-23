@@ -44,7 +44,7 @@ Choose one based on your use case:
 
 ```bash
 # Start only the database
-docker compose up -d tasker-db
+docker compose up -d tasker-db-neo4j
 
 # Wait for startup
 sleep 5

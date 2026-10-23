@@ -17,7 +17,7 @@ cd tasker
 pip install -e .
 
 # 3. Start Neo4j via Docker
-docker compose up -d tasker-db
+docker compose up -d tasker-db-neo4j
 
 # 4. Initialize Tasker in your project
 tasker init .
@@ -326,7 +326,7 @@ def test_repository():
 
 | Issue | Solution |
 |-------|----------|
-| Neo4j connection refused | Run `docker compose up -d tasker-db` |
+| Neo4j connection refused | Run `docker compose up -d tasker-db-neo4j` |
 | Import errors | Run `pip install -e .` to install package |
 | Port already in use | Check if API is already running on port 8000 |
 | Tests failing | Ensure Neo4j is running and schema is initialized |

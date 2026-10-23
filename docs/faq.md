@@ -312,7 +312,7 @@ components = repo.list_components()
 **A:**
 ```bash
 # Just database
-docker compose up -d tasker-db
+docker compose up -d tasker-db-neo4j
 
 # Database + API
 docker compose --profile api up -d
@@ -412,7 +412,7 @@ echo "USER: $TASKER_NEO4J_USER"
 echo "PASS: $TASKER_NEO4J_PASSWORD"
 
 # Verify database is running
-docker compose logs tasker-db
+docker compose logs tasker-db-neo4j
 
 # Check Neo4j directly
 curl http://localhost:8000/health
