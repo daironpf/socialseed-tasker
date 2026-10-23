@@ -24,7 +24,7 @@ Impacto:
 - **Conversaciones de chat**: el wipe de Mongo (`setup_initialize`, #543/#549) es la
   única limpieza — el usuario no puede borrar una conversación suya desde la API.
 
-## Status: OPEN
+## Status: DONE (2026-10-23)
 
 ## Priority: MEDIUM
 
@@ -68,15 +68,16 @@ feat / backend
    - Frontend: specs de los bots en real/mock si se cablean.
 
 ## Acceptance Criteria
-- [ ] `DELETE /skills/{id}` → 200 y desaparece de `GET /skills` con sus asignaciones
+- [x] `DELETE /skills/{id}` → 200 y desaparece de `GET /skills` con sus asignaciones
       limpiadas; 404/503
-- [ ] `DELETE /mcp/servers/{id}` → 200/404 (503 sin backend)
-- [ ] `DELETE /chat/conversations/{id}` → 200 solo para el dueño (JWT); ajeno/inexistente
+- [x] `DELETE /mcp/servers/{id}` → 200/404 (503 sin backend)
+- [x] `DELETE /chat/conversations/{id}` → 200 solo para el dueño (JWT); ajeno/inexistente
       → 404; Mongo caído → 503
-- [ ] Los bots de borrado de la UI funcionan en modo real (si entran en alcance)
-- [ ] i18n EN+ES (si aplica UI)
-- [ ] Gates: ruff/mypy sin delta, pytest sin nuevas fallas; frontend lint/test/build
-      si toca UI
+- [x] Los bots de borrado de la UI funcionan en modo real — **fuera de alcance en esta
+      tanda** (decisión explícita: backend-only; cableado de UI queda como follow-up)
+- [x] i18n EN+ES — no aplica (sin UI en esta tanda)
+- [x] Gates: ruff/mypy sin delta, pytest sin nuevas fallas; frontend lint/test/build
+      no aplica (sin UI)
 
 ## Files to Create
 - `tests/api/test_delete_endpoints.py` (o los que correspondan por router)
@@ -99,3 +100,34 @@ feat / backend
   **asignación**; aquí se trata el **catálogo**.
 - El patrón de "propiedad por JWT y 404 sin filtro de existencia" ya está escrito en
   `notifications.py` — copiarlo, no inventar.
+
+## Resolución (2026-10-23)
+
+**Fix:** los tres DELETE faltantes + cascadas.
+
+- `user_store.py::delete_skill(skill_id)` (transacción: existencia → count de
+  `user_skills` → DELETE del catálogo; `None` = 404) + `DELETE /skills/{skill_id}` en
+  `routers/catalogs.py` → 200 `{deleted, assignmentsRemoved}` / 404 / 503 sin PG.
+  Cascada `user_skills` (DDL #558 `ON DELETE CASCADE`; `agent_user_skills` apunta a
+  `agent_skills`, catálogo distinto — fuera de este borrado).
+- `MCPRegistry.remove_server(server_id)` en `routers/mcp.py`: hace pop del server,
+  **cascada de sesiones huérfanas** por `server in (id, nombre)` con eventos
+  `session_removed` + `server_removed`; `DELETE /mcp/servers/{server_id}` →
+  200 `{id, sessionsRemoved}` / 404 (patrón idéntico a `delete_session` vecino).
+- `ChatMongoRepository.delete_conversation(id)` (borra el doc y sus `messages`,
+  wrap `ChatStoreError`) + `DELETE /chat/conversations/{id}` en `routers/chat.py`:
+  identidad por `_current_user`, **404 para ajeno/inexistente/invalid** (sin filtrar
+  existencia, a diferencia del 403 de `_owned_conversation` — criterio de la issue),
+  503 degradado/sin store.
+- Tests: `tests/api/test_delete_endpoints.py` (10: cascada skills 404 503, MCP
+  cascada+404, chat dueño/ajeno/inválido/401/503/degradado) + 3 handlers nuevos en
+  `FakePgCursor` (existencia skills por id, count de asignaciones, delete con poda
+  de sets vacíos).
+- **Gates:** ruff "All checks passed!" (0 delta), mypy **1102** (= baseline), pytest
+  **1657 passed / 62 skipped / 0 failed** (+10).
+- **Verificación en vivo** (rebuild `tasker-api`, `verify_596_live.py`, 24/24): delete
+  con cascade `assignmentsRemoved: 1`, 404 x2, 401 sin JWT; MCP `sessionsRemoved: "1"`
+  + sesión fuera de `GET /mcp/sessions` + 404; chat dueño 200, 404 ajeno/inválido,
+  401 sin token; neo4j 5→5; `docker logs` sin ERROR/Traceback.
+- **Frontend:** fuera de alcance (decisión del usuario: backend-only — los stores no
+  tienen funciones de delete; cableado de bots queda como follow-up).
