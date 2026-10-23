@@ -617,6 +617,15 @@ class FakePgCursor:
                     if value is not None:
                         row[key] = value
                 self.rowcount = 1
+        elif low.startswith("delete from skills where"):
+            # Catalog skill removal cascades user_skills (#596).
+            slug = str(params[0])
+            existed = self.skills.pop(slug, None) is not None
+            for uid in list(self.user_skills):
+                self.user_skills[uid].discard(slug)
+                if not self.user_skills[uid]:
+                    self.user_skills.pop(uid, None)
+            self.rowcount = 1 if existed else 0
         elif low.startswith("delete from agent_skills"):
             slug = str(params[0])
             existed = self.agent_skills.pop(slug, None) is not None
@@ -737,10 +746,18 @@ class FakePgCursor:
             # Tool catalog validation for agent profiles (#564).
             self._next = (1,) if str(params[0]) in self.tools else None
         elif low.startswith("select 1 from skills where"):
-            # Duplicate check on explicit catalog creation (#576).
             values = tuple(params or ())
-            slug, name = str(values[0]), str(values[1])
-            self._next = (1,) if (slug in self.skills or name in self.skills.values()) else None
+            if len(values) == 1:
+                # delete_skill existence check by id (#596).
+                self._next = (1,) if str(values[0]) in self.skills else None
+            else:
+                # Duplicate check on explicit catalog creation (#576).
+                slug, name = str(values[0]), str(values[1])
+                self._next = (1,) if (slug in self.skills or name in self.skills.values()) else None
+        elif low.startswith("select count(*) from user_skills where skill_id"):
+            # Assignments of one skill before the catalog cascade (#596).
+            slug = str(params[0])
+            self._next = (sum(1 for slugs in self.user_skills.values() if slug in slugs),)
         elif low.startswith("select id, name from skills"):
             # Catalog read (#572 list) and duplicate checks (#576 create_skill).
             if "where" in low:

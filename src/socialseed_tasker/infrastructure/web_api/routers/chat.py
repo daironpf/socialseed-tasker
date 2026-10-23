@@ -245,3 +245,29 @@ async def create_message(
     except Exception as exc:
         logger.warning("chat new_message emission failed: %s", exc)
     return APIResponse[dict[str, Any]](data=wire)
+
+
+@chat_router.delete("/chat/conversations/{conversation_id}")
+async def delete_conversation(conversation_id: str, request: Request) -> APIResponse[dict[str, str]]:
+    """Delete a conversation and its messages; only participants may (#596).
+
+    Non-participant and unknown ids both return 404 so the response never
+    leaks whether a conversation exists.
+    """
+    user_id = _current_user(request)
+    if not is_object_id(conversation_id):
+        raise HTTPException(status_code=404, detail="conversation not found")
+    repository = _repository(request)
+    try:
+        conversation = await repository.get_conversation(conversation_id)
+    except ChatStoreError as exc:
+        raise _store_error(exc, "get conversation") from exc
+    if conversation is None or user_id not in [str(p) for p in conversation.get("participant_ids", [])]:
+        raise HTTPException(status_code=404, detail="conversation not found")
+    try:
+        deleted = await repository.delete_conversation(conversation_id)
+    except ChatStoreError as exc:
+        raise _store_error(exc, "delete conversation") from exc
+    if not deleted:
+        raise HTTPException(status_code=404, detail="conversation not found")
+    return APIResponse[dict[str, str]](data={"deleted": conversation_id})

@@ -135,6 +135,28 @@ class ChatMongoRepository:
             logger.warning("chat get_conversation failed for %s: %s", conversation_id, exc)
             raise ChatStoreError(f"get conversation failed: {exc}") from exc
 
+    async def delete_conversation(self, conversation_id: str) -> bool:
+        """Delete one conversation and all its messages (issue #596).
+
+        Returns False when the conversation does not exist; callers verify
+        ownership first so unknown and foreign ids both surface as 404.
+        """
+        if not conversation_id:
+            raise ChatStoreError("conversation_id is required")
+        try:
+            conv_coll = self._collection("conversations")
+            result: Any = await conv_coll.delete_one({"_id": _object_id(conversation_id)})
+            deleted = bool(result and getattr(result, "deleted_count", 0))
+            if deleted:
+                msg_coll = self._collection("messages")
+                await msg_coll.delete_many({"conversation_id": str(conversation_id)})
+            return deleted
+        except ChatStoreError:
+            raise
+        except Exception as exc:
+            logger.warning("chat delete_conversation failed for %s: %s", conversation_id, exc)
+            raise ChatStoreError(f"delete conversation failed: {exc}") from exc
+
     async def list_messages(
         self,
         conversation_id: str,

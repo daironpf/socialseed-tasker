@@ -248,6 +248,28 @@ class MCPRegistry:
     def servers(self) -> list[dict[str, Any]]:
         return sorted(self._servers.values(), key=lambda s: str(s.get("name", "")))
 
+    def remove_server(self, server_id: str) -> tuple[dict[str, Any], int] | None:
+        """Delete one server and every session pointing at it (issue #596).
+
+        Sessions match by server id or by registered name (the common wire
+        value); returns the removed record with the number of cascaded
+        sessions, or None when the id is unknown.
+        """
+        record = self._servers.pop(server_id, None)
+        if record is None:
+            return None
+        name = str(record.get("name") or "")
+        orphaned = [
+            sid
+            for sid, session in self._sessions.items()
+            if str(session.get("server") or "") in (server_id, name)
+        ]
+        for sid in orphaned:
+            self._sessions.pop(sid, None)
+            self.publish("session_removed", {"id": sid})
+        self.publish("server_removed", {"id": server_id})
+        return record, len(orphaned)
+
     # ------------------------------------------------------------ sessions
 
     def upsert_session(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -430,6 +452,17 @@ async def list_servers(request: Request) -> APIResponse[list[ServerResponse]]:
 async def register_server(body: ServerRegisterRequest, request: Request) -> APIResponse[ServerResponse]:
     record = _registry(request).register_server(body.model_dump(by_alias=True))
     return APIResponse[ServerResponse](data=ServerResponse(**record))
+
+
+@mcp_router.delete("/mcp/servers/{server_id}")
+async def delete_server(server_id: str, request: Request) -> APIResponse[dict[str, str]]:
+    removed = _registry(request).remove_server(server_id)
+    if removed is None:
+        raise HTTPException(status_code=404, detail=f"Server {server_id} not found")
+    record, sessions_removed = removed
+    return APIResponse[dict[str, str]](
+        data={"id": str(record.get("id")), "sessionsRemoved": str(sessions_removed)}
+    )
 
 
 # -------------------------------------------------------------- sessions

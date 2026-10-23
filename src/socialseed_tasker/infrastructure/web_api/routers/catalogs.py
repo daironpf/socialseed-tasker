@@ -10,6 +10,8 @@ the same catalog with 422 (#564).
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, HTTPException
 
 from socialseed_tasker.auth.user_store import PostgresUserStore
@@ -67,6 +69,26 @@ def create_skill(body: SkillCreateRequest) -> APIResponse[SkillCatalogItem]:
             raise HTTPException(status_code=409, detail="skill already exists") from exc
         raise HTTPException(status_code=422, detail=f"invalid skill name: {body.name!r}") from exc
     return APIResponse(data=SkillCatalogItem(id=item["id"], name=item["name"]), meta=Meta(request_id=None))
+
+
+@catalogs_router.delete(
+    "/skills/{skill_id}",
+    response_model=APIResponse[dict[str, Any]],
+    summary="Delete a skills catalog entry",
+    description=(
+        "Delete one skill from the catalog; user_skills assignments cascade "
+        "and are counted in the response (issue #596)."
+    ),
+)
+def delete_skill(skill_id: str) -> APIResponse[dict[str, Any]]:
+    """Delete a catalog skill; 404 when unknown, 503 without PostgreSQL (#596)."""
+    result = _pg_store().delete_skill(skill_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="skill not found")
+    return APIResponse(
+        data={"deleted": skill_id, "assignmentsRemoved": result["assignments_removed"]},
+        meta=Meta(request_id=None),
+    )
 
 
 @catalogs_router.get(

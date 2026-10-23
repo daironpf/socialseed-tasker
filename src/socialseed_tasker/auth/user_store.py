@@ -635,6 +635,30 @@ class PostgresUserStore:
                 raise
         return {"id": slug, "name": clean}
 
+    def delete_skill(self, skill_id: str) -> dict[str, int] | None:
+        """Delete one catalog skill (issue #596).
+
+        The ``user_skills`` assignments cascade (ON DELETE CASCADE, #558);
+        returns the number of removed assignments or None when the skill
+        id is unknown.
+        """
+        with closing(psycopg.connect(self._database_url, autocommit=False)) as conn:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT 1 FROM skills WHERE id = %s", (skill_id,))
+                    if cur.fetchone() is None:
+                        conn.rollback()
+                        return None
+                    cur.execute("SELECT count(*) FROM user_skills WHERE skill_id = %s", (skill_id,))
+                    row = cur.fetchone()
+                    removed = int(row[0]) if row is not None else 0
+                    cur.execute("DELETE FROM skills WHERE id = %s", (skill_id,))
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+        return {"assignments_removed": removed}
+
     # ------------------------------------------------------------------
     # Agent skills catalog (issue #577): name + behavior text.
     # ------------------------------------------------------------------
