@@ -22,7 +22,7 @@ stack no levanta, o es un redirect a un host externo mal configurado.
 Afecta a: clientes/openapi-consumers que prueban la superficie completa (el smoke la
 marca TIMEOUT), y a cualquiera que espere que toda ruta publicada responda.
 
-## Status: OPEN
+## Status: DONE (2026-10-23)
 
 ## Priority: LOW
 
@@ -49,12 +49,14 @@ bug fix / config
    razonable — nunca timeout.
 
 ## Acceptance Criteria
-- [ ] `GET /auth/login` → respuesta determinista (302 con Location, 404/410, o 200) en
-      < 5s — ya no TIMEOUT
-- [ ] Decisión reflejada en el stack (servicio compuesto / ruta retirada / OpenAPI
-      documentado)
-- [ ] `POST /api/v1/auth/login` sigue en 200 (regresión cero del login real)
-- [ ] Gates: ruff/mypy sin delta, pytest sin nuevas fallas
+- [x] `GET /auth/login` → respuesta determinista (302 con Location, 404/410, o 200) en
+      < 5s — ya no TIMEOUT (ahora 410 en <0.1s)
+- [x] Decisión reflejada en el stack (servicio compuesto / ruta retirada / OpenAPI
+      documentado) — opción (a): trío legacy retirado con 410 + fuera del OpenAPI +
+      nota en `SSO.md`
+- [x] `POST /api/v1/auth/login` sigue en 200 (regresión cero del login real)
+- [x] Gates: ruff/mypy sin delta, pytest sin nuevas fallas (ruff −2, mypy −2,
+      pytest 1661/62/0)
 
 ## Files to Modify
 - `src/socialseed_tasker/infrastructure/web_api/app.py` (registro de la ruta
@@ -72,3 +74,36 @@ bug fix / config
 - **Repro**: `curl -v --max-time 5 http://127.0.0.1:8888/auth/login` → cuelga (sin
   respuesta) hasta el timeout.
 - Dato del smoke: es el único TIMEOUT entre 294 rutas — el resto responde en < 8s.
+
+## Resolución (2026-10-23)
+
+**Decisión: opción (a) — retiro del trío legacy Keycloak.**
+
+- **Diagnóstico**: `GET /auth/login` (y sus hermanos `GET /auth/callback`,
+  `POST /auth/logout`) era el trío SSO Keycloak registrado fuera de `/api/v1` en
+  `app.py`. Redirigía a `TASKER_KEYCLOAK_URL` (default `localhost:8082`); el stack
+  **nunca levanta Keycloak como servicio core** (solo la tool opcional
+  `compose/tools/auth.yml`, ausente de este entorno; sin env `TASKER_KEYCLOAK_*` en
+  compose ni en el contenedor) → el cliente del smoke seguía el 302 hacia un host
+  muerto y colgaba (TIMEOUT). Hoy, además, el middleware de auth (activado en el
+  despliegue) lo interceptaba con **401** antes del handler — la ruta estaba doble
+ mente rota.
+- **Fix**: el trío responde **`410 Gone`** estático
+  (`{"error":{"code":"SSO_KEYCLOAK_RETIRED","message":...}}`) apuntando a los flujos
+  reales (`POST /api/v1/auth/login` y `GET /api/v1/auth/oauth/{provider}/authorize`,
+  el PKCE GitHub/Google que usa el frontend vía `authApi.ts` con authClient
+  `/api/v1`), queda **fuera del OpenAPI** (`include_in_schema=False`) y el middleware
+  exime las tres rutas exactas para que el 410 se vea también con auth activado.
+  `SessionStore`/`whoami`/chat cookie intactos (no dependen del trío HTTP).
+  `SSO.md` actualizado con la nota de retiro.
+- **Tests**: `tests/api/test_auth_legacy_sso.py` (4): 410 del trío, 410 también con
+  `TASKER_AUTH_ENABLED=true` (y `/api/v1/users` sigue 401), login real no retirado
+  (400/401 por credenciales), trío ausente de `openapi.json` con `/api/v1/auth/login`
+  presente.
+- **Gates:** ruff app.py **33→31** (−2, al borrar handlers), mypy **1100** (−2),
+  pytest **1661 passed / 62 skipped / 0 failed** (+4).
+- **Verificación en vivo** (rebuild, `verify_597_live.py`, 9/9): los 3 legacy → 410
+  en <0.1s (antes TIMEOUT); `POST /api/v1/auth/login` 200 (26ms); JWT 200 en
+  `/api/v1/users`; sin credenciales 401; openapi sin el trío; neo4j 5→5. Único ERROR
+  en logs: rechazo CORS de engine.io por un Origin externo `http://127.0.0.1:19001`
+  (comportamiento preexistente del allowlist de Socket.IO, no relacionado).

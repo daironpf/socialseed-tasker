@@ -1,5 +1,14 @@
 Single Sign-On (SSO) with Keycloak
 
+> **Retired in the API (issue #597).** The stack never ships Keycloak as a core
+> service, and `GET /auth/login` used to hang API-surface probes against the
+> unreachable proxy (the only TIMEOUT of the 294-route smoke). The legacy trio
+> `GET /auth/login`, `GET /auth/callback` and `POST /auth/logout` now answers
+> `410 Gone` (`SSO_KEYCLOAK_RETIRED`) and is hidden from the OpenAPI schema.
+> The real login flows are `POST /api/v1/auth/login` (api key/JWT) and
+> `GET /api/v1/auth/oauth/{provider}/authorize` (GitHub/Google PKCE).
+> The compose file below stays as an optional local-dev tool.
+
 Overview
 - Local development SSO using Keycloak and OpenID Connect.
 - Keycloak realm import file: auth/keycloak-realm.json
