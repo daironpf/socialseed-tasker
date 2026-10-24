@@ -22,6 +22,7 @@ from socialseed_tasker.auth.user_store import (
 from socialseed_tasker.infrastructure.web_api.routers import agent_skills
 from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentSkillCreateRequest,
+    AgentSkillImportUrlRequest,
     AgentSkillUpdateRequest,
 )
 from tests.fakes.fake_pg_users import FakePgCursor, install_fake_pg
@@ -344,3 +345,89 @@ def test_import_agent_skill_409_on_duplicate(monkeypatch: pytest.MonkeyPatch):
 
     assert exc.value.status_code == 409
     assert cursor.agent_skills["qa-bot"]["behavior"] == "# QA Bot\nrules"
+
+
+# ---------------------------------------------------------------------------
+# POST /agent-skills/import-url (#610)
+# ---------------------------------------------------------------------------
+
+
+def test_resolve_source_url_rewrites_github_blob_to_raw():
+    raw = agent_skills._resolve_source_url(
+        "https://github.com/acme/skills/blob/main/codex/reviewer.md"
+    )
+    assert raw == "https://raw.githubusercontent.com/acme/skills/main/codex/reviewer.md"
+
+    direct = agent_skills._resolve_source_url(
+        "https://raw.githubusercontent.com/acme/skills/main/x.txt"
+    )
+    assert direct == "https://raw.githubusercontent.com/acme/skills/main/x.txt"
+
+
+def test_resolve_source_url_422_on_bad_scheme_host_and_extension():
+    for bad in (
+        "ftp://github.com/a/b/main/x.md",
+        "https://evil.example.com/x.md",
+        "https://github.com/acme/skills/blob/main/notes.pdf",
+        "https://github.com/acme/skills",
+    ):
+        with pytest.raises(HTTPException) as exc:
+            agent_skills._resolve_source_url(bad)
+        assert exc.value.status_code == 422, bad
+
+
+def test_import_agent_skill_from_url_creates_the_row(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install(monkeypatch, cursor)
+    seen: dict[str, str] = {}
+
+    async def fake_fetch(url: str) -> str:
+        seen["url"] = url
+        return "# Remote Skill\n\nAdopt hostile-input paranoia."
+
+    monkeypatch.setattr(agent_skills, "_fetch_remote", fake_fetch)
+    body = AgentSkillImportUrlRequest(
+        url="https://github.com/acme/skills/blob/main/codex/remote-skill.md"
+    )
+
+    created = asyncio.run(agent_skills.import_agent_skill_from_url(body))
+
+    assert seen["url"] == "https://raw.githubusercontent.com/acme/skills/main/codex/remote-skill.md"
+    assert created.data.id == "remote-skill"
+    assert created.data.name == "Remote Skill"
+    assert "hostile-input paranoia" in created.data.behavior
+    assert cursor.agent_skills["remote-skill"]["behavior"] == created.data.behavior
+
+
+def test_import_agent_skill_from_url_409_on_duplicate(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install(monkeypatch, cursor)
+
+    async def fake_fetch(url: str) -> str:
+        return "# QA Bot\nrules"
+
+    monkeypatch.setattr(agent_skills, "_fetch_remote", fake_fetch)
+    body = AgentSkillImportUrlRequest(url="https://raw.githubusercontent.com/a/b/main/x.md")
+
+    asyncio.run(agent_skills.import_agent_skill_from_url(body))
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(agent_skills.import_agent_skill_from_url(body))
+
+    assert exc.value.status_code == 409
+
+
+def test_import_agent_skill_from_url_502_when_fetch_fails(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install(monkeypatch, cursor)
+
+    async def broken_fetch(url: str) -> str:
+        raise HTTPException(status_code=502, detail="could not fetch the URL")
+
+    monkeypatch.setattr(agent_skills, "_fetch_remote", broken_fetch)
+    body = AgentSkillImportUrlRequest(url="https://raw.githubusercontent.com/a/b/main/x.md")
+
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(agent_skills.import_agent_skill_from_url(body))
+
+    assert exc.value.status_code == 502
+    assert cursor.agent_skills == {}

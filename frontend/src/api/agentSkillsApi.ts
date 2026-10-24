@@ -40,6 +40,18 @@ export async function deleteAgentSkill(id: string): Promise<void> {
 export async function importAgentSkill(file: File): Promise<AgentSkill> {
   const form = new FormData()
   form.append('file', file)
-  const { data } = await client.post<APIResponse<AgentSkill>>('/agent-skills/import', form)
+  const { data } = await client.post<APIResponse<AgentSkill>>('/agent-skills/import', form, {
+    suppressErrorToast: true,
+  })
+  return data.data as AgentSkill
+}
+
+/** Import from a GitHub URL (github.com blob or raw.githubusercontent.com) (#610). */
+export async function importAgentSkillFromUrl(url: string): Promise<AgentSkill> {
+  const { data } = await client.post<APIResponse<AgentSkill>>(
+    '/agent-skills/import-url',
+    { url },
+    { suppressErrorToast: true },
+  )
   return data.data as AgentSkill
 }

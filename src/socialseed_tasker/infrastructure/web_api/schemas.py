@@ -1074,6 +1074,16 @@ class AgentSkillUpdateRequest(BaseModel):
     behavior: str | None = Field(None, max_length=20000)
 
 
+class AgentSkillImportUrlRequest(BaseModel):
+    """URL of a raw .md/.txt skill file to import (issue #610).
+
+    Accepts ``github.com/.../blob|raw/...`` web URLs and ``raw.githubusercontent.com``
+    URLs; the router fetches the text server-side and creates the catalog row.
+    """
+
+    url: str = Field(..., min_length=10, max_length=2000)
+
+
 class AgentProfileCreate(BaseModel):
     """Request for creating an agent profile on /agents/profiles (issue #564)."""
 

@@ -28,10 +28,52 @@
             {{ importing ? t('agentSkills.importing') : t('agentSkills.import') }}
           </button>
           <button
+            class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+            :disabled="importing"
+            @click="urlFormOpen = !urlFormOpen"
+          >
+            {{ t('agentSkills.importUrl') }}
+          </button>
+          <button
             class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
             @click="startCreate"
           >
             {{ t('agentSkills.newSkill') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Import from a GitHub URL: blob or raw .md/.txt (#610). -->
+      <div
+        v-if="urlFormOpen"
+        class="mb-6 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+      >
+        <label class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+          {{ t('agentSkills.importUrlTitle') }}
+        </label>
+        <p class="mb-3 text-[11px] text-gray-400 dark:text-gray-500">
+          {{ t('agentSkills.importUrlHint') }}
+        </p>
+        <div class="flex gap-2">
+          <input
+            v-model="urlDraft"
+            type="url"
+            :placeholder="t('agentSkills.importUrlPlaceholder')"
+            class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            @keyup.enter="importFromUrl"
+          />
+          <button
+            class="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+            :disabled="importing || !urlDraft.trim()"
+            @click="importFromUrl"
+          >
+            {{ importing ? t('agentSkills.importing') : t('agentSkills.importUrlAction') }}
+          </button>
+          <button
+            class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-50 dark:border-gray-600 dark:text-gray-300"
+            @click="urlFormOpen = false"
+          >
+            {{ t('agentSkills.cancel') }}
           </button>
         </div>
       </div>
@@ -188,6 +230,7 @@ import {
   updateAgentSkill,
   deleteAgentSkill,
   importAgentSkill,
+  importAgentSkillFromUrl,
   type AgentSkill,
 } from '@/api/agentSkillsApi'
 
@@ -209,6 +252,9 @@ const confirmDelete = ref(false)
 const feedback = ref('')
 const feedbackKind = ref<'ok' | 'error'>('ok')
 const fileInput = ref<HTMLInputElement | null>(null)
+
+const urlFormOpen = ref(false)
+const urlDraft = ref('')
 
 const filtered = computed(() => {
   const q = query.value.trim().toLowerCase()
@@ -320,14 +366,56 @@ async function onFilePicked(event: Event) {
     selected.value = skill
     setFeedback(t('agentSkills.imported', { name: skill.name }), 'ok')
   } catch (error) {
-    const status = (error as { response?: { status?: number } })?.response?.status
-    setFeedback(
-      status === 409 ? t('agentSkills.importConflict') : t('agentSkills.importError'),
-      'error',
-    )
+    setFeedback(importErrorMessage(error), 'error')
   } finally {
     importing.value = false
   }
+}
+
+async function importFromUrl() {
+  const url = urlDraft.value.trim()
+  if (!url) return
+  importing.value = true
+  try {
+    let skill: AgentSkill
+    if (isMockMode()) {
+      // Demo mode: raw.githubusercontent.com allows CORS, so fetch client-side (#610).
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw Object.assign(new Error('fetch failed'), { status: 502 })
+      }
+      const text = (await response.text()).trim()
+      const heading = /^#[ \t]+(.+)$/m.exec(text)
+      const stem = decodeURIComponent(new URL(url).pathname.split('/').pop() || 'skill').replace(
+        /\.(md|markdown|txt)$/i,
+        '',
+      )
+      skill = { id: stem.toLowerCase(), name: heading?.[1].trim() || stem, behavior: text }
+      skills.value = upsertLocal(skill)
+    } else {
+      skill = await importAgentSkillFromUrl(url)
+      skills.value = upsertLocal(skill)
+    }
+    selected.value = skill
+    urlDraft.value = ''
+    urlFormOpen.value = false
+    setFeedback(t('agentSkills.imported', { name: skill.name }), 'ok')
+  } catch (error) {
+    // The axios interceptor flattens failures to Error{status, message} (#519).
+    const status = (error as { status?: number }).status
+    const message = (error as { message?: string }).message
+    if (status === 409) setFeedback(t('agentSkills.importConflict'), 'error')
+    else if (status === 502) setFeedback(t('agentSkills.importFetchError'), 'error')
+    else if (status === 422 && message) setFeedback(message, 'error')
+    else setFeedback(t('agentSkills.importError'), 'error')
+  } finally {
+    importing.value = false
+  }
+}
+
+function importErrorMessage(error: unknown): string {
+  const status = (error as { status?: number }).status
+  return status === 409 ? t('agentSkills.importConflict') : t('agentSkills.importError')
 }
 
 function upsertLocal(skill: AgentSkill): AgentSkill[] {

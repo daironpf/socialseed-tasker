@@ -6,6 +6,7 @@ import {
   updateAgentSkill,
   deleteAgentSkill,
   importAgentSkill,
+  importAgentSkillFromUrl,
 } from '@/api/agentSkillsApi'
 
 vi.mock('@/api/client', () => ({
@@ -93,5 +94,22 @@ describe('agentSkillsApi', () => {
     expect(form).toBeInstanceOf(FormData)
     expect((form as FormData).get('file')).toBe(file)
     expect(skill.id).toBe('data-quality-bot')
+  })
+
+  it('POSTs the URL to /agent-skills/import-url (issue #610)', async () => {
+    mockedPost.mockResolvedValue({
+      data: { data: { id: 'remote-skill', name: 'Remote Skill', behavior: '# Remote Skill' } },
+    })
+
+    const skill = await importAgentSkillFromUrl(
+      'https://github.com/acme/skills/blob/main/remote-skill.md',
+    )
+
+    expect(mockedPost).toHaveBeenCalledWith(
+      '/agent-skills/import-url',
+      { url: 'https://github.com/acme/skills/blob/main/remote-skill.md' },
+      { suppressErrorToast: true },
+    )
+    expect(skill.id).toBe('remote-skill')
   })
 })

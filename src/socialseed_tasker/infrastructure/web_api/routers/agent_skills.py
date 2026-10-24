@@ -12,13 +12,16 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from urllib.parse import urlsplit
 
+import httpx
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from socialseed_tasker.auth.user_store import PostgresUserStore
 from socialseed_tasker.config.storage import get_database_url
 from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentSkillCreateRequest,
+    AgentSkillImportUrlRequest,
     AgentSkillResponse,
     AgentSkillUpdateRequest,
     APIResponse,
@@ -107,6 +110,11 @@ def delete_agent_skill(skill_id: str) -> APIResponse[bool]:
 
 _MD_HEADING = re.compile(r"^#[ \t]+(.+)$", re.MULTILINE)
 _MD_SUFFIXES = {".md", ".markdown"}
+_URL_SUFFIXES = {".md", ".markdown", ".txt"}
+_GITHUB_BLOB = re.compile(r"^/(?P<owner>[^/]+)/(?P<repo>[^/]+)/(?:blob|raw)/(?P<ref>[^/]+)/(.+)$")
+_GITHUB_HOSTS = {"github.com", "raw.githubusercontent.com"}
+_MAX_REMOTE_BYTES = 100_000
+_FETCH_TIMEOUT = 10.0
 
 
 def _name_from_markdown(text: str, filename: str) -> str:
@@ -115,6 +123,68 @@ def _name_from_markdown(text: str, filename: str) -> str:
     if match:
         return match.group(1).strip()
     return Path(filename).stem.replace("-", " ").replace("_", " ").strip()
+
+
+def _resolve_source_url(url: str) -> str:
+    """Validate a skill source URL and rewrite github.com blob URLs to raw.
+
+    Returns the fetchable raw URL; raises 422 for non-http(s), non-GitHub or
+    unsupported file extensions (.md/.markdown/.txt only).
+    """
+    parts = urlsplit(url.strip())
+    if parts.scheme not in {"http", "https"}:
+        raise HTTPException(status_code=422, detail="url must use http or https")
+    host = (parts.hostname or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    if host not in _GITHUB_HOSTS:
+        raise HTTPException(status_code=422, detail="url must point to github.com or raw.githubusercontent.com")
+    path = parts.path
+    if host == "github.com":
+        blob = _GITHUB_BLOB.match(path)
+        if blob:
+            path = f"/{blob.group('owner')}/{blob.group('repo')}/{blob.group('ref')}/{blob.group(4)}"
+        host = "raw.githubusercontent.com"
+    if Path(path).suffix.lower() not in _URL_SUFFIXES:
+        raise HTTPException(status_code=422, detail="url must point to a .md, .markdown or .txt file")
+    return f"https://{host}{path}"
+
+
+async def _fetch_remote(url: str) -> str:
+    """Download the skill text (UTF-8); 502 when GitHub is unreachable."""
+    try:
+        response = httpx.get(url, timeout=_FETCH_TIMEOUT, follow_redirects=True)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="could not fetch the URL") from exc
+    if response.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"fetch failed with status {response.status_code}")
+    if len(response.content) > _MAX_REMOTE_BYTES:
+        raise HTTPException(status_code=422, detail="remote file exceeds the 100kb import limit")
+    try:
+        text = response.content.decode("utf-8").strip()
+    except UnicodeDecodeError as exc:
+        raise HTTPException(status_code=422, detail="remote file must be UTF-8 text") from exc
+    if not text:
+        raise HTTPException(status_code=422, detail="remote file is empty")
+    return text
+
+
+def _create_skill_from_text(text: str, source_name: str) -> APIResponse[AgentSkillResponse]:
+    """Shared tail of both imports: derive name, validate limits, insert (#610)."""
+    name = _name_from_markdown(text, source_name)
+    if not name:
+        raise HTTPException(status_code=422, detail="could not derive a skill name from the file")
+    if len(name) > 80:
+        raise HTTPException(status_code=422, detail="derived skill name exceeds 80 characters")
+    if len(text) > 20000:
+        raise HTTPException(status_code=422, detail="markdown exceeds the 20000 char behavior limit")
+    try:
+        item = _pg_store().create_agent_skill(name, text)
+    except ValueError as exc:
+        if str(exc) == "skill":
+            raise HTTPException(status_code=409, detail="agent skill already exists") from exc
+        raise HTTPException(status_code=422, detail=f"invalid agent skill name: {name!r}") from exc
+    return APIResponse(data=_to_response(item), meta=Meta(request_id=None))
 
 
 @agent_skills_router.post(
@@ -139,17 +209,21 @@ async def import_agent_skill(file: UploadFile = File(...)) -> APIResponse[AgentS
         raise HTTPException(status_code=422, detail="file must be UTF-8 markdown") from exc
     if not text:
         raise HTTPException(status_code=422, detail="markdown file is empty")
-    name = _name_from_markdown(text, file.filename or "skill")
-    if not name:
-        raise HTTPException(status_code=422, detail="could not derive a skill name from the file")
-    if len(name) > 80:
-        raise HTTPException(status_code=422, detail="derived skill name exceeds 80 characters")
-    if len(text) > 20000:
-        raise HTTPException(status_code=422, detail="markdown exceeds the 20000 char behavior limit")
-    try:
-        item = _pg_store().create_agent_skill(name, text)
-    except ValueError as exc:
-        if str(exc) == "skill":
-            raise HTTPException(status_code=409, detail="agent skill already exists") from exc
-        raise HTTPException(status_code=422, detail=f"invalid agent skill name: {name!r}") from exc
-    return APIResponse(data=_to_response(item), meta=Meta(request_id=None))
+    return _create_skill_from_text(text, file.filename or "skill")
+
+
+@agent_skills_router.post(
+    "/agent-skills/import-url",
+    response_model=APIResponse[AgentSkillResponse],
+    status_code=201,
+    summary="Import an agent skill from a GitHub URL",
+    description=(
+        "Fetch one raw .md/.markdown/.txt file from github.com or raw.githubusercontent.com "
+        "(blob URLs are rewritten to raw) and create the catalog row (issue #610)."
+    ),
+)
+async def import_agent_skill_from_url(body: AgentSkillImportUrlRequest) -> APIResponse[AgentSkillResponse]:
+    """Create a catalog entry from a GitHub URL; 422 bad URL, 502 unreachable."""
+    url = _resolve_source_url(body.url)
+    text = await _fetch_remote(url)
+    return _create_skill_from_text(text, Path(urlsplit(url).path).name)

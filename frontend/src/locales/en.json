@@ -417,7 +417,13 @@
     "loadError": "Could not load the skills catalog.",
     "imported": "Skill \"{name}\" imported.",
     "importConflict": "A skill with that name already exists.",
-    "importError": "Could not import the file. Use a valid .md document."
+    "importError": "Could not import the file. Use a valid .md document.",
+    "importUrl": "Import URL",
+    "importUrlTitle": "Import a skill from a GitHub URL",
+    "importUrlHint": "Paste the URL of a .md, .markdown or .txt file in a GitHub repository (github.com blob links and raw.githubusercontent.com are accepted).",
+    "importUrlPlaceholder": "https://github.com/owner/repo/blob/main/skills/foo.md",
+    "importUrlAction": "Import",
+    "importFetchError": "Could not download the URL. Make sure it is public and reachable."
   },
   "graph": {
     "title": "Dependency Graph",

@@ -8,6 +8,7 @@ import {
   updateAgentSkill,
   deleteAgentSkill,
   importAgentSkill,
+  importAgentSkillFromUrl,
 } from '@/api/agentSkillsApi'
 
 const mockState = vi.hoisted(() => ({ mockMode: false }))
@@ -22,6 +23,7 @@ vi.mock('@/api/agentSkillsApi', () => ({
   updateAgentSkill: vi.fn(),
   deleteAgentSkill: vi.fn().mockResolvedValue(undefined),
   importAgentSkill: vi.fn(),
+  importAgentSkillFromUrl: vi.fn(),
 }))
 
 const CATALOG = [
@@ -154,7 +156,7 @@ describe('AgentSkillsView (issue #610)', () => {
   })
 
   it('surfaces a conflict message when the import hits a duplicate name', async () => {
-    vi.mocked(importAgentSkill).mockRejectedValue({ response: { status: 409 } })
+    vi.mocked(importAgentSkill).mockRejectedValue(Object.assign(new Error('conflict'), { status: 409 }))
     const { wrapper } = mountComponent(AgentSkillsView)
     await flushPromises()
 
@@ -162,5 +164,60 @@ describe('AgentSkillsView (issue #610)', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('A skill with that name already exists.')
+  })
+
+  it('imports a skill from a GitHub URL through the URL form', async () => {
+    vi.mocked(importAgentSkillFromUrl).mockResolvedValue({
+      id: 'url-skill',
+      name: 'URL Skill',
+      behavior: '# URL Skill\n\nFrom a repository.',
+    })
+    const { wrapper } = mountComponent(AgentSkillsView)
+    await flushPromises()
+
+    await wrapper.findAll('button').find(b => b.text() === 'Import URL')!.trigger('click')
+    await wrapper
+      .find('input[type="url"]')
+      .setValue('https://github.com/acme/skills/blob/main/url-skill.md')
+    await wrapper.findAll('button').find(b => b.text() === 'Import')!.trigger('click')
+    await flushPromises()
+
+    expect(importAgentSkillFromUrl).toHaveBeenCalledWith(
+      'https://github.com/acme/skills/blob/main/url-skill.md',
+    )
+    expect(wrapper.text()).toContain('Skill "URL Skill" imported.')
+    expect(wrapper.text()).toContain('# URL Skill')
+    expect(wrapper.find('input[type="url"]').exists()).toBe(false)
+  })
+
+  it('shows the backend detail on a 422 URL rejection and keeps the form open', async () => {
+    vi.mocked(importAgentSkillFromUrl).mockRejectedValue(
+      Object.assign(new Error('url must point to a .md, .markdown or .txt file'), { status: 422 }),
+    )
+    const { wrapper } = mountComponent(AgentSkillsView)
+    await flushPromises()
+
+    await wrapper.findAll('button').find(b => b.text() === 'Import URL')!.trigger('click')
+    await wrapper.find('input[type="url"]').setValue('https://github.com/acme/repo/blob/main/x.pdf')
+    await wrapper.findAll('button').find(b => b.text() === 'Import')!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('url must point to a .md, .markdown or .txt file')
+    expect(wrapper.find('input[type="url"]').exists()).toBe(true)
+  })
+
+  it('surfaces a fetch failure when the URL is unreachable (502)', async () => {
+    vi.mocked(importAgentSkillFromUrl).mockRejectedValue(
+      Object.assign(new Error('could not fetch the URL'), { status: 502 }),
+    )
+    const { wrapper } = mountComponent(AgentSkillsView)
+    await flushPromises()
+
+    await wrapper.findAll('button').find(b => b.text() === 'Import URL')!.trigger('click')
+    await wrapper.find('input[type="url"]').setValue('https://raw.githubusercontent.com/a/b/main/x.md')
+    await wrapper.findAll('button').find(b => b.text() === 'Import')!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Could not download the URL.')
   })
 })
