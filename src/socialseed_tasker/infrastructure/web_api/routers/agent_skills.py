@@ -10,7 +10,10 @@ the user modals reads from (``GET``), creates new entries from the same window
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+import re
+from pathlib import Path
+
+from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from socialseed_tasker.auth.user_store import PostgresUserStore
 from socialseed_tasker.config.storage import get_database_url
@@ -100,3 +103,53 @@ def delete_agent_skill(skill_id: str) -> APIResponse[bool]:
     if not _pg_store().delete_agent_skill(skill_id):
         raise HTTPException(status_code=404, detail="agent skill not found")
     return APIResponse(data=True, meta=Meta(request_id=None))
+
+
+_MD_HEADING = re.compile(r"^#[ \t]+(.+)$", re.MULTILINE)
+_MD_SUFFIXES = {".md", ".markdown"}
+
+
+def _name_from_markdown(text: str, filename: str) -> str:
+    """Skill name from a .md: first ``# heading`` wins, else the file stem."""
+    match = _MD_HEADING.search(text)
+    if match:
+        return match.group(1).strip()
+    return Path(filename).stem.replace("-", " ").replace("_", " ").strip()
+
+
+@agent_skills_router.post(
+    "/agent-skills/import",
+    response_model=APIResponse[AgentSkillResponse],
+    status_code=201,
+    summary="Import an agent skill from a .md file",
+    description=(
+        "Upload one markdown file; the skill name comes from the first '# heading' "
+        "(or the file stem) and the whole file becomes the behavior text (issue #610)."
+    ),
+)
+async def import_agent_skill(file: UploadFile = File(...)) -> APIResponse[AgentSkillResponse]:  # noqa: B008
+    """Create a catalog entry from an uploaded .md; 409 duplicate, 422 bad input."""
+    suffix = Path(file.filename or "").suffix.lower()
+    if suffix not in _MD_SUFFIXES:
+        raise HTTPException(status_code=422, detail="file must be a .md or .markdown document")
+    raw = await file.read()
+    try:
+        text = raw.decode("utf-8").strip()
+    except UnicodeDecodeError as exc:
+        raise HTTPException(status_code=422, detail="file must be UTF-8 markdown") from exc
+    if not text:
+        raise HTTPException(status_code=422, detail="markdown file is empty")
+    name = _name_from_markdown(text, file.filename or "skill")
+    if not name:
+        raise HTTPException(status_code=422, detail="could not derive a skill name from the file")
+    if len(name) > 80:
+        raise HTTPException(status_code=422, detail="derived skill name exceeds 80 characters")
+    if len(text) > 20000:
+        raise HTTPException(status_code=422, detail="markdown exceeds the 20000 char behavior limit")
+    try:
+        item = _pg_store().create_agent_skill(name, text)
+    except ValueError as exc:
+        if str(exc) == "skill":
+            raise HTTPException(status_code=409, detail="agent skill already exists") from exc
+        raise HTTPException(status_code=422, detail=f"invalid agent skill name: {name!r}") from exc
+    return APIResponse(data=_to_response(item), meta=Meta(request_id=None))

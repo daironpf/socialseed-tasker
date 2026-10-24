@@ -33,6 +33,7 @@ const router = createRouter({
     { path: '/governance-matrix', name: 'GovernanceMatrix', component: () => import('@/views/GovernanceMatrixView.vue') },
     { path: '/audit-log', name: 'AuditLog', component: () => import('@/views/AuditLogView.vue'), meta: { roles: ['ADMIN'] } },
     { path: '/agents/studio', name: 'AgentStudio', component: () => import('@/views/AgentStudioView.vue') },
+    { path: '/agent-skills', name: 'AgentSkills', component: () => import('@/views/AgentSkillsView.vue'), meta: { roles: ['ADMIN'] } },
     { path: '/analytics', name: 'Analytics', component: () => import('@/views/AnalyticsDashboardView.vue') },
     { path: '/auth/oauth-callback', name: 'AuthCallback', component: () => import('@/views/AuthCallbackView.vue') },
     { path: '/setup', name: 'Setup', component: () => import('@/views/SetupWizardView.vue') },

@@ -2,13 +2,17 @@
 
 Agents have their own tables next to the human catalog: ``agent_skills``
 (name + large behavior text) and ``agent_user_skills`` (assignments). These
-endpoints feed the floating picker in the create/edit user modals.
+endpoints feed the floating picker in the create/edit user modals. Issue #610
+adds ``POST /agent-skills/import``: one uploaded ``.md`` becomes a catalog row.
 """
 
 from __future__ import annotations
 
+import asyncio
+import io
+
 import pytest
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 
 from socialseed_tasker.auth.user_store import (
     AGENT_SKILLS_SEED,
@@ -234,6 +238,26 @@ def test_profile_skills_read_from_agent_tables(monkeypatch: pytest.MonkeyPatch):
     assert profile["skills"] == ["Reviewer"]
 
 
+def test_assigning_a_renamed_skill_links_the_stable_id(monkeypatch: pytest.MonkeyPatch):
+    """Rename keeps the id (#577 PUT); assignment by the NEW name must link it (#610)."""
+    cursor = FakePgCursor()
+    _install(monkeypatch, cursor)
+    agent_skills.create_agent_skill(AgentSkillCreateRequest(name="QA Bot", behavior="v1"))
+    agent_skills.update_agent_skill("qa-bot", AgentSkillUpdateRequest(name="QA Bot Renamed"))
+
+    store = PostgresAgentProfileStore("postgresql://fake")
+    uid = store.create_profile(username="renamed-probe", skills=["QA Bot Renamed"])
+
+    # links the STABLE id, not a fresh slug of the new name
+    assert cursor.agent_user_skills[uid] == {"qa-bot"}
+    assert "qa-bot-renamed" not in cursor.agent_skills
+    # the skill keeps its rewritten behavior (not reset to '')
+    assert cursor.agent_skills["qa-bot"]["behavior"] == "v1"
+    profile = store.get_profile(uid)
+    assert profile is not None
+    assert profile["skills"] == ["QA Bot Renamed"]
+
+
 # ---------------------------------------------------------------------------
 # 503 sin database
 # ---------------------------------------------------------------------------
@@ -248,3 +272,75 @@ def test_agent_skills_503_without_database_url(monkeypatch: pytest.MonkeyPatch):
         agent_skills.list_agent_skills()
 
     assert exc.value.status_code == 503
+
+
+# ---------------------------------------------------------------------------
+# POST /agent-skills/import (#610)
+# ---------------------------------------------------------------------------
+
+
+def _upload(content: bytes, filename: str = "skill.md") -> UploadFile:
+    return UploadFile(filename=filename, file=io.BytesIO(content))
+
+
+def test_import_agent_skill_from_heading_and_full_text(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install(monkeypatch, cursor)
+    markdown = "# Code Reviewer\n\nCheck every diff twice.\n"
+
+    created = asyncio.run(agent_skills.import_agent_skill(_upload(markdown.encode("utf-8"))))
+
+    assert created.data.id == "code-reviewer"
+    assert created.data.name == "Code Reviewer"
+    assert created.data.behavior == "# Code Reviewer\n\nCheck every diff twice."
+
+
+def test_import_agent_skill_falls_back_to_filename_stem(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install(monkeypatch, cursor)
+    markdown = "No heading here, just adoption rules."
+
+    created = asyncio.run(
+        agent_skills.import_agent_skill(
+            _upload(markdown.encode("utf-8"), filename="Data_Quality Bot.md")
+        )
+    )
+
+    assert created.data.name == "Data Quality Bot"
+    assert created.data.id == "data-quality-bot"
+    assert created.data.behavior == markdown
+
+
+def test_import_agent_skill_422_on_bad_extension_empty_and_undecodable(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    cursor = FakePgCursor()
+    _install(monkeypatch, cursor)
+
+    with pytest.raises(HTTPException) as bad_ext:
+        asyncio.run(agent_skills.import_agent_skill(_upload(b"x", filename="skill.txt")))
+    assert bad_ext.value.status_code == 422
+
+    with pytest.raises(HTTPException) as empty:
+        asyncio.run(agent_skills.import_agent_skill(_upload(b"   \n")))
+    assert empty.value.status_code == 422
+
+    with pytest.raises(HTTPException) as undecodable:
+        asyncio.run(agent_skills.import_agent_skill(_upload(b"\xff\xfe\x00bad", filename="x.md")))
+    assert undecodable.value.status_code == 422
+
+    with pytest.raises(HTTPException) as no_name:
+        asyncio.run(agent_skills.import_agent_skill(_upload(b"#    \nbody", filename="skill.md")))
+    assert no_name.value.status_code == 422
+
+
+def test_import_agent_skill_409_on_duplicate(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install(monkeypatch, cursor)
+
+    asyncio.run(agent_skills.import_agent_skill(_upload(b"# QA Bot\nrules")))
+    with pytest.raises(HTTPException) as exc:
+        asyncio.run(agent_skills.import_agent_skill(_upload(b"# QA Bot\nother rules")))
+
+    assert exc.value.status_code == 409
+    assert cursor.agent_skills["qa-bot"]["behavior"] == "# QA Bot\nrules"

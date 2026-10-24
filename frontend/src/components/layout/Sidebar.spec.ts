@@ -29,6 +29,7 @@ const SIDEBAR_PATHS = [
   '/governance-matrix',
   '/audit-log',
   '/agents/studio',
+  '/agent-skills',
   '/graph',
   '/analysis',
   '/analytics',

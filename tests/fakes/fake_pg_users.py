@@ -779,6 +779,14 @@ class FakePgCursor:
             ]
             rows.sort(key=lambda row: row[1])
             self._rows = rows
+        elif low.startswith("select id from agent_skills where name"):
+            # _write_skills resolves renamed skills (stable id, #577) by name.
+            name = str(params[0]) if params else ""
+            found = next(
+                (slug for slug, row in self.agent_skills.items() if row["name"] == name),
+                None,
+            )
+            self._next = (found,) if found else None
         elif low.startswith("select 1 from agent_skills where"):
             # Catalog duplicate checks (#577): create (id OR name) / rename (name AND id <>).
             values = tuple(str(value) for value in (params or ()))

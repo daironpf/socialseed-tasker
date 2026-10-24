@@ -21,3 +21,25 @@ export async function createAgentSkill(name: string, behavior: string): Promise<
   const { data } = await client.post<APIResponse<AgentSkill>>('/agent-skills', { name, behavior })
   return data.data as AgentSkill
 }
+
+/** Rename/rewrite one catalog row; 409 when the new name collides (#610). */
+export async function updateAgentSkill(
+  id: string,
+  patch: { name?: string; behavior?: string },
+): Promise<AgentSkill> {
+  const { data } = await client.put<APIResponse<AgentSkill>>(`/agent-skills/${id}`, patch)
+  return data.data as AgentSkill
+}
+
+/** Delete one catalog row (assignments cascade); 404 when unknown (#610). */
+export async function deleteAgentSkill(id: string): Promise<void> {
+  await client.delete<APIResponse<boolean>>(`/agent-skills/${id}`)
+}
+
+/** Upload one .md file; name from the first '# heading' (or the file stem) (#610). */
+export async function importAgentSkill(file: File): Promise<AgentSkill> {
+  const form = new FormData()
+  form.append('file', file)
+  const { data } = await client.post<APIResponse<AgentSkill>>('/agent-skills/import', form)
+  return data.data as AgentSkill
+}

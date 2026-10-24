@@ -1249,15 +1249,25 @@ class PostgresAgentProfileStore:
 
         Unknown names create an ``agent_skills`` row with an empty ``behavior``
         (the picker's "new skill" path fills it in through ``POST /agent-skills``).
+        Renamed skills keep their original id (#577 PUT), so the row is resolved
+        by display name first and only slugged when the name is brand new.
         """
         for name in skills:
-            slug = skill_slug(name)
-            if not slug:
+            clean = str(name).strip()
+            if not clean:
                 continue
-            cur.execute(
-                "INSERT INTO agent_skills (id, name, behavior) VALUES (%s, %s, '') ON CONFLICT DO NOTHING",
-                (slug, name),
-            )
+            cur.execute("SELECT id FROM agent_skills WHERE name = %s", (clean,))
+            row = cur.fetchone()
+            if row is not None:
+                slug = str(row[0])
+            else:
+                slug = skill_slug(clean)
+                if not slug:
+                    continue
+                cur.execute(
+                    "INSERT INTO agent_skills (id, name, behavior) VALUES (%s, %s, '') ON CONFLICT DO NOTHING",
+                    (slug, clean),
+                )
             cur.execute(
                 "INSERT INTO agent_user_skills (user_id, skill_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
                 (user_id, slug),
