@@ -152,6 +152,17 @@ def test_data_quality_rule_write_forbidden_for_developer_jwt(env: SimpleNamespac
     assert env.rule_registry.added == []
 
 
+def test_data_quality_rule_write_rejects_unknown_kind(env: SimpleNamespace) -> None:
+    resp = env.client.post(
+        "/api/v1/data-quality/rules",
+        json={**RULE_BODY, "id": "rule-bogus", "kind": "bogus_kind"},
+        headers=_headers(ADMIN_JWT),
+    )
+    assert resp.status_code == 422, resp.text
+    assert "unsupported rule kind" in resp.text
+    assert env.rule_registry.added == []
+
+
 def test_data_quality_rule_write_forbidden_without_identity(env: SimpleNamespace) -> None:
     resp = env.client.post("/api/v1/data-quality/rules", json=RULE_BODY)
     assert resp.status_code == 403, resp.text

@@ -229,7 +229,11 @@ def create_issue(
     _dq_container = _build_container()
     _dq_pipeline = _dq_container.data_quality_pipeline
     _dq_record_id = str(uuid4())
-    _dq_pre = _dq_pipeline.run_pre_ingest(body.model_dump(), record_id=_dq_record_id)
+    try:
+        _dq_pre = _dq_pipeline.run_pre_ingest(body.model_dump(), record_id=_dq_record_id)
+    except Exception:
+        logger.exception("data quality pre-ingest failed; creating issue without the dq gate")
+        _dq_pre = []
     if any(not r.ok for r in _dq_pre):
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=400, content={"status": "error", "error": "data_quality_failed", "details": [r.model_dump() for r in _dq_pre]})
@@ -245,7 +249,10 @@ def create_issue(
         assignee=body.assignee,
         created_by=_resolve_user(request),
     )
-    _dq_pipeline.run_post_ingest(body.model_dump(), record_id=str(issue.id))
+    try:
+        _dq_pipeline.run_post_ingest(body.model_dump(), record_id=str(issue.id))
+    except Exception:
+        logger.exception("data quality post-ingest failed; issue '%s' was still created", issue.id)
     return APIResponse(
         data=_issue_to_response(issue), meta=Meta(request_id=None, warnings=warnings if warnings else None)
     )

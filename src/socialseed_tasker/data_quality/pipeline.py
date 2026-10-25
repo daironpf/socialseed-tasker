@@ -1,12 +1,23 @@
 from __future__ import annotations
 import json
+import logging
 import time
 from typing import Dict, Any, List
-from socialseed_tasker.data_quality.rules import RuleRegistry, BaseRule, SchemaRule, RangeRule, UniqueRule, CustomRule
+from socialseed_tasker.data_quality.rules import (
+    RuleRegistry,
+    BaseRule,
+    SchemaRule,
+    RangeRule,
+    UniqueRule,
+    CustomRule,
+    NotEmptyRule,
+)
 from socialseed_tasker.application.ports import StoragePort
 from socialseed_tasker.events.bus import EventBus
 from socialseed_tasker.events.serializers import EventDTO
 from socialseed_tasker.data_quality.serializers import ValidationResult
+
+logger = logging.getLogger(__name__)
 
 REPORT_KEY_PREFIX = "dq:reports:"
 METRICS_KEY = "dq:metrics"
@@ -18,7 +29,7 @@ class DataQualityPipeline:
         self.event_bus = event_bus
         self._rule_objs: Dict[str, BaseRule] = {}
 
-    def _instantiate_rule(self, spec: Dict[str, Any]) -> BaseRule:
+    def _instantiate_rule(self, spec: Dict[str, Any]) -> BaseRule | None:
         rid = spec["id"]
         if rid in self._rule_objs:
             return self._rule_objs[rid]
@@ -32,8 +43,13 @@ class DataQualityPipeline:
         elif kind == "custom":
             fn = spec.get("config", {}).get("fn")
             r = CustomRule(spec, fn or (lambda rec: {"ok": True, "message": None, "details": {}}))
+        elif kind == "not_empty":
+            r = NotEmptyRule(spec)
         else:
-            r = BaseRule(spec)
+            logger.warning(
+                "data-quality: skipping rule '%s' with unsupported kind '%s'", rid, kind
+            )
+            return None
         self._rule_objs[rid] = r
         return r
 
@@ -43,6 +59,8 @@ class DataQualityPipeline:
             if not spec.get("enabled", True):
                 continue
             rule = self._instantiate_rule(spec)
+            if rule is None:
+                continue
             res = rule.validate(record)
             vr = ValidationResult(rule_id=rule.id, ok=res["ok"], message=res.get("message"), record_id=record_id, details=res.get("details", {}))
             results.append(vr)
@@ -62,6 +80,8 @@ class DataQualityPipeline:
             if not spec.get("enabled", True):
                 continue
             rule = self._instantiate_rule(spec)
+            if rule is None:
+                continue
             res = rule.validate(record)
             vr = ValidationResult(rule_id=rule.id, ok=res["ok"], message=res.get("message"), record_id=record_id, details=res.get("details", {}))
             results.append(vr)

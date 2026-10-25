@@ -6,6 +6,8 @@ from socialseed_tasker.application.ports import StoragePort
 class ValidationError(Exception):
     pass
 
+SUPPORTED_KINDS = ("schema", "range", "unique", "custom", "not_empty")
+
 class BaseRule:
     def __init__(self, spec: Dict[str, Any]):
         self.spec = spec
@@ -85,6 +87,19 @@ class CustomRule(BaseRule):
             return self.fn(record)
         except Exception as exc:
             return {"ok": False, "message": str(exc), "details": {}}
+
+class NotEmptyRule(BaseRule):
+    def validate(self, record: dict[str, Any]) -> dict[str, Any]:
+        target = self.spec.get("target") or ""
+        val = record.get(target)
+        if val is None:
+            return {"ok": False, "message": f"missing value for {target}", "details": {"target": target}}
+        if isinstance(val, str) and not val.strip():
+            return {"ok": False, "message": f"{target} is empty", "details": {"target": target}}
+        if isinstance(val, (list, dict, tuple)) and len(val) == 0:
+            return {"ok": False, "message": f"{target} is empty", "details": {"target": target}}
+        return {"ok": True, "message": None, "details": {}}
+
 
 class RuleRegistry:
     KEY = "dq:rules"

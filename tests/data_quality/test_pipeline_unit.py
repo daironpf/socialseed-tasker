@@ -46,3 +46,26 @@ def test_pipeline_metrics():
     m = json.loads(raw.decode("utf-8"))
     assert m["r1"]["checked"] == 2
     assert m["r1"]["failures"] == 1
+
+
+def test_not_empty_rule_fails_on_empty_and_passes_on_value():
+    storage = MemoryStorage()
+    registry = RuleRegistry(storage)
+    registry.add({"id": "r-ne", "name": "title not empty", "kind": "not_empty", "target": "title"})
+    pipeline = DataQualityPipeline(storage, registry, EventBus())
+    assert not pipeline.run_pre_ingest({"title": "  "}, record_id="a")[0].ok
+    assert not pipeline.run_pre_ingest({"title": ""}, record_id="b")[0].ok
+    assert not pipeline.run_pre_ingest({}, record_id="c")[0].ok
+    assert pipeline.run_pre_ingest({"title": "ok"}, record_id="d")[0].ok
+    assert not pipeline.run_pre_ingest({"title": []}, record_id="e")[0].ok
+
+
+def test_unsupported_kind_is_skipped_not_fatal():
+    storage = MemoryStorage()
+    registry = RuleRegistry(storage)
+    registry.add({"id": "r-bogus", "name": "bogus", "kind": "bogus_kind", "target": "title"})
+    pipeline = DataQualityPipeline(storage, registry, EventBus())
+    pre = pipeline.run_pre_ingest({"title": "x"}, record_id="f")
+    post = pipeline.run_post_ingest({"title": "x"}, record_id="f")
+    assert pre == []
+    assert post == []
