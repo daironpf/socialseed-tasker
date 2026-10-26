@@ -972,11 +972,32 @@ class TestConstraintsEndpoints:
 class TestAnalysisExtended:
     def test_component_impact(self, client, component_id):
         resp = client.get(f"/api/v1/analyze/component-impact/{component_id}")
-        assert resp.status_code in [200, 404, 405]
+        assert resp.status_code == 200
 
     def test_component_impact_nonexistent(self, client):
         resp = client.get("/api/v1/analyze/component-impact/00000000-0000-0000-0000-000000000000")
-        assert resp.status_code in [200, 404, 405]
+        assert resp.status_code == 404
+        body = resp.json()
+        assert body["data"] is None
+        assert body["error"]["code"] == "NOT_FOUND"
+        assert body["meta"]["request_id"]
+
+    def test_component_impact_invalid_identifier(self, client):
+        resp = client.get("/api/v1/analyze/component-impact/x")
+        assert resp.status_code == 422
+        body = resp.json()
+        assert body["error"]["code"] == "INVALID_PATH_PARAM"
+        assert body["error"]["message"] == "Invalid component id"
+        assert body["meta"]["request_id"]
+
+    def test_issue_impact_invalid_identifier_is_normalized(self, client):
+        resp = client.get("/api/v1/analyze/impact/not-a-uuid")
+        assert resp.status_code == 422
+        body = resp.json()
+        assert body["error"]["code"] == "INVALID_PATH_PARAM"
+        assert body["error"]["message"] == "Invalid issue id: expected a UUID"
+        assert "hexadecimal" not in resp.text
+        assert body["meta"]["request_id"]
 
 
 class TestValidationErrors:
@@ -1212,7 +1233,7 @@ class TestIssuesBatch:
     def test_create_issues_batch_empty_list(self, client):
         resp = client.post("/api/v1/issues/batch", json={"issues": []})
         assert resp.status_code == 400
-        assert resp.json()["detail"] == "No issues provided"
+        assert resp.json()["error"]["message"] == "No issues provided"
 
     def test_create_issues_batch_defaults(self, client, component_id):
         resp = client.post(

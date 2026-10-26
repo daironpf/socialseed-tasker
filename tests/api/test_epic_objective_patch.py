@@ -41,7 +41,7 @@ def test_patch_epic_empty_body_returns_422_not_500(client: TestClient, repo: _Sp
     resp = client.patch("/api/v1/epics/any-id", json={})
 
     assert resp.status_code == 422
-    assert "empty update" in resp.json()["detail"]
+    assert "empty update" in resp.json()["error"]["message"]
     assert repo.epic_updates == []
 
 
@@ -49,7 +49,7 @@ def test_patch_objective_empty_body_returns_422_not_500(client: TestClient, repo
     resp = client.patch("/api/v1/objectives/any-id", json={})
 
     assert resp.status_code == 422
-    assert "empty update" in resp.json()["detail"]
+    assert "empty update" in resp.json()["error"]["message"]
     assert repo.objective_updates == []
 
 

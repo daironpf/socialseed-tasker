@@ -115,7 +115,7 @@ def test_admin_tenants_get_and_delete_with_admin_jwt(env: SimpleNamespace) -> No
 def test_admin_tenants_forbidden_for_developer_jwt(env: SimpleNamespace) -> None:
     resp = env.client.get("/api/v1/admin/tenants", headers=_headers(DEV_JWT))
     assert resp.status_code == 403, resp.text
-    assert resp.json()["detail"] == "forbidden"
+    assert resp.json()["error"]["message"] == "forbidden"
 
 
 def test_admin_tenants_forbidden_without_identity(env: SimpleNamespace) -> None:

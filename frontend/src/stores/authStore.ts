@@ -7,8 +7,19 @@ import type { SessionUser } from '@/api/authSession'
 import i18n from '@/i18n'
 
 function httpDetail(err: unknown): string | undefined {
-  const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail
-  return typeof detail === 'string' ? detail : undefined
+  const error = err as {
+    message?: unknown
+    response?: { data?: { detail?: unknown; error?: { message?: unknown } } }
+  }
+  const message = error?.response?.data?.error?.message
+  if (typeof message === 'string') {
+    return message
+  }
+  const detail = error?.response?.data?.detail
+  if (typeof detail === 'string') {
+    return detail
+  }
+  return typeof error?.message === 'string' ? error.message : undefined
 }
 
 const DEMO_USER: SessionUser = {

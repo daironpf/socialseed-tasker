@@ -255,6 +255,13 @@ def analyze_impact(
     issue_id: str,
     repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[ImpactAnalysisResponse]:
+    try:
+        UUID(issue_id)
+    except (AttributeError, TypeError, ValueError):
+        raise HTTPException(
+            status_code=422, detail="Invalid issue id: expected a UUID"
+        ) from None
+
     root_issue = repo.get_issue(issue_id)
     analyzer = RootCauseAnalyzer(repo)
     impact: ImpactAnalysis = analyzer.analyze_impact(issue_id)
@@ -341,9 +348,9 @@ def analyze_component_impact(
     try:
         resolved_id = resolve_component_id(component_id, repo)
     except ValueError as e:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=422, detail="Invalid component id") from e
+    if repo.get_component(str(resolved_id)) is None:
+        raise ComponentNotFoundError(component_id)
 
     analyzer = RootCauseAnalyzer(repo)
     impact: ComponentImpactAnalysis = analyzer.analyze_component_impact(str(resolved_id))

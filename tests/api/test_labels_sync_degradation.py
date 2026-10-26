@@ -62,7 +62,7 @@ def test_labels_sync_without_token_returns_503_not_500(
 
     resp = client.post("/api/v1/labels/sync")
     assert resp.status_code == 503, resp.text
-    assert "GITHUB_TOKEN_NOT_CONFIGURED" in resp.json()["detail"]
+    assert "GITHUB_TOKEN_NOT_CONFIGURED" in resp.json()["error"]["message"]
     assert "Illegal header" not in resp.text
 
 
@@ -74,7 +74,7 @@ def test_labels_sync_without_repository_returns_503(
 
     resp = client.post("/api/v1/labels/sync")
     assert resp.status_code == 503, resp.text
-    assert resp.json()["detail"] == "Neo4j not available"
+    assert resp.json()["error"]["message"] == "Neo4j not available"
 
 
 def test_labels_sync_happy_path_with_token(

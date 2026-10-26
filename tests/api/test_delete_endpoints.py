@@ -108,7 +108,7 @@ def test_delete_mcp_server_404_when_unknown():
         resp = client.request("DELETE", "/api/v1/mcp/servers/ghost")
 
         assert resp.status_code == 404
-        assert resp.json()["detail"] == "Server ghost not found"
+        assert resp.json()["error"]["message"] == "Server ghost not found"
 
 
 # ---------------------------------------------------------------------------

@@ -1089,7 +1089,7 @@ def create_app(
     async def component_not_found_handler(request: Request, exc: ComponentNotFoundError) -> JSONResponse:
         return JSONResponse(
             status_code=404,
-            content=_error_response("COMPONENT_NOT_FOUND", str(exc)),
+            content=_error_response("NOT_FOUND", str(exc)),
         )
 
     @app.exception_handler(CircularDependencyError)
@@ -1150,11 +1150,31 @@ def create_app(
             content=_error_response("AI_NOT_CONFIGURED", str(exc)),
         )
 
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(
+        request: StarletteRequest, exc: StarletteHTTPException
+    ) -> JSONResponse:
+        detail = exc.detail
+        if isinstance(detail, str):
+            message = detail
+            details: dict[str, Any] = {}
+        else:
+            message = "Request failed"
+            details = {"detail": detail}
+        if _contains_parser_error(message):
+            message = "Invalid value for request"
+        code = _HTTP_ERROR_CODE_BY_STATUS.get(exc.status_code, "HTTP_ERROR")
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=_error_response(code, message, details),
+            headers=getattr(exc, "headers", None),
+        )
+
     @app.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
         return JSONResponse(
             status_code=400,
-            content=_error_response("VALIDATION_ERROR", str(exc)),
+            content=_error_response("VALIDATION_ERROR", "Invalid value for request"),
         )
 
     @app.exception_handler(RequestValidationError)
@@ -1272,6 +1292,34 @@ def create_app(
     )
 
     return app
+
+
+_HTTP_ERROR_CODE_BY_STATUS: dict[int, str] = {
+    400: "VALIDATION_ERROR",
+    401: "UNAUTHORIZED",
+    403: "FORBIDDEN",
+    404: "NOT_FOUND",
+    405: "METHOD_NOT_ALLOWED",
+    409: "CONFLICT",
+    410: "GONE",
+    413: "PAYLOAD_TOO_LARGE",
+    422: "INVALID_PATH_PARAM",
+    429: "RATE_LIMITED",
+    500: "INTERNAL_ERROR",
+    503: "SERVICE_UNAVAILABLE",
+}
+
+_PARSER_ERROR_MARKERS = (
+    "badly formed",
+    "hexadecimal",
+    "invalid literal",
+    "could not convert",
+)
+
+
+def _contains_parser_error(message: str) -> bool:
+    lowered = message.lower()
+    return any(marker in lowered for marker in _PARSER_ERROR_MARKERS)
 
 
 def _error_response(

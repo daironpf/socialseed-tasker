@@ -99,7 +99,7 @@ def resolve_component_identifier_to_uuid(
             if str(component.id).startswith(partial_component_identifier):
                 return component.id
 
-    raise ValueError(f"Component not found: {partial_component_identifier}")
+    raise ComponentNotFoundError(partial_component_identifier)
 
 
 def convert_domain_issue_to_api_response(domain_issue: Issue) -> IssueResponse:

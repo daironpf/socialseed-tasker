@@ -33,7 +33,7 @@ lógica de reintentos/CRUD y las expectation de la sonda); un consumidor que esp
 `error.code` no puede leer nada en `{"detail"}`; los mensajes crudos de Python se
 filtran al exterior.
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: MEDIUM
 

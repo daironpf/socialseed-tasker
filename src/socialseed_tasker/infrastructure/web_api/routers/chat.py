@@ -130,7 +130,7 @@ async def _emit(request: Request, event: str, data: dict[str, Any], room: str) -
 
 async def _owned_conversation(request: Request, user_id: str, conversation_id: str) -> dict[str, Any]:
     if not is_object_id(conversation_id):
-        raise ValueError("invalid conversation_id")
+        raise HTTPException(status_code=404, detail="conversation not found")
     repository = _repository(request)
     try:
         conversation = await repository.get_conversation(conversation_id)

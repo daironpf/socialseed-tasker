@@ -75,7 +75,11 @@ def test_embed_unknown_issue_returns_404_not_500(monkeypatch) -> None:
 
     resp = client.post("/api/v1/ai/issues/nonexistent/embed")
     assert resp.status_code == 404, resp.text
-    assert resp.json()["detail"] == "Issue not found"
+    body = resp.json()
+    assert body["data"] is None
+    assert body["error"]["code"] == "NOT_FOUND"
+    assert body["error"]["message"] == "Issue not found"
+    assert body["meta"]["request_id"]
 
 
 def test_embed_with_key_and_existing_embedding_short_circuits(monkeypatch) -> None:

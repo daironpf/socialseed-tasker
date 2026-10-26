@@ -262,7 +262,11 @@ def test_messages_history_pagination_and_forbidden(chat_env: SimpleNamespace) ->
     resp = chat_env.client.get(
         "/api/v1/chat/conversations/not-an-id/messages", headers=_headers("alice")
     )
-    assert resp.status_code == 400
+    assert resp.status_code == 404
+    body = resp.json()
+    assert body["error"]["code"] == "NOT_FOUND"
+    assert body["data"] is None
+    assert body["meta"]["request_id"]
 
     resp = chat_env.client.get(
         f"/api/v1/chat/conversations/{CONV_ID}/messages",
@@ -282,6 +286,15 @@ def test_pin_toggles_for_current_user(chat_env: SimpleNamespace) -> None:
 
     resp = chat_env.client.post(f"/api/v1/chat/conversations/{CONV_ID}/pin", headers=_headers("carol"))
     assert resp.status_code == 403
+
+    resp = chat_env.client.post(
+        "/api/v1/chat/conversations/not-an-id/pin", headers=_headers("alice")
+    )
+    assert resp.status_code == 404
+    body = resp.json()
+    assert body["error"]["code"] == "NOT_FOUND"
+    assert body["data"] is None
+    assert body["meta"]["request_id"]
 
 
 def test_create_message_persists_and_emits(chat_env: SimpleNamespace) -> None:

@@ -163,7 +163,7 @@ class TestPasswordLogin:
     def test_wrong_password_is_401(self, client: TestClient, pg_login: None) -> None:
         resp = client.post("/api/v1/auth/login", json={"username": "Manolo", "password": "otra-contrasena"})
         assert resp.status_code == 401
-        assert resp.json()["detail"] == "Invalid username or password"
+        assert resp.json()["error"]["message"] == "Invalid username or password"
 
     def test_missing_database_url_is_503(self, client: TestClient) -> None:
         resp = client.post("/api/v1/auth/login", json={"username": "manolo", "password": "manolo"})
@@ -276,7 +276,7 @@ class TestSessionLifecycle:
         assert client.app.state.auth_sessions.get(str(claims["sub"]), str(claims["sid"])) is None
         me = client.get("/api/v1/auth/me", headers=_bearer(data["access_token"]))
         assert me.status_code == 401
-        assert me.json()["detail"] == "Session revoked"
+        assert me.json()["error"]["message"] == "Session revoked"
         again = client.post("/api/v1/auth/refresh", json={"refresh_token": data["refresh_token"]})
         assert again.status_code == 401
 
@@ -316,7 +316,7 @@ class TestSessionLifecycle:
         client.app.state.auth_sessions.delete(str(claims["sub"]), str(claims["sid"]))
         resp = client.post("/api/v1/auth/refresh", json={"refresh_token": data["refresh_token"]})
         assert resp.status_code == 401
-        assert resp.json()["detail"] == "Session revoked"
+        assert resp.json()["error"]["message"] == "Session revoked"
 
     def test_middleware_rejects_token_with_revoked_session(
         self, client: TestClient, pg_login: None

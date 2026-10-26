@@ -153,7 +153,7 @@ def test_create_conversation_documents_and_enforces_participant_rule(
         headers={"X-User-ID": "alice"},
     )
     assert resp.status_code == 400, resp.text
-    assert "two participants" in resp.text
+    assert resp.json()["error"]["message"] == "Invalid value for request"
 
 
 def test_whoami_returns_envelope(client: TestClient) -> None:

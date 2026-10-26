@@ -184,7 +184,7 @@ def test_mcp_rerun_without_executor_returns_400():
     client.post("/api/v1/mcp/tool-calls", json={"id": "call-1", "tool": "unknown_tool"})
     resp = client.post("/api/v1/mcp/tool-calls/call-1/rerun")
     assert resp.status_code == 400
-    assert "unknown_tool" in resp.json()["detail"]
+    assert "unknown_tool" in resp.json()["error"]["message"]
 
 
 def test_mcp_rerun_success_records_new_call(monkeypatch):

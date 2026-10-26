@@ -65,7 +65,7 @@ def test_similar_issues_cypher_error_returns_503_not_500() -> None:
 
     resp = client.get("/api/v1/ai/similar-issues/a")
     assert resp.status_code == 503, resp.text
-    detail = resp.json()["detail"]
+    detail = resp.json()["error"]["message"]
     assert detail.startswith("CYPHER_QUERY_UNAVAILABLE:")
     assert "Unknown function" in detail
     assert resp.status_code != 500
@@ -76,7 +76,7 @@ def test_similar_issues_without_repository_returns_503() -> None:
 
     resp = client.get("/api/v1/ai/similar-issues/a")
     assert resp.status_code == 503, resp.text
-    assert "Neo4j not available" in resp.json()["detail"]
+    assert "Neo4j not available" in resp.json()["error"]["message"]
 
 
 def test_similarity_queries_do_not_require_apoc() -> None:

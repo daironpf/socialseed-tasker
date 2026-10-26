@@ -90,7 +90,7 @@ def test_non_dict_entry_returns_404_not_500(
     storage.put("secrets:weird", json.dumps([1, 2, 3]).encode("utf-8"))
     resp = client.get("/api/v1/secrets/weird")
     assert resp.status_code == 404, resp.text[:300]
-    assert "list" not in resp.text or resp.json()["detail"] == "not found"
+    assert "list" not in resp.text or resp.json()["error"]["message"] == "not found"
 
 
 def test_get_secret_raises_typed_error_for_non_dict_entry() -> None:

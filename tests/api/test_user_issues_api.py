@@ -255,7 +255,7 @@ def test_user_issues_404_unknown_user(client: TestClient, pg_users):
         headers=_auth(UID_ANA),
     )
     assert resp.status_code == 404
-    assert resp.json()["detail"] == "User not found"
+    assert resp.json()["error"]["message"] == "User not found"
 
     stats = client.get(
         f"/api/v1/users/{UID_GHOST}/issue-stats", headers=_auth(UID_ANA)
@@ -280,4 +280,4 @@ def test_user_issues_invalid_kind_422(client: TestClient, pg_users):
         headers=_auth(UID_ANA),
     )
     assert resp.status_code == 422
-    assert "invalid kind" in resp.json()["detail"]
+    assert "invalid kind" in resp.json()["error"]["message"]

@@ -77,14 +77,16 @@ def env(monkeypatch: pytest.MonkeyPatch) -> Any:
 def test_mark_read_malformed_id_returns_404_not_503(env: SimpleNamespace) -> None:
     resp = env.client.patch(f"/api/v1/notifications/{MALFORMED}/read", headers=_headers("alice"))
     assert resp.status_code == 404, resp.text
-    assert resp.json()["detail"] == "notification not found"
+    assert resp.json()["error"]["code"] == "NOT_FOUND"
+    assert resp.json()["error"]["message"] == "notification not found"
     assert "store unavailable" not in resp.text
 
 
 def test_delete_malformed_id_returns_404_not_503(env: SimpleNamespace) -> None:
     resp = env.client.delete(f"/api/v1/notifications/{MALFORMED}", headers=_headers("alice"))
     assert resp.status_code == 404, resp.text
-    assert resp.json()["detail"] == "notification not found"
+    assert resp.json()["error"]["code"] == "NOT_FOUND"
+    assert resp.json()["error"]["message"] == "notification not found"
     assert "store unavailable" not in resp.text
 
 
@@ -111,7 +113,7 @@ def test_real_store_failure_still_returns_503(env: SimpleNamespace) -> None:
 
     resp = env.client.patch(f"/api/v1/notifications/{note_id}/read", headers=_headers("alice"))
     assert resp.status_code == 503, resp.text
-    assert "store unavailable" in resp.json()["detail"]
+    assert "store unavailable" in resp.json()["error"]["message"]
 
 
 def test_delete_store_failure_still_returns_503(env: SimpleNamespace) -> None:
