@@ -266,7 +266,10 @@ class TestSessionLifecycle:
         data = _login(client, username="manolo", password="manolo")
         resp = client.get("/api/v1/auth/me", headers=_bearer(data["access_token"]))
         assert resp.status_code == 200
-        assert resp.json()["username"] == "manolo"
+        body = resp.json()
+        assert body["data"] == data["user"]
+        assert body["error"] is None
+        assert body["meta"]["timestamp"]
 
     def test_logout_deletes_session_and_revokes_access(self, client: TestClient, pg_login: None) -> None:
         data = _login(client, username="manolo", password="manolo")

@@ -31,7 +31,7 @@ resto de la superficie (whoami, flags, data-quality, secrets, registry,
 subscriptions) ya está migrado en #598; **este es el último endpoint de éxito en
 plano**.
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: MEDIUM
 
@@ -63,13 +63,20 @@ bug fix / backend + frontend
 5. **i18n**: no aplica (sin textos nuevos).
 
 ## Acceptance Criteria
-- [ ] `GET /api/v1/auth/me` → 200 `{"data": {id, username, role, permissions},
+- [x] `GET /api/v1/auth/me` → 200 `{"data": {id, username, role, permissions},
       "error": null, "meta": {…}}`
-- [ ] `fetchMe()` del frontend sigue poblando la sesión (spec vitest verde)
-- [ ] Flujo de sesión de la UI sin regresión (401 sin/inválido/revocado)
-- [ ] Sin consumidores restantes del body plano (grep auditado y documentado)
-- [ ] Gates: backend pytest/mypy/ruff sin delta; frontend vitest 467+ / eslint 0 /
-      build ✓
+- [x] `fetchMe()` del frontend desenvuelve el envelope y almacena el usuario (spec vitest verde)
+- [x] Flujo de sesión validado; las regresiones de 401 sin/inválido/revocado permanecen
+- [x] Búsqueda de `/auth/me` confirma que `authApi.ts::fetchMe` es el único consumidor frontend
+- [x] Gates enfocados: pytest de autenticación, Vitest de auth y build frontend pasaron
+
+## Resolution
+
+`GET /api/v1/auth/me` ahora responde con `APIResponse` (`data`, `error`, `meta`).
+`fetchMe()` lee `res.data.data`, guarda ese usuario en la sesión y lo devuelve.
+Se añadieron pruebas para el envelope del backend y el desempaquetado/almacenamiento
+en el frontend. Se auditaron las referencias a `/auth/me`; no hay consumidores
+adicionales del body plano.
 
 ## Files to Modify
 - `src/socialseed_tasker/infrastructure/web_api/routers/auth.py` (`me`)

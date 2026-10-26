@@ -56,8 +56,9 @@ export async function exchange(code: string): Promise<SessionUser> {
 
 export async function fetchMe(): Promise<SessionUser> {
   const res = await authClient.get('/auth/me', { headers: bearerHeaders() })
-  session.setUser(res.data as SessionUser)
-  return res.data as SessionUser
+  const user = res.data.data as SessionUser
+  session.setUser(user)
+  return user
 }
 
 export function refresh(): Promise<boolean> {

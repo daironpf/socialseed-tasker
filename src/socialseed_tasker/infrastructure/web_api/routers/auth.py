@@ -45,6 +45,7 @@ from socialseed_tasker.auth.auth import load_auth_provider
 from socialseed_tasker.auth.redis_sessions import AuthSessionStore
 from socialseed_tasker.auth.user_store import authenticate_user, record_session_event
 from socialseed_tasker.config.storage import get_database_url
+from socialseed_tasker.infrastructure.web_api.schemas import APIResponse, Meta
 
 logger = logging.getLogger(__name__)
 
@@ -308,7 +309,9 @@ def logout(
 
 
 @auth_router.get("/auth/me", summary="Current session user")
-def me(request: Request, authorization: str | None = Header(default=None)) -> dict[str, Any]:
+def me(
+    request: Request, authorization: str | None = Header(default=None)
+) -> APIResponse[dict[str, Any]]:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing bearer token")
     claims = tokens.verify_access(authorization[7:])
@@ -317,12 +320,15 @@ def me(request: Request, authorization: str | None = Header(default=None)) -> di
     session_id = claims.get("sid")
     if session_id and _session_store(request).get(str(claims.get("sub", "")), str(session_id)) is None:
         raise HTTPException(status_code=401, detail="Session revoked")
-    return {
-        "id": claims.get("sub"),
-        "username": claims.get("username"),
-        "role": claims.get("role", "VIEWER"),
-        "permissions": claims.get("permissions", []),
-    }
+    return APIResponse(
+        data={
+            "id": claims.get("sub"),
+            "username": claims.get("username"),
+            "role": claims.get("role", "VIEWER"),
+            "permissions": claims.get("permissions", []),
+        },
+        meta=Meta(request_id=None),
+    )
 
 
 # ---------------------------------------------------------------- OAuth2 PKCE
