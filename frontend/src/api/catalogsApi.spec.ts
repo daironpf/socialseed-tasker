@@ -1,14 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import client from '@/api/client'
-import { fetchSkills, fetchTools, resetCatalogsCache } from '@/api/catalogsApi'
+import { deleteSkill, fetchSkills, fetchTools, resetCatalogsCache } from '@/api/catalogsApi'
 
 vi.mock('@/api/client', () => ({
   default: {
     get: vi.fn(),
+    delete: vi.fn(),
   },
 }))
 
 const mockedGet = client.get as unknown as ReturnType<typeof vi.fn>
+const mockedDelete = client.delete as unknown as ReturnType<typeof vi.fn>
 
 describe('catalogsApi', () => {
   beforeEach(() => {
@@ -89,5 +91,19 @@ describe('catalogsApi', () => {
 
     await expect(fetchTools()).rejects.toMatchObject({ status: 503 })
     await expect(fetchTools()).resolves.toEqual([{ id: 'shell', name: 'Shell' }])
+  })
+
+  it('deletes a skill catalog item and returns the removed assignment count', async () => {
+    mockedDelete.mockResolvedValue({
+      data: { data: { deleted: 'python', assignmentsRemoved: 3 } },
+    })
+    mockedGet.mockResolvedValue({ data: { data: [{ id: 'python', name: 'Python' }] } })
+
+    await fetchSkills()
+    await expect(deleteSkill('python')).resolves.toEqual({ assignmentsRemoved: 3 })
+    expect(mockedDelete).toHaveBeenCalledWith('/skills/python', { suppressErrorToast: true })
+
+    await fetchSkills()
+    expect(mockedGet).toHaveBeenCalledTimes(2)
   })
 })

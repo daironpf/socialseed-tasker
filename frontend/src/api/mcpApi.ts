@@ -121,6 +121,15 @@ export async function registerServer(input: MCPServerInput): Promise<MCPServer> 
   return normalizeServer(data.data)
 }
 
+export async function deleteServer(serverId: string): Promise<{ sessionsRemoved: number }> {
+  const { data } = await client.delete<APIResponse<{ id: string; sessionsRemoved: string | number }>>(
+    `/mcp/servers/${encodeURIComponent(serverId)}`,
+    { suppressErrorToast: true },
+  )
+  if (!data.data) throw new Error('Server deletion failed')
+  return { sessionsRemoved: Number(data.data.sessionsRemoved) }
+}
+
 // ------------------------------------------------------------- sessions
 
 export async function fetchSessions(): Promise<MCPSession[]> {

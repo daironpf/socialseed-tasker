@@ -27,7 +27,7 @@ borrar nada en modo real**:
 | `DELETE /api/v1/mcp/servers/{server_id}` | 200 `{id, sessionsRemoved}` | 404 / 503 sin backend |
 | `DELETE /api/v1/chat/conversations/{id}` | 200 (solo dueño JWT) | ajeno/inexistente → 404, Mongo caído → 503 |
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: MEDIUM
 

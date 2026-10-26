@@ -122,6 +122,14 @@
             {{ mcpStore.servers.length }}
           </span>
         </div>
+        <p
+          v-if="serverFeedback"
+          class="px-4 pt-3 text-sm"
+          :class="serverFeedbackKind === 'error' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'"
+          role="status"
+        >
+          {{ serverFeedback }}
+        </p>
         <div v-if="mcpStore.servers.length === 0" class="px-6 py-8 text-center">
           <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('mcp.noServers') }}</p>
         </div>
@@ -163,6 +171,14 @@
             <p class="mt-2 text-[10px] text-gray-400 dark:text-gray-500">
               {{ t('mcp.lastSeen') }}: {{ formatTimestamp(server.lastSeen) }}
             </p>
+            <button
+              class="mt-3 rounded border border-rose-300 px-2 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50 dark:border-rose-700 dark:text-rose-400 dark:hover:bg-rose-900/30"
+              :aria-label="t('mcp.deleteServer')"
+              :disabled="serverDeletingId === server.id"
+              @click="handleDeleteServer(server)"
+            >
+              {{ serverDeletingId === server.id ? t('mcp.deletingServer') : t('mcp.deleteServer') }}
+            </button>
           </div>
         </div>
       </div>
@@ -511,7 +527,7 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       @click.self="confirmModal.show = false"
     >
-      <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">
+      <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800" role="dialog">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ confirmModal.title }}</h3>
         <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ confirmModal.message }}</p>
         <div class="mt-6 flex justify-end gap-3">
@@ -524,9 +540,10 @@
           <button
             class="rounded-lg px-4 py-2 text-sm font-medium text-white"
             :class="confirmModal.danger ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'"
-            @click="confirmModal.onConfirm(); confirmModal.show = false"
+            :disabled="confirmingAction"
+            @click="runConfirmAction"
           >
-            {{ confirmModal.confirmLabel }}
+            {{ serverDeletingId ? t('mcp.deletingServer') : confirmModal.confirmLabel }}
           </button>
         </div>
       </div>
@@ -613,6 +630,10 @@ const mcpStore = useMcpStore()
 const activeFilter = ref<'all' | MCPSessionStatus>('all')
 const selectedCall = ref<MCPToolCall | null>(null)
 const rerunningId = ref<string | null>(null)
+const serverDeletingId = ref<string | null>(null)
+const serverFeedback = ref('')
+const serverFeedbackKind = ref<'ok' | 'error'>('ok')
+const confirmingAction = ref(false)
 
 const confirmModal = ref<{
   show: boolean
@@ -620,7 +641,7 @@ const confirmModal = ref<{
   message: string
   confirmLabel: string
   danger: boolean
-  onConfirm: () => void
+  onConfirm: () => void | Promise<void>
 }>({
   show: false,
   title: '',
@@ -657,7 +678,7 @@ function handlePause(id: string) {
     message: t('mcp.pauseSessionMessage'),
     confirmLabel: t('mcp.pauseSessionConfirm'),
     danger: false,
-    onConfirm: () => mcpStore.pauseSession(id),
+    onConfirm: async () => { await mcpStore.pauseSession(id) },
   }
 }
 
@@ -672,7 +693,59 @@ function handleRevoke(id: string) {
     message: t('mcp.revokeSessionMessage'),
     confirmLabel: t('mcp.revokeSessionConfirm'),
     danger: true,
-    onConfirm: () => mcpStore.revokeSession(id),
+    onConfirm: async () => { await mcpStore.revokeSession(id) },
+  }
+}
+
+function handleDeleteServer(server: { id: string; name: string }) {
+  confirmModal.value = {
+    show: true,
+    title: t('mcp.deleteServerTitle'),
+    message: t('mcp.deleteServerMessage', { name: server.name }),
+    confirmLabel: t('mcp.deleteServer'),
+    danger: true,
+    onConfirm: async () => {
+      serverDeletingId.value = server.id
+      serverFeedback.value = ''
+      try {
+        const result = await mcpStore.removeServer(server.id)
+        if (result?.errorStatus === 404) {
+          serverFeedback.value = t(result.refreshFailed ? 'mcp.serverNotFoundRefreshError' : 'mcp.serverNotFound')
+          serverFeedbackKind.value = 'error'
+        } else if (result?.errorStatus === 503) {
+          serverFeedback.value = t('mcp.deleteUnavailable')
+          serverFeedbackKind.value = 'error'
+        } else if (result?.errorStatus) {
+          serverFeedback.value = t('mcp.deleteError')
+          serverFeedbackKind.value = 'error'
+        } else if (result?.failed) {
+          serverFeedback.value = t('mcp.deleteError')
+          serverFeedbackKind.value = 'error'
+        } else if (result?.refreshFailed) {
+          serverFeedback.value = t('mcp.serverDeletedRefreshError', { count: result.sessionsRemoved })
+          serverFeedbackKind.value = 'error'
+        } else if (result) {
+          serverFeedback.value = t('mcp.serverDeleted', { count: result.sessionsRemoved })
+          serverFeedbackKind.value = 'ok'
+        } else {
+          serverFeedback.value = t('mcp.deleteError')
+          serverFeedbackKind.value = 'error'
+        }
+      } finally {
+        serverDeletingId.value = null
+      }
+    },
+  }
+}
+
+async function runConfirmAction() {
+  if (confirmingAction.value) return
+  confirmingAction.value = true
+  try {
+    await confirmModal.value.onConfirm()
+    confirmModal.value.show = false
+  } finally {
+    confirmingAction.value = false
   }
 }
 

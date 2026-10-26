@@ -321,6 +321,67 @@ export const useMcpStore = defineStore('mcp', () => {
     return updateSessionStatus(id, 'revoked')
   }
 
+  async function removeServer(
+    id: string,
+  ): Promise<{
+    sessionsRemoved: number
+    errorStatus?: number
+    failed?: boolean
+    refreshFailed?: boolean
+  } | null> {
+    const target = servers.value.find(server => server.id === id)
+    if (!target) return null
+    error.value = null
+    let result: { sessionsRemoved: number }
+    try {
+      if (isMockMode()) {
+        const removedSessions = sessions.value.filter(
+          session => session.server === id || session.server === target.name,
+        )
+        servers.value = servers.value.filter(item => item.id !== id)
+        sessions.value = sessions.value.filter(
+          session => session.server !== id && session.server !== target.name,
+        )
+        return { sessionsRemoved: removedSessions.length }
+      }
+      result = await mcpApi.deleteServer(id)
+    } catch (e) {
+      error.value = errorMessage(e)
+      const status = (e as { status?: number }).status
+      if (status === 404) {
+        try {
+          const [serverList, sessionList] = await Promise.all([
+            mcpApi.fetchServers(),
+            mcpApi.fetchSessions(),
+          ])
+          servers.value = serverList
+          sessions.value = sessionList
+        } catch (refreshError) {
+          error.value = `${errorMessage(e)}; refresh failed: ${errorMessage(refreshError)}`
+          return { sessionsRemoved: 0, errorStatus: status, failed: true, refreshFailed: true }
+        }
+      }
+      return { sessionsRemoved: 0, errorStatus: status, failed: true }
+    }
+
+    try {
+      const [serverList, sessionList] = await Promise.all([
+        mcpApi.fetchServers(),
+        mcpApi.fetchSessions(),
+      ])
+      servers.value = serverList
+      sessions.value = sessionList
+      return result
+    } catch (refreshError) {
+      error.value = errorMessage(refreshError)
+      servers.value = servers.value.filter(server => server.id !== id)
+      sessions.value = sessions.value.filter(
+        session => session.server !== id && session.server !== target.name,
+      )
+      return { ...result, refreshFailed: true }
+    }
+  }
+
   async function pauseSession(id: string): Promise<boolean> {
     const session = sessions.value.find(s => s.id === id)
     if (!session || session.status !== 'active') return false
@@ -510,6 +571,7 @@ export const useMcpStore = defineStore('mcp', () => {
     metrics,
     toolMetrics,
     fetchSessions,
+    removeServer,
     revokeSession,
     pauseSession,
     resumeSession,

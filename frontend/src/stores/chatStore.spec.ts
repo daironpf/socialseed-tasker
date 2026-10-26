@@ -81,6 +81,7 @@ function routeGet(url: string): Promise<unknown> {
 
 function spyChatApi() {
   vi.spyOn(client, 'get').mockImplementation((url: string) => routeGet(url) as never)
+  vi.spyOn(client, 'delete').mockResolvedValue({} as never)
   return vi.spyOn(client, 'post').mockResolvedValue(envelope(msgWire('m-post')) as never)
 }
 
@@ -123,6 +124,19 @@ describe('chatStore', () => {
       const last = store.messages['conv-6'][store.messages['conv-6'].length - 1]
       expect(last.content).toBe('hola mock')
       expect(store.activeConversation?.lastMessage?.content).toBe('hola mock')
+    })
+
+    it('deletes a conversation and its messages locally', async () => {
+      const store = useChatStore()
+      const deleteSpy = vi.spyOn(client, 'delete')
+      store.selectConversation('conv-3')
+
+      await store.deleteConversation('conv-3')
+
+      expect(store.conversations.some(conversation => conversation.id === 'conv-3')).toBe(false)
+      expect(store.messages['conv-3']).toBeUndefined()
+      expect(store.activeConversationId).toBeNull()
+      expect(deleteSpy).not.toHaveBeenCalled()
       expect(fakeSocket.emit).not.toHaveBeenCalled()
       expect(ioMock).not.toHaveBeenCalled()
     })
@@ -165,6 +179,40 @@ describe('chatStore', () => {
       expect(store.conversations[0].name).toBe('bob')
       expect(store.conversations[0].unreadCount).toBe(0)
       expect(store.isRealtimeApi).toBe(true)
+    })
+
+    it('deletes a live conversation and closes its active room', async () => {
+      const store = useChatStore()
+      await vi.waitFor(() => expect(store.conversations).toHaveLength(2))
+      fakeSocket.connected = true
+      store.selectConversation('c1')
+      await vi.waitFor(() => expect(store.messages['c1']).toHaveLength(1))
+      fakeSocket.emit.mockClear()
+
+      await store.deleteConversation('c1')
+
+      expect(client.delete).toHaveBeenCalledWith('/chat/conversations/c1', {
+        suppressErrorToast: true,
+      })
+      expect(fakeSocket.emit).toHaveBeenCalledWith('leave_room', { conversation_id: 'c1' })
+      expect(store.activeConversationId).toBeNull()
+      expect(store.messages['c1']).toBeUndefined()
+      expect(store.conversations.some(conversation => conversation.id === 'c1')).toBe(false)
+    })
+
+    it('refreshes conversations and propagates a 404 deletion response', async () => {
+      const store = useChatStore()
+      await vi.waitFor(() => expect(store.conversations).toHaveLength(2))
+      vi.mocked(client.get).mockClear()
+      vi.mocked(client.delete).mockRejectedValueOnce(
+        Object.assign(new Error('not found'), { status: 404 }),
+      )
+
+      await expect(store.deleteConversation('c1')).rejects.toMatchObject({ status: 404 })
+      expect(client.get).toHaveBeenCalledTimes(1)
+      expect(client.get).toHaveBeenLastCalledWith('/chat/conversations', {
+        suppressErrorToast: true,
+      })
     })
 
     it('selects a conversation joining the room, marking read and loading history', async () => {

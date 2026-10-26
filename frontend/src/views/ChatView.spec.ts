@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { mount, type VueWrapper } from '@vue/test-utils'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import i18n from '@/i18n'
 import ChatView from '@/views/ChatView.vue'
@@ -47,6 +47,46 @@ describe('ChatView', () => {
     expect(wrapper.find('.flex-1.overflow-y-auto').exists()).toBe(true)
     expect(wrapper.text()).toContain('alice')
     expect(wrapper.text()).toContain('Kanban drag-and-drop')
+  })
+
+  it('deletes the active conversation only after confirmation', async () => {
+    const { wrapper, store } = mountChat()
+    const deleteButton = wrapper.find('[aria-label="Delete conversation"]')
+
+    expect(deleteButton.exists()).toBe(true)
+    await deleteButton.trigger('click')
+    await nextTick()
+    expect(document.body.textContent).toContain('Delete conversation?')
+    expect(store.conversations.some(conversation => conversation.id === 'conv-3')).toBe(true)
+
+    const confirmButton = Array.from(document.body.querySelectorAll('button')).find(
+      button => button.textContent?.trim() === 'Delete',
+    ) as HTMLButtonElement
+    confirmButton.click()
+    await nextTick()
+
+    expect(store.conversations.some(conversation => conversation.id === 'conv-3')).toBe(false)
+    expect(store.activeConversationId).toBeNull()
+    expect(wrapper.text()).toContain('Select a conversation')
+  })
+
+  it('shows a degraded-service message when conversation deletion returns 503', async () => {
+    const { wrapper, store } = mountChat()
+    vi.spyOn(store, 'deleteConversation').mockRejectedValueOnce(
+      Object.assign(new Error('service unavailable'), { status: 503 }),
+    )
+
+    await wrapper.find('[aria-label="Delete conversation"]').trigger('click')
+    const confirm = document.body.querySelectorAll('button')
+    const confirmButton = Array.from(confirm).find(
+      button => button.textContent?.trim() === 'Delete',
+    ) as HTMLButtonElement
+    confirmButton.click()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain(
+      'Conversation deletion is unavailable because the chat service is not configured.',
+    )
   })
 
   it('notifies typing while composing and sends on Enter with trimmed text', async () => {

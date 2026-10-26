@@ -36,6 +36,16 @@ export async function fetchSkills(): Promise<SkillCatalogItem[]> {
   return items
 }
 
+export async function deleteSkill(id: string): Promise<{ assignmentsRemoved: number }> {
+  const { data } = await client.delete<APIResponse<{ deleted: string; assignmentsRemoved: number }>>(
+    `/skills/${encodeURIComponent(id)}`,
+    { suppressErrorToast: true },
+  )
+  resetCatalogsCache()
+  if (!data.data) throw new Error('Skill deletion failed')
+  return { assignmentsRemoved: data.data.assignmentsRemoved }
+}
+
 export async function fetchTools(): Promise<ToolCatalogItem[]> {
   if (toolsCache && Date.now() - toolsCache.at < CACHE_TTL_MS) return toolsCache.items
   // Degrade silently: the pickers keep the AGENT_TOOLS local fallback (#572).

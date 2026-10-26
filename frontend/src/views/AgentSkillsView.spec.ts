@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { mountComponent } from '@/test/mount'
 import AgentSkillsView from '@/views/AgentSkillsView.vue'
+import { deleteSkill, fetchSkills } from '@/api/catalogsApi'
 import {
   fetchAgentSkills,
   createAgentSkill,
@@ -24,6 +25,11 @@ vi.mock('@/api/agentSkillsApi', () => ({
   deleteAgentSkill: vi.fn().mockResolvedValue(undefined),
   importAgentSkill: vi.fn(),
   importAgentSkillFromUrl: vi.fn(),
+}))
+vi.mock('@/api/catalogsApi', () => ({
+  fetchSkills: vi.fn().mockResolvedValue([{ id: 'python', name: 'Python' }]),
+  deleteSkill: vi.fn().mockResolvedValue({ assignmentsRemoved: 2 }),
+  resetCatalogsCache: vi.fn(),
 }))
 
 const CATALOG = [
@@ -50,6 +56,7 @@ describe('AgentSkillsView (issue #610)', () => {
     vi.clearAllMocks()
     mockState.mockMode = false
     vi.mocked(fetchAgentSkills).mockResolvedValue(CATALOG)
+    vi.mocked(fetchSkills).mockResolvedValue([{ id: 'python', name: 'Python' }])
   })
 
   it('lists the catalog and reads the full behavior of a selected skill', async () => {
@@ -136,6 +143,70 @@ describe('AgentSkillsView (issue #610)', () => {
     expect(deleteAgentSkill).toHaveBeenCalledWith('code-reviewer')
     expect(wrapper.text()).toContain('Skill deleted.')
     expect(wrapper.text()).not.toContain('Code Reviewer')
+  })
+
+  it('deletes a user skill catalog entry through the real catalog endpoint', async () => {
+    const { wrapper } = mountComponent(AgentSkillsView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('User skill catalog')
+    expect(wrapper.text()).toContain('Python')
+    await wrapper.find('[aria-label="Delete Python"]').trigger('click')
+    expect(deleteSkill).not.toHaveBeenCalled()
+
+    await wrapper.findAll('button').find(button => button.text() === 'Confirm')!.trigger('click')
+    await flushPromises()
+
+    expect(deleteSkill).toHaveBeenCalledWith('python')
+    expect(wrapper.text()).toContain('Skill deleted. 2 user assignment(s) removed.')
+    expect(wrapper.text()).not.toContain('Python')
+  })
+
+  it('removes a user skill catalog entry locally in mock mode', async () => {
+    mockState.mockMode = true
+    const { wrapper } = mountComponent(AgentSkillsView)
+    await flushPromises()
+
+    await wrapper.find('[aria-label="Delete Python"]').trigger('click')
+    await wrapper.findAll('button').find(button => button.text() === 'Confirm')!.trigger('click')
+    await flushPromises()
+
+    expect(deleteSkill).not.toHaveBeenCalled()
+    expect(wrapper.text()).not.toContain('Python')
+  })
+
+  it('refreshes the user skill catalog after a 404', async () => {
+    vi.mocked(fetchSkills)
+      .mockResolvedValueOnce([{ id: 'python', name: 'Python' }])
+      .mockResolvedValueOnce([])
+    vi.mocked(deleteSkill).mockRejectedValueOnce(Object.assign(new Error('not found'), { status: 404 }))
+    const { wrapper } = mountComponent(AgentSkillsView)
+    await flushPromises()
+
+    await wrapper.find('[aria-label="Delete Python"]').trigger('click')
+    await wrapper.findAll('button').find(button => button.text() === 'Confirm')!.trigger('click')
+    await flushPromises()
+
+    expect(fetchSkills).toHaveBeenCalledTimes(2)
+    expect(wrapper.text()).toContain('This skill no longer exists.')
+    expect(wrapper.text()).not.toContain('Python')
+  })
+
+  it('shows a degraded-backend message after a 503 skill deletion', async () => {
+    vi.mocked(deleteSkill).mockRejectedValueOnce(
+      Object.assign(new Error('service unavailable'), { status: 503 }),
+    )
+    const { wrapper } = mountComponent(AgentSkillsView)
+    await flushPromises()
+
+    await wrapper.find('[aria-label="Delete Python"]').trigger('click')
+    await wrapper.findAll('button').find(button => button.text() === 'Confirm')!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain(
+      'The skill catalog is unavailable because PostgreSQL is not configured.',
+    )
+    expect(wrapper.text()).toContain('Python')
   })
 
   it('imports a .md file and selects the imported skill', async () => {

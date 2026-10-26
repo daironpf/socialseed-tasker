@@ -15,6 +15,7 @@ vi.mock('@/api/mcpApi', async (importOriginal) => {
     fetchSessions: vi.fn(),
     fetchServers: vi.fn(),
     fetchToolCalls: vi.fn(),
+    deleteServer: vi.fn(),
     saveSession: vi.fn(),
     rerunToolCall: vi.fn(),
   }
@@ -173,5 +174,67 @@ describe('MCPInspectorView', () => {
     await closeButton!.trigger('click')
     await wrapper.vm.$nextTick()
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
+  })
+
+  it('confirms live server deletion and reports the number of removed sessions', async () => {
+    vi.mocked(mcpApi.deleteServer).mockResolvedValue({ sessionsRemoved: 2 })
+    vi.mocked(mcpApi.fetchServers)
+      .mockResolvedValueOnce([neo4jServer])
+      .mockResolvedValueOnce([])
+    vi.mocked(mcpApi.fetchSessions)
+      .mockResolvedValueOnce([activeSession])
+      .mockResolvedValueOnce([])
+    const wrapper = await mountView()
+
+    await wrapper.find('[aria-label="Delete server"]').trigger('click')
+    expect(wrapper.text()).toContain('Delete MCP server?')
+    expect(mcpApi.deleteServer).not.toHaveBeenCalled()
+
+    const confirm = wrapper
+      .find('[role="dialog"]')
+      .findAll('button')
+      .find(button => button.text() === 'Delete server')
+    await confirm!.trigger('click')
+    await flushPromises()
+
+    expect(mcpApi.deleteServer).toHaveBeenCalledWith('srv1')
+    expect(mcpApi.fetchServers).toHaveBeenCalledTimes(2)
+    expect(mcpApi.fetchSessions).toHaveBeenCalledTimes(2)
+    expect(wrapper.text()).toContain('Server deleted. 2 session(s) removed.')
+    expect(wrapper.find('[aria-label="Delete server"]').exists()).toBe(false)
+  })
+
+  it('refreshes server lists and reports a 404 deletion conflict', async () => {
+    vi.mocked(mcpApi.deleteServer).mockRejectedValueOnce(
+      Object.assign(new Error('not found'), { status: 404 }),
+    )
+    const wrapper = await mountView()
+
+    await wrapper.find('[aria-label="Delete server"]').trigger('click')
+    const confirm = wrapper.find('[role="dialog"]').findAll('button')
+      .find(button => button.text() === 'Delete server')
+    await confirm!.trigger('click')
+    await flushPromises()
+
+    expect(mcpApi.fetchServers).toHaveBeenCalledTimes(2)
+    expect(wrapper.text()).toContain('This server no longer exists. The lists were refreshed.')
+  })
+
+  it('shows a degraded-backend message after a 503 server deletion', async () => {
+    vi.mocked(mcpApi.deleteServer).mockRejectedValueOnce(
+      Object.assign(new Error('service unavailable'), { status: 503 }),
+    )
+    const wrapper = await mountView()
+
+    await wrapper.find('[aria-label="Delete server"]').trigger('click')
+    const confirm = wrapper.find('[role="dialog"]').findAll('button')
+      .find(button => button.text() === 'Delete server')
+    await confirm!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain(
+      'Server deletion is unavailable because the MCP service is not configured.',
+    )
+    expect(mcpApi.fetchServers).toHaveBeenCalledTimes(1)
   })
 })

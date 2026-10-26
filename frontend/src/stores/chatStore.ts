@@ -678,6 +678,30 @@ export const useChatStore = defineStore('chat', () => {
     if (conv) conv.isPinned = !conv.isPinned
   }
 
+  async function deleteConversation(conversationId: string): Promise<void> {
+    if (!conversations.value.some(conversation => conversation.id === conversationId)) return
+    if (!isMockMode()) {
+      try {
+        await client.delete(`/chat/conversations/${encodeURIComponent(conversationId)}`, {
+          suppressErrorToast: true,
+        })
+      } catch (error) {
+        if ((error as { status?: number }).status === 404) await hydrateConversations()
+        throw error
+      }
+    }
+    if (activeConversationId.value === conversationId) {
+      emitChatEvent('leave_room', { conversation_id: conversationId })
+      clearTypingFor(conversationId)
+      stopTyping()
+      activeConversationId.value = null
+    }
+    conversations.value = conversations.value.filter(
+      conversation => conversation.id !== conversationId,
+    )
+    delete messages.value[conversationId]
+  }
+
   function getParticipant(id: string): ChatParticipant | undefined {
     return MOCK_PARTICIPANTS[id]
   }
@@ -787,6 +811,7 @@ export const useChatStore = defineStore('chat', () => {
     sendMessage,
     receiveMessage,
     createConversation,
+    deleteConversation,
     togglePin,
     getParticipant,
     getOnlineParticipants,

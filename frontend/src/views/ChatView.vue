@@ -51,7 +51,22 @@
           >
             {{ chatStore.activeConversation.isPinned ? '📌' : '📍' }}
           </button>
+          <button
+            class="rounded-lg p-2 text-rose-600 hover:bg-rose-50 disabled:opacity-50 dark:text-rose-400 dark:hover:bg-rose-900/30"
+            :aria-label="t('chat.deleteConversation')"
+            :disabled="deletingConversation"
+            @click="showDeleteConfirm = true"
+          >
+            {{ t('chat.deleteConversation') }}
+          </button>
         </div>
+        <p
+          v-if="deleteFeedback"
+          class="border-b border-gray-200 px-4 py-2 text-sm text-red-600 dark:border-gray-700 dark:text-red-400"
+          role="status"
+        >
+          {{ deleteFeedback }}
+        </p>
 
         <div ref="messagesContainer" class="flex-1 overflow-y-auto">
           <div class="py-2">
@@ -197,6 +212,37 @@
           </div>
         </div>
       </Transition>
+
+      <div
+        v-if="showDeleteConfirm"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        @click.self="showDeleteConfirm = false"
+      >
+        <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800" role="dialog">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+            {{ t('chat.deleteConversationTitle') }}
+          </h3>
+          <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            {{ t('chat.deleteConversationMessage', { name: chatStore.activeConversation?.name || '' }) }}
+          </p>
+          <div class="mt-6 flex justify-end gap-2">
+            <button
+              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+              :disabled="deletingConversation"
+              @click="showDeleteConfirm = false"
+            >
+              {{ t('common.cancel') }}
+            </button>
+            <button
+              class="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-50"
+              :disabled="deletingConversation"
+              @click="confirmDeleteConversation"
+            >
+              {{ deletingConversation ? t('chat.deletingConversation') : t('chat.confirmDeleteConversation') }}
+            </button>
+          </div>
+        </div>
+      </div>
     </Teleport>
   </div>
 </template>
@@ -234,6 +280,9 @@ const connectionDotClass = computed(
 
 const messagesContainer = ref<HTMLDivElement | null>(null)
 const showNewChatModal = ref(false)
+const showDeleteConfirm = ref(false)
+const deletingConversation = ref(false)
+const deleteFeedback = ref('')
 
 const newChat = ref({
   type: 'direct' as 'direct' | 'group' | 'agent',
@@ -298,6 +347,24 @@ function createChat() {
   chatStore.selectConversation(conv.id)
   showNewChatModal.value = false
   newChat.value = { type: 'direct', name: '', participantIds: [] }
+}
+
+async function confirmDeleteConversation() {
+  const conversation = chatStore.activeConversation
+  if (!conversation || deletingConversation.value) return
+  deletingConversation.value = true
+  deleteFeedback.value = ''
+  try {
+    await chatStore.deleteConversation(conversation.id)
+    showDeleteConfirm.value = false
+  } catch (error) {
+    const status = (error as { status?: number }).status
+    if (status === 404) deleteFeedback.value = t('chat.conversationNotFound')
+    else if (status === 503) deleteFeedback.value = t('chat.deleteUnavailable')
+    else deleteFeedback.value = t('chat.deleteError')
+  } finally {
+    deletingConversation.value = false
+  }
 }
 
 watch(() => chatStore.activeMessages.length, () => {

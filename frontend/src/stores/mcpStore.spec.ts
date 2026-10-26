@@ -13,6 +13,7 @@ vi.mock('@/api/mcpApi', async (importOriginal) => {
     fetchSessions: vi.fn(),
     fetchServers: vi.fn(),
     fetchToolCalls: vi.fn(),
+    deleteServer: vi.fn(),
     saveSession: vi.fn(),
     rerunToolCall: vi.fn(),
   }
@@ -116,6 +117,34 @@ describe('mcpStore', () => {
     expect(store.error).toBe('boom')
     expect(store.sessions).toHaveLength(0)
     expect(store.loading).toBe(false)
+  })
+
+  it('deletes a live server and refreshes servers and sessions', async () => {
+    vi.mocked(mcpApi.fetchSessions).mockResolvedValue([makeSession({ server: 'neo4j-mcp' })])
+    vi.mocked(mcpApi.fetchServers).mockResolvedValue([makeServer()])
+    vi.mocked(mcpApi.fetchToolCalls).mockResolvedValue([])
+    vi.mocked(mcpApi.deleteServer).mockResolvedValue({ sessionsRemoved: 1 })
+
+    await store.fetchSessions()
+    vi.mocked(mcpApi.fetchServers).mockResolvedValue([])
+    vi.mocked(mcpApi.fetchSessions).mockResolvedValue([])
+
+    await expect(store.removeServer('srv1')).resolves.toEqual({ sessionsRemoved: 1 })
+    expect(mcpApi.deleteServer).toHaveBeenCalledWith('srv1')
+    expect(mcpApi.fetchServers).toHaveBeenCalledTimes(2)
+    expect(mcpApi.fetchSessions).toHaveBeenCalledTimes(2)
+    expect(store.servers).toEqual([])
+    expect(store.sessions).toEqual([])
+  })
+
+  it('removes a server locally in mock mode without calling the API', async () => {
+    setApiMode('mock')
+    await store.fetchSessions()
+    const [server] = store.servers
+
+    await expect(store.removeServer(server.id)).resolves.toEqual({ sessionsRemoved: 0 })
+    expect(store.servers).not.toContainEqual(server)
+    expect(mcpApi.deleteServer).not.toHaveBeenCalled()
   })
 
   it('computes latency metrics with slow detection', async () => {

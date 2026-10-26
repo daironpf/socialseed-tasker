@@ -215,6 +215,61 @@
           </p>
         </div>
       </div>
+
+      <section class="mt-6 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+        <div class="mb-3">
+          <h2 class="font-semibold text-gray-900 dark:text-white">{{ t('agentSkills.userCatalogTitle') }}</h2>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('agentSkills.userCatalogHint') }}</p>
+        </div>
+        <p v-if="catalogError" class="mb-3 text-sm text-rose-600 dark:text-rose-400" role="status">
+          {{ catalogError }}
+        </p>
+        <p v-if="catalogFeedback" class="mb-3 text-sm text-emerald-600 dark:text-emerald-400" role="status">
+          {{ catalogFeedback }}
+        </p>
+        <div v-if="catalogLoading" class="py-4 text-sm text-gray-500 dark:text-gray-400">
+          {{ t('agentSkills.catalogLoading') }}
+        </div>
+        <p v-else-if="!catalogSkills.length" class="py-4 text-sm text-gray-500 dark:text-gray-400">
+          {{ t('agentSkills.catalogEmpty') }}
+        </p>
+        <ul v-else class="divide-y divide-gray-100 dark:divide-gray-700">
+          <li
+            v-for="skill in catalogSkills"
+            :key="skill.id"
+            class="flex items-center justify-between gap-3 py-2"
+          >
+            <span class="min-w-0">
+              <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">{{ skill.name }}</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">{{ skill.id }}</span>
+            </span>
+            <span v-if="catalogDeleteId === skill.id" class="flex shrink-0 gap-2">
+              <button
+                class="rounded border border-rose-300 px-2 py-1 text-xs text-rose-600 disabled:opacity-50 dark:border-rose-700 dark:text-rose-400"
+                :disabled="catalogDeletingId === skill.id"
+                @click="removeCatalogSkill(skill)"
+              >
+                {{ catalogDeletingId === skill.id ? t('agentSkills.catalogDeleting') : t('agentSkills.confirmDelete') }}
+              </button>
+              <button
+                class="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 dark:border-gray-600 dark:text-gray-300"
+                :disabled="catalogDeletingId === skill.id"
+                @click="catalogDeleteId = null"
+              >
+                {{ t('agentSkills.cancel') }}
+              </button>
+            </span>
+            <button
+              v-else
+              class="shrink-0 rounded border border-rose-300 px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 dark:border-rose-700 dark:text-rose-400 dark:hover:bg-rose-900/30"
+              :aria-label="t('agentSkills.deleteCatalogSkill', { name: skill.name })"
+              @click="catalogDeleteId = skill.id"
+            >
+              {{ t('agentSkills.delete') }}
+            </button>
+          </li>
+        </ul>
+      </section>
     </div>
   </div>
 </template>
@@ -224,6 +279,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import { isMockMode } from '@/api/client'
+import { deleteSkill, fetchSkills, resetCatalogsCache, type SkillCatalogItem } from '@/api/catalogsApi'
 import {
   fetchAgentSkills,
   createAgentSkill,
@@ -255,6 +311,17 @@ const fileInput = ref<HTMLInputElement | null>(null)
 
 const urlFormOpen = ref(false)
 const urlDraft = ref('')
+const catalogSkills = ref<SkillCatalogItem[]>([])
+const catalogLoading = ref(false)
+const catalogDeleteId = ref<string | null>(null)
+const catalogDeletingId = ref<string | null>(null)
+const catalogFeedback = ref('')
+const catalogError = ref('')
+
+const MOCK_SKILL_CATALOG: SkillCatalogItem[] = [
+  { id: 'python', name: 'Python' },
+  { id: 'vue', name: 'Vue' },
+]
 
 const filtered = computed(() => {
   const q = query.value.trim().toLowerCase()
@@ -276,6 +343,53 @@ async function load() {
     setFeedback(t('agentSkills.loadError'), 'error')
   } finally {
     loading.value = false
+  }
+  await loadCatalog()
+}
+
+async function loadCatalog() {
+  catalogLoading.value = true
+  catalogError.value = ''
+  try {
+    catalogSkills.value = isMockMode()
+      ? MOCK_SKILL_CATALOG.map(skill => ({ ...skill }))
+      : await fetchSkills()
+  } catch (error) {
+    const status = (error as { status?: number }).status
+    catalogError.value = status === 503
+      ? t('agentSkills.catalogUnavailable')
+      : t('agentSkills.catalogLoadError')
+  } finally {
+    catalogLoading.value = false
+  }
+}
+
+async function removeCatalogSkill(skill: SkillCatalogItem) {
+  if (catalogDeletingId.value) return
+  catalogDeletingId.value = skill.id
+  catalogFeedback.value = ''
+  catalogError.value = ''
+  try {
+    const result = isMockMode()
+      ? { assignmentsRemoved: 0 }
+      : await deleteSkill(skill.id)
+    catalogSkills.value = catalogSkills.value.filter(item => item.id !== skill.id)
+    catalogDeleteId.value = null
+    catalogFeedback.value = t('agentSkills.catalogDeleted', { count: result.assignmentsRemoved })
+  } catch (error) {
+    const status = (error as { status?: number }).status
+    if (status === 404) {
+      resetCatalogsCache()
+      await loadCatalog()
+      catalogError.value = t('agentSkills.catalogNotFound')
+      catalogDeleteId.value = null
+    } else if (status === 503) {
+      catalogError.value = t('agentSkills.catalogUnavailable')
+    } else {
+      catalogError.value = t('agentSkills.catalogDeleteError')
+    }
+  } finally {
+    catalogDeletingId.value = null
   }
 }
 
