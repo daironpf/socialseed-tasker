@@ -4,7 +4,7 @@
 `127.0.0.1:8888`, 296 endpoints, fases A/B, 2026-10-25/26) + revisión de cierre de
 #595/#596/#597 y del blocker extra de `POST /issues`.
 **Created:** 2026-10-26
-**Status:** TODO (0/6)
+**Status:** TODO (1/6) — #598 DONE 2026-10-26
 **Numeración:** **#598–#603** (continúa tras **#597**, máximo en `.issues/done/`)
 
 > **Nota de numeración:** los commits recientes citan `#610` (campaña de agent skills
@@ -44,7 +44,7 @@
 
 | # | Issue | Priority | Type | Status |
 |---|---|---|---|---|
-| #598 | Cierre de follow-ups: rebuild, verificación en vivo y commit (specs, envelope, DELETEs) | HIGH | infra / quality | TODO |
+| #598 | Cierre de follow-ups: rebuild, verificación en vivo y commit (specs, envelope, DELETEs) | HIGH | infra / quality | DONE |
 | #599 | Semántica engañosa de los 400 (not-found→400, ids→VALIDATION_ERROR, HTTPException sin envelope) | MEDIUM | bug fix / backend | TODO |
 | #600 | `GET /secrets` (colección) → 405: existe alta pero no listado | MEDIUM | feat / backend | TODO |
 | #601 | Envelope de `GET /auth/me` + consumidor frontend `authApi.ts` | MEDIUM | bug fix / backend + frontend | TODO |
@@ -84,7 +84,7 @@
 
 ## Release Checklist (backlog de esta serie)
 
-- [ ] **#598**: imagen reconstruida, `verify_followup_live.py` 25/25, commit en
+- [x] **#598**: imagen reconstruida, `verify_followup_live.py` 25/25, commit en
       `main` (español sin tildes, ref `#598`), sección Resolución, mover a `done/`
 - [ ] **#599/#600**: fixes backend con tests de contrato + verify en vivo
 - [ ] **#601**: backend + `authApi.ts` + specs, gates backend y frontend
