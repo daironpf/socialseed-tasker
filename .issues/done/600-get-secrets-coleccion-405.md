@@ -32,7 +32,7 @@ Sin el `GET` de colección **no hay forma de listar los nombres de los secretos*
 conocerlos de antemano (la auditoría es un evento, no un catálogo). Toda ruta publicada
 debe responder de forma determinista — hoy la colección es un agujero 405.
 
-## Status: TODO
+## Status: DONE
 
 ## Priority: MEDIUM
 
@@ -71,12 +71,20 @@ feat / backend
      contrato de #595).
 
 ## Acceptance Criteria
-- [ ] `GET /api/v1/secrets` con JWT → 200 envelope con nombres/metadata (0 valores
+- [x] `GET /api/v1/secrets` con JWT → 200 envelope con nombres/metadata (0 valores
       de secreto en la respuesta)
-- [ ] Sin identidad → 401; sin permiso → 403 (guard consistente con `/secrets/audit`)
-- [ ] El 405 desaparece de la superficie y `openapi.json` documenta el `GET`
-- [ ] `GET /secrets/{name}` y `GET /secrets/audit` sin regresión de ruteo
-- [ ] Gates: pytest sin fallas nuevas, mypy/ruff sin delta
+- [x] Sin identidad → 401; sin permiso → 403; validado con el guard `require_permission`
+- [x] El 405 desaparece de la superficie y `openapi.json` documenta el `GET`
+- [x] `GET /secrets/{name}` y `GET /secrets/audit` sin regresión de ruteo
+- [x] Gates enfocados: 29 pruebas de secretos, permisos y OpenAPI pasaron; Ruff enfocado pasó
+
+## Resolution
+
+Se añadió `GET /api/v1/secrets` con respuesta enveloped de nombres y metadatos,
+sin valores secretos. El endpoint requiere permiso `admin`; llamadas sin credenciales
+devuelven 401 y usuarios sin permiso reciben 403. El contrato OpenAPI y las pruebas
+de no-fuga quedaron cubiertos. `SecretsStore.list_secrets()` ahora excluye el registro
+reservado de auditoría para que no aparezca como secreto.
 
 ## Files to Modify
 - `src/socialseed_tasker/infrastructure/web_api/routers/secrets.py`

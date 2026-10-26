@@ -5,12 +5,15 @@ import json
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
+from socialseed_tasker.auth.oauth import SESSION_COOKIE_NAME
+from socialseed_tasker.auth.permissions import require_permission
 from socialseed_tasker.cli.wiring import build_default_container
 from socialseed_tasker.infrastructure.web_api.schemas import (
     APIResponse,
     Meta,
+    SecretMetadataResponse,
     SecretPutRequest,
     SecretRotateRunRequest,
     SecretRotateScheduleRequest,
@@ -27,6 +30,18 @@ def _get_container() -> Any:
 
 def _meta() -> Meta:
     return Meta(request_id=None)
+
+
+def _require_secret_admin(request: Request, container: Any) -> None:
+    authorization = request.headers.get("authorization", "")
+    has_bearer = authorization.lower().startswith("bearer ") and bool(
+        authorization[7:].strip()
+    )
+    has_api_key = bool(request.headers.get("x-api-key", "").strip())
+    has_session = bool(request.cookies.get(SESSION_COOKIE_NAME))
+    if not (has_bearer or has_api_key or has_session):
+        raise HTTPException(status_code=401, detail="unauthorized")
+    require_permission(request, "admin", container)
 
 
 def _check_permission(
@@ -53,6 +68,30 @@ def api_put_secret(
         name, val, metadata=meta, actor="api"
     )
     return APIResponse(data={"name": name}, meta=_meta())
+
+
+@secrets_router.get(
+    "/api/v1/secrets",
+    response_model=APIResponse[list[SecretMetadataResponse]],
+    summary="List secret metadata",
+    description="Return secret names and metadata without revealing secret values.",
+)
+def api_list_secrets(
+    request: Request,
+    container: Any = Depends(_get_container),
+) -> APIResponse[list[SecretMetadataResponse]]:
+    _require_secret_admin(request, container)
+    secrets: list[SecretMetadataResponse] = []
+    for name in container.secrets_store.list_secrets():
+        secret = container.secrets_store.get_secret(name, reveal=False)
+        secrets.append(
+            SecretMetadataResponse(
+                name=name,
+                metadata=secret["metadata"],
+                ts=secret["ts"],
+            )
+        )
+    return APIResponse(data=secrets, meta=_meta())
 
 
 @secrets_router.get("/api/v1/secrets/audit")

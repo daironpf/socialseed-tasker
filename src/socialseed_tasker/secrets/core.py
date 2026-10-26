@@ -102,6 +102,8 @@ class SecretsStore:
         for k in keys:
             if k.startswith(SECRETS_PREFIX):
                 name = k[len(SECRETS_PREFIX) :]
+                if name == "audit":
+                    continue
                 if prefix and not name.startswith(prefix):
                     continue
                 out.append(name)

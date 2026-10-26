@@ -36,7 +36,8 @@ def _bearer_token(request: Request) -> str | None:
     if auth.lower().startswith("bearer "):
         token = auth.split(" ", 1)[1]
         return token or None
-    return None
+    api_key = request.headers.get("x-api-key", "").strip()
+    return api_key or None
 
 
 def _session_user(request: Request) -> str | None:

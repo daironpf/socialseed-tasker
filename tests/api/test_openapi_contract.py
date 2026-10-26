@@ -79,6 +79,20 @@ def test_symbol_link_schema_requires_symbol_id(spec) -> None:
     assert schema["properties"]["symbol_id"]["type"] == "string"
 
 
+def test_secret_collection_declares_metadata_response(spec) -> None:
+    operation = spec["paths"]["/api/v1/secrets"]["get"]
+    response_schema = operation["responses"]["200"]["content"]["application/json"]["schema"]
+    response_schema_name = response_schema["$ref"].rsplit("/", maxsplit=1)[1]
+    response_model = spec["components"]["schemas"][response_schema_name]
+    data_schema = response_model["properties"]["data"]
+    array_schema = next(schema for schema in data_schema["anyOf"] if schema.get("type") == "array")
+
+    assert array_schema["items"] == {
+        "$ref": "#/components/schemas/SecretMetadataResponse"
+    }
+    assert "value" not in spec["components"]["schemas"]["SecretMetadataResponse"]["properties"]
+
+
 # ---------------------------------------------------------------------------
 # affects: object contract behaviour
 # ---------------------------------------------------------------------------

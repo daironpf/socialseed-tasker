@@ -1438,6 +1438,14 @@ class SecretPutRequest(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class SecretMetadataResponse(BaseModel):
+    """Secret metadata without the stored value."""
+
+    name: str
+    metadata: dict[str, Any]
+    ts: int | None = None
+
+
 class SecretRotateScheduleRequest(BaseModel):
     """Body for ``POST /api/v1/secrets/rotate`` (issue #595)."""
 

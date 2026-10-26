@@ -24,6 +24,14 @@ def test_put_get_delete_list_and_audit():
     assert len(arr) >= 2
 
 
+def test_list_secrets_excludes_audit_record():
+    s = MemoryStorage()
+    ss = SecretsStore(s)
+    ss.put_secret("k1", b"v1", actor="tester")
+
+    assert ss.list_secrets() == ["k1"]
+
+
 def test_get_secret_not_found():
     import pytest
 
