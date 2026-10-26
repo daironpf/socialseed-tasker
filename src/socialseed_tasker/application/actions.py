@@ -381,6 +381,9 @@ class TaskRepositoryInterface(Protocol):
     def create_deployment(self, deployment) -> None:
         """Record a new deployment."""
 
+    def delete_deployment(self, deployment_id: str) -> bool:
+        """Remove a deployment by id. Returns True when one was deleted."""
+
     def search_by_embedding(self, embedding: list[float], threshold: float = 0.7, limit: int = 10) -> list[dict]:
         """Search issues by embedding similarity."""
 

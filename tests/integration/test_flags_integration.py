@@ -49,6 +49,6 @@ def test_flag_roundtrip_via_cli_and_api(mock_container, mock_auth):
             headers={"Authorization": "Bearer fake-token"},
         )
         assert resp.status_code == 200
-        data = resp.json()
+        data = resp.json()["data"]
         assert data["name"] == "integration_flag"
         assert data["value"] == "value_a"

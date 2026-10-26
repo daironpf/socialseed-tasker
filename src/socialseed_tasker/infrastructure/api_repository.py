@@ -462,6 +462,14 @@ class ApiTaskRepository(TaskRepositoryInterface):
     def create_deployment(self, deployment: Any) -> None:
         self.client.request("POST", f"{_API}/deployments", json=_to_dict(deployment))
 
+    def delete_deployment(self, deployment_id: str) -> bool:
+        data = self.client.request("DELETE", f"{_API}/deployments/{deployment_id}")
+        if isinstance(data, dict):
+            inner = data.get("data")
+            if isinstance(inner, dict):
+                return bool(inner.get("deleted", True))
+        return data is not None
+
     # -- Vector search ----------------------------------------------------------
 
     def search_by_embedding(self, embedding: list[float], threshold: float = 0.7, limit: int = 10) -> list[dict]:

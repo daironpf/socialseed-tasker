@@ -47,7 +47,14 @@ class CamelModel(BaseModel):
 
 
 class ConversationCreateRequest(CamelModel):
-    participant_ids: list[str] = Field(default_factory=list)
+    participant_ids: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Other participant user ids (the caller is always included). "
+            "'direct' conversations require exactly two participants in total; "
+            "other types require at least two"
+        ),
+    )
     type: str = "direct"
     title: str | None = None
 

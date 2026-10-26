@@ -41,8 +41,7 @@ def test_secrets_audit_reaches_audit_handler_not_shadow(
     resp = client.get("/api/v1/secrets/audit")
     assert resp.status_code == 200, resp.text[:300]
     body = resp.json()
-    assert body["status"] == "ok"
-    assert body["audit"] == []
+    assert body["data"]["audit"] == []
 
 
 def test_secrets_audit_lists_events_after_put(
@@ -57,7 +56,7 @@ def test_secrets_audit_lists_events_after_put(
     assert put.status_code == 200, put.text[:300]
     resp = client.get("/api/v1/secrets/audit")
     assert resp.status_code == 200, resp.text[:300]
-    events = resp.json()["audit"]
+    events = resp.json()["data"]["audit"]
     assert len(events) == 1
     assert events[0]["action"] == "put"
     assert events[0]["name"] == "itest"
@@ -74,11 +73,11 @@ def test_get_secret_still_works_for_normal_names(
     )
     meta = client.get("/api/v1/secrets/db-pass")
     assert meta.status_code == 200, meta.text[:300]
-    assert meta.json()["metadata"] == {"env": "prod"}
+    assert meta.json()["data"]["metadata"] == {"env": "prod"}
 
     revealed = client.get("/api/v1/secrets/db-pass/value")
     assert revealed.status_code == 200, revealed.text[:300]
-    assert base64.b64decode(revealed.json()["value"]) == b"initval"
+    assert base64.b64decode(revealed.json()["data"]["value"]) == b"initval"
 
     missing = client.get("/api/v1/secrets/nope")
     assert missing.status_code == 404, missing.text[:300]

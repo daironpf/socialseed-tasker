@@ -52,6 +52,13 @@ class MockRepository(TaskRepositoryInterface):
                 return self._deployment_dict(d)
         return None
 
+    def delete_deployment(self, deployment_id: str) -> bool:
+        before = len(self._deployments)
+        self._deployments = [
+            d for d in self._deployments if str(d.id) != str(deployment_id)
+        ]
+        return len(self._deployments) != before
+
     @staticmethod
     def _deployment_dict(d: Deployment) -> dict[str, Any]:
         return {

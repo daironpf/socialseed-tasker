@@ -1,7 +1,9 @@
 from __future__ import annotations
 from fastapi import APIRouter, Header, Request, HTTPException
 from fastapi.responses import JSONResponse
-from typing import Optional
+from typing import Any, Optional
+
+from socialseed_tasker.infrastructure.web_api.schemas import APIResponse, Meta
 
 webhook_router = APIRouter()
 
@@ -47,20 +49,20 @@ async def webhooks_receive(request: Request, x_signature: Optional[str] = Header
 
 
 @webhook_router.post("/api/v1/webhooks/subscriptions")
-async def create_subscription(req: dict, request: Request):
+async def create_subscription(req: dict, request: Request) -> APIResponse[dict[str, Any]]:
     wm = request.app.state.events
     sub = wm.create_subscription(url=req.get("url"), events=req.get("events"), secret=req.get("secret"))
-    return {"status": "ok", "subscription": sub}
+    return APIResponse(data={"subscription": sub}, meta=Meta(request_id=None))
 
 
 @webhook_router.get("/api/v1/webhooks/subscriptions")
-async def list_subscriptions(request: Request):
+async def list_subscriptions(request: Request) -> APIResponse[dict[str, Any]]:
     wm = request.app.state.events
-    return {"status": "ok", "subscriptions": wm.list_subscriptions()}
+    return APIResponse(data={"subscriptions": wm.list_subscriptions()}, meta=Meta(request_id=None))
 
 
 @webhook_router.delete("/api/v1/webhooks/subscriptions/{sid}")
-async def delete_subscription(sid: str, request: Request):
+async def delete_subscription(sid: str, request: Request) -> APIResponse[dict[str, Any]]:
     wm = request.app.state.events
     wm.delete_subscription(sid)
-    return {"status": "ok"}
+    return APIResponse(data={"deleted": True, "id": sid}, meta=Meta(request_id=None))

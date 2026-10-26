@@ -41,8 +41,7 @@ def test_api_list_flags(mock_container, mock_auth):
         client = TestClient(app)
         resp = client.get("/api/v1/admin/flags", headers={"Authorization": "Bearer test-token"})
     assert resp.status_code == 200
-    data = resp.json()
-    assert data["status"] == "ok"
+    data = resp.json()["data"]
     assert data["flags"] == {"f1": "v1"}
 
 
@@ -52,8 +51,7 @@ def test_api_get_flag_found(mock_container, mock_auth):
         client = TestClient(app)
         resp = client.get("/api/v1/admin/flags/f1", headers={"Authorization": "Bearer test-token"})
     assert resp.status_code == 200
-    data = resp.json()
-    assert data["status"] == "ok"
+    data = resp.json()["data"]
     assert data["name"] == "f1"
     assert data["value"] == "v1"
 
@@ -77,8 +75,7 @@ def test_api_set_flag(mock_container, mock_auth):
             headers={"Authorization": "Bearer test-token"},
         )
     assert resp.status_code == 200
-    data = resp.json()
-    assert data["status"] == "ok"
+    data = resp.json()["data"]
     assert data["name"] == "new_flag"
     assert data["value"] == "new_val"
 
@@ -101,8 +98,7 @@ def test_api_delete_flag(mock_container, mock_auth):
         client = TestClient(app)
         resp = client.delete("/api/v1/admin/flags/f1", headers={"Authorization": "Bearer test-token"})
     assert resp.status_code == 200
-    data = resp.json()
-    assert data["status"] == "ok"
+    data = resp.json()["data"]
     assert data["name"] == "f1"
 
 

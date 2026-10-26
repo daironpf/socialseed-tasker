@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from socialseed_tasker.domain.entities import Deployment
 from socialseed_tasker.infrastructure import neo4j_queries as queries
 from socialseed_tasker.infrastructure.neo4j_impl.shared import _session
@@ -7,6 +9,8 @@ from socialseed_tasker.infrastructure.neo4j_impl.shared import _session
 
 class DeploymentRepositoryMixin:
     """Deployment operations."""
+
+    _driver: Any  # provided by the host repository class
 
     def create_deployment(self, deployment: Deployment) -> None:
         with _session(self._driver) as session:
@@ -72,3 +76,9 @@ class DeploymentRepositoryMixin:
                 }
                 for record in result
             ]
+
+    def delete_deployment(self, deployment_id: str) -> bool:
+        with _session(self._driver) as session:
+            result = session.run(queries.DELETE_DEPLOYMENT, id=str(deployment_id))
+            record = result.single()
+            return bool(record and record["deleted"])

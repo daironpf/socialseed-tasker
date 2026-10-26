@@ -35,7 +35,9 @@ from socialseed_tasker.application.actions import (
 )
 from socialseed_tasker.application.exceptions import AIServiceNotConfiguredError, GraphPortError
 from socialseed_tasker.infrastructure.web_api.schemas import (
+    APIResponse,
     FlagSetRequest,
+    Meta,
     PrivacyDeleteRequest,
     PrivacyExportRequest,
 )
@@ -769,7 +771,7 @@ def create_app(
         return JSONResponse(status_code=410, content=_SSO_RETIRED)
 
     @app.get("/api/v1/whoami")
-    def whoami(request: Request):
+    def whoami(request: Request) -> APIResponse[dict[str, Any]]:
         from socialseed_tasker.auth.oauth import SESSION_COOKIE_NAME
         sid = request.cookies.get(SESSION_COOKIE_NAME)
         if sid:
@@ -777,20 +779,20 @@ def create_app(
             if session:
                 claims = session.get("claims", {})
                 username = claims.get("preferred_username") or claims.get("sub")
-                return {"username": username, "authenticated": True}
+                return APIResponse(data={"username": username, "authenticated": True})
         auth = request.headers.get("authorization")
         if auth and auth.lower().startswith("bearer "):
             token = auth.split(" ", 1)[1]
             from socialseed_tasker.auth.tokens import verify_access
             claims = verify_access(token)
             if claims:
-                return {"username": claims.get("username"), "authenticated": True}
+                return APIResponse(data={"username": claims.get("username"), "authenticated": True})
             from socialseed_tasker.auth.auth import load_auth_provider
             provider = load_auth_provider()
             user_id = provider.verify_token(token)
             if user_id:
-                return {"username": user_id, "authenticated": True}
-        return {"username": None, "authenticated": False}
+                return APIResponse(data={"username": user_id, "authenticated": True})
+        return APIResponse(data={"username": None, "authenticated": False})
 
     if os.getenv("TASKER_INTEGRATION") == "1":
         @app.post("/test/create_session")
@@ -905,16 +907,16 @@ def create_app(
 
     # Admin feature-flag endpoints
     @app.get("/api/v1/admin/flags")
-    def api_list_flags(request: Request):
+    def api_list_flags(request: Request) -> APIResponse[dict[str, Any]]:
         from fastapi import HTTPException
         container = _require_admin(request)
         if container is None:
             from socialseed_tasker.cli.wiring import build_default_container
             container = build_default_container()
-        return {"status": "ok", "flags": container.runtime_config.list()}
+        return APIResponse(data={"flags": container.runtime_config.list()})
 
     @app.get("/api/v1/admin/flags/{name}")
-    def api_get_flag(name: str, request: Request):
+    def api_get_flag(name: str, request: Request) -> APIResponse[dict[str, Any]]:
         from fastapi import HTTPException
         container = _require_admin(request)
         if container is None:
@@ -923,10 +925,10 @@ def create_app(
         v = container.runtime_config.get(name, None)
         if v is None:
             raise HTTPException(status_code=404, detail="not found")
-        return {"status": "ok", "name": name, "value": v}
+        return APIResponse(data={"name": name, "value": v})
 
     @app.post("/api/v1/admin/flags")
-    async def api_set_flag(body: FlagSetRequest, request: Request):
+    async def api_set_flag(body: FlagSetRequest, request: Request) -> APIResponse[dict[str, Any]]:
         from fastapi import HTTPException
         container = _require_admin(request)
         if container is None:
@@ -937,17 +939,17 @@ def create_app(
         if not name:
             raise HTTPException(status_code=400, detail="missing name")
         container.runtime_config.set(name, value)
-        return {"status": "ok", "name": name, "value": value}
+        return APIResponse(data={"name": name, "value": value})
 
     @app.delete("/api/v1/admin/flags/{name}")
-    def api_delete_flag(name: str, request: Request):
+    def api_delete_flag(name: str, request: Request) -> APIResponse[dict[str, Any]]:
         from fastapi import HTTPException
         container = _require_admin(request)
         if container is None:
             from socialseed_tasker.cli.wiring import build_default_container
             container = build_default_container()
         container.runtime_config.delete(name)
-        return {"status": "ok", "name": name}
+        return APIResponse(data={"name": name})
 
     # Privacy / GDPR endpoints
     @app.post("/api/v1/privacy/export")

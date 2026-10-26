@@ -40,5 +40,5 @@ def test_sso_session_cookie_and_api_access():
     cookies = r2.cookies
     r3 = requests.get("http://localhost:8000/api/v1/whoami", cookies=cookies, timeout=5)
     assert r3.status_code == 200
-    j = r3.json()
+    j = r3.json()["data"]
     assert j.get("username") == "reader"

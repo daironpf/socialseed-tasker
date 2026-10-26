@@ -772,6 +772,12 @@ RETURN d
 ORDER BY d.deployed_at DESC
 """
 
+DELETE_DEPLOYMENT = """
+MATCH (d:Deployment {id: $id})
+DETACH DELETE d
+RETURN count(d) AS deleted
+"""
+
 GET_DEPLOYMENT_ISSUES = """
 MATCH (d:Deployment {id: $deployment_id})-[:RELEASED_IN]->(i:Issue)
 RETURN i

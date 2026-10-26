@@ -140,7 +140,7 @@ def test_data_quality_rule_write_allows_admin_jwt(env: SimpleNamespace) -> None:
         "/api/v1/data-quality/rules", json=RULE_BODY, headers=_headers(ADMIN_JWT)
     )
     assert resp.status_code == 200, resp.text
-    assert resp.json()["status"] == "ok"
+    assert resp.json()["data"]["rule"]["id"] == "rule-593"
     assert env.rule_registry.added[0]["id"] == "rule-593"
 
 

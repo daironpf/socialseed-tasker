@@ -1433,8 +1433,8 @@ class ObjectiveLinkEpicsRequest(BaseModel):
 class SecretPutRequest(BaseModel):
     """Body for ``POST /api/v1/secrets`` (issue #595)."""
 
-    name: str | None = Field(None, description="Secret name (400 if missing/empty)")
-    value: str | None = Field(None, description="Base64-encoded secret value")
+    name: str = Field(..., min_length=1, description="Secret name")
+    value: str = Field(..., description="Base64-encoded secret value")
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -1455,7 +1455,7 @@ class SecretRotateRunRequest(BaseModel):
 class DeploymentCreateRequest(BaseModel):
     """Body for ``POST /api/v1/deployments`` (issue #595)."""
 
-    commit_sha: str = Field("", description="Deployed commit SHA (400 if empty)")
+    commit_sha: str = Field(..., min_length=1, description="Deployed commit SHA")
     environment: str = "DEV"
     issue_ids: list[str] = Field(default_factory=list)
     channel: str = "webhook"

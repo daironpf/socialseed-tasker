@@ -41,7 +41,7 @@ def test_api_put_rotate_and_audit():
         headers=headers,
     )
     assert r2.status_code == 200
-    rid = r2.json().get("rotation_id")
+    rid = r2.json()["data"].get("rotation_id")
     r3 = requests.post(
         f"{base}/api/v1/secrets/rotate/run",
         json={"rotation_id": rid},
@@ -53,4 +53,4 @@ def test_api_put_rotate_and_audit():
         f"{base}/api/v1/secrets/audit", timeout=5, headers=headers
     )
     assert r4.status_code == 200
-    assert len(r4.json().get("audit", [])) >= 2
+    assert len(r4.json()["data"].get("audit", [])) >= 2

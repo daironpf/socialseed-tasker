@@ -94,6 +94,23 @@ class SchemaRegistry:
             raise KeyError("dataset not found")
         return json.loads(raw.decode("utf-8"))
 
+    def delete_schema(self, name: str) -> None:
+        versions = self.get_versions(name)
+        if not versions:
+            raise KeyError("schema not found")
+        for version in versions:
+            self.storage.delete(self._schema_key(name, version))
+        self.storage.delete(self._versions_key(name))
+
+    def delete_dataset(self, dataset_id: str) -> None:
+        self.get_dataset(dataset_id)
+        self.storage.delete(self._dataset_key(dataset_id))
+        raw = self.storage.get("dataset:list") or b"[]"
+        arr = json.loads(raw.decode("utf-8")) if raw else []
+        if dataset_id in arr:
+            arr.remove(dataset_id)
+            self.storage.put("dataset:list", json.dumps(arr).encode("utf-8"))
+
     def list_datasets(self) -> List[Dict]:
         raw = self.storage.get("dataset:list") or b"[]"
         arr = json.loads(raw.decode("utf-8")) if raw else []
