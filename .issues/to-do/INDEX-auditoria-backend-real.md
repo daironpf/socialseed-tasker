@@ -1,4 +1,4 @@
-# Auditoría del backend real (294 endpoints) — Issue Index
+# Auditoría del backend real (294 endpoints históricos; 301 operaciones actuales) — Issue Index
 
 **Fuente:** campaña de pruebas del API desplegado (`tasker-api` en `127.0.0.1:8888`,
 imagen reconstruida a `7cbfc5b`), 2026-10-20/21.
@@ -16,16 +16,28 @@ imagen reconstruida a `7cbfc5b`), 2026-10-20/21.
   (neo4j 5.26 community), `tasker-db-pg`, `tasker-db-mongo`, `tasker-db-redis`.
   Auth real (`TASKER_AUTH_ENABLED=true`, `X-API-Key`/Bearer + JWT vía
   `POST /api/v1/auth/login`), rate limit 60/min por IP.
-- **Corrida run4** (`results4.json`, 294 rutas): **PASS 154, GRACE 64, 4XX 30, ERR 38,
-  SKIP 7, TIMEOUT 1** (0×422 inesperados tras corregir seeds).
+- **Corrida run4 histórica** (`results4.json`, 294 rutas): **PASS 154, GRACE 64,
+  4XX 30, ERR 38, SKIP 7, TIMEOUT 1** (0×422 inesperados tras corregir seeds).
+- **Smoke autenticado final de #603** (OpenAPI 3.1.0, imagen `sha256:863cf9c16f50`,
+  237 paths / 301 operaciones): **PASS 212, GRACE 40, 4XX 0, ERR 0, SKIP 49,
+  TIMEOUT 0**, cero respuestas 5xx. Resultado completo:
+  `artifacts/smoke/tasker-smoke-bcae435560-results.json`.
 - **Triaje de causas raíz:** los 38 ERR no se aceptaron "por status": se reprodujeron
   **in-process dentro del contenedor** con `app.debug = True` + `TestClient`
   (`docker cp` + `docker exec tasker-api python /tmp/debug*.py`) para capturar los
   tracebacks reales (el `generic_error_handler` no los loguea — ver **#594**).
   Confirmaciones por código (`grep` de queries/callers) para los heredados del run4.
-- **Limpieza:** el entorno se dejó limpio (Neo4j: solo `User×2, Agent×2, Project×1`;
-  policies/issues/components vacíos; PG/Mongo barridos). La policy de la prueba de
-  #588 hubo que borrarla **a mano con Cypher** — el bug exactamente.
+- **Limpieza:** tras el smoke final Neo4j quedó con **5 nodos**
+  (`User×2, Agent×2, Project×1`) y cero propiedades etiquetadas por el smoke; Mongo,
+  **3 colecciones / 0 documentos**. Redis quedó idéntico al preflight inmediato del
+  run (**142 claves / 115 sesiones / 16 reportes**), sin sesiones smoke; se eliminaron
+  los 3 reportes creados por los issues del run. PostgreSQL volvió a los conteos de la
+  captura histórica salvo `session_logs` (**57 vs 56**): se borró el log etiquetado
+  del smoke y se preservó un login no-smoke. La captura histórica previa al conjunto
+  de reruns tenía Redis 131/112; no almacenaba inventario de claves y las claves
+  adicionales actuales no llevan etiquetas de smoke, por lo que se preservaron.
+  La policy de la prueba de #588 hubo que borrarla **a mano con Cypher** — el bug
+  exactamente.
 
 ## Issue Index
 
@@ -99,8 +111,8 @@ imagen reconstruida a `7cbfc5b`), 2026-10-20/21.
 - [ ] 20 issues implementadas — mover cada fichero a `.issues/done/` con `Status: DONE`
 - [ ] Cada issue: gates backend (`ruff`/`mypy`/`pytest`); frontend (`lint`/`test`/`build`
       + i18n EN/ES) donde toque UI (#596)
-- [ ] Re-correr el smoke completo (294 rutas) tras #578-#595 y actualizar el recuento
-      (objetivo: 0 ERR de esta lista)
+- [x] Re-correr el smoke autenticado completo (301 operaciones actuales) tras
+      #578-#595 y actualizar el recuento en #603 (0 ERR, 0 TIMEOUT, 0×500)
 - [ ] Verificación en vivo sobre `tasker-api` desplegado (rebuild de imagen, patrón de
       #555) antes de dar por cerrada cada issue
 - [ ] Commit solo tras `si` explícito; mensaje en español sin tildes referenciando

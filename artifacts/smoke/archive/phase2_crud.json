@@ -1,0 +1,330 @@
+{
+  "source": "phase2_crud.json",
+  "captured_from": "temporary audit workspace; response bodies/details/URLs omitted",
+  "redacted": true,
+  "row_count": 52,
+  "status_counts": {
+    "200": 28,
+    "500": 1,
+    "201": 7,
+    "400": 6,
+    "404": 5,
+    "0": 4,
+    "422": 1
+  },
+  "verdict_counts": {},
+  "results": [
+    {
+      "flow": "whoami",
+      "step": "GET /whoami",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "whoami",
+      "step": "role/permissions",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "issues",
+      "step": "create",
+      "status": 500,
+      "ok": false
+    },
+    {
+      "flow": "projects",
+      "step": "create (no id in response)",
+      "status": 201,
+      "ok": false
+    },
+    {
+      "flow": "epics",
+      "step": "create",
+      "status": 400,
+      "ok": false
+    },
+    {
+      "flow": "objectives",
+      "step": "create",
+      "status": 400,
+      "ok": false
+    },
+    {
+      "flow": "components",
+      "step": "create",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "flow": "components",
+      "step": "read",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "components",
+      "step": "update PATCH",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "components",
+      "step": "delete",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "components",
+      "step": "read after delete",
+      "status": 404,
+      "ok": true
+    },
+    {
+      "flow": "secrets",
+      "step": "create",
+      "status": 400,
+      "ok": false
+    },
+    {
+      "flow": "webhooks/subs",
+      "step": "create (no id in response)",
+      "status": 200,
+      "ok": false
+    },
+    {
+      "flow": "mcp/servers",
+      "step": "create",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "mcp/servers",
+      "step": "read",
+      "status": 0,
+      "ok": true
+    },
+    {
+      "flow": "chat/convs",
+      "step": "create",
+      "status": 400,
+      "ok": false
+    },
+    {
+      "flow": "policies",
+      "step": "create",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "flow": "policies",
+      "step": "read",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "policies",
+      "step": "delete",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "policies",
+      "step": "read after delete",
+      "status": 404,
+      "ok": true
+    },
+    {
+      "flow": "data-quality",
+      "step": "create (no id in response)",
+      "status": 200,
+      "ok": false
+    },
+    {
+      "flow": "registry/datasets",
+      "step": "create (no id in response)",
+      "status": 200,
+      "ok": false
+    },
+    {
+      "flow": "registry/schemas",
+      "step": "create",
+      "status": 400,
+      "ok": false
+    },
+    {
+      "flow": "deployments",
+      "step": "create",
+      "status": 400,
+      "ok": false
+    },
+    {
+      "flow": "commits",
+      "step": "create",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "commits",
+      "step": "read",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "commits",
+      "step": "delete",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "commits",
+      "step": "read after delete",
+      "status": 404,
+      "ok": true
+    },
+    {
+      "flow": "users",
+      "step": "create",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "flow": "users",
+      "step": "read",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "users",
+      "step": "update PUT",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "users",
+      "step": "delete",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "users",
+      "step": "read after delete",
+      "status": 404,
+      "ok": true
+    },
+    {
+      "flow": "skills",
+      "step": "create",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "flow": "skills",
+      "step": "read",
+      "status": 0,
+      "ok": true
+    },
+    {
+      "flow": "agent-skills",
+      "step": "create",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "flow": "agent-skills",
+      "step": "read",
+      "status": 0,
+      "ok": true
+    },
+    {
+      "flow": "workflows",
+      "step": "create",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "flow": "workflows",
+      "step": "read",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "workflows",
+      "step": "update PUT",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "workflows",
+      "step": "delete",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "workflows",
+      "step": "read after delete",
+      "status": 404,
+      "ok": true
+    },
+    {
+      "flow": "labels",
+      "step": "SKIP (no POST)",
+      "status": 0,
+      "ok": true
+    },
+    {
+      "flow": "issues filter",
+      "step": "GET ?limit=3",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "notifications",
+      "step": "GET list",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "admin flags",
+      "step": "GET flags",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "secrets",
+      "step": "GET audit",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "cost summary",
+      "step": "GET",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "blocked issues",
+      "step": "GET",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "workable issues",
+      "step": "GET",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "policies",
+      "step": "POST validate",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "rag",
+      "step": "POST search",
+      "status": 422,
+      "ok": true
+    }
+  ]
+}

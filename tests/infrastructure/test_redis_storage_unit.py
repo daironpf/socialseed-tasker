@@ -1,6 +1,10 @@
 from unittest.mock import MagicMock, patch
-from socialseed_tasker.infrastructure.redis_storage import RedisStorage
+
+import pytest
+
 from socialseed_tasker.application.exceptions import StorageError
+from socialseed_tasker.infrastructure.redis_storage import RedisStorage
+
 
 @patch("socialseed_tasker.infrastructure.redis_storage.redis")
 def test_redis_storage_put_get_delete(mock_redis_module):
@@ -18,8 +22,29 @@ def test_redis_storage_put_get_delete(mock_redis_module):
 @patch("socialseed_tasker.infrastructure.redis_storage.redis")
 def test_redis_storage_connection_failure(mock_redis_module):
     mock_redis_module.from_url.side_effect = Exception("conn fail")
-    try:
+    with pytest.raises(StorageError):
         RedisStorage(url="redis://bad")
-        assert False, "Expected StorageError"
-    except StorageError:
-        pass
+
+@patch("socialseed_tasker.infrastructure.redis_storage.redis")
+def test_redis_storage_list_keys_decodes_bytes(mock_redis_module):
+    client = MagicMock()
+    mock_redis_module.from_url.return_value = client
+    client.ping.return_value = True
+    client.scan_iter.return_value = [b"one", "two"]
+
+    storage = RedisStorage(url="redis://localhost:6379/0")
+
+    assert storage.list_keys() == ["one", "two"]
+    client.scan_iter.assert_called_once_with()
+
+@patch("socialseed_tasker.infrastructure.redis_storage.redis")
+def test_redis_storage_list_keys_wraps_scan_errors(mock_redis_module):
+    client = MagicMock()
+    mock_redis_module.from_url.return_value = client
+    client.ping.return_value = True
+    client.scan_iter.side_effect = RuntimeError("scan failed")
+
+    storage = RedisStorage(url="redis://localhost:6379/0")
+
+    with pytest.raises(StorageError, match="Redis key listing failed"):
+        storage.list_keys()

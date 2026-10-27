@@ -9,7 +9,6 @@ import logging
 from typing import Any
 
 from socialseed_tasker.domain.entities import (
-    DecisionType,
     ReasoningFeedback,
     ReasoningNode,
 )
@@ -66,7 +65,7 @@ REASONING_QUERIES = {
     """,
     "get_feedback": """
         MATCH (f:ReasoningFeedback)-[:FEEDS_BACK]->(r:ReasoningNode {id: $reasoning_id})
-        RETURN f.id as id, f.is_approved as is_approved, 
+        RETURN f.id as id, f.is_approved as is_approved,
                f.feedback_text as feedback_text, f.created_at as created_at
     """,
     "get_decision_stats": """
@@ -132,10 +131,10 @@ class ReasoningRepository:
                     "agent_name": agent_name,
                     "thought": reasoning.thought,
                     "confidence": reasoning.confidence,
-                    "alternativesConsidered": reasoning.alternatives_considered,
-                    "rejectedReasons": reasoning.rejected_reasons,
+                    "alternatives_considered": reasoning.alternatives_considered,
+                    "rejected_reasons": reasoning.rejected_reasons,
                     "decision": reasoning.decision,
-                    "decisionType": reasoning.decision_type.value,
+                    "decision_type": reasoning.decision_type.value,
                 },
             )
             record = result.single()

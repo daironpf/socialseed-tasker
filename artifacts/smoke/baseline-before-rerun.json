@@ -1,0 +1,29 @@
+{
+  "capturedAt": "2026-10-26T23:13:28.562Z",
+  "capturePurpose": "Post-cleanup baseline immediately before the authenticated rerun for issue 603.",
+  "sourceCommit": "1b52b2c6502a95e78b1aa82091f3793bc3a684e5",
+  "apiImage": "sha256:863cf9c16f5002dea0aeb10d57cb7af48b089ac238a7cb7ca8c112e3ae576451",
+  "neo4jNodes": 5,
+  "neo4jOldSmokeTaggedNodes": 0,
+  "redisKeys": 131,
+  "redisSessionKeys": 112,
+  "redisOldSmokeTaggedKeys": 0,
+  "postgresTableRows": {
+    "agent_runs": 0,
+    "agent_run_logs": 0,
+    "user_skills": 5,
+    "tools": 14,
+    "human_user": 2,
+    "agent_user_skills": 1,
+    "users_legacy": 0,
+    "workflows": 5,
+    "skills": 18,
+    "agent_skills": 23,
+    "agents_user": 1,
+    "users": 3,
+    "session_logs": 56,
+    "roles": 3
+  },
+  "mongoCollectionCount": 3,
+  "mongoDocumentCount": 0
+}

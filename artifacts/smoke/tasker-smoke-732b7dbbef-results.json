@@ -1,0 +1,2408 @@
+{
+  "run_id": "TASKER-SMOKE-732b7dbbef",
+  "created_at": "2026-10-27T01:34:00Z",
+  "api_base": "http://127.0.0.1:8888",
+  "openapi_version": "3.1.0",
+  "openapi_path_count": 237,
+  "operation_count": 301,
+  "counts": {
+    "PASS": 212,
+    "SKIP": 49,
+    "GRACE": 40
+  },
+  "cleanup": {
+    "direct": "8/8",
+    "issues": 4,
+    "agent_profiles": 1,
+    "skills": 1,
+    "agent_skills": 1,
+    "users": 1,
+    "agents": 0,
+    "policies": 1,
+    "epics": 1,
+    "objectives": 1,
+    "conversations": 0,
+    "tenants": 0,
+    "flags": 2,
+    "subscriptions": 0,
+    "datasets": 1,
+    "mcp_sessions": 0,
+    "mcp_servers": 2,
+    "components": 2,
+    "workflow": 404,
+    "secret": 200,
+    "commit": 200,
+    "mcp_session": 404,
+    "agent_skill": 404,
+    "conversation": 404,
+    "data_quality_rule": 200,
+    "skill": 404,
+    "registry_schema": 200,
+    "reasoning": 200,
+    "auth_session": 200,
+    "dq_reports": 3,
+    "auth_sessions": 1
+  },
+  "cleanup_errors": [],
+  "results": [
+    {
+      "m": "POST",
+      "p": "/api/v1/issues",
+      "status": 201,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 848
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 21
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/batch",
+      "status": 201,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 35
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/stream",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 3035
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 16
+    },
+    {
+      "m": "PATCH",
+      "p": "/api/v1/issues/{issue_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 20
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/component",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 22
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/deployments",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 24
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/close",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 49
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/resolution",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 38
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/link-github",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "may mutate a remote GitHub issue"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/unlink-github",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "may mutate a remote GitHub issue"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/github-sync",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "starts external GitHub synchronization"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/github-sync/resolve",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "may mutate a remote GitHub issue"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/mirror-root-cause",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "may post to a remote GitHub issue"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/mirror-impact",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "may post to a remote GitHub issue"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/reasoning",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 571
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/reasoning",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 24
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/comments",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 31
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/comments",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 22
+    },
+    {
+      "m": "PATCH",
+      "p": "/api/v1/issues/{issue_id}/manifest/todo",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 50
+    },
+    {
+      "m": "PATCH",
+      "p": "/api/v1/issues/{issue_id}/manifest/files",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 26
+    },
+    {
+      "m": "PATCH",
+      "p": "/api/v1/issues/{issue_id}/manifest/notes",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 22
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/manifest",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 16
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/agent/start",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "starts a background agent run"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/agent/finish",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "changes agent execution state"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/start-agent",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "starts a background agent run"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/stop-agent",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "changes agent execution state"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/agent/heartbeat",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "changes agent execution state"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/agent/status",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 20
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/dependencies",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "seed phase already tests dependency creation"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/dependencies",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 16
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/dependencies/bulk",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 31
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/dependents",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 19
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/dependency-chain",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 23
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/blocked-issues",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 19
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/dependencies/blocked",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 22
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/workable-issues",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 44
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/affects",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 25
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/affects",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 20
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/code/symbols/{symbol_id}/issues",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 32
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/projects",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 35
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/projects",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "persistent project creation has no DELETE route"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/components",
+      "status": 201,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 32
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/components",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 30
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/components/{component_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 19
+    },
+    {
+      "m": "PATCH",
+      "p": "/api/v1/components/{component_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 23
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/components/{component_id}/dependencies",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 22
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/components/{component_id}/dependencies",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 17
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/components/{component_id}/dependents",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 20
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "endpoint has no safe, reversible smoke contract"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 34
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/constraints/validate",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 39
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/labels",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 23
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/labels/sync",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "may call GitHub and mutate remote labels"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/analyze/root-cause",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 41
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/analyze/link-test",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 38
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/test-failures",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 44
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/analyze/impact/{issue_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 23
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/analyze/code-impact",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 38
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/analyze/component-impact/{component_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 471
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/graph/dependencies",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 864
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/graph/{issue_id}/subgraph",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 559
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/similarity/{issue_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 29
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/projects/all",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 17
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/projects/current",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 17
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/projects/{project_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 39
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/projects/users",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "may create a graph user without safe scoped cleanup"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/projects/{project_name}/summary",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 25
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/projects/{project_id}/agents/{agent_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 15
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/projects/{project_id}/agents",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 16
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/policies/validate",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 18
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/policies/rules",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 14
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/policies/component/{component_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 12
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/policies",
+      "status": 201,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 20
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/policies",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 14
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/policies/{policy_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 13
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/policies/dry-run",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 36
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/policies/{policy_id}/link/project/{project_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 18
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/policies/{policy_id}/link/agent/{agent_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 20
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/policies/{policy_id}/link/component/{component_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 24
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/policies/project/{project_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 17
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/policies/agent/{agent_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 21
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/agents/profiles",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 41
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/agents/profiles",
+      "status": 201,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 79
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/agents/profiles/{agent_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 36
+    },
+    {
+      "m": "PUT",
+      "p": "/api/v1/agents/profiles/{agent_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 66
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/skills",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 37
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/skills",
+      "status": 201,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 46
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/tools",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 33
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/agent-skills",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 55
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/agent-skills",
+      "status": 201,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 32
+    },
+    {
+      "m": "PUT",
+      "p": "/api/v1/agent-skills/{skill_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 39
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/agent-skills/import",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "creates persistent skills from uploaded files"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/agent-skills/import-url",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "fetches external URLs and creates persistent skills"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/agents/register",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "persists a Neo4j agent without a safe delete route"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/agents",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 11
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/agents/{agent_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 12
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/agents/{agent_id}/heartbeat",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 30
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/agents/role/{role}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 35
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/agent/context/{issue_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 89
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/agent/similar/{issue_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 44
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/agents/{agent_id}/specialists/{component_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 48
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/agents/{agent_id}/specialists",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 30
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/components/{component_id}/specialists",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 36
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/agents/{agent_id}/runs",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "starts an agent workflow"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/agents/{agent_id}/runs",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 51
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/runs/{run_id}/logs",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 50
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/runs/{run_id}/logs",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 45
+    },
+    {
+      "m": "PATCH",
+      "p": "/api/v1/runs/{run_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 53
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/workflows",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 40
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/workflows",
+      "status": 201,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 52
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/workflows/{slug}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 58
+    },
+    {
+      "m": "PUT",
+      "p": "/api/v1/workflows/{slug}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 43
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/sync/status",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 641
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/sync/queue",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 15
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/sync/force",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "starts an external synchronization job"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/deployments",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 289
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/deployments",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 28
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/deployments/by-commit/{commit_sha}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 21
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/webhooks/test-failure",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "intentionally triggers webhook failure handling"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/webhooks/github",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "processes externally signed GitHub events"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/webhooks/github/logs",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 11
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/webhooks/github/test",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 13
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/admin/reset",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "DESTRUCTIVO (vacia la BD real)"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/epics",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 22
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/epics",
+      "status": 201,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 38
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/epics/{epic_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 29
+    },
+    {
+      "m": "PATCH",
+      "p": "/api/v1/epics/{epic_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 49
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/epics/{epic_id}/issues",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 18
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/objectives",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 22
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/objectives",
+      "status": 201,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 81
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/objectives/{objective_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 26
+    },
+    {
+      "m": "PATCH",
+      "p": "/api/v1/objectives/{objective_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 28
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/objectives/{objective_id}/epics",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 15
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/cost-per-component",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 48
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/cost-per-epic",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 25
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/cost-per-project",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 27
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/cost-summary",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 27
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/ai/search-context",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 12
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/ai/similar-issues/{issue_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 45
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/ai/issues/{issue_id}/embed",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "may incur provider cost and mutate embeddings"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/ai/search-similar-solutions",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "may incur provider cost"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/ai/backfill-embeddings",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "PESADO (backfill de embeddings)"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/code-graph/scan",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "PESADO (escaneo del repo)"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/code-graph/files",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 34
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/code-graph/symbols",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 21
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/code-graph/stats",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 1021
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/code-graph/calls/{symbol_name}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 23
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/code-graph/depends/{file_path}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 19
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/code-graph/tests/{file_path}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 24
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/code-graph/issues/{file_path}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 19
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/code-graph/symbols/{symbol_id}/callers",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 16
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/code-graph/symbols/{symbol_id}/callees",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 35
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/code-graph/symbols/{symbol_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 22
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/code-graph/analyze/impact",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 50
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/rag/index",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "PESADO (indexa documentos)"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/rag/search",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 38
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/rag/stats",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 34
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/mcp/servers",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 26
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/mcp/servers",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 30
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/mcp/sessions",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 13
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/mcp/sessions",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 30
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/mcp/tool-calls",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 8
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/mcp/tool-calls",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "creates tool-call records without a delete route"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/mcp/tool-calls/stream",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 3044
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/mcp/tool-calls/{call_id}/rerun",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 21
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/reasoning/log",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "creates a Neo4j Agent node without a scoped delete route"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/reasoning/issue/{issue_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 27
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/reasoning/history",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 38
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/reasoning/timeline",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 17
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/reasoning/{reasoning_id}/feedback",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "creates persistent feedback without a delete route"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/reasoning/{reasoning_id}/feedback",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 42
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/reasoning/stats",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 22
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/users",
+      "status": 201,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 453
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/users",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 39
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/users/{user_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 39
+    },
+    {
+      "m": "PUT",
+      "p": "/api/v1/users/{user_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 126
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/users/email/{email}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 61
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/users/{user_id}/skills",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 55
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/users/{user_id}/skills",
+      "status": 201,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 33
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/users/{user_id}/issues",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 75
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/users/{user_id}/issue-stats",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 72
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/commits",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 54
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/commits",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 39
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/commits/stats",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 19
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/commits/{sha}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 15
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/commits/{sha}/link/agent/{agent_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 37
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/commits/{sha}/link/user/{user_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 49
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/commits/{sha}/link/issue/{issue_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 22
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/commits/issue/{issue_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 19
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/commits/file/{file_path}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 22
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/secrets",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 27
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/secrets",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 30
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/secrets/audit",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 22
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/secrets/{name}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 21
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/secrets/{name}/value",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 17
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/secrets/rotate",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "changes live secret material"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/secrets/rotate/run",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "rotates live secrets"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/admin/tenants",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 19
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/admin/tenants",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 28
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/admin/tenants/{tenant_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 25
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/agent-logs",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 10
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/agent-logs",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 16
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/agent-logs/stream",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 3028
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/presence",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 13
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/presence",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 17
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/issues/{issue_id}/presence/leave",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 32
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/presence/stream",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 3018
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/issues/{issue_id}/github-sync/stream",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 3024
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/auth/login",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 17
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/auth/refresh",
+      "status": 401,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 27
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/auth/logout",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "invalidates the JWT required by the rest of the smoke"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/auth/me",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 11
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/auth/oauth/{provider}/authorize",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 9
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/auth/oauth/{provider}/callback",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "OAuth callback requires a real provider authorization state"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/auth/exchange",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "OAuth credential exchange is not a smoke operation"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/auto-healing/runs",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 33
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/auto-healing/runs",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "starts an autonomous remediation run"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/auto-healing/runs/{run_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 26
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/auto-healing/runs/{run_id}/logs",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 13
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/auto-healing/runs/{run_id}/patches",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 31
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/auto-healing/runs/{run_id}/patches/{patch_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 9
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/auto-healing/runs/{run_id}/cancel",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 36
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/auto-healing/runs/{run_id}/restart",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 35
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/chat/conversations",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 16
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/chat/conversations",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 16
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/chat/conversations/{conversation_id}/messages",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 32
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/chat/conversations/{conversation_id}/messages",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 17
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/chat/conversations/{conversation_id}/pin",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 25
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/setup/status",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 35
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/setup/initialize",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "DESTRUCTIVO (inicializacion)"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/notifications",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 15
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/notifications/stream",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 3025
+    },
+    {
+      "m": "PATCH",
+      "p": "/api/v1/notifications/{notification_id}/read",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 25
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/notifications/mark-all-read",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "changes all admin notification state"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/notifications/clear-all",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "DESTRUCTIVO (borra todas las notificaciones)"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/webhooks/receive",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "processes arbitrary webhook payloads"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/webhooks/subscriptions",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 14
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/webhooks/subscriptions",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 29
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/registry/schemas",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 45
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/registry/schemas/{name}/versions",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 17
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/registry/schemas/{name}/{version}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 23
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/registry/datasets",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 37
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/registry/datasets",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 33
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/registry/datasets/{dataset_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 33
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/data-quality/rules",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 33
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/data-quality/rules",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 45
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/data-quality/reports/{record_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 17
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/data-quality/metrics",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 18
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/graph",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 44
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/graph/impact/{node_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 32
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/graph/export.json",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 54
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/graph/export.svg",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 35
+    },
+    {
+      "m": "GET",
+      "p": "/health",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 37
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/whoami",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 10
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/admin/rate/{key}",
+      "status": 403,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 10
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/admin/rate/{key}/reset",
+      "status": 403,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 34
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/admin/flags",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 25
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/admin/flags",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 28
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/admin/flags/{name}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 26
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/privacy/export",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "creates a potentially sensitive export artifact"
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/privacy/delete",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "DESTRUCTIVO (eliminacion de datos de cuenta)"
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/privacy/tasks/{task_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 23
+    },
+    {
+      "m": "GET",
+      "p": "/api/v1/privacy/audit",
+      "status": 403,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 953
+    },
+    {
+      "m": "POST",
+      "p": "/api/v1/models/{model_name}/infer",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "model inference may incur provider cost"
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/issues/{issue_id}",
+      "status": 204,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 80
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/issues/{issue_id}/dependencies/{depends_on_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 30
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/issues/{issue_id}/affects",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 16
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/components/{component_id}",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "seed component is linked to smoke issues and is cleaned after them"
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/projects/{project_id}/agents/{agent_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 15
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/policies/{policy_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 33
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/agents/profiles/{agent_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 68
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/skills/{skill_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 48
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/agent-skills/{skill_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 37
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/agents/{agent_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 10
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/agents/{agent_id}/specialists/{component_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 25
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/runs/{run_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 28
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/workflows/{slug}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 55
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/deployments/{deployment_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 29
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/epics/{epic_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 42
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/objectives/{objective_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 37
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/code-graph",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "DESTRUCTIVO (borra code graph)"
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/rag/{source_type}/{source_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 13
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/rag",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "DESTRUCTIVO (borra indice RAG)"
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/mcp/servers/{server_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 11
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/mcp/sessions/{session_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 13
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/reasoning/issue/{issue_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 699
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/reasoning",
+      "status": null,
+      "verdict": "SKIP",
+      "note": "DESTRUCTIVO (borra todos los reasoning logs)"
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/users/{user_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 98
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/users/{user_id}/skills/{skill_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 50
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/commits/{sha}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 41
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/secrets/{name}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 20
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/admin/tenants/{tenant_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 18
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/chat/conversations/{conversation_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 15
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/notifications/{notification_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 13
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/webhooks/subscriptions/{sid}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 29
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/registry/schemas/{name}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 17
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/registry/datasets/{dataset_id}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 20
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/data-quality/rules/{rule_id}",
+      "status": 404,
+      "verdict": "GRACE",
+      "note": "",
+      "ms": 21
+    },
+    {
+      "m": "DELETE",
+      "p": "/api/v1/admin/flags/{name}",
+      "status": 200,
+      "verdict": "PASS",
+      "note": "",
+      "ms": 24
+    }
+  ]
+}

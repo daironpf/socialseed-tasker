@@ -1,0 +1,5279 @@
+{
+  "source": "endpoint_probe.json",
+  "captured_from": "temporary audit workspace; response bodies/details/URLs omitted",
+  "redacted": true,
+  "row_count": 592,
+  "status_counts": {
+    "401": 259,
+    "None": 68,
+    "422": 93,
+    "404": 55,
+    "200": 108,
+    "503": 2,
+    "400": 4,
+    "403": 3
+  },
+  "verdict_counts": {},
+  "results": [
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues",
+      "status": 401,
+      "ms": 20.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues",
+      "status": 401,
+      "ms": 735.7,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/batch",
+      "status": 401,
+      "ms": 750.1,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/stream",
+      "status": 401,
+      "ms": 749.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}",
+      "status": 401,
+      "ms": 769.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "PATCH",
+      "path": "/api/v1/issues/{issue_id}",
+      "status": 401,
+      "ms": 731.1,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/issues/{issue_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/component",
+      "status": 401,
+      "ms": 748.4,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/deployments",
+      "status": 401,
+      "ms": 749.9,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/close",
+      "status": 401,
+      "ms": 752.1,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/resolution",
+      "status": 401,
+      "ms": 747.1,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/link-github",
+      "status": 401,
+      "ms": 753.0,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/unlink-github",
+      "status": 401,
+      "ms": 747.6,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/github-sync",
+      "status": 401,
+      "ms": 751.1,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/github-sync/resolve",
+      "status": 401,
+      "ms": 751.1,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/mirror-root-cause",
+      "status": 401,
+      "ms": 747.9,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/mirror-impact",
+      "status": 401,
+      "ms": 752.1,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/reasoning",
+      "status": 401,
+      "ms": 745.4,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/reasoning",
+      "status": 401,
+      "ms": 750.5,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/comments",
+      "status": 401,
+      "ms": 748.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/comments",
+      "status": 401,
+      "ms": 753.6,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "PATCH",
+      "path": "/api/v1/issues/{issue_id}/manifest/todo",
+      "status": 401,
+      "ms": 746.6,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "PATCH",
+      "path": "/api/v1/issues/{issue_id}/manifest/files",
+      "status": 401,
+      "ms": 749.5,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "PATCH",
+      "path": "/api/v1/issues/{issue_id}/manifest/notes",
+      "status": 401,
+      "ms": 749.1,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/manifest",
+      "status": 401,
+      "ms": 754.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/agent/start",
+      "status": 401,
+      "ms": 745.6,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/agent/finish",
+      "status": 401,
+      "ms": 750.0,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/start-agent",
+      "status": 401,
+      "ms": 748.9,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/stop-agent",
+      "status": 401,
+      "ms": 755.6,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/agent/heartbeat",
+      "status": 401,
+      "ms": 749.3,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/agent/status",
+      "status": 401,
+      "ms": 745.7,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/dependencies",
+      "status": 401,
+      "ms": 749.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/dependencies",
+      "status": 401,
+      "ms": 750.5,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/dependencies/bulk",
+      "status": 401,
+      "ms": 758.5,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/issues/{issue_id}/dependencies/{depends_on_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/dependents",
+      "status": 401,
+      "ms": 740.5,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/dependency-chain",
+      "status": 401,
+      "ms": 749.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/blocked-issues",
+      "status": 401,
+      "ms": 752.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/dependencies/blocked",
+      "status": 401,
+      "ms": 751.5,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/workable-issues",
+      "status": 401,
+      "ms": 746.9,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/affects",
+      "status": 401,
+      "ms": 748.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/affects",
+      "status": 401,
+      "ms": 763.5,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/issues/{issue_id}/affects",
+      "status": 401,
+      "ms": 736.5,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/code/symbols/{symbol_id}/issues",
+      "status": 401,
+      "ms": 757.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/projects",
+      "status": 401,
+      "ms": 741.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/projects",
+      "status": 401,
+      "ms": 759.0,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/components",
+      "status": 401,
+      "ms": 743.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/components",
+      "status": 401,
+      "ms": 746.0,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/components/{component_id}",
+      "status": 401,
+      "ms": 749.5,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "PATCH",
+      "path": "/api/v1/components/{component_id}",
+      "status": 401,
+      "ms": 756.0,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/components/{component_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/components/{component_id}/dependencies",
+      "status": 401,
+      "ms": 744.4,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/components/{component_id}/dependencies",
+      "status": 401,
+      "ms": 748.9,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/components/{component_id}/dependents",
+      "status": 401,
+      "ms": 754.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1",
+      "status": 401,
+      "ms": 748.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1",
+      "status": 401,
+      "ms": 746.5,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/constraints/validate",
+      "status": 401,
+      "ms": 752.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/labels",
+      "status": 401,
+      "ms": 753.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/labels/sync",
+      "status": 401,
+      "ms": 747.1,
+      "class": "GUARDED",
+      "expectation": "action"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/analyze/root-cause",
+      "status": 401,
+      "ms": 744.9,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/analyze/link-test",
+      "status": 401,
+      "ms": 751.5,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/test-failures",
+      "status": 401,
+      "ms": 749.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/analyze/impact/{issue_id}",
+      "status": 401,
+      "ms": 752.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/analyze/code-impact",
+      "status": 401,
+      "ms": 747.5,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/analyze/component-impact/{component_id}",
+      "status": 401,
+      "ms": 749.7,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/graph/dependencies",
+      "status": 401,
+      "ms": 750.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/graph/{issue_id}/subgraph",
+      "status": 401,
+      "ms": 749.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/similarity/{issue_id}",
+      "status": 401,
+      "ms": 749.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/projects/all",
+      "status": 401,
+      "ms": 748.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/projects/current",
+      "status": 401,
+      "ms": 756.4,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}",
+      "status": 401,
+      "ms": 750.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/projects/users",
+      "status": 401,
+      "ms": 743.0,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_name}/summary",
+      "status": 401,
+      "ms": 749.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/projects/{project_id}/agents/{agent_id}",
+      "status": 401,
+      "ms": 754.3,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/projects/{project_id}/agents/{agent_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}/agents",
+      "status": 401,
+      "ms": 745.9,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/policies/validate",
+      "status": 401,
+      "ms": 749.6,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/policies/rules",
+      "status": 401,
+      "ms": 753.1,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/policies/component/{component_id}",
+      "status": 401,
+      "ms": 750.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/policies",
+      "status": 401,
+      "ms": 746.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/policies",
+      "status": 401,
+      "ms": 749.0,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/policies/{policy_id}",
+      "status": 401,
+      "ms": 750.9,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/policies/{policy_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/policies/dry-run",
+      "status": 401,
+      "ms": 748.8,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/policies/{policy_id}/link/project/{project_id}",
+      "status": 401,
+      "ms": 753.1,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/policies/{policy_id}/link/agent/{agent_id}",
+      "status": 401,
+      "ms": 757.1,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/policies/{policy_id}/link/component/{component_id}",
+      "status": 401,
+      "ms": 740.1,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/policies/project/{project_id}",
+      "status": 401,
+      "ms": 750.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/policies/agent/{agent_id}",
+      "status": 401,
+      "ms": 752.1,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/agents/profiles",
+      "status": 401,
+      "ms": 746.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/agents/profiles",
+      "status": 401,
+      "ms": 748.3,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/agents/profiles/{agent_id}",
+      "status": 401,
+      "ms": 756.1,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "PUT",
+      "path": "/api/v1/agents/profiles/{agent_id}",
+      "status": 401,
+      "ms": 744.8,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/agents/profiles/{agent_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/skills",
+      "status": 401,
+      "ms": 750.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/skills",
+      "status": 401,
+      "ms": 747.4,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/skills/{skill_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/tools",
+      "status": 401,
+      "ms": 750.4,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/agent-skills",
+      "status": 401,
+      "ms": 752.1,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/agent-skills",
+      "status": 401,
+      "ms": 747.0,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "PUT",
+      "path": "/api/v1/agent-skills/{skill_id}",
+      "status": 401,
+      "ms": 750.9,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/agent-skills/{skill_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/agent-skills/import",
+      "status": 401,
+      "ms": 753.1,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/agent-skills/import-url",
+      "status": 401,
+      "ms": 748.3,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/agents/register",
+      "status": 401,
+      "ms": 750.5,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/agents",
+      "status": 401,
+      "ms": 749.2,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/agents/{agent_id}",
+      "status": 401,
+      "ms": 747.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/agents/{agent_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/agents/{agent_id}/heartbeat",
+      "status": 401,
+      "ms": 749.4,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/agents/role/{role}",
+      "status": 401,
+      "ms": 749.9,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/agent/context/{issue_id}",
+      "status": 401,
+      "ms": 752.9,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/agent/similar/{issue_id}",
+      "status": 401,
+      "ms": 746.4,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/agents/{agent_id}/specialists/{component_id}",
+      "status": 401,
+      "ms": 749.9,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/agents/{agent_id}/specialists/{component_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/agents/{agent_id}/specialists",
+      "status": 401,
+      "ms": 749.4,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/components/{component_id}/specialists",
+      "status": 401,
+      "ms": 753.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/agents/{agent_id}/runs",
+      "status": 401,
+      "ms": 749.4,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/agents/{agent_id}/runs",
+      "status": 401,
+      "ms": 746.7,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/runs/{run_id}/logs",
+      "status": 401,
+      "ms": 748.7,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/runs/{run_id}/logs",
+      "status": 401,
+      "ms": 750.2,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "PATCH",
+      "path": "/api/v1/runs/{run_id}",
+      "status": 401,
+      "ms": 753.9,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/runs/{run_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/workflows",
+      "status": 401,
+      "ms": 747.2,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/workflows",
+      "status": 401,
+      "ms": 747.7,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/workflows/{slug}",
+      "status": 401,
+      "ms": 750.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "PUT",
+      "path": "/api/v1/workflows/{slug}",
+      "status": 401,
+      "ms": 754.0,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/workflows/{slug}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/sync/status",
+      "status": 401,
+      "ms": 745.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/sync/queue",
+      "status": 401,
+      "ms": 750.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/sync/force",
+      "status": 401,
+      "ms": 752.8,
+      "class": "GUARDED",
+      "expectation": "action"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/deployments",
+      "status": 401,
+      "ms": 746.9,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/deployments",
+      "status": 401,
+      "ms": 749.4,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/deployments/by-commit/{commit_sha}",
+      "status": 401,
+      "ms": 750.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/webhooks/test-failure",
+      "status": 401,
+      "ms": 753.6,
+      "class": "GUARDED",
+      "expectation": "401"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/webhooks/github",
+      "status": 401,
+      "ms": 749.7,
+      "class": "GUARDED",
+      "expectation": "401"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/webhooks/github/logs",
+      "status": 401,
+      "ms": 746.5,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/webhooks/github/test",
+      "status": 401,
+      "ms": 749.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/admin/reset",
+      "status": 401,
+      "ms": 750.5,
+      "class": "GUARDED",
+      "expectation": "401"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/epics",
+      "status": 401,
+      "ms": 753.2,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/epics",
+      "status": 401,
+      "ms": 745.5,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/epics/{epic_id}",
+      "status": 401,
+      "ms": 749.7,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "PATCH",
+      "path": "/api/v1/epics/{epic_id}",
+      "status": 401,
+      "ms": 749.7,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/epics/{epic_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/epics/{epic_id}/issues",
+      "status": 401,
+      "ms": 753.8,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/objectives",
+      "status": 401,
+      "ms": 746.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/objectives",
+      "status": 401,
+      "ms": 749.6,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/objectives/{objective_id}",
+      "status": 401,
+      "ms": 753.7,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "PATCH",
+      "path": "/api/v1/objectives/{objective_id}",
+      "status": 401,
+      "ms": 750.8,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/objectives/{objective_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/objectives/{objective_id}/epics",
+      "status": 401,
+      "ms": 744.9,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/cost-per-component",
+      "status": 401,
+      "ms": 749.5,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/cost-per-epic",
+      "status": 401,
+      "ms": 750.5,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/cost-per-project",
+      "status": 401,
+      "ms": 749.7,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/cost-summary",
+      "status": 401,
+      "ms": 749.1,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/ai/search-context",
+      "status": 401,
+      "ms": 756.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/ai/similar-issues/{issue_id}",
+      "status": 401,
+      "ms": 747.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/ai/issues/{issue_id}/embed",
+      "status": 401,
+      "ms": 745.4,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/ai/search-similar-solutions",
+      "status": 401,
+      "ms": 749.2,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/ai/backfill-embeddings",
+      "status": 401,
+      "ms": 755.3,
+      "class": "GUARDED",
+      "expectation": "action"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/code-graph/scan",
+      "status": 401,
+      "ms": 749.2,
+      "class": "GUARDED",
+      "expectation": "action"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/code-graph/files",
+      "status": 401,
+      "ms": 746.9,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/code-graph/symbols",
+      "status": 401,
+      "ms": 749.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/code-graph/stats",
+      "status": 401,
+      "ms": 754.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/code-graph",
+      "status": 401,
+      "ms": 748.6,
+      "class": "GUARDED",
+      "expectation": "401"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/code-graph/calls/{symbol_name}",
+      "status": 401,
+      "ms": 748.5,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/code-graph/depends/{file_path}",
+      "status": 401,
+      "ms": 746.9,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/code-graph/tests/{file_path}",
+      "status": 401,
+      "ms": 752.4,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/code-graph/issues/{file_path}",
+      "status": 401,
+      "ms": 755.5,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/code-graph/symbols/{symbol_id}/callers",
+      "status": 401,
+      "ms": 748.1,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/code-graph/symbols/{symbol_id}/callees",
+      "status": 401,
+      "ms": 752.7,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/code-graph/symbols/{symbol_id}",
+      "status": 401,
+      "ms": 740.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/code-graph/analyze/impact",
+      "status": 401,
+      "ms": 749.2,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/rag/index",
+      "status": 401,
+      "ms": 749.3,
+      "class": "GUARDED",
+      "expectation": "action"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/rag/search",
+      "status": 401,
+      "ms": 750.5,
+      "class": "GUARDED",
+      "expectation": "action"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/rag/stats",
+      "status": 401,
+      "ms": 752.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/rag/{source_type}/{source_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/rag",
+      "status": 401,
+      "ms": 751.3,
+      "class": "GUARDED",
+      "expectation": "401"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/mcp/servers",
+      "status": 401,
+      "ms": 744.7,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/mcp/servers",
+      "status": 401,
+      "ms": 749.3,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/mcp/servers/{server_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/mcp/sessions",
+      "status": 401,
+      "ms": 752.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/mcp/sessions",
+      "status": 401,
+      "ms": 746.4,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/mcp/sessions/{session_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/mcp/tool-calls",
+      "status": 401,
+      "ms": 751.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/mcp/tool-calls",
+      "status": 401,
+      "ms": 748.5,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/mcp/tool-calls/stream",
+      "status": 401,
+      "ms": 752.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/mcp/tool-calls/{call_id}/rerun",
+      "status": 401,
+      "ms": 751.0,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/reasoning/log",
+      "status": 401,
+      "ms": 746.5,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/reasoning/issue/{issue_id}",
+      "status": 401,
+      "ms": 753.9,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/reasoning/issue/{issue_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/reasoning/history",
+      "status": 401,
+      "ms": 747.7,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/reasoning/timeline",
+      "status": 401,
+      "ms": 754.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/reasoning/{reasoning_id}/feedback",
+      "status": 401,
+      "ms": 743.7,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/reasoning/{reasoning_id}/feedback",
+      "status": 401,
+      "ms": 750.3,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/reasoning/stats",
+      "status": 401,
+      "ms": 747.5,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/reasoning",
+      "status": 401,
+      "ms": 752.2,
+      "class": "GUARDED",
+      "expectation": "401"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/users",
+      "status": 401,
+      "ms": 750.4,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/users",
+      "status": 401,
+      "ms": 745.6,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/users/{user_id}",
+      "status": 401,
+      "ms": 753.7,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "PUT",
+      "path": "/api/v1/users/{user_id}",
+      "status": 401,
+      "ms": 749.0,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/users/{user_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/users/email/{email}",
+      "status": 401,
+      "ms": 746.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/users/{user_id}/skills",
+      "status": 401,
+      "ms": 754.2,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/users/{user_id}/skills",
+      "status": 401,
+      "ms": 751.2,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/users/{user_id}/skills/{skill_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/users/{user_id}/issues",
+      "status": 401,
+      "ms": 747.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/users/{user_id}/issue-stats",
+      "status": 401,
+      "ms": 747.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/commits",
+      "status": 401,
+      "ms": 748.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/commits",
+      "status": 401,
+      "ms": 755.0,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/commits/stats",
+      "status": 401,
+      "ms": 745.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/commits/{sha}",
+      "status": 401,
+      "ms": 750.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/commits/{sha}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/commits/{sha}/link/agent/{agent_id}",
+      "status": 401,
+      "ms": 752.6,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/commits/{sha}/link/user/{user_id}",
+      "status": 401,
+      "ms": 748.2,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/commits/{sha}/link/issue/{issue_id}",
+      "status": 401,
+      "ms": 746.8,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/commits/issue/{issue_id}",
+      "status": 401,
+      "ms": 751.4,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/commits/file/{file_path}",
+      "status": 401,
+      "ms": 748.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/secrets",
+      "status": 401,
+      "ms": 749.9,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/secrets/audit",
+      "status": 401,
+      "ms": 750.4,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/secrets/{name}",
+      "status": 401,
+      "ms": 751.7,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/secrets/{name}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/secrets/{name}/value",
+      "status": 401,
+      "ms": 749.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/secrets/rotate",
+      "status": 401,
+      "ms": 749.5,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/secrets/rotate/run",
+      "status": 401,
+      "ms": 747.5,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/admin/tenants",
+      "status": 401,
+      "ms": 747.9,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/admin/tenants",
+      "status": 401,
+      "ms": 752.9,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/admin/tenants/{tenant_id}",
+      "status": 401,
+      "ms": 750.5,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/admin/tenants/{tenant_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/agent-logs",
+      "status": 401,
+      "ms": 746.2,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/agent-logs",
+      "status": 401,
+      "ms": 749.5,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/agent-logs/stream",
+      "status": 401,
+      "ms": 753.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/presence",
+      "status": 401,
+      "ms": 751.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/presence",
+      "status": 401,
+      "ms": 745.1,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/presence/leave",
+      "status": 401,
+      "ms": 748.8,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/presence/stream",
+      "status": 401,
+      "ms": 754.4,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/github-sync/stream",
+      "status": 401,
+      "ms": 769.7,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 422,
+      "ms": 752.2,
+      "class": "OPEN-422",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/auth/refresh",
+      "status": 422,
+      "ms": 727.0,
+      "class": "OPEN-422",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "status": 422,
+      "ms": 753.6,
+      "class": "OPEN-422",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 401,
+      "ms": 746.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/auth/oauth/{provider}/authorize",
+      "status": 404,
+      "ms": 748.9,
+      "class": "OPEN-404",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/auth/oauth/{provider}/callback",
+      "status": 422,
+      "ms": 749.4,
+      "class": "OPEN-422",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/auth/exchange",
+      "status": 422,
+      "ms": 755.1,
+      "class": "OPEN-422",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/auto-healing/runs",
+      "status": 401,
+      "ms": 746.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/auto-healing/runs",
+      "status": 401,
+      "ms": 746.0,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/auto-healing/runs/{run_id}",
+      "status": 401,
+      "ms": 750.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/auto-healing/runs/{run_id}/logs",
+      "status": 401,
+      "ms": 749.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/auto-healing/runs/{run_id}/patches",
+      "status": 401,
+      "ms": 751.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/auto-healing/runs/{run_id}/patches/{patch_id}",
+      "status": 401,
+      "ms": 749.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/auto-healing/runs/{run_id}/cancel",
+      "status": 401,
+      "ms": 747.7,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/auto-healing/runs/{run_id}/restart",
+      "status": 401,
+      "ms": 749.9,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/chat/conversations",
+      "status": 401,
+      "ms": 751.6,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/chat/conversations",
+      "status": 401,
+      "ms": 748.2,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/chat/conversations/{conversation_id}/messages",
+      "status": 401,
+      "ms": 765.1,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/chat/conversations/{conversation_id}/messages",
+      "status": 401,
+      "ms": 736.7,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/chat/conversations/{conversation_id}/pin",
+      "status": 401,
+      "ms": 746.9,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/chat/conversations/{conversation_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/setup/status",
+      "status": 200,
+      "ms": 764.9,
+      "class": "OPEN-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/setup/initialize",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/notifications",
+      "status": 401,
+      "ms": 737.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/notifications/stream",
+      "status": 401,
+      "ms": 746.9,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "PATCH",
+      "path": "/api/v1/notifications/{notification_id}/read",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/notifications/mark-all-read",
+      "status": 401,
+      "ms": 760.3,
+      "class": "GUARDED",
+      "expectation": "401"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/notifications/{notification_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/notifications/clear-all",
+      "status": 401,
+      "ms": 739.2,
+      "class": "GUARDED",
+      "expectation": "401"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/webhooks/receive",
+      "status": 401,
+      "ms": 749.2,
+      "class": "GUARDED",
+      "expectation": "401"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/webhooks/subscriptions",
+      "status": 401,
+      "ms": 750.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/webhooks/subscriptions",
+      "status": 401,
+      "ms": 750.3,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/webhooks/subscriptions/{sid}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/registry/schemas",
+      "status": 401,
+      "ms": 749.2,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/registry/schemas/{name}/versions",
+      "status": 401,
+      "ms": 749.5,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/registry/schemas/{name}/{version}",
+      "status": 401,
+      "ms": 749.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/registry/datasets",
+      "status": 401,
+      "ms": 750.2,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/registry/datasets",
+      "status": 401,
+      "ms": 749.6,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/registry/datasets/{dataset_id}",
+      "status": 401,
+      "ms": 749.5,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/data-quality/rules",
+      "status": 401,
+      "ms": 749.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/data-quality/rules",
+      "status": 401,
+      "ms": 750.6,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/data-quality/reports/{record_id}",
+      "status": 401,
+      "ms": 751.1,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/data-quality/metrics",
+      "status": 401,
+      "ms": 747.2,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/graph",
+      "status": 401,
+      "ms": 750.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/graph/impact/{node_id}",
+      "status": 401,
+      "ms": 749.9,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/graph/export.json",
+      "status": 401,
+      "ms": 751.5,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/graph/export.svg",
+      "status": 401,
+      "ms": 748.4,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/health",
+      "status": 200,
+      "ms": 779.2,
+      "class": "OPEN-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/whoami",
+      "status": 401,
+      "ms": 720.3,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/admin/rate/{key}",
+      "status": 401,
+      "ms": 749.2,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/admin/rate/{key}/reset",
+      "status": 401,
+      "ms": 750.0,
+      "class": "GUARDED",
+      "expectation": "404"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/admin/flags",
+      "status": 401,
+      "ms": 750.4,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/admin/flags",
+      "status": 401,
+      "ms": 749.5,
+      "class": "GUARDED",
+      "expectation": "401"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/admin/flags/{name}",
+      "status": 401,
+      "ms": 749.5,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "DELETE",
+      "path": "/api/v1/admin/flags/{name}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/privacy/export",
+      "status": 401,
+      "ms": 750.8,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/privacy/delete",
+      "status": 401,
+      "ms": 749.4,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/privacy/tasks/{task_id}",
+      "status": 401,
+      "ms": 749.8,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "GET",
+      "path": "/api/v1/privacy/audit",
+      "status": 401,
+      "ms": 749.0,
+      "class": "GUARDED",
+      "expectation": "read"
+    },
+    {
+      "phase": "A",
+      "method": "POST",
+      "path": "/api/v1/models/{model_name}/infer",
+      "status": 401,
+      "ms": 752.6,
+      "class": "GUARDED",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues",
+      "status": 200,
+      "ms": 753.3,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues",
+      "status": 422,
+      "ms": 734.1,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/batch",
+      "status": 422,
+      "ms": 751.3,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/stream",
+      "status": 200,
+      "ms": 750.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}",
+      "status": 404,
+      "ms": 1549.2,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "PATCH",
+      "path": "/api/v1/issues/{issue_id}",
+      "status": 422,
+      "ms": 11.0,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/issues/{issue_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/component",
+      "status": 404,
+      "ms": 751.7,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/deployments",
+      "status": 200,
+      "ms": 1118.8,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/close",
+      "status": 422,
+      "ms": 379.5,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/resolution",
+      "status": 404,
+      "ms": 752.5,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/link-github",
+      "status": 422,
+      "ms": 744.9,
+      "class": "VALIDATION",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/unlink-github",
+      "status": 404,
+      "ms": 754.4,
+      "class": "NOT-FOUND",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/github-sync",
+      "status": 404,
+      "ms": 749.8,
+      "class": "NOT-FOUND",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/github-sync/resolve",
+      "status": 422,
+      "ms": 747.0,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/mirror-root-cause",
+      "status": 404,
+      "ms": 757.6,
+      "class": "NOT-FOUND",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/mirror-impact",
+      "status": 404,
+      "ms": 748.1,
+      "class": "NOT-FOUND",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/reasoning",
+      "status": 404,
+      "ms": 748.7,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/reasoning",
+      "status": 422,
+      "ms": 746.6,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/comments",
+      "status": 404,
+      "ms": 751.8,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/comments",
+      "status": 422,
+      "ms": 747.2,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "PATCH",
+      "path": "/api/v1/issues/{issue_id}/manifest/todo",
+      "status": 422,
+      "ms": 749.8,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "PATCH",
+      "path": "/api/v1/issues/{issue_id}/manifest/files",
+      "status": 422,
+      "ms": 749.0,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "PATCH",
+      "path": "/api/v1/issues/{issue_id}/manifest/notes",
+      "status": 422,
+      "ms": 750.2,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/manifest",
+      "status": 404,
+      "ms": 755.8,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/agent/start",
+      "status": 422,
+      "ms": 744.1,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/agent/finish",
+      "status": 422,
+      "ms": 749.1,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/start-agent",
+      "status": 404,
+      "ms": 764.1,
+      "class": "NOT-FOUND",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/stop-agent",
+      "status": 404,
+      "ms": 745.3,
+      "class": "NOT-FOUND",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/agent/heartbeat",
+      "status": 404,
+      "ms": 757.6,
+      "class": "NOT-FOUND",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/agent/status",
+      "status": 404,
+      "ms": 734.8,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/dependencies",
+      "status": 404,
+      "ms": 753.4,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/dependencies",
+      "status": 422,
+      "ms": 745.5,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/dependencies/bulk",
+      "status": 422,
+      "ms": 748.9,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/issues/{issue_id}/dependencies/{depends_on_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/dependents",
+      "status": 404,
+      "ms": 750.9,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/dependency-chain",
+      "status": 404,
+      "ms": 749.7,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/blocked-issues",
+      "status": 200,
+      "ms": 1004.2,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/dependencies/blocked",
+      "status": 200,
+      "ms": 496.2,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/workable-issues",
+      "status": 200,
+      "ms": 1026.0,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/affects",
+      "status": 404,
+      "ms": 474.4,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/affects",
+      "status": 422,
+      "ms": 747.3,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/issues/{issue_id}/affects",
+      "status": 422,
+      "ms": 756.6,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/code/symbols/{symbol_id}/issues",
+      "status": 200,
+      "ms": 1234.9,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/projects",
+      "status": 200,
+      "ms": 334.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/projects",
+      "status": 422,
+      "ms": 675.7,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/components",
+      "status": 200,
+      "ms": 763.6,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/components",
+      "status": 422,
+      "ms": 732.1,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/components/{component_id}",
+      "status": 404,
+      "ms": 839.2,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "PATCH",
+      "path": "/api/v1/components/{component_id}",
+      "status": 422,
+      "ms": 662.7,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/components/{component_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/components/{component_id}/dependencies",
+      "status": 404,
+      "ms": 750.6,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/components/{component_id}/dependencies",
+      "status": 422,
+      "ms": 747.3,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/components/{component_id}/dependents",
+      "status": 404,
+      "ms": 751.8,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1",
+      "status": 200,
+      "ms": 852.4,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1",
+      "status": 422,
+      "ms": 644.3,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/constraints/validate",
+      "status": 200,
+      "ms": 754.6,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/labels",
+      "status": 200,
+      "ms": 793.3,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/labels/sync",
+      "status": 503,
+      "ms": 773.9,
+      "class": "SERVER-ERROR",
+      "expectation": "action"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/analyze/root-cause",
+      "status": 422,
+      "ms": 680.0,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/analyze/link-test",
+      "status": 422,
+      "ms": 762.6,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/test-failures",
+      "status": 200,
+      "ms": 744.2,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/analyze/impact/{issue_id}",
+      "status": 400,
+      "ms": 749.2,
+      "class": "OTHER-400",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/analyze/code-impact",
+      "status": 422,
+      "ms": 739.5,
+      "class": "VALIDATION",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/analyze/component-impact/{component_id}",
+      "status": 400,
+      "ms": 811.6,
+      "class": "OTHER-400",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/graph/dependencies",
+      "status": 200,
+      "ms": 697.7,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/graph/{issue_id}/subgraph",
+      "status": 404,
+      "ms": 767.3,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/similarity/{issue_id}",
+      "status": 200,
+      "ms": 2263.4,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/projects/all",
+      "status": 200,
+      "ms": 85.5,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/projects/current",
+      "status": 200,
+      "ms": 731.7,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}",
+      "status": 200,
+      "ms": 795.0,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/projects/users",
+      "status": 422,
+      "ms": 652.3,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_name}/summary",
+      "status": 200,
+      "ms": 1189.9,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/projects/{project_id}/agents/{agent_id}",
+      "status": 200,
+      "ms": 595.5,
+      "class": "OK-2XX",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/projects/{project_id}/agents/{agent_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/projects/{project_id}/agents",
+      "status": 200,
+      "ms": 524.8,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/policies/validate",
+      "status": 422,
+      "ms": 684.7,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/policies/rules",
+      "status": 200,
+      "ms": 748.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/policies/component/{component_id}",
+      "status": 200,
+      "ms": 757.5,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/policies",
+      "status": 200,
+      "ms": 745.8,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/policies",
+      "status": 422,
+      "ms": 747.6,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/policies/{policy_id}",
+      "status": 404,
+      "ms": 781.8,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/policies/{policy_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/policies/dry-run",
+      "status": 422,
+      "ms": 718.1,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/policies/{policy_id}/link/project/{project_id}",
+      "status": 200,
+      "ms": 844.4,
+      "class": "OK-2XX",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/policies/{policy_id}/link/agent/{agent_id}",
+      "status": 200,
+      "ms": 746.7,
+      "class": "OK-2XX",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/policies/{policy_id}/link/component/{component_id}",
+      "status": 200,
+      "ms": 731.8,
+      "class": "OK-2XX",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/policies/project/{project_id}",
+      "status": 200,
+      "ms": 757.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/policies/agent/{agent_id}",
+      "status": 200,
+      "ms": 739.5,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/agents/profiles",
+      "status": 200,
+      "ms": 725.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/agents/profiles",
+      "status": 422,
+      "ms": 703.1,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/agents/profiles/{agent_id}",
+      "status": 404,
+      "ms": 769.7,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "PUT",
+      "path": "/api/v1/agents/profiles/{agent_id}",
+      "status": 422,
+      "ms": 733.3,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/agents/profiles/{agent_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/skills",
+      "status": 200,
+      "ms": 774.9,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/skills",
+      "status": 422,
+      "ms": 720.7,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/skills/{skill_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/tools",
+      "status": 200,
+      "ms": 769.6,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/agent-skills",
+      "status": 200,
+      "ms": 756.7,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/agent-skills",
+      "status": 422,
+      "ms": 722.1,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "PUT",
+      "path": "/api/v1/agent-skills/{skill_id}",
+      "status": 422,
+      "ms": 749.9,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/agent-skills/{skill_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/agent-skills/import",
+      "status": 422,
+      "ms": 762.6,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/agent-skills/import-url",
+      "status": 422,
+      "ms": 847.2,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/agents/register",
+      "status": 422,
+      "ms": 660.1,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/agents",
+      "status": 200,
+      "ms": 727.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/agents/{agent_id}",
+      "status": 404,
+      "ms": 750.9,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/agents/{agent_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/agents/{agent_id}/heartbeat",
+      "status": 422,
+      "ms": 750.1,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/agents/role/{role}",
+      "status": 200,
+      "ms": 749.3,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/agent/context/{issue_id}",
+      "status": 404,
+      "ms": 782.9,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/agent/similar/{issue_id}",
+      "status": 404,
+      "ms": 731.3,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/agents/{agent_id}/specialists/{component_id}",
+      "status": 200,
+      "ms": 1682.9,
+      "class": "OK-2XX",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/agents/{agent_id}/specialists/{component_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/agents/{agent_id}/specialists",
+      "status": 200,
+      "ms": 299.8,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/components/{component_id}/specialists",
+      "status": 200,
+      "ms": 612.7,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/agents/{agent_id}/runs",
+      "status": 404,
+      "ms": 615.3,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/agents/{agent_id}/runs",
+      "status": 422,
+      "ms": 731.6,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/runs/{run_id}/logs",
+      "status": 404,
+      "ms": 767.6,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/runs/{run_id}/logs",
+      "status": 422,
+      "ms": 731.4,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "PATCH",
+      "path": "/api/v1/runs/{run_id}",
+      "status": 422,
+      "ms": 751.0,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/runs/{run_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/workflows",
+      "status": 200,
+      "ms": 770.2,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/workflows",
+      "status": 422,
+      "ms": 729.5,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/workflows/{slug}",
+      "status": 404,
+      "ms": 767.2,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "PUT",
+      "path": "/api/v1/workflows/{slug}",
+      "status": 422,
+      "ms": 731.1,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/workflows/{slug}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/sync/status",
+      "status": 200,
+      "ms": 1457.3,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/sync/queue",
+      "status": 200,
+      "ms": 48.6,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/sync/force",
+      "status": 200,
+      "ms": 3769.6,
+      "class": "OK-2XX",
+      "expectation": "action"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/deployments",
+      "status": 200,
+      "ms": 153.3,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/deployments",
+      "status": 422,
+      "ms": 607.2,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/deployments/by-commit/{commit_sha}",
+      "status": 404,
+      "ms": 782.5,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/webhooks/test-failure",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/webhooks/github",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/webhooks/github/logs",
+      "status": 200,
+      "ms": 715.4,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/webhooks/github/test",
+      "status": 200,
+      "ms": 749.5,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/admin/reset",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/epics",
+      "status": 200,
+      "ms": 792.5,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/epics",
+      "status": 422,
+      "ms": 708.3,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/epics/{epic_id}",
+      "status": 404,
+      "ms": 783.6,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "PATCH",
+      "path": "/api/v1/epics/{epic_id}",
+      "status": 422,
+      "ms": 715.9,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/epics/{epic_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/epics/{epic_id}/issues",
+      "status": 422,
+      "ms": 750.3,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/objectives",
+      "status": 200,
+      "ms": 854.6,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/objectives",
+      "status": 422,
+      "ms": 647.5,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/objectives/{objective_id}",
+      "status": 404,
+      "ms": 789.6,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "PATCH",
+      "path": "/api/v1/objectives/{objective_id}",
+      "status": 422,
+      "ms": 719.1,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/objectives/{objective_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/objectives/{objective_id}/epics",
+      "status": 422,
+      "ms": 754.0,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/cost-per-component",
+      "status": 200,
+      "ms": 4362.4,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/cost-per-epic",
+      "status": 200,
+      "ms": 181.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/cost-per-project",
+      "status": 200,
+      "ms": 850.6,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/cost-summary",
+      "status": 200,
+      "ms": 609.6,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/ai/search-context",
+      "status": 422,
+      "ms": 617.8,
+      "class": "VALIDATION",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/ai/similar-issues/{issue_id}",
+      "status": 200,
+      "ms": 757.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/ai/issues/{issue_id}/embed",
+      "status": 503,
+      "ms": 744.4,
+      "class": "SERVER-ERROR",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/ai/search-similar-solutions",
+      "status": 422,
+      "ms": 749.2,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/ai/backfill-embeddings",
+      "status": 200,
+      "ms": 751.1,
+      "class": "OK-2XX",
+      "expectation": "action"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/code-graph/scan",
+      "status": 422,
+      "ms": 746.2,
+      "class": "VALIDATION",
+      "expectation": "action"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/code-graph/files",
+      "status": 200,
+      "ms": 796.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/code-graph/symbols",
+      "status": 200,
+      "ms": 703.6,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/code-graph/stats",
+      "status": 200,
+      "ms": 943.6,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/code-graph",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/code-graph/calls/{symbol_name}",
+      "status": 200,
+      "ms": 622.2,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/code-graph/depends/{file_path}",
+      "status": 200,
+      "ms": 746.7,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/code-graph/tests/{file_path}",
+      "status": 200,
+      "ms": 829.9,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/code-graph/issues/{file_path}",
+      "status": 200,
+      "ms": 737.3,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/code-graph/symbols/{symbol_id}/callers",
+      "status": 200,
+      "ms": 673.0,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/code-graph/symbols/{symbol_id}/callees",
+      "status": 200,
+      "ms": 752.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/code-graph/symbols/{symbol_id}",
+      "status": 200,
+      "ms": 758.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/code-graph/analyze/impact",
+      "status": 422,
+      "ms": 686.3,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/rag/index",
+      "status": 422,
+      "ms": 750.1,
+      "class": "VALIDATION",
+      "expectation": "action"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/rag/search",
+      "status": 422,
+      "ms": 749.3,
+      "class": "VALIDATION",
+      "expectation": "action"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/rag/stats",
+      "status": 200,
+      "ms": 815.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/rag/{source_type}/{source_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/rag",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/mcp/servers",
+      "status": 200,
+      "ms": 683.2,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/mcp/servers",
+      "status": 422,
+      "ms": 750.7,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/mcp/servers/{server_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/mcp/sessions",
+      "status": 200,
+      "ms": 751.4,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/mcp/sessions",
+      "status": 422,
+      "ms": 752.6,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/mcp/sessions/{session_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/mcp/tool-calls",
+      "status": 200,
+      "ms": 743.7,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/mcp/tool-calls",
+      "status": 422,
+      "ms": 749.5,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/mcp/tool-calls/stream",
+      "status": 200,
+      "ms": 756.6,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/mcp/tool-calls/{call_id}/rerun",
+      "status": 404,
+      "ms": 745.4,
+      "class": "NOT-FOUND",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/reasoning/log",
+      "status": 422,
+      "ms": 751.1,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/reasoning/issue/{issue_id}",
+      "status": 200,
+      "ms": 879.2,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/reasoning/issue/{issue_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/reasoning/history",
+      "status": 200,
+      "ms": 777.9,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/reasoning/timeline",
+      "status": 200,
+      "ms": 594.9,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/reasoning/{reasoning_id}/feedback",
+      "status": 200,
+      "ms": 807.7,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/reasoning/{reasoning_id}/feedback",
+      "status": 422,
+      "ms": 688.3,
+      "class": "VALIDATION",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/reasoning/stats",
+      "status": 200,
+      "ms": 788.6,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/reasoning",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/users",
+      "status": 200,
+      "ms": 736.0,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/users",
+      "status": 422,
+      "ms": 724.9,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/users/{user_id}",
+      "status": 404,
+      "ms": 775.9,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "PUT",
+      "path": "/api/v1/users/{user_id}",
+      "status": 422,
+      "ms": 727.4,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/users/{user_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/users/email/{email}",
+      "status": 404,
+      "ms": 771.2,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/users/{user_id}/skills",
+      "status": 404,
+      "ms": 739.0,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/users/{user_id}/skills",
+      "status": 422,
+      "ms": 735.5,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/users/{user_id}/skills/{skill_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/users/{user_id}/issues",
+      "status": 422,
+      "ms": 745.7,
+      "class": "VALIDATION",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/users/{user_id}/issue-stats",
+      "status": 404,
+      "ms": 777.5,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/commits",
+      "status": 200,
+      "ms": 1618.2,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/commits",
+      "status": 422,
+      "ms": 10.7,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/commits/stats",
+      "status": 200,
+      "ms": 1679.9,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/commits/{sha}",
+      "status": 404,
+      "ms": 333.1,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/commits/{sha}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/commits/{sha}/link/agent/{agent_id}",
+      "status": 200,
+      "ms": 533.5,
+      "class": "OK-2XX",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/commits/{sha}/link/user/{user_id}",
+      "status": 200,
+      "ms": 724.2,
+      "class": "OK-2XX",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/commits/{sha}/link/issue/{issue_id}",
+      "status": 200,
+      "ms": 758.8,
+      "class": "OK-2XX",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/commits/issue/{issue_id}",
+      "status": 200,
+      "ms": 714.7,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/commits/file/{file_path}",
+      "status": 200,
+      "ms": 777.8,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/secrets",
+      "status": 422,
+      "ms": 675.4,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/secrets/audit",
+      "status": 200,
+      "ms": 747.7,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/secrets/{name}",
+      "status": 404,
+      "ms": 753.3,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/secrets/{name}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/secrets/{name}/value",
+      "status": 404,
+      "ms": 748.9,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/secrets/rotate",
+      "status": 422,
+      "ms": 748.5,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/secrets/rotate/run",
+      "status": 422,
+      "ms": 749.3,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/admin/tenants",
+      "status": 200,
+      "ms": 751.7,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/admin/tenants",
+      "status": 422,
+      "ms": 741.5,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/admin/tenants/{tenant_id}",
+      "status": 404,
+      "ms": 753.4,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/admin/tenants/{tenant_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/agent-logs",
+      "status": 200,
+      "ms": 745.4,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/agent-logs",
+      "status": 422,
+      "ms": 748.5,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/agent-logs/stream",
+      "status": 200,
+      "ms": 751.9,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/presence",
+      "status": 200,
+      "ms": 771.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/presence",
+      "status": 422,
+      "ms": 726.7,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/issues/{issue_id}/presence/leave",
+      "status": 422,
+      "ms": 751.8,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/presence/stream",
+      "status": 200,
+      "ms": 749.4,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/issues/{issue_id}/github-sync/stream",
+      "status": 200,
+      "ms": 761.9,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 422,
+      "ms": 746.7,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/auth/refresh",
+      "status": 422,
+      "ms": 739.9,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "status": 422,
+      "ms": 747.6,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200,
+      "ms": 749.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/auth/oauth/{provider}/authorize",
+      "status": 404,
+      "ms": 750.4,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/auth/oauth/{provider}/callback",
+      "status": 422,
+      "ms": 749.1,
+      "class": "VALIDATION",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/auth/exchange",
+      "status": 422,
+      "ms": 753.3,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/auto-healing/runs",
+      "status": 200,
+      "ms": 747.7,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/auto-healing/runs",
+      "status": 422,
+      "ms": 753.8,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/auto-healing/runs/{run_id}",
+      "status": 404,
+      "ms": 748.4,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/auto-healing/runs/{run_id}/logs",
+      "status": 404,
+      "ms": 747.8,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/auto-healing/runs/{run_id}/patches",
+      "status": 404,
+      "ms": 748.6,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/auto-healing/runs/{run_id}/patches/{patch_id}",
+      "status": 404,
+      "ms": 750.6,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/auto-healing/runs/{run_id}/cancel",
+      "status": 404,
+      "ms": 766.7,
+      "class": "NOT-FOUND",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/auto-healing/runs/{run_id}/restart",
+      "status": 404,
+      "ms": 735.5,
+      "class": "NOT-FOUND",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/chat/conversations",
+      "status": 200,
+      "ms": 747.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/chat/conversations",
+      "status": 422,
+      "ms": 751.6,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/chat/conversations/{conversation_id}/messages",
+      "status": 400,
+      "ms": 747.0,
+      "class": "OTHER-400",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/chat/conversations/{conversation_id}/messages",
+      "status": 422,
+      "ms": 751.4,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/chat/conversations/{conversation_id}/pin",
+      "status": 400,
+      "ms": 748.0,
+      "class": "OTHER-400",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/chat/conversations/{conversation_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/setup/status",
+      "status": 200,
+      "ms": 774.5,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/setup/initialize",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/notifications",
+      "status": 200,
+      "ms": 727.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/notifications/stream",
+      "status": 200,
+      "ms": 752.4,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "PATCH",
+      "path": "/api/v1/notifications/{notification_id}/read",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/notifications/mark-all-read",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/notifications/{notification_id}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/notifications/clear-all",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/webhooks/receive",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/webhooks/subscriptions",
+      "status": 200,
+      "ms": 748.4,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/webhooks/subscriptions",
+      "status": 422,
+      "ms": 746.1,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/webhooks/subscriptions/{sid}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/registry/schemas",
+      "status": 422,
+      "ms": 750.0,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/registry/schemas/{name}/versions",
+      "status": 200,
+      "ms": 755.9,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/registry/schemas/{name}/{version}",
+      "status": 404,
+      "ms": 752.2,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/registry/datasets",
+      "status": 200,
+      "ms": 751.3,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/registry/datasets",
+      "status": 422,
+      "ms": 741.4,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/registry/datasets/{dataset_id}",
+      "status": 404,
+      "ms": 753.1,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/data-quality/rules",
+      "status": 200,
+      "ms": 750.5,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/data-quality/rules",
+      "status": 422,
+      "ms": 744.0,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/data-quality/reports/{record_id}",
+      "status": 200,
+      "ms": 756.2,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/data-quality/metrics",
+      "status": 200,
+      "ms": 750.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/graph",
+      "status": 200,
+      "ms": 1093.5,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/graph/impact/{node_id}",
+      "status": 404,
+      "ms": 427.5,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/graph/export.json",
+      "status": 200,
+      "ms": 745.2,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/graph/export.svg",
+      "status": 200,
+      "ms": 749.4,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/health",
+      "status": 200,
+      "ms": 750.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/whoami",
+      "status": 200,
+      "ms": 726.7,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/admin/rate/{key}",
+      "status": 403,
+      "ms": 758.7,
+      "class": "DENIED",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/admin/rate/{key}/reset",
+      "status": 403,
+      "ms": 748.4,
+      "class": "DENIED",
+      "expectation": "404"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/admin/flags",
+      "status": 200,
+      "ms": 758.1,
+      "class": "OK-2XX",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/admin/flags",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/admin/flags/{name}",
+      "status": 404,
+      "ms": 746.3,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "DELETE",
+      "path": "/api/v1/admin/flags/{name}",
+      "status": null,
+      "ms": 0,
+      "class": "SKIPPED-UNSAFE"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/privacy/export",
+      "status": 422,
+      "ms": 737.1,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/privacy/delete",
+      "status": 422,
+      "ms": 758.7,
+      "class": "VALIDATION",
+      "expectation": "422"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/privacy/tasks/{task_id}",
+      "status": 404,
+      "ms": 754.0,
+      "class": "NOT-FOUND",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "GET",
+      "path": "/api/v1/privacy/audit",
+      "status": 403,
+      "ms": 743.6,
+      "class": "DENIED",
+      "expectation": "read"
+    },
+    {
+      "phase": "B",
+      "method": "POST",
+      "path": "/api/v1/models/{model_name}/infer",
+      "status": 422,
+      "ms": 745.6,
+      "class": "VALIDATION",
+      "expectation": "422"
+    }
+  ]
+}

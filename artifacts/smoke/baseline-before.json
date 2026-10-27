@@ -1,0 +1,25 @@
+﻿{
+    "capturedAt":  "2026-10-26T21:50:37.7639772Z",
+    "sourceCommit":  "1b52b2c6502a95e78b1aa82091f3793bc3a684e5",
+    "apiImage":  "sha256:00d797fcdbd064c672efc21ef0433d1b16d5173024d0c21fda3d0321c117ae3a",
+    "neo4jNodes":  5,
+    "redisKeys":  118,
+    "postgresTableRows":  {
+                              "agent_runs":  0,
+                              "agent_run_logs":  0,
+                              "user_skills":  5,
+                              "tools":  14,
+                              "human_user":  2,
+                              "agent_user_skills":  1,
+                              "users_legacy":  0,
+                              "workflows":  5,
+                              "skills":  18,
+                              "agent_skills":  23,
+                              "agents_user":  1,
+                              "users":  3,
+                              "session_logs":  55,
+                              "roles":  3
+                          },
+    "mongoCollectionCount":  3,
+    "mongoDocumentCount":  0
+}

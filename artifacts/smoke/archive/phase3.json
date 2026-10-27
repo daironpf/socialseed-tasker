@@ -1,0 +1,155 @@
+{
+  "source": "phase3.json",
+  "captured_from": "temporary audit workspace; response bodies/details/URLs omitted",
+  "redacted": true,
+  "row_count": 23,
+  "status_counts": {
+    "400": 2,
+    "201": 2,
+    "200": 12,
+    "404": 5,
+    "0": 1,
+    "500": 1
+  },
+  "verdict_counts": {},
+  "results": [
+    {
+      "flow": "epics",
+      "step": "create",
+      "status": 400,
+      "ok": false
+    },
+    {
+      "flow": "objectives",
+      "step": "create",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "flow": "objectives",
+      "step": "read",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "objectives",
+      "step": "update",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "objectives",
+      "step": "delete",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "objectives",
+      "step": "read after delete",
+      "status": 404,
+      "ok": true
+    },
+    {
+      "flow": "secrets",
+      "step": "create",
+      "status": 400,
+      "ok": false
+    },
+    {
+      "flow": "secrets",
+      "step": "read",
+      "status": 404,
+      "ok": false
+    },
+    {
+      "flow": "secrets",
+      "step": "delete",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "secrets",
+      "step": "read after delete",
+      "status": 404,
+      "ok": true
+    },
+    {
+      "flow": "commits",
+      "step": "create for deploy",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "deployments",
+      "step": "create",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "deployments",
+      "step": "read",
+      "status": 404,
+      "ok": false
+    },
+    {
+      "flow": "deployments",
+      "step": "delete",
+      "status": 404,
+      "ok": false
+    },
+    {
+      "flow": "chat",
+      "step": "create peer user",
+      "status": 201,
+      "ok": true
+    },
+    {
+      "flow": "chat",
+      "step": "create conversation",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "chat",
+      "step": "list messages",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "chat",
+      "step": "send message",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "chat",
+      "step": "delete conversation",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "registry/schemas",
+      "step": "create",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "registry/schemas",
+      "step": "list versions",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "flow": "registry/schemas",
+      "step": "cleanup",
+      "status": 0,
+      "ok": true
+    },
+    {
+      "flow": "issues",
+      "step": "create (bug #593)",
+      "status": 500,
+      "ok": false
+    }
+  ]
+}

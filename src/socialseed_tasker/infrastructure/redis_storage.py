@@ -1,9 +1,11 @@
 from __future__ import annotations
+
 import os
-from typing import Optional
-from socialseed_tasker.application.ports import StoragePort
+
 from socialseed_tasker.application.exceptions import StorageError
+from socialseed_tasker.application.ports import StoragePort
 from socialseed_tasker.observability.tracing import get_tracer
+
 
 def _get_storage_tracer():
     return get_tracer("tasker.redis_storage")
@@ -15,7 +17,7 @@ except Exception:
     _REDIS_AVAILABLE = False
 
 class RedisStorage(StoragePort):
-    def __init__(self, url: Optional[str] = None) -> None:
+    def __init__(self, url: str | None = None) -> None:
         if not _REDIS_AVAILABLE:
             raise StorageError("redis package not available")
         self._url = url or os.getenv("TASKER_REDIS_URL", "redis://localhost:6379/0")
@@ -25,7 +27,7 @@ class RedisStorage(StoragePort):
         except Exception as exc:
             raise StorageError(f"Failed to connect to Redis at {self._url}: {exc}") from exc
 
-    def put(self, key: str, value: bytes, ttl_seconds: Optional[int] = None) -> None:
+    def put(self, key: str, value: bytes, ttl_seconds: int | None = None) -> None:
         with _get_storage_tracer().start_as_current_span("redis.put"):
             try:
                 if ttl_seconds is None:
@@ -35,7 +37,7 @@ class RedisStorage(StoragePort):
             except Exception as exc:
                 raise StorageError(f"Redis put failed for key {key}: {exc}") from exc
 
-    def get(self, key: str) -> Optional[bytes]:
+    def get(self, key: str) -> bytes | None:
         with _get_storage_tracer().start_as_current_span("redis.get"):
             try:
                 v = self._client.get(key)
@@ -49,3 +51,13 @@ class RedisStorage(StoragePort):
                 self._client.delete(key)
             except Exception as exc:
                 raise StorageError(f"Redis delete failed for key {key}: {exc}") from exc
+
+    def list_keys(self) -> list[str]:
+        with _get_storage_tracer().start_as_current_span("redis.list_keys"):
+            try:
+                return [
+                    key.decode("utf-8") if isinstance(key, bytes) else str(key)
+                    for key in self._client.scan_iter()
+                ]
+            except Exception as exc:
+                raise StorageError(f"Redis key listing failed: {exc}") from exc
