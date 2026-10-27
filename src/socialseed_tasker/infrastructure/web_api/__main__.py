@@ -2,6 +2,7 @@
 
 import os
 from contextlib import suppress
+from typing import Any
 
 import uvicorn
 
@@ -36,7 +37,7 @@ def main() -> None:
     server.run()
 
 
-def _seed_demo_data(repository) -> None:
+def _seed_demo_data(repository: Any) -> None:
     """Populate the database with demo data if not already present."""
     existing = repository.list_components(project="demo-platform")
     if existing:
@@ -55,7 +56,7 @@ def _seed_demo_data(repository) -> None:
         {"name": "notification-service", "description": "Email, SMS, and push notification delivery"},
     ]
 
-    issues_data = [
+    issues_data: list[dict[str, Any]] = [
         {
             "title": "Implement rate limiting on API gateway",
             "component": "api-gateway",
@@ -131,7 +132,7 @@ def _seed_demo_data(repository) -> None:
 
     issue_map = {}
     for idata in issues_data:
-        issue = create_issue_action(
+        issue, _warnings = create_issue_action(
             repository,
             title=idata["title"],
             component_id=comp_map[idata["component"]],

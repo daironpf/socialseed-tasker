@@ -391,7 +391,7 @@ class CodeGraphRepository:
         direct_callers = self.get_direct_callers(symbol_id)
         callees = self.get_direct_callees(symbol_id)
 
-        result = {
+        result: dict[str, Any] = {
             "symbol": self.get_symbol_by_id(symbol_id),
             "direct_callers_count": len(direct_callers),
             "direct_callers": direct_callers,

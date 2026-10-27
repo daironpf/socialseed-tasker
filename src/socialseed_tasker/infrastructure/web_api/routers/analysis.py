@@ -95,6 +95,8 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     DependencyResponse,
     GitHubWebhookLogResponse,
     GitHubWebhookTestResponse,
+    GraphEdge,
+    GraphNode,
     ImpactAnalysisResponse,
     ImpactIssueSummary,
     IssueCreateRequest,
@@ -394,28 +396,23 @@ def get_full_dependency_graph(
     all_issues = repo.list_issues(project=project)
     components = {str(c.id): c.name for c in repo.list_components(project=project)}
 
-    nodes = []
-    edges = []
+    nodes: list[GraphNode] = []
+    edges: list[GraphEdge] = []
 
     for issue in all_issues:
         nodes.append(
-            {
-                "id": str(issue.id),
-                "title": issue.title,
-                "component": components.get(str(issue.component_id)),
-                "status": issue.status.value,
-                "priority": issue.priority.value,
-            }
+            GraphNode(
+                id=str(issue.id),
+                title=issue.title,
+                component=components.get(str(issue.component_id)),
+                status=issue.status.value,
+                priority=issue.priority.value,
+            )
         )
 
     for issue in all_issues:
         for dep_id in issue.dependencies:
-            edges.append(
-                {
-                    "from_node": str(issue.id),
-                    "to_node": str(dep_id),
-                }
-            )
+            edges.append(GraphEdge(from_node=str(issue.id), to_node=str(dep_id)))
 
     return APIResponse(
         data=DependencyGraphResponse(nodes=nodes, edges=edges),
@@ -440,8 +437,8 @@ def get_subgraph(
     if center_issue is None:
         raise IssueNotFoundError(issue_id)
 
-    nodes: dict[str, dict] = {}
-    edges: list[dict[str, str]] = []
+    nodes: dict[str, GraphNode] = {}
+    edges: list[GraphEdge] = []
 
     visited: set[str] = set()
     queue = deque([(issue_id, 0)])
@@ -456,34 +453,34 @@ def get_subgraph(
         if issue is None:
             continue
 
-        nodes[str(issue.id)] = {
-            "id": str(issue.id),
-            "title": issue.title,
-            "status": issue.status.value,
-            "priority": issue.priority.value,
-        }
+        nodes[str(issue.id)] = GraphNode(
+            id=str(issue.id),
+            title=issue.title,
+            status=issue.status.value,
+            priority=issue.priority.value,
+        )
 
         if current_id != issue_id:
-            edges.append({"from_node": current_id, "to_node": issue_id})
+            edges.append(GraphEdge(from_node=current_id, to_node=issue_id))
 
         if current_depth < depth:
             for dep_id in issue.dependencies:
                 dep_id_str = str(dep_id)
                 if dep_id_str not in visited:
-                    edges.append({"from_node": str(issue.id), "to_node": dep_id_str})
+                    edges.append(GraphEdge(from_node=str(issue.id), to_node=dep_id_str))
                     queue.append((dep_id_str, current_depth + 1))
 
             for dep in repo.get_dependents(current_id):
                 dep_id_str = str(dep.id)
                 if dep_id_str not in visited:
-                    edges.append({"from_node": dep_id_str, "to_node": str(issue.id)})
+                    edges.append(GraphEdge(from_node=dep_id_str, to_node=str(issue.id)))
                     queue.append((dep_id_str, current_depth + 1))
 
     components = {str(c.id): c.name for c in repo.list_components()}
     for node_id, node_data in nodes.items():
         issue = repo.get_issue(node_id)
         if issue:
-            node_data["component"] = components.get(str(issue.component_id))
+            node_data.component = components.get(str(issue.component_id))
 
     return APIResponse(
         data=DependencyGraphResponse(nodes=list(nodes.values()), edges=edges),

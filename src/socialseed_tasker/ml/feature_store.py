@@ -24,7 +24,12 @@ class FeatureStore:
         raw = self.storage.get(self._key(key))
         if not raw:
             return None
-        return json.loads(raw.decode("utf-8"))
+        features: object = json.loads(raw.decode("utf-8"))
+        if not isinstance(features, dict) or not all(
+            isinstance(name, str) for name in features
+        ):
+            raise ValueError("stored features must be a JSON object with string keys")
+        return {name: features[name] for name in features}
 
     def list_keys(self, prefix: str = "") -> list[str]:
         if not hasattr(self.storage, "list_keys"):

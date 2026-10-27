@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+from typing import Any
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
@@ -10,14 +11,14 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter, Sp
 
 
 class _InMemoryExporter(SpanExporter):
-    def __init__(self):
+    def __init__(self) -> None:
         self.spans: list[ReadableSpan] = []
 
-    def export(self, spans):
+    def export(self, spans: Any) -> Any:
         self.spans.extend(spans)
         return SpanExportResult.SUCCESS
 
-    def shutdown(self):
+    def shutdown(self) -> Any:
         pass
 
     def get_finished_spans(self) -> list[ReadableSpan]:
@@ -25,12 +26,12 @@ class _InMemoryExporter(SpanExporter):
 
 
 class InMemoryTracing:
-    def __init__(self):
+    def __init__(self) -> None:
         self.exporter = _InMemoryExporter()
         self.processor = SimpleSpanProcessor(self.exporter)
-        self._previous_provider = None
+        self._previous_provider: object | None = None
 
-    def start(self):
+    def start(self) -> Any:
         existing = trace.get_tracer_provider()
         if isinstance(existing, TracerProvider):
             existing.add_span_processor(self.processor)
@@ -41,8 +42,8 @@ class InMemoryTracing:
             with contextlib.suppress(Exception):
                 trace.set_tracer_provider(provider)
 
-    def stop(self):
+    def stop(self) -> Any:
         pass
 
-    def get_finished_spans(self) -> list:
+    def get_finished_spans(self) -> list[Any]:
         return self.exporter.get_finished_spans()

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import suppress
+from typing import TypedDict
 
 import typer
 from rich.panel import Panel
@@ -14,6 +15,15 @@ from socialseed_tasker.domain.entities import Component
 
 seed_app = typer.Typer(help="Seed demo data for first-time users")
 
+
+class SeedIssue(TypedDict):
+    title: str
+    component: str
+    description: str
+    priority: str
+    labels: list[str]
+
+
 _SEED_COMPONENTS = [
     {"name": "api-gateway", "description": "Central API gateway routing requests to microservices"},
     {"name": "user-service", "description": "User authentication, profiles, and permissions"},
@@ -21,7 +31,7 @@ _SEED_COMPONENTS = [
     {"name": "notification-service", "description": "Email, SMS, and push notification delivery"},
 ]
 
-_SEED_ISSUES = [
+_SEED_ISSUES: list[SeedIssue] = [
     {
         "title": "Implement rate limiting on API gateway",
         "component": "api-gateway",

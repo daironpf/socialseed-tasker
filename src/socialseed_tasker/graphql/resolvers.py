@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, TypeVar, cast
 
 from ariadne import MutationType, QueryType, SubscriptionType
 
@@ -13,9 +14,15 @@ query = QueryType()
 mutation = MutationType()
 subscription = SubscriptionType()
 
+Resolver = TypeVar("Resolver", bound=Callable[..., Any])
 
-@query.field("issue")
-def resolve_issue(_, info, id: str):
+
+def _field(registry: Any, name: str) -> Callable[[Resolver], Resolver]:
+    return cast(Callable[[Resolver], Resolver], registry.field(name))
+
+
+@_field(query, "issue")
+def resolve_issue(_: Any, info: Any, id: str) -> Any:
     container = info.context["container"]
     user_id = info.context.get("user_id")
     if not container.rbac.has_permission(user_id, "read:context"):
@@ -23,8 +30,8 @@ def resolve_issue(_, info, id: str):
     return container.issue_repo.get(id)
 
 
-@query.field("issues")
-def resolve_issues(_, info):
+@_field(query, "issues")
+def resolve_issues(_: Any, info: Any) -> Any:
     container = info.context["container"]
     user_id = info.context.get("user_id")
     if not container.rbac.has_permission(user_id, "read:context"):
@@ -32,8 +39,8 @@ def resolve_issues(_, info):
     return container.issue_repo.list()
 
 
-@query.field("impact")
-def resolve_impact(_, info, issueId: str, maxDepth: int = 5):  # noqa: N803  # nombre de argumento del esquema GraphQL
+@_field(query, "impact")
+def resolve_impact(_: Any, info: Any, issueId: str, maxDepth: int = 5) -> Any:  # noqa: N803  # nombre de argumento del esquema GraphQL
     container = info.context["container"]
     user_id = info.context.get("user_id")
     if not container.rbac.has_permission(user_id, "read:impact"):
@@ -41,8 +48,8 @@ def resolve_impact(_, info, issueId: str, maxDepth: int = 5):  # noqa: N803  # n
     return container.application.calculate_impact(issueId, maxDepth, graph_repo=container.graph_repo, user_id=user_id)
 
 
-@query.field("agentContext")
-def resolve_agent_context(_, info, issueId: str, maxDepth: int = 3):  # noqa: N803  # nombre de argumento del esquema GraphQL
+@_field(query, "agentContext")
+def resolve_agent_context(_: Any, info: Any, issueId: str, maxDepth: int = 3) -> Any:  # noqa: N803  # nombre de argumento del esquema GraphQL
     container = info.context["container"]
     user_id = info.context.get("user_id")
     if not container.rbac.has_permission(user_id, "read:context"):
@@ -57,16 +64,16 @@ def resolve_agent_context(_, info, issueId: str, maxDepth: int = 3):  # noqa: N8
     return {"issueId": issueId, "context": ctx}
 
 
-@mutation.field("createIssue")
+@_field(mutation, "createIssue")
 def resolve_create_issue(
-    _,
-    info,
+    _: Any,
+    info: Any,
     id: str,
     title: str,
     description: str = "",
     status: str = "open",
-    metadata: dict[str, Any] = None,
-):
+    metadata: dict[str, Any] | None = None,
+) -> Any:
     container = info.context["container"]
     user_id = info.context.get("user_id")
     if not container.rbac.has_permission(user_id, "create:issue"):
@@ -84,8 +91,8 @@ def resolve_create_issue(
     return container.issue_repo.get(id)
 
 
-@mutation.field("addDependency")
-def resolve_add_dependency(_, info, **args):
+@_field(mutation, "addDependency")
+def resolve_add_dependency(_: Any, info: Any, **args: Any) -> Any:
     container = info.context["container"]
     user_id = info.context.get("user_id")
     if not container.rbac.has_permission(user_id, "add:dependency"):
@@ -100,8 +107,10 @@ def resolve_add_dependency(_, info, **args):
     return {"from": args["from"], "to": args["to"], "relation": args.get("relation", "DEPENDS_ON")}
 
 
-@mutation.field("triggerEvent")
-def resolve_trigger_event(_, info, type: str, payload: dict[str, Any] = None):
+@_field(mutation, "triggerEvent")
+def resolve_trigger_event(
+    _: Any, info: Any, type: str, payload: dict[str, Any] | None = None
+) -> Any:
     container = info.context["container"]
     user_id = info.context.get("user_id")
     if not container.rbac.has_permission(user_id, "admin"):
@@ -117,12 +126,12 @@ def resolve_trigger_event(_, info, type: str, payload: dict[str, Any] = None):
     return True
 
 
-@subscription.source("issueEvents")
-def source_issue_events(obj, info, issueId=None):  # noqa: N803  # nombre de argumento del esquema GraphQL
+@_field(subscription, "issueEvents")
+def source_issue_events(obj: Any, info: Any, issueId: Any = None) -> Any:  # noqa: N803  # nombre de argumento del esquema GraphQL
     container = info.context["container"]
     queue = []
 
-    def handler(event):
+    def handler(event: Any) -> Any:
         try:
             if issueId is None or (event.payload.get("id") == issueId):
                 queue.append(event.to_json())
@@ -140,17 +149,17 @@ def source_issue_events(obj, info, issueId=None):  # noqa: N803  # nombre de arg
         container.events_bus.unsubscribe("*", handler)
 
 
-@subscription.field("issueEvents")
-def issue_events_resolver(event_json, info, issueId=None):  # noqa: N803  # nombre de argumento del esquema GraphQL
+@_field(subscription, "issueEvents")
+def issue_events_resolver(event_json: Any, info: Any, issueId: Any = None) -> Any:  # noqa: N803  # nombre de argumento del esquema GraphQL
     return __import__("json").loads(event_json)
 
 
-@subscription.source("webhookEvents")
-def source_webhook_events(obj, info):
+@_field(subscription, "webhookEvents")
+def source_webhook_events(obj: Any, info: Any) -> Any:
     container = info.context["container"]
     queue = []
 
-    def handler(event):
+    def handler(event: Any) -> Any:
         try:
             if event.type.startswith("webhook."):
                 queue.append(event.to_json())
@@ -168,6 +177,6 @@ def source_webhook_events(obj, info):
         container.events_bus.unsubscribe("*", handler)
 
 
-@subscription.field("webhookEvents")
-def webhook_events_resolver(event_json, info):
+@_field(subscription, "webhookEvents")
+def webhook_events_resolver(event_json: Any, info: Any) -> Any:
     return __import__("json").loads(event_json)

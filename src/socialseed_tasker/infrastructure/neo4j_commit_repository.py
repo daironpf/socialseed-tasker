@@ -18,16 +18,13 @@ def _now_iso() -> str:
 
 def _node_to_commit(node: dict[str, Any]) -> Commit:
     """Convert a Neo4j node to a domain Commit."""
+    timestamp = node.get("timestamp")
     return Commit(
         sha=node["sha"],
         message=node.get("message", ""),
         author_name=node.get("authorName") or node.get("author_name", ""),
         author_email=node.get("authorEmail") or node.get("author_email", ""),
-        timestamp=(
-            datetime.fromisoformat(node.get("timestamp"))
-            if node.get("timestamp")
-            else datetime.now(timezone.utc)
-        ),
+        timestamp=datetime.fromisoformat(timestamp) if isinstance(timestamp, str) else datetime.now(timezone.utc),
         is_ai_generated=node.get("isAiGenerated") or node.get("is_ai_generated", False),
         branch=node.get("branch", ""),
         additions=node.get("additions", 0),
@@ -42,7 +39,7 @@ class CommitRepository:
     def __init__(self, driver: Any) -> None:
         self._driver = driver
 
-    def _get_session(self):
+    def _get_session(self) -> Any:
         """Get Neo4j session."""
         if hasattr(self._driver, "driver"):
             return self._driver.driver.session(database=self._driver.database)

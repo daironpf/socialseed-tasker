@@ -10,7 +10,8 @@ from __future__ import annotations
 import contextlib
 import os
 import time
-from typing import Any
+from collections.abc import Callable, Mapping
+from typing import Any, TypeVar
 
 from neo4j.exceptions import Neo4jError, ServiceUnavailable
 
@@ -25,6 +26,7 @@ DEFAULT_NEO4J_USER = os.getenv("TASKER_NEO4J_USER", "neo4j")
 DEFAULT_NEO4J_PASSWORD = os.getenv("TASKER_NEO4J_PASSWORD", "neoSocial")
 DEFAULT_MAX_RETRIES = int(os.getenv("TASKER_NEO4J_MAX_RETRIES", "3"))
 DEFAULT_RETRY_BACKOFF = float(os.getenv("TASKER_NEO4J_RETRY_BACKOFF", "0.5"))
+T = TypeVar("T")
 
 
 class Neo4jGraphAdapter(GraphPort):
@@ -54,7 +56,7 @@ class Neo4jGraphAdapter(GraphPort):
 
     logger = get_logger("tasker.neo4j")
 
-    def _with_retry(self, fn, *args, **kwargs):
+    def _with_retry(self, fn: Callable[..., T], *args: Any, **kwargs: Any) -> T:
         last_exc = None
         for attempt in range(1, self._max_retries + 1):
             try:
@@ -71,7 +73,7 @@ class Neo4jGraphAdapter(GraphPort):
         with observe_operation("neo4j", "create_node"):
             self.logger.info("neo4j.create_node.start", extra={"label": label})
 
-            def _op():
+            def _op() -> str:
                 with self._driver.session() as session:
                     result = session.run(
                         f"CREATE (n:{label}) SET n += $props RETURN elementId(n) AS id",
@@ -91,7 +93,7 @@ class Neo4jGraphAdapter(GraphPort):
         with observe_operation("neo4j", "get_node"):
             self.logger.info("neo4j.get_node.start", extra={"node_id": node_id})
 
-            def _op():
+            def _op() -> NodeRecord | None:
                 with self._driver.session() as session:
                     result = session.run(
                         "MATCH (n) WHERE elementId(n) = $id RETURN labels(n) AS labels, properties(n) AS props",
@@ -109,10 +111,10 @@ class Neo4jGraphAdapter(GraphPort):
         with observe_operation("neo4j", "run_cypher"):
             self.logger.info("neo4j.run_cypher.start")
 
-            def _op():
+            def _op() -> QueryResult:
                 with self._driver.session() as session:
                     result = session.run(query, params or {})
-                    records = [{k: v for k, v in r.items()} for r in result]
+                    records: list[Mapping[str, Any]] = [dict(record) for record in result]
                     return QueryResult(records=records)
 
             return self._with_retry(_op)
@@ -122,12 +124,11 @@ class Neo4jGraphAdapter(GraphPort):
         with observe_operation("neo4j", "delete_node"):
             self.logger.info("neo4j.delete_node.start", extra={"node_id": node_id})
 
-            def _op():
+            def _op() -> None:
                 with self._driver.session() as session:
                     session.run("MATCH (n) WHERE elementId(n) = $id DETACH DELETE n", id=node_id)
-                    return None
 
-            return self._with_retry(_op)
+            self._with_retry(_op)
 
     def close(self) -> None:
         """Release Neo4j driver resources."""

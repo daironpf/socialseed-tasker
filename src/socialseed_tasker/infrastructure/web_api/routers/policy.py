@@ -147,7 +147,7 @@ policy_router = APIRouter()
 def validate_policy(
     body: PolicyValidationRequest,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-    request: Request = None,
+    request: Request,
 ) -> APIResponse[PolicyValidationResponse]:
     from uuid import UUID
 
@@ -213,13 +213,13 @@ def validate_policy(
 
 @policy_router.get(
     "/policies/rules",
-    response_model=APIResponse[list[dict]],
+    response_model=APIResponse[list[dict[Any, Any]]],
     summary="Get active policy rules",
     description="List all active architectural rules.",
 )
 def get_policy_rules(
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-) -> APIResponse[list[dict]]:
+) -> APIResponse[list[dict[Any, Any]]]:
     from socialseed_tasker.application.analyzer import ArchitecturalAnalyzer
 
     analyzer = ArchitecturalAnalyzer(repo)
@@ -242,14 +242,14 @@ def get_policy_rules(
 
 @policy_router.get(
     "/policies/component/{component_id}",
-    response_model=APIResponse[list[dict]],
+    response_model=APIResponse[list[dict[Any, Any]]],
     summary="Get policies for component",
     description="Get all policies that apply to a specific component.",
 )
 def get_policies_for_component(
     component_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-) -> APIResponse[list[dict]]:
+) -> APIResponse[list[dict[Any, Any]]]:
     from socialseed_tasker.application.analyzer import ArchitecturalAnalyzer
 
     analyzer = ArchitecturalAnalyzer(repo)
@@ -392,7 +392,7 @@ def _policy_to_response(p: Policy) -> PolicyResponse:
 )
 def list_policies(
     request: Request,
-    name: str = None,
+    name: str | None = None,
 ) -> APIResponse[list[PolicyResponse]]:
     from socialseed_tasker.infrastructure.neo4j_policy_repository import PolicyRepository
 
@@ -433,11 +433,11 @@ def get_policy(policy_id: str, request: Request) -> APIResponse[PolicyResponse]:
 
 @policy_router.delete(
     "/policies/{policy_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Delete a policy",
     description="Delete a policy by ID from Neo4j. Returns 404 if it does not exist.",
 )
-def delete_policy(policy_id: str, request: Request) -> APIResponse[dict]:
+def delete_policy(policy_id: str, request: Request) -> APIResponse[dict[Any, Any]]:
     from socialseed_tasker.infrastructure.neo4j_policy_repository import PolicyRepository
     from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
 

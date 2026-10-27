@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import time
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
 
@@ -19,7 +20,8 @@ _runner = ModelRunner(storage=_storage, feature_store=_feature_store)
 
 
 @app.post("/api/v1/models/{model_name}/infer")
-def api_model_infer(model_name: str, req: InferenceRequest):
+def api_model_infer(model_name: str, req: InferenceRequest) -> Any:
+    params = req.params or {}
     features = {}
     if req.key:
         f = _feature_store.get_features(req.key)
@@ -30,8 +32,8 @@ def api_model_infer(model_name: str, req: InferenceRequest):
         features = req.features
     else:
         raise HTTPException(status_code=400, detail="missing features or key")
-    seed = req.params.get("seed") or int(os.getenv("TASKER_ML_SEED", "42"))
-    res = _runner.predict(model_name, features, version=req.params.get("version"), seed=seed)
+    seed = params.get("seed") or int(os.getenv("TASKER_ML_SEED", "42"))
+    res = _runner.predict(model_name, features, version=params.get("version"), seed=seed)
     input_hash = _feature_store.compute_input_hash(features)
     trace = {
         "model": model_name,

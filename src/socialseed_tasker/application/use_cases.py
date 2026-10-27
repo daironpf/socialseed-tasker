@@ -76,7 +76,11 @@ def generate_agent_context(
 
                 files: list[str] = []
                 try:
-                    files = list(iobj.metadata.get("files", [])) if getattr(iobj, "metadata", None) else []
+                    metadata = getattr(iobj, "metadata", None)
+                    if isinstance(metadata, dict):
+                        file_values = metadata.get("files", [])
+                        if isinstance(file_values, list):
+                            files = [path for path in file_values if isinstance(path, str)]
                 except Exception:
                     files = []
 

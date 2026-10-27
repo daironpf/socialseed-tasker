@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
+from typing import Any
 
 from socialseed_tasker.auth.auth import load_auth_provider
 from socialseed_tasker.auth.oauth import SessionStore
@@ -37,34 +38,34 @@ import socialseed_tasker.application as application_module
 class Container:
     """Wiring container holding all adapter and repository instances."""
 
-    graph: object
-    parser: object
-    issue_repo: object
-    graph_repo: object
-    embedding: object | None
-    storage: object | None
-    logger: object
-    application: object
-    auth: object
-    rbac: object
-    events: object
-    events_bus: object
-    delivery_worker: object
-    session_store: object
-    rate_limiter: object
-    tenant_store: object
-    tenant_scoped_storage: object
-    tenancy_token_map: object
-    runtime_config: object
-    privacy_handlers: object
-    feature_store: object
-    ml_runner: object
-    ml_batch_worker: object
-    schema_registry: object
-    rule_registry: object
-    data_quality_pipeline: object
-    secrets_store: object
-    secrets_rotator: object
+    graph: Any
+    parser: Any
+    issue_repo: Any
+    graph_repo: Any
+    embedding: Any
+    storage: Any
+    logger: Any
+    application: Any
+    auth: Any
+    rbac: Any
+    events: Any
+    events_bus: Any
+    delivery_worker: Any
+    session_store: Any
+    rate_limiter: Any
+    tenant_store: Any
+    tenant_scoped_storage: Any
+    tenancy_token_map: Any
+    runtime_config: Any
+    privacy_handlers: Any
+    feature_store: Any
+    ml_runner: Any
+    ml_batch_worker: Any
+    schema_registry: Any
+    rule_registry: Any
+    data_quality_pipeline: Any
+    secrets_store: Any
+    secrets_rotator: Any
 
 
 def build_default_container() -> Container:
@@ -92,6 +93,7 @@ def build_default_container() -> Container:
     delivery_worker = DeliveryWorker(storage=storage)
     session_store = SessionStore(storage=storage)
     redis_url = get_redis_url()
+    rate_limiter: RedisRateLimiter | MemoryRateLimiter
     if redis_url and _REDIS_RATE_AVAILABLE:
         try:
             rate_limiter = RedisRateLimiter(
@@ -122,9 +124,9 @@ def build_default_container() -> Container:
 
     runtime_config = RuntimeConfig(storage=storage, poll_interval=int(os.getenv("TASKER_CONFIG_POLL_SECONDS", "5")))
     tenant_store = TenantStore(storage)
-    def tenant_scoped_storage(tenant_id):
+    def tenant_scoped_storage(tenant_id: Any) -> Any:
         return NamespacedStorage(storage, tenant_id=tenant_id)
-    tenancy_token_map = {}
+    tenancy_token_map: dict[str, str] = {}
 
     from socialseed_tasker.privacy import handlers as privacy_handlers_module
     privacy_handlers = privacy_handlers_module

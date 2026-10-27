@@ -153,7 +153,8 @@ class ApiHttpClient:
                 items = data
             else:
                 items = []
-            all_items.extend(items)
+            if isinstance(items, list):
+                all_items.extend(item for item in items if isinstance(item, dict))
             if isinstance(data, dict):
                 pagination = data.get("pagination", {})
                 if isinstance(pagination, dict):

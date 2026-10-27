@@ -42,6 +42,8 @@ class SchemaRule(BaseRule):
 class RangeRule(BaseRule):
     def validate(self, record: dict[str, Any]) -> dict[str, Any]:
         target = self.spec.get("target")
+        if not isinstance(target, str):
+            return {"ok": True, "message": None, "details": {}}
         cfg = self.spec.get("config", {})
         minv = cfg.get("min")
         maxv = cfg.get("max")
@@ -66,6 +68,8 @@ class UniqueRule(BaseRule):
 
     def validate(self, record: dict[str, Any]) -> dict[str, Any]:
         target = self.spec.get("target")
+        if not isinstance(target, str):
+            return {"ok": True, "message": None, "details": {}}
         val = record.get(target)
         if val is None:
             return {"ok": True, "message": None, "details": {}}
@@ -75,8 +79,10 @@ class UniqueRule(BaseRule):
             return {"ok": False, "message": "duplicate", "details": {"existing": existing.decode("utf-8")}}
         return {"ok": True, "message": None, "details": {}}
 
-    def mark_unique(self, record: dict[str, Any], record_id: str):
+    def mark_unique(self, record: dict[str, Any], record_id: str) -> Any:
         target = self.spec.get("target")
+        if not isinstance(target, str):
+            return
         val = record.get(target)
         if val is None:
             return
@@ -112,10 +118,10 @@ class RuleRegistry:
 
     def __init__(self, storage: StoragePort):
         self.storage = storage
-        self._rules: dict[str, dict] = {}
+        self._rules: dict[str, dict[Any, Any]] = {}
         self._load()
 
-    def _load(self):
+    def _load(self) -> Any:
         raw = self.storage.get(self.KEY)
         if raw:
             try:
@@ -125,13 +131,13 @@ class RuleRegistry:
         else:
             self._rules = {}
 
-    def _persist(self):
+    def _persist(self) -> Any:
         self.storage.put(self.KEY, json.dumps(self._rules).encode("utf-8"))
 
-    def list(self) -> builtins.list[dict]:
+    def list(self) -> builtins.list[dict[Any, Any]]:
         return list(self._rules.values())
 
-    def get(self, rule_id: str) -> dict | None:
+    def get(self, rule_id: str) -> dict[Any, Any] | None:
         return self._rules.get(rule_id)
 
     def add(self, spec: dict[str, Any]) -> None:

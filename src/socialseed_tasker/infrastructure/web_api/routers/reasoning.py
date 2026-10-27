@@ -168,7 +168,6 @@ async def log_reasoning(
         rejected_reasons=body.rejected_reasons or [],
         decision=body.decision,
         decision_type=decision_type_enum,
-        context=body.context or {},
     )
 
     repo = ReasoningRepository(driver)
@@ -263,7 +262,7 @@ async def add_reasoning_feedback(
     )
 
     feedback = ReasoningFeedback(
-        reasoning_id=reasoning_id,
+        reasoning_id=UUID(reasoning_id),
         is_approved=is_approved,
         feedback_text=feedback_text,
     )

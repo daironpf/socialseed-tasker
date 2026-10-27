@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 
-class Neo4jConnectionMode(str):
+class Neo4jConnectionMode(str, Enum):
     """Connection mode for Neo4j.
 
     Intent: Distinguish between local Docker instances and remote Aura DB
@@ -32,8 +33,8 @@ class Neo4jConnectionMode(str):
     production database environments.
     """
 
-    LOCAL: str = "local"
-    AURA: str = "aura"
+    LOCAL = "local"
+    AURA = "aura"
 
 
 @dataclass
@@ -60,7 +61,7 @@ class Neo4jConfig:
         """
         is_aura = uri.startswith(("bolt+s://", "neo4j+s://")) or "aura" in uri.lower()
         mode: Neo4jConnectionMode = Neo4jConnectionMode.AURA if is_aura else Neo4jConnectionMode.LOCAL
-        return cls(uri=uri, connection_mode=mode, **kwargs)  # type: ignore[arg-type]
+        return cls(uri=uri, connection_mode=mode, **kwargs)
 
 
 @dataclass
@@ -163,6 +164,8 @@ class Container:
             Neo4jTaskRepository,
         )
 
+        if driver is None:
+            raise RuntimeError("Neo4j driver is unavailable in direct mode")
         self._repository = Neo4jTaskRepository(driver)
         return self._repository
 
@@ -180,7 +183,7 @@ class Container:
         self._repository = ApiTaskRepository(client)
         return self._repository
 
-    def get_driver(self) -> Any:
+    def get_driver(self) -> Neo4jDriver | None:
         """Get or create the Neo4j driver.
 
         In ``api`` mode no local Neo4j driver is created — this method
@@ -231,7 +234,8 @@ class Container:
     def health_check(self) -> bool:
         """Verify the Neo4j database is accessible."""
         try:
-            return self._get_neo4j_driver().health_check()
+            driver = self.get_driver()
+            return driver.health_check() if driver is not None else False
         except Exception:
             return False
 

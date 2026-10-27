@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import Response
 
 USER_PER_MIN = int(os.getenv("TASKER_RATE_USER_PER_MIN", "120"))
 IP_PER_MIN = int(os.getenv("TASKER_RATE_IP_PER_MIN", "60"))
 BURST = int(os.getenv("TASKER_RATE_BURST", "60"))
 
 
-def _compute_retry_after(limiter, key: str) -> int:
+def _compute_retry_after(limiter: Any, key: str) -> int:
     state = getattr(limiter, "get_state", None)
     if state is None:
         return 1
@@ -29,7 +31,7 @@ def _compute_retry_after(limiter, key: str) -> int:
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         limiter = getattr(request.app.state, "rate_limiter", None)
         if limiter is None:
             return await call_next(request)

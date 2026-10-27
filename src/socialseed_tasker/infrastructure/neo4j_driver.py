@@ -84,20 +84,18 @@ class Neo4jDriver:
         - bolt+s:// or neo4j+s:// → encrypted (Aura DB)
         - bolt:// or neo4j:// → unencrypted (local Docker)
         """
-        driver_kwargs = {
-            "max_connection_lifetime": self._max_connection_lifetime,
-            "connection_timeout": self._connection_timeout,
-        }
-
-        if self._encrypted is not None:
-            driver_kwargs["encrypted"] = self._encrypted
-        elif self._uri.startswith(("bolt+s://", "neo4j+s://")):
-            driver_kwargs["encrypted"] = True
+        encrypted = (
+            self._encrypted
+            if self._encrypted is not None
+            else self._uri.startswith(("bolt+s://", "neo4j+s://"))
+        )
 
         self._driver = GraphDatabase.driver(
             self._uri,
             auth=(self._user, self._password),
-            **driver_kwargs,
+            max_connection_lifetime=self._max_connection_lifetime,
+            connection_timeout=self._connection_timeout,
+            encrypted=encrypted,
         )
         self._verify_connection()
         self._init_schema()
@@ -139,7 +137,7 @@ class Neo4jDriver:
     def _verify_connection(self) -> None:
         """Verify the driver can connect to the database."""
         try:
-            with self._driver.session(database=self._database) as session:
+            with self.driver.session(database=self._database) as session:
                 session.run("RETURN 1")
         except (Neo4jError, ServiceUnavailable) as exc:
             logger.debug("Neo4j connection failed (full details): %s", exc)
@@ -150,7 +148,7 @@ class Neo4jDriver:
 
     def _init_schema(self) -> None:
         """Create indexes and constraints if they don't exist."""
-        with self._driver.session(database=self._database) as session:
+        with self.driver.session(database=self._database) as session:
             for constraint in SCHEMA_CONSTRAINTS:
                 try:
                     session.run(constraint)

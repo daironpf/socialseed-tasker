@@ -12,6 +12,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Any
 from uuid import UUID, uuid4
 
 logger = logging.getLogger(__name__)
@@ -55,7 +56,7 @@ class SyncQueueItem:
     operation: SyncOperation = SyncOperation.CREATE
     entity_type: SyncEntityType = SyncEntityType.ISSUE
     entity_id: UUID = field(default_factory=uuid4)
-    payload: dict = field(default_factory=dict)
+    payload: dict[Any, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=_now)
     retry_count: int = 0
     status: SyncStatus = SyncStatus.PENDING
@@ -78,9 +79,9 @@ class OfflineFirstSyncEngine:
         self._batch_size = batch_size
         self._retry_delay = retry_delay
         self._is_online = True
-        self._github_adapter = None
+        self._github_adapter: Any | None = None
 
-    def set_github_adapter(self, adapter) -> None:
+    def set_github_adapter(self, adapter: Any) -> None:
         """Set the GitHub adapter for syncing."""
         self._github_adapter = adapter
 
@@ -115,7 +116,7 @@ class OfflineFirstSyncEngine:
         operation: str,
         entity_type: str,
         entity_id: str,
-        payload: dict,
+        payload: dict[Any, Any],
     ) -> SyncQueueItem:
         """Add an operation to the sync queue."""
         item = SyncQueueItem(
@@ -131,7 +132,7 @@ class OfflineFirstSyncEngine:
         """Get all pending queue items."""
         return [item for item in self._queue if item.status == SyncStatus.PENDING]
 
-    def get_status(self) -> dict:
+    def get_status(self) -> dict[Any, Any]:
         """Get sync status."""
         pending = sum(1 for i in self._queue if i.status == SyncStatus.PENDING)
         processing = sum(1 for i in self._queue if i.status == SyncStatus.PROCESSING)
@@ -145,7 +146,7 @@ class OfflineFirstSyncEngine:
             "total": len(self._queue),
         }
 
-    def process_queue(self) -> dict:
+    def process_queue(self) -> dict[Any, Any]:
         """Process the sync queue."""
         if not self._is_online:
             return {"processed": 0, "failed": 0, "message": "Offline"}
@@ -188,6 +189,8 @@ class OfflineFirstSyncEngine:
 
     def _process_issue(self, item: SyncQueueItem) -> None:
         """Process an issue sync item."""
+        if self._github_adapter is None:
+            return
         if item.operation == SyncOperation.CREATE:
             self._github_adapter.create_issue(
                 title=item.payload.get("title", ""),
@@ -210,7 +213,7 @@ class OfflineFirstSyncEngine:
         """Process a label sync item."""
         pass
 
-    def force_sync(self) -> dict:
+    def force_sync(self) -> dict[Any, Any]:
         """Force a sync attempt."""
         self.check_connectivity()
         return self.process_queue()

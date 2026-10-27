@@ -36,26 +36,29 @@ class DataQualityPipeline:
         if rid in self._rule_objs:
             return self._rule_objs[rid]
         kind = spec.get("kind")
+        rule: BaseRule
         if kind == "schema":
-            r = SchemaRule(spec, spec.get("config", {}).get("schema", {}))
+            rule = SchemaRule(spec, spec.get("config", {}).get("schema", {}))
         elif kind == "range":
-            r = RangeRule(spec)
+            rule = RangeRule(spec)
         elif kind == "unique":
-            r = UniqueRule(spec, self.storage)
+            rule = UniqueRule(spec, self.storage)
         elif kind == "custom":
             fn = spec.get("config", {}).get("fn")
-            r = CustomRule(spec, fn or (lambda rec: {"ok": True, "message": None, "details": {}}))
+            rule = CustomRule(spec, fn or (lambda rec: {"ok": True, "message": None, "details": {}}))
         elif kind == "not_empty":
-            r = NotEmptyRule(spec)
+            rule = NotEmptyRule(spec)
         else:
             logger.warning(
                 "data-quality: skipping rule '%s' with unsupported kind '%s'", rid, kind
             )
             return None
-        self._rule_objs[rid] = r
-        return r
+        self._rule_objs[rid] = rule
+        return rule
 
-    def run_pre_ingest(self, record: dict[str, Any], record_id: str = None) -> list[ValidationResult]:
+    def run_pre_ingest(
+        self, record: dict[str, Any], record_id: str | None = None
+    ) -> list[ValidationResult]:
         results = []
         for spec in self.registry.list():
             if not spec.get("enabled", True):
@@ -82,7 +85,9 @@ class DataQualityPipeline:
                 }))
         return results
 
-    def run_post_ingest(self, record: dict[str, Any], record_id: str = None) -> list[ValidationResult]:
+    def run_post_ingest(
+        self, record: dict[str, Any], record_id: str | None = None
+    ) -> list[ValidationResult]:
         results = []
         for spec in self.registry.list():
             if not spec.get("enabled", True):
@@ -104,12 +109,12 @@ class DataQualityPipeline:
         self._write_report(record_id or "unknown", results)
         return results
 
-    def _write_report(self, record_id: str, results: list[ValidationResult]):
+    def _write_report(self, record_id: str, results: list[ValidationResult]) -> Any:
         key = REPORT_KEY_PREFIX + str(record_id)
         arr = [r.model_dump() for r in results]
         self.storage.put(key, json.dumps(arr).encode("utf-8"))
 
-    def _inc_metric(self, rule_id: str, failures: int = 0):
+    def _inc_metric(self, rule_id: str, failures: int = 0) -> Any:
         raw = self.storage.get(METRICS_KEY) or b"{}"
         try:
             m = json.loads(raw.decode("utf-8")) if raw else {}

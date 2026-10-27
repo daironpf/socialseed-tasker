@@ -64,8 +64,8 @@ def _get_performance_targets() -> dict[str, float]:
     }
 
 
-@asynccontextmanager  # type: ignore[misc]
-async def lifespan(app: FastAPI):
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> Any:
     """Application lifecycle hook.
 
     Runs startup/shutdown logic. Initializes Neo4j indexes and handles
@@ -299,7 +299,7 @@ def create_app(
         return _master_key_matches(candidate)
 
     @app.middleware("http")
-    async def api_key_auth_middleware(request: Request, call_next):
+    async def api_key_auth_middleware(request: Request, call_next: Any) -> Any:
         # Skip auth if no API key configured or auth disabled in development
         if api_key is None or not auth_enabled:
             return await call_next(request)
@@ -348,7 +348,7 @@ def create_app(
     _rate_limit_store: dict[str, list[float]] = {}
 
     @app.middleware("http")
-    async def rate_limit_middleware(request: Request, call_next):
+    async def rate_limit_middleware(request: Request, call_next: Any) -> Any:
         from time import time
 
         if not rate_limit_enabled:
@@ -403,7 +403,7 @@ def create_app(
 
     # Performance monitoring middleware
     @app.middleware("http")
-    async def performance_monitoring_middleware(request: Request, call_next):
+    async def performance_monitoring_middleware(request: Request, call_next: Any) -> Any:
         if not ENABLE_PERF_LOGGING:
             return await call_next(request)
 
@@ -425,7 +425,7 @@ def create_app(
 
     # Reasoning Capture Middleware
     @app.middleware("http")
-    async def reasoning_capture_middleware(request: Request, call_next):
+    async def reasoning_capture_middleware(request: Request, call_next: Any) -> Any:
         response = await call_next(request)
 
         reasoning_header = request.headers.get("X-Agent-Reasoning")
@@ -766,15 +766,15 @@ def create_app(
     }
 
     @app.get("/auth/login", include_in_schema=False)
-    def auth_login():
+    def auth_login() -> Any:
         return JSONResponse(status_code=410, content=_sso_retired)
 
     @app.get("/auth/callback", include_in_schema=False)
-    def auth_callback():
+    def auth_callback() -> Any:
         return JSONResponse(status_code=410, content=_sso_retired)
 
     @app.post("/auth/logout", include_in_schema=False)
-    def auth_logout():
+    def auth_logout() -> Any:
         return JSONResponse(status_code=410, content=_sso_retired)
 
     @app.get("/api/v1/whoami")
@@ -803,7 +803,7 @@ def create_app(
 
     if os.getenv("TASKER_INTEGRATION") == "1":
         @app.post("/test/create_session")
-        async def test_create_session(request: Request):
+        async def test_create_session(request: Request) -> Any:
             import json as _json
 
             from socialseed_tasker.auth.oauth import SESSION_COOKIE_NAME, parse_id_token
@@ -854,7 +854,7 @@ def create_app(
     app.add_middleware(TenantMiddleware, container=_tenancy_container)
 
     # Admin rate-limit endpoints
-    def _require_rate_access(request: Request):
+    def _require_rate_access(request: Request) -> Any:
         if not auth_enabled:
             return True
         from socialseed_tasker.auth.auth import load_auth_provider
@@ -874,7 +874,7 @@ def create_app(
         return user_id is not None
 
     @app.get("/api/v1/admin/rate/{key}")
-    def admin_get_rate(key: str, request: Request):
+    def admin_get_rate(key: str, request: Request) -> Any:
         from fastapi import HTTPException
         if not _require_rate_access(request) or not getattr(app.state, "rate_limiter", None):
             raise HTTPException(status_code=403, detail="forbidden")
@@ -882,7 +882,7 @@ def create_app(
         return {"status": "ok", "key": key, "state": state}
 
     @app.post("/api/v1/admin/rate/{key}/reset")
-    def admin_reset_rate(key: str, request: Request):
+    def admin_reset_rate(key: str, request: Request) -> Any:
         from fastapi import HTTPException
         if not _require_rate_access(request) or not getattr(app.state, "rate_limiter", None):
             raise HTTPException(status_code=403, detail="forbidden")
@@ -890,7 +890,7 @@ def create_app(
         return {"status": "ok", "key": key}
 
     # Admin helpers
-    def _require_admin(request: Request):
+    def _require_admin(request: Request) -> Any:
         if not auth_enabled:
             return None
         from fastapi import HTTPException
@@ -962,7 +962,7 @@ def create_app(
 
     # Privacy / GDPR endpoints
     @app.post("/api/v1/privacy/export")
-    async def api_privacy_export(body: PrivacyExportRequest, request: Request):
+    async def api_privacy_export(body: PrivacyExportRequest, request: Request) -> Any:
         from fastapi import HTTPException
 
         from socialseed_tasker.auth.auth import load_auth_provider
@@ -983,7 +983,7 @@ def create_app(
         return {"status": "ok", "export_path": path}
 
     @app.post("/api/v1/privacy/delete")
-    async def api_privacy_delete(body: PrivacyDeleteRequest, request: Request):
+    async def api_privacy_delete(body: PrivacyDeleteRequest, request: Request) -> Any:
         import json as _json
         import time
 
@@ -1015,7 +1015,7 @@ def create_app(
         return {"status": "ok", "task": task, "result": res}
 
     @app.get("/api/v1/privacy/tasks/{task_id}")
-    def api_privacy_task(task_id: str, request: Request):
+    def api_privacy_task(task_id: str, request: Request) -> Any:
         import json as _json
 
         from fastapi import HTTPException
@@ -1030,7 +1030,7 @@ def create_app(
         raise HTTPException(status_code=404, detail="not found")
 
     @app.get("/api/v1/privacy/audit")
-    def api_privacy_audit(request: Request):
+    def api_privacy_audit(request: Request) -> Any:
         import json as _json
 
         from fastapi import HTTPException
@@ -1052,7 +1052,7 @@ def create_app(
 
     # ML inference endpoint
     @app.post("/api/v1/models/{model_name}/infer")
-    async def api_model_infer(model_name: str, req: InferenceRequest):
+    async def api_model_infer(model_name: str, req: InferenceRequest) -> Any:
         import json as _json
         import time as _time
 
@@ -1064,16 +1064,17 @@ def create_app(
         features = {}
         if req.key:
             f = fs.get_features(req.key)
-            if f is None:
+            if not isinstance(f, dict):
                 raise HTTPException(status_code=404, detail="feature key not found")
             features = f
         elif req.features:
             features = req.features
         else:
             raise HTTPException(status_code=400, detail="missing features or key")
-        seed = req.params.get("seed") or int(os.getenv("TASKER_ML_SEED", "42"))
+        params = req.params or {}
+        seed = params.get("seed") or int(os.getenv("TASKER_ML_SEED", "42"))
         runner = container.ml_runner
-        res = runner.predict(model_name, features, version=req.params.get("version"), seed=seed)
+        res = runner.predict(model_name, features, version=params.get("version"), seed=seed)
         input_hash = fs.compute_input_hash(features)
         trace = {
             "model": model_name,
@@ -1102,7 +1103,7 @@ def create_app(
         )
 
     # Provide config to routes for policy enforcement mode
-    if hasattr(repository, "_driver") and hasattr(repository._driver, "_config"):
+    if repository is not None and hasattr(repository, "_driver") and hasattr(repository._driver, "_config"):
         app.state.config = repository._driver._config
     else:
         from socialseed_tasker.application.container import AppConfig

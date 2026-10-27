@@ -56,7 +56,11 @@ def _ask(
 ) -> str:
     """Prompt the user, falling back to input() when stdin is not a TTY."""
     try:
-        return Prompt.ask(prompt, default=default, password=password, choices=choices)
+        if default is None:
+            return Prompt.ask(prompt, password=password, choices=choices)
+        return Prompt.ask(
+            prompt, default=default, password=password, choices=choices
+        )
     except (EOFError, KeyboardInterrupt):
         if default is not None:
             return default

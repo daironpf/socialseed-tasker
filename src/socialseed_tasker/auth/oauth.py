@@ -22,15 +22,15 @@ SESSION_COOKIE_NAME = os.getenv("TASKER_SESSION_COOKIE", "TASKER_SESSION")
 SESSION_TTL = int(os.getenv("TASKER_SESSION_TTL", "3600"))
 
 
-def _auth_endpoint():
+def _auth_endpoint() -> str:
     return f"{KEYCLOAK_BASE}/realms/{REALM}/protocol/openid-connect/auth"
 
 
-def _token_endpoint():
+def _token_endpoint() -> str:
     return f"{KEYCLOAK_BASE}/realms/{REALM}/protocol/openid-connect/token"
 
 
-def _logout_endpoint():
+def _logout_endpoint() -> str:
     return f"{KEYCLOAK_BASE}/realms/{REALM}/protocol/openid-connect/logout"
 
 
@@ -55,7 +55,12 @@ class SessionStore:
         if not raw:
             return None
         try:
-            return json.loads(raw.decode("utf-8"))
+            session: object = json.loads(raw.decode("utf-8"))
+            if isinstance(session, dict) and all(
+                isinstance(key, str) for key in session
+            ):
+                return {key: session[key] for key in session}
+            return None
         except Exception:
             return None
 
@@ -84,7 +89,12 @@ def exchange_code_for_tokens(code: str, redirect_uri: str) -> dict[str, Any]:
     }
     r = requests.post(_token_endpoint(), data=data, timeout=5)
     r.raise_for_status()
-    return r.json()
+    payload: object = r.json()
+    if not isinstance(payload, dict) or not all(
+        isinstance(key, str) for key in payload
+    ):
+        raise ValueError("token endpoint returned an invalid JSON object")
+    return {key: payload[key] for key in payload}
 
 
 def refresh_tokens(refresh_token: str) -> dict[str, Any]:
@@ -96,7 +106,12 @@ def refresh_tokens(refresh_token: str) -> dict[str, Any]:
     }
     r = requests.post(_token_endpoint(), data=data, timeout=5)
     r.raise_for_status()
-    return r.json()
+    payload: object = r.json()
+    if not isinstance(payload, dict) or not all(
+        isinstance(key, str) for key in payload
+    ):
+        raise ValueError("token endpoint returned an invalid JSON object")
+    return {key: payload[key] for key in payload}
 
 
 def parse_id_token(id_token: str) -> dict[str, Any]:
@@ -106,7 +121,12 @@ def parse_id_token(id_token: str) -> dict[str, Any]:
             return {}
         payload = parts[1] + "=="
         decoded = base64.urlsafe_b64decode(payload.encode("utf-8"))
-        return json.loads(decoded.decode("utf-8"))
+        claims: object = json.loads(decoded.decode("utf-8"))
+        if isinstance(claims, dict) and all(
+            isinstance(key, str) for key in claims
+        ):
+            return {key: claims[key] for key in claims}
+        return {}
     except Exception:
         return {}
 

@@ -5,7 +5,7 @@ import time
 from typing import Any
 
 try:
-    import redis  # type: ignore
+    import redis
     _REDIS_AVAILABLE = True
 except Exception:
     _REDIS_AVAILABLE = False
@@ -38,7 +38,11 @@ class RedisRateLimiter:
     def __init__(self, redis_url: str | None = None, rate_per_min: int = 60, burst: int = 20):
         if not _REDIS_AVAILABLE:
             raise RuntimeError("redis package not available")
-        self._url = redis_url or os.getenv("TASKER_REDIS_URL", "redis://localhost:6379/0")
+        self._url: str = (
+            redis_url
+            if redis_url is not None
+            else os.getenv("TASKER_REDIS_URL", "redis://localhost:6379/0")
+        )
         self._client = redis.from_url(self._url)
         self.rate_per_min = rate_per_min
         self.burst = burst

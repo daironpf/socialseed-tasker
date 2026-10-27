@@ -1,18 +1,23 @@
 # src/socialseed_tasker/tenancy/middleware.py
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import Response
 
 from socialseed_tasker.tenancy.context import TenantContext
 
 
 class TenantMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, container):
+    def __init__(self, app: Any, container: Any) -> None:
         super().__init__(app)
         self.container = container
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         tenant_id = None
         tenant_id = request.headers.get("x-tenant-id")
         if not tenant_id:

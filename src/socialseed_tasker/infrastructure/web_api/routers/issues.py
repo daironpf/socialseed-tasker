@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from socialseed_tasker.application.actions import (
     CircularDependencyError,
@@ -172,7 +172,7 @@ def create_issue(
     body: IssueCreateRequest,
     request: Request,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-) -> APIResponse[IssueResponse]:
+) -> APIResponse[IssueResponse] | JSONResponse:
     """Create a new issue.
 
     Creates a new issue linked to a component. The issue title is validated
@@ -244,7 +244,6 @@ def create_issue(
         logger.exception("data quality pre-ingest failed; creating issue without the dq gate")
         _dq_pre = []
     if any(not r.ok for r in _dq_pre):
-        from fastapi.responses import JSONResponse
         return JSONResponse(
             status_code=400,
             content={"status": "error", "error": "data_quality_failed", "details": [r.model_dump() for r in _dq_pre]},
@@ -378,7 +377,7 @@ def list_issues(
     limit: int = Query(50, ge=1, le=100, description="Items per page (default: 50, max: 100)"),
     assignee: str | None = Query(None, description="Filter by assigned user id (PG uid)"),
     created_by: str | None = Query(None, description="Filter by creating user id (PG uid)"),
-):
+) -> Any:
     comp = component or component_id
     status_list = [s.strip() for s in status.split(",") if s.strip()] if status else []
     all_issues = repo.list_issues(component_id=comp, statuses=status_list, project=project)
@@ -431,7 +430,7 @@ async def stream_issue_updates(request: Request) -> StreamingResponse:
 def get_issue(
     issue_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     """Get a single issue by ID.
 
     Retrieves full details of an issue including dependencies, blocks,
@@ -476,7 +475,7 @@ def get_issue(
 
 @issues_router.get(
     "/issues/{issue_id}/component",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Get issue's component via relationship",
     description="Get the Component that this Issue belongs to, following the BELONGS_TO relationship.",
     responses={404: {"description": "Issue or Component not found"}},
@@ -484,7 +483,7 @@ def get_issue(
 def get_issue_component(
     issue_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     issue = repo.get_issue(str(issue_id))
     if issue is None:
         raise IssueNotFoundError(issue_id)
@@ -499,14 +498,14 @@ def get_issue_component(
 
 @issues_router.get(
     "/issues/{issue_id}/deployments",
-    response_model=APIResponse[list],
+    response_model=APIResponse[list[Any]],
     summary="Get deployments for an issue",
     description="Get all deployments where this issue was released.",
 )
 def get_issue_deployments(
     issue_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-) -> APIResponse[list]:
+) -> APIResponse[list[Any]]:
     deployments = repo.get_issue_deployments(issue_id)
     return APIResponse(data=deployments, meta=Meta(request_id=None))
 
@@ -526,7 +525,7 @@ def update_issue(
     body: IssueUpdateRequest,
     request: Request,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     """Update an issue with partial field updates.
 
     Applies partial updates to an existing issue. Only fields included in the
@@ -626,7 +625,7 @@ def update_issue(
 def delete_issue(
     issue_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> None:
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
@@ -651,7 +650,7 @@ def close_issue(
     commit_sha: str | None = Body(None, description="Git commit SHA that resolved this issue"),
     resolution: str = Body("implemented", description="Resolution type: implemented, duplicate, wontfix, etc."),
     force: bool = Query(False, description="Force close even with policy violations"),
-):
+) -> Any:
     from socialseed_tasker.application.analyzer import ArchitecturalAnalyzer
 
     issue = repo.get_issue(issue_id)
@@ -707,14 +706,14 @@ def close_issue(
 
 @issues_router.get(
     "/issues/{issue_id}/resolution",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Get issue resolution",
     description="Get the commit SHA and resolution details that closed this issue.",
 )
 def get_issue_resolution(
     issue_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
@@ -861,14 +860,14 @@ async def resolve_github_sync_conflict(
 
 @issues_router.post(
     "/issues/{issue_id}/mirror-root-cause",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Mirror root cause analysis to GitHub",
     description="Post root cause analysis as a comment on the linked GitHub issue.",
 )
 def mirror_root_cause(
     issue_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     from socialseed_tasker.infrastructure.github_mirror import GitHubMirroringService
 
     issue = repo.get_issue(issue_id)
@@ -880,11 +879,16 @@ def mirror_root_cause(
 
         raise HTTPException(status_code=400, detail="Issue not linked to GitHub")
 
-    from socialseed_tasker.application.analyzer import ArchitecturalAnalyzer
-
-    analyzer = ArchitecturalAnalyzer(repo)
-
-    causal_links = analyzer.analyze_root_cause_issues([issue])
+    analyzer = RootCauseAnalyzer(repo)
+    test_failure = TestFailure(
+        test_id=str(issue.id),
+        test_name=issue.title,
+        error_message=issue.description,
+        component=str(issue.component_id),
+        labels=issue.labels,
+    )
+    closed_issues = repo.list_issues(statuses=[IssueStatus.CLOSED.value])
+    causal_links = analyzer.find_root_cause(test_failure, closed_issues)
 
     if not causal_links:
         return APIResponse(
@@ -910,14 +914,14 @@ def mirror_root_cause(
 
 @issues_router.post(
     "/issues/{issue_id}/mirror-impact",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Mirror impact analysis to GitHub",
     description="Post impact analysis as a comment on the linked GitHub issue.",
 )
 def mirror_impact(
     issue_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     from socialseed_tasker.infrastructure.github_mirror import GitHubMirroringService
 
     issue = repo.get_issue(issue_id)
@@ -929,10 +933,7 @@ def mirror_impact(
 
         raise HTTPException(status_code=400, detail="Issue not linked to GitHub")
 
-    from socialseed_tasker.application.analyzer import ArchitecturalAnalyzer
-
-    analyzer = ArchitecturalAnalyzer(repo)
-    analysis = analyzer.analyze_impact(issue.id)
+    analysis = RootCauseAnalyzer(repo).analyze_impact(str(issue.id))
 
     analysis_data = {
         "directly_affected": [{"id": str(i.id), "title": i.title} for i in analysis.directly_affected],
@@ -954,7 +955,7 @@ def mirror_impact(
 
 @issues_router.post(
     "/issues/{issue_id}/reasoning",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Add reasoning log entry",
     description=(
         "Add a reasoning log entry to an issue. "
@@ -969,7 +970,7 @@ def add_reasoning_log(
     body: ReasoningLogEntryRequest,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
     neo4j_driver: Annotated[Any, Depends(get_code_graph_driver)],
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
@@ -985,7 +986,7 @@ def add_reasoning_log(
             reasoning = ReasoningNodeEntity(
                 thought=body.reasoning,
                 confidence=0.5,
-                decisionType=(
+                decision_type=(
                     DecisionType(body.context)
                     if body.context in [e.value for e in DecisionType]
                     else DecisionType.UNKNOWN
@@ -1410,6 +1411,8 @@ def agent_heartbeat(
 
         repo.update_issue(issue_id, {"locked_until": locked_until.isoformat()})
         updated_issue = repo.get_issue(issue_id)
+        if updated_issue is None:
+            raise IssueNotFoundError(issue_id)
         return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))

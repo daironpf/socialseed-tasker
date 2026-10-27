@@ -8,6 +8,7 @@ inherit the Protocol directly.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from socialseed_tasker.application.ports import (
@@ -41,7 +42,10 @@ class GraphShim:
                 props=properties,
             )
             record = result.single()
-            return record["id"] if record else ""
+            if record is None:
+                return ""
+            node_id = record.get("id")
+            return node_id if isinstance(node_id, str) else ""
 
     def get_node(self, node_id: str) -> NodeRecord | None:
         driver = self._driver.driver
@@ -64,7 +68,10 @@ class GraphShim:
         driver = self._driver.driver
         with driver.session(database=self._driver.database) as session:
             result = session.run(query, **(params or {}))
-            records = [dict(r) for r in result]
+            records: list[Mapping[str, Any]] = [
+                {str(key): value for key, value in dict(record).items()}
+                for record in result
+            ]
             return QueryResult(records=records)
 
     def delete_node(self, node_id: str) -> None:
@@ -91,13 +98,18 @@ class ParserShim:
 
     def extract_symbols(self, ast: dict[str, Any]) -> list[dict[str, Any]]:
         if hasattr(self._parser, "extract_symbols"):
-            return self._parser.extract_symbols(ast)  # type: ignore[return-value]
+            symbols = self._parser.extract_symbols(ast)
+            if isinstance(symbols, list):
+                return [symbol for symbol in symbols if isinstance(symbol, dict)]
+            return []
         symbols = ast.get("body", [])
         return [s for s in symbols if isinstance(s, dict)]
 
     def extract_imports(self, ast: dict[str, Any]) -> list[str]:
         if hasattr(self._parser, "extract_imports"):
-            return self._parser.extract_imports(ast)  # type: ignore[return-value]
+            imports = self._parser.extract_imports(ast)
+            if isinstance(imports, list):
+                return [item for item in imports if isinstance(item, str)]
         return []
 
 
@@ -113,17 +125,22 @@ class GitShim:
 
     def list_changed_files(self, ref: str) -> list[str]:
         if hasattr(self._adapter, "list_changed_files"):
-            return self._adapter.list_changed_files(ref)  # type: ignore[return-value]
+            files = self._adapter.list_changed_files(ref)
+            if isinstance(files, list):
+                return [path for path in files if isinstance(path, str)]
         return []
 
     def read_file_at_ref(self, path: str, ref: str) -> str:
         if hasattr(self._adapter, "read_file_at_ref"):
-            return self._adapter.read_file_at_ref(path, ref)  # type: ignore[return-value]
+            content = self._adapter.read_file_at_ref(path, ref)
+            return content if isinstance(content, str) else ""
         return ""
 
     def current_branch(self) -> str:
         if hasattr(self._adapter, "current_branch"):
-            return self._adapter.current_branch()  # type: ignore[return-value]
+            branch = self._adapter.current_branch()
+            if isinstance(branch, str):
+                return branch
         import os
         return os.environ.get("GIT_BRANCH", "main")
 
@@ -140,7 +157,9 @@ class EmbeddingShim:
 
     def embed_text(self, text: str) -> list[float]:
         result = self._service.generate(text)
-        return result if result is not None else []
+        if isinstance(result, list):
+            return [float(value) for value in result]
+        return []
 
     def embed_batch(self, texts: list[str]) -> list[list[float]]:
         return [self.embed_text(t) for t in texts]

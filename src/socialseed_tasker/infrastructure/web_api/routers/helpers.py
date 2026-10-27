@@ -7,7 +7,7 @@ repository dependency injectors, and ID resolution helpers.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 from fastapi import Depends, Request
@@ -18,6 +18,7 @@ from socialseed_tasker.application.actions import (
 )
 from socialseed_tasker.domain.entities import Component, Issue
 from socialseed_tasker.infrastructure.web_api.schemas import (
+    CommentResponse,
     ComponentResponse,
     GitHubConflictResponse,
     GitHubSyncResponse,
@@ -25,6 +26,7 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     Meta,
     PaginatedResponse,
     PaginationMeta,
+    ReasoningLogEntryResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -49,7 +51,7 @@ class RepositoryProviderDependency:
 
     def __call__(self, request: Request) -> TaskRepositoryInterface:
         """Extract and return the repository from the application state."""
-        return request.app.state.repository
+        return cast(TaskRepositoryInterface, request.app.state.repository)
 
 
 # Shared instance of the repository provider dependency
@@ -146,13 +148,13 @@ def convert_domain_issue_to_api_response(domain_issue: Issue) -> IssueResponse:
         agent_working=domain_issue.agent_working,
         agent_working_started_at=domain_issue.agent_started_at,
         reasoning_logs=[
-            {
-                "id": str(log.id),
-                "timestamp": log.timestamp,
-                "context": log.context.value,
-                "reasoning": log.reasoning,
-                "related_nodes": [str(node_id) for node_id in log.related_nodes],
-            }
+            ReasoningLogEntryResponse(
+                id=str(log.id),
+                timestamp=log.timestamp,
+                context=log.context.value,
+                reasoning=log.reasoning,
+                related_nodes=[str(node_id) for node_id in log.related_nodes],
+            )
             for log in domain_issue.reasoning_logs
         ],
         manifest_todo=domain_issue.manifest_todo,
@@ -163,12 +165,12 @@ def convert_domain_issue_to_api_response(domain_issue: Issue) -> IssueResponse:
         agent_finished_at=domain_issue.agent_finished_at,
         agent_id=domain_issue.agent_id,
         comments=[
-            {
-                "id": str(c.id),
-                "timestamp": c.timestamp,
-                "author": c.author,
-                "text": c.text,
-            }
+            CommentResponse(
+                id=str(c.id),
+                timestamp=c.timestamp,
+                author=c.author,
+                text=c.text,
+            )
             for c in domain_issue.comments
         ],
         assignee=domain_issue.assignee,

@@ -4,11 +4,21 @@ import contextlib
 import json
 import re
 import time
+from typing import Any
 
 from socialseed_tasker.application.exceptions import StorageError
 from socialseed_tasker.application.ports import StoragePort
 
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
+
+
+def _decode_mapping(raw: bytes) -> dict[str, Any]:
+    decoded: object = json.loads(raw.decode("utf-8"))
+    if not isinstance(decoded, dict) or not all(
+        isinstance(key, str) for key in decoded
+    ):
+        raise ValueError("stored catalog value must be a JSON object with string keys")
+    return {key: decoded[key] for key in decoded}
 
 
 class SchemaCompatibilityError(Exception):
@@ -28,7 +38,7 @@ class SchemaRegistry:
     def _dataset_key(self, dataset_id: str) -> str:
         return f"dataset:{dataset_id}"
 
-    def register_schema(self, name: str, version: str, schema: dict, compatibility: str = "BACKWARD") -> None:
+    def register_schema(self, name: str, version: str, schema: dict[Any, Any], compatibility: str = "BACKWARD") -> None:
         if not SEMVER_RE.match(version):
             raise ValueError("version must be semantic MAJOR.MINOR.PATCH")
         versions = self.get_versions(name)
@@ -44,19 +54,24 @@ class SchemaRegistry:
         except Exception as exc:
             raise StorageError(f"failed to persist schema: {exc}") from exc
 
-    def get_schema(self, name: str, version: str) -> dict:
+    def get_schema(self, name: str, version: str) -> dict[Any, Any]:
         raw = self.storage.get(self._schema_key(name, version))
         if not raw:
             raise KeyError("schema not found")
-        return json.loads(raw.decode("utf-8"))
+        return _decode_mapping(raw)
 
     def get_versions(self, name: str) -> list[str]:
         raw = self.storage.get(self._versions_key(name))
         if not raw:
             return []
-        return json.loads(raw.decode("utf-8"))
+        versions: object = json.loads(raw.decode("utf-8"))
+        if not isinstance(versions, list) or not all(
+            isinstance(version, str) for version in versions
+        ):
+            raise ValueError("stored schema versions must be a JSON string array")
+        return versions
 
-    def list_schemas(self) -> list[dict]:
+    def list_schemas(self) -> list[dict[Any, Any]]:
         if not hasattr(self.storage, "list_keys"):
             return []
         keys = self.storage.list_keys()
@@ -64,7 +79,7 @@ class SchemaRegistry:
         for k in keys:
             if k.startswith("schema:versions:"):
                 names.add(k.split("schema:versions:")[1])
-        out = []
+        out: list[dict[str, Any]] = []
         for n in sorted(names):
             out.append({"name": n, "versions": self.get_versions(n)})
         return out
@@ -99,11 +114,11 @@ class SchemaRegistry:
         except Exception as exc:
             raise StorageError(f"failed to persist dataset: {exc}") from exc
 
-    def get_dataset(self, dataset_id: str) -> dict:
+    def get_dataset(self, dataset_id: str) -> dict[Any, Any]:
         raw = self.storage.get(self._dataset_key(dataset_id))
         if not raw:
             raise KeyError("dataset not found")
-        return json.loads(raw.decode("utf-8"))
+        return _decode_mapping(raw)
 
     def delete_schema(self, name: str) -> None:
         versions = self.get_versions(name)
@@ -122,7 +137,7 @@ class SchemaRegistry:
             arr.remove(dataset_id)
             self.storage.put("dataset:list", json.dumps(arr).encode("utf-8"))
 
-    def list_datasets(self) -> list[dict]:
+    def list_datasets(self) -> list[dict[Any, Any]]:
         raw = self.storage.get("dataset:list") or b"[]"
         arr = json.loads(raw.decode("utf-8")) if raw else []
         out = []
@@ -131,11 +146,16 @@ class SchemaRegistry:
                 out.append(self.get_dataset(did))
         return out
 
-    def _check_compatibility(self, old_schema: dict, new_schema: dict, mode: str = "BACKWARD") -> bool:
+    def _check_compatibility(
+        self,
+        old_schema: dict[Any, Any],
+        new_schema: dict[Any, Any],
+        mode: str = "BACKWARD",
+    ) -> bool:
         if mode == "NONE":
             return True
 
-        def extract_required(sch: dict) -> dict[str, str]:
+        def extract_required(sch: dict[Any, Any]) -> dict[str, str]:
             props = sch.get("properties", {})
             req = {}
             for k, v in props.items():

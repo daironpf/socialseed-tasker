@@ -11,7 +11,7 @@ El objetivo es eliminar esa deuda global de manera verificable, paquete a paquet
 apagar reglas, añadir ignores amplios ni convertir el typecheck de CI en un falso
 positivo.
 
-## Status: TODO
+## Status: DONE — 2026-10-27
 
 ## Priority: MEDIUM
 
@@ -35,11 +35,11 @@ quality / backend
    adicionales hasta que `mypy src/` finalice sin errores.
 
 ## Acceptance Criteria
-- [ ] El conteo global final de `mypy src/` es cero.
-- [ ] Todos los paquetes/módulos de `src/` pasan el modo estricto del proyecto.
-- [ ] `strict = true` permanece habilitado y no se introducen ignores globales ni
+- [x] El conteo global final de `mypy src/` es cero.
+- [x] Todos los paquetes/módulos de `src/` pasan el modo estricto del proyecto.
+- [x] `strict = true` permanece habilitado y no se introducen ignores globales ni
       excepciones de módulo para enmascarar el backlog.
-- [ ] El typecheck global y las pruebas pertinentes pasan; la resolución registra
+- [x] El typecheck global y las pruebas pertinentes pasan; la resolución registra
       baseline, conteo final cero, módulos y pruebas ejecutadas.
 
 ## Files to Modify
@@ -57,3 +57,21 @@ quality / backend
   `_now()`. Mantener ese resultado, pero no extrapolarlo al resto de `src/`.
 - El CI existente ejecuta mypy globalmente; esta issue no autoriza a eliminar o
   relajar ese gate.
+
+## Resolution
+- Baseline vigente al iniciar sobre el worktree disponible: 256 errores en 82
+  archivos con `python -m mypy src/ --python-version 3.12`. El baseline histórico de
+  1.054 errores/131 archivos corresponde a la revisión general anterior.
+- Resultado final: `python -m mypy src/` pasa con cero errores en 236 archivos.
+  `strict = true` permanece habilitado; no se añadieron ignores globales ni de
+  módulos para ocultar diagnósticos.
+- Se corrigieron los contratos tipados y validaciones en application, auth, CLI,
+  config, data catalog/quality, domain, events, graphviz, GraphQL, infraestructura,
+  ML, observability, privacy, tenancy y workers. Se añadieron `types-requests` y
+  `types-PyYAML` al perfil de desarrollo.
+- El target de mypy se sincronizó a Python 3.12, máximo soportado por el proyecto,
+  para analizar los stubs actuales de NumPy, que usan la sintaxis `type` de Python
+  3.12; strict sigue activo.
+- Pruebas focalizadas de auth, CLI, application, data catalog/quality, config, ML,
+  tenancy, events, observability, privacy, workers y API: 231 pasaron. El lote
+  enfocado de infraestructura reportó 110 pasadas y 16 omitidas.

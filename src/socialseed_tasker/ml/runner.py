@@ -18,7 +18,7 @@ class ModelRunner:
         self.storage = storage
         self.feature_store = feature_store
         self.models_dir = models_dir or os.getenv("TASKER_MODELS_DIR", "models")
-        self._cache = {}
+        self._cache: dict[str, Any] = {}
         self._lock = threading.RLock()
 
     def _model_path(self, model_name: str, version: str | None = None) -> str:
@@ -26,7 +26,7 @@ class ModelRunner:
             return f"{self.models_dir}/{model_name}/{version}.pkl"
         return f"{self.models_dir}/{model_name}/latest.pkl"
 
-    def load_model(self, model_name: str, version: str | None = None):
+    def load_model(self, model_name: str, version: str | None = None) -> Any:
         key = f"{model_name}:{version or 'latest'}"
         with self._lock:
             if key in self._cache:

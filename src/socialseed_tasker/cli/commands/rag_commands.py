@@ -127,7 +127,7 @@ def rag_embed_native(
     """
     from socialseed_tasker.application.wiring import get_driver
     from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
-    from socialseed_tasker.infrastructure.neo4j_repository import TaskRepository
+    from socialseed_tasker.infrastructure.neo4j_repository import Neo4jTaskRepository
 
     driver = get_driver()
     if driver is None:
@@ -135,7 +135,7 @@ def rag_embed_native(
         raise typer.Exit(code=1)
 
     if not content:
-        repo_task = TaskRepository(driver)
+        repo_task = Neo4jTaskRepository(driver)
         if source_type == "issue":
             issue = repo_task.get_issue(source_id)
             if issue:

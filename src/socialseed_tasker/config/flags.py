@@ -23,8 +23,11 @@ class FeatureFlagStore:
             try:
                 registry = json.loads(raw.decode("utf-8"))
             except (json.JSONDecodeError, UnicodeDecodeError):
-                registry = {}
-            return registry.get(name)
+                return None
+            if not isinstance(registry, dict):
+                return None
+            value: object | None = registry.get(name)
+            return value
 
     def set_flag(self, name: str, value: object) -> None:
         with self._lock:

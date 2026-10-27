@@ -53,7 +53,10 @@ def _session_user(request: Request) -> str | None:
     if not session:
         return None
     claims = session.get("claims", {})
-    return claims.get("preferred_username") or claims.get("sub")
+    if not isinstance(claims, dict):
+        return None
+    user_id = claims.get("preferred_username") or claims.get("sub")
+    return user_id if isinstance(user_id, str) else None
 
 
 def _granted(container: Any, user_id: str, permission: str) -> bool:

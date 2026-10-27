@@ -24,7 +24,7 @@ def _request(
     path: str,
     body: dict[str, Any] | None = None,
     params: dict[str, str] | None = None,
-) -> dict:
+) -> dict[Any, Any]:
     """Send an HTTP request to the Tasker API and return the parsed response."""
     url = f"{TASKER_API_URL}{path}"
 
@@ -43,15 +43,22 @@ def _request(
         with urlopen(req) as response:
             if response.status == 204:
                 return {"data": None, "error": None, "meta": {}}
-            return json.loads(response.read().decode("utf-8"))
+            return _decode_response(response.read())
     except HTTPError as exc:
-        return json.loads(exc.read().decode("utf-8"))
+        return _decode_response(exc.read())
     except URLError as exc:
         return {
             "data": None,
             "error": {"code": "CONNECTION_ERROR", "message": str(exc.reason)},
             "meta": {},
         }
+
+
+def _decode_response(response_body: bytes) -> dict[Any, Any]:
+    decoded: object = json.loads(response_body.decode("utf-8"))
+    if not isinstance(decoded, dict):
+        raise ValueError("Tasker API returned a non-object JSON response")
+    return decoded
 
 
 # =============================================================================
@@ -64,7 +71,7 @@ def create_component(
     project: str,
     description: str | None = None,
     labels: list[str] | None = None,
-) -> dict:
+) -> dict[Any, Any]:
     """Create a new component to group issues.
 
     Args:
@@ -84,7 +91,7 @@ def create_component(
     return _request("POST", "/api/v1/components", body)
 
 
-def list_components(project: str | None = None, name: str | None = None) -> dict:
+def list_components(project: str | None = None, name: str | None = None) -> dict[Any, Any]:
     """List all components, optionally filtered.
 
     Args:
@@ -102,17 +109,17 @@ def list_components(project: str | None = None, name: str | None = None) -> dict
     return _request("GET", "/api/v1/components", params=params)
 
 
-def get_component(component_id: str) -> dict:
+def get_component(component_id: str) -> dict[Any, Any]:
     """Get full details of a single component."""
     return _request("GET", f"/api/v1/components/{component_id}")
 
 
-def update_component(component_id: str, data: dict[str, Any]) -> dict:
+def update_component(component_id: str, data: dict[str, Any]) -> dict[Any, Any]:
     """Update component fields."""
     return _request("PATCH", f"/api/v1/components/{component_id}", data)
 
 
-def delete_component(component_id: str) -> dict:
+def delete_component(component_id: str) -> dict[Any, Any]:
     """Delete a component and all associated issues."""
     return _request("DELETE", f"/api/v1/components/{component_id}")
 
@@ -129,7 +136,7 @@ def create_issue(
     priority: str = "MEDIUM",
     labels: list[str] | None = None,
     project: str | None = None,
-) -> dict:
+) -> dict[Any, Any]:
     """Create a new issue.
 
     Args:
@@ -161,7 +168,7 @@ def list_issues(
     priority: str | None = None,
     page: int = 1,
     page_size: int = 50,
-) -> dict:
+) -> dict[Any, Any]:
     """List issues with optional filters and pagination.
 
     Returns:
@@ -182,7 +189,7 @@ def list_issues(
     return _request("GET", "/api/v1/issues", params=params)
 
 
-def get_issue(issue_id: str) -> dict:
+def get_issue(issue_id: str) -> dict[Any, Any]:
     """Get full details of a single issue."""
     return _request("GET", f"/api/v1/issues/{issue_id}")
 
@@ -194,7 +201,7 @@ def update_issue(
     description: str | None = None,
     labels: list[str] | None = None,
     agent_working: bool | None = None,
-) -> dict:
+) -> dict[Any, Any]:
     """Partially update an issue's fields.
 
     Args:
@@ -222,12 +229,12 @@ def update_issue(
     return _request("PATCH", f"/api/v1/issues/{issue_id}", body)
 
 
-def close_issue(issue_id: str) -> dict:
+def close_issue(issue_id: str) -> dict[Any, Any]:
     """Close an issue. Fails if it has open dependencies."""
     return _request("POST", f"/api/v1/issues/{issue_id}/close")
 
 
-def delete_issue(issue_id: str) -> dict:
+def delete_issue(issue_id: str) -> dict[Any, Any]:
     """Permanently delete an issue."""
     return _request("DELETE", f"/api/v1/issues/{issue_id}")
 
@@ -235,7 +242,7 @@ def delete_issue(issue_id: str) -> dict:
 def get_workable_issues(
     priority: str | None = None,
     component: str | None = None,
-) -> dict:
+) -> dict[Any, Any]:
     """Get issues where all dependencies are closed (ready to work on).
 
     Returns:
@@ -254,32 +261,32 @@ def get_workable_issues(
 # =============================================================================
 
 
-def add_dependency(issue_id: str, depends_on_id: str) -> dict:
+def add_dependency(issue_id: str, depends_on_id: str) -> dict[Any, Any]:
     """Create a DEPENDS_ON relationship between two issues."""
     return _request("POST", f"/api/v1/issues/{issue_id}/dependencies", {"depends_on_id": depends_on_id})
 
 
-def remove_dependency(issue_id: str, depends_on_id: str) -> dict:
+def remove_dependency(issue_id: str, depends_on_id: str) -> dict[Any, Any]:
     """Remove a DEPENDS_ON relationship."""
     return _request("DELETE", f"/api/v1/issues/{issue_id}/dependencies/{depends_on_id}")
 
 
-def get_dependencies(issue_id: str) -> dict:
+def get_dependencies(issue_id: str) -> dict[Any, Any]:
     """List issues that the given issue depends on."""
     return _request("GET", f"/api/v1/issues/{issue_id}/dependencies")
 
 
-def get_dependency_chain(issue_id: str) -> dict:
+def get_dependency_chain(issue_id: str) -> dict[Any, Any]:
     """Get the full transitive dependency chain for an issue."""
     return _request("GET", f"/api/v1/issues/{issue_id}/dependency-chain")
 
 
-def get_blocked_issues() -> dict:
+def get_blocked_issues() -> dict[Any, Any]:
     """List all issues blocked by at least one open dependency."""
     return _request("GET", "/api/v1/blocked-issues")
 
 
-def get_dependency_graph(project: str | None = None) -> dict:
+def get_dependency_graph(project: str | None = None) -> dict[Any, Any]:
     """Get full dependency graph for visualization.
 
     Returns:
@@ -296,7 +303,7 @@ def get_dependency_graph(project: str | None = None) -> dict:
 # =============================================================================
 
 
-def analyze_impact(issue_id: str) -> dict:
+def analyze_impact(issue_id: str) -> dict[Any, Any]:
     """Analyze downstream impact of an issue.
 
     Returns:
@@ -305,7 +312,7 @@ def analyze_impact(issue_id: str) -> dict:
     return _request("GET", f"/api/v1/analyze/impact/{issue_id}")
 
 
-def analyze_component_impact(component_id: str) -> dict:
+def analyze_component_impact(component_id: str) -> dict[Any, Any]:
     """Analyze impact for a component.
 
     Returns:
@@ -317,7 +324,7 @@ def analyze_component_impact(component_id: str) -> dict:
 def analyze_root_cause(
     test_failure: str,
     component_id: str | None = None,
-) -> dict:
+) -> dict[Any, Any]:
     """Find likely root causes for a test failure.
 
     Args:
@@ -338,7 +345,7 @@ def analyze_root_cause(
 # =============================================================================
 
 
-def get_project_summary(project_name: str) -> dict:
+def get_project_summary(project_name: str) -> dict[Any, Any]:
     """Get complete project summary dashboard.
 
     Returns:
@@ -352,7 +359,7 @@ def get_project_summary(project_name: str) -> dict:
 # =============================================================================
 
 
-def health_check() -> dict:
+def health_check() -> dict[Any, Any]:
     """Check API and Neo4j health.
 
     Returns:
@@ -361,7 +368,7 @@ def health_check() -> dict:
     return _request("GET", "/health")
 
 
-def admin_reset(scope: str = "all") -> dict:
+def admin_reset(scope: str = "all") -> dict[Any, Any]:
     """Reset data.
 
     Args:
@@ -378,7 +385,7 @@ def admin_reset(scope: str = "all") -> dict:
 # =============================================================================
 
 
-def get_sync_status() -> dict:
+def get_sync_status() -> dict[Any, Any]:
     """Get sync status.
 
     Returns:
@@ -387,16 +394,16 @@ def get_sync_status() -> dict:
     return _request("GET", "/api/v1/sync/status")
 
 
-def get_sync_queue() -> dict:
+def get_sync_queue() -> dict[Any, Any]:
     """Get pending sync queue items."""
     return _request("GET", "/api/v1/sync/queue")
 
 
-def force_sync() -> dict:
+def force_sync() -> dict[Any, Any]:
     """Force sync attempt."""
     return _request("POST", "/api/v1/sync/force")
 
 
-def test_webhook() -> dict:
+def test_webhook() -> dict[Any, Any]:
     """Test webhook configuration."""
     return _request("GET", "/api/v1/webhooks/github/test")

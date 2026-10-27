@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from socialseed_tasker.application.exceptions import StorageError
 from socialseed_tasker.application.ports import StoragePort
 from socialseed_tasker.observability.tracing import get_tracer
 
 
-def _get_storage_tracer():
+def _get_storage_tracer() -> Any:
     return get_tracer("tasker.redis_storage")
 
 try:
-    import redis  # type: ignore
+    import redis
     _REDIS_AVAILABLE = True
 except Exception:
     _REDIS_AVAILABLE = False
@@ -20,7 +21,7 @@ class RedisStorage(StoragePort):
     def __init__(self, url: str | None = None) -> None:
         if not _REDIS_AVAILABLE:
             raise StorageError("redis package not available")
-        self._url = url or os.getenv("TASKER_REDIS_URL", "redis://localhost:6379/0")
+        self._url: str = url if url is not None else os.getenv("TASKER_REDIS_URL", "redis://localhost:6379/0")
         try:
             self._client = redis.from_url(self._url)
             self._client.ping()
@@ -41,7 +42,9 @@ class RedisStorage(StoragePort):
         with _get_storage_tracer().start_as_current_span("redis.get"):
             try:
                 v = self._client.get(key)
-                return v if v is not None else None
+                if isinstance(v, str):
+                    return v.encode("utf-8")
+                return v
             except Exception as exc:
                 raise StorageError(f"Redis get failed for key {key}: {exc}") from exc
 

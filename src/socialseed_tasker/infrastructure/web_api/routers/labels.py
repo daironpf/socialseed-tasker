@@ -135,26 +135,26 @@ label_router = APIRouter()
 
 @label_router.get(
     "/labels",
-    response_model=APIResponse[list[dict]],
+    response_model=APIResponse[list[dict[Any, Any]]],
     summary="List all labels",
     description="List all labels synced from GitHub or created in Tasker.",
 )
 def list_labels(
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-) -> APIResponse[list[dict]]:
+) -> APIResponse[list[dict[Any, Any]]]:
     labels = repo.get_all_labels() if hasattr(repo, "get_all_labels") else []
     return APIResponse(data=labels, meta=Meta(request_id=None))
 
 
 @label_router.post(
     "/labels/sync",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Sync labels from GitHub",
     description="Force sync labels from GitHub repository to Neo4j.",
 )
 def sync_labels(
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     from socialseed_tasker.infrastructure.github_adapter import GitHubAdapter
 
     if repo is None or not hasattr(repo, "sync_labels_from_github"):
@@ -200,7 +200,7 @@ def list_issues(
     else:
         issues = repo.list_issues(
             component_id=component_id,
-            status=status,
+            statuses=[status] if status else None,
             project=project,
         )
 

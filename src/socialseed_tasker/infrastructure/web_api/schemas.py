@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any, Generic, Literal, TypeVar
+from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -362,10 +363,14 @@ class PolicyResponse(BaseModel):
     id: str
     name: str
     description: str
-    rules: list[dict]
+    rules: list[dict[Any, Any]]
+    target_scope: str = "COMPONENT"
+    logic_definition: str | None = None
+    remediation_strategy: str | None = None
+    autofix_template: str | None = None
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class TestFailureWebhookRequest(BaseModel):
@@ -1198,16 +1203,6 @@ class CommitStatsResponse(BaseModel):
     human_commits: int
 
 
-class PolicyRuleRequest(BaseModel):
-    """Request for a policy rule."""
-
-    rule_type: str
-    from_pattern: str = ""
-    to_pattern: str = ""
-    max_depth: int = 5
-    description: str = ""
-
-
 class PolicyCreateRequest(BaseModel):
     """Request for creating a policy."""
 
@@ -1234,22 +1229,6 @@ class PolicyUpdateRequest(BaseModel):
     remediation_strategy: str | None = None
     autofix_template: str | None = None
     is_active: bool | None = None
-
-
-class PolicyResponse(BaseModel):
-    """Response for policy data."""
-
-    id: str
-    name: str
-    description: str
-    rules: list[dict]
-    target_scope: str
-    logic_definition: str | None = None
-    remediation_strategy: str | None = None
-    autofix_template: str | None = None
-    is_active: bool
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
 
 
 AgentRunStatus = Literal["running", "completed", "failed", "cancelled"]
@@ -1471,7 +1450,7 @@ class DeploymentCreateRequest(BaseModel):
 
     commit_sha: str = Field(..., min_length=1, description="Deployed commit SHA")
     environment: str = "DEV"
-    issue_ids: list[str] = Field(default_factory=list)
+    issue_ids: list[UUID] = Field(default_factory=list)
     channel: str = "webhook"
     deployed_by: str = "ci-cd"
 

@@ -36,6 +36,16 @@ def _parse_component(data: dict[str, Any]) -> Component:
 _API = "/api/v1"
 
 
+def _response_items(data: Any) -> list[Any]:
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        items = data.get("items", data.get("data"))
+        if isinstance(items, list):
+            return items
+    return []
+
+
 class ApiTaskRepository(TaskRepositoryInterface):
     """TaskRepositoryInterface implementation that delegates to the Tasker REST API.
 
@@ -60,7 +70,7 @@ class ApiTaskRepository(TaskRepositoryInterface):
             return None
         return _parse_issue(data)
 
-    def update_issue(self, issue_id: str, updates: dict) -> Issue:
+    def update_issue(self, issue_id: str, updates: dict[Any, Any]) -> Issue:
         data = self.client.request("PATCH", f"{_API}/issues/{issue_id}", json=updates)
         return _parse_issue(data)
 
@@ -113,21 +123,11 @@ class ApiTaskRepository(TaskRepositoryInterface):
 
     def get_dependents(self, issue_id: str) -> list[Issue]:
         data = self.client.request("GET", f"{_API}/issues/{issue_id}/dependents")
-        if isinstance(data, list):
-            return [_parse_issue(i) for i in data]
-        if isinstance(data, dict):
-            items = data.get("items", data.get("data", []))
-            return [_parse_issue(i) for i in items]
-        return []
+        return [_parse_issue(i) for i in _response_items(data)]
 
     def get_blocked_issues(self) -> list[Issue]:
         data = self.client.request("GET", f"{_API}/blocked-issues")
-        if isinstance(data, list):
-            return [_parse_issue(i) for i in data]
-        if isinstance(data, dict):
-            items = data.get("items", data.get("data", []))
-            return [_parse_issue(i) for i in items]
-        return []
+        return [_parse_issue(i) for i in _response_items(data)]
 
     def get_workable_issues(
         self,
@@ -140,12 +140,7 @@ class ApiTaskRepository(TaskRepositoryInterface):
         if component_id:
             params["component"] = component_id
         data = self.client.request("GET", f"{_API}/workable-issues", params=params)
-        if isinstance(data, list):
-            return [_parse_issue(i) for i in data]
-        if isinstance(data, dict):
-            items = data.get("items", data.get("data", []))
-            return [_parse_issue(i) for i in items]
-        return []
+        return [_parse_issue(i) for i in _response_items(data)]
 
     # -- CodeSymbol relationship (AFFECTS) -----------------------------------
 
@@ -154,20 +149,11 @@ class ApiTaskRepository(TaskRepositoryInterface):
 
     def get_affected_symbols(self, issue_id: str) -> list[dict[str, Any]]:
         data = self.client.request("GET", f"{_API}/issues/{issue_id}/affects")
-        if isinstance(data, list):
-            return data
-        if isinstance(data, dict):
-            return data.get("items", data.get("data", []))
-        return []
+        return [item for item in _response_items(data) if isinstance(item, dict)]
 
     def get_issues_affecting_symbol(self, symbol_id: str) -> list[Issue]:
         data = self.client.request("GET", f"{_API}/code/symbols/{symbol_id}/issues")
-        if isinstance(data, list):
-            return [_parse_issue(i) for i in data]
-        if isinstance(data, dict):
-            items = data.get("items", data.get("data", []))
-            return [_parse_issue(i) for i in items]
-        return []
+        return [_parse_issue(i) for i in _response_items(data)]
 
     def remove_affects_symbol(self, issue_id: str, symbol_id: str) -> None:
         self.client.request("DELETE", f"{_API}/issues/{issue_id}/affects", json={"symbol_id": symbol_id})
@@ -191,7 +177,7 @@ class ApiTaskRepository(TaskRepositoryInterface):
         items = self.client.paginate(f"{_API}/components", params=params)
         return [_parse_component(i) for i in items]
 
-    def update_component(self, component_id: str, updates: dict) -> Component:
+    def update_component(self, component_id: str, updates: dict[Any, Any]) -> Component:
         data = self.client.request("PATCH", f"{_API}/components/{component_id}", json=updates)
         return _parse_component(data)
 
@@ -210,21 +196,11 @@ class ApiTaskRepository(TaskRepositoryInterface):
 
     def get_component_dependencies(self, component_id: str) -> list[Component]:
         data = self.client.request("GET", f"{_API}/components/{component_id}/dependencies")
-        if isinstance(data, list):
-            return [_parse_component(i) for i in data]
-        if isinstance(data, dict):
-            items = data.get("items", data.get("data", []))
-            return [_parse_component(i) for i in items]
-        return []
+        return [_parse_component(i) for i in _response_items(data)]
 
     def get_component_dependents(self, component_id: str) -> list[Component]:
         data = self.client.request("GET", f"{_API}/components/{component_id}/dependents")
-        if isinstance(data, list):
-            return [_parse_component(i) for i in data]
-        if isinstance(data, dict):
-            items = data.get("items", data.get("data", []))
-            return [_parse_component(i) for i in items]
-        return []
+        return [_parse_component(i) for i in _response_items(data)]
 
     # -- Project discovery --------------------------------------------------
 
@@ -251,13 +227,9 @@ class ApiTaskRepository(TaskRepositoryInterface):
 
     def list_epics(self) -> list[Any]:
         data = self.client.request("GET", f"{_API}/epics")
-        if isinstance(data, list):
-            return data
-        if isinstance(data, dict):
-            return data.get("items", data.get("data", []))
-        return []
+        return _response_items(data)
 
-    def update_epic(self, epic_id: str, updates: dict) -> Any:
+    def update_epic(self, epic_id: str, updates: dict[Any, Any]) -> Any:
         return self.client.request("PATCH", f"{_API}/epics/{epic_id}", json=updates)
 
     def delete_epic(self, epic_id: str) -> None:
@@ -274,13 +246,9 @@ class ApiTaskRepository(TaskRepositoryInterface):
 
     def list_objectives(self) -> list[Any]:
         data = self.client.request("GET", f"{_API}/objectives")
-        if isinstance(data, list):
-            return data
-        if isinstance(data, dict):
-            return data.get("items", data.get("data", []))
-        return []
+        return _response_items(data)
 
-    def update_objective(self, objective_id: str, updates: dict) -> Any:
+    def update_objective(self, objective_id: str, updates: dict[Any, Any]) -> Any:
         return self.client.request("PATCH", f"{_API}/objectives/{objective_id}", json=updates)
 
     def delete_objective(self, objective_id: str) -> None:
@@ -296,12 +264,7 @@ class ApiTaskRepository(TaskRepositoryInterface):
         data = self.client.request("GET", f"{_API}/components", params=params)
         if data is None:
             return None
-        if isinstance(data, dict):
-            items = data.get("items", data.get("data", []))
-        elif isinstance(data, list):
-            items = data
-        else:
-            items = []
+        items = _response_items(data)
         if items:
             return _parse_component(items[0])
         return None
@@ -339,11 +302,7 @@ class ApiTaskRepository(TaskRepositoryInterface):
 
     def get_reasoning_logs(self, issue_id: str) -> list[dict[str, Any]]:
         data = self.client.request("GET", f"{_API}/issues/{issue_id}/reasoning")
-        if isinstance(data, list):
-            return data
-        if isinstance(data, dict):
-            return data.get("items", data.get("data", []))
-        return []
+        return [item for item in _response_items(data) if isinstance(item, dict)]
 
     # -- Comments ---------------------------------------------------------------
 
@@ -357,11 +316,7 @@ class ApiTaskRepository(TaskRepositoryInterface):
 
     def get_comments(self, issue_id: str) -> list[dict[str, Any]]:
         data = self.client.request("GET", f"{_API}/issues/{issue_id}/comments")
-        if isinstance(data, list):
-            return data
-        if isinstance(data, dict):
-            return data.get("items", data.get("data", []))
-        return []
+        return [item for item in _response_items(data) if isinstance(item, dict)]
 
     # -- Manifest ---------------------------------------------------------------
 
@@ -410,25 +365,25 @@ class ApiTaskRepository(TaskRepositoryInterface):
 
     # -- Cost analytics ---------------------------------------------------------
 
-    def get_cost_per_component(self) -> list[dict]:
+    def get_cost_per_component(self) -> list[dict[Any, Any]]:
         data = self.client.request("GET", f"{_API}/cost/component")
         if isinstance(data, list):
             return data
         return []
 
-    def get_cost_per_epic(self) -> list[dict]:
+    def get_cost_per_epic(self) -> list[dict[Any, Any]]:
         data = self.client.request("GET", f"{_API}/cost/epic")
         if isinstance(data, list):
             return data
         return []
 
-    def get_cost_per_project(self) -> list[dict]:
+    def get_cost_per_project(self) -> list[dict[Any, Any]]:
         data = self.client.request("GET", f"{_API}/cost/project")
         if isinstance(data, list):
             return data
         return []
 
-    def get_cost_summary(self) -> dict:
+    def get_cost_summary(self) -> dict[Any, Any]:
         data = self.client.request("GET", f"{_API}/cost/summary")
         if isinstance(data, dict):
             return data
@@ -436,24 +391,16 @@ class ApiTaskRepository(TaskRepositoryInterface):
 
     # -- Deployments ------------------------------------------------------------
 
-    def get_deployments(self, environment_name: str | None = None, limit: int = 50) -> list[dict]:
+    def get_deployments(self, environment_name: str | None = None, limit: int = 50) -> list[dict[Any, Any]]:
         params: dict[str, Any] = {"limit": limit}
         if environment_name:
             params["environment"] = environment_name
         data = self.client.request("GET", f"{_API}/deployments", params=params)
-        if isinstance(data, list):
-            return data
-        if isinstance(data, dict):
-            return data.get("items", data.get("data", []))
-        return []
+        return [item for item in _response_items(data) if isinstance(item, dict)]
 
-    def get_issue_deployments(self, issue_id: str) -> list[dict]:
+    def get_issue_deployments(self, issue_id: str) -> list[dict[Any, Any]]:
         data = self.client.request("GET", f"{_API}/issues/{issue_id}/deployments")
-        if isinstance(data, list):
-            return data
-        if isinstance(data, dict):
-            return data.get("items", data.get("data", []))
-        return []
+        return [item for item in _response_items(data) if isinstance(item, dict)]
 
     def get_deployment_by_commit(self, commit_sha: str) -> dict[str, Any] | None:
         data = self.client.request("GET", f"{_API}/deployments/by-commit/{commit_sha}")
@@ -477,29 +424,23 @@ class ApiTaskRepository(TaskRepositoryInterface):
 
     # -- Vector search ----------------------------------------------------------
 
-    def search_by_embedding(self, embedding: list[float], threshold: float = 0.7, limit: int = 10) -> list[dict]:
+    def search_by_embedding(
+        self, embedding: list[float], threshold: float = 0.7, limit: int = 10
+    ) -> list[dict[Any, Any]]:
         data = self.client.request(
             "POST",
             f"{_API}/issues/search",
             json={"embedding": embedding, "threshold": threshold, "limit": limit},
         )
-        if isinstance(data, list):
-            return data
-        if isinstance(data, dict):
-            return data.get("items", data.get("data", []))
-        return []
+        return [item for item in _response_items(data) if isinstance(item, dict)]
 
-    def find_similar_issues(self, issue_id: str, threshold: float = 0.7, limit: int = 10) -> list[dict]:
+    def find_similar_issues(self, issue_id: str, threshold: float = 0.7, limit: int = 10) -> list[dict[Any, Any]]:
         data = self.client.request(
             "GET",
             f"{_API}/issues/{issue_id}/similar",
             params={"threshold": threshold, "limit": limit},
         )
-        if isinstance(data, list):
-            return data
-        if isinstance(data, dict):
-            return data.get("items", data.get("data", []))
-        return []
+        return [item for item in _response_items(data) if isinstance(item, dict)]
 
     def update_issue_embedding(self, issue_id: str, embedding: list[float]) -> None:
         self.client.request("POST", f"{_API}/issues/{issue_id}/embedding", json={"embedding": embedding})
@@ -512,11 +453,7 @@ class ApiTaskRepository(TaskRepositoryInterface):
     def list_constraints(self, category: str | None = None) -> list[Any]:
         params = {"category": category} if category else None
         data = self.client.request("GET", f"{_API}/constraints", params=params)
-        if isinstance(data, list):
-            return data
-        if isinstance(data, dict):
-            return data.get("items", data.get("data", []))
-        return []
+        return _response_items(data)
 
     def get_constraint(self, constraint_id: str) -> Any | None:
         return self.client.request("GET", f"{_API}/constraints/{constraint_id}")
@@ -524,7 +461,7 @@ class ApiTaskRepository(TaskRepositoryInterface):
     def delete_constraint(self, constraint_id: str) -> None:
         self.client.request("DELETE", f"{_API}/constraints/{constraint_id}")
 
-    def update_constraint(self, constraint_id: str, updates: dict) -> Any:
+    def update_constraint(self, constraint_id: str, updates: dict[Any, Any]) -> Any:
         return self.client.request("PATCH", f"{_API}/constraints/{constraint_id}", json=updates)
 
     def reset_data(self, scope: str = "all") -> dict[str, int]:
@@ -567,9 +504,11 @@ def _component_to_dict(component: Component) -> dict[str, Any]:
 
 def _to_dict(obj: Any) -> dict[str, Any]:
     if hasattr(obj, "model_dump"):
-        return obj.model_dump()
+        value = obj.model_dump()
+        return value if isinstance(value, dict) else {}
     if hasattr(obj, "dict"):
-        return obj.dict()
+        value = obj.dict()
+        return value if isinstance(value, dict) else {}
     if isinstance(obj, dict):
         return obj
     return {k: v for k, v in obj.__dict__.items() if not k.startswith("_")}

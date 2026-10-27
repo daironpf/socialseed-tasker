@@ -12,6 +12,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Any
 
 
 def _now() -> datetime:
@@ -42,7 +43,7 @@ class PriorityQueueItem:
     operation: str
     entity_type: str
     entity_id: str
-    payload: dict
+    payload: dict[Any, Any]
     priority: QueuePriority = QueuePriority.NORMAL
     created_at: datetime = field(default_factory=_now)
     retry_count: int = 0
@@ -66,8 +67,8 @@ class ConnectivityManager:
         self._latency: float = 0.0
         self._last_check: datetime | None = None
         self._reconnect_attempts: int = 0
-        self._on_connect_callbacks: list[Callable] = []
-        self._on_disconnect_callbacks: list[Callable] = []
+        self._on_connect_callbacks: list[Callable[[], Any]] = []
+        self._on_disconnect_callbacks: list[Callable[[], Any]] = []
 
     def is_online(self) -> bool:
         """Check if currently online."""
@@ -109,18 +110,17 @@ class ConnectivityManager:
             self._last_check = _now()
             return False
 
-    def on_connect(self, callback: Callable) -> None:
+    def on_connect(self, callback: Callable[[], Any]) -> None:
         """Register a callback for when connection is restored."""
         self._on_connect_callbacks.append(callback)
 
-    def on_disconnect(self, callback: Callable) -> None:
+    def on_disconnect(self, callback: Callable[[], Any]) -> None:
         """Register a callback for when connection is lost."""
         self._on_disconnect_callbacks.append(callback)
 
     def get_reconnect_delay(self) -> int:
         """Get the current reconnect delay with exponential backoff."""
-        delay = min(2**self._reconnect_attempts, self._max_reconnect_delay)
-        return delay
+        return int(min(2**self._reconnect_attempts, self._max_reconnect_delay))
 
     def record_reconnect_attempt(self) -> None:
         """Record a reconnection attempt."""
@@ -137,7 +137,7 @@ class PrioritySyncQueue:
             QueuePriority.NORMAL: [],
             QueuePriority.LOW: [],
         }
-        self._metrics: dict = {
+        self._metrics: dict[Any, Any] = {
             "total_enqueued": 0,
             "total_processed": 0,
             "total_failed": 0,
@@ -149,7 +149,7 @@ class PrioritySyncQueue:
         operation: str,
         entity_type: str,
         entity_id: str,
-        payload: dict,
+        payload: dict[Any, Any],
         priority: QueuePriority = QueuePriority.NORMAL,
     ) -> PriorityQueueItem:
         """Add an item to the priority queue."""
@@ -198,7 +198,7 @@ class PrioritySyncQueue:
         """Record a failed sync."""
         self._metrics["total_failed"] += 1
 
-    def get_metrics(self) -> dict:
+    def get_metrics(self) -> dict[Any, Any]:
         """Get queue metrics."""
         avg_sync_time = 0.0
         if self._metrics["total_processed"] > 0:

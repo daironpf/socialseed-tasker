@@ -8,6 +8,7 @@ from rich.table import Table
 
 from socialseed_tasker.cli.commands.shared import console
 from socialseed_tasker.config.mode_config import DualModeConfig
+from socialseed_tasker.domain.code_analysis_entities import SymbolType
 
 CG_API = "/api/v1/code-graph"
 code_graph_app = typer.Typer(help="Code-as-Graph: scan and analyze source code")
@@ -21,7 +22,7 @@ def _get_client() -> Any | None:
     return None
 
 
-def _call_api(client: Any, method: str, path: str, **kwargs) -> Any:
+def _call_api(client: Any, method: str, path: str, **kwargs: Any) -> Any:
     return client.request(method, path, **kwargs)
 
 
@@ -100,7 +101,11 @@ def code_graph_find(
         raise typer.Exit(code=1)
     from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
     repo = CodeGraphRepository(driver)
-    results = repo.find_symbols(name=name, symbol_type=symbol_type, limit=limit)
+    try:
+        symbol_kind = SymbolType(symbol_type) if symbol_type else None
+    except ValueError as exc:
+        raise typer.BadParameter(f"Unknown symbol type: {symbol_type}") from exc
+    results = repo.find_symbols(name=name, symbol_type=symbol_kind, limit=limit)
     if not results:
         console.print("[info]No symbols found[/info]")
         return
@@ -169,11 +174,11 @@ def code_graph_stats() -> None:
     client = _get_client()
     if client:
         result = _call_api(client, "GET", f"{CG_API}/stats")
-        stats = result if isinstance(result, dict) else {}
+        stats_payload = result if isinstance(result, dict) else {}
         console.print(Panel(
-            f"[bold]Total Files:[/bold] {stats.get('total_files', stats.get('totalFiles', 0))}\n"
-            f"[bold]Total Symbols:[/bold] {stats.get('total_symbols', stats.get('totalSymbols', 0))}\n"
-            f"[bold]Total Relationships:[/bold] {stats.get('total_relationships', stats.get('totalRelationships', 0))}",
+            f"[bold]Total Files:[/bold] {stats_payload.get('total_files', stats_payload.get('totalFiles', 0))}\n"
+            f"[bold]Total Symbols:[/bold] {stats_payload.get('total_symbols', stats_payload.get('totalSymbols', 0))}\n"
+            f"[bold]Total Relationships:[/bold] {stats_payload.get('total_relationships', stats_payload.get('totalRelationships', 0))}",
             title="[bold]Code Graph Statistics[/bold]",
         ))
         return

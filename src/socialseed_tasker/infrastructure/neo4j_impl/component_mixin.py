@@ -6,10 +6,16 @@ from typing import Any
 
 from socialseed_tasker.domain.entities import Component
 from socialseed_tasker.infrastructure import neo4j_queries as queries
-from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_component, _now_iso, _session, _to_camel
+from socialseed_tasker.infrastructure.neo4j_impl.shared import (
+    _Neo4jMixin,
+    _node_to_component,
+    _now_iso,
+    _session,
+    _to_camel,
+)
 
 
-class ComponentRepositoryMixin:
+class ComponentRepositoryMixin(_Neo4jMixin):
     """Component CRUD operations."""
 
     def create_component(self, component: Component) -> Component:
@@ -66,7 +72,7 @@ class ComponentRepositoryMixin:
             result = session.run(queries.LIST_PROJECTS)
             return [r["name"] for r in result]
 
-    def list_project_nodes(self) -> list[dict]:
+    def list_project_nodes(self) -> list[dict[Any, Any]]:
         with _session(self._driver) as session:
             result = session.run(queries.LIST_PROJECT_NODES)
             projects = []
@@ -143,15 +149,15 @@ class ComponentRepositoryMixin:
         base_package: str | None = None,
         visibility: str = "PRIVATE",
         status: str = "ACTIVE",
-        tech_stack: list | None = None,
-        main_stack: list | None = None,
+        tech_stack: list[Any] | None = None,
+        main_stack: list[Any] | None = None,
         architecture_style: str | None = None,
         version: str = "0.0.1",
         conventions_url: str | None = None,
         conventions_rules: str | None = None,
         last_full_scan: str | None = None,
         global_status: str = "DEVELOPMENT",
-    ) -> dict:
+    ) -> dict[Any, Any]:
         from datetime import datetime, timezone
 
         now = datetime.now(timezone.utc).isoformat()
@@ -186,7 +192,7 @@ class ComponentRepositoryMixin:
                     "slug": p.get("slug"),
                     "description": p.get("description"),
                 }
-            return None
+            raise RuntimeError("Neo4j did not return the created project")
 
     def get_component_by_name(self, name: str, project: str | None = None) -> Component | None:
         with _session(self._driver) as session:

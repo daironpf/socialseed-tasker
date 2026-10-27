@@ -35,6 +35,8 @@ mypy>=1.8.0
 
 # Type stubs
 types-setuptools
+types-requests
+types-PyYAML
 
 # Documentation
 mkdocs>=1.5.0

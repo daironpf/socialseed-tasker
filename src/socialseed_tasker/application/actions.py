@@ -11,6 +11,7 @@ from collections import deque
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any, Protocol
+from uuid import UUID
 
 from socialseed_tasker.application.constraints import (
     Constraint,
@@ -177,7 +178,7 @@ class TaskRepositoryInterface(Protocol):
     def get_issue(self, issue_id: str) -> Issue | None:
         """Retrieve an issue by ID, or None if not found."""
 
-    def update_issue(self, issue_id: str, updates: dict) -> Issue:
+    def update_issue(self, issue_id: str, updates: dict[Any, Any]) -> Issue:
         """Apply partial updates and return the updated issue."""
 
     def close_issue(self, issue_id: str, commit_sha: str | None = None, resolution: str = "implemented") -> Issue:
@@ -199,7 +200,7 @@ class TaskRepositoryInterface(Protocol):
     def add_dependency(self, issue_id: str, depends_on_id: str) -> None:
         """Create a [:DEPENDS_ON] relationship."""
 
-    def add_dependencies_bulk(self, issue_id: str, depends_on_ids: list[str]) -> dict:
+    def add_dependencies_bulk(self, issue_id: str, depends_on_ids: list[str]) -> dict[Any, Any]:
         """Create multiple [:DEPENDS_ON] relationships in a single operation.
 
         Returns a dict with 'successful' and 'failed' counts and 'results' list.
@@ -249,7 +250,7 @@ class TaskRepositoryInterface(Protocol):
     def list_components(self, project: str | None = None) -> list[Component]:
         """List components, optionally filtered by project."""
 
-    def update_component(self, component_id: str, updates: dict) -> Component:
+    def update_component(self, component_id: str, updates: dict[Any, Any]) -> Component:
         """Apply partial updates and return the updated component."""
 
     def delete_component(self, component_id: str) -> None:
@@ -284,7 +285,7 @@ class TaskRepositoryInterface(Protocol):
     def list_epics(self) -> list[Any]:
         """List all epics."""
 
-    def update_epic(self, epic_id: str, updates: dict) -> Any:
+    def update_epic(self, epic_id: str, updates: dict[Any, Any]) -> Any:
         """Update an epic."""
 
     def delete_epic(self, epic_id: str) -> None:
@@ -302,7 +303,7 @@ class TaskRepositoryInterface(Protocol):
     def list_objectives(self) -> list[Any]:
         """List all objectives."""
 
-    def update_objective(self, objective_id: str, updates: dict) -> Any:
+    def update_objective(self, objective_id: str, updates: dict[Any, Any]) -> Any:
         """Update an objective."""
 
     def delete_objective(self, objective_id: str) -> None:
@@ -357,37 +358,39 @@ class TaskRepositoryInterface(Protocol):
     def finish_agent_work(self, issue_id: str, agent_id: str) -> Issue:
         """Finish agent work on an issue."""
 
-    def get_cost_per_component(self) -> list[dict]:
+    def get_cost_per_component(self) -> list[dict[Any, Any]]:
         """Get cost breakdown by component for closed issues."""
 
-    def get_cost_per_epic(self) -> list[dict]:
+    def get_cost_per_epic(self) -> list[dict[Any, Any]]:
         """Get cost breakdown by epic for closed issues."""
 
-    def get_cost_per_project(self) -> list[dict]:
+    def get_cost_per_project(self) -> list[dict[Any, Any]]:
         """Get cost breakdown by project for closed issues."""
 
-    def get_cost_summary(self) -> dict:
+    def get_cost_summary(self) -> dict[Any, Any]:
         """Get overall cost summary."""
 
-    def get_deployments(self, environment_name: str | None = None, limit: int = 50) -> list[dict]:
+    def get_deployments(self, environment_name: str | None = None, limit: int = 50) -> list[dict[Any, Any]]:
         """Get deployments, optionally filtered by environment."""
 
-    def get_issue_deployments(self, issue_id: str) -> list[dict]:
+    def get_issue_deployments(self, issue_id: str) -> list[dict[Any, Any]]:
         """Get all deployments for an issue."""
 
     def get_deployment_by_commit(self, commit_sha: str) -> dict[str, Any] | None:
         """Get a single deployment by its commit SHA."""
 
-    def create_deployment(self, deployment) -> None:
+    def create_deployment(self, deployment: Any) -> None:
         """Record a new deployment."""
 
     def delete_deployment(self, deployment_id: str) -> bool:
         """Remove a deployment by id. Returns True when one was deleted."""
 
-    def search_by_embedding(self, embedding: list[float], threshold: float = 0.7, limit: int = 10) -> list[dict]:
+    def search_by_embedding(
+        self, embedding: list[float], threshold: float = 0.7, limit: int = 10
+    ) -> list[dict[Any, Any]]:
         """Search issues by embedding similarity."""
 
-    def find_similar_issues(self, issue_id: str, threshold: float = 0.7, limit: int = 10) -> list[dict]:
+    def find_similar_issues(self, issue_id: str, threshold: float = 0.7, limit: int = 10) -> list[dict[Any, Any]]:
         """Find issues similar to the given issue."""
 
     def update_issue_embedding(self, issue_id: str, embedding: list[float]) -> None:
@@ -410,7 +413,7 @@ class TaskRepositoryInterface(Protocol):
     def delete_constraint(self, constraint_id: str) -> None:
         """Permanently remove a constraint."""
 
-    def update_constraint(self, constraint_id: str, updates: dict) -> Constraint:
+    def update_constraint(self, constraint_id: str, updates: dict[Any, Any]) -> Constraint:
         """Update a constraint."""
 
     def reset_data(self, scope: str = "all") -> dict[str, int]:
@@ -459,8 +462,7 @@ def _compute_preemptive_impact(component_id: str) -> dict[str, Any] | None:
         cg = CodeGraphRepository(driver)
         stats = cg.get_stats()
 
-        files = stats.get("files", [])
-        total_files = len(files)
+        total_files = stats.total_files
 
         callers = cg.get_callers_by_path(component_id)
         callers_count = len(callers)
@@ -473,6 +475,7 @@ def _compute_preemptive_impact(component_id: str) -> dict[str, Any] | None:
         elif callers_count > 0 or total_files > 10:
             risk_level = "MEDIUM"
 
+        files = cg.get_files(limit=100)
         hot_files = [f.get("path", "") for f in files if f.get("symbol_type") == "function"][:3]
 
         return {
@@ -545,7 +548,7 @@ def create_issue_action(
         title=title,
         description=description,
         priority=IssuePriority(priority),
-        component_id=component_id,
+        component_id=UUID(component_id),
         labels=labels or [],
         architectural_constraints=architectural_constraints or [],
         assignee=assignee,
@@ -659,7 +662,7 @@ def close_issue_action(
 
         open_deps = [dep.id for dep in repository.get_dependencies(issue_id) if dep.status != IssueStatus.CLOSED]
         if open_deps:
-            raise OpenDependenciesError(issue_id, open_deps)
+            raise OpenDependenciesError(issue_id, [str(dep_id) for dep_id in open_deps])
 
         issue = repository.close_issue(issue_id, commit_sha, resolution)
 
@@ -830,7 +833,7 @@ def update_component_action(
     if existing is None:
         raise ComponentNotFoundError(component_id)
 
-    updates: dict = {}
+    updates: dict[Any, Any] = {}
     if name is not None:
         updates["name"] = name
     if description is not None:
@@ -898,7 +901,7 @@ def reset_data_action(
 def validate_action_against_policies(
     repository: TaskRepositoryInterface,
     action_type: str,
-    action_data: dict,
+    action_data: dict[Any, Any],
     policy_engine: Any = None,
 ) -> None:
     """Validate an action against defined policies.

@@ -10,7 +10,7 @@ import os
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import httpx
 
@@ -122,7 +122,7 @@ class GitHubAdapter:
         """Whether a token and repository are available for real requests."""
         return bool(self._token and self._repo)
 
-    def _request(self, method: str, path: str, **kwargs) -> dict:
+    def _request(self, method: str, path: str, **kwargs: Any) -> dict[Any, Any]:
         """Make an API request with rate limiting and retry logic."""
         self._rate_limiter.wait()
 
@@ -132,7 +132,10 @@ class GitHubAdapter:
             response = self._client.request(method, url, **kwargs)
 
             if response.status_code == 200:
-                return response.json()
+                data = response.json()
+                if not isinstance(data, dict):
+                    raise ValueError("GitHub API response must be an object")
+                return data
             elif response.status_code == 429:
                 reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
                 wait_time = max(reset_time - time.time(), 0) + 1
@@ -206,7 +209,7 @@ class GitHubAdapter:
         assignees: list[str] | None = None,
     ) -> GitHubIssue:
         """Update a GitHub issue."""
-        update_data = {}
+        update_data: dict[str, Any] = {}
         if title is not None:
             update_data["title"] = title
         if body is not None:
@@ -290,7 +293,7 @@ class GitHubAdapter:
         """Close the HTTP client."""
         self._client.close()
 
-    def list_labels(self) -> list[dict]:
+    def list_labels(self) -> list[dict[Any, Any]]:
         """List all labels in the repository."""
         data = self._request("GET", "/labels")
         return [

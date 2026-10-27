@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 import os
+from typing import Any
 
 import numpy as np
 
 try:
-    import faiss  # type: ignore
+    import faiss
     _FAISS_AVAILABLE = True
 except Exception:
     _FAISS_AVAILABLE = False
@@ -16,19 +17,18 @@ class FaissStore:
     def __init__(self, dim: int, index_factory: str = "Flat"):
         self.dim = dim
         self.index_factory = index_factory
-        self._id_to_meta: dict[str, dict] = {}
+        self._id_to_meta: dict[str, dict[Any, Any]] = {}
         self._id_list: list[str] = []
-        self._vectors = None
-        self._index = None
+        self._vectors: np.ndarray = np.zeros((0, dim), dtype="float32")
+        self._index: Any | None = None
         if _FAISS_AVAILABLE:
             self._index = faiss.IndexFlatL2(dim)
-        else:
-            self._index = None
-            self._vectors = np.zeros((0, dim), dtype="float32")
 
-    def upsert(self, id: str, vector: list[float], metadata: dict | None = None) -> None:
+    def upsert(self, id: str, vector: list[float], metadata: dict[Any, Any] | None = None) -> None:
         vec = np.array(vector, dtype="float32").reshape(1, -1)
         if _FAISS_AVAILABLE:
+            if self._index is None:
+                raise RuntimeError("FAISS index is not initialized")
             if self._index.ntotal == 0:
                 self._index.add(vec)
                 self._id_list.append(id)
@@ -46,9 +46,11 @@ class FaissStore:
             self._id_list.append(id)
         self._id_to_meta[id] = metadata or {}
 
-    def query(self, vector: list[float], top_k: int = 5) -> list[dict]:
+    def query(self, vector: list[float], top_k: int = 5) -> list[dict[Any, Any]]:
         q = np.array(vector, dtype="float32").reshape(1, -1)
         if _FAISS_AVAILABLE:
+            if self._index is None:
+                raise RuntimeError("FAISS index is not initialized")
             distances, indices = self._index.search(q, top_k)
             results = []
             for dist, idx in zip(distances[0], indices[0], strict=False):
@@ -76,6 +78,8 @@ class FaissStore:
         self._id_list.pop(idx)
         self._id_to_meta.pop(id, None)
         if _FAISS_AVAILABLE:
+            if self._index is None:
+                raise RuntimeError("FAISS index is not initialized")
             if not self._id_list:
                 self._index = faiss.IndexFlatL2(self.dim)
             else:
@@ -95,6 +99,8 @@ class FaissStore:
         with open(meta_path, "w", encoding="utf-8") as fh:
             json.dump({"ids": self._id_list, "meta": self._id_to_meta, "dim": self.dim}, fh)
         if _FAISS_AVAILABLE:
+            if self._index is None:
+                raise RuntimeError("FAISS index is not initialized")
             faiss.write_index(self._index, os.path.join(path, "index.faiss"))
         else:
             np.save(os.path.join(path, "vectors.npy"), self._vectors)

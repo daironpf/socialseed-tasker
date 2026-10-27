@@ -155,7 +155,7 @@ class EmbeddingService:
                 model=self._model,
                 input=filtered_text[:8192],
             )
-            return response.data[0].embedding
+            return [float(value) for value in response.data[0].embedding]
         except Exception as e:
             logger.error(f"Failed to generate embedding: {e}")
             return self._generate_fallback(filtered_text)

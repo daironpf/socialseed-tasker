@@ -7,14 +7,14 @@ from socialseed_tasker.application.dtos import IssueSummary
 
 
 class Graph:
-    def __init__(self):
-        self.nodes: dict[str, dict] = {}
+    def __init__(self) -> None:
+        self.nodes: dict[str, dict[Any, Any]] = {}
         self.edges: list[tuple[str, str, str]] = []
 
-    def add_node(self, node_id: str, label: str):
+    def add_node(self, node_id: str, label: str) -> Any:
         self.nodes[node_id] = {"id": node_id, "label": label}
 
-    def add_edge(self, from_id: str, to_id: str, relation: str = "DEPENDS_ON"):
+    def add_edge(self, from_id: str, to_id: str, relation: str = "DEPENDS_ON") -> Any:
         self.edges.append((from_id, to_id, relation))
 
     def to_json(self) -> dict[str, Any]:
@@ -26,7 +26,7 @@ class Graph:
         return {"nodes": nodes, "edges": edges}
 
 
-def build_graph(container) -> Graph:
+def build_graph(container: Any) -> Graph:
     g = Graph()
     issues: list[IssueSummary] = list(container.issue_repo.list())
     issues_sorted = sorted(issues, key=lambda i: str(i.id))
@@ -48,7 +48,7 @@ def build_graph(container) -> Graph:
                 g.add_node(t, t)
             g.add_edge(f, t, rel)
     except Exception:
-        edges_data: list[dict] = []
+        edges_data: list[dict[Any, Any]] = []
         if hasattr(container.graph_repo, "list_edges"):
             edges_data = list(container.graph_repo.list_edges())
         edges_sorted = sorted(edges_data, key=lambda e: (str(e.get("from")), str(e.get("to"))))
@@ -66,7 +66,7 @@ def build_graph(container) -> Graph:
 
 def compute_impact(graph: Graph, node_id: str, max_depth: int = 5) -> list[str]:
     visited = set()
-    q: deque = deque()
+    q: deque[Any] = deque()
     q.append((node_id, 0))
     result: list[str] = []
     adj: dict[str, list[str]] = {}

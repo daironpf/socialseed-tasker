@@ -136,15 +136,15 @@ webhook_router = APIRouter()
 
 @webhook_router.post(
     "/deployments",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Receive CI/CD deployment events",
     description="Webhook endpoint to receive deployment events from CI/CD systems.",
 )
 def receive_deployment(
     body: DeploymentCreateRequest,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-    request: Request = None,
-) -> APIResponse[dict]:
+    request: Request,
+) -> APIResponse[dict[Any, Any]]:
     from datetime import datetime, timezone
     from uuid import uuid4
 
@@ -190,7 +190,7 @@ def receive_deployment(
 
 @webhook_router.get(
     "/deployments",
-    response_model=APIResponse[list],
+    response_model=APIResponse[list[Any]],
     summary="List deployments",
     description="List deployments, optionally filtered by environment.",
 )
@@ -198,21 +198,21 @@ def list_deployments(
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
     environment: str | None = Query(None, description="Filter by environment"),
     limit: int = Query(50, ge=1, le=100, description="Maximum results"),
-) -> APIResponse[list]:
+) -> APIResponse[list[Any]]:
     deployments = repo.get_deployments(environment_name=environment, limit=limit)
     return APIResponse(data=deployments, meta=Meta(request_id=None))
 
 
 @webhook_router.get(
     "/deployments/by-commit/{commit_sha}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Get deployment by commit",
     description="Get deployment details for a specific commit SHA.",
 )
 def get_deployment_by_commit(
     commit_sha: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     deployment = repo.get_deployment_by_commit(commit_sha)
     if deployment is None:
         from fastapi import HTTPException
@@ -248,7 +248,7 @@ def delete_deployment(
 def receive_test_failure(
     body: TestFailureWebhookRequest,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-    request: Request = None,
+    request: Request,
 ) -> APIResponse[TestFailureWebhookResponse]:
     import os
 
@@ -359,12 +359,12 @@ def receive_test_failure(
         )
 
 
-_github_webhook_logs: list[dict] = []
+_github_webhook_logs: list[dict[Any, Any]] = []
 
 
 @webhook_router.post(
     "/webhooks/github",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Receive GitHub webhook events",
     description="Receive real-time updates from GitHub (issues, comments, labels, milestones).",
     openapi_extra={
@@ -380,8 +380,8 @@ _github_webhook_logs: list[dict] = []
 )
 async def receive_github_webhook(
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-    request: Request = None,
-) -> APIResponse[dict]:
+    request: Request,
+) -> APIResponse[dict[Any, Any]]:
     import json
     from datetime import datetime, timezone
 
@@ -501,4 +501,4 @@ def test_webhook() -> APIResponse[GitHubWebhookTestResponse]:
 
 
 # In-memory agent storage for swarm coordination
-_agents: dict[str, dict] = {}
+_agents: dict[str, dict[Any, Any]] = {}

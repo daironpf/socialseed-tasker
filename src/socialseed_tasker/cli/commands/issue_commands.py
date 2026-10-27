@@ -124,7 +124,7 @@ def issue_create(
         description=description,
         status=IssueStatus.OPEN,
         priority=IssuePriority(normalized_priority),
-        component_id=str(component_uuid),
+        component_id=component_uuid,
         labels=label_list,
     )
     result = analyzer.validate_issue_creation(temp_issue)

@@ -97,7 +97,7 @@ class ReasoningRepository:
         """
         self._driver = driver
 
-    def _get_session(self):
+    def _get_session(self) -> Any:
         """Get Neo4j session."""
         if hasattr(self._driver, "driver"):
             return self._driver.driver.session(database=self._driver.database)
@@ -138,7 +138,12 @@ class ReasoningRepository:
                 },
             )
             record = result.single()
-            return record["r"]["id"] if record else None
+            if record is None:
+                raise ValueError(f"Could not create reasoning for issue {issue_id}")
+            reasoning_id = record["r"].get("id")
+            if not isinstance(reasoning_id, str):
+                raise ValueError("Created reasoning has no valid ID")
+            return reasoning_id
 
     def get_reasoning_by_issue(
         self, issue_id: str, limit: int = 50
@@ -225,7 +230,12 @@ class ReasoningRepository:
                 },
             )
             record = result.single()
-            return record["f"]["id"] if record else None
+            if record is None:
+                raise ValueError(f"Could not create feedback for reasoning {reasoning_id}")
+            feedback_id = record["f"].get("id")
+            if not isinstance(feedback_id, str):
+                raise ValueError("Created feedback has no valid ID")
+            return feedback_id
 
     def get_feedback(self, reasoning_id: str) -> list[dict[str, Any]]:
         """Get feedback for a reasoning.

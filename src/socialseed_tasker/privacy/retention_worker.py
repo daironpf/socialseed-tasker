@@ -15,32 +15,32 @@ from socialseed_tasker.privacy.policy import evaluate_policy
 AUDIT_KEY = "privacy:audits"
 
 class RetentionWorker:
-    def __init__(self, container, interval: int = 3600):
+    def __init__(self, container: Any, interval: int = 3600) -> None:
         self.container = container
         self.storage: StoragePort = container.storage
         self.interval = int(os.getenv("TASKER_RETENTION_INTERVAL", str(interval)))
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
-    def start(self):
+    def start(self) -> Any:
         if self._thread and self._thread.is_alive():
             return
         self._stop.clear()
         self._thread = threading.Thread(target=self._loop, daemon=True)
         self._thread.start()
 
-    def stop(self):
+    def stop(self) -> Any:
         self._stop.set()
         if self._thread:
             self._thread.join(timeout=5)
 
-    def _loop(self):
+    def _loop(self) -> Any:
         while not self._stop.is_set():
             with contextlib.suppress(Exception):
                 self.run_once()
             time.sleep(self.interval)
 
-    def run_once(self):
+    def run_once(self) -> Any:
         issues = []
         if hasattr(self.container.issue_repo, "list_all"):
             issues = self.container.issue_repo.list_all()
@@ -61,7 +61,7 @@ class RetentionWorker:
                 if not evaluate_policy(meta):
                     self._archive_and_delete("storage", k, None, meta)
 
-    def _archive_and_delete(self, kind: str, key: str, record: dict[str, Any] | None, meta: dict[str, Any]):
+    def _archive_and_delete(self, kind: str, key: str, record: dict[str, Any] | None, meta: dict[str, Any]) -> Any:
         archive_enabled = os.getenv("TASKER_RETENTION_ARCHIVE", "0") == "1"
         archive_path = os.getenv(
             "TASKER_RETENTION_ARCHIVE_PATH",
@@ -88,7 +88,7 @@ class RetentionWorker:
             audit["error"] = str(exc)
             self._write_audit(audit)
 
-    def _write_audit(self, audit: dict[str, Any]):
+    def _write_audit(self, audit: dict[str, Any]) -> Any:
         try:
             raw = self.storage.get(AUDIT_KEY) or b"[]"
             arr = json.loads(raw.decode("utf-8")) if raw else []

@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from .value_objects import ReasoningContext
+from .value_objects import ReasoningContext as ReasoningContext
 
 
 def _now() -> datetime:

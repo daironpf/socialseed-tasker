@@ -524,14 +524,16 @@ class RootCauseAnalyzer:
         transitively_affected_components: set[str] = set()
 
         for issue_id in all_directly_affected_ids:
-            issue = self._repository.get_issue(issue_id)
-            if issue:
-                directly_affected_components.add(str(issue.component_id))
+            directly_affected_issue = self._repository.get_issue(issue_id)
+            if directly_affected_issue:
+                directly_affected_components.add(str(directly_affected_issue.component_id))
 
         for issue_id in all_transitively_affected_ids:
-            issue = self._repository.get_issue(issue_id)
-            if issue:
-                transitively_affected_components.add(str(issue.component_id))
+            transitively_affected_issue = self._repository.get_issue(issue_id)
+            if transitively_affected_issue:
+                transitively_affected_components.add(
+                    str(transitively_affected_issue.component_id)
+                )
 
         directly_affected_components.discard(component_id)
         transitively_affected_components.discard(component_id)

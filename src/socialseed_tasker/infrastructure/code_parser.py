@@ -13,6 +13,7 @@ import importlib.util
 import os
 import re
 from pathlib import Path
+from typing import Any
 
 from socialseed_tasker.domain.code_analysis_entities import (
     CodeFile,
@@ -43,7 +44,7 @@ LANGUAGE_EXTENSIONS: dict[str, str] = {
     ".php": "php",
 }
 
-TEST_PATTERNS: list[re.Pattern] = [
+TEST_PATTERNS: list[re.Pattern[Any]] = [
     re.compile(r"^test_.*\.(py|js|ts|go|rs|java|cpp|c)$"),
     re.compile(r".*_test\.(py|js|ts|go|rs|java|cpp|c)$"),
     re.compile(r".*\.spec\.(js|ts|jsx|tsx)$"),
@@ -60,7 +61,7 @@ class CodeGraphParser:
     :type: ParserPortProtocol  # implemented via ParserShim
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._tree_sitter_available = self._check_tree_sitter()
 
     def _check_tree_sitter(self) -> bool:
@@ -287,7 +288,7 @@ class CodeGraphParser:
         imports: list[CodeImport] = []
         relationships: list[CodeRelationship] = []
 
-        def traverse(node, parent_id=None):
+        def traverse(node: Any, parent_id: Any = None) -> Any:
             if node.type == "class_definition":
                 name_node = node.child_by_field_name("name")
                 if name_node:
@@ -429,7 +430,7 @@ class CodeGraphParser:
         imports: list[CodeImport] = []
         relationships: list[CodeRelationship] = []
 
-        def traverse(node, parent_id=None):
+        def traverse(node: Any, parent_id: Any = None) -> Any:
             if node.type == "class_declaration":
                 name_node = node.child_by_field_name("name")
                 if name_node:
@@ -522,7 +523,7 @@ class CodeGraphParser:
         imports: list[CodeImport] = []
         relationships: list[CodeRelationship] = []
 
-        def traverse(node, parent_id=None):
+        def traverse(node: Any, parent_id: Any = None) -> Any:
             if node.type == "class_declaration":
                 name_node = node.child_by_field_name("name")
                 if name_node:
@@ -579,7 +580,7 @@ class CodeGraphParser:
         imports: list[CodeImport] = []
         relationships: list[CodeRelationship] = []
 
-        def traverse(node, parent_id=None):
+        def traverse(node: Any, parent_id: Any = None) -> Any:
             if node.type in ("class_specifier", "struct_specifier"):
                 name_node = node.child_by_field_name("name")
                 if name_node:

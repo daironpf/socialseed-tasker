@@ -75,7 +75,7 @@ class RAGRepository:
         self._driver = driver
         self._embedding_service = get_embedding_service()
 
-    def _get_session(self):
+    def _get_session(self) -> Any:
         """Get Neo4j session."""
         if hasattr(self._driver, "driver"):
             return self._driver.driver.session(database=self._driver.database)
@@ -143,14 +143,14 @@ class RAGRepository:
                         },
                     )
             else:
-                for chunk in chunks:
+                for text_chunk in chunks:
                     chunk_id = str(uuid.uuid4())
                     chunk_ids.append(chunk_id)
                     session.run(
                         RAG_QUERIES["create_embedding_node"],
                         {
                             "id": chunk_id,
-                            "content": chunk,
+                            "content": text_chunk,
                             "embedding": [],
                             "source_type": source_type,
                             "source_id": source_id,
@@ -258,7 +258,7 @@ class RAGRepository:
                 {"source_type": source_type, "source_id": source_id},
             )
 
-    def get_context_for_issue(self, issue_id: str) -> list[dict]:
+    def get_context_for_issue(self, issue_id: str) -> list[dict[Any, Any]]:
         """Build RAG context for an Issue by following AFFECTS relationship.
 
         Retrieves CodeSymbols and CodeFiles affected by this issue
@@ -275,7 +275,7 @@ class RAGRepository:
             """, issue_id=issue_id)
             return [dict(r) for r in result]
 
-    def get_embeddings_by_symbol(self, symbol_id: str) -> list[dict]:
+    def get_embeddings_by_symbol(self, symbol_id: str) -> list[dict[Any, Any]]:
         """Get all RAG embeddings linked to a CodeSymbol."""
         with self._get_session() as session:
             result = session.run("""

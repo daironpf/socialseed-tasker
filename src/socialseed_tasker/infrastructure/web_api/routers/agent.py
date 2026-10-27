@@ -208,6 +208,13 @@ def register_agent(
                 )
                 assigned_project_id = project_id_to_assign
 
+    created_at = agent_data["created_at"]
+    if not isinstance(created_at, str):
+        created_at = datetime.now(timezone.utc).isoformat()
+    last_heartbeat = agent_data["last_heartbeat"]
+    if not isinstance(last_heartbeat, str):
+        last_heartbeat = created_at
+
     return APIResponse(
         data=AgentResponse(
             agent_id=body.agent_id,
@@ -216,8 +223,8 @@ def register_agent(
             status="idle",
             current_issue_id=None,
             capabilities=body.capabilities,
-            created_at=agent_data["created_at"],
-            last_heartbeat=agent_data["last_heartbeat"],
+            created_at=datetime.fromisoformat(created_at),
+            last_heartbeat=datetime.fromisoformat(last_heartbeat),
             project_id=assigned_project_id,
         ),
         meta=Meta(request_id=None),
@@ -319,11 +326,11 @@ def agent_heartbeat(
 
 @agent_router.delete(
     "/agents/{agent_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Deregister agent",
     description="Deregister an agent from the swarm.",
 )
-def deregister_agent(agent_id: str) -> APIResponse[dict]:
+def deregister_agent(agent_id: str) -> APIResponse[dict[Any, Any]]:
     if agent_id not in _agents:
         from fastapi import HTTPException
 
@@ -436,14 +443,14 @@ def get_similar_issues(
 
 @agent_router.post(
     "/agents/{agent_id}/specialists/{component_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Add agent specialist in component",
     description="Create (Agent)-[:SPECIALIST_IN]->(Component) relationship.",
 )
 def add_agent_specialist(
     agent_id: str,
     component_id: str,
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     from fastapi import HTTPException
 
     from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
@@ -464,14 +471,14 @@ def add_agent_specialist(
 
 @agent_router.delete(
     "/agents/{agent_id}/specialists/{component_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Remove agent specialist",
     description="Remove (Agent)-[:SPECIALIST_IN]->(Component) relationship.",
 )
 def remove_agent_specialist(
     agent_id: str,
     component_id: str,
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     from fastapi import HTTPException
 
     from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
@@ -492,13 +499,13 @@ def remove_agent_specialist(
 
 @agent_router.get(
     "/agents/{agent_id}/specialists",
-    response_model=APIResponse[list[dict]],
+    response_model=APIResponse[list[dict[Any, Any]]],
     summary="Get agent specialists",
     description="Get all components an agent specializes in.",
 )
 def get_agent_specialists(
     agent_id: str,
-) -> APIResponse[list[dict]]:
+) -> APIResponse[list[dict[Any, Any]]]:
     from fastapi import HTTPException
 
     from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
@@ -516,13 +523,13 @@ def get_agent_specialists(
 
 @agent_router.get(
     "/components/{component_id}/specialists",
-    response_model=APIResponse[list[dict]],
+    response_model=APIResponse[list[dict[Any, Any]]],
     summary="Get component specialists",
     description="Get all agents that specialize in a component.",
 )
 def get_component_specialists(
     component_id: str,
-) -> APIResponse[list[dict]]:
+) -> APIResponse[list[dict[Any, Any]]]:
     from fastapi import HTTPException
 
     from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from ariadne import load_schema_from_path, make_executable_schema
 from ariadne.asgi import GraphQL
@@ -19,7 +20,7 @@ type_defs = load_schema_from_path(SDL_PATH)
 schema = make_executable_schema(type_defs, [query, mutation, subscription])
 
 
-def get_user_from_header(auth_header: str, container):
+def get_user_from_header(auth_header: str | None, container: Any) -> Any:
     if not auth_header:
         return None
     if auth_header.lower().startswith("bearer "):
@@ -28,7 +29,7 @@ def get_user_from_header(auth_header: str, container):
     return None
 
 
-def create_app():
+def create_app() -> FastAPI:
     container = build_default_container()
     app = FastAPI(title="Tasker GraphQL", version="0.1.0")
     allow_origins_env = os.getenv("TASKER_API_ALLOW_ORIGINS", "http://localhost:8080")
@@ -45,7 +46,7 @@ def create_app():
             fh.write(type_defs)
     graphql_app = GraphQL(schema, debug=os.getenv("TASKER_DEBUG", "0") == "1")
 
-    async def asgi_app(scope, receive, send):
+    async def asgi_app(scope: Any, receive: Any, send: Any) -> None:
         request = Request(scope, receive=receive)
         auth = request.headers.get("authorization")
         user_id = get_user_from_header(auth, container)
@@ -54,10 +55,10 @@ def create_app():
         await graphql_app(scope, receive, send)
 
     app.add_route("/graphql", graphql_app)
-    app.add_websocket_route("/graphql/ws", graphql_app)
+    app.add_api_websocket_route("/graphql/ws", graphql_app)
 
     @app.middleware("http")
-    async def attach_container(request, call_next):
+    async def attach_container(request: Request, call_next: Any) -> Any:
         request.state.container = container
         return await call_next(request)
 

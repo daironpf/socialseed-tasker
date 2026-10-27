@@ -137,7 +137,7 @@ if TYPE_CHECKING:
 commit_router = APIRouter()
 
 
-def _commit_to_response(commit: Commit) -> CommitResponse:  # type: ignore[valid-type]
+def _commit_to_response(commit: Commit) -> CommitResponse:
     """Convert domain Commit to API response."""
     return CommitResponse(
         sha=commit.sha,
@@ -174,13 +174,13 @@ def create_commit(
     commit = Commit(
         sha=body.sha,
         message=body.message,
-        authorName=body.author_name,
-        authorEmail=body.author_email,
-        isAiGenerated=body.is_ai_generated,
+        author_name=body.author_name,
+        author_email=body.author_email,
+        is_ai_generated=body.is_ai_generated,
         branch=body.branch,
         additions=body.additions,
         deletions=body.deletions,
-        filesChanged=body.files_changed,
+        files_changed=body.files_changed,
     )
 
     from socialseed_tasker.infrastructure.neo4j_commit_repository import CommitRepository
@@ -287,7 +287,7 @@ def list_commits(
 
 @commit_router.post(
     "/commits/{sha}/link/agent/{agent_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Link commit to agent",
     description="Create (Agent)-[:AUTHORED]->(Commit) relationship.",
 )
@@ -295,7 +295,7 @@ def link_commit_to_agent(
     sha: str,
     agent_id: str,
     driver: Annotated[Any, Depends(get_code_graph_driver)],
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     """Link commit to an agent."""
     if not driver:
         from fastapi import HTTPException
@@ -312,7 +312,7 @@ def link_commit_to_agent(
 
 @commit_router.post(
     "/commits/{sha}/link/user/{user_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Link commit to user",
     description="Create (User)-[:AUTHORED]->(Commit) relationship.",
 )
@@ -320,7 +320,7 @@ def link_commit_to_user(
     sha: str,
     user_id: str,
     driver: Annotated[Any, Depends(get_code_graph_driver)],
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     """Link commit to a user."""
     if not driver:
         from fastapi import HTTPException
@@ -337,7 +337,7 @@ def link_commit_to_user(
 
 @commit_router.post(
     "/commits/{sha}/link/issue/{issue_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Link commit to issue",
     description="Create (Issue)-[:RESOLVED_BY]->(Commit) relationship.",
 )
@@ -345,7 +345,7 @@ def link_commit_to_issue(
     sha: str,
     issue_id: str,
     driver: Annotated[Any, Depends(get_code_graph_driver)],
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     """Link commit to an issue (mark as resolved)."""
     if not driver:
         from fastapi import HTTPException
@@ -390,7 +390,7 @@ def get_commits_for_issue(
 
 @commit_router.get(
     "/commits/file/{file_path:path}",
-    response_model=APIResponse[list[dict]],
+    response_model=APIResponse[list[dict[Any, Any]]],
     summary="Get commits for file",
     description="Get commit history for a file.",
 )
@@ -398,7 +398,7 @@ def get_commits_for_file(
     file_path: str,
     driver: Annotated[Any, Depends(get_code_graph_driver)],
     limit: int = Query(50, ge=1, le=100),
-) -> APIResponse[list[dict]]:
+) -> APIResponse[list[dict[Any, Any]]]:
     """Get commits for a file."""
     if not driver:
         from fastapi import HTTPException
@@ -424,14 +424,14 @@ def get_commits_for_file(
 
 @commit_router.delete(
     "/commits/{sha}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Delete commit",
     description="Delete a commit from the system.",
 )
 def delete_commit(
     sha: str,
     driver: Annotated[Any, Depends(get_code_graph_driver)],
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     """Delete a commit."""
     if not driver:
         from fastapi import HTTPException

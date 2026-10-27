@@ -16,7 +16,8 @@ from socialseed_tasker.observability.logging import get_logger
 from socialseed_tasker.observability.metrics import observe_operation
 
 try:
-    from tree_sitter import Language, Parser  # type: ignore[import-untyped]
+    import tree_sitter_python
+    from tree_sitter import Language, Parser
 
     _TREE_SITTER_AVAILABLE = True
 except Exception:
@@ -44,9 +45,8 @@ class TreeSitterParser(ParserPort):
         self._ts_language = None
         if _TREE_SITTER_AVAILABLE and self.config.treesitter_python_so:
             try:
-                self._ts_language = Language(self.config.treesitter_python_so, "python")
-                p = Parser()
-                p.set_language(self._ts_language)
+                self._ts_language = Language(tree_sitter_python.language())
+                p = Parser(self._ts_language)
                 self._ts_parser = p
             except Exception:
                 self._ts_parser = None
@@ -128,7 +128,7 @@ class TreeSitterParser(ParserPort):
                 stack.append(c)
         return imports
 
-    def _node_to_dict(self, node, raw_bytes: bytes) -> dict[str, Any]:
+    def _node_to_dict(self, node: Any, raw_bytes: bytes) -> dict[str, Any]:
         text = raw_bytes[node.start_byte : node.end_byte].decode("utf-8", errors="replace")
         d: dict[str, Any] = {
             "type": node.type,

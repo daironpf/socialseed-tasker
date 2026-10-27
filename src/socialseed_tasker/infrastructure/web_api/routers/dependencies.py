@@ -147,8 +147,8 @@ def add_dependency(
     issue_id: str,
     body: DependencyRequest,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-    request: Request = None,
-):
+    request: Request,
+) -> Any:
     from socialseed_tasker.application.actions import PolicyViolationError
     from socialseed_tasker.application.policy import PolicyEngine
 
@@ -215,7 +215,7 @@ def add_dependencies_bulk(
     issue_id: str,
     body: BulkDependencyRequest,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     from socialseed_tasker.application.actions import (
         CircularDependencyError,
         IssueNotFoundError,
@@ -270,7 +270,7 @@ def remove_dependency(
     issue_id: str,
     depends_on_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> None:
     remove_dependency_action(repo, issue_id, depends_on_id)
 
 
@@ -285,7 +285,7 @@ def list_dependencies(
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
     page: int = Query(1, ge=1, description="Page number (starts at 1, default: 1)"),
     limit: int = Query(50, ge=1, le=100, description="Items per page (default: 50, max: 100)"),
-):
+) -> Any:
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
@@ -318,7 +318,7 @@ def list_dependencies(
 def list_dependents(
     issue_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
@@ -335,7 +335,7 @@ def list_dependents(
 def get_dependency_chain(
     issue_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     chain = get_dependency_chain_action(repo, issue_id)
     return APIResponse(data=[_issue_to_response(i) for i in chain], meta=Meta(request_id=None))
 
@@ -355,7 +355,7 @@ def get_dependency_chain(
 )
 def list_blocked_issues(
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     blocked = get_blocked_issues_action(repo)
     return APIResponse(data=[_issue_to_response(i) for i in blocked], meta=Meta(request_id=None))
 
@@ -374,7 +374,7 @@ def list_workable_issues(
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
     priority: str | None = Query(None, description="Filter by priority (HIGH, MEDIUM, LOW)"),
     component: str | None = Query(None, description="Filter by component ID"),
-):
+) -> Any:
     workable = get_workable_issues_action(repo, priority=priority, component_id=component)
     return APIResponse(data=[_issue_to_response(i) for i in workable], meta=Meta(request_id=None))
 
@@ -386,7 +386,7 @@ def list_workable_issues(
 
 @dependencies_router.post(
     "/issues/{issue_id}/affects",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Link CodeSymbol to Issue",
     description="Create an AFFECTS relationship between an Issue and a CodeSymbol.",
 )
@@ -394,7 +394,7 @@ def add_affects_symbol(
     issue_id: str,
     payload: SymbolLinkRequest,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
@@ -407,14 +407,14 @@ def add_affects_symbol(
 
 @dependencies_router.get(
     "/issues/{issue_id}/affects",
-    response_model=APIResponse[list[dict]],
+    response_model=APIResponse[list[dict[Any, Any]]],
     summary="Get affected CodeSymbols",
     description="Get all CodeSymbols affected by an Issue.",
 )
 def get_affected_symbols(
     issue_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
@@ -424,7 +424,7 @@ def get_affected_symbols(
 
 @dependencies_router.delete(
     "/issues/{issue_id}/affects",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Remove CodeSymbol from Issue",
     description="Remove an AFFECTS relationship between an Issue and a CodeSymbol.",
 )
@@ -432,7 +432,7 @@ def remove_affects_symbol(
     issue_id: str,
     payload: SymbolLinkRequest,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
@@ -452,6 +452,6 @@ def remove_affects_symbol(
 def get_issues_affecting_symbol(
     symbol_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     issues = repo.get_issues_affecting_symbol(symbol_id)
     return APIResponse(data=[_issue_to_response(i) for i in issues], meta=Meta(request_id=None))

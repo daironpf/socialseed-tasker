@@ -10,6 +10,7 @@ from socialseed_tasker.domain.entities import Issue
 from socialseed_tasker.infrastructure import neo4j_queries as queries
 from socialseed_tasker.infrastructure.embedding_service import get_embedding_service
 from socialseed_tasker.infrastructure.neo4j_impl.shared import (
+    _Neo4jMixin,
     _node_to_issue,
     _now_iso,
     _parse_manifest_todo,
@@ -19,7 +20,7 @@ from socialseed_tasker.infrastructure.neo4j_impl.shared import (
 )
 
 
-class IssueRepositoryMixin:
+class IssueRepositoryMixin(_Neo4jMixin):
     """Issue CRUD and related operations."""
 
     def create_issue(self, issue: Issue) -> Issue:
@@ -208,7 +209,7 @@ class IssueRepositoryMixin:
                 depends_on_id=depends_on_id,
             )
 
-    def add_dependencies_bulk(self, issue_id: str, depends_on_ids: list[str]) -> dict:
+    def add_dependencies_bulk(self, issue_id: str, depends_on_ids: list[str]) -> dict[Any, Any]:
         successful = 0
         failed = 0
         results = []
@@ -419,7 +420,9 @@ class IssueRepositoryMixin:
             raw = record["i"].get("reasoningLogs", [])
             if isinstance(raw, str):
                 raw = json.loads(raw)
-            return raw
+            if not isinstance(raw, list):
+                return []
+            return [entry for entry in raw if isinstance(entry, dict)]
 
     # -- Comments ----------------------------------------------------------------
 
@@ -463,7 +466,9 @@ class IssueRepositoryMixin:
             raw = record["i"].get("comments", [])
             if isinstance(raw, str):
                 raw = json.loads(raw)
-            return raw
+            if not isinstance(raw, list):
+                return []
+            return [entry for entry in raw if isinstance(entry, dict)]
 
     # -- Manifest ---------------------------------------------------------------
 

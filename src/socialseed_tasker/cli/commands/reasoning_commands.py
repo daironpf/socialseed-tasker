@@ -8,6 +8,7 @@ from rich.table import Table
 
 from socialseed_tasker.cli.commands.shared import console
 from socialseed_tasker.config.mode_config import DualModeConfig
+from socialseed_tasker.domain.entities import DecisionType, ReasoningNode
 
 reasoning_app = typer.Typer(help="AI Reasoning Log commands")
 
@@ -25,7 +26,7 @@ def _get_reasoning_client() -> Any | None:
     return None
 
 
-def _log_via_api(client: Any, **kwargs) -> str:
+def _log_via_api(client: Any, **kwargs: Any) -> str:
     body: dict[str, Any] = {
         "issue_id": kwargs["issue_id"],
         "agent_id": kwargs.get("agent_id", "agent-1"),
@@ -41,19 +42,32 @@ def _log_via_api(client: Any, **kwargs) -> str:
     if kwargs.get("rejected"):
         body["rejected_reasons"] = kwargs["rejected"]
     result = client.request("POST", "/api/v1/reasoning/log", json=body)
-    return result.get("id", "unknown")
+    if not isinstance(result, dict):
+        raise ValueError("reasoning API returned an invalid response")
+    reasoning_id = result.get("id", "unknown")
+    if not isinstance(reasoning_id, str):
+        raise ValueError("reasoning API returned an invalid id")
+    return reasoning_id
 
 
-def _history_via_api(client: Any, issue_id: str | None = None, limit: int = 20) -> list[dict]:
+def _history_via_api(client: Any, issue_id: str | None = None, limit: int = 20) -> list[dict[Any, Any]]:
     if issue_id:
-        return client.request("GET", f"/api/v1/reasoning/issue/{issue_id}", params={"limit": limit})
-    return client.request("GET", "/api/v1/reasoning/history", params={"limit": limit})
+        result = client.request("GET", f"/api/v1/reasoning/issue/{issue_id}", params={"limit": limit})
+    else:
+        result = client.request("GET", "/api/v1/reasoning/history", params={"limit": limit})
+    if isinstance(result, dict):
+        result = result.get("reasoning", result.get("items", []))
+    if not isinstance(result, list) or not all(isinstance(item, dict) for item in result):
+        raise ValueError("reasoning API returned an invalid history")
+    return result
 
 
 def _stats_via_api(client: Any) -> dict[str, Any]:
     result = client.request("GET", "/api/v1/reasoning/stats")
     if isinstance(result, dict):
-        return result.get("stats", result)
+        stats = result.get("stats", result)
+        if isinstance(stats, dict):
+            return {key: stats[key] for key in stats if isinstance(key, str)}
     return {}
 
 
@@ -88,7 +102,6 @@ def reasoning_log(
         return
 
     from socialseed_tasker.application.wiring import get_driver
-    from socialseed_tasker.domain.entities import DecisionType, ReasoningNode
     from socialseed_tasker.infrastructure.neo4j_reasoning_repository import ReasoningRepository
 
     driver = get_driver()
@@ -108,9 +121,9 @@ def reasoning_log(
         thought=thought,
         confidence=confidence,
         decision=decision,
-        decisionType=decision_type_enum,
-        alternativesConsidered=alt_list,
-        rejectedReasons=rej_list,
+        decision_type=decision_type_enum,
+        alternatives_considered=alt_list,
+        rejected_reasons=rej_list,
     )
 
     repo = ReasoningRepository(driver)

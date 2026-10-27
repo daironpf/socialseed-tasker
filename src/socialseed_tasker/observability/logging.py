@@ -48,8 +48,9 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(payload, ensure_ascii=False)
 
 
-def configure_root_logger(level: str | int = None) -> None:
-    level = level or os.getenv("TASKER_LOG_LEVEL", "INFO")
+def configure_root_logger(level: str | int | None = None) -> None:
+    if not level:
+        level = os.getenv("TASKER_LOG_LEVEL", "INFO")
     root = logging.getLogger()
     if root.handlers:
         return
@@ -59,12 +60,14 @@ def configure_root_logger(level: str | int = None) -> None:
     root.addHandler(handler)
 
 
-def get_logger(name: str, trace_id: str | None = None) -> logging.Logger:
+def get_logger(
+    name: str, trace_id: str | None = None
+) -> logging.LoggerAdapter[logging.Logger]:
     configure_root_logger()
     logger = logging.getLogger(name)
 
-    class _Adapter(logging.LoggerAdapter):
-        def process(self, msg, kwargs):
+    class _Adapter(logging.LoggerAdapter[logging.Logger]):
+        def process(self, msg: Any, kwargs: Any) -> Any:
             extra = kwargs.get("extra", {})
             if trace_id:
                 extra = {**extra, "trace_id": trace_id}

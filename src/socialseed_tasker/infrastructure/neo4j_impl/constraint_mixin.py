@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Any
+from uuid import UUID
 
 from socialseed_tasker.application.constraints import (
     Constraint,
@@ -8,10 +10,10 @@ from socialseed_tasker.application.constraints import (
     ConstraintLevel,
     ConstraintStatus,
 )
-from socialseed_tasker.infrastructure.neo4j_impl.shared import _session
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _Neo4jMixin, _session
 
 
-class ConstraintRepositoryMixin:
+class ConstraintRepositoryMixin(_Neo4jMixin):
     """Constraint CRUD operations."""
 
     def create_constraint(self, constraint: Constraint) -> None:
@@ -75,7 +77,7 @@ class ConstraintRepositoryMixin:
                 node = dict(r["c"])
                 constraints.append(
                     Constraint(
-                        id=node.get("id"),
+                        id=UUID(str(node.get("id"))),
                         category=ConstraintCategory(node.get("category", "architecture")),
                         level=ConstraintLevel(node.get("level", "hard")),
                         pattern=node.get("pattern", ""),
@@ -105,7 +107,7 @@ class ConstraintRepositoryMixin:
 
             node = dict(record["c"])
             return Constraint(
-                id=node.get("id"),
+                id=UUID(str(node.get("id"))),
                 category=ConstraintCategory(node.get("category", "architecture")),
                 level=ConstraintLevel(node.get("level", "hard")),
                 pattern=node.get("pattern", ""),
@@ -128,7 +130,7 @@ class ConstraintRepositoryMixin:
                 id=constraint_id,
             )
 
-    def update_constraint(self, constraint_id: str, updates: dict) -> Constraint:
+    def update_constraint(self, constraint_id: str, updates: dict[Any, Any]) -> Constraint:
         """Update a constraint in Neo4j."""
         with _session(self._driver) as session:
             set_clauses = []
@@ -148,4 +150,7 @@ class ConstraintRepositoryMixin:
             if record is None:
                 raise ValueError(f"Constraint {constraint_id} not found")
 
-            return self.get_constraint(constraint_id)
+            constraint = self.get_constraint(constraint_id)
+            if constraint is None:
+                raise ValueError(f"Constraint {constraint_id} not found")
+            return constraint

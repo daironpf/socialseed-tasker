@@ -7,6 +7,7 @@ on linked GitHub issues.
 from __future__ import annotations
 
 import os
+from typing import Any
 
 import httpx
 
@@ -30,28 +31,37 @@ class GitHubMirroringService:
             headers["Authorization"] = f"token {self._token}"
         self._client = httpx.Client(headers=headers, timeout=30.0)
 
-    def post_comment(self, issue_number: int, body: str) -> dict:
+    def post_comment(self, issue_number: int, body: str) -> dict[Any, Any]:
         """Post a comment to a GitHub issue."""
         url = f"{self._api_url}/repos/{self._repo}/issues/{issue_number}/comments"
         response = self._client.post(url, json={"body": body})
         response.raise_for_status()
-        return response.json()
+        data = response.json()
+        if not isinstance(data, dict):
+            raise ValueError("GitHub API response must be an object")
+        return data
 
-    def update_comment(self, comment_id: int, body: str) -> dict:
+    def update_comment(self, comment_id: int, body: str) -> dict[Any, Any]:
         """Update an existing comment."""
         url = f"{self._api_url}/repos/{self._repo}/issues/comments/{comment_id}"
         response = self._client.patch(url, json={"body": body})
         response.raise_for_status()
-        return response.json()
+        data = response.json()
+        if not isinstance(data, dict):
+            raise ValueError("GitHub API response must be an object")
+        return data
 
-    def get_issue_comments(self, issue_number: int) -> list[dict]:
+    def get_issue_comments(self, issue_number: int) -> list[dict[Any, Any]]:
         """Get comments on a GitHub issue."""
         url = f"{self._api_url}/repos/{self._repo}/issues/{issue_number}/comments"
         response = self._client.get(url)
         response.raise_for_status()
-        return response.json()
+        data = response.json()
+        if not isinstance(data, list):
+            raise ValueError("GitHub API response must be a list")
+        return [item for item in data if isinstance(item, dict)]
 
-    def find_tasker_comment(self, issue_number: int) -> dict | None:
+    def find_tasker_comment(self, issue_number: int) -> dict[Any, Any] | None:
         """Find an existing Tasker analysis comment."""
         comments = self.get_issue_comments(issue_number)
         for comment in comments:
@@ -62,8 +72,8 @@ class GitHubMirroringService:
     def mirror_root_cause(
         self,
         issue_number: int,
-        analysis_data: dict,
-    ) -> dict:
+        analysis_data: dict[Any, Any],
+    ) -> dict[Any, Any]:
         """Mirror root cause analysis to GitHub."""
         body = self._format_root_cause_comment(analysis_data)
 
@@ -76,8 +86,8 @@ class GitHubMirroringService:
     def mirror_impact(
         self,
         issue_number: int,
-        analysis_data: dict,
-    ) -> dict:
+        analysis_data: dict[Any, Any],
+    ) -> dict[Any, Any]:
         """Mirror impact analysis to GitHub."""
         body = self._format_impact_comment(analysis_data)
 
@@ -87,7 +97,7 @@ class GitHubMirroringService:
         else:
             return self.post_comment(issue_number, body)
 
-    def _format_root_cause_comment(self, data: dict) -> str:
+    def _format_root_cause_comment(self, data: dict[Any, Any]) -> str:
         """Format root cause analysis as GitHub-flavored Markdown."""
         score = data.get("confidence", 0.0)
         reasons = data.get("reasons", [])
@@ -119,7 +129,7 @@ _Analysis performed by Tasker_
 """
         return body
 
-    def _format_impact_comment(self, data: dict) -> str:
+    def _format_impact_comment(self, data: dict[Any, Any]) -> str:
         """Format impact analysis as GitHub-flavored Markdown."""
         directly = len(data.get("directly_affected", []))
         transitively = len(data.get("transitively_affected", []))

@@ -14,7 +14,12 @@ def load_saved_credentials() -> dict[str, str]:
     if config_file.exists():
         try:
             with open(config_file) as f:
-                return json.load(f)
+                credentials = json.load(f)
+            if isinstance(credentials, dict) and all(
+                isinstance(key, str) and isinstance(value, str)
+                for key, value in credentials.items()
+            ):
+                return credentials
         except (OSError, json.JSONDecodeError):
             pass
     return {}

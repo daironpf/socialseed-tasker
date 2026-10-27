@@ -111,28 +111,32 @@ def component_show(component: str) -> None:
         console.print("[info]You can use full UUID, 8+ character prefix, or component name.[/info]")
         raise typer.Exit(code=2) from e
 
-    component = repo.get_component(str(component_uuid))
+    component_entity = repo.get_component(str(component_uuid))
 
-    if component is None:
+    if component_entity is None:
         console.print(f"[error]Component '{component}' not found.[/error]")
         raise typer.Exit(code=1)
 
     lines = [
-        f"[bold]Name:[/bold] {component.name}",
-        f"[bold]Project:[/bold] {component.project}",
-        f"[bold]Created:[/bold] {component.created_at.isoformat()}",
+        f"[bold]Name:[/bold] {component_entity.name}",
+        f"[bold]Project:[/bold] {component_entity.project}",
+        f"[bold]Created:[/bold] {component_entity.created_at.isoformat()}",
     ]
-    if component.description:
-        lines.append(f"[bold]Description:[/bold] {component.description}")
+    if component_entity.description:
+        lines.append(f"[bold]Description:[/bold] {component_entity.description}")
 
     console.print(
-        Panel("\n".join(lines), title=f"[bold]{component.name}[/bold] ({str(component.id)[:8]})", border_style="cyan")
+        Panel(
+            "\n".join(lines),
+            title=f"[bold]{component_entity.name}[/bold] ({str(component_entity.id)[:8]})",
+            border_style="cyan",
+        )
     )
 
     issues = repo.list_issues(component_id=str(component_uuid))
     if issues:
         console.print("\n[bold]Issues:[/bold]")
-        console.print(_issues_table(issues, {str(component_uuid): component.name}))
+        console.print(_issues_table(issues, {str(component_uuid): component_entity.name}))
     else:
         console.print("\n[info]No issues in this component.[/info]")
 

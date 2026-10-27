@@ -110,6 +110,8 @@ dev = [
     
     # Type stubs
     "types-setuptools",
+    "types-requests",
+    "types-PyYAML",
     
     # Documentation
     "mkdocs>=1.5.0",
@@ -179,7 +181,7 @@ known-first-party = ["socialseed_tasker"]
  "**/domain/**/*.py" = ["B904"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 warn_return_any = true
 warn_unused_configs = true

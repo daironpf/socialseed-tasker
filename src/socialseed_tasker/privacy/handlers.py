@@ -8,7 +8,7 @@ import time
 from typing import Any
 
 
-def export_subject(subject_id: str, container) -> str:
+def export_subject(subject_id: str, container: Any) -> str:
     tmp = tempfile.mkdtemp(prefix="tasker-export-subject-")
     files = []
     if hasattr(container.issue_repo, "list_by_subject"):
@@ -34,14 +34,17 @@ def export_subject(subject_id: str, container) -> str:
     return out
 
 
-def delete_subject(subject_id: str, container, dry_run: bool = True) -> dict[str, Any]:
-    to_delete = {"issues": [], "storage": []}
+def delete_subject(subject_id: str, container: Any, dry_run: bool = True) -> dict[str, Any]:
+    to_delete: dict[str, list[str]] = {"issues": [], "storage": []}
     if hasattr(container.issue_repo, "list_by_subject"):
         issues = container.issue_repo.list_by_subject(subject_id)
     else:
         issues = [i for i in container.issue_repo.list_all() if i.get("owner") == subject_id]
     for i in issues:
         iid = i.get("id")
+        if iid is None:
+            continue
+        iid = str(iid)
         to_delete["issues"].append(iid)
         if not dry_run and iid and hasattr(container.issue_repo, "delete"):
             container.issue_repo.delete(iid)

@@ -5,7 +5,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from socialseed_tasker.domain.entities import (
     CommentEntry,
@@ -15,6 +15,12 @@ from socialseed_tasker.domain.entities import (
     ReasoningContext,
     ReasoningLogEntry,
 )
+
+
+class _Neo4jMixin:
+    """Base for repository mixins; the concrete repository injects the driver."""
+
+    _driver: Any
 
 
 @contextmanager
@@ -105,7 +111,7 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
                     context_enum = ReasoningContext.ARCHITECTURE_CHOICE
                 reasoning_logs.append(
                     ReasoningLogEntry(
-                        id=log_data.get("id"),
+                        id=_to_uuid(log_data.get("id")) or uuid4(),
                         timestamp=datetime.fromisoformat(
                             log_data.get("timestamp", datetime.now(timezone.utc).isoformat())
                         ),
@@ -123,7 +129,7 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
             if isinstance(c_data, dict):
                 comments_list.append(
                     CommentEntry(
-                        id=c_data.get("id"),
+                        id=_to_uuid(c_data.get("id")) or uuid4(),
                         timestamp=datetime.fromisoformat(
                             c_data.get("timestamp", datetime.now(timezone.utc).isoformat())
                         ),

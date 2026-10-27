@@ -138,7 +138,7 @@ epic_router = APIRouter()
 
 @epic_router.post(
     "/epics",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     status_code=201,
     summary="Create an epic",
     description="Create a new epic to group related issues.",
@@ -146,14 +146,14 @@ epic_router = APIRouter()
 def create_epic(
     body: EpicCreateRequest,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
-    from uuid import uuid4
+) -> Any:
+    from uuid import UUID, uuid4
 
     epic = Epic(
         id=uuid4(),
         name=body.name,
         description=body.description,
-        objective_id=body.objective_id,
+        objective_id=UUID(body.objective_id) if body.objective_id else None,
         status=EpicStatus(body.status),
     )
     repo.create_epic(epic)
@@ -165,11 +165,11 @@ def create_epic(
 
 @epic_router.get(
     "/epics",
-    response_model=APIResponse[list],
+    response_model=APIResponse[list[Any]],
     summary="List epics",
     description="List all epics in the system.",
 )
-def list_epics(repo: Annotated[TaskRepositoryInterface, Depends(get_repo)]):
+def list_epics(repo: Annotated[TaskRepositoryInterface, Depends(get_repo)]) -> Any:
     epics = repo.list_epics()
     return APIResponse(
         data=[{"id": str(e.id), "name": e.name, "status": e.status.value} for e in epics],
@@ -179,11 +179,11 @@ def list_epics(repo: Annotated[TaskRepositoryInterface, Depends(get_repo)]):
 
 @epic_router.get(
     "/epics/{epic_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Get an epic",
     description="Get details of a specific epic.",
 )
-def get_epic(epic_id: str, repo: Annotated[TaskRepositoryInterface, Depends(get_repo)]):
+def get_epic(epic_id: str, repo: Annotated[TaskRepositoryInterface, Depends(get_repo)]) -> Any:
     epic = repo.get_epic(epic_id)
     if epic is None:
         from fastapi import HTTPException
@@ -203,18 +203,18 @@ def get_epic(epic_id: str, repo: Annotated[TaskRepositoryInterface, Depends(get_
 
 @epic_router.delete(
     "/epics/{epic_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Delete an epic",
     description="Delete an epic.",
 )
-def delete_epic(epic_id: str, repo: Annotated[TaskRepositoryInterface, Depends(get_repo)]):
+def delete_epic(epic_id: str, repo: Annotated[TaskRepositoryInterface, Depends(get_repo)]) -> Any:
     repo.delete_epic(epic_id)
     return APIResponse(data={"deleted": epic_id}, meta=Meta(request_id=None))
 
 
 @epic_router.patch(
     "/epics/{epic_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Update an epic",
     description="Update an epic.",
 )
@@ -222,7 +222,7 @@ def update_epic(
     epic_id: str,
     body: EpicUpdateRequest,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     updates = body.model_dump(exclude_none=True)
     if not updates:
         raise HTTPException(status_code=422, detail="empty update: provide at least one field")
@@ -232,7 +232,7 @@ def update_epic(
 
 @epic_router.post(
     "/epics/{epic_id}/issues",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Link issues to epic",
     description="Link multiple issues to an epic.",
 )
@@ -240,7 +240,7 @@ def link_issues_to_epic(
     epic_id: str,
     body: EpicLinkIssuesRequest,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
 
     issue_ids = body.issue_ids
     for issue_id in issue_ids:
