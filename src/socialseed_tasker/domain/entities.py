@@ -1,12 +1,16 @@
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Any
 from uuid import UUID, uuid4
-from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, AliasChoices, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-def _now():
+from .value_objects import ReasoningContext
+
+
+def _now() -> datetime:
     return datetime.now(timezone.utc)
+
 
 def to_camel(string: str) -> str:
     return "".join(word.capitalize() if i > 0 else word for i, word in enumerate(string.split("_")))
@@ -47,12 +51,12 @@ class User(BaseModel):
     # uids like the wizard admin ('admin') are plain strings.
     id: UUID | str = Field(default_factory=uuid4)
     username: str = Field(..., min_length=1)
-    email: Optional[str] = None
+    email: str | None = None
     role: UserRole = UserRole.DEVELOPER
-    github_handle: Optional[str] = None
+    github_handle: str | None = None
     created_at: datetime = Field(default_factory=_now)
-    last_login: Optional[datetime] = None
-    preferences: Optional[str] = None
+    last_login: datetime | None = None
+    preferences: str | None = None
 
     @field_validator("id", mode="before")
     @classmethod
@@ -63,8 +67,6 @@ class User(BaseModel):
             except ValueError:
                 return value
         return value
-
-from .value_objects import ReasoningContext
 
 
 class DecisionType(str, Enum):
@@ -98,17 +100,17 @@ class Project(BaseModel):
     name: str = Field(..., min_length=1)
     slug: str = Field(..., min_length=1)
     description: str = ""
-    repository_url: Optional[str] = None
-    base_package: Optional[str] = None
+    repository_url: str | None = None
+    base_package: str | None = None
     visibility: ProjectVisibility = ProjectVisibility.PRIVATE
     status: ProjectStatus = ProjectStatus.ACTIVE
     tech_stack: list[str] = Field(default_factory=list)
     main_stack: list[str] = Field(default_factory=list)
-    architecture_style: Optional[str] = None
+    architecture_style: str | None = None
     version: str = "0.0.1"
-    conventions_url: Optional[str] = None
-    conventions_rules: Optional[str] = None
-    last_full_scan: Optional[datetime] = None
+    conventions_url: str | None = None
+    conventions_rules: str | None = None
+    last_full_scan: datetime | None = None
     global_status: GlobalStatus = GlobalStatus.DEVELOPMENT
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
@@ -117,9 +119,9 @@ class Component(BaseModel):
     model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
     id: UUID = Field(default_factory=uuid4)
     name: str = Field(..., min_length=1)
-    description: Optional[str] = None
+    description: str | None = None
     project: str = Field(..., min_length=1)
-    project_id: Optional[UUID] = None
+    project_id: UUID | None = None
     labels: list[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
@@ -128,7 +130,7 @@ class Label(BaseModel):
     model_config = ConfigDict(frozen=True, populate_by_name=True, alias_generator=to_camel)
     id: UUID = Field(default_factory=uuid4)
     name: str = Field(..., min_length=1)
-    color: Optional[str] = None
+    color: str | None = None
     description: str = ""
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
@@ -149,22 +151,22 @@ class Issue(BaseModel):
     affects: list[UUID] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
-    closed_at: Optional[datetime] = None
+    closed_at: datetime | None = None
     architectural_constraints: list[str] = Field(default_factory=list)
     agent_working: bool = False
-    agent_started_at: Optional[datetime] = None
-    agent_finished_at: Optional[datetime] = None
-    agent_id: Optional[str] = None
-    locked_until: Optional[datetime] = None
+    agent_started_at: datetime | None = None
+    agent_finished_at: datetime | None = None
+    agent_id: str | None = None
+    locked_until: datetime | None = None
     reasoning_logs: list[ReasoningLogEntry] = Field(default_factory=list)
     comments: list[CommentEntry] = Field(default_factory=list)
     manifest_todo: list[dict[str, Any]] = Field(default_factory=list)
     manifest_files: list[str] = Field(default_factory=list)
     manifest_notes: list[str] = Field(default_factory=list)
     task_checklist: dict[str, bool] = Field(default_factory=dict)
-    github_issue_url: Optional[str] = None
-    github_issue_number: Optional[int] = None
-    last_mirrored_at: Optional[datetime] = None
+    github_issue_url: str | None = None
+    github_issue_number: int | None = None
+    last_mirrored_at: datetime | None = None
     github_sync_status: str | None = None
     github_last_synced_at: datetime | None = None
     github_conflict: dict[str, Any] | None = None
@@ -172,13 +174,13 @@ class Issue(BaseModel):
     github_base: dict[str, Any] | None = None
     github_pr_url: str | None = None
     github_pr_number: int | None = None
-    estimated_hours: Optional[float] = None
-    hourly_rate_tier: Optional[str] = None
-    resolved_by_commit_sha: Optional[str] = Field(default=None, description="Git commit SHA that resolved this issue")
-    resolution: Optional[str] = Field(default=None, description="Resolution type: implemented, duplicate, wontfix, etc.")
-    actual_hours: Optional[float] = None
-    epic_id: Optional[UUID] = None
-    description_embedding: Optional[list[float]] = None
+    estimated_hours: float | None = None
+    hourly_rate_tier: str | None = None
+    resolved_by_commit_sha: str | None = Field(default=None, description="Git commit SHA that resolved this issue")
+    resolution: str | None = Field(default=None, description="Resolution type: implemented, duplicate, wontfix, etc.")
+    actual_hours: float | None = None
+    epic_id: UUID | None = None
+    description_embedding: list[float] | None = None
 
     def to_indexable_text(self) -> str:
         parts = [f"Issue: {self.title}", f"Description: {self.description}"]
@@ -191,7 +193,7 @@ class ReasoningNode(BaseModel):
     confidence: float = Field(default=0.5, ge=0.0, le=1.0)
     alternatives_considered: list[str] = Field(default_factory=list)
     rejected_reasons: list[str] = Field(default_factory=list)
-    decision: Optional[str] = None
+    decision: str | None = None
     decision_type: DecisionType = DecisionType.UNKNOWN
     created_at: datetime = Field(default_factory=_now)
 
@@ -213,7 +215,7 @@ class ReasoningFeedback(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     reasoning_id: UUID = Field(...)
     is_approved: bool = Field(...)
-    feedback_text: Optional[str] = None
+    feedback_text: str | None = None
     created_at: datetime = Field(default_factory=_now)
     last_heartbeat: datetime = Field(default_factory=_now)
 
@@ -240,7 +242,7 @@ class Agent(BaseModel):
     role: AgentRole = AgentRole.DEVELOPER
     status: AgentStatus = AgentStatus.IDLE
     capabilities: list[str] = Field(default_factory=list)
-    current_issue_id: Optional[str] = None
+    current_issue_id: str | None = None
     created_at: datetime = Field(default_factory=_now)
     last_heartbeat: datetime = Field(default_factory=_now)
 
@@ -257,7 +259,7 @@ class Epic(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     name: str = Field(..., min_length=1)
     description: str = ""
-    objective_id: Optional[UUID] = None
+    objective_id: UUID | None = None
     status: EpicStatus = EpicStatus.OPEN
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)

@@ -7,12 +7,12 @@ is not available.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
+import importlib.util
 import os
 import re
-from datetime import datetime
 from pathlib import Path
-from typing import Protocol, TYPE_CHECKING
 
 from socialseed_tasker.domain.code_analysis_entities import (
     CodeFile,
@@ -22,9 +22,6 @@ from socialseed_tasker.domain.code_analysis_entities import (
     RelationshipType,
     SymbolType,
 )
-
-if TYPE_CHECKING:
-    from socialseed_tasker.application.ports import ParserPort as ParserPortProtocol
 
 LANGUAGE_EXTENSIONS: dict[str, str] = {
     ".py": "python",
@@ -65,15 +62,13 @@ class CodeGraphParser:
 
     def __init__(self):
         self._tree_sitter_available = self._check_tree_sitter()
-        self._parsers: dict[str, TreeSitterLanguage] = {}
 
     def _check_tree_sitter(self) -> bool:
         """Check if tree-sitter is available."""
-        try:
-            import tree_sitter
-            return True
-        except ImportError:
-            return False
+        return (
+            importlib.util.find_spec("tree_sitter") is not None
+            and importlib.util.find_spec("tree_sitter_python") is not None
+        )
 
     def scan_repository(
         self,
@@ -174,7 +169,7 @@ class CodeGraphParser:
         """Iterate over source files in the repository."""
         source_files = []
         exclude_dirs = {
-            ".git", "__pycache__", "node_modules", "venv", ".venv", 
+            ".git", "__pycache__", "node_modules", "venv", ".venv",
             "dist", "build", "assets", "static", "public", "vendor",
             "tests/data", "fixtures"
         }
@@ -187,7 +182,7 @@ class CodeGraphParser:
                 # Ignorar archivos minificados o bundles
                 if ".min." in file or "-min." in file:
                     continue
-                
+
                 ext = Path(file).suffix
                 if ext in LANGUAGE_EXTENSIONS:
                     source_files.append(Path(root) / file)
@@ -263,18 +258,12 @@ class CodeGraphParser:
                     symbols, imports, relationships = self._parse_js_ts(content, file_id, is_test, language)
             else:
                 symbols, imports, relationships = self._parse_js_ts(content, file_id, is_test, language)
-        elif language == "java":
-            if self._tree_sitter_available:
-                try:
-                    symbols, imports, relationships = self._parse_java_tree_sitter(content, file_id, is_test)
-                except Exception:
-                    pass # Basic fallback not implemented
-        elif language == "cpp":
-            if self._tree_sitter_available:
-                try:
-                    symbols, imports, relationships = self._parse_cpp_tree_sitter(content, file_id, is_test)
-                except Exception:
-                    pass
+        elif language == "java" and self._tree_sitter_available:
+            with contextlib.suppress(Exception):
+                symbols, imports, relationships = self._parse_java_tree_sitter(content, file_id, is_test)
+        elif language == "cpp" and self._tree_sitter_available:
+            with contextlib.suppress(Exception):
+                symbols, imports, relationships = self._parse_cpp_tree_sitter(content, file_id, is_test)
 
         return symbols, imports, relationships
 
@@ -285,11 +274,11 @@ class CodeGraphParser:
         is_test: bool,
     ) -> tuple[list[CodeSymbol], list[CodeImport], list[CodeRelationship]]:
         """Parse Python source code using tree-sitter."""
-        from tree_sitter import Language, Parser
         import tree_sitter_python as tspython
+        from tree_sitter import Language, Parser
 
-        PY_LANGUAGE = Language(tspython.language())
-        parser = Parser(PY_LANGUAGE)
+        py_language = Language(tspython.language())
+        parser = Parser(py_language)
 
         tree = parser.parse(content.encode())
         root_node = tree.root_node
@@ -329,7 +318,7 @@ class CodeGraphParser:
                 name_node = node.child_by_field_name("name")
                 if name_node:
                     func_name = content[name_node.start_byte:name_node.end_byte]
-                    
+
                     # Extract parameters
                     params = []
                     params_node = node.child_by_field_name("parameters")
@@ -367,7 +356,7 @@ class CodeGraphParser:
             elif node.type in ("import_statement", "import_from_statement"):
                 module_name = ""
                 imported_names = []
-                
+
                 if node.type == "import_statement":
                     for child in node.children:
                         if child.type == "dotted_name":
@@ -380,7 +369,7 @@ class CodeGraphParser:
                             for name in child.children:
                                 if name.type == "dotted_name":
                                     imported_names.append(content[name.start_byte:name.end_byte])
-                
+
                 if module_name:
                     imp = CodeImport(
                         file_id=file_id,
@@ -460,7 +449,8 @@ class CodeGraphParser:
                     relationships.append(CodeRelationship(
                         source_id=file_id, target_id=symbol.id, relationship_type=RelationshipType.DEFINES
                     ))
-                    for child in node.children: traverse(child, symbol.id)
+                    for child in node.children:
+                        traverse(child, symbol.id)
                     return
 
             elif node.type in ("function_declaration", "method_definition"):
@@ -491,7 +481,7 @@ class CodeGraphParser:
                 source_node = node.child_by_field_name("source")
                 if source_node:
                     module_name = content[source_node.start_byte:source_node.end_byte].strip("'\"")
-                
+
                 if module_name:
                     imp = CodeImport(
                         file_id=file_id, module=module_name, line_number=node.start_point[0] + 1
@@ -522,12 +512,12 @@ class CodeGraphParser:
         is_test: bool,
     ) -> tuple[list[CodeSymbol], list[CodeImport], list[CodeRelationship]]:
         """Parse Java source code using tree-sitter."""
-        from tree_sitter import Language, Parser
         import tree_sitter_java as tsjava
+        from tree_sitter import Language, Parser
         lang = Language(tsjava.language())
         parser = Parser(lang)
         tree = parser.parse(content.encode())
-        
+
         symbols: list[CodeSymbol] = []
         imports: list[CodeImport] = []
         relationships: list[CodeRelationship] = []
@@ -547,7 +537,8 @@ class CodeGraphParser:
                     relationships.append(CodeRelationship(
                         source_id=file_id, target_id=symbol.id, relationship_type=RelationshipType.DEFINES
                     ))
-                    for child in node.children: traverse(child, symbol.id)
+                    for child in node.children:
+                        traverse(child, symbol.id)
                     return
             elif node.type == "method_declaration":
                 name_node = node.child_by_field_name("name")
@@ -565,7 +556,8 @@ class CodeGraphParser:
                         target_id=symbol.id,
                         relationship_type=RelationshipType.DEFINES if not parent_id else RelationshipType.CONTAINS
                     ))
-            for child in node.children: traverse(child, parent_id)
+            for child in node.children:
+                traverse(child, parent_id)
 
         traverse(tree.root_node)
         return symbols, imports, relationships
@@ -577,12 +569,12 @@ class CodeGraphParser:
         is_test: bool,
     ) -> tuple[list[CodeSymbol], list[CodeImport], list[CodeRelationship]]:
         """Parse C++ source code using tree-sitter."""
-        from tree_sitter import Language, Parser
         import tree_sitter_cpp as tscpp
+        from tree_sitter import Language, Parser
         lang = Language(tscpp.language())
         parser = Parser(lang)
         tree = parser.parse(content.encode())
-        
+
         symbols: list[CodeSymbol] = []
         imports: list[CodeImport] = []
         relationships: list[CodeRelationship] = []
@@ -602,7 +594,8 @@ class CodeGraphParser:
                     relationships.append(CodeRelationship(
                         source_id=file_id, target_id=symbol.id, relationship_type=RelationshipType.DEFINES
                     ))
-                    for child in node.children: traverse(child, symbol.id)
+                    for child in node.children:
+                        traverse(child, symbol.id)
                     return
             elif node.type == "function_definition":
                 declarator = node.child_by_field_name("declarator")
@@ -621,7 +614,8 @@ class CodeGraphParser:
                         target_id=symbol.id,
                         relationship_type=RelationshipType.DEFINES if not parent_id else RelationshipType.CONTAINS
                     ))
-            for child in node.children: traverse(child, parent_id)
+            for child in node.children:
+                traverse(child, parent_id)
 
         traverse(tree.root_node)
         return symbols, imports, relationships
@@ -730,10 +724,11 @@ class CodeGraphParser:
 
         lines = content.splitlines()
 
-        import_pattern = re.compile(r"^(?:import\s+(?:{[^}]+}|\w+)\s+from\s+['\"]([^'\"]+)['\"]|import\s+['\"]([^'\"]+)['\"])")
-        func_pattern = re.compile(r"^(?:async\s+)?(?:function\s+(\w+)|const\s+(\w+)\s*=\s*(?:async\s+)?\()")
+        import_pattern = re.compile(
+            r"^(?:import\s+(?:{[^}]+}|\w+)\s+from\s+['\"]([^'\"]+)['\"]|"
+            r"import\s+['\"]([^'\"]+)['\"])"
+        )
         class_pattern = re.compile(r"^class\s+(\w+)")
-        arrow_pattern = re.compile(r"^(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\(")
         method_pattern = re.compile(r"^\s*(?:async\s+)?(\w+)\s*\([^)]*\)\s*{")
 
         current_class: str | None = None

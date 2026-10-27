@@ -5,7 +5,6 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import mermaid from 'mermaid'
 import { checklistKey, checklistKeyFromEscaped, escapeHtml } from '@/utils/checklist'
 
 const { t } = useI18n()
@@ -22,22 +21,21 @@ const rendered = ref('')
 const mermaidIdCounter = ref(0)
 
 let isDark = document.documentElement.classList.contains('dark')
+let mermaid: typeof import('mermaid').default | undefined
 
-mermaid.initialize({
-  startOnLoad: false,
-  theme: isDark ? 'dark' : 'default',
-  securityLevel: 'strict',
-})
+function initializeMermaid() {
+  mermaid?.initialize({
+    startOnLoad: false,
+    theme: isDark ? 'dark' : 'default',
+    securityLevel: 'strict',
+  })
+}
 
 const darkObserver = new MutationObserver(() => {
   const newDark = document.documentElement.classList.contains('dark')
   if (newDark !== isDark) {
     isDark = newDark
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: isDark ? 'dark' : 'default',
-      securityLevel: 'strict',
-    })
+    initializeMermaid()
   }
 })
 darkObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
@@ -56,18 +54,23 @@ async function renderMermaidDiagrams(html: string): Promise<string> {
     result = result.replace(match[0], `<div class="mermaid-container" id="${id}"></div>`)
   }
 
-  for (const diagram of diagrams) {
-    try {
-      const { svg } = await mermaid.render(diagram.id, diagram.code)
-      result = result.replace(
-        `<div class="mermaid-container" id="${diagram.id}"></div>`,
-        `<div class="mermaid-diagram my-3">${svg}</div>`
-      )
-    } catch {
-      result = result.replace(
-        `<div class="mermaid-container" id="${diagram.id}"></div>`,
-        `<div class="mermaid-error rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-sm text-red-700 dark:text-red-300 my-2">${t('analysis.invalidMermaid')}</div>`
-      )
+  if (diagrams.length > 0) {
+    const mermaidRenderer = mermaid ??= (await import('mermaid')).default
+    initializeMermaid()
+
+    for (const diagram of diagrams) {
+      try {
+        const { svg } = await mermaidRenderer.render(diagram.id, diagram.code)
+        result = result.replace(
+          `<div class="mermaid-container" id="${diagram.id}"></div>`,
+          `<div class="mermaid-diagram my-3">${svg}</div>`
+        )
+      } catch {
+        result = result.replace(
+          `<div class="mermaid-container" id="${diagram.id}"></div>`,
+          `<div class="mermaid-error rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-sm text-red-700 dark:text-red-300 my-2">${t('analysis.invalidMermaid')}</div>`
+        )
+      }
     }
   }
 

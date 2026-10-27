@@ -937,7 +937,7 @@ def test_role_change_revokes_sessions_and_new_login_has_new_role(
     assert second["user"]["role"] == "DEVELOPER"
     me = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {second['access_token']}"})
     assert me.status_code == 200
-    assert me.json()["role"] == "DEVELOPER"
+    assert me.json()["data"]["role"] == "DEVELOPER"
 
 
 def test_role_change_without_role_field_keeps_sessions(monkeypatch: pytest.MonkeyPatch):

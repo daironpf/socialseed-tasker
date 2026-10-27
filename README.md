@@ -9,8 +9,8 @@ frontend turns it into a board you actually want to work in — with AI agents w
 same governance rules as humans: they plan, you approve (HITL), policies veto, and an audit
 log remembers everything.
 
-**What's already built** is not a prototype sketch — it's the result of **580 resolved issues**:
-~44,000 lines of typed frontend (105 components, 29 views, 37 stores, 453 Vitest tests, full EN/ES i18n), a real
+**What's already built** is not a prototype sketch — it's the result of **606 resolved issues**:
+~44,000 lines of typed frontend (105 components, 29 views, 37 stores, 483 Vitest tests, full EN/ES i18n), a real
 backend with code-as-graph analysis (tree-sitter), RAG-style reasoning, secrets management and
 a CLI, user/agent management already wired end-to-end against the real API (users, agent
 profiles, skills catalogs, runs and workflows on Postgres), plus a complete mock dataset so
@@ -141,18 +141,18 @@ socialseed-tasker/
 │   │   ├── api/               # client.ts (axios) + mockApi.ts (fetch)
 │   │   ├── locales/           # i18n: en.json / es.json (~1,780 keys)
 │   │   ├── types/             # shared TypeScript contracts
-│   │   └── **/*.spec.ts       # Vitest suites (60 files, 453 tests)
+│   │   └── **/*.spec.ts       # Vitest suites (62 files, 483 tests)
 │   └── dataset-de-pruebas/    # mock dataset (live JSON persistence)
 ├── src/socialseed_tasker/     # Python backend (FastAPI, hexagonal-ish)
 │   ├── cli/                   # `tasker` CLI (typer + rich)
 │   ├── infrastructure/        # web_api (FastAPI), repos (Neo4j)
 │   └── application/           # use cases, container/DI
-├── tests/                     # 161 pytest files (unit, integration, e2e, contracts)
+├── tests/                     # 189 pytest files (unit, integration, e2e, contracts)
 ├── .github/workflows/         # CI: lint, mypy, pytest (3.10–3.12), release, security
 ├── mock-api/server.py         # standalone mock backend for the UI
 ├── docker-compose.yml         # 7 services: neo4j, postgres, redis, mongo, api, board, mock-api
 ├── features.md                # living feature inventory (68 sections)
-└── .issues/                   # issue tracker: to-do/ + done/ (580 closed)
+└── .issues/                   # issue tracker: to-do/ + done/ (606 closed)
 ```
 
 ---
@@ -264,7 +264,7 @@ Where this is going next, roughly in order:
 | Frontend | Vue 3.5 · TypeScript · Vite 6 · Tailwind 3 · Pinia · vue-i18n · vis-network |
 | Backend | Python 3.10+ · FastAPI · Neo4j 5 · Typer CLI · tree-sitter · pydantic |
 | Mock | FastAPI + JSON dataset (drop-in replacement, read/write) |
-| Tooling | Frontend gate: Vitest (453 tests) + `vue-tsc -b && vite build` · Backend CI: ruff, black, isort, mypy, pytest (GitHub Actions) |
+| Tooling | Frontend gate: Vitest (483 tests) + `vue-tsc -b && vite build` · Backend CI: ruff, black, isort, mypy, pytest (GitHub Actions) |
 
 ```bash
 cd frontend && npm run build   # type-check + production bundle (frontend's quality gate)
@@ -313,6 +313,6 @@ the `git checkout` restore above.)
 ---
 
 <p align="center">
-  <b>SocialSeed Tasker v1.0.5</b> · 580 issues resolved · Apache-2.0<br/>
+  <b>SocialSeed Tasker v1.0.5</b> · 606 issues resolved · Apache-2.0<br/>
   Built by <a href="https://github.com/daironpf">Dairon Pérez Frías</a>
 </p>

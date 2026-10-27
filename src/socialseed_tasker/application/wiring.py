@@ -6,7 +6,7 @@ Provides factory functions for both CLI and API entrypoints.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from socialseed_tasker.application.container import Container
 

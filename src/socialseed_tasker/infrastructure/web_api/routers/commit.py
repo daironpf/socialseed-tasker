@@ -117,6 +117,9 @@ from socialseed_tasker.infrastructure.web_api.routers.helpers import (
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from socialseed_tasker.domain.entities import Commit
+
 # ---------------------------------------------------------------------------
 # Commit router
 # ---------------------------------------------------------------------------

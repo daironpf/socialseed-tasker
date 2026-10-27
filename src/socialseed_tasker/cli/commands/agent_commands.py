@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import os
 
+import httpx
 import typer
 from rich.panel import Panel
 from rich.table import Table
 
+from socialseed_tasker.application.wiring import get_driver
 from socialseed_tasker.cli.commands.shared import console, get_repository
 from socialseed_tasker.config.mode_config import DualModeConfig
 
@@ -30,7 +32,6 @@ def agent_context(
     issue_id: str = typer.Option(..., "--issue", "-i", help="Issue ID or short ID"),
 ) -> None:
     """Get code context for an issue from Code-as-Graph."""
-    from socialseed_tasker.application.wiring import get_driver
     from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     driver = get_driver()
@@ -61,9 +62,7 @@ def agent_suggest(
     limit: int = typer.Option(5, "--limit", "-l", help="Max similar issues to return"),
 ) -> None:
     """Find similar past issues via RAG."""
-    from socialseed_tasker.application.wiring import get_driver
     from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
-    from socialseed_tasker.domain.entities import ReasoningNode
 
     driver = get_driver()
     if driver is None:
@@ -99,7 +98,6 @@ def agent_reasoning(
     rejected: str = typer.Option(None, "--rejected", "-rej", help="Comma-separated reasons for rejecting alternatives"),
 ) -> None:
     """Log agent reasoning for issue resolution."""
-    from socialseed_tasker.application.wiring import get_driver
     from socialseed_tasker.domain.entities import DecisionType, ReasoningNode
     from socialseed_tasker.infrastructure.neo4j_reasoning_repository import ReasoningRepository
 
@@ -127,7 +125,7 @@ def agent_reasoning(
     )
 
     repo = ReasoningRepository(driver)
-    reasoning_id = repo.log_reasoning(
+    repo.log_reasoning(
         issue_id=issue_id,
         agent_id="local-agent",
         agent_name="tasker",
@@ -143,8 +141,6 @@ def agent_architect(
     check_only: bool = typer.Option(False, "--check", "-c", help="Only check, don't veto"),
 ) -> None:
     """ARCHITECT agent: Validate changes against architectural constraints."""
-    from rich.panel import Panel
-
     driver = get_driver()
     if driver is None:
         console.print("[error]Neo4j not connected.[/error]")
@@ -184,8 +180,6 @@ def agent_register(
     project_id: str | None = typer.Option(None, "--project-id", "-p", help="Optional project ID to assign the agent to"),
 ) -> None:
     """Register an agent with Tasker to enable tracking and specialization."""
-    import httpx
-
     api_url = _get_api_url()
     caps = [c.strip() for c in capabilities.split(",") if c.strip()]
 
@@ -227,9 +221,9 @@ def agent_register(
         else:
             console.print(f"[error]Failed to register agent:[/error] {response.text}")
             raise typer.Exit(1)
-    except httpx.ConnectError:
+    except httpx.ConnectError as exc:
         console.print("[error]Cannot connect to API. Is the server running?[/error]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from exc
 
 
 @agent_app.command("specialize")
@@ -238,8 +232,6 @@ def agent_specialize(
     component_id: str = typer.Option(..., "--component", "-c", help="Component ID to specialize in"),
 ) -> None:
     """Add agent specialization to a component."""
-    import httpx
-
     api_url = _get_api_url()
 
     try:
@@ -252,28 +244,26 @@ def agent_specialize(
         else:
             console.print(f"[error]Failed:[/error] {response.text}")
             raise typer.Exit(1)
-    except httpx.ConnectError:
+    except httpx.ConnectError as exc:
         console.print("[error]Cannot connect to API.[/error]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from exc
 
 
 @agent_app.command("list")
 def agent_list() -> None:
     """List all agents registered in Tasker."""
-    from rich.table import Table
-
     api_url = _get_api_url()
     try:
         response = httpx.get(f"{api_url}/api/v1/agents", timeout=10)
         response.raise_for_status()
         data = response.json()
         agents = data.get("data", [])
-    except httpx.ConnectError:
+    except httpx.ConnectError as exc:
         console.print("[error]Cannot connect to API.[/error]")
-        raise typer.Exit(1)
-    except Exception as e:
-        console.print(f"[error]Failed to list agents: {e}[/error]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from exc
+    except Exception as exc:
+        console.print(f"[error]Failed to list agents: {exc}[/error]")
+        raise typer.Exit(1) from exc
 
     if not agents:
         console.print("[info]No agents registered[/info]")
