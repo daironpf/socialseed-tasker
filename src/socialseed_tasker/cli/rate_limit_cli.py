@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from typing import Any
 
-def check_cli_rate(container, user_id: str | None) -> bool:
+
+def check_cli_rate(container: Any, user_id: str | None) -> bool:
     limiter = getattr(container, "rate_limiter", None)
     if limiter is None:
         return True

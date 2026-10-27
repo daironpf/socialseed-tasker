@@ -91,7 +91,7 @@ def _dependencies_table(
     return table
 
 
-def _dependency_tree(issue_id: str, deps: list, title: str) -> Tree:
+def _dependency_tree(issue_id: str, deps: list[Any], title: str) -> Tree:
     """Format dependencies as a tree."""
     tree = Tree(f"[bold]{title}[/bold]")
     for dep in deps:

@@ -11,7 +11,7 @@ webhook_router = APIRouter()
 
 
 @webhook_router.post("/api/v1/webhooks/receive")
-async def webhooks_receive(request: Request, x_signature: str | None = Header(None)):
+async def webhooks_receive(request: Request, x_signature: str | None = Header(None)) -> Any:
     try:
         raw_body = await request.body()
     except Exception:
@@ -52,7 +52,7 @@ async def webhooks_receive(request: Request, x_signature: str | None = Header(No
 
 
 @webhook_router.post("/api/v1/webhooks/subscriptions")
-async def create_subscription(req: dict, request: Request) -> APIResponse[dict[str, Any]]:
+async def create_subscription(req: dict[Any, Any], request: Request) -> APIResponse[dict[str, Any]]:
     wm = request.app.state.events
     sub = wm.create_subscription(url=req.get("url"), events=req.get("events"), secret=req.get("secret"))
     return APIResponse(data={"subscription": sub}, meta=Meta(request_id=None))

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import typer
 from rich.tree import Tree
@@ -338,7 +339,7 @@ def dependency_add_batch(
     resolved_str = str(resolved_issue_id)
 
     resolved_dep_ids: list[str] = []
-    resolution_errors: list[dict] = []
+    resolution_errors: list[dict[Any, Any]] = []
     for raw_id in dep_ids:
         try:
             resolved = resolve_issue_id(raw_id, repo)

@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+from typing import Any
+
 from socialseed_tasker.infrastructure import neo4j_queries as queries
-from socialseed_tasker.infrastructure.neo4j_impl.shared import _session
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _Neo4jMixin, _session
 
 
-class CostAnalyticsRepositoryMixin:
+class CostAnalyticsRepositoryMixin(_Neo4jMixin):
     """Cost analytics operations."""
 
-    def get_cost_per_component(self) -> list[dict]:
+    def get_cost_per_component(self) -> list[dict[Any, Any]]:
         """Get cost breakdown by component for closed issues."""
         with _session(self._driver) as session:
             result = session.run(queries.GET_COST_PER_COMPONENT)
@@ -23,7 +25,7 @@ class CostAnalyticsRepositoryMixin:
                 for record in result
             ]
 
-    def get_cost_per_epic(self) -> list[dict]:
+    def get_cost_per_epic(self) -> list[dict[Any, Any]]:
         """Get cost breakdown by epic for closed issues."""
         with _session(self._driver) as session:
             result = session.run(queries.GET_COST_PER_EPIC)
@@ -38,7 +40,7 @@ class CostAnalyticsRepositoryMixin:
                 for record in result
             ]
 
-    def get_cost_per_project(self) -> list[dict]:
+    def get_cost_per_project(self) -> list[dict[Any, Any]]:
         """Get cost breakdown by project for closed issues."""
         with _session(self._driver) as session:
             result = session.run(queries.GET_COST_PER_PROJECT)
@@ -53,7 +55,7 @@ class CostAnalyticsRepositoryMixin:
                 for record in result
             ]
 
-    def get_cost_summary(self) -> dict:
+    def get_cost_summary(self) -> dict[Any, Any]:
         """Get overall cost summary."""
         with _session(self._driver) as session:
             result = session.run(queries.GET_COST_SUMMARY)

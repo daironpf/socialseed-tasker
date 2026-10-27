@@ -136,7 +136,7 @@ if TYPE_CHECKING:
 policy_rel_router = APIRouter()
 
 
-def _policy_to_response(policy: Policy) -> PolicyResponse:  # type: ignore[valid-type]
+def _policy_to_response(policy: Policy) -> PolicyResponse:
     """Convert domain Policy to API response."""
     return PolicyResponse(
         id=str(policy.id),
@@ -155,7 +155,7 @@ def _policy_to_response(policy: Policy) -> PolicyResponse:  # type: ignore[valid
 
 @policy_rel_router.post(
     "/policies/{policy_id}/link/project/{project_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Link policy to project",
     description="Create (Project)-[:ENFORCES]->(Policy) relationship.",
 )
@@ -163,7 +163,7 @@ def link_policy_to_project(
     policy_id: str,
     project_id: str,
     driver: Annotated[Any, Depends(get_code_graph_driver)],
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     """Link policy to a project."""
     if not driver:
         from fastapi import HTTPException
@@ -180,7 +180,7 @@ def link_policy_to_project(
 
 @policy_rel_router.post(
     "/policies/{policy_id}/link/agent/{agent_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Link policy to agent",
     description="Create (Agent)-[:MUST_COMPLY_WITH]->(Policy) relationship.",
 )
@@ -188,7 +188,7 @@ def link_policy_to_agent(
     policy_id: str,
     agent_id: str,
     driver: Annotated[Any, Depends(get_code_graph_driver)],
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     """Link policy to an agent."""
     if not driver:
         from fastapi import HTTPException
@@ -205,7 +205,7 @@ def link_policy_to_agent(
 
 @policy_rel_router.post(
     "/policies/{policy_id}/link/component/{component_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Link policy to component",
     description="Create (Policy)-[:APPLIES_TO]->(Component) relationship.",
 )
@@ -213,7 +213,7 @@ def link_policy_to_component(
     policy_id: str,
     component_id: str,
     driver: Annotated[Any, Depends(get_code_graph_driver)],
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     """Link policy to a component."""
     if not driver:
         from fastapi import HTTPException

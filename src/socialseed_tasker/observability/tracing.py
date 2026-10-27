@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 OTEL_SERVICE_NAME = os.getenv("TASKER_OTEL_SERVICE", "tasker")
 OTEL_JAEGER_HOST = os.getenv("TASKER_JAEGER_HOST", "localhost")
@@ -10,7 +11,7 @@ OTEL_SAMPLING_RATE = float(os.getenv("TASKER_OTEL_SAMPLING_RATE", "1.0"))
 
 _tracer_initialized = False
 
-def init_tracing(app=None, celery_app=None, service_name: str | None = None):
+def init_tracing(app: Any = None, celery_app: Any = None, service_name: str | None = None) -> Any:
     global _tracer_initialized
     if _tracer_initialized:
         return
@@ -53,6 +54,6 @@ def init_tracing(app=None, celery_app=None, service_name: str | None = None):
             pass
     _tracer_initialized = True
 
-def get_tracer(name: str = "tasker"):
+def get_tracer(name: str = "tasker") -> Any:
     from opentelemetry import trace
     return trace.get_tracer(name)

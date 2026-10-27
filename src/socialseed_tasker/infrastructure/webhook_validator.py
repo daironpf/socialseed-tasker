@@ -10,6 +10,7 @@ import hmac
 import logging
 import os
 from datetime import datetime, timezone
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ class WebhookSignatureValidator:
 
     def __init__(self, secret: str | None = None) -> None:
         self._secret = secret or os.environ.get("GITHUB_WEBHOOK_SECRET", "")
-        self._rejected_log: list[dict] = []
+        self._rejected_log: list[dict[Any, Any]] = []
         self._max_rejected_log_size = 100
 
     @property
@@ -80,7 +81,7 @@ class WebhookSignatureValidator:
 
         logger.warning(f"Webhook rejected: {reason}")
 
-    def get_rejected_log(self) -> list[dict]:
+    def get_rejected_log(self) -> list[dict[Any, Any]]:
         """Get log of rejected webhook requests."""
         return self._rejected_log.copy()
 

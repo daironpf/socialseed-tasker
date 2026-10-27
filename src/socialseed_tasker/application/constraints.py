@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -119,7 +120,7 @@ class Constraint(BaseModel):
     updated_at: datetime = Field(default_factory=_now)
 
     @classmethod
-    def from_dict(cls, data: dict) -> Constraint:
+    def from_dict(cls, data: dict[Any, Any]) -> Constraint:
         """Create constraint from dictionary."""
         return cls(
             category=ConstraintCategory(data.get("category", "architecture")),
@@ -172,12 +173,12 @@ class ConstraintValidationResult(BaseModel):
 class ConstraintConfig(BaseModel):
     """Configuration file structure for constraints."""
 
-    architecture: list[dict] = Field(default_factory=list)
-    technology: list[dict] = Field(default_factory=list)
-    naming: list[dict] = Field(default_factory=list)
-    patterns: list[dict] = Field(default_factory=list)
-    dependencies: list[dict] = Field(default_factory=list)
-    active_constraints: list[dict] = Field(default_factory=list)
+    architecture: list[dict[Any, Any]] = Field(default_factory=list)
+    technology: list[dict[Any, Any]] = Field(default_factory=list)
+    naming: list[dict[Any, Any]] = Field(default_factory=list)
+    patterns: list[dict[Any, Any]] = Field(default_factory=list)
+    dependencies: list[dict[Any, Any]] = Field(default_factory=list)
+    active_constraints: list[dict[Any, Any]] = Field(default_factory=list)
 
     def to_constraints(self) -> list[Constraint]:
         """Convert config to constraint entities."""

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timezone
-from typing import Protocol
+from typing import Any, Protocol
 
 
 def _now() -> datetime:
@@ -29,16 +29,16 @@ class CachedGitHubIssueMapper:
 
     def __init__(
         self,
-        github_adapter=None,
+        github_adapter: Any = None,
         ttl_seconds: int = 300,
     ) -> None:
         self._adapter = github_adapter
         self._ttl = ttl_seconds
         self._cache: dict[str, tuple[int, datetime]] = {}
         self._reverse_cache: dict[int, str] = {}
-        self._github_cache: dict[int, dict] = {}
+        self._github_cache: dict[int, dict[Any, Any]] = {}
 
-    def set_github_adapter(self, adapter) -> None:
+    def set_github_adapter(self, adapter: Any) -> None:
         """Set the GitHub adapter."""
         self._adapter = adapter
 
@@ -93,7 +93,7 @@ class CachedGitHubIssueMapper:
         self,
         github_issue_number: int,
         tasker_issue_id: str,
-        metadata: dict | None = None,
+        metadata: dict[Any, Any] | None = None,
     ) -> None:
         """Cache a GitHub issue mapping."""
         self._cache[tasker_issue_id] = (github_issue_number, _now())
@@ -117,7 +117,7 @@ class CachedGitHubIssueMapper:
             if tasker_id and tasker_id in self._cache:
                 self._cache.pop(tasker_id, None)
 
-    def get_cache_stats(self) -> dict:
+    def get_cache_stats(self) -> dict[Any, Any]:
         """Get cache statistics."""
         fresh_count = sum(1 for _, (_, ts) in self._cache.items() if self._is_fresh(ts))
         return {

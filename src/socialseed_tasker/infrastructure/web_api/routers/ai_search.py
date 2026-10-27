@@ -138,7 +138,7 @@ ai_search_router = APIRouter()
 
 @ai_search_router.get(
     "/search-context",
-    response_model=APIResponse[list],
+    response_model=APIResponse[list[Any]],
     summary="Semantic search for context",
     description="Search issues by semantic similarity to the query text.",
 )
@@ -147,7 +147,7 @@ def search_context(
     q: str = Query(..., description="Search query text"),
     threshold: float = Query(0.7, ge=0.0, le=1.0, description="Minimum similarity score"),
     limit: int = Query(10, ge=1, le=50, description="Maximum results"),
-) -> APIResponse[list]:
+) -> APIResponse[list[Any]]:
     try:
         import os
 
@@ -173,7 +173,7 @@ def search_context(
 
 @ai_search_router.get(
     "/similar-issues/{issue_id}",
-    response_model=APIResponse[list],
+    response_model=APIResponse[list[Any]],
     summary="Find similar issues",
     description="Find issues similar to the given issue by semantic similarity.",
 )
@@ -182,7 +182,7 @@ def find_similar_issues(
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
     threshold: float = Query(0.7, ge=0.0, le=1.0, description="Minimum similarity score"),
     limit: int = Query(10, ge=1, le=50, description="Maximum results"),
-) -> APIResponse[list]:
+) -> APIResponse[list[Any]]:
     from neo4j.exceptions import CypherSyntaxError
 
     if repo is None:
@@ -199,7 +199,7 @@ def find_similar_issues(
 
 @ai_search_router.post(
     "/issues/{issue_id}/embed",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Generate embedding for issue",
     description="Generate or regenerate the embedding for an issue description.",
 )
@@ -207,7 +207,7 @@ def generate_issue_embedding(
     issue_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
     force: bool = Query(False, description="Force regenerate existing embedding"),
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     import os
 
     from socialseed_tasker.application.exceptions import AIServiceNotConfiguredError

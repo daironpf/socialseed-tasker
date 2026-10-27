@@ -16,3 +16,20 @@ from socialseed_tasker.infrastructure.web_api.routes import (
     sync_router,
     webhook_router,
 )
+
+__all__ = [
+    "admin_router",
+    "agent_router",
+    "analysis_router",
+    "components_dep_router",
+    "components_router",
+    "constraints_router",
+    "dependencies_router",
+    "epic_router",
+    "label_router",
+    "objective_router",
+    "policy_router",
+    "project_router",
+    "sync_router",
+    "webhook_router",
+]

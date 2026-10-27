@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from contextlib import contextmanager
+from typing import Any
 
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram, generate_latest
 
@@ -31,7 +32,7 @@ INPROGRESS_GAUGE = Gauge(
 
 
 @contextmanager
-def observe_operation(component: str, operation: str):
+def observe_operation(component: str, operation: str) -> Any:
     INPROGRESS_GAUGE.labels(component=component, operation=operation).inc()
     start = time.time()
     try:

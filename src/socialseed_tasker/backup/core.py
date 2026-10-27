@@ -25,7 +25,7 @@ def _write_manifest(tmpdir: Path, manifest: dict[str, Any]) -> None:
     with open(tmpdir / "MANIFEST.json", "w", encoding="utf-8") as fh:
         json.dump(manifest, fh, indent=2)
 
-def _collect_storage(storage, tmpdir: Path) -> list[dict[str, str]]:
+def _collect_storage(storage: Any, tmpdir: Path) -> list[dict[str, str]]:
     keys_meta = []
     if hasattr(storage, "list_keys"):
         for k in storage.list_keys():
@@ -38,15 +38,15 @@ def _collect_storage(storage, tmpdir: Path) -> list[dict[str, str]]:
 
 def export_data(
     output_path: str,
-    issue_repo=None,
-    graph_repo=None,
-    storage=None,
+    issue_repo: Any = None,
+    graph_repo: Any = None,
+    storage: Any = None,
     include_storage: bool = True,
     encrypt: bool = False,
     passphrase: str | None = None,
 ) -> str:
     tmpdir = Path(tempfile.mkdtemp(prefix="tasker-export-"))
-    manifest = {"timestamp": time.time(), "version": "1.0.0", "files": []}
+    manifest: dict[str, Any] = {"timestamp": time.time(), "version": "1.0.0", "files": []}
     issues_file = tmpdir / "issues.json"
     issues = []
     if issue_repo is not None and hasattr(issue_repo, "list_all"):
@@ -67,7 +67,7 @@ def export_data(
         b = fh.read()
     manifest["files"].append({"path": "graph.json", "sha256": _sha256_bytes(b)})
 
-    storage_meta = []
+    storage_meta: list[dict[str, str]] = []
     if include_storage and storage is not None:
         storage_meta = _collect_storage(storage, tmpdir)
         for m in storage_meta:
@@ -118,9 +118,9 @@ def verify_export(file_path: str) -> bool:
 
 def restore_data(
     file_path: str,
-    issue_repo=None,
-    graph_repo=None,
-    storage=None,
+    issue_repo: Any = None,
+    graph_repo: Any = None,
+    storage: Any = None,
     decrypt_passphrase: str | None = None,
 ) -> None:
     tmpdir = Path(tempfile.mkdtemp(prefix="tasker-restore-"))

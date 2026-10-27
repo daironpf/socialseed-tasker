@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import threading
+from typing import Any
 
 from prometheus_client import start_http_server
 
@@ -14,7 +15,7 @@ def start_exporter(port: int | None = None) -> None:
         return
     port = port or int(os.getenv("TASKER_METRICS_PORT", "8000"))
 
-    def _run():
+    def _run() -> Any:
         start_http_server(port)
 
     _METRICS_THREAD = threading.Thread(target=_run, daemon=True)

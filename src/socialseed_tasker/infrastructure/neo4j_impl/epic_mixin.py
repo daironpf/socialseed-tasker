@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Any
 from uuid import UUID
 
 from socialseed_tasker.domain.entities import Epic, EpicStatus, Objective, ObjectiveStatus
 from socialseed_tasker.infrastructure import neo4j_queries as queries
-from socialseed_tasker.infrastructure.neo4j_impl.shared import _session
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _Neo4jMixin, _session
 
 _EPIC_UPDATABLE_FIELDS = frozenset({"name", "description", "objective_id", "status"})
 _OBJECTIVE_UPDATABLE_FIELDS = frozenset({"name", "description", "status", "quarter"})
 
 
-class EpicRepositoryMixin:
+class EpicRepositoryMixin(_Neo4jMixin):
     """Epic and Objective CRUD operations."""
 
     def create_epic(self, epic: Epic) -> None:
@@ -69,7 +70,7 @@ class EpicRepositoryMixin:
         with _session(self._driver) as session:
             session.run(queries.LINK_ISSUE_TO_EPIC, issue_id=issue_id, epic_id=epic_id)
 
-    def update_epic(self, epic_id: str, updates: dict) -> None:
+    def update_epic(self, epic_id: str, updates: dict[Any, Any]) -> None:
         safe_updates = {k: v for k, v in updates.items() if k in _EPIC_UPDATABLE_FIELDS}
         if not safe_updates:
             return
@@ -139,7 +140,7 @@ class EpicRepositoryMixin:
         with _session(self._driver) as session:
             session.run(queries.LINK_EPIC_TO_OBJECTIVE, epic_id=epic_id, objective_id=objective_id)
 
-    def update_objective(self, objective_id: str, updates: dict) -> None:
+    def update_objective(self, objective_id: str, updates: dict[Any, Any]) -> None:
         safe_updates = {k: v for k, v in updates.items() if k in _OBJECTIVE_UPDATABLE_FIELDS}
         if not safe_updates:
             return

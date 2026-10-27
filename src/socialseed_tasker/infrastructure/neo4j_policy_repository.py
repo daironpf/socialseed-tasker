@@ -74,7 +74,7 @@ class PolicyRepository:
     def __init__(self, driver: Any) -> None:
         self._driver = driver
 
-    def _get_session(self):
+    def _get_session(self) -> Any:
         """Get Neo4j session."""
         if hasattr(self._driver, "driver"):
             return self._driver.driver.session(database=self._driver.database)

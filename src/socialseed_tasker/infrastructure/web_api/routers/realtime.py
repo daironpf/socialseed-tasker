@@ -281,7 +281,7 @@ async def stream_agent_logs(issue_id: str, request: Request) -> StreamingRespons
     hub = _hub(request)
     queue, snapshot = hub.subscribe_logs(issue_id)
 
-    async def generate():
+    async def generate() -> Any:
         try:
             yield _sse(
                 "connected",
@@ -330,7 +330,7 @@ async def stream_presence(issue_id: str, request: Request) -> StreamingResponse:
     hub = _hub(request)
     queue, snapshot = hub.subscribe_presence(issue_id)
 
-    async def generate():
+    async def generate() -> Any:
         try:
             yield _sse("connected", {"issue_id": issue_id})
             yield _sse("viewers", {"viewers": snapshot})

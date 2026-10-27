@@ -145,7 +145,7 @@ def add_component_dependency(
     component_id: str,
     body: dict[str, str],
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     from fastapi import HTTPException
 
     depends_on_id = body.get("depends_on_id")
@@ -180,7 +180,7 @@ def add_component_dependency(
 def get_component_dependencies(
     component_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     existing = repo.get_component(component_id)
     if existing is None:
         raise ComponentNotFoundError(component_id)
@@ -202,7 +202,7 @@ def get_component_dependencies(
 def get_component_dependents(
     component_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     existing = repo.get_component(component_id)
     if existing is None:
         raise ComponentNotFoundError(component_id)

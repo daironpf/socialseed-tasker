@@ -13,19 +13,19 @@ from socialseed_tasker.graphviz.builder import build_graph, compute_impact
 router = APIRouter(prefix="/api/v1/graph", tags=["graphviz"])
 
 
-def get_container():
+def get_container() -> Any:
     return build_default_container()
 
 
 @router.get("", response_class=JSONResponse)
-def api_get_graph(container: Any = None):
+def api_get_graph(container: Any = None) -> Any:
     container = container or get_container()
     g = build_graph(container)
     return g.to_json()
 
 
 @router.get("/impact/{node_id}", response_class=JSONResponse)
-def api_get_impact(node_id: str, max_depth: int = 5, container: Any = None):
+def api_get_impact(node_id: str, max_depth: int = 5, container: Any = None) -> Any:
     container = container or get_container()
     g = build_graph(container)
     if node_id not in g.nodes:
@@ -35,14 +35,14 @@ def api_get_impact(node_id: str, max_depth: int = 5, container: Any = None):
 
 
 @router.get("/export.json", response_class=JSONResponse)
-def api_export_json(container: Any = None):
+def api_export_json(container: Any = None) -> Any:
     container = container or get_container()
     g = build_graph(container)
     return g.to_json()
 
 
 @router.get("/export.svg")
-def api_export_svg(container: Any = None):
+def api_export_svg(container: Any = None) -> Any:
     container = container or get_container()
     g = build_graph(container)
     nodes = g.to_json()["nodes"]
@@ -106,12 +106,12 @@ app.include_router(router)
 
 
 @app.get("/graphviz", response_class=HTMLResponse)
-def ui():
+def ui() -> Any:
     return UI_HTML
 
 
 @app.on_event("startup")
-def startup_subscribe():
+def startup_subscribe() -> Any:
     container = build_default_container()
     eb = getattr(container, "events_bus", None)
     if eb:

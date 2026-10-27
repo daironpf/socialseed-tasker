@@ -35,7 +35,7 @@ import uuid
 from typing import Any
 from urllib.parse import urlencode
 
-import requests  # type: ignore[import-untyped]
+import requests
 from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel

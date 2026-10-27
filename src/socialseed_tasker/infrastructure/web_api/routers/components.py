@@ -152,7 +152,7 @@ def list_projects(
 def create_component(
     body: ComponentCreateRequest,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     from fastapi import HTTPException
 
     from socialseed_tasker.domain import (
@@ -187,7 +187,7 @@ def list_components(
     name: str | None = Query(None, description="Filter by exact name"),
     page: int = Query(1, ge=1, description="Page number (starts at 1, default: 1)"),
     limit: int = Query(50, ge=1, le=100, description="Items per page (default: 50, max: 100)"),
-):
+) -> Any:
     if name:
         comp = repo.get_component_by_name(name, project)
         components = [comp] if comp else []
@@ -224,7 +224,7 @@ def list_components(
 def get_component(
     component_id: str,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     comp = repo.get_component(component_id)
     if comp is None:
         raise ComponentNotFoundError(component_id)

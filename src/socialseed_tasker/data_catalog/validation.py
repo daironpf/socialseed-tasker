@@ -23,7 +23,7 @@ def validate_payload(dataset_id: str, payload: dict[str, Any], version: str | No
 
 class ValidationMiddleware:
     @staticmethod
-    async def validate_request(request: Request, dataset_id: str):
+    async def validate_request(request: Request, dataset_id: str) -> Any:
         try:
             body = await request.json()
         except Exception:

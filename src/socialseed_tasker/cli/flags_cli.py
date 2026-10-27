@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+from typing import Any
 
 from socialseed_tasker.application.exceptions import PermissionError
 
@@ -11,7 +12,7 @@ def _print_json(obj: object) -> None:
     sys.stdout.flush()
 
 
-def _error_and_exit(command: str, payload: dict, details: str = "") -> None:
+def _error_and_exit(command: str, payload: dict[Any, Any], details: str = "") -> None:
     out = {
         "status": "error",
         "command": command,
@@ -24,7 +25,7 @@ def _error_and_exit(command: str, payload: dict, details: str = "") -> None:
     sys.exit(2)
 
 
-def cmd_flag_set(args, container, user_id) -> None:
+def cmd_flag_set(args: Any, container: Any, user_id: Any) -> None:
     try:
         if not container.rbac.has_permission(user_id, "admin"):
             raise PermissionError("forbidden")
@@ -36,7 +37,7 @@ def cmd_flag_set(args, container, user_id) -> None:
         _error_and_exit("flag-set", {"name": args.name}, details=str(exc))
 
 
-def cmd_flag_get(args, container, user_id) -> None:
+def cmd_flag_get(args: Any, container: Any, user_id: Any) -> None:
     try:
         if not container.rbac.has_permission(user_id, "admin"):
             raise PermissionError("forbidden")
@@ -48,7 +49,7 @@ def cmd_flag_get(args, container, user_id) -> None:
         _error_and_exit("flag-get", {"name": args.name}, details=str(exc))
 
 
-def cmd_flag_list(args, container, user_id) -> None:
+def cmd_flag_list(args: Any, container: Any, user_id: Any) -> None:
     try:
         if not container.rbac.has_permission(user_id, "admin"):
             raise PermissionError("forbidden")
@@ -60,7 +61,7 @@ def cmd_flag_list(args, container, user_id) -> None:
         _error_and_exit("flag-list", {}, details=str(exc))
 
 
-def cmd_flag_delete(args, container, user_id) -> None:
+def cmd_flag_delete(args: Any, container: Any, user_id: Any) -> None:
     try:
         if not container.rbac.has_permission(user_id, "admin"):
             raise PermissionError("forbidden")

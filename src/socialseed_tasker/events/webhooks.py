@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import json
 import uuid
+from typing import Any
 
 from socialseed_tasker.application.exceptions import StorageError
 from socialseed_tasker.application.ports import StoragePort
@@ -15,10 +16,10 @@ class WebhookManager:
 
     def __init__(self, storage: StoragePort):
         self.storage = storage
-        self._cache: dict[str, dict] = {}
+        self._cache: dict[str, dict[Any, Any]] = {}
         self._load_from_storage()
 
-    def _load_from_storage(self):
+    def _load_from_storage(self) -> Any:
         try:
             raw = self.storage.get(self.SUBS_KEY)
             if raw:
@@ -28,23 +29,25 @@ class WebhookManager:
         except Exception:
             self._cache = {}
 
-    def _persist(self):
+    def _persist(self) -> Any:
         try:
             self.storage.put(self.SUBS_KEY, json.dumps(self._cache).encode("utf-8"))
         except Exception as exc:
             raise StorageError(f"Failed to persist subscriptions: {exc}") from exc
 
-    def create_subscription(self, url: str, events: list[str] | None = None, secret: str | None = None) -> dict:
+    def create_subscription(
+        self, url: str, events: list[str] | None = None, secret: str | None = None
+    ) -> dict[Any, Any]:
         sid = str(uuid.uuid4())
         sub = {"id": sid, "url": url, "events": events or ["*"], "secret": secret}
         self._cache[sid] = sub
         self._persist()
         return sub
 
-    def list_subscriptions(self) -> list[dict]:
+    def list_subscriptions(self) -> list[dict[Any, Any]]:
         return list(self._cache.values())
 
-    def get_subscription(self, sid: str) -> dict | None:
+    def get_subscription(self, sid: str) -> dict[Any, Any] | None:
         return self._cache.get(sid)
 
     def delete_subscription(self, sid: str) -> None:

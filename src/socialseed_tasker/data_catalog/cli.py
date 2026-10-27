@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import argparse
 import json
+from typing import Any
 
 from socialseed_tasker.cli.wiring import build_default_container
 
 
-def cmd_register_schema(args):
+def cmd_register_schema(args: Any) -> Any:
     container = build_default_container()
     reg = container.schema_registry
     with open(args.file, encoding="utf-8") as f:
@@ -15,14 +16,14 @@ def cmd_register_schema(args):
     print("ok")
 
 
-def cmd_get_schema(args):
+def cmd_get_schema(args: Any) -> Any:
     container = build_default_container()
     reg = container.schema_registry
     s = reg.get_schema(args.name, args.version)
     print(json.dumps(s, indent=2))
 
 
-def cmd_register_dataset(args):
+def cmd_register_dataset(args: Any) -> Any:
     container = build_default_container()
     reg = container.schema_registry
     reg.register_dataset(
@@ -37,7 +38,7 @@ def cmd_register_dataset(args):
     print("ok")
 
 
-def main(argv=None):
+def main(argv: Any = None) -> Any:
     p = argparse.ArgumentParser(prog="tasker-registry")
     sub = p.add_subparsers(dest="cmd")
     rs = sub.add_parser("register-schema")

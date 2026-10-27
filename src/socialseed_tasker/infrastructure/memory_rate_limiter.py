@@ -12,7 +12,7 @@ class MemoryRateLimiter:
         self.rate_per_min = rate_per_min
         self.burst = burst
 
-    def _init_key(self, key: str):
+    def _init_key(self, key: str) -> Any:
         if key not in self._store:
             self._store[key] = {
                 "tokens": float(self.burst),

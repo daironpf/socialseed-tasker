@@ -4,6 +4,7 @@ import contextlib
 import json
 import threading
 import time
+from typing import Any
 
 from socialseed_tasker.application.ports import StoragePort
 from socialseed_tasker.ml.runner import ModelRunner
@@ -20,25 +21,25 @@ class BatchWorker:
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
-    def start(self):
+    def start(self) -> Any:
         if self._thread and self._thread.is_alive():
             return
         self._stop.clear()
         self._thread = threading.Thread(target=self._loop, daemon=True)
         self._thread.start()
 
-    def stop(self):
+    def stop(self) -> Any:
         self._stop.set()
         if self._thread:
             self._thread.join(timeout=5)
 
-    def _loop(self):
+    def _loop(self) -> Any:
         while not self._stop.is_set():
             with contextlib.suppress(Exception):
                 self.run_once()
             time.sleep(self.poll_interval)
 
-    def run_once(self):
+    def run_once(self) -> Any:
         raw = self.storage.get(JOBS_KEY) or b"[]"
         jobs = json.loads(raw.decode("utf-8")) if raw else []
         if not jobs:

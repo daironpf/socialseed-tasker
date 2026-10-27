@@ -135,11 +135,11 @@ sync_router = APIRouter()
 
 @sync_router.get(
     "/sync/status",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Get sync status",
     description="Get current sync status (online/offline, queue size).",
 )
-def get_sync_status() -> APIResponse[dict]:
+def get_sync_status() -> APIResponse[dict[Any, Any]]:
     from socialseed_tasker.infrastructure.sync_engine import get_sync_engine
 
     engine = get_sync_engine()
@@ -151,11 +151,11 @@ def get_sync_status() -> APIResponse[dict]:
 
 @sync_router.get(
     "/sync/queue",
-    response_model=APIResponse[list[dict]],
+    response_model=APIResponse[list[dict[Any, Any]]],
     summary="Get sync queue",
     description="View pending sync queue items.",
 )
-def get_sync_queue() -> APIResponse[list[dict]]:
+def get_sync_queue() -> APIResponse[list[dict[Any, Any]]]:
     from socialseed_tasker.infrastructure.sync_engine import get_sync_engine
 
     engine = get_sync_engine()
@@ -179,11 +179,11 @@ def get_sync_queue() -> APIResponse[list[dict]]:
 
 @sync_router.post(
     "/sync/force",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Force sync",
     description="Force a sync attempt to process the queue.",
 )
-def force_sync() -> APIResponse[dict]:
+def force_sync() -> APIResponse[dict[Any, Any]]:
     from socialseed_tasker.infrastructure.sync_engine import get_sync_engine
 
     engine = get_sync_engine()

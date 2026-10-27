@@ -28,14 +28,14 @@ class Rotator:
         self.storage = storage
         self.secrets = secrets_store
 
-    def _load_rotations(self) -> dict[str, dict]:
+    def _load_rotations(self) -> dict[str, dict[Any, Any]]:
         raw = self.storage.get(ROTATIONS_KEY) or b"{}"
         try:
             return json.loads(raw.decode("utf-8")) if raw else {}
         except Exception:
             return {}
 
-    def _persist_rotations(self, data: dict[str, dict]) -> None:
+    def _persist_rotations(self, data: dict[str, dict[Any, Any]]) -> None:
         self.storage.put(ROTATIONS_KEY, json.dumps(data).encode("utf-8"))
 
     def schedule_rotation(

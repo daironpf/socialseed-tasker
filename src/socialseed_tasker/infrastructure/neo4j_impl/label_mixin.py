@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Any
 from uuid import uuid4
 
 from socialseed_tasker.domain.entities import Issue
 from socialseed_tasker.infrastructure import neo4j_queries as queries
-from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_issue, _session
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _Neo4jMixin, _node_to_issue, _session
 
 
-class LabelRepositoryMixin:
+class LabelRepositoryMixin(_Neo4jMixin):
     """Label management operations."""
 
-    def sync_labels_from_github(self, github_adapter) -> int:
+    def sync_labels_from_github(self, github_adapter: Any) -> int:
         """Sync labels from GitHub repository."""
 
         labels = github_adapter.list_labels() if github_adapter else []
@@ -32,7 +33,7 @@ class LabelRepositoryMixin:
 
         return synced
 
-    def get_all_labels(self) -> list[dict]:
+    def get_all_labels(self) -> list[dict[Any, Any]]:
         """Get all labels from Neo4j."""
         with _session(self._driver) as session:
             result = session.run(queries.GET_ALL_LABELS)

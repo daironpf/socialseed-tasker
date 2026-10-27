@@ -13,7 +13,7 @@ from socialseed_tasker.application.ports import StoragePort
 from socialseed_tasker.observability.tracing import get_tracer
 
 
-def _tracer_fn():
+def _tracer_fn() -> Any:
     return get_tracer("tasker.delivery")
 
 DELIVERY_PREFIX = "webhook:delivery:"
@@ -26,25 +26,25 @@ class DeliveryWorker:
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
-    def start(self):
+    def start(self) -> Any:
         if self._thread and self._thread.is_alive():
             return
         self._stop.clear()
         self._thread = threading.Thread(target=self._run_loop, daemon=True)
         self._thread.start()
 
-    def stop(self):
+    def stop(self) -> Any:
         self._stop.set()
         if self._thread:
             self._thread.join(timeout=5)
 
-    def _run_loop(self):
+    def _run_loop(self) -> Any:
         while not self._stop.is_set():
             with contextlib.suppress(Exception):
                 self._process_pending()
             time.sleep(1.0)
 
-    def _process_pending(self):
+    def _process_pending(self) -> Any:
         try:
             raw = self.storage.get("webhook:deliveries_index")
             index = json.loads(raw.decode("utf-8")) if raw else []
@@ -71,7 +71,7 @@ class DeliveryWorker:
             except Exception:
                 pass
 
-    def _attempt_delivery(self, did: str, state: dict[str, Any], key: str, index: list):
+    def _attempt_delivery(self, did: str, state: dict[str, Any], key: str, index: list[Any]) -> Any:
         with _tracer_fn().start_as_current_span("delivery.attempt"):
             url = state["url"]
             payload = state["payload"]

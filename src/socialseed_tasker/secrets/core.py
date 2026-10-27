@@ -81,7 +81,7 @@ class SecretsStore:
         raw = self.storage.get(self._key(name))
         prev_hash = None
         if raw:
-            entry: dict = json.loads(raw.decode("utf-8"))
+            entry: dict[Any, Any] = json.loads(raw.decode("utf-8"))
             prev_hash = _hash_bytes(
                 base64.b64decode(entry["value"].encode("utf-8"))
             )
@@ -112,7 +112,7 @@ class SecretsStore:
     def _write_audit(self, audit: dict[str, Any]) -> None:
         raw = self.storage.get(AUDIT_KEY) or b"[]"
         try:
-            arr: list = json.loads(raw.decode("utf-8")) if raw else []
+            arr: list[Any] = json.loads(raw.decode("utf-8")) if raw else []
         except Exception:
             arr = []
         arr.append(audit)

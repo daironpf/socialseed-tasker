@@ -299,7 +299,7 @@ def get_project_by_id(
 
 @project_router.post(
     "/projects",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     status_code=201,
     summary="Create or get the single project",
     description="Tasker supports only ONE project. If one exists, it returns the existing one. If not, it creates it.",
@@ -307,7 +307,7 @@ def get_project_by_id(
 def create_project(
     request: Request,
     body: ProjectCreateRequest,
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     from datetime import datetime, timezone
 
     from fastapi import HTTPException
@@ -383,7 +383,7 @@ def create_project(
 
 @project_router.post(
     "/projects/users",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     status_code=201,
     summary="Create a new user node and link it to a project",
     description="Create a new user node in the graph and link to project. "
@@ -393,7 +393,7 @@ def create_project(
 def create_user(
     body: UserCreateRequest,
     project_id: str = Query(..., description="Project ID to link the user to"),
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     import uuid
     from datetime import datetime, timezone
 
@@ -516,14 +516,14 @@ def get_project_summary(
 
 @project_router.post(
     "/projects/{project_id}/agents/{agent_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Assign agent to project",
     description="Create (Project)-[:ASSIGNED_TO]->(Agent) relationship.",
 )
 def assign_agent_to_project(
     project_id: str,
     agent_id: str,
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     from fastapi import HTTPException
 
     from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
@@ -544,14 +544,14 @@ def assign_agent_to_project(
 
 @project_router.delete(
     "/projects/{project_id}/agents/{agent_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Remove agent from project",
     description="Remove (Project)-[:ASSIGNED_TO]->(Agent) relationship.",
 )
 def remove_agent_from_project(
     project_id: str,
     agent_id: str,
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     from fastapi import HTTPException
 
     from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver
@@ -572,13 +572,13 @@ def remove_agent_from_project(
 
 @project_router.get(
     "/projects/{project_id}/agents",
-    response_model=APIResponse[list[dict]],
+    response_model=APIResponse[list[dict[Any, Any]]],
     summary="Get project agents",
     description="Get all agents assigned to a project.",
 )
 def get_project_agents(
     project_id: str,
-) -> APIResponse[list[dict]]:
+) -> APIResponse[list[dict[Any, Any]]]:
     from fastapi import HTTPException
 
     from socialseed_tasker.application.wiring import get_driver as get_neo4j_driver

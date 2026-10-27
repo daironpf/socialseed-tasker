@@ -138,7 +138,7 @@ objective_router = APIRouter()
 
 @objective_router.post(
     "/objectives",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     status_code=201,
     summary="Create an objective",
     description="Create a new objective (OKR).",
@@ -146,7 +146,7 @@ objective_router = APIRouter()
 def create_objective(
     body: ObjectiveCreateRequest,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     from uuid import uuid4
 
     objective = Objective(
@@ -165,11 +165,11 @@ def create_objective(
 
 @objective_router.get(
     "/objectives",
-    response_model=APIResponse[list],
+    response_model=APIResponse[list[Any]],
     summary="List objectives",
     description="List all objectives in the system.",
 )
-def list_objectives(repo: Annotated[TaskRepositoryInterface, Depends(get_repo)]):
+def list_objectives(repo: Annotated[TaskRepositoryInterface, Depends(get_repo)]) -> Any:
     objectives = repo.list_objectives()
     return APIResponse(
         data=[{"id": str(o.id), "name": o.name, "status": o.status.value, "quarter": o.quarter} for o in objectives],
@@ -179,11 +179,11 @@ def list_objectives(repo: Annotated[TaskRepositoryInterface, Depends(get_repo)])
 
 @objective_router.get(
     "/objectives/{objective_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Get an objective",
     description="Get details of a specific objective.",
 )
-def get_objective(objective_id: str, repo: Annotated[TaskRepositoryInterface, Depends(get_repo)]):
+def get_objective(objective_id: str, repo: Annotated[TaskRepositoryInterface, Depends(get_repo)]) -> Any:
     objective = repo.get_objective(objective_id)
     if objective is None:
         from fastapi import HTTPException
@@ -203,18 +203,18 @@ def get_objective(objective_id: str, repo: Annotated[TaskRepositoryInterface, De
 
 @objective_router.delete(
     "/objectives/{objective_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Delete an objective",
     description="Delete an objective.",
 )
-def delete_objective(objective_id: str, repo: Annotated[TaskRepositoryInterface, Depends(get_repo)]):
+def delete_objective(objective_id: str, repo: Annotated[TaskRepositoryInterface, Depends(get_repo)]) -> Any:
     repo.delete_objective(objective_id)
     return APIResponse(data={"deleted": objective_id}, meta=Meta(request_id=None))
 
 
 @objective_router.patch(
     "/objectives/{objective_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Update an objective",
     description="Update an objective.",
 )
@@ -222,7 +222,7 @@ def update_objective(
     objective_id: str,
     body: ObjectiveUpdateRequest,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
     updates = body.model_dump(exclude_none=True)
     if not updates:
         raise HTTPException(status_code=422, detail="empty update: provide at least one field")
@@ -232,7 +232,7 @@ def update_objective(
 
 @objective_router.post(
     "/objectives/{objective_id}/epics",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Link epics to objective",
     description="Link multiple epics to an objective.",
 )
@@ -240,7 +240,7 @@ def link_epics_to_objective(
     objective_id: str,
     body: ObjectiveLinkEpicsRequest,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
-):
+) -> Any:
 
     epic_ids = body.epic_ids
     for epic_id in epic_ids:

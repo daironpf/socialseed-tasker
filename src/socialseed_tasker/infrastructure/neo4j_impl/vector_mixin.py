@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from typing import Any
 
 from socialseed_tasker.infrastructure import neo4j_queries as queries
-from socialseed_tasker.infrastructure.neo4j_impl.shared import _session
+from socialseed_tasker.infrastructure.neo4j_impl.shared import _Neo4jMixin, _session
 
 
-class VectorSearchRepositoryMixin:
+class VectorSearchRepositoryMixin(_Neo4jMixin):
     """Vector search and data management operations."""
 
-    def search_by_embedding(self, embedding: list[float], threshold: float = 0.7, limit: int = 10) -> list[dict]:
+    def search_by_embedding(
+        self, embedding: list[float], threshold: float = 0.7, limit: int = 10
+    ) -> list[dict[Any, Any]]:
         with _session(self._driver) as session:
             result = session.run(
                 queries.SEARCH_BY_EMBEDDING,
@@ -26,7 +29,7 @@ class VectorSearchRepositoryMixin:
                 for record in result
             ]
 
-    def find_similar_issues(self, issue_id: str, threshold: float = 0.7, limit: int = 10) -> list[dict]:
+    def find_similar_issues(self, issue_id: str, threshold: float = 0.7, limit: int = 10) -> list[dict[Any, Any]]:
         with _session(self._driver) as session:
             result = session.run(
                 queries.FIND_SIMILAR_ISSUES,
@@ -52,7 +55,7 @@ class VectorSearchRepositoryMixin:
             )
 
     @contextmanager
-    def transaction(self):  # type: ignore[misc]
+    def transaction(self) -> Any:
         """Execute a block of operations as a logical unit.
 
         Note: Each repository method manages its own Neo4j session internally.

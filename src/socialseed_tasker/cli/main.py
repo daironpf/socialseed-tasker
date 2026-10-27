@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import sys
+from typing import Any, TextIO
 
 from socialseed_tasker.application.dtos import DependencyEdge, IssueDTO
 from socialseed_tasker.application.exceptions import PermissionError
@@ -17,14 +18,14 @@ from socialseed_tasker.tenancy.migrations import ensure_tenant_schema
 logger = get_logger("tasker.cli")
 
 
-def _print_json(obj: object, stream: object = None) -> None:
+def _print_json(obj: object, stream: TextIO | None = None) -> None:
     stream = stream or sys.stdout
     stream.write(json.dumps(obj, ensure_ascii=False))
     stream.write("\n")
     stream.flush()
 
 
-def _error_and_exit(command: str, payload: dict, details: str = "") -> None:
+def _error_and_exit(command: str, payload: dict[Any, Any], details: str = "") -> None:
     logger.error("cli.error", extra={"command": command, "error": str(details or "unknown error"), **payload})
     out = {
         "status": "error",
@@ -37,7 +38,7 @@ def _error_and_exit(command: str, payload: dict, details: str = "") -> None:
     sys.exit(2)
 
 
-def cmd_agent_context(args: argparse.Namespace, container: object, user_id: str | None) -> None:
+def cmd_agent_context(args: argparse.Namespace, container: Any, user_id: str | None) -> None:
     try:
         if not container.rbac.has_permission(user_id, "read:context"):
             raise PermissionError("forbidden")
@@ -59,7 +60,7 @@ def cmd_agent_context(args: argparse.Namespace, container: object, user_id: str 
         _error_and_exit("agent-context", {"issue_id": args.issue_id}, details=str(exc))
 
 
-def cmd_calculate_impact(args: argparse.Namespace, container: object, user_id: str | None) -> None:
+def cmd_calculate_impact(args: argparse.Namespace, container: Any, user_id: str | None) -> None:
     try:
         if not container.rbac.has_permission(user_id, "read:impact"):
             raise PermissionError("forbidden")
@@ -84,7 +85,7 @@ def cmd_calculate_impact(args: argparse.Namespace, container: object, user_id: s
         _error_and_exit("calculate-impact", {"issue_id": args.issue_id}, details=str(exc))
 
 
-def cmd_create_issue(args: argparse.Namespace, container: object, user_id: str | None) -> None:
+def cmd_create_issue(args: argparse.Namespace, container: Any, user_id: str | None) -> None:
     try:
         if not container.rbac.has_permission(user_id, "create:issue"):
             raise PermissionError("forbidden")
@@ -109,7 +110,7 @@ def cmd_create_issue(args: argparse.Namespace, container: object, user_id: str |
         _error_and_exit("create-issue", {"id": args.id}, details=str(exc))
 
 
-def cmd_add_dependency(args: argparse.Namespace, container: object, user_id: str | None) -> None:
+def cmd_add_dependency(args: argparse.Namespace, container: Any, user_id: str | None) -> None:
     try:
         if not container.rbac.has_permission(user_id, "add:dependency"):
             raise PermissionError("forbidden")
@@ -137,7 +138,7 @@ def cmd_add_dependency(args: argparse.Namespace, container: object, user_id: str
         _error_and_exit("add-dependency", {"from": args.from_id, "to": args.to}, details=str(exc))
 
 
-def cmd_parse_file(args: argparse.Namespace, container: object, user_id: str | None) -> None:
+def cmd_parse_file(args: argparse.Namespace, container: Any, user_id: str | None) -> None:
     try:
         if not container.rbac.has_permission(user_id, "admin"):
             raise PermissionError("forbidden")
@@ -160,7 +161,7 @@ def cmd_parse_file(args: argparse.Namespace, container: object, user_id: str | N
         _error_and_exit("parse-file", {"path": args.path}, details=str(exc))
 
 
-def cmd_enqueue_task(args: argparse.Namespace, container: object, user_id: str | None) -> None:
+def cmd_enqueue_task(args: argparse.Namespace, container: Any, user_id: str | None) -> None:
     try:
         if not container.rbac.has_permission(user_id, "admin") and not container.rbac.has_permission(
             user_id, "background:enqueue"
@@ -189,7 +190,7 @@ def cmd_enqueue_task(args: argparse.Namespace, container: object, user_id: str |
     except Exception as exc:
         _error_and_exit("enqueue-task", {}, details=str(exc))
 
-def cmd_tenant_create(args: argparse.Namespace, container: object, user_id: str | None) -> None:
+def cmd_tenant_create(args: argparse.Namespace, container: Any, user_id: str | None) -> None:
     try:
         if not container.rbac.has_permission(user_id, "admin"):
             raise PermissionError("forbidden")
@@ -202,7 +203,7 @@ def cmd_tenant_create(args: argparse.Namespace, container: object, user_id: str 
     except Exception as exc:
         _error_and_exit("tenant-create", {"id": args.id}, details=str(exc))
 
-def cmd_tenant_list(args: argparse.Namespace, container: object, user_id: str | None) -> None:
+def cmd_tenant_list(args: argparse.Namespace, container: Any, user_id: str | None) -> None:
     try:
         if not container.rbac.has_permission(user_id, "admin"):
             raise PermissionError("forbidden")
@@ -213,7 +214,7 @@ def cmd_tenant_list(args: argparse.Namespace, container: object, user_id: str | 
     except Exception as exc:
         _error_and_exit("tenant-list", {}, details=str(exc))
 
-def cmd_tenant_delete(args: argparse.Namespace, container: object, user_id: str | None) -> None:
+def cmd_tenant_delete(args: argparse.Namespace, container: Any, user_id: str | None) -> None:
     try:
         if not container.rbac.has_permission(user_id, "admin"):
             raise PermissionError("forbidden")
@@ -224,7 +225,7 @@ def cmd_tenant_delete(args: argparse.Namespace, container: object, user_id: str 
     except Exception as exc:
         _error_and_exit("tenant-delete", {"id": args.id}, details=str(exc))
 
-def cmd_task_status(args: argparse.Namespace, container: object, user_id: str | None) -> None:
+def cmd_task_status(args: argparse.Namespace, container: Any, user_id: str | None) -> None:
     try:
         from celery.result import AsyncResult
 

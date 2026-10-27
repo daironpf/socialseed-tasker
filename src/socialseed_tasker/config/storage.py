@@ -29,7 +29,7 @@ def build_storage() -> tuple[str, StoragePort]:
     redis_url = get_redis_url()
     if redis_url:
         try:
-            return "redis", RedisStorage(url=redis_url)  # type: ignore[abstract]
+            return "redis", RedisStorage(url=redis_url)
         except Exception:
             pass
     return "memory", MemoryStorage()

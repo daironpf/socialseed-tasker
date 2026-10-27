@@ -133,7 +133,7 @@ logger = logging.getLogger(__name__)
 admin_router = APIRouter()
 
 
-def require_admin_auth(request: Request):
+def require_admin_auth(request: Request) -> Any:
     """Require admin authentication for protected endpoints."""
     import os
 
@@ -171,6 +171,6 @@ def require_admin_auth(request: Request):
 def reset_data(
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
     scope: str = Query("all", description="What to reset: 'all', 'issues', or 'components'"),
-):
+) -> Any:
     result = reset_data_action(repo, scope=scope)
     return APIResponse(data=result, meta=Meta(request_id=None))

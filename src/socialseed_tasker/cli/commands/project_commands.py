@@ -54,7 +54,7 @@ def project_detect(
 
     if docker_compose.exists():
         try:
-            import yaml  # type: ignore[import-untyped]
+            import yaml
 
             with open(docker_compose) as f:
                 compose_data = yaml.safe_load(f)

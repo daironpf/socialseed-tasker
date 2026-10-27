@@ -4,12 +4,13 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from typing import Any
 
 from socialseed_tasker.backup.core import export_data, list_exports, restore_data, verify_export
 from socialseed_tasker.cli.wiring import build_default_container
 
 
-def main(argv=None):
+def main(argv: Any = None) -> Any:
     p = argparse.ArgumentParser(prog="tasker-backup")
     sub = p.add_subparsers(dest="cmd")
     ex = sub.add_parser("export")

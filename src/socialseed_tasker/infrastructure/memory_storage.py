@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import threading
 import time
+from typing import Any
 
 from socialseed_tasker.application.ports import StoragePort
 from socialseed_tasker.observability.tracing import get_tracer
 
 
-def _get_tracer():
+def _get_tracer() -> Any:
     return get_tracer("tasker.memory_storage")
 
 class MemoryStorage(StoragePort):

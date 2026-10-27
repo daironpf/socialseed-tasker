@@ -140,7 +140,7 @@ constraints_router = APIRouter()
     description="Load constraints from a YAML config file and store in Neo4j.",
 )
 def load_constraints(
-    config: dict,
+    config: dict[Any, Any],
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[ConstraintLoadResponse]:
     from socialseed_tasker.application.actions import load_constraints_from_config_action

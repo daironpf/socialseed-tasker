@@ -143,7 +143,7 @@ logger = logging.getLogger(__name__)
 user_router = APIRouter()
 
 
-def _user_to_response(user: User) -> UserResponse:  # type: ignore[valid-type]
+def _user_to_response(user: User) -> UserResponse:
     """Convert domain User to API response."""
     return UserResponse(
         id=str(user.id),
@@ -467,7 +467,7 @@ def unassign_user_skill(user_id: str, skill_id: str) -> APIResponse[bool]:
 
 @user_router.delete(
     "/users/{user_id}",
-    response_model=APIResponse[dict],
+    response_model=APIResponse[dict[Any, Any]],
     summary="Delete user",
     description="Delete a user from the PostgreSQL root with best-effort cleanup of indexed data (issue #562).",
 )
@@ -475,7 +475,7 @@ async def delete_user(
     user_id: str,
     request: Request,
     driver: Annotated[Any, Depends(get_code_graph_driver)],
-) -> APIResponse[dict]:
+) -> APIResponse[dict[Any, Any]]:
     """Delete a user from the PG root; projections/notifications degrade to logs (#562)."""
     repository = _pg_repository()
     profile = repository.get_user(user_id)
