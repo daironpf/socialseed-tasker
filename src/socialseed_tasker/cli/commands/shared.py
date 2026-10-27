@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from contextlib import suppress
 from pathlib import Path
-from typing import Any
 from uuid import UUID
 
 import typer
@@ -15,9 +13,7 @@ from rich.table import Table
 from rich.tree import Tree
 
 from socialseed_tasker.application.actions import (
-    ComponentNotFoundError,
     InvalidEntityError,
-    IssueNotFoundError,
     TaskRepositoryInterface,
 )
 from socialseed_tasker.domain.entities import (
@@ -88,8 +84,8 @@ def get_repository() -> TaskRepositoryInterface:
     cfg = DualModeConfig.load()
 
     if cfg.mode == "api":
-        from socialseed_tasker.infrastructure.http.api_client import ApiHttpClient
         from socialseed_tasker.infrastructure.api_repository import ApiTaskRepository
+        from socialseed_tasker.infrastructure.http.api_client import ApiHttpClient
 
         client = ApiHttpClient(
             base_url=cfg.api_url,
@@ -156,9 +152,9 @@ def resolve_issue_id(partial_id: str, repo: TaskRepositoryInterface) -> UUID:
         raise ValueError(
             f"Could not resolve issue '{partial_id}': the issue tracker returned invalid data. "
             "Try using the full UUID instead of a short ID."
-        )
+        ) from None
     except Exception as e:
-        raise ValueError(f"Could not resolve issue '{partial_id}': {e}")
+        raise ValueError(f"Could not resolve issue '{partial_id}': {e}") from e
 
     for issue in issues:
         if issue.title.lower() == partial_id.lower():

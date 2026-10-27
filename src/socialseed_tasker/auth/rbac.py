@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import Dict, Set, List, Optional
 
 DEFAULT_PERMISSIONS = [
     "create:issue",
@@ -12,7 +11,7 @@ DEFAULT_PERMISSIONS = [
 
 class RBAC:
     def __init__(self) -> None:
-        self._store: Dict[str, Set[str]] = {}
+        self._store: dict[str, set[str]] = {}
 
     def grant(self, user_id: str, permission: str) -> None:
         self._store.setdefault(user_id, set()).add(permission)
@@ -21,12 +20,12 @@ class RBAC:
         if user_id in self._store:
             self._store[user_id].discard(permission)
 
-    def has_permission(self, user_id: Optional[str], permission: str) -> bool:
+    def has_permission(self, user_id: str | None, permission: str) -> bool:
         if user_id is None:
             return False
         if user_id == "system" or permission == "public":
             return True
         return permission in self._store.get(user_id, set())
 
-    def list_permissions(self, user_id: str) -> List[str]:
+    def list_permissions(self, user_id: str) -> list[str]:
         return sorted(list(self._store.get(user_id, set())))

@@ -11,11 +11,11 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from socialseed_tasker.application.actions import TaskRepositoryInterface
     from socialseed_tasker.application.markdown_transformer import MarkdownTransformer
     from socialseed_tasker.application.secret_manager import SecretManager
-    from socialseed_tasker.infrastructure.webhook_validator import WebhookSignatureValidator
-    from socialseed_tasker.application.actions import TaskRepositoryInterface
     from socialseed_tasker.infrastructure.neo4j_driver import Neo4jDriver
+    from socialseed_tasker.infrastructure.webhook_validator import WebhookSignatureValidator
 
 
 # ---------------------------------------------------------------------------
@@ -168,8 +168,8 @@ class Container:
 
     def _get_api_repository(self) -> TaskRepositoryInterface:
         from socialseed_tasker.config.mode_config import DualModeConfig
-        from socialseed_tasker.infrastructure.http.api_client import ApiHttpClient
         from socialseed_tasker.infrastructure.api_repository import ApiTaskRepository
+        from socialseed_tasker.infrastructure.http.api_client import ApiHttpClient
 
         dual_cfg = DualModeConfig.load()
         client = ApiHttpClient(
@@ -212,7 +212,7 @@ class Container:
 
     def get_code_graph_repository(self) -> Any:
         """Get the code graph repository.
-        
+
         Business Value: Enables storing and querying code-as-graph structures.
         """
         from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository

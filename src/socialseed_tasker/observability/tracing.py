@@ -1,7 +1,7 @@
 # src/socialseed_tasker/observability/tracing.py
 from __future__ import annotations
+
 import os
-from typing import Optional
 
 OTEL_SERVICE_NAME = os.getenv("TASKER_OTEL_SERVICE", "tasker")
 OTEL_JAEGER_HOST = os.getenv("TASKER_JAEGER_HOST", "localhost")
@@ -10,7 +10,7 @@ OTEL_SAMPLING_RATE = float(os.getenv("TASKER_OTEL_SAMPLING_RATE", "1.0"))
 
 _tracer_initialized = False
 
-def init_tracing(app=None, celery_app=None, service_name: Optional[str] = None):
+def init_tracing(app=None, celery_app=None, service_name: str | None = None):
     global _tracer_initialized
     if _tracer_initialized:
         return

@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Any, Dict
+from typing import Any
 
 
 class MemoryRateLimiter:
     def __init__(self, rate_per_min: int = 60, burst: int = 20):
         self._lock = threading.RLock()
-        self._store: Dict[str, Dict[str, Any]] = {}
+        self._store: dict[str, dict[str, Any]] = {}
         self.rate_per_min = rate_per_min
         self.burst = burst
 
@@ -34,11 +34,16 @@ class MemoryRateLimiter:
                 return True
             return False
 
-    def get_state(self, key: str) -> Dict[str, Any]:
+    def get_state(self, key: str) -> dict[str, Any]:
         with self._lock:
             self._init_key(key)
             s = self._store[key].copy()
-            return {"tokens": s["tokens"], "last_ts": s["last_ts"], "rate_per_min": self.rate_per_min, "burst": self.burst}
+            return {
+                "tokens": s["tokens"],
+                "last_ts": s["last_ts"],
+                "rate_per_min": self.rate_per_min,
+                "burst": self.burst,
+            }
 
     def reset(self, key: str) -> None:
         with self._lock:

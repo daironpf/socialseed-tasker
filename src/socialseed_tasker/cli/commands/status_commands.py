@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
-
 import typer
 from rich.panel import Panel
 
@@ -32,7 +29,6 @@ def status_command(
     short: bool = typer.Option(False, "--short", "-s", help="Show compact single-line summary"),
 ) -> None:
     """Show graph health dashboard with issue statistics."""
-    from pathlib import Path
 
     from socialseed_tasker.application.container import AppConfig
     from socialseed_tasker.config.mode_config import DualModeConfig, _discover_config_file

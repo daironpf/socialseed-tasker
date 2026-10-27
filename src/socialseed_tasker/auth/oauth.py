@@ -5,7 +5,7 @@ import json
 import os
 import time
 import urllib.parse
-from typing import Any, Dict, Optional
+from typing import Any
 
 import requests
 
@@ -40,7 +40,7 @@ class SessionStore:
     def __init__(self, storage: StoragePort):
         self.storage = storage
 
-    def create(self, data: Dict[str, Any], ttl: int = SESSION_TTL) -> str:
+    def create(self, data: dict[str, Any], ttl: int = SESSION_TTL) -> str:
         sid = str(int(time.time() * 1000)) + "-" + str(hash(json.dumps(data)))
         key = self.PREFIX + sid
         try:
@@ -49,7 +49,7 @@ class SessionStore:
             raise StorageError(f"Failed to create session: {exc}") from exc
         return sid
 
-    def get(self, sid: str) -> Optional[Dict[str, Any]]:
+    def get(self, sid: str) -> dict[str, Any] | None:
         key = self.PREFIX + sid
         raw = self.storage.get(key)
         if not raw:
@@ -75,7 +75,7 @@ def build_auth_url(state: str, redirect_uri: str, scope: str = "openid profile e
     return _auth_endpoint() + "?" + urllib.parse.urlencode(params)
 
 
-def exchange_code_for_tokens(code: str, redirect_uri: str) -> Dict[str, Any]:
+def exchange_code_for_tokens(code: str, redirect_uri: str) -> dict[str, Any]:
     data = {
         "grant_type": "authorization_code",
         "code": code,
@@ -87,7 +87,7 @@ def exchange_code_for_tokens(code: str, redirect_uri: str) -> Dict[str, Any]:
     return r.json()
 
 
-def refresh_tokens(refresh_token: str) -> Dict[str, Any]:
+def refresh_tokens(refresh_token: str) -> dict[str, Any]:
     data = {
         "grant_type": "refresh_token",
         "refresh_token": refresh_token,
@@ -99,7 +99,7 @@ def refresh_tokens(refresh_token: str) -> Dict[str, Any]:
     return r.json()
 
 
-def parse_id_token(id_token: str) -> Dict[str, Any]:
+def parse_id_token(id_token: str) -> dict[str, Any]:
     try:
         parts = id_token.split(".")
         if len(parts) < 2:
@@ -116,7 +116,7 @@ def start_login_redirect(request_base_url: str, state: str) -> str:
     return build_auth_url(state=state, redirect_uri=redirect_uri)
 
 
-def handle_oauth_callback(code: str, request_base_url: str, session_store: SessionStore) -> Dict[str, Any]:
+def handle_oauth_callback(code: str, request_base_url: str, session_store: SessionStore) -> dict[str, Any]:
     redirect_uri = urllib.parse.urljoin(request_base_url, REDIRECT_PATH)
     tokens = exchange_code_for_tokens(code, redirect_uri)
     id_token = tokens.get("id_token")

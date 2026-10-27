@@ -1,10 +1,12 @@
 from __future__ import annotations
+
+import contextlib
 import json
 import re
 import time
-from typing import Dict, List, Optional
-from socialseed_tasker.application.ports import StoragePort
+
 from socialseed_tasker.application.exceptions import StorageError
+from socialseed_tasker.application.ports import StoragePort
 
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 
@@ -26,7 +28,7 @@ class SchemaRegistry:
     def _dataset_key(self, dataset_id: str) -> str:
         return f"dataset:{dataset_id}"
 
-    def register_schema(self, name: str, version: str, schema: Dict, compatibility: str = "BACKWARD") -> None:
+    def register_schema(self, name: str, version: str, schema: dict, compatibility: str = "BACKWARD") -> None:
         if not SEMVER_RE.match(version):
             raise ValueError("version must be semantic MAJOR.MINOR.PATCH")
         versions = self.get_versions(name)
@@ -42,19 +44,19 @@ class SchemaRegistry:
         except Exception as exc:
             raise StorageError(f"failed to persist schema: {exc}") from exc
 
-    def get_schema(self, name: str, version: str) -> Dict:
+    def get_schema(self, name: str, version: str) -> dict:
         raw = self.storage.get(self._schema_key(name, version))
         if not raw:
             raise KeyError("schema not found")
         return json.loads(raw.decode("utf-8"))
 
-    def get_versions(self, name: str) -> List[str]:
+    def get_versions(self, name: str) -> list[str]:
         raw = self.storage.get(self._versions_key(name))
         if not raw:
             return []
         return json.loads(raw.decode("utf-8"))
 
-    def list_schemas(self) -> List[Dict]:
+    def list_schemas(self) -> list[dict]:
         if not hasattr(self.storage, "list_keys"):
             return []
         keys = self.storage.list_keys()
@@ -67,7 +69,16 @@ class SchemaRegistry:
             out.append({"name": n, "versions": self.get_versions(n)})
         return out
 
-    def register_dataset(self, dataset_id: str, title: str, description: str, schema_name: str, default_schema_version: str, owner: str, tags: Optional[List[str]] = None) -> None:
+    def register_dataset(
+        self,
+        dataset_id: str,
+        title: str,
+        description: str,
+        schema_name: str,
+        default_schema_version: str,
+        owner: str,
+        tags: list[str] | None = None,
+    ) -> None:
         meta = {
             "dataset_id": dataset_id,
             "title": title,
@@ -88,7 +99,7 @@ class SchemaRegistry:
         except Exception as exc:
             raise StorageError(f"failed to persist dataset: {exc}") from exc
 
-    def get_dataset(self, dataset_id: str) -> Dict:
+    def get_dataset(self, dataset_id: str) -> dict:
         raw = self.storage.get(self._dataset_key(dataset_id))
         if not raw:
             raise KeyError("dataset not found")
@@ -111,22 +122,20 @@ class SchemaRegistry:
             arr.remove(dataset_id)
             self.storage.put("dataset:list", json.dumps(arr).encode("utf-8"))
 
-    def list_datasets(self) -> List[Dict]:
+    def list_datasets(self) -> list[dict]:
         raw = self.storage.get("dataset:list") or b"[]"
         arr = json.loads(raw.decode("utf-8")) if raw else []
         out = []
         for did in arr:
-            try:
+            with contextlib.suppress(Exception):
                 out.append(self.get_dataset(did))
-            except Exception:
-                pass
         return out
 
-    def _check_compatibility(self, old_schema: Dict, new_schema: Dict, mode: str = "BACKWARD") -> bool:
+    def _check_compatibility(self, old_schema: dict, new_schema: dict, mode: str = "BACKWARD") -> bool:
         if mode == "NONE":
             return True
 
-        def extract_required(sch: Dict) -> Dict[str, str]:
+        def extract_required(sch: dict) -> dict[str, str]:
             props = sch.get("properties", {})
             req = {}
             for k, v in props.items():

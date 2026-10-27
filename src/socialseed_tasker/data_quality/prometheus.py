@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 import json
+
 from socialseed_tasker.application.ports import StoragePort
+
 
 class MetricsStore:
     KEY = "dq:metrics"

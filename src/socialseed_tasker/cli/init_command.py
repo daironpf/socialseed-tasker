@@ -9,14 +9,13 @@ external projects without manual setup.
 
 from __future__ import annotations
 
-from datetime import date
-from pathlib import Path
+import contextlib
+import hashlib
 import io
-import os
 import subprocess
 import sys
-
-import socialseed_tasker
+from datetime import date
+from pathlib import Path
 
 import typer
 from rich.console import Console
@@ -24,10 +23,8 @@ from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
 
-import hashlib
-
-from socialseed_tasker.domain.system_init_entities import FileOperation, ScaffoldStatus
 from socialseed_tasker.application.scaffolder import ScaffolderService
+from socialseed_tasker.domain.system_init_entities import FileOperation, ScaffoldStatus
 
 
 def _setup_windows_encoding() -> None:
@@ -41,15 +38,11 @@ def _setup_windows_encoding() -> None:
         except Exception:
             pass
         if hasattr(sys.stdout, "buffer") and sys.stdout.encoding != "utf-8":
-            try:
+            with contextlib.suppress(Exception):
                 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-            except Exception:
-                pass
         if hasattr(sys.stderr, "buffer") and sys.stderr.encoding != "utf-8":
-            try:
+            with contextlib.suppress(Exception):
                 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
-            except Exception:
-                pass
 
 
 _setup_windows_encoding()
@@ -212,7 +205,7 @@ def interactive_init_command(
     """
     console.print("[bold cyan]Welcome to SocialSeed Tasker Initialization[/bold cyan]")
     console.print("Configure your project using the menu below.\n")
-    
+
     # Initialize defaults (use parameter if provided, otherwise default)
     _project_name = project_name or "my-project"
     architecture = "api-first"
@@ -231,29 +224,29 @@ def interactive_init_command(
     conventions_url = ""
     conventions_rules = "- Use standard conventions"
     global_status = "DEVELOPMENT"
-    
+
     username = "admin"
     email = "admin@example.com"
     user_role = "ADMIN"
     github_handle = "admin"
-    
+
     forbidden_tech = "- None"
     required_patterns = "- Issues must have acceptance criteria"
     naming_conventions = "kebab-case for files, CamelCase for classes"
     dependency_rules = "- Max 10 direct dependencies per issue"
     dos_and_donts = "- DO: Use .agent/skills/issue_quality_guide.json\n- DON'T: Create vague issues"
-    
+
     # New fields
     agent_name = "Architect-Agent"
     agent_role = "planner"
     agent_capabilities = "coding,testing,architecture"
     openai_api_key = ""
     components_list_str = "core"
-    
+
     # Track if project name was provided via CLI (non-interactive)
     project_name_provided = project_name is not None
     mode_provided = mode is not None
-    
+
     state = {
         "1": project_name_provided,  # Already filled if provided via CLI
         "2": False, # Tech Stack
@@ -264,7 +257,7 @@ def interactive_init_command(
         "7": False, # API Keys
         "8": False, # Components
     }
-    
+
     # Non-interactive mode: use provided parameters or defaults
     if yes or (project_name_provided and mode_provided):
         if yes:
@@ -277,27 +270,35 @@ def interactive_init_command(
             table.add_column("Option", justify="right", style="cyan")
             table.add_column("Category", style="white")
             table.add_column("Status", style="yellow")
-            
-            table.add_row("1", "Project Identity", "[green]Filled[/green]" if state["1"] else "[red]Pending (Defaults will be used)[/red]")
+
+            table.add_row(
+                "1",
+                "Project Identity",
+                "[green]Filled[/green]" if state["1"] else "[red]Pending (Defaults will be used)[/red]",
+            )
             table.add_row("2", "Tech Stack", "[green]Filled[/green]" if state["2"] else "[red]Pending[/red]")
             table.add_row("3", "Project Settings", "[green]Filled[/green]" if state["3"] else "[red]Pending[/red]")
             table.add_row("4", "User Config (Human)", "[green]Filled[/green]" if state["4"] else "[red]Pending[/red]")
-            table.add_row("5", "Policies & Constraints", "[green]Filled[/green]" if state["5"] else "[red]Pending[/red]")
+            table.add_row(
+                "5",
+                "Policies & Constraints",
+                "[green]Filled[/green]" if state["5"] else "[red]Pending[/red]",
+            )
             table.add_row("6", "Agent Config", "[green]Filled[/green]" if state["6"] else "[red]Pending[/red]")
             table.add_row("7", "API Keys (OpenAI)", "[green]Filled[/green]" if state["7"] else "[red]Pending[/red]")
             table.add_row("8", "Initial Components", "[green]Filled[/green]" if state["8"] else "[red]Pending[/red]")
             table.add_row("", "", "")
             table.add_row("START", "[bold green]Run Setup[/bold green]", "")
             table.add_row("EXIT", "[bold red]Cancel[/bold red]", "")
-            
+
             console.print(table)
-            
+
             choice = _ask("Select an option", default="START").upper()
-            
+
             if choice == "EXIT":
                 console.print("[yellow]Initialization cancelled.[/yellow]")
                 raise typer.Exit(code=0)
-                
+
             elif choice == "START":
                 # If nothing filled, ask for project name
                 if not any(state.values()) or not state["1"]:
@@ -307,7 +308,7 @@ def interactive_init_command(
                     base_package = _project_name.lower().replace(" ", "_")
                     state["1"] = True
                 break
-                
+
             elif choice == "1":
                 _project_name = _ask("Project Name", default=_project_name)
                 github_repo = _ask("GitHub Repository URL", default=github_repo)
@@ -317,7 +318,7 @@ def interactive_init_command(
                 if not state["3"]:
                     base_package = _project_name.lower().replace(" ", "_")
                 state["1"] = True
-                
+
             elif choice == "2":
                 architecture = _ask("Architecture", default=architecture)
                 language = _ask("Primary Language", default=language)
@@ -326,7 +327,7 @@ def interactive_init_command(
                 tech_stack_str = _ask("Tech Stack (comma separated)", default=f"{language}, {framework}, {database}")
                 main_stack_str = _ask("Main Stack (comma separated)", default=f"{language}, Neo4j")
                 state["2"] = True
-                
+
             elif choice == "3":
                 base_package = _ask("Base Package", default=base_package)
                 visibility = _ask("Visibility", choices=["PUBLIC", "PRIVATE"], default=visibility)
@@ -334,16 +335,20 @@ def interactive_init_command(
                 version = _ask("Version", default=version)
                 conventions_url = _ask("Conventions URL", default=conventions_url)
                 conventions_rules = _ask("Conventions Rules", default=conventions_rules)
-                global_status = _ask("Global Status", choices=["DEVELOPMENT", "STAGING", "PRODUCTION"], default=global_status)
+                global_status = _ask(
+                    "Global Status",
+                    choices=["DEVELOPMENT", "STAGING", "PRODUCTION"],
+                    default=global_status,
+                )
                 state["3"] = True
-                
+
             elif choice == "4":
                 username = _ask("Username", default=username)
                 email = _ask("Email", default=email)
                 user_role = _ask("Role", choices=["ADMIN", "LEAD_ARCHITECT", "DEVELOPER"], default=user_role)
                 github_handle = _ask("GitHub Handle", default=github_handle)
                 state["4"] = True
-                
+
             elif choice == "5":
                 forbidden_tech = _ask("Forbidden Technologies", default=forbidden_tech)
                 required_patterns = _ask("Required Patterns", default=required_patterns)
@@ -351,24 +356,24 @@ def interactive_init_command(
                 dependency_rules = _ask("Dependency Rules", default=dependency_rules)
                 dos_and_donts = _ask("Do's and Don'ts", default=dos_and_donts)
                 state["5"] = True
-                
+
             elif choice == "6":
                 agent_name = _ask("Agent Name", default=agent_name)
                 agent_role = _ask("Agent Role", default=agent_role)
                 agent_capabilities = _ask("Agent Capabilities (comma separated)", default=agent_capabilities)
                 state["6"] = True
-                
+
             elif choice == "7":
                 openai_api_key = _ask("OpenAI API Key (hidden)", password=True)
                 state["7"] = True
-                
+
             elif choice == "8":
                 components_list_str = _ask("Initial Components (comma separated)", default=components_list_str)
                 state["8"] = True
-                
+
             else:
                 console.print("[red]Invalid option.[/red]")
-                
+
             console.print("\n" + "="*40 + "\n")
 
     # Mode selection
@@ -405,7 +410,9 @@ def interactive_init_command(
                 timeout=120,
             )
             if result.returncode != 0:
-                console.print(f"[warning]Frontend build skipped (npm not configured): {result.stderr.strip()}[/warning]")
+                console.print(
+                    f"[warning]Frontend build skipped (npm not configured): {result.stderr.strip()}[/warning]"
+                )
             else:
                 console.print("[success]Frontend built successfully![/success]")
         except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as e:
@@ -413,11 +420,11 @@ def interactive_init_command(
             console.print("[dim]The board service will not be available.[/dim]")
 
     console.print("\n[info]Starting initialization with provided context...[/info]\n")
-    
+
     tech_stack = [s.strip() for s in tech_stack_str.split(",") if s.strip()]
     main_stack = [s.strip() for s in main_stack_str.split(",") if s.strip()]
     components_list = [s.strip() for s in components_list_str.split(",") if s.strip()]
-    
+
     _run_scaffold(
         target=target,
         force=force,
@@ -470,29 +477,29 @@ def interactive_init_command(
             console.print("Please start Docker Desktop and try again.")
             console.print("You can also start the database manually with:")
             console.print("  docker compose up -d")
-            raise typer.Exit(code=1)
+            raise typer.Exit(code=1) from None
 
         compose_dir = Path(target).resolve()
         if not inplace:
             compose_dir = compose_dir / ".agent" / "tasker"
-            
+
         # Clean up any existing containers for this project
         subprocess.run(
             ["docker", "compose", "-p", compose_project_name, "down"],
             cwd=compose_dir,
             capture_output=True,
         )
-        
+
         # The Dockerfile installs socialseed-tasker from PyPI, so no
         # local wheel is needed. Just proceed to docker compose up.
-        
+
         compose_profile = {"direct": [], "api": ["--profile", "api"], "full": ["--profile", "full"]}.get(cli_mode, [])
         subprocess.run(
             ["docker", "compose", "-p", compose_project_name, *compose_profile, "up", "-d", "--build"],
             cwd=compose_dir,
             check=True,
         )
-        
+
         if cli_mode == "direct":
             console.print("\n[info]Tasker initialized in Direct mode. Neo4j is running and ready.[/info]")
             console.print("[bold green]SUCCESS: TASKER is successfully started and ready![/bold green]")
@@ -501,8 +508,9 @@ def interactive_init_command(
 
         console.print("\n[info]Waiting for Tasker API to be ready to push configuration...[/info]")
         import time
+
         import httpx
-        
+
         api_url = "http://localhost:8888"
         api_ready = False
         for _ in range(60):
@@ -518,7 +526,7 @@ def interactive_init_command(
         if api_ready:
             time.sleep(3)  # allow API to finalize initialization after health check
             console.print("[info]API is ready, configuring project and policies...[/info]")
-            
+
             try:
                 # Create project node
                 project_data = {
@@ -541,11 +549,9 @@ def interactive_init_command(
                 project_node_id = None
                 if res.status_code in (200, 201):
                     console.print("[success]Project node created successfully![/success]")
-                    try:
+                    with contextlib.suppress(Exception):
                         project_node_id = res.json().get("data", {}).get("id")
-                    except Exception:
-                        pass
-                        
+
                     if project_node_id:
                         try:
                             user_data = {
@@ -554,9 +560,15 @@ def interactive_init_command(
                                 "role": user_role,
                                 "github_handle": github_handle,
                             }
-                            res_user = httpx.post(f"{api_url}/api/v1/projects/users?project_id={project_node_id}", json=user_data, timeout=5.0)
+                            res_user = httpx.post(
+                                f"{api_url}/api/v1/projects/users?project_id={project_node_id}",
+                                json=user_data,
+                                timeout=5.0,
+                            )
                             if res_user.status_code in (200, 201):
-                                console.print("[success]User node created and linked to project successfully![/success]")
+                                console.print(
+                                    "[success]User node created and linked to project successfully![/success]"
+                                )
                             else:
                                 console.print(f"[warning]Failed to create user node: {res_user.text}[/warning]")
                         except Exception as e:
@@ -579,7 +591,10 @@ def interactive_init_command(
                                 try:
                                     agent_id = res_agent.json().get("data", {}).get("agent_id") or agent_id_to_use
                                     if agent_id:
-                                        res_assign = httpx.post(f"{api_url}/api/v1/projects/{project_node_id}/agents/{agent_id}", timeout=5.0)
+                                        res_assign = httpx.post(
+                                            f"{api_url}/api/v1/projects/{project_node_id}/agents/{agent_id}",
+                                            timeout=5.0,
+                                        )
                                         if res_assign.status_code in (200, 201):
                                             console.print("[success]Agent assigned to project successfully![/success]")
                                 except Exception:
@@ -619,7 +634,7 @@ def interactive_init_command(
                         console.print(f"[warning]Failed to create component '{comp_name}': {res_comp.text}[/warning]")
                 except Exception as e:
                     console.print(f"[warning]Failed to create component '{comp_name}': {e}[/warning]")
-                    
+
             # Create first issue if a component exists
             if created_components:
                 console.print("[info]Creating first issue for the project...[/info]")
@@ -641,7 +656,7 @@ def interactive_init_command(
                         console.print(f"[warning]Failed to create first issue: {res_issue.text}[/warning]")
                 except Exception as e:
                     console.print(f"[warning]Failed to create first issue: {e}[/warning]")
-                    
+
             policies = [
                 {
                     "name": "Forbidden Technologies",
@@ -684,7 +699,7 @@ def interactive_init_command(
                     "severity": "WARNING"
                 }
             ]
-            
+
             for policy in policies:
                 try:
                     # check if exists
@@ -692,30 +707,37 @@ def interactive_init_command(
                     exists = False
                     if existing_res.status_code == 200:
                         data = existing_res.json().get("data", {})
-                        items = data.get("items", []) if isinstance(data, dict) and "items" in data else (data if isinstance(data, list) else [])
+                        items = (
+                            data.get("items", [])
+                            if isinstance(data, dict) and "items" in data
+                            else (data if isinstance(data, list) else [])
+                        )
                         for item in items:
                             if item.get("name") == policy["name"]:
                                 exists = True
                                 break
-                    
+
                     if not exists:
                         res = httpx.post(f"{api_url}/api/v1/policies", json=policy, timeout=5.0)
                         if res.status_code not in (200, 201):
                             console.print(f"[warning]Failed to create policy {policy['name']}: {res.text}[/warning]")
                 except Exception as e:
                     console.print(f"[warning]Failed to create policy {policy['name']}: {e}[/warning]")
-                    
+
             console.print("\n[bold green]SUCCESS: TASKER is successfully started and ready![/bold green]")
             if cli_mode == "full":
                 console.print("[bold green]Board UI at http://localhost:8889[/bold green]")
             console.print("[bold green]You can now focus on writing code. Tasker will handle the rest.[/bold green]")
         else:
-            console.print("\n[warning]Tasker started but API did not become ready in time. Policies were not pushed automatically.[/warning]")
-            
+            console.print(
+                "\n[warning]Tasker started but API did not become ready in time. "
+                "Policies were not pushed automatically.[/warning]"
+            )
+
     except Exception as e:
         console.print(f"\n[bold red]Failed to start Docker Compose: {e}[/bold red]")
         console.print("Please check your Docker installation and try running 'docker compose up -d' manually.")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from e
 
 
 @init_app.command(name="install")
@@ -871,7 +893,19 @@ def _run_scaffold(
     else:
         result = service.scaffold(target_path, force=force)
 
-    if project_name or architecture or language or framework or database or github_repo or forbidden_tech or required_patterns or naming_conventions or dependency_rules or dos_and_donts:
+    if (
+        project_name
+        or architecture
+        or language
+        or framework
+        or database
+        or github_repo
+        or forbidden_tech
+        or required_patterns
+        or naming_conventions
+        or dependency_rules
+        or dos_and_donts
+    ):
         _fill_project_context(
             target_path,
             target_path if inplace else target_path / ".agent",
@@ -958,8 +992,13 @@ def _fill_project_context(
         "{test_commands}": "pytest tests/",
         "{build_commands}": "pip install -e . && pip wheel . --wheel-dir dist/",
         "{code_review_count}": "1",
-        "{agent_notes}": "- Read .agent/project.md before starting work\n- Use .agent/AGENT_GUIDE.md for protocol\n- Consult Tasker first for all project-related requests",
-        "{k_dos_and_donts}": dos_and_donts or "- DO: Use .agent/skills/issue_quality_guide.json\n- DON'T: Create vague issues",
+        "{agent_notes}": (
+            "- Read .agent/project.md before starting work\n"
+            "- Use .agent/AGENT_GUIDE.md for protocol\n"
+            "- Consult Tasker first for all project-related requests"
+        ),
+        "{k_dos_and_donts}": dos_and_donts
+        or "- DO: Use .agent/skills/issue_quality_guide.json\n- DON'T: Create vague issues",
     }
 
     # Markdown files
@@ -978,19 +1017,25 @@ def _fill_project_context(
             for key, value in replacements.items():
                 content = content.replace(key, value)
             md_file.write_text(content, encoding="utf-8")
-            console.print(f"  [success]Updated:[/success]    {md_file.relative_to(target_root.parent if target_root.parent.exists() else target_root)}")
+            console.print(
+                f"  [success]Updated:[/success]    "
+                f"{md_file.relative_to(target_root.parent if target_root.parent.exists() else target_root)}"
+            )
 
     # JSON project file (needs different key_components format)
     project_json = tasker_dir / "project.json"
     if project_json.exists():
         json_replacements = replacements.copy()
         json_replacements["{key_components}"] = '"API Gateway", "Backend Service", "Database"'
-        
+
         content = project_json.read_text(encoding="utf-8")
         for key, value in json_replacements.items():
             content = content.replace(key, value)
         project_json.write_text(content, encoding="utf-8")
-        console.print(f"  [success]Updated:[/success]    {project_json.relative_to(target_root.parent if target_root.parent.exists() else target_root)}")
+        console.print(
+            f"  [success]Updated:[/success]    "
+            f"{project_json.relative_to(target_root.parent if target_root.parent.exists() else target_root)}"
+        )
 
 
 def _inject_compose_project_name(target: str, inplace: bool, slug: str) -> str:
@@ -1019,10 +1064,7 @@ def _inject_compose_project_name(target: str, inplace: bool, slug: str) -> str:
 def _write_mode_config(target: str, inplace: bool, mode: str) -> None:
     """Write .agent/configs/tasker.yml with the chosen CLI mode."""
     config_dir = Path(target).resolve()
-    if not inplace:
-        config_dir = config_dir / ".agent" / "configs"
-    else:
-        config_dir = config_dir / "configs"
+    config_dir = config_dir / ".agent" / "configs" if not inplace else config_dir / "configs"
 
     config_dir.mkdir(parents=True, exist_ok=True)
     config_file = config_dir / "tasker.yml"

@@ -5,19 +5,39 @@ import logging
 import os
 import sys
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             "timestamp": datetime.utcfromtimestamp(record.created).isoformat() + "Z",
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
         }
         extras = {k: v for k, v in record.__dict__.items() if k not in logging.LogRecord.__dict__}
-        for k in ("msg", "args", "levelname", "levelno", "pathname", "filename", "module", "exc_info", "exc_text", "stack_info", "lineno", "funcName", "created", "msecs", "relativeCreated", "thread", "threadName", "processName", "process"):
+        for k in (
+            "msg",
+            "args",
+            "levelname",
+            "levelno",
+            "pathname",
+            "filename",
+            "module",
+            "exc_info",
+            "exc_text",
+            "stack_info",
+            "lineno",
+            "funcName",
+            "created",
+            "msecs",
+            "relativeCreated",
+            "thread",
+            "threadName",
+            "processName",
+            "process",
+        ):
             extras.pop(k, None)
         if extras:
             payload.update(extras)
@@ -39,7 +59,7 @@ def configure_root_logger(level: str | int = None) -> None:
     root.addHandler(handler)
 
 
-def get_logger(name: str, trace_id: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str, trace_id: str | None = None) -> logging.Logger:
     configure_root_logger()
     logger = logging.getLogger(name)
 

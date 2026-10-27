@@ -10,7 +10,6 @@ from typing import Any
 
 from socialseed_tasker.infrastructure.embedding_service import (
     ChunkingStrategy,
-    EmbeddingService,
     get_embedding_service,
 )
 
@@ -144,7 +143,7 @@ class RAGRepository:
                         },
                     )
             else:
-                for i, chunk in enumerate(chunks):
+                for chunk in chunks:
                     chunk_id = str(uuid.uuid4())
                     chunk_ids.append(chunk_id)
                     session.run(
@@ -215,7 +214,7 @@ class RAGRepository:
             import math
 
             def cosine_similarity(a: list[float], b: list[float]) -> float:
-                dot = sum(x * y for x, y in zip(a, b))
+                dot = sum(x * y for x, y in zip(a, b, strict=False))
                 mag_a = math.sqrt(sum(x * x for x in a))
                 mag_b = math.sqrt(sum(x * x for x in b))
                 return dot / (mag_a * mag_b) if mag_a and mag_b else 0
@@ -261,7 +260,7 @@ class RAGRepository:
 
     def get_context_for_issue(self, issue_id: str) -> list[dict]:
         """Build RAG context for an Issue by following AFFECTS relationship.
-        
+
         Retrieves CodeSymbols and CodeFiles affected by this issue
         to provide targeted context for the AI agent.
         """

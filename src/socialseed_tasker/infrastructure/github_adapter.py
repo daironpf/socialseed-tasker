@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 import httpx
 
 if TYPE_CHECKING:
-    from socialseed_tasker.application.ports import GitPort as GitPortProtocol
+    pass
 
 
 def _now() -> datetime:

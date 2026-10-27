@@ -7,23 +7,11 @@ from __future__ import annotations
 
 import logging
 import secrets
-from typing import Annotated, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 
-from socialseed_tasker.application.analyzer import (
-    ComponentImpactAnalysis,
-    ImpactAnalysis,
-    RootCauseAnalyzer,
-    TestFailure,
-)
-from socialseed_tasker.auth import tokens
-from socialseed_tasker.auth.user_store import PostgresUserStore, hash_password, normalize_user_type
-from socialseed_tasker.config.storage import get_database_url
-from socialseed_tasker.infrastructure.mongo.notification_repository import NotificationMongoRepository
-from socialseed_tasker.infrastructure.pg_user_repository import PgUserRepository
-from socialseed_tasker.infrastructure.web_api.routers.auth import record_logout_event
 from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
@@ -41,6 +29,15 @@ from socialseed_tasker.application.actions import (
     remove_dependency_action,
     reset_data_action,
 )
+from socialseed_tasker.application.analyzer import (
+    ComponentImpactAnalysis,
+    ImpactAnalysis,
+    RootCauseAnalyzer,
+    TestFailure,
+)
+from socialseed_tasker.auth import tokens
+from socialseed_tasker.auth.user_store import PostgresUserStore, hash_password, normalize_user_type
+from socialseed_tasker.config.storage import get_database_url
 from socialseed_tasker.domain.entities import (
     Agent,
     AgentRole,
@@ -57,6 +54,28 @@ from socialseed_tasker.domain.entities import (
     User,
     UserRole,
 )
+from socialseed_tasker.infrastructure.mongo.notification_repository import NotificationMongoRepository
+from socialseed_tasker.infrastructure.pg_user_repository import PgUserRepository
+from socialseed_tasker.infrastructure.web_api.routers.auth import record_logout_event
+from socialseed_tasker.infrastructure.web_api.routers.chat import _current_user
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    construct_paginated_api_response as _paginated,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    convert_domain_component_to_api_response as _component_to_response,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    convert_domain_issue_to_api_response as _issue_to_response,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    get_repository_provider as get_repo,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    resolve_component_identifier_to_uuid as resolve_component_id,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    retrieve_neo4j_code_graph_driver as get_code_graph_driver,
+)
 from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentRegisterRequest,
     AgentResponse,
@@ -67,6 +86,9 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     BulkDependencyRequest,
     BulkDependencyResponse,
     CausalLinkResponse,
+    CommitCreateRequest,
+    CommitResponse,
+    CommitStatsResponse,
     ComponentCreateRequest,
     ComponentImpactAnalysisResponse,
     ComponentImpactIssueSummary,
@@ -97,9 +119,9 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     PolicyValidationRequest,
     PolicyValidationResponse,
     PolicyViolationResponse,
-    ProjectSummaryResponse,
     ProjectCreateRequest,
     ProjectResponse,
+    ProjectSummaryResponse,
     ReasoningLogEntryRequest,
     ReasoningLogEntryResponse,
     TestFailureRequest,
@@ -110,18 +132,6 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     UserSkillAssignRequest,
     UserSkillResponse,
     UserUpdateRequest,
-    CommitCreateRequest,
-    CommitResponse,
-    CommitStatsResponse,
-)
-from socialseed_tasker.infrastructure.web_api.routers.chat import _current_user
-from socialseed_tasker.infrastructure.web_api.routers.helpers import (
-    retrieve_neo4j_code_graph_driver as get_code_graph_driver,
-    get_repository_provider as get_repo,
-    resolve_component_identifier_to_uuid as resolve_component_id,
-    convert_domain_issue_to_api_response as _issue_to_response,
-    convert_domain_component_to_api_response as _component_to_response,
-    construct_paginated_api_response as _paginated,
 )
 
 logger = logging.getLogger(__name__)
@@ -133,7 +143,7 @@ logger = logging.getLogger(__name__)
 user_router = APIRouter()
 
 
-def _user_to_response(user: "User") -> "UserResponse":  # type: ignore[valid-type]
+def _user_to_response(user: User) -> UserResponse:  # type: ignore[valid-type]
     """Convert domain User to API response."""
     return UserResponse(
         id=str(user.id),
@@ -220,7 +230,7 @@ def _revoke_user_sessions(request: Request, store: PostgresUserStore, user_id: s
 )
 def create_user(
     body: UserCreateRequest,
-    driver: Any = Depends(get_code_graph_driver),
+    driver: Annotated[Any, Depends(get_code_graph_driver)],
 ) -> APIResponse[UserResponse]:
     """Create a human user across ``users``/``human_user``/``user_skills`` (#559, #563).
 
@@ -332,7 +342,7 @@ def update_user(
     user_id: str,
     body: UserUpdateRequest,
     request: Request,
-    driver: Any = Depends(get_code_graph_driver),
+    driver: Annotated[Any, Depends(get_code_graph_driver)],
 ) -> APIResponse[UserResponse]:
     """Update a human user profile in PostgreSQL (issue #560)."""
     if body.type is not None and normalize_user_type(body.type) != "human":
@@ -464,7 +474,7 @@ def unassign_user_skill(user_id: str, skill_id: str) -> APIResponse[bool]:
 async def delete_user(
     user_id: str,
     request: Request,
-    driver: Any = Depends(get_code_graph_driver),
+    driver: Annotated[Any, Depends(get_code_graph_driver)],
 ) -> APIResponse[dict]:
     """Delete a user from the PG root; projections/notifications degrade to logs (#562)."""
     repository = _pg_repository()

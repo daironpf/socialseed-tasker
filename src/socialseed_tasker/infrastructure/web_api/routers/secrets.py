@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import logging
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
@@ -56,7 +56,7 @@ def _check_permission(
 @secrets_router.post("/api/v1/secrets")
 def api_put_secret(
     req: SecretPutRequest,
-    container: Any = Depends(_get_container),
+    container: Annotated[Any, Depends(_get_container)],
 ) -> APIResponse[dict[str, Any]]:
     name = req.name
     val_b64 = req.value
@@ -78,7 +78,7 @@ def api_put_secret(
 )
 def api_list_secrets(
     request: Request,
-    container: Any = Depends(_get_container),
+    container: Annotated[Any, Depends(_get_container)],
 ) -> APIResponse[list[SecretMetadataResponse]]:
     _require_secret_admin(request, container)
     secrets: list[SecretMetadataResponse] = []
@@ -96,7 +96,7 @@ def api_list_secrets(
 
 @secrets_router.get("/api/v1/secrets/audit")
 def api_get_audit(
-    container: Any = Depends(_get_container),
+    container: Annotated[Any, Depends(_get_container)],
 ) -> APIResponse[dict[str, Any]]:
     raw = container.storage.get("secrets:audit") or b"[]"
     arr = json.loads(raw.decode("utf-8")) if raw else []
@@ -106,7 +106,7 @@ def api_get_audit(
 @secrets_router.get("/api/v1/secrets/{name}")
 def api_get_secret_meta(
     name: str,
-    container: Any = Depends(_get_container),
+    container: Annotated[Any, Depends(_get_container)],
 ) -> APIResponse[dict[str, Any]]:
     try:
         res = container.secrets_store.get_secret(name, reveal=False)
@@ -125,7 +125,7 @@ def api_get_secret_meta(
 @secrets_router.get("/api/v1/secrets/{name}/value")
 def api_get_secret_value(
     name: str,
-    container: Any = Depends(_get_container),
+    container: Annotated[Any, Depends(_get_container)],
 ) -> APIResponse[dict[str, Any]]:
     try:
         res = container.secrets_store.get_secret(name, reveal=True)
@@ -143,7 +143,7 @@ def api_get_secret_value(
 @secrets_router.delete("/api/v1/secrets/{name}")
 def api_delete_secret(
     name: str,
-    container: Any = Depends(_get_container),
+    container: Annotated[Any, Depends(_get_container)],
 ) -> APIResponse[dict[str, Any]]:
     container.secrets_store.delete_secret(name, actor="api")
     return APIResponse(data={"deleted": True, "name": name}, meta=_meta())
@@ -152,7 +152,7 @@ def api_delete_secret(
 @secrets_router.post("/api/v1/secrets/rotate")
 def api_schedule_rotate(
     req: SecretRotateScheduleRequest,
-    container: Any = Depends(_get_container),
+    container: Annotated[Any, Depends(_get_container)],
 ) -> APIResponse[dict[str, Any]]:
     name = req.name
     interval = req.interval_seconds
@@ -166,7 +166,7 @@ def api_schedule_rotate(
 @secrets_router.post("/api/v1/secrets/rotate/run")
 def api_run_rotate(
     req: SecretRotateRunRequest,
-    container: Any = Depends(_get_container),
+    container: Annotated[Any, Depends(_get_container)],
 ) -> APIResponse[dict[str, Any]]:
     rid = req.rotation_id
     if not rid:

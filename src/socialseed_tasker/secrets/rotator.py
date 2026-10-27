@@ -17,7 +17,7 @@ DETERMINISTIC = os.getenv("TASKER_SECRETS_DETERMINISTIC", "0") == "1"
 
 def _seed_master(name: str, ts: int) -> bytes:
     mk = os.getenv("TASKER_SECRETS_MASTER_KEY", "")
-    data = f"{mk}:{name}:{ts}".encode("utf-8")
+    data = f"{mk}:{name}:{ts}".encode()
     return hashlib.sha256(data).digest()
 
 

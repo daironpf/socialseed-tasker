@@ -3,7 +3,7 @@
 **Fuente:** informe de revisión general del proyecto y seguimiento de sus
 recomendaciones, 2026-10-26.
 **Created:** 2026-10-26
-**Status:** TODO (0/8)
+**Status:** TODO (1/8) - #604 DONE 2026-10-27
 **Numeración:** **#604–#611** (continúa tras **#603**, última issue numerada en
 `.issues/done/`)
 
@@ -38,7 +38,7 @@ antes de fijar la reducción final.
 
 | # | Fichero | Título | Prioridad | Tipo | Status |
 |---|---|---|---|---|---|
-| #604 | `604-reducir-deuda-ruff-sin-cambios-masivos.md` | Eliminar hallazgos Ruff en `src/` | MEDIUM | quality / backend | TODO |
+| #604 | `604-reducir-deuda-ruff-sin-cambios-masivos.md` | Eliminar hallazgos Ruff en `src/` | MEDIUM | quality / backend | DONE |
 | #605 | `605-reducir-deuda-mypy-por-paquetes.md` | Eliminar errores mypy en `src/` sin debilitar strict | MEDIUM | quality / backend | TODO |
 | #606 | `606-hacer-reproducible-la-suite-de-integracion-en-ci.md` | Hacer reproducible la suite de integración en CI | MEDIUM | test / infra | TODO |
 | #607 | `607-validar-y-triar-los-scans-de-seguridad-en-ci.md` | Validar scans bloqueantes y triar su baseline | HIGH | security / quality | TODO |
@@ -61,7 +61,7 @@ antes de fijar la reducción final.
 
 ## Release Checklist
 
-- [ ] #604: baseline Ruff vigente y cero hallazgos en `src/`
+- [x] #604: baseline Ruff vigente y cero hallazgos en `src/`
 - [ ] #605: baseline mypy vigente, cero errores globales y modo estricto preservado
 - [ ] #606: prerrequisitos documentados y jobs opt-in de integración reproducibles
 - [ ] #607: ambos scanners validados en Actions, hallazgos triajeados y exit codes

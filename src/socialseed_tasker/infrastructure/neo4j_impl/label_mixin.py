@@ -13,8 +13,6 @@ class LabelRepositoryMixin:
 
     def sync_labels_from_github(self, github_adapter) -> int:
         """Sync labels from GitHub repository."""
-        from datetime import datetime, timezone
-        from uuid import uuid4
 
         labels = github_adapter.list_labels() if github_adapter else []
         synced = 0

@@ -11,7 +11,7 @@ import logging
 import os
 import time
 import uuid
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from datetime import datetime, timezone
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
@@ -24,7 +24,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.requests import Request as StarletteRequest
 
 from socialseed_tasker import __version__  # noqa: E402
-from socialseed_tasker.observability.tracing import init_tracing, get_tracer
 from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
@@ -42,6 +41,7 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     PrivacyExportRequest,
 )
 from socialseed_tasker.ml.schemas import InferenceRequest
+from socialseed_tasker.observability.tracing import get_tracer, init_tracing
 
 if TYPE_CHECKING:
     from socialseed_tasker.application.actions import TaskRepositoryInterface
@@ -241,11 +241,9 @@ def create_app(
     )
 
     # initialize tracing for API
-    try:
+    with suppress(Exception):
         init_tracing(app=app, service_name=os.getenv("TASKER_OTEL_SERVICE", "tasker-api"))
-    except Exception:
-        pass
-    tracer = get_tracer("tasker.api")
+    get_tracer("tasker.api")
 
     # CORS for browser access — configurable via TASKER_API_ALLOW_ORIGINS (comma separated)
     allow_origins_env = os.getenv("TASKER_API_ALLOW_ORIGINS", "http://localhost:8080")
@@ -429,7 +427,7 @@ def create_app(
     @app.middleware("http")
     async def reasoning_capture_middleware(request: Request, call_next):
         response = await call_next(request)
-        
+
         reasoning_header = request.headers.get("X-Agent-Reasoning")
         if reasoning_header and "api/v1/issues/" in request.url.path:
             parts = request.url.path.split("/")
@@ -440,11 +438,12 @@ def create_app(
                     import uuid
                     try:
                         uuid.UUID(issue_id)
-                        
-                        from socialseed_tasker.infrastructure.neo4j_reasoning_repository import ReasoningRepository
-                        from socialseed_tasker.domain.entities import ReasoningNode, DecisionType
+
                         import json
-                        
+
+                        from socialseed_tasker.domain.entities import DecisionType, ReasoningNode
+                        from socialseed_tasker.infrastructure.neo4j_reasoning_repository import ReasoningRepository
+
                         driver = getattr(app.state, "driver", None)
                         if driver:
                             repo = ReasoningRepository(driver)
@@ -460,7 +459,7 @@ def create_app(
                                         decision_type = DecisionType(data["decision_type"])
                                 except ValueError:
                                     pass
-                                    
+
                                 node = ReasoningNode(
                                     thought=thought,
                                     confidence=confidence,
@@ -472,7 +471,11 @@ def create_app(
                                 agent_name = request.headers.get("X-Agent-Name", "Unknown Agent")
                                 repo.log_reasoning(issue_id, agent_id, agent_name, node)
                             except json.JSONDecodeError:
-                                node = ReasoningNode(thought=reasoning_header, confidence=0.5, decision="action_execution")
+                                node = ReasoningNode(
+                                    thought=reasoning_header,
+                                    confidence=0.5,
+                                    decision="action_execution",
+                                )
                                 agent_id = request.headers.get("X-Agent-ID", "unknown-agent")
                                 agent_name = request.headers.get("X-Agent-Name", "Unknown Agent")
                                 repo.log_reasoning(issue_id, agent_id, agent_name, node)
@@ -480,18 +483,40 @@ def create_app(
                         pass
             except Exception as e:
                 logger.error(f"Failed to capture reasoning: {e}")
-                
+
         return response
 
     # Health endpoint with Neo4j check is registered below with the routers
     # Register routers
     # Register routers
+    from socialseed_tasker.events.routes import webhook_router as events_webhook_router
+
+    # #564: must be registered before agent_router so /agents/profiles is not
+    # swallowed by the /agents/{agent_id} path parameter of agent.py.
+    from socialseed_tasker.infrastructure.web_api.routers.agent_profiles import agent_profiles_router
+
+    # #574: persistent agent run history; /agents/{id}/runs and /runs/{id}
+    # templates are distinct from agent.py's suffixes (heartbeat/specialists).
+    from socialseed_tasker.infrastructure.web_api.routers.agent_runs import agent_runs_router
+
+    # #577: agent skills catalog (name + behavior) read by the floating picker.
+    from socialseed_tasker.infrastructure.web_api.routers.agent_skills import agent_skills_router
+
+    # #572: seeded catalogs consumed by the frontend pickers.
+    from socialseed_tasker.infrastructure.web_api.routers.catalogs import catalogs_router
+
+    # #575: workflow definition library (builtin .md imports + custom rows).
+    from socialseed_tasker.infrastructure.web_api.routers.workflows import workflows_router
     from socialseed_tasker.infrastructure.web_api.routes import (
         admin_router,
         agent_router,
         ai_search_router,
         analysis_router,
+        auth_router,
+        auto_healing_router,
+        chat_router,
         code_graph_router,
+        commit_router,
         components_dep_router,
         components_router,
         constraints_router,
@@ -501,43 +526,21 @@ def create_app(
         issues_router,
         label_router,
         mcp_router,
+        notifications_router,
         objective_router,
-        policy_router,
         policy_rel_router,
+        policy_router,
         project_router,
         rag_router,
+        realtime_router,
         reasoning_router,
+        secrets_router,
+        setup_router,
         sync_router,
         tenants_router,
         user_router,
-        commit_router,
         webhook_router,
-        secrets_router,
-        realtime_router,
-        auth_router,
-        auto_healing_router,
-        chat_router,
-        setup_router,
-        notifications_router,
     )
-    from socialseed_tasker.events.routes import webhook_router as events_webhook_router
-
-    # #564: must be registered before agent_router so /agents/profiles is not
-    # swallowed by the /agents/{agent_id} path parameter of agent.py.
-    from socialseed_tasker.infrastructure.web_api.routers.agent_profiles import agent_profiles_router
-
-    # #572: seeded catalogs consumed by the frontend pickers.
-    from socialseed_tasker.infrastructure.web_api.routers.catalogs import catalogs_router
-
-    # #577: agent skills catalog (name + behavior) read by the floating picker.
-    from socialseed_tasker.infrastructure.web_api.routers.agent_skills import agent_skills_router
-
-    # #574: persistent agent run history; /agents/{id}/runs and /runs/{id}
-    # templates are distinct from agent.py's suffixes (heartbeat/specialists).
-    from socialseed_tasker.infrastructure.web_api.routers.agent_runs import agent_runs_router
-
-    # #575: workflow definition library (builtin .md imports + custom rows).
-    from socialseed_tasker.infrastructure.web_api.routers.workflows import workflows_router
 
     app.include_router(issues_router, prefix="/api/v1", tags=["issues"])
     app.include_router(dependencies_router, prefix="/api/v1", tags=["dependencies"])
@@ -619,7 +622,11 @@ def create_app(
             result["dependencies"]["neo4j"] = "connected" if neo4j_connected else "disconnected"
             from urllib.parse import urlparse
             parsed = urlparse(neo4j_driver.uri)
-            result["neo4j_uri"] = f"{parsed.scheme}://{parsed.hostname}:{parsed.port}" if parsed.hostname else neo4j_driver.uri
+            result["neo4j_uri"] = (
+                f"{parsed.scheme}://{parsed.hostname}:{parsed.port}"
+                if parsed.hostname
+                else neo4j_driver.uri
+            )
             if not neo4j_connected:
                 result["status"] = "degraded"
         else:
@@ -686,9 +693,9 @@ def create_app(
 
     # Events wiring
     from socialseed_tasker.config.storage import build_storage
-    from socialseed_tasker.events.webhooks import WebhookManager
     from socialseed_tasker.events.bus import EventBus
     from socialseed_tasker.events.delivery import DeliveryWorker
+    from socialseed_tasker.events.webhooks import WebhookManager
     storage_backend, evt_storage = build_storage()
     app.state.storage_backend = storage_backend
     logger.info("event storage backend: %s", storage_backend)
@@ -747,7 +754,7 @@ def create_app(
     # service, so GET /auth/login used to hang clients against an unreachable
     # proxy (issue #597, the only TIMEOUT of the 294-route smoke). Answer 410
     # Gone pointing at the real flows instead of redirecting into the void.
-    _SSO_RETIRED = {
+    _sso_retired = {
         "error": {
             "code": "SSO_KEYCLOAK_RETIRED",
             "message": (
@@ -760,15 +767,15 @@ def create_app(
 
     @app.get("/auth/login", include_in_schema=False)
     def auth_login():
-        return JSONResponse(status_code=410, content=_SSO_RETIRED)
+        return JSONResponse(status_code=410, content=_sso_retired)
 
     @app.get("/auth/callback", include_in_schema=False)
     def auth_callback():
-        return JSONResponse(status_code=410, content=_SSO_RETIRED)
+        return JSONResponse(status_code=410, content=_sso_retired)
 
     @app.post("/auth/logout", include_in_schema=False)
     def auth_logout():
-        return JSONResponse(status_code=410, content=_SSO_RETIRED)
+        return JSONResponse(status_code=410, content=_sso_retired)
 
     @app.get("/api/v1/whoami")
     def whoami(request: Request) -> APIResponse[dict[str, Any]]:
@@ -797,8 +804,9 @@ def create_app(
     if os.getenv("TASKER_INTEGRATION") == "1":
         @app.post("/test/create_session")
         async def test_create_session(request: Request):
-            from socialseed_tasker.auth.oauth import SESSION_COOKIE_NAME, parse_id_token
             import json as _json
+
+            from socialseed_tasker.auth.oauth import SESSION_COOKIE_NAME, parse_id_token
             raw = await request.body()
             body = _json.loads(raw.decode("utf-8")) if raw else {}
             id_token = body.get("id_token", "")
@@ -822,11 +830,11 @@ def create_app(
     from socialseed_tasker.infrastructure.web_api.rate_limit import BURST, USER_PER_MIN
     try:
         from socialseed_tasker.infrastructure.redis_rate_limiter import RedisRateLimiter
-        _REDIS_AVAILABLE = True
+        _redis_available = True
     except Exception:
-        _REDIS_AVAILABLE = False
+        _redis_available = False
     _rate_redis_url = os.getenv("TASKER_REDIS_URL")
-    if _rate_redis_url and _REDIS_AVAILABLE:
+    if _rate_redis_url and _redis_available:
         try:
             app.state.rate_limiter = RedisRateLimiter(
                 _rate_redis_url, rate_per_min=USER_PER_MIN, burst=BURST
@@ -840,8 +848,8 @@ def create_app(
     app.add_middleware(RateLimitMiddleware)
 
     # Tenant middleware
-    from socialseed_tasker.tenancy.middleware import TenantMiddleware
     from socialseed_tasker.cli.wiring import build_default_container
+    from socialseed_tasker.tenancy.middleware import TenantMiddleware
     _tenancy_container = build_default_container()
     app.add_middleware(TenantMiddleware, container=_tenancy_container)
 
@@ -886,6 +894,7 @@ def create_app(
         if not auth_enabled:
             return None
         from fastapi import HTTPException
+
         from socialseed_tasker.auth.auth import load_auth_provider
         from socialseed_tasker.cli.wiring import build_default_container
         auth = request.headers.get("authorization", "")
@@ -955,6 +964,7 @@ def create_app(
     @app.post("/api/v1/privacy/export")
     async def api_privacy_export(body: PrivacyExportRequest, request: Request):
         from fastapi import HTTPException
+
         from socialseed_tasker.auth.auth import load_auth_provider
         from socialseed_tasker.cli.wiring import build_default_container
         auth = request.headers.get("authorization", "")
@@ -974,11 +984,13 @@ def create_app(
 
     @app.post("/api/v1/privacy/delete")
     async def api_privacy_delete(body: PrivacyDeleteRequest, request: Request):
-        from fastapi import HTTPException
-        from socialseed_tasker.auth.auth import load_auth_provider
-        from socialseed_tasker.cli.wiring import build_default_container
         import json as _json
         import time
+
+        from fastapi import HTTPException
+
+        from socialseed_tasker.auth.auth import load_auth_provider
+        from socialseed_tasker.cli.wiring import build_default_container
         auth = request.headers.get("authorization", "")
         user_id = None
         if auth.lower().startswith("bearer "):
@@ -1004,9 +1016,11 @@ def create_app(
 
     @app.get("/api/v1/privacy/tasks/{task_id}")
     def api_privacy_task(task_id: str, request: Request):
-        from fastapi import HTTPException
-        from socialseed_tasker.cli.wiring import build_default_container
         import json as _json
+
+        from fastapi import HTTPException
+
+        from socialseed_tasker.cli.wiring import build_default_container
         container = build_default_container()
         raw = container.storage.get("privacy:tasks") or b"[]"
         arr = _json.loads(raw.decode("utf-8")) if raw else []
@@ -1017,10 +1031,12 @@ def create_app(
 
     @app.get("/api/v1/privacy/audit")
     def api_privacy_audit(request: Request):
+        import json as _json
+
         from fastapi import HTTPException
+
         from socialseed_tasker.auth.auth import load_auth_provider
         from socialseed_tasker.cli.wiring import build_default_container
-        import json as _json
         auth = request.headers.get("authorization", "")
         user_id = None
         if auth.lower().startswith("bearer "):
@@ -1037,9 +1053,12 @@ def create_app(
     # ML inference endpoint
     @app.post("/api/v1/models/{model_name}/infer")
     async def api_model_infer(model_name: str, req: InferenceRequest):
+        import json as _json
+        import time as _time
+
         from fastapi import HTTPException
+
         from socialseed_tasker.cli.wiring import build_default_container
-        import json as _json, time as _time
         container = build_default_container()
         fs = container.feature_store
         features = {}
@@ -1054,11 +1073,16 @@ def create_app(
             raise HTTPException(status_code=400, detail="missing features or key")
         seed = req.params.get("seed") or int(os.getenv("TASKER_ML_SEED", "42"))
         runner = container.ml_runner
-        start = _time.time()
         res = runner.predict(model_name, features, version=req.params.get("version"), seed=seed)
-        latency = (_time.time() - start) * 1000.0
         input_hash = fs.compute_input_hash(features)
-        trace = {"model": model_name, "version": res["version"], "input_hash": input_hash, "seed": res["seed"], "latency_ms": res["latency_ms"], "ts": int(_time.time())}
+        trace = {
+            "model": model_name,
+            "version": res["version"],
+            "input_hash": input_hash,
+            "seed": res["seed"],
+            "latency_ms": res["latency_ms"],
+            "ts": int(_time.time()),
+        }
         try:
             raw_traces = container.storage.get("ml:traces") or b"[]"
             arr = _json.loads(raw_traces.decode("utf-8")) if raw_traces else []
@@ -1067,7 +1091,15 @@ def create_app(
         except Exception:
             pass
         from socialseed_tasker.ml.schemas import InferenceResponse
-        return InferenceResponse(model=model_name, version=res["version"], prediction=res["prediction"], input_hash=input_hash, seed=res["seed"], latency_ms=res["latency_ms"], meta={})
+        return InferenceResponse(
+            model=model_name,
+            version=res["version"],
+            prediction=res["prediction"],
+            input_hash=input_hash,
+            seed=res["seed"],
+            latency_ms=res["latency_ms"],
+            meta={},
+        )
 
     # Provide config to routes for policy enforcement mode
     if hasattr(repository, "_driver") and hasattr(repository._driver, "_config"):
@@ -1182,14 +1214,13 @@ def create_app(
         errors = []
         for error in exc.errors():
             loc = error.get("loc", [])
-            field_path = ".".join(str(l) for l in loc[1:] if l != "body") if loc else "unknown"
             errors.append({
                 "loc": list(loc),
                 "msg": error.get("msg", "validation error"),
                 "type": error.get("type", "value_error"),
                 "input": error.get("input"),
             })
-        
+
         return JSONResponse(
             status_code=422,
             content={

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any
 
 from ariadne import MutationType, QueryType, SubscriptionType
 
@@ -33,7 +33,7 @@ def resolve_issues(_, info):
 
 
 @query.field("impact")
-def resolve_impact(_, info, issueId: str, maxDepth: int = 5):
+def resolve_impact(_, info, issueId: str, maxDepth: int = 5):  # noqa: N803  # nombre de argumento del esquema GraphQL
     container = info.context["container"]
     user_id = info.context.get("user_id")
     if not container.rbac.has_permission(user_id, "read:impact"):
@@ -42,7 +42,7 @@ def resolve_impact(_, info, issueId: str, maxDepth: int = 5):
 
 
 @query.field("agentContext")
-def resolve_agent_context(_, info, issueId: str, maxDepth: int = 3):
+def resolve_agent_context(_, info, issueId: str, maxDepth: int = 3):  # noqa: N803  # nombre de argumento del esquema GraphQL
     container = info.context["container"]
     user_id = info.context.get("user_id")
     if not container.rbac.has_permission(user_id, "read:context"):
@@ -58,7 +58,15 @@ def resolve_agent_context(_, info, issueId: str, maxDepth: int = 3):
 
 
 @mutation.field("createIssue")
-def resolve_create_issue(_, info, id: str, title: str, description: str = "", status: str = "open", metadata: Dict[str, Any] = None):
+def resolve_create_issue(
+    _,
+    info,
+    id: str,
+    title: str,
+    description: str = "",
+    status: str = "open",
+    metadata: dict[str, Any] = None,
+):
     container = info.context["container"]
     user_id = info.context.get("user_id")
     if not container.rbac.has_permission(user_id, "create:issue"):
@@ -93,7 +101,7 @@ def resolve_add_dependency(_, info, **args):
 
 
 @mutation.field("triggerEvent")
-def resolve_trigger_event(_, info, type: str, payload: Dict[str, Any] = None):
+def resolve_trigger_event(_, info, type: str, payload: dict[str, Any] = None):
     container = info.context["container"]
     user_id = info.context.get("user_id")
     if not container.rbac.has_permission(user_id, "admin"):
@@ -110,7 +118,7 @@ def resolve_trigger_event(_, info, type: str, payload: Dict[str, Any] = None):
 
 
 @subscription.source("issueEvents")
-def source_issue_events(obj, info, issueId=None):
+def source_issue_events(obj, info, issueId=None):  # noqa: N803  # nombre de argumento del esquema GraphQL
     container = info.context["container"]
     queue = []
 
@@ -133,7 +141,7 @@ def source_issue_events(obj, info, issueId=None):
 
 
 @subscription.field("issueEvents")
-def issue_events_resolver(event_json, info, issueId=None):
+def issue_events_resolver(event_json, info, issueId=None):  # noqa: N803  # nombre de argumento del esquema GraphQL
     return __import__("json").loads(event_json)
 
 

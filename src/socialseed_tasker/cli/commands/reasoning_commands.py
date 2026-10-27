@@ -6,7 +6,7 @@ import typer
 from rich.panel import Panel
 from rich.table import Table
 
-from socialseed_tasker.cli.commands.shared import console, get_repository
+from socialseed_tasker.cli.commands.shared import console
 from socialseed_tasker.config.mode_config import DualModeConfig
 
 reasoning_app = typer.Typer(help="AI Reasoning Log commands")
@@ -158,10 +158,7 @@ def reasoning_history(
         raise typer.Exit(code=1)
 
     repo = ReasoningRepository(driver)
-    if issue_id:
-        history = repo.get_reasoning_by_issue(issue_id, limit)
-    else:
-        history = repo.get_reasoning_history(limit)
+    history = repo.get_reasoning_by_issue(issue_id, limit) if issue_id else repo.get_reasoning_history(limit)
 
     if not history:
         console.print("[info]No reasoning found[/info]")

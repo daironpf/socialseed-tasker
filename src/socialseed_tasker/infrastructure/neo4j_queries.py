@@ -61,8 +61,10 @@ SCHEMA_INDEXES = [
     "CREATE INDEX user_username IF NOT EXISTS FOR (u:User) ON (u.username)",
     "CREATE INDEX user_role IF NOT EXISTS FOR (u:User) ON (u.role)",
     "CREATE INDEX policy_name IF NOT EXISTS FOR (p:Policy) ON (p.name)",
-    "CREATE VECTOR INDEX issue_embeddings IF NOT EXISTS FOR (i:Issue) ON (i.embedding) OPTIONS {indexConfig: {`vector.dimensions`: 1536, `vector.similarity_function`: 'cosine'}}",
-    "CREATE VECTOR INDEX rag_content_index IF NOT EXISTS FOR (r:RAGEmbedding) ON (r.embedding) OPTIONS {indexConfig: {`vector.dimensions`: 1536, `vector.similarity_function`: 'cosine'}}",
+    "CREATE VECTOR INDEX issue_embeddings IF NOT EXISTS FOR (i:Issue) ON (i.embedding) "
+    "OPTIONS {indexConfig: {`vector.dimensions`: 1536, `vector.similarity_function`: 'cosine'}}",
+    "CREATE VECTOR INDEX rag_content_index IF NOT EXISTS FOR (r:RAGEmbedding) ON (r.embedding) "
+    "OPTIONS {indexConfig: {`vector.dimensions`: 1536, `vector.similarity_function`: 'cosine'}}",
     "CREATE INDEX code_calls IF NOT EXISTS FOR ()-[r:CALLS]->() ON (r.timestamp)",
     "CREATE INDEX code_depends IF NOT EXISTS FOR ()-[r:DEPENDS_ON]->() ON (r.timestamp)",
     "CREATE INDEX agent_thought IF NOT EXISTS FOR ()-[r:THOUGHT]->() ON (r.timestamp)",
@@ -1093,7 +1095,7 @@ MATCH (c:Commit)
 WHERE ($since IS NULL OR c.timestamp >= $since)
 OPTIONAL MATCH (a:Agent)-[:AUTHORED]->(c)
 OPTIONAL MATCH (u:User)-[:AUTHORED]->(c)
-RETURN 
+RETURN
     count(c) as total_commits,
     sum(c.additions) as total_additions,
     sum(c.deletions) as total_deletions,

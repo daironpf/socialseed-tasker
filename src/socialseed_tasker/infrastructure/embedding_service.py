@@ -11,10 +11,10 @@ import os
 import random
 import re
 from dataclasses import dataclass
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from socialseed_tasker.application.ports import EmbeddingPort as EmbeddingPortProtocol
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,12 @@ class SecretFilter:
     def filter(text: str) -> str:
         """Remove secrets from text."""
         filtered = text
-        filtered = re.sub(r"api[_-]?key\s*[=:]\s*['\"]?([a-zA-Z0-9_\-]{20,})", r"api_key=\1[REDACTED]", filtered, flags=re.I)
+        filtered = re.sub(
+            r"api[_-]?key\s*[=:]\s*['\"]?([a-zA-Z0-9_\-]{20,})",
+            r"api_key=\1[REDACTED]",
+            filtered,
+            flags=re.I,
+        )
         filtered = re.sub(r"(gh[pousa]_[\w]{36,})", r"\1[REDACTED]", filtered)
         filtered = re.sub(r"(?i)bearer\s+[a-zA-Z0-9_\-\.]+", r"bearer [REDACTED]", filtered)
         filtered = re.sub(r"password\s*[=:]\s*['\"]?([a-zA-Z0-9_\-]{8,})", r"password=[REDACTED]", filtered, flags=re.I)

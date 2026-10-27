@@ -27,9 +27,9 @@ class EpicRepositoryMixin:
                 updated_at=epic.updated_at.isoformat(),
             )
 
-    def get_epic(self, epicId: str) -> Epic | None:
+    def get_epic(self, epic_id: str) -> Epic | None:
         with _session(self._driver) as session:
-            result = session.run(queries.GET_EPIC, id=epicId)
+            result = session.run(queries.GET_EPIC, id=epic_id)
             record = result.single()
             if record is None:
                 return None
@@ -61,20 +61,20 @@ class EpicRepositoryMixin:
                 )
             return epics
 
-    def delete_epic(self, epicId: str) -> None:
+    def delete_epic(self, epic_id: str) -> None:
         with _session(self._driver) as session:
-            session.run(queries.DELETE_EPIC, id=epicId)
+            session.run(queries.DELETE_EPIC, id=epic_id)
 
-    def link_issue_to_epic(self, issue_id: str, epicId: str) -> None:
+    def link_issue_to_epic(self, issue_id: str, epic_id: str) -> None:
         with _session(self._driver) as session:
-            session.run(queries.LINK_ISSUE_TO_EPIC, issue_id=issue_id, epic_id=epicId)
+            session.run(queries.LINK_ISSUE_TO_EPIC, issue_id=issue_id, epic_id=epic_id)
 
-    def update_epic(self, epicId: str, updates: dict) -> None:
+    def update_epic(self, epic_id: str, updates: dict) -> None:
         safe_updates = {k: v for k, v in updates.items() if k in _EPIC_UPDATABLE_FIELDS}
         if not safe_updates:
             return
         with _session(self._driver) as session:
-            params = {"id": epicId, "updated_at": datetime.now(timezone.utc).isoformat()}
+            params = {"id": epic_id, "updated_at": datetime.now(timezone.utc).isoformat()}
             set_clauses = ["e.updatedAt = $updated_at"]
 
             for key, value in safe_updates.items():
@@ -135,9 +135,9 @@ class EpicRepositoryMixin:
         with _session(self._driver) as session:
             session.run(queries.DELETE_OBJECTIVE, id=objective_id)
 
-    def link_epic_to_objective(self, epicId: str, objective_id: str) -> None:
+    def link_epic_to_objective(self, epic_id: str, objective_id: str) -> None:
         with _session(self._driver) as session:
-            session.run(queries.LINK_EPIC_TO_OBJECTIVE, epic_id=epicId, objective_id=objective_id)
+            session.run(queries.LINK_EPIC_TO_OBJECTIVE, epic_id=epic_id, objective_id=objective_id)
 
     def update_objective(self, objective_id: str, updates: dict) -> None:
         safe_updates = {k: v for k, v in updates.items() if k in _OBJECTIVE_UPDATABLE_FIELDS}

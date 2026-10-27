@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -17,8 +16,8 @@ class FaissStore:
     def __init__(self, dim: int, index_factory: str = "Flat"):
         self.dim = dim
         self.index_factory = index_factory
-        self._id_to_meta: Dict[str, Dict] = {}
-        self._id_list: List[str] = []
+        self._id_to_meta: dict[str, dict] = {}
+        self._id_list: list[str] = []
         self._vectors = None
         self._index = None
         if _FAISS_AVAILABLE:
@@ -27,7 +26,7 @@ class FaissStore:
             self._index = None
             self._vectors = np.zeros((0, dim), dtype="float32")
 
-    def upsert(self, id: str, vector: List[float], metadata: Optional[Dict] = None) -> None:
+    def upsert(self, id: str, vector: list[float], metadata: dict | None = None) -> None:
         vec = np.array(vector, dtype="float32").reshape(1, -1)
         if _FAISS_AVAILABLE:
             if self._index.ntotal == 0:
@@ -47,12 +46,12 @@ class FaissStore:
             self._id_list.append(id)
         self._id_to_meta[id] = metadata or {}
 
-    def query(self, vector: List[float], top_k: int = 5) -> List[Dict]:
+    def query(self, vector: list[float], top_k: int = 5) -> list[dict]:
         q = np.array(vector, dtype="float32").reshape(1, -1)
         if _FAISS_AVAILABLE:
-            D, I = self._index.search(q, top_k)
+            distances, indices = self._index.search(q, top_k)
             results = []
-            for dist, idx in zip(D[0], I[0]):
+            for dist, idx in zip(distances[0], indices[0], strict=False):
                 if idx < 0 or idx >= len(self._id_list):
                     continue
                 _id = self._id_list[int(idx)]
@@ -102,7 +101,7 @@ class FaissStore:
 
     def load(self, path: str) -> None:
         meta_path = os.path.join(path, "meta.json")
-        with open(meta_path, "r", encoding="utf-8") as fh:
+        with open(meta_path, encoding="utf-8") as fh:
             data = json.load(fh)
         self._id_list = data.get("ids", [])
         self._id_to_meta = data.get("meta", {})

@@ -32,14 +32,14 @@ from socialseed_tasker.application.actions import (
     delete_component_action,
     update_component_action,
 )
-from socialseed_tasker.domain.entities import Component
 from socialseed_tasker.cli.commands.shared import (
+    _components_table,
+    _issues_table,
     console,
     get_repository,
     resolve_component_id,
-    _components_table,
-    _issues_table,
 )
+from socialseed_tasker.domain.entities import Component
 
 component_app = typer.Typer(help="Manage components")
 
@@ -145,7 +145,6 @@ def component_update(
     project: str | None = typer.Option(None, "--project", "-p", help="New project name"),
 ) -> None:
     """Update a component's fields."""
-    from socialseed_tasker.application.actions import update_component_action
 
     if name is None and description is None and project is None:
         console.print(
@@ -173,7 +172,6 @@ def component_delete(
     yes: bool = typer.Option(False, "--yes", "-y", help="Confirm deletion without prompting"),
 ) -> None:
     """Delete a component."""
-    from socialseed_tasker.application.actions import ComponentHasIssuesError, delete_component_action
 
     repo = get_repository()
 

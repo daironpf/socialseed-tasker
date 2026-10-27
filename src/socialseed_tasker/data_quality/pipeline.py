@@ -1,21 +1,23 @@
 from __future__ import annotations
+
 import json
 import logging
 import time
-from typing import Dict, Any, List
+from typing import Any
+
+from socialseed_tasker.application.ports import StoragePort
 from socialseed_tasker.data_quality.rules import (
-    RuleRegistry,
     BaseRule,
-    SchemaRule,
-    RangeRule,
-    UniqueRule,
     CustomRule,
     NotEmptyRule,
+    RangeRule,
+    RuleRegistry,
+    SchemaRule,
+    UniqueRule,
 )
-from socialseed_tasker.application.ports import StoragePort
+from socialseed_tasker.data_quality.serializers import ValidationResult
 from socialseed_tasker.events.bus import EventBus
 from socialseed_tasker.events.serializers import EventDTO
-from socialseed_tasker.data_quality.serializers import ValidationResult
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +29,9 @@ class DataQualityPipeline:
         self.storage = storage
         self.registry = rule_registry
         self.event_bus = event_bus
-        self._rule_objs: Dict[str, BaseRule] = {}
+        self._rule_objs: dict[str, BaseRule] = {}
 
-    def _instantiate_rule(self, spec: Dict[str, Any]) -> BaseRule | None:
+    def _instantiate_rule(self, spec: dict[str, Any]) -> BaseRule | None:
         rid = spec["id"]
         if rid in self._rule_objs:
             return self._rule_objs[rid]
@@ -53,7 +55,7 @@ class DataQualityPipeline:
         self._rule_objs[rid] = r
         return r
 
-    def run_pre_ingest(self, record: Dict[str, Any], record_id: str = None) -> List[ValidationResult]:
+    def run_pre_ingest(self, record: dict[str, Any], record_id: str = None) -> list[ValidationResult]:
         results = []
         for spec in self.registry.list():
             if not spec.get("enabled", True):
@@ -62,7 +64,13 @@ class DataQualityPipeline:
             if rule is None:
                 continue
             res = rule.validate(record)
-            vr = ValidationResult(rule_id=rule.id, ok=res["ok"], message=res.get("message"), record_id=record_id, details=res.get("details", {}))
+            vr = ValidationResult(
+                rule_id=rule.id,
+                ok=res["ok"],
+                message=res.get("message"),
+                record_id=record_id,
+                details=res.get("details", {}),
+            )
             results.append(vr)
             self._inc_metric(rule.id, 0 if res["ok"] else 1)
             if not res["ok"] and spec.get("config", {}).get("action") == "reject":
@@ -74,7 +82,7 @@ class DataQualityPipeline:
                 }))
         return results
 
-    def run_post_ingest(self, record: Dict[str, Any], record_id: str = None) -> List[ValidationResult]:
+    def run_post_ingest(self, record: dict[str, Any], record_id: str = None) -> list[ValidationResult]:
         results = []
         for spec in self.registry.list():
             if not spec.get("enabled", True):
@@ -83,14 +91,20 @@ class DataQualityPipeline:
             if rule is None:
                 continue
             res = rule.validate(record)
-            vr = ValidationResult(rule_id=rule.id, ok=res["ok"], message=res.get("message"), record_id=record_id, details=res.get("details", {}))
+            vr = ValidationResult(
+                rule_id=rule.id,
+                ok=res["ok"],
+                message=res.get("message"),
+                record_id=record_id,
+                details=res.get("details", {}),
+            )
             results.append(vr)
             if isinstance(rule, UniqueRule) and res["ok"]:
                 rule.mark_unique(record, record_id or "")
         self._write_report(record_id or "unknown", results)
         return results
 
-    def _write_report(self, record_id: str, results: List[ValidationResult]):
+    def _write_report(self, record_id: str, results: list[ValidationResult]):
         key = REPORT_KEY_PREFIX + str(record_id)
         arr = [r.model_dump() for r in results]
         self.storage.put(key, json.dumps(arr).encode("utf-8"))

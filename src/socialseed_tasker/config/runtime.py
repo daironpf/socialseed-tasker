@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import contextlib
 import os
 import threading
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from socialseed_tasker.config.flags import FeatureFlagClient, FeatureFlagStore
 from socialseed_tasker.application.ports import StoragePort
-
+from socialseed_tasker.config.flags import FeatureFlagClient, FeatureFlagStore
 
 Callback = Callable[[str, Any], None]
 
@@ -100,10 +101,8 @@ class RuntimeConfig:
         with self._lock:
             fns = list(self._callbacks.get(name, []))
         for fn in fns:
-            try:
+            with contextlib.suppress(Exception):
                 fn(name, value)
-            except Exception:
-                pass
 
 
 def _env_bool(key: str, default: str = "0") -> bool:

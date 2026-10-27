@@ -1,21 +1,21 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import Any, Iterator
+from typing import Any
 from uuid import UUID
 
 from socialseed_tasker.domain.entities import (
     CommentEntry,
     Component,
     Issue,
-    IssuePriority,
     IssueStatus,
-    Label,
     ReasoningContext,
     ReasoningLogEntry,
 )
+
 
 @contextmanager
 def _session(driver: Any) -> Iterator[Any]:
@@ -91,7 +91,7 @@ def _parse_manifest_todo(raw: Any) -> list[dict[str, Any]]:
 def _node_to_issue(node: dict[str, Any]) -> Issue:
     """Convert a Neo4j node to a domain Issue."""
     data = dict(node)
-    reasoningLogs = []
+    reasoning_logs = []
     raw_logs = data.get("reasoningLogs")
     if raw_logs:
         if isinstance(raw_logs, str):
@@ -103,7 +103,7 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
                     context_enum = ReasoningContext(context_value)
                 except ValueError:
                     context_enum = ReasoningContext.ARCHITECTURE_CHOICE
-                reasoningLogs.append(
+                reasoning_logs.append(
                     ReasoningLogEntry(
                         id=log_data.get("id"),
                         timestamp=datetime.fromisoformat(
@@ -152,7 +152,7 @@ def _node_to_issue(node: dict[str, Any]) -> Issue:
         agent_started_at=data.get("agentStartedAt") or data.get("agent_started_at"),
         agent_finished_at=data.get("agentFinishedAt") or data.get("agent_finished_at"),
         agent_id=data.get("agentId") or data.get("agent_id"),
-        reasoning_logs=reasoningLogs,
+        reasoning_logs=reasoning_logs,
         comments=comments_list,
         manifest_todo=_parse_manifest_todo(data.get("manifestTodo")),
         manifest_files=data.get("manifestFiles", []),

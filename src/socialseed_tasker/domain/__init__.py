@@ -3,8 +3,8 @@
 from socialseed_tasker.domain.architectural_rules import (
     ArchitecturalRule,
     Severity,
-    Violation,
     ValidationResult,
+    Violation,
 )
 from socialseed_tasker.domain.code_analysis_entities import (
     CodeFile,

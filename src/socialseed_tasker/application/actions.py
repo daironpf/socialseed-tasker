@@ -201,7 +201,7 @@ class TaskRepositoryInterface(Protocol):
 
     def add_dependencies_bulk(self, issue_id: str, depends_on_ids: list[str]) -> dict:
         """Create multiple [:DEPENDS_ON] relationships in a single operation.
-        
+
         Returns a dict with 'successful' and 'failed' counts and 'results' list.
         """
 

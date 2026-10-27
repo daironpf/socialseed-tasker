@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from socialseed_tasker.application.dtos import IssueDTO
 from socialseed_tasker.application.exceptions import GraphPortError, ParserError
 from socialseed_tasker.application.ports import ParserPort
 from socialseed_tasker.application.repositories import GraphRepository, IssueRepository

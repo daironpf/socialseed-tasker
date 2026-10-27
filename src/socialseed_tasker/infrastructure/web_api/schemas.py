@@ -49,7 +49,7 @@ class Meta(BaseModel):
         default=None,
         description="Non-critical warnings for the client",
     )
-    pagination: 'PaginationMeta | None' = Field(
+    pagination: PaginationMeta | None = Field(
         default=None,
         description="Pagination metadata for list endpoints (present only when results are paginated)",
     )
@@ -522,7 +522,7 @@ class DependencyRequest(BaseModel):
     )
 
     @model_validator(mode="after")
-    def _resolve_depends_on(self) -> "DependencyRequest":
+    def _resolve_depends_on(self) -> DependencyRequest:
         if self.depends_on_id is None and self.depends_on is not None:
             self.depends_on_id = self.depends_on
         if self.depends_on_id is None:
@@ -568,7 +568,10 @@ class BulkIssueCreateItem(BaseModel):
     priority: str = Field("MEDIUM", description="Priority level: LOW, MEDIUM, HIGH, CRITICAL")
     component_id: str = Field(..., min_length=1, description="UUID of the component this issue belongs to")
     labels: list[str] = Field(default_factory=list, description="Tags for categorisation")
-    architectural_constraints: list[str] = Field(default_factory=list, description="Architectural rules this issue must comply with")
+    architectural_constraints: list[str] = Field(
+        default_factory=list,
+        description="Architectural rules this issue must comply with",
+    )
 
 
 class BulkIssueCreateRequest(BaseModel):
@@ -634,19 +637,22 @@ class ProjectCreateRequest(BaseModel):
     """Request body for creating a new project node."""
     id: str | None = Field(None, description="Universal unique identifier (generated if not provided)")
     name: str = Field(..., min_length=1, description="Official name of the project")
-    slug: str = Field(default="", description="URL-friendly identifier (defaults to name lowercased + hyphens if empty)")
+    slug: str = Field(
+        default="",
+        description="URL-friendly identifier (defaults to name lowercased + hyphens if empty)",
+    )
     description: str = Field("", description="Detailed description of the project's scope")
-    repositoryUrl: str = Field("", description="Link to the remote Git repository")
-    basePackage: str = Field("", description="The root package or primary namespace")
+    repositoryUrl: str = Field("", description="Link to the remote Git repository")  # noqa: N815
+    basePackage: str = Field("", description="The root package or primary namespace")  # noqa: N815
     visibility: str = Field("PUBLIC", description="Project visibility level (PUBLIC, PRIVATE)")
     status: str = Field("DEVELOPMENT", description="Current project lifecycle state")
-    techStack: list[str] = Field(default_factory=list, description="Complete list of all integrated technologies")
-    mainStack: list[str] = Field(default_factory=list, description="Core technologies")
-    architectureStyle: str = Field("api-first", description="Architectural pattern followed")
+    techStack: list[str] = Field(default_factory=list, description="Complete list of all integrated technologies")  # noqa: N815
+    mainStack: list[str] = Field(default_factory=list, description="Core technologies")  # noqa: N815
+    architectureStyle: str = Field("api-first", description="Architectural pattern followed")  # noqa: N815
     version: str = Field("0.1.0", description="Current semantic version")
-    conventionsUrl: str = Field("", description="Reference to external coding standards")
-    conventionsRules: str = Field("", description="Specific rules and guidelines for AI agents")
-    globalStatus: str = Field("DEVELOPMENT", description="Operational status: DEVELOPMENT, STAGING, PRODUCTION")
+    conventionsUrl: str = Field("", description="Reference to external coding standards")  # noqa: N815
+    conventionsRules: str = Field("", description="Specific rules and guidelines for AI agents")  # noqa: N815
+    globalStatus: str = Field("DEVELOPMENT", description="Operational status: DEVELOPMENT, STAGING, PRODUCTION")  # noqa: N815
 
 
 class ProjectResponse(BaseModel):
@@ -655,18 +661,18 @@ class ProjectResponse(BaseModel):
     name: str
     slug: str
     description: str
-    repositoryUrl: str
-    basePackage: str
+    repositoryUrl: str  # noqa: N815
+    basePackage: str  # noqa: N815
     visibility: str
     status: str
-    techStack: list[str]
-    mainStack: list[str]
-    architectureStyle: str
+    techStack: list[str]  # noqa: N815
+    mainStack: list[str]  # noqa: N815
+    architectureStyle: str  # noqa: N815
     version: str
-    conventionsUrl: str
-    globalStatus: str
-    createdAt: str | None = None
-    updatedAt: str | None = None
+    conventionsUrl: str  # noqa: N815
+    globalStatus: str  # noqa: N815
+    createdAt: str | None = None  # noqa: N815
+    updatedAt: str | None = None  # noqa: N815
 
 
 class TestFailureRequest(BaseModel):

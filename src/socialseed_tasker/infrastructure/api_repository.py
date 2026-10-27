@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Iterator
+from typing import Any
 from uuid import UUID
 
 from socialseed_tasker.application.actions import TaskRepositoryInterface
@@ -12,7 +13,11 @@ from socialseed_tasker.infrastructure.http.api_client import ApiHttpClient
 def _parse_issue(data: dict[str, Any]) -> Issue:
     raw = dict(data)
     raw["id"] = UUID(raw["id"]) if isinstance(raw.get("id"), str) else raw.get("id")
-    raw["component_id"] = UUID(raw["component_id"]) if isinstance(raw.get("component_id"), str) else raw.get("component_id")
+    raw["component_id"] = (
+        UUID(raw["component_id"])
+        if isinstance(raw.get("component_id"), str)
+        else raw.get("component_id")
+    )
     priority_val = raw.get("priority", "MEDIUM")
     if isinstance(priority_val, str):
         raw["priority"] = IssuePriority(priority_val)

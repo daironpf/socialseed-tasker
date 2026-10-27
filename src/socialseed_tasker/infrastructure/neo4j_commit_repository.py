@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
-from uuid import UUID
 
 from socialseed_tasker.domain.entities import Commit
 from socialseed_tasker.infrastructure import neo4j_queries as queries
@@ -24,7 +23,11 @@ def _node_to_commit(node: dict[str, Any]) -> Commit:
         message=node.get("message", ""),
         author_name=node.get("authorName") or node.get("author_name", ""),
         author_email=node.get("authorEmail") or node.get("author_email", ""),
-        timestamp=datetime.fromisoformat(node.get("timestamp")) if node.get("timestamp") else datetime.now(timezone.utc),
+        timestamp=(
+            datetime.fromisoformat(node.get("timestamp"))
+            if node.get("timestamp")
+            else datetime.now(timezone.utc)
+        ),
         is_ai_generated=node.get("isAiGenerated") or node.get("is_ai_generated", False),
         branch=node.get("branch", ""),
         additions=node.get("additions", 0),

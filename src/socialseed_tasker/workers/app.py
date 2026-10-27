@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import os
+
 from celery import Celery
 
 DEFAULT_BROKER = os.getenv("TASKER_CELERY_BROKER_URL", "redis://localhost:6379/0")

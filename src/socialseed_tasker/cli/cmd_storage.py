@@ -8,7 +8,7 @@ from __future__ import annotations
 import typer
 from rich.console import Console
 
-from socialseed_tasker.infrastructure.neo4j_migrations.v090 import run_migration, rollback_migration
+from socialseed_tasker.infrastructure.neo4j_migrations.v090 import rollback_migration, run_migration
 
 console = Console()
 storage_app = typer.Typer(help="Manage Neo4j storage and schema")
@@ -20,14 +20,14 @@ def storage_migrate(
     """Run Neo4j schema migrations."""
     from socialseed_tasker.cli.commands import get_repository
     from socialseed_tasker.infrastructure.neo4j_repository import Neo4jTaskRepository
-    
+
     repo = get_repository()
     if not isinstance(repo, Neo4jTaskRepository):
         console.print("[error]Storage migration is only supported for Neo4j backend.[/error]")
         raise typer.Exit(1)
-        
+
     driver = repo._driver
-    
+
     if version == "0.9.0":
         success = run_migration(driver)
         if success:
@@ -46,14 +46,14 @@ def storage_rollback(
     """Roll back Neo4j schema migrations."""
     from socialseed_tasker.cli.commands import get_repository
     from socialseed_tasker.infrastructure.neo4j_repository import Neo4jTaskRepository
-    
+
     repo = get_repository()
     if not isinstance(repo, Neo4jTaskRepository):
         console.print("[error]Storage rollback is only supported for Neo4j backend.[/error]")
         raise typer.Exit(1)
-        
+
     driver = repo._driver
-    
+
     if version == "0.9.0":
         success = rollback_migration(driver)
         if success:

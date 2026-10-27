@@ -135,20 +135,21 @@ def constraints_validate() -> None:
 @constraints_app.command("doc-gaps")
 def constraints_doc_gaps() -> None:
     """Find undocumented API endpoints (compare OpenAPI vs docs)."""
-    from rich.table import Table
     import httpx
+    from rich.table import Table
 
     try:
         openapi = httpx.get("http://localhost:8000/openapi.json", timeout=5).json()
     except Exception:
         console.print("[error]API not running[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     try:
-        doc = open("docs/API_REFERENCE.md", encoding="utf-8").read()
+        with open("docs/API_REFERENCE.md", encoding="utf-8") as fh:
+            doc = fh.read()
     except FileNotFoundError:
         console.print("[error]docs/API_REFERENCE.md not found[/error]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     gaps = []
     for path in openapi.get("paths", {}):

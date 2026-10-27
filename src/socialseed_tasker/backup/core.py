@@ -1,13 +1,14 @@
 # src/socialseed_tasker/backup/core.py
 from __future__ import annotations
-import os
+
+import hashlib
 import json
+import os
 import tarfile
 import tempfile
-import hashlib
 import time
-from typing import Optional, Dict, Any, List
 from pathlib import Path
+from typing import Any
 
 try:
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -20,11 +21,11 @@ def _sha256_bytes(b: bytes) -> str:
     h.update(b)
     return h.hexdigest()
 
-def _write_manifest(tmpdir: Path, manifest: Dict[str, Any]) -> None:
+def _write_manifest(tmpdir: Path, manifest: dict[str, Any]) -> None:
     with open(tmpdir / "MANIFEST.json", "w", encoding="utf-8") as fh:
         json.dump(manifest, fh, indent=2)
 
-def _collect_storage(storage, tmpdir: Path) -> List[Dict[str, str]]:
+def _collect_storage(storage, tmpdir: Path) -> list[dict[str, str]]:
     keys_meta = []
     if hasattr(storage, "list_keys"):
         for k in storage.list_keys():
@@ -35,7 +36,15 @@ def _collect_storage(storage, tmpdir: Path) -> List[Dict[str, str]]:
             keys_meta.append({"key": k, "file": fname, "sha256": _sha256_bytes(v if v is not None else b"")})
     return keys_meta
 
-def export_data(output_path: str, issue_repo=None, graph_repo=None, storage=None, include_storage: bool = True, encrypt: bool = False, passphrase: Optional[str] = None) -> str:
+def export_data(
+    output_path: str,
+    issue_repo=None,
+    graph_repo=None,
+    storage=None,
+    include_storage: bool = True,
+    encrypt: bool = False,
+    passphrase: str | None = None,
+) -> str:
     tmpdir = Path(tempfile.mkdtemp(prefix="tasker-export-"))
     manifest = {"timestamp": time.time(), "version": "1.0.0", "files": []}
     issues_file = tmpdir / "issues.json"
@@ -107,7 +116,13 @@ def verify_export(file_path: str) -> bool:
             return False
     return True
 
-def restore_data(file_path: str, issue_repo=None, graph_repo=None, storage=None, decrypt_passphrase: Optional[str] = None) -> None:
+def restore_data(
+    file_path: str,
+    issue_repo=None,
+    graph_repo=None,
+    storage=None,
+    decrypt_passphrase: str | None = None,
+) -> None:
     tmpdir = Path(tempfile.mkdtemp(prefix="tasker-restore-"))
     with tarfile.open(file_path, "r:gz") as tar:
         tar.extractall(path=tmpdir)

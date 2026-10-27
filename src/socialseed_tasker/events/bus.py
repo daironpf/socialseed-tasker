@@ -1,16 +1,21 @@
 from __future__ import annotations
-from typing import Callable, Dict, List
+
+import contextlib
 import threading
+from collections.abc import Callable
+
 from socialseed_tasker.events.serializers import EventDTO
 from socialseed_tasker.observability.tracing import get_tracer
 
-_tracer_fn = lambda: get_tracer("tasker.eventbus")
+
+def _tracer_fn():
+    return get_tracer("tasker.eventbus")
 
 Subscriber = Callable[[EventDTO], None]
 
 class EventBus:
     def __init__(self):
-        self._subs: Dict[str, List[Subscriber]] = {}
+        self._subs: dict[str, list[Subscriber]] = {}
         self._lock = threading.RLock()
 
     def subscribe(self, event_type: str, fn: Subscriber) -> None:
@@ -27,7 +32,5 @@ class EventBus:
             with self._lock:
                 handlers = list(self._subs.get(event.type, [])) + list(self._subs.get("*", []))
             for h in handlers:
-                try:
+                with contextlib.suppress(Exception):
                     h(event)
-                except Exception:
-                    pass

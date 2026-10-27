@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import typer
 from rich.panel import Panel
 from rich.table import Table

@@ -1,8 +1,10 @@
 from __future__ import annotations
-import time
-import threading
+
+import contextlib
 import json
-from typing import Optional, Dict, Any
+import threading
+import time
+
 from socialseed_tasker.application.ports import StoragePort
 from socialseed_tasker.ml.runner import ModelRunner
 
@@ -16,7 +18,7 @@ class BatchWorker:
         self.runner = runner
         self.poll_interval = poll_interval
         self._stop = threading.Event()
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
 
     def start(self):
         if self._thread and self._thread.is_alive():
@@ -32,10 +34,8 @@ class BatchWorker:
 
     def _loop(self):
         while not self._stop.is_set():
-            try:
+            with contextlib.suppress(Exception):
                 self.run_once()
-            except Exception:
-                pass
             time.sleep(self.poll_interval)
 
     def run_once(self):

@@ -59,8 +59,12 @@ def _node_to_policy(node: dict[str, Any]) -> Policy:
         remediation_strategy=node.get("remediationStrategy") or node.get("remediation_strategy"),
         autofix_template=node.get("autofixTemplate") or node.get("autofix_template"),
         is_active=node.get("isActive", True),
-        created_at=datetime.fromisoformat(node.get("createdAt") or node.get("created_at", datetime.now(timezone.utc).isoformat())),
-        updated_at=datetime.fromisoformat(node.get("updatedAt") or node.get("updated_at", datetime.now(timezone.utc).isoformat())),
+        created_at=datetime.fromisoformat(
+            node.get("createdAt") or node.get("created_at", datetime.now(timezone.utc).isoformat())
+        ),
+        updated_at=datetime.fromisoformat(
+            node.get("updatedAt") or node.get("updated_at", datetime.now(timezone.utc).isoformat())
+        ),
     )
 
 

@@ -9,8 +9,8 @@ from socialseed_tasker.application.actions import (
     add_dependency_action,
     create_issue_action,
 )
-from socialseed_tasker.domain.entities import Component
 from socialseed_tasker.cli.commands.shared import console, get_repository
+from socialseed_tasker.domain.entities import Component
 
 seed_app = typer.Typer(help="Seed demo data for first-time users")
 

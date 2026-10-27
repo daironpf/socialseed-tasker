@@ -8,8 +8,8 @@ import os
 import sys
 
 from socialseed_tasker.application.dtos import DependencyEdge, IssueDTO
-from socialseed_tasker.application.exceptions import GraphPortError, ParserError, PermissionError
-from socialseed_tasker.cli.flags_cli import cmd_flag_set, cmd_flag_get, cmd_flag_list, cmd_flag_delete
+from socialseed_tasker.application.exceptions import PermissionError
+from socialseed_tasker.cli.flags_cli import cmd_flag_delete, cmd_flag_get, cmd_flag_list, cmd_flag_set
 from socialseed_tasker.cli.wiring import build_default_container
 from socialseed_tasker.observability.logging import get_logger
 from socialseed_tasker.tenancy.migrations import ensure_tenant_schema
@@ -162,7 +162,9 @@ def cmd_parse_file(args: argparse.Namespace, container: object, user_id: str | N
 
 def cmd_enqueue_task(args: argparse.Namespace, container: object, user_id: str | None) -> None:
     try:
-        if not container.rbac.has_permission(user_id, "admin") and not container.rbac.has_permission(user_id, "background:enqueue"):
+        if not container.rbac.has_permission(user_id, "admin") and not container.rbac.has_permission(
+            user_id, "background:enqueue"
+        ):
             raise PermissionError("forbidden")
         from socialseed_tasker.workers.app import create_celery
         celery = create_celery()
@@ -170,9 +172,15 @@ def cmd_enqueue_task(args: argparse.Namespace, container: object, user_id: str |
         if args.task == "parse_and_index_files":
             task = celery.send_task("tasker.parse_and_index_files", args=[payload.get("file_paths", [])])
         elif args.task == "batch_embed_and_store":
-            task = celery.send_task("tasker.batch_embed_and_store", args=[payload.get("docs", []), payload.get("store_key", "default")])
+            task = celery.send_task(
+                "tasker.batch_embed_and_store",
+                args=[payload.get("docs", []), payload.get("store_key", "default")],
+            )
         elif args.task == "run_graph_analysis":
-            task = celery.send_task("tasker.run_graph_analysis", args=[payload.get("issue_id"), int(payload.get("depth", 3))])
+            task = celery.send_task(
+                "tasker.run_graph_analysis",
+                args=[payload.get("issue_id"), int(payload.get("depth", 3))],
+            )
         else:
             _error_and_exit("enqueue-task", {}, details=f"Unknown task {args.task}")
         _print_json({"status": "ok", "command": "enqueue-task", "task_id": task.id})
@@ -219,6 +227,7 @@ def cmd_tenant_delete(args: argparse.Namespace, container: object, user_id: str 
 def cmd_task_status(args: argparse.Namespace, container: object, user_id: str | None) -> None:
     try:
         from celery.result import AsyncResult
+
         from socialseed_tasker.workers.app import create_celery
         celery = create_celery()
         res = AsyncResult(args.task_id, app=celery)
@@ -286,7 +295,7 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--name", required=True)
 
     # Add --token to all subcommands
-    for name, subp in list(sub.choices.items()):
+    for _name, subp in list(sub.choices.items()):
         subp.add_argument("--token")
 
     args = parser.parse_args(argv)

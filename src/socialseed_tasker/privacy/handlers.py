@@ -1,10 +1,11 @@
 from __future__ import annotations
-import os
-import time
-import tempfile
-import tarfile
+
 import json
-from typing import Dict, Any
+import os
+import tarfile
+import tempfile
+import time
+from typing import Any
 
 
 def export_subject(subject_id: str, container) -> str:
@@ -33,7 +34,7 @@ def export_subject(subject_id: str, container) -> str:
     return out
 
 
-def delete_subject(subject_id: str, container, dry_run: bool = True) -> Dict[str, Any]:
+def delete_subject(subject_id: str, container, dry_run: bool = True) -> dict[str, Any]:
     to_delete = {"issues": [], "storage": []}
     if hasattr(container.issue_repo, "list_by_subject"):
         issues = container.issue_repo.list_by_subject(subject_id)

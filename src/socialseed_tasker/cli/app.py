@@ -144,7 +144,7 @@ app.add_typer(commands.analyze_app, name="analyze", help="Analyze issues and roo
 app.add_typer(commands.project_app, name="project", help="Project detection and setup")
 
 # Register init and install as standalone commands to avoid nested typer issues
-from socialseed_tasker.cli.init_command import scaffold_command, interactive_init_command
+from socialseed_tasker.cli.init_command import interactive_init_command, scaffold_command
 
 app.command(name="install", help="Install Tasker infrastructure into a project (non-interactive)")(scaffold_command)
 app.command(name="init", help="Initialize Tasker in a project interactively")(interactive_init_command)
@@ -184,6 +184,7 @@ app.add_typer(commands.constraints_app, name="constraints", help="Manage project
 
 # Register storage commands
 from socialseed_tasker.cli.cmd_storage import storage_app
+
 app.add_typer(storage_app, name="storage")
 
 
@@ -194,6 +195,7 @@ def serve_command(
 ) -> None:
     """Start the Tasker API server."""
     import uvicorn
+
     from socialseed_tasker.application.container import Container
     from socialseed_tasker.infrastructure.web_api.app import create_app
 
@@ -376,7 +378,7 @@ def handle_error(error: Exception, exit_code: int = 1) -> None:
                 "Add ~1s delay between commands to avoid rate limits."
             )
         elif "DATABASE_CONNECTION_ERROR" in message or "Connection error" in message:
-            console.print(f"[error]Database connection failed:[/error] Check that Neo4j is running and accessible.")
+            console.print("[error]Database connection failed:[/error] Check that Neo4j is running and accessible.")
             console.print(DB_CONNECTION_TIP)
         elif any(s in message for s in ("500", "502", "503")):
             console.print(f"[error]Service unavailable:[/error] {message}")

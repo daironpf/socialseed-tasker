@@ -1,15 +1,17 @@
 # src/socialseed_tasker/observability/in_memory_tracing.py
 # In-memory OpenTelemetry helpers (kept out of test collection on purpose).
 from __future__ import annotations
-from typing import List
-from opentelemetry.sdk.trace import TracerProvider, ReadableSpan
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter, SpanExportResult
+
+import contextlib
+
 from opentelemetry import trace
+from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter, SpanExportResult
 
 
 class _InMemoryExporter(SpanExporter):
     def __init__(self):
-        self.spans: List[ReadableSpan] = []
+        self.spans: list[ReadableSpan] = []
 
     def export(self, spans):
         self.spans.extend(spans)
@@ -18,7 +20,7 @@ class _InMemoryExporter(SpanExporter):
     def shutdown(self):
         pass
 
-    def get_finished_spans(self) -> List[ReadableSpan]:
+    def get_finished_spans(self) -> list[ReadableSpan]:
         return list(self.spans)
 
 
@@ -36,13 +38,11 @@ class InMemoryTracing:
             self._previous_provider = existing
             provider = TracerProvider()
             provider.add_span_processor(self.processor)
-            try:
+            with contextlib.suppress(Exception):
                 trace.set_tracer_provider(provider)
-            except Exception:
-                pass
 
     def stop(self):
         pass
 
-    def get_finished_spans(self) -> List:
+    def get_finished_spans(self) -> list:
         return self.exporter.get_finished_spans()

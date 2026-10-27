@@ -1,19 +1,21 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Any, Dict
+
 import json
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Any
+
 
 @dataclass
 class EventDTO:
     id: str
     type: str
     source: str
-    payload: Dict[str, Any]
+    payload: dict[str, Any]
     created_at: str
 
     @staticmethod
-    def from_dict(d: Dict[str, Any]) -> "EventDTO":
+    def from_dict(d: dict[str, Any]) -> EventDTO:
         return EventDTO(
             id=d.get("id") or d.get("event_id") or "",
             type=d["type"],

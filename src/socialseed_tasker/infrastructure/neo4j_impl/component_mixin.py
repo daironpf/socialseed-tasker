@@ -139,18 +139,18 @@ class ComponentRepositoryMixin:
         name: str,
         slug: str,
         description: str = "",
-        repositoryUrl: str | None = None,
-        basePackage: str | None = None,
+        repository_url: str | None = None,
+        base_package: str | None = None,
         visibility: str = "PRIVATE",
         status: str = "ACTIVE",
-        techStack: list | None = None,
-        mainStack: list | None = None,
-        architectureStyle: str | None = None,
+        tech_stack: list | None = None,
+        main_stack: list | None = None,
+        architecture_style: str | None = None,
         version: str = "0.0.1",
-        conventionsUrl: str | None = None,
-        conventionsRules: str | None = None,
-        lastFullScan: str | None = None,
-        globalStatus: str = "DEVELOPMENT",
+        conventions_url: str | None = None,
+        conventions_rules: str | None = None,
+        last_full_scan: str | None = None,
+        global_status: str = "DEVELOPMENT",
     ) -> dict:
         from datetime import datetime, timezone
 
@@ -160,18 +160,18 @@ class ComponentRepositoryMixin:
             "name": name,
             "slug": slug,
             "description": description,
-            "repository_url": repositoryUrl,
-            "base_package": basePackage,
+            "repository_url": repository_url,
+            "base_package": base_package,
             "visibility": visibility,
             "status": status,
-            "tech_stack": techStack or [],
-            "main_stack": mainStack or [],
-            "architecture_style": architectureStyle,
+            "tech_stack": tech_stack or [],
+            "main_stack": main_stack or [],
+            "architecture_style": architecture_style,
             "version": version,
-            "conventions_url": conventionsUrl,
-            "conventions_rules": conventionsRules,
-            "last_full_scan": lastFullScan,
-            "global_status": globalStatus,
+            "conventions_url": conventions_url,
+            "conventions_rules": conventions_rules,
+            "last_full_scan": last_full_scan,
+            "global_status": global_status,
             "created_at": now,
             "updated_at": now,
         }
@@ -204,52 +204,52 @@ class ComponentRepositoryMixin:
             record = result.single()
             return _node_to_component(record["c"]) if record else None
 
-    def update_component(self, componentId: str, updates: dict[str, Any]) -> Component:
+    def update_component(self, component_id: str, updates: dict[str, Any]) -> Component:
         with _session(self._driver) as session:
             camel_updates = {_to_camel(k): v for k, v in updates.items()}
             result = session.run(
                 queries.UPDATE_COMPONENT,
-                id=componentId,
+                id=component_id,
                 updates=camel_updates,
                 updated_at=_now_iso(),
             )
             record = result.single()
             if record is None:
-                raise ValueError(f"Component {componentId} not found")
+                raise ValueError(f"Component {component_id} not found")
             return _node_to_component(record["c"])
 
-    def delete_component(self, componentId: str) -> None:
+    def delete_component(self, component_id: str) -> None:
         with _session(self._driver) as session:
-            session.run(queries.DELETE_COMPONENT, id=componentId)
+            session.run(queries.DELETE_COMPONENT, id=component_id)
 
-    def add_component_dependency(self, componentId: str, depends_on_id: str) -> None:
+    def add_component_dependency(self, component_id: str, depends_on_id: str) -> None:
         with _session(self._driver) as session:
             session.run(
                 queries.ADD_COMPONENT_DEPENDENCY,
-                component_id=componentId,
+                component_id=component_id,
                 depends_on_id=depends_on_id,
             )
 
-    def remove_component_dependency(self, componentId: str, depends_on_id: str) -> None:
+    def remove_component_dependency(self, component_id: str, depends_on_id: str) -> None:
         with _session(self._driver) as session:
             session.run(
                 queries.REMOVE_COMPONENT_DEPENDENCY,
-                component_id=componentId,
+                component_id=component_id,
                 depends_on_id=depends_on_id,
             )
 
-    def get_component_dependencies(self, componentId: str) -> list[Component]:
+    def get_component_dependencies(self, component_id: str) -> list[Component]:
         with _session(self._driver) as session:
             result = session.run(
                 queries.GET_COMPONENT_DEPENDENCIES,
-                component_id=componentId,
+                component_id=component_id,
             )
             return [_node_to_component(r["dep"]) for r in result]
 
-    def get_component_dependents(self, componentId: str) -> list[Component]:
+    def get_component_dependents(self, component_id: str) -> list[Component]:
         with _session(self._driver) as session:
             result = session.run(
                 queries.GET_COMPONENT_DEPENDENTS,
-                component_id=componentId,
+                component_id=component_id,
             )
             return [_node_to_component(r["dependent"]) for r in result]

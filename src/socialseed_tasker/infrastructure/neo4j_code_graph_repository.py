@@ -15,12 +15,10 @@ from socialseed_tasker.domain.code_analysis_entities import (
     CodeImport,
     CodeRelationship,
     CodeSymbol,
-    RelationshipType,
     SymbolType,
 )
 from socialseed_tasker.infrastructure import neo4j_queries as queries
 from socialseed_tasker.infrastructure.neo4j_impl.shared import _now_iso, _session
-
 
 CODE_GRAPH_QUERIES = {
     "create_file": """
@@ -251,7 +249,12 @@ class CodeGraphRepository:
             record = result.single()
             return dict(record["f"]) if record else None
 
-    def find_symbols(self, name: str | None = None, symbol_type: SymbolType | None = None, limit: int = 50) -> list[dict[str, Any]]:
+    def find_symbols(
+        self,
+        name: str | None = None,
+        symbol_type: SymbolType | None = None,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
         """Find symbols by name or type."""
         with _session(self._driver) as session:
             if name:
@@ -387,7 +390,7 @@ class CodeGraphRepository:
         """Full impact analysis for a CodeSymbol."""
         direct_callers = self.get_direct_callers(symbol_id)
         callees = self.get_direct_callees(symbol_id)
-        
+
         result = {
             "symbol": self.get_symbol_by_id(symbol_id),
             "direct_callers_count": len(direct_callers),
@@ -395,13 +398,13 @@ class CodeGraphRepository:
             "direct_callees_count": len(callees),
             "direct_callees": callees,
         }
-        
+
         if include_transitive:
             transitive = self.get_transitive_callers(symbol_id)
             result["transitive_callers_count"] = len(transitive)
             result["transitive_callers"] = transitive
             result["risk_level"] = self._calculate_risk_level(len(direct_callers), len(transitive))
-        
+
         return result
 
     def _calculate_risk_level(self, direct: int, transitive: int) -> str:

@@ -1,12 +1,15 @@
 from __future__ import annotations
+
+import json
 import os
 import time
-import json
+
 from fastapi import FastAPI, HTTPException
-from socialseed_tasker.ml.schemas import InferenceRequest, InferenceResponse
+
 from socialseed_tasker.infrastructure.memory_storage import MemoryStorage
 from socialseed_tasker.ml.feature_store import FeatureStore
 from socialseed_tasker.ml.runner import ModelRunner
+from socialseed_tasker.ml.schemas import InferenceRequest, InferenceResponse
 
 app = FastAPI(title="Tasker ML Serving")
 
@@ -28,11 +31,16 @@ def api_model_infer(model_name: str, req: InferenceRequest):
     else:
         raise HTTPException(status_code=400, detail="missing features or key")
     seed = req.params.get("seed") or int(os.getenv("TASKER_ML_SEED", "42"))
-    start = time.time()
     res = _runner.predict(model_name, features, version=req.params.get("version"), seed=seed)
-    latency = (time.time() - start) * 1000.0
     input_hash = _feature_store.compute_input_hash(features)
-    trace = {"model": model_name, "version": res["version"], "input_hash": input_hash, "seed": res["seed"], "latency_ms": res["latency_ms"], "ts": int(time.time())}
+    trace = {
+        "model": model_name,
+        "version": res["version"],
+        "input_hash": input_hash,
+        "seed": res["seed"],
+        "latency_ms": res["latency_ms"],
+        "ts": int(time.time()),
+    }
     try:
         raw = _storage.get("ml:traces") or b"[]"
         arr = json.loads(raw.decode("utf-8")) if raw else []
@@ -40,4 +48,12 @@ def api_model_infer(model_name: str, req: InferenceRequest):
         _storage.put("ml:traces", json.dumps(arr).encode("utf-8"))
     except Exception:
         pass
-    return InferenceResponse(model=model_name, version=res["version"], prediction=res["prediction"], input_hash=input_hash, seed=res["seed"], latency_ms=res["latency_ms"], meta={})
+    return InferenceResponse(
+        model=model_name,
+        version=res["version"],
+        prediction=res["prediction"],
+        input_hash=input_hash,
+        seed=res["seed"],
+        latency_ms=res["latency_ms"],
+        meta={},
+    )

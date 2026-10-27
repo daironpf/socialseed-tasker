@@ -34,17 +34,16 @@ from socialseed_tasker.application.actions import (
     create_issue_action,
     move_issue_action,
 )
-from socialseed_tasker.domain.entities import IssueStatus
 from socialseed_tasker.cli.commands.shared import (
+    _dependency_tree,
+    _format_issue_card,
+    _issues_table,
     console,
     get_repository,
     resolve_component_id,
     resolve_issue_id,
-    _dependency_tree,
-    _format_issue_card,
-    _issues_table,
-    _status_style,
 )
+from socialseed_tasker.domain.entities import IssueStatus
 
 issue_app = typer.Typer(help="Manage issues")
 
@@ -82,7 +81,6 @@ def issue_create(
     from uuid import uuid4
 
     from socialseed_tasker.application.analyzer import ArchitecturalAnalyzer
-    from socialseed_tasker.domain.entities import Issue, IssuePriority, IssueStatus
     from socialseed_tasker.domain import (
         IssueDescriptionValidationError,
         IssueTitleValidationError,
@@ -90,6 +88,7 @@ def issue_create(
         sanitize_issue_title,
         validate_issue_title,
     )
+    from socialseed_tasker.domain.entities import Issue, IssuePriority, IssueStatus
 
     try:
         validated_title = validate_issue_title(title)

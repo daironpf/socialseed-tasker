@@ -4,7 +4,7 @@ import typer
 from rich.panel import Panel
 from rich.table import Table
 
-from socialseed_tasker.cli.commands.shared import console, get_repository
+from socialseed_tasker.cli.commands.shared import console
 
 rag_app = typer.Typer(help="RAG (Retrieval-Augmented Generation) commands")
 
@@ -146,7 +146,7 @@ def rag_embed_native(
             reasoning_repo = ReasoningRepository(driver)
             logs = reasoning_repo.get_reasoning_by_issue(source_id)
             if logs:
-                content = " ".join([l.get("thought", "") for l in logs])
+                content = " ".join([log.get("thought", "") for log in logs])
 
     if not content:
         console.print("[error]No content to embed[/error]")
@@ -169,6 +169,7 @@ def rag_search_native(
 ) -> None:
     """Search using native embeddings (no separate nodes)."""
     from rich.table import Table
+
     from socialseed_tasker.application.wiring import get_driver
     from socialseed_tasker.infrastructure.neo4j_rag_repository import RAGRepository
 

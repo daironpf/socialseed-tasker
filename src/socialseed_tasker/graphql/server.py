@@ -9,9 +9,9 @@ from ariadne.asgi import GraphQL
 from fastapi import FastAPI, Request
 from starlette.middleware.cors import CORSMiddleware
 
+from socialseed_tasker.cli.wiring import build_default_container
 from socialseed_tasker.graphql import SDL_PATH
 from socialseed_tasker.graphql.resolvers import mutation, query, subscription
-from socialseed_tasker.cli.wiring import build_default_container
 
 SDL_EXPORT = os.path.join(os.path.dirname(SDL_PATH), "schema_export.graphql")
 

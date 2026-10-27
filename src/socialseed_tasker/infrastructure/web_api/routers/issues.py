@@ -7,18 +7,12 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Annotated, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
-from socialseed_tasker.application.analyzer import (
-    ComponentImpactAnalysis,
-    ImpactAnalysis,
-    RootCauseAnalyzer,
-    TestFailure,
-)
 from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
@@ -36,6 +30,19 @@ from socialseed_tasker.application.actions import (
     remove_dependency_action,
     reset_data_action,
 )
+from socialseed_tasker.application.analyzer import (
+    ComponentImpactAnalysis,
+    ImpactAnalysis,
+    RootCauseAnalyzer,
+    TestFailure,
+)
+from socialseed_tasker.application.github_sync import (
+    issue_snapshot,
+    now_iso,
+    pull_github_issue,
+    push_issue_to_github,
+    resolve_github_conflict,
+)
 from socialseed_tasker.domain.entities import (
     Agent,
     AgentRole,
@@ -52,10 +59,31 @@ from socialseed_tasker.domain.entities import (
     User,
     UserRole,
 )
+from socialseed_tasker.infrastructure.web_api.routers.chat import _resolve_user
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    convert_domain_component_to_api_response as _component_to_response,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    convert_domain_issue_to_api_response as _issue_to_response,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    get_repository_provider as get_repo,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    resolve_component_identifier_to_uuid as resolve_component_id,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    retrieve_neo4j_code_graph_driver as get_code_graph_driver,
+)
+from socialseed_tasker.infrastructure.web_api.routers.realtime import (
+    issue_updates_stream,
+    publish_github_sync,
+    publish_issue_update,
+)
 from socialseed_tasker.infrastructure.web_api.schemas import (
+    AgentFinishRequest,
     AgentRegisterRequest,
     AgentResponse,
-    AgentFinishRequest,
     AgentStartRequest,
     AgentStatusResponse,
     AgentToggleRequest,
@@ -69,6 +97,9 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     CausalLinkResponse,
     CommentRequest,
     CommentResponse,
+    CommitCreateRequest,
+    CommitResponse,
+    CommitStatsResponse,
     ComponentCreateRequest,
     ComponentImpactAnalysisResponse,
     ComponentImpactIssueSummary,
@@ -99,9 +130,9 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     PolicyValidationRequest,
     PolicyValidationResponse,
     PolicyViolationResponse,
-    ProjectSummaryResponse,
     ProjectCreateRequest,
     ProjectResponse,
+    ProjectSummaryResponse,
     ReasoningLogEntryRequest,
     ReasoningLogEntryResponse,
     TestFailureRequest,
@@ -110,29 +141,6 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     UserCreateRequest,
     UserResponse,
     UserUpdateRequest,
-    CommitCreateRequest,
-    CommitResponse,
-    CommitStatsResponse,
-)
-from socialseed_tasker.infrastructure.web_api.routers.helpers import (
-    retrieve_neo4j_code_graph_driver as get_code_graph_driver,
-    get_repository_provider as get_repo,
-    resolve_component_identifier_to_uuid as resolve_component_id,
-    convert_domain_issue_to_api_response as _issue_to_response,
-    convert_domain_component_to_api_response as _component_to_response,
-)
-from socialseed_tasker.infrastructure.web_api.routers.chat import _resolve_user
-from socialseed_tasker.application.github_sync import (
-    issue_snapshot,
-    now_iso,
-    pull_github_issue,
-    push_issue_to_github,
-    resolve_github_conflict,
-)
-from socialseed_tasker.infrastructure.web_api.routers.realtime import (
-    issue_updates_stream,
-    publish_github_sync,
-    publish_issue_update,
 )
 
 logger = logging.getLogger(__name__)
@@ -163,7 +171,7 @@ issues_router = APIRouter()
 def create_issue(
     body: IssueCreateRequest,
     request: Request,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[IssueResponse]:
     """Create a new issue.
 
@@ -224,8 +232,9 @@ def create_issue(
 
     sanitized_title = sanitize_issue_title(validated_title)
 
-    from socialseed_tasker.cli.wiring import build_default_container as _build_container
     from uuid import uuid4
+
+    from socialseed_tasker.cli.wiring import build_default_container as _build_container
     _dq_container = _build_container()
     _dq_pipeline = _dq_container.data_quality_pipeline
     _dq_record_id = str(uuid4())
@@ -236,7 +245,10 @@ def create_issue(
         _dq_pre = []
     if any(not r.ok for r in _dq_pre):
         from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=400, content={"status": "error", "error": "data_quality_failed", "details": [r.model_dump() for r in _dq_pre]})
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "error": "data_quality_failed", "details": [r.model_dump() for r in _dq_pre]},
+        )
 
     issue, warnings = create_issue_action(
         repo,
@@ -275,7 +287,7 @@ def create_issue(
 )
 def create_issues_batch(
     body: BulkIssueCreateRequest,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[BulkIssueCreateResponse]:
     """Create multiple issues in a single request.
 
@@ -356,6 +368,7 @@ def create_issues_batch(
     operation_id="list_all_issues",
 )
 def list_issues(
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
     status: str | None = Query(None, description="Filter by status"),
     component: str | None = Query(None, description="Filter by component ID"),
     component_id: str | None = Query(None, description="Alias for component"),
@@ -365,7 +378,6 @@ def list_issues(
     limit: int = Query(50, ge=1, le=100, description="Items per page (default: 50, max: 100)"),
     assignee: str | None = Query(None, description="Filter by assigned user id (PG uid)"),
     created_by: str | None = Query(None, description="Filter by creating user id (PG uid)"),
-    repo: TaskRepositoryInterface = Depends(get_repo),
 ):
     comp = component or component_id
     status_list = [s.strip() for s in status.split(",") if s.strip()] if status else []
@@ -418,7 +430,7 @@ async def stream_issue_updates(request: Request) -> StreamingResponse:
 )
 def get_issue(
     issue_id: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ):
     """Get a single issue by ID.
 
@@ -471,7 +483,7 @@ def get_issue(
 )
 def get_issue_component(
     issue_id: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[dict]:
     issue = repo.get_issue(str(issue_id))
     if issue is None:
@@ -493,7 +505,7 @@ def get_issue_component(
 )
 def get_issue_deployments(
     issue_id: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[list]:
     deployments = repo.get_issue_deployments(issue_id)
     return APIResponse(data=deployments, meta=Meta(request_id=None))
@@ -513,7 +525,7 @@ def update_issue(
     issue_id: str,
     body: IssueUpdateRequest,
     request: Request,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ):
     """Update an issue with partial field updates.
 
@@ -613,7 +625,7 @@ def update_issue(
 )
 def delete_issue(
     issue_id: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ):
     issue = repo.get_issue(issue_id)
     if issue is None:
@@ -633,19 +645,19 @@ def delete_issue(
 )
 def close_issue(
     issue_id: str,
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
+    request: Annotated[Request, Depends(get_code_graph_driver)],
+    affected_files: Annotated[list[str], Body(default_factory=list, description="Files affected by this issue")],
     commit_sha: str | None = Body(None, description="Git commit SHA that resolved this issue"),
     resolution: str = Body("implemented", description="Resolution type: implemented, duplicate, wontfix, etc."),
-    affected_files: list[str] = Body([], description="Files affected by this issue"),
     force: bool = Query(False, description="Force close even with policy violations"),
-    repo: TaskRepositoryInterface = Depends(get_repo),
-    request: Request = Depends(get_code_graph_driver),
 ):
     from socialseed_tasker.application.analyzer import ArchitecturalAnalyzer
-    
+
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
-    
+
     if not force and issue.component_id:
         analyzer = ArchitecturalAnalyzer(repo)
         validation = analyzer.validate_issue_creation(issue)
@@ -663,7 +675,7 @@ def close_issue(
                     "hint": "Use ?force=true to override (not recommended)"
                 }
             )
-    
+
     issue = close_issue_action(repo, issue_id, commit_sha, resolution)
 
     if issue.github_issue_number:
@@ -701,12 +713,12 @@ def close_issue(
 )
 def get_issue_resolution(
     issue_id: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[dict]:
     issue = repo.get_issue(issue_id)
     if issue is None:
         raise IssueNotFoundError(issue_id)
-    
+
     resolution_data = {
         "issue_id": issue_id,
         "title": issue.title,
@@ -715,7 +727,7 @@ def get_issue_resolution(
         "resolution": issue.resolution,
         "closed_at": issue.closed_at.isoformat() if issue.closed_at else None,
     }
-    
+
     return APIResponse(data=resolution_data, meta=Meta(request_id=None))
 
 
@@ -728,7 +740,7 @@ def get_issue_resolution(
 def link_github_issue(
     issue_id: str,
     github_issue_url: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[IssueResponse]:
     import re
 
@@ -765,7 +777,7 @@ def link_github_issue(
 )
 def unlink_github_issue(
     issue_id: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[IssueResponse]:
     issue = repo.get_issue(issue_id)
     if issue is None:
@@ -855,7 +867,7 @@ async def resolve_github_sync_conflict(
 )
 def mirror_root_cause(
     issue_id: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[dict]:
     from socialseed_tasker.infrastructure.github_mirror import GitHubMirroringService
 
@@ -904,7 +916,7 @@ def mirror_root_cause(
 )
 def mirror_impact(
     issue_id: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[dict]:
     from socialseed_tasker.infrastructure.github_mirror import GitHubMirroringService
 
@@ -955,8 +967,8 @@ def mirror_impact(
 def add_reasoning_log(
     issue_id: str,
     body: ReasoningLogEntryRequest,
-    repo: TaskRepositoryInterface = Depends(get_repo),
-    neo4j_driver: Any = Depends(get_code_graph_driver),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
+    neo4j_driver: Annotated[Any, Depends(get_code_graph_driver)],
 ) -> APIResponse[dict]:
     issue = repo.get_issue(issue_id)
     if issue is None:
@@ -966,13 +978,18 @@ def add_reasoning_log(
     reasoning_id: str | None = None
     if neo4j_driver:
         try:
-            from socialseed_tasker.domain.entities import DecisionType, ReasoningNode as ReasoningNodeEntity
+            from socialseed_tasker.domain.entities import DecisionType
+            from socialseed_tasker.domain.entities import ReasoningNode as ReasoningNodeEntity
             from socialseed_tasker.infrastructure.neo4j_reasoning_repository import ReasoningRepository
 
             reasoning = ReasoningNodeEntity(
                 thought=body.reasoning,
                 confidence=0.5,
-                decisionType=DecisionType(body.context) if body.context in [e.value for e in DecisionType] else DecisionType.UNKNOWN,
+                decisionType=(
+                    DecisionType(body.context)
+                    if body.context in [e.value for e in DecisionType]
+                    else DecisionType.UNKNOWN
+                ),
             )
             reasoning_repo = ReasoningRepository(neo4j_driver)
             reasoning_id = reasoning_repo.log_reasoning(issue_id, "api-user", "API User", reasoning)
@@ -1005,8 +1022,8 @@ def add_reasoning_log(
 )
 def get_reasoning_logs(
     issue_id: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
-    neo4j_driver: Any = Depends(get_code_graph_driver),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
+    neo4j_driver: Annotated[Any, Depends(get_code_graph_driver)],
 ) -> APIResponse[list[ReasoningLogEntryResponse]]:
     issue = repo.get_issue(issue_id)
     if issue is None:
@@ -1068,7 +1085,7 @@ def get_reasoning_logs(
 def add_comment(
     issue_id: str,
     body: CommentRequest,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[IssueResponse]:
     issue = repo.get_issue(issue_id)
     if issue is None:
@@ -1089,7 +1106,7 @@ def add_comment(
 )
 def get_comments(
     issue_id: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[list[CommentResponse]]:
     issue = repo.get_issue(issue_id)
     if issue is None:
@@ -1123,7 +1140,7 @@ def get_comments(
 def update_manifest_todo(
     issue_id: str,
     body: ManifestTodoRequest,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[IssueResponse]:
     issue = repo.get_issue(issue_id)
     if issue is None:
@@ -1148,7 +1165,7 @@ def update_manifest_todo(
 def update_manifest_files(
     issue_id: str,
     body: ManifestFilesRequest,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[IssueResponse]:
     issue = repo.get_issue(issue_id)
     if issue is None:
@@ -1172,7 +1189,7 @@ def update_manifest_files(
 def update_manifest_notes(
     issue_id: str,
     body: ManifestNotesRequest,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[IssueResponse]:
     issue = repo.get_issue(issue_id)
     if issue is None:
@@ -1193,7 +1210,7 @@ def update_manifest_notes(
 )
 def get_manifest(
     issue_id: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[ManifestResponse]:
     issue = repo.get_issue(issue_id)
     if issue is None:
@@ -1259,7 +1276,7 @@ def start_agent_work(
     issue_id: str,
     body: AgentStartRequest,
     request: Request,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[IssueResponse]:
     try:
         updated_issue = _run_agent_start(issue_id, body.agent_id, repo)
@@ -1287,7 +1304,7 @@ def finish_agent_work(
     issue_id: str,
     body: AgentFinishRequest,
     request: Request,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[IssueResponse]:
     try:
         updated_issue = _run_agent_finish(issue_id, body.agent_id, repo)
@@ -1365,13 +1382,17 @@ def stop_agent_toggle(
     "/issues/{issue_id}/agent/heartbeat",
     response_model=APIResponse[IssueResponse],
     summary="Agent heartbeat to renew lock lease",
-    description="Agents must call this periodically (e.g., every 5 min) to keep their lock. Updates locked_until timestamp.",
+    description=(
+        "Agents must call this periodically (e.g., every 5 min) to keep their lock. "
+        "Updates locked_until timestamp."
+    ),
 )
 def agent_heartbeat(
     issue_id: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[IssueResponse]:
     from datetime import datetime, timezone
+
     from fastapi import HTTPException
 
     try:
@@ -1405,7 +1426,7 @@ def agent_heartbeat(
 )
 def get_agent_status(
     issue_id: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[AgentStatusResponse]:
     issue = repo.get_issue(issue_id)
     if issue is None:

@@ -78,9 +78,9 @@ def resolve_issue_id(partial_id: str, repo: TaskRepositoryInterface) -> UUID:
         raise ValueError(
             f"Could not resolve issue '{partial_id}': the issue tracker returned invalid data. "
             "Try using the full UUID instead of a short ID."
-        )
+        ) from None
     except Exception as e:
-        raise ValueError(f"Could not resolve issue '{partial_id}': {e}")
+        raise ValueError(f"Could not resolve issue '{partial_id}': {e}") from e
 
     # Try exact title match first (no length restriction - titles can be short)
     for issue in issues:

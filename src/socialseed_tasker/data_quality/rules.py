@@ -1,7 +1,12 @@
 from __future__ import annotations
+
+import builtins
 import json
-from typing import Any, Dict, Callable, List, Optional
+from collections.abc import Callable
+from typing import Any
+
 from socialseed_tasker.application.ports import StoragePort
+
 
 class ValidationError(Exception):
     pass
@@ -9,24 +14,25 @@ class ValidationError(Exception):
 SUPPORTED_KINDS = ("schema", "range", "unique", "custom", "not_empty")
 
 class BaseRule:
-    def __init__(self, spec: Dict[str, Any]):
+    def __init__(self, spec: dict[str, Any]):
         self.spec = spec
         self.id = spec["id"]
         self.name = spec.get("name", self.id)
         self.enabled = spec.get("enabled", True)
 
-    def validate(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def validate(self, record: dict[str, Any]) -> dict[str, Any]:
         raise NotImplementedError
 
 class SchemaRule(BaseRule):
-    def __init__(self, spec: Dict[str, Any], schema: Dict[str, Any]):
+    def __init__(self, spec: dict[str, Any], schema: dict[str, Any]):
         super().__init__(spec)
         self.schema = schema
-        from jsonschema import validate, ValidationError as JSVE
+        from jsonschema import ValidationError as JsonSchemaValidationError
+        from jsonschema import validate
         self._validate_fn = validate
-        self._jsv_exc = JSVE
+        self._jsv_exc = JsonSchemaValidationError
 
-    def validate(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def validate(self, record: dict[str, Any]) -> dict[str, Any]:
         try:
             self._validate_fn(instance=record, schema=self.schema)
             return {"ok": True, "message": None, "details": {}}
@@ -34,7 +40,7 @@ class SchemaRule(BaseRule):
             return {"ok": False, "message": str(exc), "details": {}}
 
 class RangeRule(BaseRule):
-    def validate(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def validate(self, record: dict[str, Any]) -> dict[str, Any]:
         target = self.spec.get("target")
         cfg = self.spec.get("config", {})
         minv = cfg.get("min")
@@ -53,12 +59,12 @@ class RangeRule(BaseRule):
         return {"ok": True, "message": None, "details": {}}
 
 class UniqueRule(BaseRule):
-    def __init__(self, spec: Dict[str, Any], storage: StoragePort):
+    def __init__(self, spec: dict[str, Any], storage: StoragePort):
         super().__init__(spec)
         self.storage = storage
         self.index_prefix = spec.get("config", {}).get("index_prefix", f"dq:unique:{self.id}")
 
-    def validate(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def validate(self, record: dict[str, Any]) -> dict[str, Any]:
         target = self.spec.get("target")
         val = record.get(target)
         if val is None:
@@ -69,7 +75,7 @@ class UniqueRule(BaseRule):
             return {"ok": False, "message": "duplicate", "details": {"existing": existing.decode("utf-8")}}
         return {"ok": True, "message": None, "details": {}}
 
-    def mark_unique(self, record: Dict[str, Any], record_id: str):
+    def mark_unique(self, record: dict[str, Any], record_id: str):
         target = self.spec.get("target")
         val = record.get(target)
         if val is None:
@@ -78,11 +84,11 @@ class UniqueRule(BaseRule):
         self.storage.put(key, record_id.encode("utf-8"))
 
 class CustomRule(BaseRule):
-    def __init__(self, spec: Dict[str, Any], fn: Callable[[Dict[str,Any]], Dict[str,Any]]):
+    def __init__(self, spec: dict[str, Any], fn: Callable[[dict[str,Any]], dict[str,Any]]):
         super().__init__(spec)
         self.fn = fn
 
-    def validate(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def validate(self, record: dict[str, Any]) -> dict[str, Any]:
         try:
             return self.fn(record)
         except Exception as exc:
@@ -106,7 +112,7 @@ class RuleRegistry:
 
     def __init__(self, storage: StoragePort):
         self.storage = storage
-        self._rules: Dict[str, Dict] = {}
+        self._rules: dict[str, dict] = {}
         self._load()
 
     def _load(self):
@@ -122,13 +128,13 @@ class RuleRegistry:
     def _persist(self):
         self.storage.put(self.KEY, json.dumps(self._rules).encode("utf-8"))
 
-    def list(self) -> List[Dict]:
+    def list(self) -> builtins.list[dict]:
         return list(self._rules.values())
 
-    def get(self, rule_id: str) -> Optional[Dict]:
+    def get(self, rule_id: str) -> dict | None:
         return self._rules.get(rule_id)
 
-    def add(self, spec: Dict[str, Any]) -> None:
+    def add(self, spec: dict[str, Any]) -> None:
         rid = spec["id"]
         self._rules[rid] = spec
         self._persist()

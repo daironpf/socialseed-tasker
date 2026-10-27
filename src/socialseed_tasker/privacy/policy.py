@@ -1,7 +1,9 @@
 from __future__ import annotations
+
+import contextlib
 import os
 import time
-from typing import Dict, Any
+from typing import Any
 
 DEFAULT_RETENTION = {
     "issue": 60 * 60 * 24 * 365 * 3,
@@ -20,7 +22,7 @@ def get_retention_for(kind: str) -> int:
             pass
     return DEFAULT_RETENTION.get(kind, 60 * 60 * 24 * 365)
 
-def evaluate_policy(record_meta: Dict[str, Any]) -> bool:
+def evaluate_policy(record_meta: dict[str, Any]) -> bool:
     if not record_meta:
         return True
     tags = record_meta.get("tags", []) or []
@@ -35,8 +37,6 @@ def evaluate_policy(record_meta: Dict[str, Any]) -> bool:
         tkey = f"TASKER_RETENTION_{tenant}_{kind}".upper()
         tv = os.getenv(tkey)
         if tv:
-            try:
+            with contextlib.suppress(Exception):
                 retention = int(tv)
-            except Exception:
-                pass
     return age < retention

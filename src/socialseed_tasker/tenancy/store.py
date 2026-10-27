@@ -1,16 +1,18 @@
 # src/socialseed_tasker/tenancy/store.py
 from __future__ import annotations
-from typing import Optional, Dict, List
+
 import json
-from socialseed_tasker.application.ports import StoragePort
+
 from socialseed_tasker.application.exceptions import StorageError
+from socialseed_tasker.application.ports import StoragePort
+
 
 class TenantStore:
     KEY = "tenants:registry"
 
     def __init__(self, storage: StoragePort):
         self.storage = storage
-        self._cache: Dict[str, Dict] = {}
+        self._cache: dict[str, dict] = {}
         self._load()
 
     def _load(self):
@@ -29,7 +31,7 @@ class TenantStore:
         except Exception as exc:
             raise StorageError(f"Failed to persist tenants: {exc}") from exc
 
-    def create_tenant(self, tenant_id: str, config: Optional[Dict] = None) -> Dict:
+    def create_tenant(self, tenant_id: str, config: dict | None = None) -> dict:
         if tenant_id in self._cache:
             raise ValueError("tenant exists")
         cfg = config or {}
@@ -42,8 +44,8 @@ class TenantStore:
             self._cache.pop(tenant_id)
             self._persist()
 
-    def list_tenants(self) -> List[Dict]:
+    def list_tenants(self) -> list[dict]:
         return list(self._cache.values())
 
-    def get_tenant(self, tenant_id: str) -> Optional[Dict]:
+    def get_tenant(self, tenant_id: str) -> dict | None:
         return self._cache.get(tenant_id)

@@ -1,20 +1,21 @@
 from __future__ import annotations
-import hmac
+
 import hashlib
-import os
+import hmac
 import json
 import uuid
-from typing import Dict, Optional, List
-from socialseed_tasker.events.serializers import EventDTO
-from socialseed_tasker.application.ports import StoragePort
+
 from socialseed_tasker.application.exceptions import StorageError
+from socialseed_tasker.application.ports import StoragePort
+from socialseed_tasker.events.serializers import EventDTO
+
 
 class WebhookManager:
     SUBS_KEY = "webhook:subscriptions"
 
     def __init__(self, storage: StoragePort):
         self.storage = storage
-        self._cache: Dict[str, Dict] = {}
+        self._cache: dict[str, dict] = {}
         self._load_from_storage()
 
     def _load_from_storage(self):
@@ -33,17 +34,17 @@ class WebhookManager:
         except Exception as exc:
             raise StorageError(f"Failed to persist subscriptions: {exc}") from exc
 
-    def create_subscription(self, url: str, events: Optional[List[str]] = None, secret: Optional[str] = None) -> Dict:
+    def create_subscription(self, url: str, events: list[str] | None = None, secret: str | None = None) -> dict:
         sid = str(uuid.uuid4())
         sub = {"id": sid, "url": url, "events": events or ["*"], "secret": secret}
         self._cache[sid] = sub
         self._persist()
         return sub
 
-    def list_subscriptions(self) -> List[Dict]:
+    def list_subscriptions(self) -> list[dict]:
         return list(self._cache.values())
 
-    def get_subscription(self, sid: str) -> Optional[Dict]:
+    def get_subscription(self, sid: str) -> dict | None:
         return self._cache.get(sid)
 
     def delete_subscription(self, sid: str) -> None:
@@ -66,7 +67,7 @@ class WebhookManager:
         except Exception:
             return False
 
-    def receive(self, raw_body: bytes, signature: Optional[str]) -> EventDTO:
+    def receive(self, raw_body: bytes, signature: str | None) -> EventDTO:
         data = json.loads(raw_body.decode("utf-8"))
         event = EventDTO.from_dict(data)
         return event

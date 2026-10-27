@@ -7,17 +7,11 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Annotated, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 
-from socialseed_tasker.application.analyzer import (
-    ComponentImpactAnalysis,
-    ImpactAnalysis,
-    RootCauseAnalyzer,
-    TestFailure,
-)
 from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
@@ -35,6 +29,12 @@ from socialseed_tasker.application.actions import (
     remove_dependency_action,
     reset_data_action,
 )
+from socialseed_tasker.application.analyzer import (
+    ComponentImpactAnalysis,
+    ImpactAnalysis,
+    RootCauseAnalyzer,
+    TestFailure,
+)
 from socialseed_tasker.domain.entities import (
     Agent,
     AgentRole,
@@ -51,6 +51,24 @@ from socialseed_tasker.domain.entities import (
     User,
     UserRole,
 )
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    construct_paginated_api_response as _paginated,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    convert_domain_component_to_api_response as _component_to_response,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    convert_domain_issue_to_api_response as _issue_to_response,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    get_repository_provider as get_repo,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    resolve_component_identifier_to_uuid as resolve_component_id,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    retrieve_neo4j_code_graph_driver as get_code_graph_driver,
+)
 from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentRegisterRequest,
     AgentResponse,
@@ -61,6 +79,9 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     BulkDependencyRequest,
     BulkDependencyResponse,
     CausalLinkResponse,
+    CommitCreateRequest,
+    CommitResponse,
+    CommitStatsResponse,
     ComponentCreateRequest,
     ComponentImpactAnalysisResponse,
     ComponentImpactIssueSummary,
@@ -91,9 +112,9 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     PolicyValidationRequest,
     PolicyValidationResponse,
     PolicyViolationResponse,
-    ProjectSummaryResponse,
     ProjectCreateRequest,
     ProjectResponse,
+    ProjectSummaryResponse,
     ReasoningLogEntryRequest,
     ReasoningLogEntryResponse,
     TestFailureRequest,
@@ -103,17 +124,6 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     UserCreateRequest,
     UserResponse,
     UserUpdateRequest,
-    CommitCreateRequest,
-    CommitResponse,
-    CommitStatsResponse,
-)
-from socialseed_tasker.infrastructure.web_api.routers.helpers import (
-    retrieve_neo4j_code_graph_driver as get_code_graph_driver,
-    get_repository_provider as get_repo,
-    resolve_component_identifier_to_uuid as resolve_component_id,
-    convert_domain_issue_to_api_response as _issue_to_response,
-    convert_domain_component_to_api_response as _component_to_response,
-    construct_paginated_api_response as _paginated,
 )
 
 logger = logging.getLogger(__name__)
@@ -139,7 +149,7 @@ analysis_router = APIRouter()
 )
 def analyze_root_cause(
     body: TestFailureRequest,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[list[CausalLinkResponse]]:
     analyzer = RootCauseAnalyzer(repo)
     test_failure = TestFailure(
@@ -182,7 +192,7 @@ def analyze_root_cause(
 )
 def link_test_failure(
     body: TestFailureRequest,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[list[CausalLinkResponse]]:
     analyzer = RootCauseAnalyzer(repo)
     test_failure = TestFailure(
@@ -253,7 +263,7 @@ def list_test_failures(
 )
 def analyze_impact(
     issue_id: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[ImpactAnalysisResponse]:
     try:
         UUID(issue_id)
@@ -294,8 +304,8 @@ def analyze_impact(
     description="Analyze code-level impact using Code-as-Graph (callers, dependencies, tests).",
 )
 def analyze_code_impact(
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
     path: str = Query(..., description="File or directory path"),
-    repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[dict[str, Any]]:
     from socialseed_tasker.application.wiring import get_driver
     from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
@@ -343,7 +353,7 @@ def analyze_code_impact(
 )
 def analyze_component_impact(
     component_id: str,
-    repo: TaskRepositoryInterface = Depends(get_repo),
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[ComponentImpactAnalysisResponse]:
     try:
         resolved_id = resolve_component_id(component_id, repo)
@@ -378,8 +388,8 @@ def analyze_component_impact(
     description="Return the complete dependency graph for visualization. Supports filtering by project.",
 )
 def get_full_dependency_graph(
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
     project: str | None = Query(None, description="Filter by project name"),
-    repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[DependencyGraphResponse]:
     all_issues = repo.list_issues(project=project)
     components = {str(c.id): c.name for c in repo.list_components(project=project)}
@@ -421,8 +431,8 @@ def get_full_dependency_graph(
 )
 def get_subgraph(
     issue_id: str,
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
     depth: int = Query(2, ge=1, le=5, description="Maximum depth to traverse"),
-    repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[DependencyGraphResponse]:
     from collections import deque
 
@@ -485,13 +495,16 @@ def get_subgraph(
     "/similarity/{issue_id}",
     response_model=APIResponse[list[dict[str, Any]]],
     summary="Find phantom dependencies",
-    description="Find issues that are semantically similar but lack explicit dependency links. Uses RAG embeddings to detect conceptual relationships.",
+    description=(
+        "Find issues that are semantically similar but lack explicit dependency links. "
+        "Uses RAG embeddings to detect conceptual relationships."
+    ),
 )
 def find_phantom_dependencies(
     issue_id: str,
+    repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
     threshold: float = Query(0.7, ge=0.0, le=1.0, description="Minimum similarity score"),
     limit: int = Query(10, ge=1, le=50, description="Maximum results"),
-    repo: TaskRepositoryInterface = Depends(get_repo),
 ) -> APIResponse[list[dict[str, Any]]]:
     """Find potential phantom dependencies using semantic similarity."""
     try:

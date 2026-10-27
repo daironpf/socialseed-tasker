@@ -83,9 +83,18 @@ UI_HTML = """
   </div>
   <pre id="graph"></pre>
   <script>
-    async function fetchGraph(){ const r=await fetch('/api/v1/graph'); const j=await r.json(); document.getElementById('graph').textContent=JSON.stringify(j,null,2); }
+    async function fetchGraph(){
+      const r=await fetch('/api/v1/graph');
+      const j=await r.json();
+      document.getElementById('graph').textContent=JSON.stringify(j,null,2);
+    }
     document.getElementById('refresh').addEventListener('click', fetchGraph);
-    document.getElementById('impact').addEventListener('click', async ()=>{ const id=document.getElementById('node').value; const r=await fetch('/api/v1/graph/impact/'+encodeURIComponent(id)); const j=await r.json(); alert('Impact:\\n'+JSON.stringify(j,null,2)); });
+    document.getElementById('impact').addEventListener('click', async ()=>{
+      const id=document.getElementById('node').value;
+      const r=await fetch('/api/v1/graph/impact/'+encodeURIComponent(id));
+      const j=await r.json();
+      alert('Impact:\n'+JSON.stringify(j,null,2));
+    });
     fetchGraph();
   </script>
 </body>

@@ -1,15 +1,22 @@
 from __future__ import annotations
 
+import contextlib
 import json
-from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
 from socialseed_tasker.domain.entities import Issue
-from socialseed_tasker.infrastructure.embedding_service import get_embedding_service
 from socialseed_tasker.infrastructure import neo4j_queries as queries
-from socialseed_tasker.infrastructure.neo4j_impl.shared import _node_to_issue, _now_iso, _parse_manifest_todo, _session, _to_uuid_list, _to_camel
+from socialseed_tasker.infrastructure.embedding_service import get_embedding_service
+from socialseed_tasker.infrastructure.neo4j_impl.shared import (
+    _node_to_issue,
+    _now_iso,
+    _parse_manifest_todo,
+    _session,
+    _to_camel,
+    _to_uuid_list,
+)
 
 
 class IssueRepositoryMixin:
@@ -150,14 +157,12 @@ class IssueRepositoryMixin:
 
             # Create (Issue)-[:RESOLVED_BY]->(Commit) if commit_sha provided
             if commit_sha:
-                try:
+                with contextlib.suppress(Exception):
                     session.run(
                         queries.LINK_COMMIT_TO_ISSUE,
                         sha=commit_sha,
                         issue_id=issue_id,
                     )
-                except Exception:
-                    pass
 
             return issue
 
@@ -376,7 +381,11 @@ class IssueRepositoryMixin:
 
             node_data = dict(record["i"])
             existing_logs_raw = node_data.get("reasoningLogs", [])
-            existing_logs = json.loads(existing_logs_raw) if isinstance(existing_logs_raw, str) else (existing_logs_raw or [])
+            existing_logs = (
+                json.loads(existing_logs_raw)
+                if isinstance(existing_logs_raw, str)
+                else (existing_logs_raw or [])
+            )
             new_log = {
                 "id": str(uuid4()),
                 "timestamp": datetime.now(timezone.utc).isoformat(),

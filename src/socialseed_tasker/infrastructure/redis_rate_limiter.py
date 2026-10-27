@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 try:
     import redis  # type: ignore
@@ -35,7 +35,7 @@ end
 
 
 class RedisRateLimiter:
-    def __init__(self, redis_url: Optional[str] = None, rate_per_min: int = 60, burst: int = 20):
+    def __init__(self, redis_url: str | None = None, rate_per_min: int = 60, burst: int = 20):
         if not _REDIS_AVAILABLE:
             raise RuntimeError("redis package not available")
         self._url = redis_url or os.getenv("TASKER_REDIS_URL", "redis://localhost:6379/0")
@@ -52,7 +52,7 @@ class RedisRateLimiter:
         allowed = bool(res[0])
         return allowed
 
-    def get_state(self, key: str) -> Dict[str, Any]:
+    def get_state(self, key: str) -> dict[str, Any]:
         data = self._client.hgetall(f"ratelimit:{key}")
         tokens = float(data.get(b"tokens", b"0")) if data else 0.0
         last_ts = float(data.get(b"last_ts", b"0")) if data else 0.0

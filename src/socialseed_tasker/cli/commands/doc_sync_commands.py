@@ -42,7 +42,7 @@ def doc_sync_command(
     from socialseed_tasker.infrastructure.neo4j_code_graph_repository import CodeGraphRepository
 
     try:
-        repo = get_repository()
+        get_repository()
         driver = None
         try:
             from socialseed_tasker.application.wiring import get_driver
@@ -58,7 +58,6 @@ def doc_sync_command(
 
     total_files = 0
     total_refs = 0
-    total_linked = 0
     file_details: list[dict[str, Any]] = []
 
     for md_file in md_files:
@@ -113,7 +112,7 @@ def doc_sync_command(
 
     # --- Summary ---
     console.print()
-    console.print(f"[bold]Documentation Scan Complete[/bold]")
+    console.print("[bold]Documentation Scan Complete[/bold]")
     console.print(f"  [bold]Files found:[/bold] {len(md_files)}")
     console.print(f"  [bold]Files registered:[/bold] {total_files}")
     console.print(f"  [bold]Issue references found:[/bold] {total_refs}")

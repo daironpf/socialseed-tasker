@@ -1,11 +1,14 @@
 from __future__ import annotations
-from typing import Callable, Optional, Any
+
 import json
-from socialseed_tasker.application.ports import StoragePort
-from socialseed_tasker.application.exceptions import StorageError
+from collections.abc import Callable
 from functools import wraps
 
-def get_or_set(storage: StoragePort, key: str, factory: Callable[[], bytes], ttl_seconds: Optional[int] = None) -> bytes:
+from socialseed_tasker.application.exceptions import StorageError
+from socialseed_tasker.application.ports import StoragePort
+
+
+def get_or_set(storage: StoragePort, key: str, factory: Callable[[], bytes], ttl_seconds: int | None = None) -> bytes:
     try:
         v = storage.get(key)
     except Exception as exc:
@@ -19,14 +22,19 @@ def get_or_set(storage: StoragePort, key: str, factory: Callable[[], bytes], ttl
         raise StorageError(f"Storage put failed for key {key}: {exc}") from exc
     return val
 
-def memoize(ttl_seconds: Optional[int] = None):
+def memoize(ttl_seconds: int | None = None):
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
             storage = kwargs.get("storage")
             if storage is None:
                 return fn(*args, **kwargs)
-            key_parts = [fn.__module__, fn.__name__, json.dumps(args, default=str, sort_keys=True), json.dumps(kwargs, default=str, sort_keys=True)]
+            key_parts = [
+                fn.__module__,
+                fn.__name__,
+                json.dumps(args, default=str, sort_keys=True),
+                json.dumps(kwargs, default=str, sort_keys=True),
+            ]
             key = "cache:" + ":".join(key_parts)
             def factory():
                 res = fn(*args, **kwargs)

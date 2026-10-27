@@ -38,12 +38,12 @@ from socialseed_tasker.application.actions import (
     remove_dependency_action,
 )
 from socialseed_tasker.cli.commands.shared import (
-    console,
-    get_repository,
-    resolve_issue_id,
     _dependency_tree,
     _issues_table,
     _status_style,
+    console,
+    get_repository,
+    resolve_issue_id,
 )
 
 dependency_app = typer.Typer(help="Manage dependencies between issues")
@@ -315,7 +315,7 @@ def dependency_add_batch(
             dep_ids.extend(loaded)
         except (json.JSONDecodeError, KeyError) as e:
             console.print(f"[error]Invalid JSON file: {e}[/error]")
-            raise typer.Exit(code=2)
+            raise typer.Exit(code=2) from e
 
     if deps:
         dep_ids.extend(d.strip() for d in deps.split(",") if d.strip())

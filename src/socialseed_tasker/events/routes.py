@@ -1,7 +1,9 @@
 from __future__ import annotations
-from fastapi import APIRouter, Header, Request, HTTPException
-from fastapi.responses import JSONResponse
+
 from typing import Any, Optional
+
+from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
 
 from socialseed_tasker.infrastructure.web_api.schemas import APIResponse, Meta
 
@@ -9,7 +11,7 @@ webhook_router = APIRouter()
 
 
 @webhook_router.post("/api/v1/webhooks/receive")
-async def webhooks_receive(request: Request, x_signature: Optional[str] = Header(None)):
+async def webhooks_receive(request: Request, x_signature: str | None = Header(None)):
     try:
         raw_body = await request.body()
     except Exception:
@@ -41,7 +43,8 @@ async def webhooks_receive(request: Request, x_signature: Optional[str] = Header
             headers = {"Content-Type": "application/json"}
             secret = s.get("secret")
             if secret:
-                import hmac, hashlib
+                import hashlib
+                import hmac
                 mac = hmac.new(secret.encode("utf-8"), event.to_json().encode("utf-8"), hashlib.sha256)
                 headers["X-Signature"] = "sha256=" + mac.hexdigest()
             delivery.enqueue_delivery(s["url"], event.to_json(), headers=headers)

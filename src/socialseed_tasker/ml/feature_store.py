@@ -1,7 +1,9 @@
 from __future__ import annotations
-import json
+
 import hashlib
-from typing import Dict, Any, List, Optional
+import json
+from typing import Any
+
 from socialseed_tasker.application.ports import StoragePort
 
 
@@ -14,17 +16,17 @@ class FeatureStore:
     def _key(self, key: str) -> str:
         return self.PREFIX + key
 
-    def put_features(self, key: str, features: Dict[str, Any]) -> None:
+    def put_features(self, key: str, features: dict[str, Any]) -> None:
         payload = json.dumps(features, sort_keys=True).encode("utf-8")
         self.storage.put(self._key(key), payload)
 
-    def get_features(self, key: str) -> Optional[Dict[str, Any]]:
+    def get_features(self, key: str) -> dict[str, Any] | None:
         raw = self.storage.get(self._key(key))
         if not raw:
             return None
         return json.loads(raw.decode("utf-8"))
 
-    def list_keys(self, prefix: str = "") -> List[str]:
+    def list_keys(self, prefix: str = "") -> list[str]:
         if not hasattr(self.storage, "list_keys"):
             return []
         all_keys = self.storage.list_keys()
@@ -33,6 +35,6 @@ class FeatureStore:
             return [k for k in ks if k.startswith(prefix)]
         return ks
 
-    def compute_input_hash(self, features: Dict[str, Any]) -> str:
+    def compute_input_hash(self, features: dict[str, Any]) -> str:
         b = json.dumps(features, sort_keys=True).encode("utf-8")
         return hashlib.sha256(b).hexdigest()

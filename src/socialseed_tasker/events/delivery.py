@@ -1,15 +1,20 @@
 from __future__ import annotations
-import time
+
+import contextlib
 import json
 import threading
+import time
+from typing import Any
+
 import requests
-from typing import Dict, Any, Optional
-from socialseed_tasker.application.ports import StoragePort
-from socialseed_tasker.events.serializers import EventDTO
+
 from socialseed_tasker.application.exceptions import StorageError
+from socialseed_tasker.application.ports import StoragePort
 from socialseed_tasker.observability.tracing import get_tracer
 
-_tracer_fn = lambda: get_tracer("tasker.delivery")
+
+def _tracer_fn():
+    return get_tracer("tasker.delivery")
 
 DELIVERY_PREFIX = "webhook:delivery:"
 
@@ -19,7 +24,7 @@ class DeliveryWorker:
         self.max_retries = max_retries
         self.base_backoff = base_backoff
         self._stop = threading.Event()
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
 
     def start(self):
         if self._thread and self._thread.is_alive():
@@ -35,10 +40,8 @@ class DeliveryWorker:
 
     def _run_loop(self):
         while not self._stop.is_set():
-            try:
+            with contextlib.suppress(Exception):
                 self._process_pending()
-            except Exception:
-                pass
             time.sleep(1.0)
 
     def _process_pending(self):
@@ -68,7 +71,7 @@ class DeliveryWorker:
             except Exception:
                 pass
 
-    def _attempt_delivery(self, did: str, state: Dict[str, Any], key: str, index: list):
+    def _attempt_delivery(self, did: str, state: dict[str, Any], key: str, index: list):
         with _tracer_fn().start_as_current_span("delivery.attempt"):
             url = state["url"]
             payload = state["payload"]
@@ -81,7 +84,7 @@ class DeliveryWorker:
                     return
                 else:
                     raise Exception(f"status {r.status_code}")
-            except Exception as exc:
+            except Exception:
                 attempts = state.get("attempts", 0) + 1
                 state["attempts"] = attempts
                 if attempts >= self.max_retries:
@@ -92,7 +95,7 @@ class DeliveryWorker:
                 self.storage.put(key, json.dumps(state).encode("utf-8"))
                 return
 
-    def enqueue_delivery(self, url: str, payload: str, headers: Optional[Dict[str, str]] = None) -> str:
+    def enqueue_delivery(self, url: str, payload: str, headers: dict[str, str] | None = None) -> str:
         with _tracer_fn().start_as_current_span("delivery.enqueue"):
             did = str(int(time.time() * 1000)) + "-" + str(hash(url))
             key = DELIVERY_PREFIX + did

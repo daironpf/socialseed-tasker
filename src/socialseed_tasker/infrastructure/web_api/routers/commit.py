@@ -7,17 +7,11 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, Body, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 
-from socialseed_tasker.application.analyzer import (
-    ComponentImpactAnalysis,
-    ImpactAnalysis,
-    RootCauseAnalyzer,
-    TestFailure,
-)
 from socialseed_tasker.application.actions import (
     CircularDependencyError,
     ComponentNotFoundError,
@@ -35,6 +29,12 @@ from socialseed_tasker.application.actions import (
     remove_dependency_action,
     reset_data_action,
 )
+from socialseed_tasker.application.analyzer import (
+    ComponentImpactAnalysis,
+    ImpactAnalysis,
+    RootCauseAnalyzer,
+    TestFailure,
+)
 from socialseed_tasker.domain.entities import (
     Agent,
     AgentRole,
@@ -51,6 +51,24 @@ from socialseed_tasker.domain.entities import (
     User,
     UserRole,
 )
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    construct_paginated_api_response as _paginated,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    convert_domain_component_to_api_response as _component_to_response,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    convert_domain_issue_to_api_response as _issue_to_response,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    get_repository_provider as get_repo,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    resolve_component_identifier_to_uuid as resolve_component_id,
+)
+from socialseed_tasker.infrastructure.web_api.routers.helpers import (
+    retrieve_neo4j_code_graph_driver as get_code_graph_driver,
+)
 from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentRegisterRequest,
     AgentResponse,
@@ -61,6 +79,9 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     BulkDependencyRequest,
     BulkDependencyResponse,
     CausalLinkResponse,
+    CommitCreateRequest,
+    CommitResponse,
+    CommitStatsResponse,
     ComponentCreateRequest,
     ComponentImpactAnalysisResponse,
     ComponentImpactIssueSummary,
@@ -91,9 +112,9 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     PolicyValidationRequest,
     PolicyValidationResponse,
     PolicyViolationResponse,
-    ProjectSummaryResponse,
     ProjectCreateRequest,
     ProjectResponse,
+    ProjectSummaryResponse,
     ReasoningLogEntryRequest,
     ReasoningLogEntryResponse,
     TestFailureRequest,
@@ -102,17 +123,6 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     UserCreateRequest,
     UserResponse,
     UserUpdateRequest,
-    CommitCreateRequest,
-    CommitResponse,
-    CommitStatsResponse,
-)
-from socialseed_tasker.infrastructure.web_api.routers.helpers import (
-    retrieve_neo4j_code_graph_driver as get_code_graph_driver,
-    get_repository_provider as get_repo,
-    resolve_component_identifier_to_uuid as resolve_component_id,
-    convert_domain_issue_to_api_response as _issue_to_response,
-    convert_domain_component_to_api_response as _component_to_response,
-    construct_paginated_api_response as _paginated,
 )
 
 logger = logging.getLogger(__name__)
@@ -127,7 +137,7 @@ if TYPE_CHECKING:
 commit_router = APIRouter()
 
 
-def _commit_to_response(commit: "Commit") -> "CommitResponse":  # type: ignore[valid-type]
+def _commit_to_response(commit: Commit) -> CommitResponse:  # type: ignore[valid-type]
     """Convert domain Commit to API response."""
     return CommitResponse(
         sha=commit.sha,
@@ -151,7 +161,7 @@ def _commit_to_response(commit: "Commit") -> "CommitResponse":  # type: ignore[v
 )
 def create_commit(
     body: CommitCreateRequest,
-    driver: Any = Depends(get_code_graph_driver),
+    driver: Annotated[Any, Depends(get_code_graph_driver)],
 ) -> APIResponse[CommitResponse]:
     """Create a new commit."""
     if not driver:
@@ -188,8 +198,8 @@ def create_commit(
     description="Get commit statistics by author (human vs AI).",
 )
 def get_commit_stats(
-    since: datetime | None = Query(None, description="Filter by start date"),
-    driver: Any = Depends(get_code_graph_driver),
+    driver: Annotated[Any, Depends(get_code_graph_driver)],
+    since: Annotated[datetime | None, Query(description="Filter by start date")] = None,
 ) -> APIResponse[CommitStatsResponse]:
     """Get commit statistics."""
     if not driver:
@@ -213,7 +223,7 @@ def get_commit_stats(
 )
 def get_commit(
     sha: str,
-    driver: Any = Depends(get_code_graph_driver),
+    driver: Annotated[Any, Depends(get_code_graph_driver)],
 ) -> APIResponse[CommitResponse]:
     """Get a commit by SHA."""
     if not driver:
@@ -241,14 +251,14 @@ def get_commit(
     description="List commits with optional filters.",
 )
 def list_commits(
+    driver: Annotated[Any, Depends(get_code_graph_driver)],
     branch: str | None = Query(None, description="Filter by branch"),
     author: str | None = Query(None, description="Filter by author name"),
     is_ai_generated: bool | None = Query(None, description="Filter by AI generated"),
-    since: datetime | None = Query(None, description="Filter by start date"),
-    until: datetime | None = Query(None, description="Filter by end date"),
+    since: Annotated[datetime | None, Query(description="Filter by start date")] = None,
+    until: Annotated[datetime | None, Query(description="Filter by end date")] = None,
     limit: int = Query(50, ge=1, le=100),
     skip: int = Query(0, ge=0),
-    driver: Any = Depends(get_code_graph_driver),
 ) -> APIResponse[list[CommitResponse]]:
     """List commits."""
     if not driver:
@@ -284,7 +294,7 @@ def list_commits(
 def link_commit_to_agent(
     sha: str,
     agent_id: str,
-    driver: Any = Depends(get_code_graph_driver),
+    driver: Annotated[Any, Depends(get_code_graph_driver)],
 ) -> APIResponse[dict]:
     """Link commit to an agent."""
     if not driver:
@@ -309,7 +319,7 @@ def link_commit_to_agent(
 def link_commit_to_user(
     sha: str,
     user_id: str,
-    driver: Any = Depends(get_code_graph_driver),
+    driver: Annotated[Any, Depends(get_code_graph_driver)],
 ) -> APIResponse[dict]:
     """Link commit to a user."""
     if not driver:
@@ -334,7 +344,7 @@ def link_commit_to_user(
 def link_commit_to_issue(
     sha: str,
     issue_id: str,
-    driver: Any = Depends(get_code_graph_driver),
+    driver: Annotated[Any, Depends(get_code_graph_driver)],
 ) -> APIResponse[dict]:
     """Link commit to an issue (mark as resolved)."""
     if not driver:
@@ -358,8 +368,8 @@ def link_commit_to_issue(
 )
 def get_commits_for_issue(
     issue_id: str,
+    driver: Annotated[Any, Depends(get_code_graph_driver)],
     limit: int = Query(50, ge=1, le=100),
-    driver: Any = Depends(get_code_graph_driver),
 ) -> APIResponse[list[CommitResponse]]:
     """Get commits for an issue."""
     if not driver:
@@ -386,8 +396,8 @@ def get_commits_for_issue(
 )
 def get_commits_for_file(
     file_path: str,
+    driver: Annotated[Any, Depends(get_code_graph_driver)],
     limit: int = Query(50, ge=1, le=100),
-    driver: Any = Depends(get_code_graph_driver),
 ) -> APIResponse[list[dict]]:
     """Get commits for a file."""
     if not driver:
@@ -420,7 +430,7 @@ def get_commits_for_file(
 )
 def delete_commit(
     sha: str,
-    driver: Any = Depends(get_code_graph_driver),
+    driver: Annotated[Any, Depends(get_code_graph_driver)],
 ) -> APIResponse[dict]:
     """Delete a commit."""
     if not driver:

@@ -1,8 +1,11 @@
 # src/socialseed_tasker/tenancy/middleware.py
 from __future__ import annotations
-from starlette.middleware.base import BaseHTTPMiddleware
+
 from fastapi import Request
+from starlette.middleware.base import BaseHTTPMiddleware
+
 from socialseed_tasker.tenancy.context import TenantContext
+
 
 class TenantMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, container):
