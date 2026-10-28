@@ -57,6 +57,11 @@ quality / backend
   `_now()`. Mantener ese resultado, pero no extrapolarlo al resto de `src/`.
 - El CI existente ejecuta mypy globalmente; esta issue no autoriza a eliminar o
   relajar ese gate.
+- La imagen Docker usa Python 3.10 mientras mypy apunta a 3.12: `logging.LoggerAdapter`
+  no es subscriptable en 3.10 en tiempo de ejecucion (el venv 3.14 si lo permite).
+  Se detecto al arrancar la imagen reconstruida y se corrigio con un alias bajo
+  `TYPE_CHECKING`. Pendiente en otra issue: alinear el target de mypy con la imagen
+  o subir la base a 3.12.
 
 ## Resolution
 - Baseline vigente al iniciar sobre el worktree disponible: 256 errores en 82
@@ -75,3 +80,15 @@ quality / backend
 - Pruebas focalizadas de auth, CLI, application, data catalog/quality, config, ML,
   tenancy, events, observability, privacy, workers y API: 231 pasaron. El lote
   enfocado de infraestructura reportó 110 pasadas y 16 omitidas.
+- Cierre verificado con el venv del proyecto: `mypy 1.20.0` aún reportaba 12
+  errores. Se instalaron los stubs `types-requests`/`types-PyYAML` ya declarados en
+  `requirements.txt` y se corrigieron 4 puntos reales: `cast` de las respuestas de
+  redis 7.4 (`hgetall`/`get` se tipan como `Awaitable[T] | T`), `cast(Any,
+  CeleryInstrumentor)` (instrumentación Celery sin stubs) y `cast(Any, graphql_app)`
+  en `add_route` (Ariadne es ASGI). Verificación final: `mypy src` → 0 errores,
+  `ruff check src` → 0 y pytest **1712 passed / 62 skipped**.
+- Verificación de despliegue: imagen `tasker-api:local` reconstruida y healthy con
+  Python 3.10, openapi con 237 rutas y smoke de login/issues/projects/code-graph/AI/
+  commits correcto. El arranque destapó que `logging.LoggerAdapter[...]` como clase
+  base rompe en 3.10; se sustituyó por un alias `TYPE_CHECKING` y se repitieron
+  mypy, ruff, la suite completa y el smoke.

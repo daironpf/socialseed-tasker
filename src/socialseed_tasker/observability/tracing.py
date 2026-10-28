@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, cast
 
 OTEL_SERVICE_NAME = os.getenv("TASKER_OTEL_SERVICE", "tasker")
 OTEL_JAEGER_HOST = os.getenv("TASKER_JAEGER_HOST", "localhost")
@@ -43,7 +43,7 @@ def init_tracing(app: Any = None, celery_app: Any = None, service_name: str | No
     if celery_app is not None:
         try:
             from opentelemetry.instrumentation.celery import CeleryInstrumentor
-            CeleryInstrumentor().instrument()
+            cast(Any, CeleryInstrumentor)().instrument()
         except Exception:
             pass
     if app is not None:

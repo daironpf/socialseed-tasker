@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, cast
 
 from ariadne import load_schema_from_path, make_executable_schema
 from ariadne.asgi import GraphQL
@@ -54,7 +54,7 @@ def create_app() -> FastAPI:
         scope["user_id"] = user_id
         await graphql_app(scope, receive, send)
 
-    app.add_route("/graphql", graphql_app)
+    app.add_route("/graphql", cast(Any, graphql_app))
     app.add_api_websocket_route("/graphql/ws", graphql_app)
 
     @app.middleware("http")

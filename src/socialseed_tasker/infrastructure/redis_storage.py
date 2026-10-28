@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import Any, cast
 
 from socialseed_tasker.application.exceptions import StorageError
 from socialseed_tasker.application.ports import StoragePort
@@ -41,7 +41,7 @@ class RedisStorage(StoragePort):
     def get(self, key: str) -> bytes | None:
         with _get_storage_tracer().start_as_current_span("redis.get"):
             try:
-                v = self._client.get(key)
+                v = cast(bytes | str | None, self._client.get(key))
                 if isinstance(v, str):
                     return v.encode("utf-8")
                 return v

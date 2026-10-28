@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Any
+from typing import Any, cast
 
 try:
     import redis
@@ -57,7 +57,7 @@ class RedisRateLimiter:
         return allowed
 
     def get_state(self, key: str) -> dict[str, Any]:
-        data = self._client.hgetall(f"ratelimit:{key}")
+        data = cast(dict[Any, Any], self._client.hgetall(f"ratelimit:{key}"))
         tokens = float(data.get(b"tokens", b"0")) if data else 0.0
         last_ts = float(data.get(b"last_ts", b"0")) if data else 0.0
         return {"tokens": tokens, "last_ts": last_ts, "rate_per_min": self.rate_per_min, "burst": self.burst}

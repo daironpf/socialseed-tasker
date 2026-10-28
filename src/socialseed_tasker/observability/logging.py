@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 
 class JsonFormatter(logging.Formatter):
@@ -60,13 +60,19 @@ def configure_root_logger(level: str | int | None = None) -> None:
     root.addHandler(handler)
 
 
+if TYPE_CHECKING:
+    _LoggerAdapterBase = logging.LoggerAdapter[logging.Logger]
+else:
+    _LoggerAdapterBase = logging.LoggerAdapter
+
+
 def get_logger(
     name: str, trace_id: str | None = None
 ) -> logging.LoggerAdapter[logging.Logger]:
     configure_root_logger()
     logger = logging.getLogger(name)
 
-    class _Adapter(logging.LoggerAdapter[logging.Logger]):
+    class _Adapter(_LoggerAdapterBase):
         def process(self, msg: Any, kwargs: Any) -> Any:
             extra = kwargs.get("extra", {})
             if trace_id:
