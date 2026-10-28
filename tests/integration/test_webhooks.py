@@ -25,6 +25,11 @@ from socialseed_tasker.application.constraints import Constraint
 from socialseed_tasker.domain.entities import Component, Issue, IssueStatus
 from socialseed_tasker.infrastructure.web_api.app import create_app
 
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.self_contained,
+]
+
 
 class MockRepository(TaskRepositoryInterface):
     """In-memory mock repository for API testing."""

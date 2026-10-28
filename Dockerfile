@@ -17,7 +17,7 @@ COPY pyproject.toml ./
 COPY src/ ./src/
 
 # Install runtime dependencies into a custom prefix
-RUN pip install --no-cache-dir --prefix=/install --timeout=120 .
+RUN pip install --no-cache-dir --prefix=/install --timeout=120 ".[observability]"
 
 # =============================================================================
 # Stage 2: Runtime - Minimal image with only what's needed to run

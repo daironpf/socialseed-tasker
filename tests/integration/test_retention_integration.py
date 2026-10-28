@@ -5,7 +5,10 @@ from socialseed_tasker.infrastructure.memory_storage import MemoryStorage
 from socialseed_tasker.privacy.retention_worker import RetentionWorker, AUDIT_KEY
 from socialseed_tasker.privacy.policy import evaluate_policy
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.self_contained,
+]
 
 
 def _skip():
@@ -13,8 +16,11 @@ def _skip():
         pytest.skip("Integration disabled")
 
 
-def test_retention_worker_archives_and_deletes():
+def test_retention_worker_archives_and_deletes(monkeypatch):
     _skip()
+    # Storage keys carry no timestamp: force the retention window to zero so the
+    # storage branch is deterministic (see RetentionWorker.run_once).
+    monkeypatch.setenv("TASKER_RETENTION_STORAGE", "0")
     from unittest.mock import MagicMock
     container = MagicMock()
     storage = MemoryStorage()

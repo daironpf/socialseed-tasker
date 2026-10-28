@@ -14,8 +14,12 @@ NEO4J_URI = os.getenv("TASKER_NEO4J_URI", "bolt://localhost:7687")
 NEO4J_USER = os.getenv("TASKER_NEO4J_USER", "neo4j")
 NEO4J_PASSWORD = os.getenv("TASKER_NEO4J_PASSWORD", "neoSocial")
 
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.requires_neo4j,
+]
 
-@pytest.mark.integration
+
 def test_create_get_delete_node_integration():
     adapter = Neo4jGraphAdapter(uri=NEO4J_URI, user=NEO4J_USER, password=NEO4J_PASSWORD)
     node_id = adapter.create_node("IntegrationTest", {"x": 1})
@@ -31,7 +35,6 @@ def test_create_get_delete_node_integration():
     adapter.close()
 
 
-@pytest.mark.integration
 def test_run_cypher_integration():
     adapter = Neo4jGraphAdapter(uri=NEO4J_URI, user=NEO4J_USER, password=NEO4J_PASSWORD)
     result = adapter.run_cypher("RETURN 1 AS value")
@@ -40,7 +43,6 @@ def test_run_cypher_integration():
     adapter.close()
 
 
-@pytest.mark.integration
 def test_get_node_not_found_integration():
     adapter = Neo4jGraphAdapter(uri=NEO4J_URI, user=NEO4J_USER, password=NEO4J_PASSWORD)
     assert adapter.get_node("non-existent-999") is None

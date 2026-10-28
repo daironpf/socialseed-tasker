@@ -3,7 +3,10 @@ import time
 import pytest
 from socialseed_tasker.infrastructure.redis_storage import RedisStorage
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.requires_redis,
+]
 
 def _skip_if_no_redis():
     if os.getenv("TASKER_REDIS_URL") is None:

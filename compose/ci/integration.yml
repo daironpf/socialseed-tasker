@@ -1,0 +1,21 @@
+# Disposable stack for the opt-in integration CI job (issue #606).
+#
+# It reuses the production images and adds host ports expected by
+# tests/integration plus the environment needed to exercise the API session and
+# tracing flows. Host ports come from API_PORT/FRONTEND_PORT. Usage:
+#
+#   API_PORT=8000 FRONTEND_PORT=8080 docker compose \
+#     -f docker-compose.yml -f compose/ci/integration.yml up -d --build \
+#     tasker-db-neo4j tasker-db-pg tasker-db-redis tasker-db-mongo tasker-api tasker-board
+#
+# Never run it against development data: test_neo4j_repository wipes the graph.
+services:
+  tasker-api:
+    environment:
+      TASKER_AUTH_ENABLED: "false"
+      TASKER_INTEGRATION: "1"
+      TASKER_API_ALLOW_ORIGINS: "http://localhost:8080,http://localhost:8000"
+      TASKER_JAEGER_HOST: "host.docker.internal"
+      TASKER_JAEGER_PORT: "6831"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

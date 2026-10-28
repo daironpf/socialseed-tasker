@@ -7,11 +7,12 @@ from __future__ import annotations
 
 import json
 import os
-from io import StringIO
-
 import pytest
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.requires_neo4j,
+]
 
 
 def _skip_if_not_integration() -> None:
@@ -19,38 +20,20 @@ def _skip_if_not_integration() -> None:
         pytest.skip("Integration tests disabled; set TASKER_INTEGRATION=1 to enable")
 
 
-def test_create_issue_and_calculate_impact_integration():
+def test_create_issue_and_calculate_impact_integration(monkeypatch, capsys):
     """Create two issues, add a dependency, calculate impact via the thin CLI."""
     _skip_if_not_integration()
+    monkeypatch.setenv("TASKER_AUTH_TOKEN", os.getenv("TASKER_TEST_TOKEN", "admintoken123"))
 
     from socialseed_tasker.cli.main import main
 
-    with pytest.raises(SystemExit) as exc:
-        main(["create-issue", "--id", "cli-a", "--title", "A"])
-    assert exc.value.code == 0
+    main(["create-issue", "--id", "cli-a", "--title", "A"])
+    main(["create-issue", "--id", "cli-b", "--title", "B"])
+    main(["add-dependency", "--from", "cli-a", "--to", "cli-b"])
 
-    with pytest.raises(SystemExit) as exc:
-        main(["create-issue", "--id", "cli-b", "--title", "B"])
-    assert exc.value.code == 0
-
-    with pytest.raises(SystemExit) as exc:
-        main(["add-dependency", "--from", "cli-a", "--to", "cli-b"])
-    assert exc.value.code == 0
-
-    from io import StringIO
-
-    with pytest.raises(SystemExit) as exc, StringIO() as buf:
-        import sys
-        old_stdout = sys.stdout
-        sys.stdout = buf
-        try:
-            main(["calculate-impact", "--issue-id", "cli-b"])
-        finally:
-            sys.stdout = old_stdout
-        output = buf.getvalue()
-
-    assert exc.value.code == 0
-    j = json.loads(output)
+    capsys.readouterr()
+    main(["calculate-impact", "--issue-id", "cli-b"])
+    j = json.loads(capsys.readouterr().out)
     assert "cli-a" in j.get("impact_set", [])
 
     # cleanup

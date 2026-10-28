@@ -3,7 +3,11 @@ import time
 import requests
 import pytest
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.requires_api,
+    pytest.mark.requires_redis,
+]
 
 
 def _skip_if_not_integration():
@@ -13,8 +17,9 @@ def _skip_if_not_integration():
 
 def test_rate_limit_with_redis():
     _skip_if_not_integration()
-    base = "http://localhost:8000"
-    headers = {"Authorization": "Bearer admintoken123"}
+    base = os.getenv("TASKER_API_URL", "http://localhost:8000")
+    token = os.getenv("TASKER_TEST_TOKEN", "admintoken123")
+    headers = {"Authorization": f"Bearer {token}"}
     allowed = 0
     for i in range(10):
         r = requests.get(f"{base}/api/v1/issues/some", headers=headers)

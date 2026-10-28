@@ -2,7 +2,11 @@
 import os
 import subprocess
 import pytest
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.requires_chaos,
+    pytest.mark.requires_api,
+]
 
 def _skip_if_not_integration():
     if os.getenv("TASKER_CHAOS") != "1":

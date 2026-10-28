@@ -17,7 +17,10 @@ try:
 except Exception:
     _TS_AVAILABLE = False
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.requires_treesitter,
+]
 
 
 def _skip_if_no_treesitter():

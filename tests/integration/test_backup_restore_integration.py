@@ -5,7 +5,10 @@ from socialseed_tasker.infrastructure.memory_storage import MemoryStorage
 from socialseed_tasker.backup.core import export_data, verify_export, restore_data
 from unittest.mock import MagicMock
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.self_contained,
+]
 
 def _skip_if_not_integration():
     if os.getenv("TASKER_INTEGRATION") != "1":

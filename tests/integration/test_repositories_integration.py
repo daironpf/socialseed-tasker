@@ -12,7 +12,10 @@ from socialseed_tasker.infrastructure.neo4j_adapter import Neo4jGraphAdapter
 from socialseed_tasker.infrastructure.neo4j_graph_repository import Neo4jGraphRepository
 from socialseed_tasker.infrastructure.neo4j_issue_repository import Neo4jIssueRepository
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.requires_neo4j,
+]
 
 NEO4J_URI = os.getenv("TASKER_NEO4J_URI", "bolt://localhost:7687")
 NEO4J_USER = os.getenv("TASKER_NEO4J_USER", "neo4j")

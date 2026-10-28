@@ -3,7 +3,10 @@ import time
 import requests
 import pytest
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.requires_grafana,
+]
 
 def _skip_if_not_integration():
     if os.getenv("TASKER_INTEGRATION") != "1":

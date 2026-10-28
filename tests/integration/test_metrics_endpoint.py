@@ -1,4 +1,5 @@
 import os
+import socket
 import time
 
 import pytest
@@ -7,7 +8,10 @@ import requests
 from socialseed_tasker.observability.exporter import start_exporter
 from socialseed_tasker.observability.metrics import observe_operation
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.self_contained,
+]
 
 
 def _skip_if_not_integration():
@@ -17,7 +21,13 @@ def _skip_if_not_integration():
 
 def test_metrics_endpoint_exposes_metrics():
     _skip_if_not_integration()
-    port = int(os.getenv("TASKER_METRICS_PORT", "8001"))
+    configured_port = os.getenv("TASKER_METRICS_PORT")
+    if configured_port is None:
+        with socket.socket() as sock:
+            sock.bind(("127.0.0.1", 0))
+            port = sock.getsockname()[1]
+    else:
+        port = int(configured_port)
     start_exporter(port=port)
     with observe_operation("integration", "op"):
         pass

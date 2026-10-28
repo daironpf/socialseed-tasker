@@ -3,7 +3,10 @@ import pytest
 from socialseed_tasker.infrastructure.memory_storage import MemoryStorage
 from socialseed_tasker.data_catalog.registry import SchemaRegistry
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.self_contained,
+]
 
 
 def _skip_if_not_integration():

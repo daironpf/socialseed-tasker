@@ -4,7 +4,11 @@ import time
 import subprocess
 import json
 import pytest
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.requires_chaos,
+    pytest.mark.requires_redis,
+]
 
 def _skip_if_not_integration():
     if os.getenv("TASKER_CHAOS") != "1":

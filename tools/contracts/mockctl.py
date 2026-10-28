@@ -2,8 +2,15 @@
 from __future__ import annotations
 
 import argparse
+import time
 
-from .mock_server import MockServer
+if __package__ in (None, ""):
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from tools.contracts.mock_server import MockServer
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -23,7 +30,12 @@ def main(argv: list[str] | None = None) -> None:
             seed=args.seed,
         )
         ms.start()
-        print(f"mock server started on port {args.port} (spec={args.spec})")
+        print(f"mock server started on port {args.port} (spec={args.spec})", flush=True)
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            ms.stop()
     else:
         p.print_help()
 

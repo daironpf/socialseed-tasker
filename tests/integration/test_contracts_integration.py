@@ -1,12 +1,17 @@
 import json
 import os
 import subprocess
+import sys
 import time
+import urllib.request
 
 import pytest
 import yaml
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.self_contained,
+]
 
 
 def _skip_if_not_integration():
@@ -16,6 +21,7 @@ def _skip_if_not_integration():
 
 def test_provider_against_mock(tmp_path):
     _skip_if_not_integration()
+    mock_port = os.getenv("TASKER_CONTRACT_MOCK_PORT", "9100")
     spec_path = tmp_path / "fixture-openapi.yaml"
     spec = {
         "openapi": "3.0.0",
@@ -48,26 +54,34 @@ def test_provider_against_mock(tmp_path):
     report_path = tmp_path / "report.json"
     proc = subprocess.Popen(
         [
-            "python",
+            sys.executable,
             "tools/contracts/mockctl.py",
             "start",
             "--spec",
             str(spec_path),
             "--port",
-            "9100",
+            mock_port,
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-    time.sleep(1)
+    deadline = time.time() + 30
+    while time.time() < deadline:
+        try:
+            urllib.request.urlopen(f"http://127.0.0.1:{mock_port}/health", timeout=1)
+            break
+        except Exception:
+            time.sleep(0.2)
+    else:
+        raise AssertionError("mock server did not become reachable")
     try:
         subprocess.run(
             [
-                "python",
+                sys.executable,
                 "tools/contracts/contractctl.py",
                 "run",
                 "--provider",
-                "http://localhost:9100",
+                f"http://127.0.0.1:{mock_port}",
                 "--spec",
                 str(spec_path),
                 "--out",

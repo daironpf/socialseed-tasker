@@ -2,7 +2,10 @@ import os
 import pytest
 import requests
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.requires_api,
+]
 
 BASE = os.getenv("TASKER_API_URL", "http://localhost:8000")
 BOARD = os.getenv("TASKER_BOARD_URL", "http://localhost:8080")
@@ -29,6 +32,7 @@ def test_api_cors_preflight():
     assert r.headers.get("access-control-allow-origin") in ("http://localhost:8080", "*")
 
 
+@pytest.mark.requires_board
 def test_board_health():
     _skip_if_not_integration()
     r = requests.get(f"{BOARD}/")

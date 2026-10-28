@@ -5,10 +5,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-pytestmark = pytest.mark.skipif(
-    os.environ.get("TASKER_INTEGRATION") != "1",
-    reason="requires TASKER_INTEGRATION=1",
-)
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.self_contained,
+    pytest.mark.skipif(
+        os.environ.get("TASKER_INTEGRATION") != "1",
+        reason="requires TASKER_INTEGRATION=1",
+    ),
+]
 
 
 @pytest.fixture

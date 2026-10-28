@@ -5,7 +5,10 @@ from socialseed_tasker.infrastructure.memory_storage import MemoryStorage
 from socialseed_tasker.infrastructure.tenant_storage import NamespacedStorage
 from socialseed_tasker.tenancy.store import TenantStore
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.self_contained,
+]
 
 def _skip_if_not_integration():
     if os.getenv("TASKER_INTEGRATION") != "1":

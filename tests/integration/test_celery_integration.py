@@ -4,9 +4,13 @@ import json
 import subprocess
 import sys
 import pytest
-from socialseed_tasker.workers.app import create_celery
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.requires_celery,
+    pytest.mark.requires_redis,
+    pytest.mark.requires_neo4j,
+]
 
 def _skip_if_not_integration():
     if os.getenv("TASKER_INTEGRATION") != "1":
@@ -14,6 +18,8 @@ def _skip_if_not_integration():
 
 def test_enqueue_and_run_parse_task():
     _skip_if_not_integration()
+    from socialseed_tasker.workers.app import create_celery
+
     celery = create_celery()
     import tempfile
     p = tempfile.NamedTemporaryFile(suffix=".py", delete=False)

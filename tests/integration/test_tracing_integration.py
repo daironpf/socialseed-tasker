@@ -4,7 +4,11 @@ import time
 import requests
 import pytest
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.requires_api,
+    pytest.mark.requires_jaeger,
+]
 
 def _skip_if_not_integration():
     if os.getenv("TASKER_INTEGRATION") != "1":
@@ -27,7 +31,8 @@ def wait_for_jaeger(timeout=60):
 def test_trace_emitted_and_visible():
     _skip_if_not_integration()
     assert wait_for_jaeger(), "Jaeger not ready"
-    r = requests.get("http://localhost:8000/api/v1/health", timeout=5)
+    api = os.getenv("TASKER_API_URL", "http://localhost:8000")
+    r = requests.get(f"{api}/api/v1/health", timeout=5)
     assert r.status_code == 200
     time.sleep(2)
     r2 = requests.get(f"{JAEGER_UI}/api/services", timeout=5)

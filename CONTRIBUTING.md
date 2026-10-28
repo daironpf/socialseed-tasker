@@ -52,3 +52,19 @@ docker compose up -d tasker-db-neo4j
 
 # 4. Run tests to ensure everything is green
 pytest
+```
+
+The suite in `tests/integration/` is opt-in and skipped by default. It is
+grouped by prerequisite (`self_contained`, `requires_neo4j`, `requires_redis`,
+`requires_api`, `requires_graphql`, `requires_graphviz`, `requires_jaeger`,
+`requires_grafana`, `requires_sso`, `requires_celery`, `requires_chaos`,
+`requires_treesitter`). Some of those tests are destructive (they wipe the Neo4j
+graph), so use a disposable stack:
+
+```bash
+TASKER_INTEGRATION=1 pytest -m self_contained
+TASKER_INTEGRATION=1 pytest -m requires_neo4j   # disposable Neo4j
+```
+
+See [docs/INTEGRATION_TESTS.md](docs/INTEGRATION_TESTS.md) for the full
+inventory, environment variables and CI jobs.

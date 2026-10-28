@@ -101,41 +101,113 @@ jobs:
         run: |
           pytest -q -k "not integration" --maxfail=1 --disable-warnings
 
-  integration-tests:
-    name: Integration Tests
+  integration:
+    name: Integration (opt-in)
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.integration == 'true' || env.TASKER_INTEGRATION == '1' }}
-    services:
-      neo4j:
-        image: neo4j:5.26.15-community
-        env:
-          NEO4J_AUTH: neo4j/neoSocial
-          NEO4J_dbms_memory_heap_initial__size: 100M
-          NEO4J_dbms_memory_heap_max__size: 100M
-          NEO4J_dbms_memory_pagecache_size: 50M
-        ports:
-          - 7687:7687
-        options: >-
-          --health-cmd "echo 'RETURN 1' | cypher-shell -u neo4j -p neoSocial || exit 1"
-          --health-interval 10s
-          --health-timeout 10s
-          --health-retries 30
+    timeout-minutes: 60
+    if: ${{ github.event.inputs.integration == 'true' }}
+    env:
+      TASKER_INTEGRATION: "1"
+      TASKER_API_URL: "http://localhost:8000"
+      TASKER_BOARD_URL: "http://localhost:8080"
+      TASKER_GRAPHQL_URL: "http://localhost:8081/graphql"
+      TASKER_GRAPHVIZ_URL: "http://localhost:8083"
+      TASKER_KEYCLOAK_URL: "http://localhost:8082"
+      TASKER_JAEGER_URL: "http://localhost:16686"
+      TASKER_PROM_URL: "http://localhost:9090"
+      TASKER_GRAFANA_URL: "http://localhost:3000"
+      TASKER_NEO4J_URI: "bolt://localhost:7687"
+      TASKER_NEO4J_USER: "neo4j"
+      TASKER_NEO4J_PASSWORD: "neoSocial"
+      TASKER_REDIS_URL: "redis://localhost:6379/0"
+      TASKER_CELERY_BROKER_URL: "redis://localhost:6379/0"
+      TASKER_CELERY_RESULT_BACKEND: "redis://localhost:6379/1"
+      TASKER_TEST_TOKEN: "admintoken123"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: "3.11"
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
-      - name: Run integration tests
-        env:
-          TASKER_NEO4J_URI: "bolt://localhost:7687"
-          TASKER_NEO4J_USER: "neo4j"
-          TASKER_NEO4J_PASSWORD: "neoSocial"
-          TASKER_INTEGRATION: "1"
+          pip install -e ".[dev,observability,celery]"
+      - name: Start disposable stack
         run: |
-          pytest -q -m integration --maxfail=1 --disable-warnings
+          API_PORT=8000 FRONTEND_PORT=8080 docker compose \
+            -f docker-compose.yml -f compose/ci/integration.yml \
+            up -d --build --wait --wait-timeout 600 \
+            tasker-db-neo4j tasker-db-pg tasker-db-redis tasker-db-mongo tasker-api tasker-board
+      - name: Start GraphQL and Graphviz
+        run: |
+          nohup python -m uvicorn "socialseed_tasker.graphql.server:create_app" \
+            --factory --host 127.0.0.1 --port 8081 > graphql.log 2>&1 &
+          nohup python -m uvicorn socialseed_tasker.graphviz.server:app \
+            --host 127.0.0.1 --port 8083 > graphviz.log 2>&1 &
+      - name: Start Celery worker
+        run: |
+          nohup python -m socialseed_tasker.workers.worker > worker.log 2>&1 &
+          for _ in $(seq 1 60); do
+            grep -q "ready" worker.log && exit 0
+            sleep 1
+          done
+          echo "Celery worker did not become ready" >&2
+          cat worker.log
+          exit 1
+      - name: Start Jaeger
+        run: |
+          docker run -d --name tasker-ci-jaeger \
+            -p 16686:16686 -p 6831:6831/udp jaegertracing/all-in-one:1.49
+      - name: Start Keycloak
+        run: |
+          docker run -d --name tasker-ci-keycloak \
+            -p 8082:8080 \
+            -v "$PWD/auth/keycloak-realm.json:/opt/keycloak/data/import/tasker-realm.json:ro" \
+            -e KEYCLOAK_ADMIN=kcadmin -e KEYCLOAK_ADMIN_PASSWORD=kcadminpass \
+            quay.io/keycloak/keycloak:21.1.1 start-dev --import-realm
+      - name: Start Prometheus and Grafana
+        run: |
+          docker compose -f compose/infra/grafana.yml up -d
+      - name: Wait for services
+        run: |
+          ./scripts/wait-for-service.sh http://localhost:8000/health 240
+          ./scripts/wait-for-service.sh http://localhost:8080/ 240
+          ./scripts/wait-for-service.sh http://localhost:8082/realms/tasker-dev 240
+          ./scripts/wait-for-service.sh http://localhost:16686/api/services 120
+          ./scripts/wait-for-service.sh http://localhost:9090/-/ready 120
+          ./scripts/wait-for-service.sh http://localhost:3000/api/health 120
+          python - <<'PY'
+          import socket
+          import sys
+          import time
+
+          for port in (8081, 8083):
+              for _ in range(120):
+                  try:
+                      socket.create_connection(("127.0.0.1", port), timeout=1).close()
+                      break
+                  except OSError:
+                      time.sleep(1)
+              else:
+                  sys.exit(f"port {port} did not open")
+          PY
+      - name: Run integration suite
+        run: |
+          pytest -q -m "integration and not requires_chaos and not requires_treesitter" \
+            --maxfail=1 --disable-warnings
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          docker compose -f docker-compose.yml -f compose/ci/integration.yml logs --tail=200 || true
+          docker logs --tail=200 tasker-ci-jaeger || true
+          docker logs --tail=200 tasker-ci-keycloak || true
+          docker compose -f compose/infra/grafana.yml logs --tail=100 || true
+          cat graphql.log graphviz.log worker.log || true
+      - name: Stop services
+        if: always()
+        run: |
+          docker compose -f docker-compose.yml -f compose/ci/integration.yml down -v || true
+          docker compose -f compose/infra/grafana.yml down -v || true
+          docker rm -f tasker-ci-jaeger tasker-ci-keycloak || true

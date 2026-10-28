@@ -5,7 +5,10 @@ from socialseed_tasker.data_quality.rules import RuleRegistry
 from socialseed_tasker.data_quality.pipeline import DataQualityPipeline
 from socialseed_tasker.events.bus import EventBus
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.self_contained,
+]
 
 
 def _skip_if_not_integration():

@@ -4,7 +4,10 @@ import time
 
 import pytest
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.requires_api,
+]
 
 
 def _skip_if_not_integration():
@@ -16,8 +19,9 @@ def test_api_put_rotate_and_audit():
     _skip_if_not_integration()
     import requests
 
-    base = "http://localhost:8000"
-    headers = {"Authorization": "Bearer admin"}
+    base = os.getenv("TASKER_API_URL", "http://localhost:8000")
+    token = os.getenv("TASKER_TEST_TOKEN", "admintoken123")
+    headers = {"Authorization": f"Bearer {token}"}
     val = base64.b64encode(b"initval").decode("utf-8")
     r = requests.post(
         f"{base}/api/v1/secrets",

@@ -34,6 +34,10 @@ class InMemoryAuthProvider:
             if token:
                 self._token_map[token] = uid
 
+    @property
+    def users(self) -> dict[str, dict[str, Any]]:
+        return self._users
+
     def verify_token(self, token: str) -> str | None:
         return self._token_map.get(token)
 

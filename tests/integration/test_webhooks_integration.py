@@ -1,4 +1,5 @@
 import os
+import socket
 import threading
 import time
 import requests
@@ -10,7 +11,10 @@ from socialseed_tasker.events.delivery import DeliveryWorker
 from socialseed_tasker.events.bus import EventBus
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.self_contained,
+]
 
 class EchoHandler(BaseHTTPRequestHandler):
     last = None
@@ -23,7 +27,7 @@ class EchoHandler(BaseHTTPRequestHandler):
         self.wfile.write(b"ok")
 
 def run_echo(port):
-    server = HTTPServer(("localhost", port), EchoHandler)
+    server = HTTPServer(("127.0.0.1", port), EchoHandler)
     server.serve_forever()
 
 def _skip_if_not_integration():
@@ -35,16 +39,27 @@ def test_end_to_end_delivery():
     storage = MemoryStorage()
     wm = WebhookManager(storage)
     bus = EventBus()
-    worker = DeliveryWorker(storage)
-    worker.start()
-    port = 9010
+    port = int(os.getenv("TASKER_WEBHOOK_ECHO_PORT", "9010"))
     t = threading.Thread(target=run_echo, args=(port,), daemon=True)
     t.start()
-    sub = wm.create_subscription(url=f"http://localhost:{port}/", events=["test.event"], secret=None)
+    deadline = time.time() + 10
+    while time.time() < deadline:
+        try:
+            socket.create_connection(("127.0.0.1", port), timeout=1).close()
+            break
+        except OSError:
+            time.sleep(0.1)
+    else:
+        raise AssertionError("echo server did not start")
+    worker = DeliveryWorker(storage)
+    worker.start()
+    sub = wm.create_subscription(url=f"http://127.0.0.1:{port}/", events=["test.event"], secret=None)
     e = {"id":"evt1","type":"test.event","payload":{"x":1}}
     event = wm.receive(json.dumps(e).encode("utf-8"), None)
     bus.publish(event)
     worker.enqueue_delivery(sub["url"], event.to_json(), headers={"Content-Type":"application/json"})
-    time.sleep(1.0)
+    deadline = time.time() + 15
+    while time.time() < deadline and EchoHandler.last is None:
+        time.sleep(0.2)
     assert EchoHandler.last is not None
     worker.stop()

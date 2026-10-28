@@ -77,16 +77,18 @@ def build_default_container() -> Container:
     graph_repo = Neo4jGraphRepository(graph)
     auth = load_auth_provider()
     rbac = RBAC()
+    users: dict[str, dict[str, Any]] = {}
     users_env = os.getenv("TASKER_AUTH_USERS")
     if users_env:
         try:
             users = json.loads(users_env)
-            for uid, info in users.items():
-                perms = info.get("permissions", [])
-                for p in perms:
-                    rbac.grant(uid, p)
         except Exception:
-            pass
+            users = {}
+    else:
+        users = getattr(auth, "users", {})
+    for uid, info in users.items():
+        for permission in info.get("permissions", []):
+            rbac.grant(uid, permission)
     _, storage = build_storage()
     events = WebhookManager(storage=storage)
     events_bus = EventBus()

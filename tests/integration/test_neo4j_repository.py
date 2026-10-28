@@ -12,9 +12,14 @@ from socialseed_tasker.domain.entities import Component, Issue, IssueStatus
 from socialseed_tasker.infrastructure.neo4j_driver import Neo4jDriver
 from socialseed_tasker.infrastructure.neo4j_repository import Neo4jTaskRepository
 
-NEO4J_URI = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
-NEO4J_USER = os.environ.get("NEO4J_USER", "neo4j")
-NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", "neoSocial")
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.requires_neo4j,
+]
+
+NEO4J_URI = os.getenv("TASKER_NEO4J_URI", os.environ.get("NEO4J_URI", "bolt://localhost:7687"))
+NEO4J_USER = os.getenv("TASKER_NEO4J_USER", os.environ.get("NEO4J_USER", "neo4j"))
+NEO4J_PASSWORD = os.getenv("TASKER_NEO4J_PASSWORD", os.environ.get("NEO4J_PASSWORD", "neoSocial"))
 
 
 @pytest.fixture(scope="module")

@@ -27,6 +27,9 @@ dependencies = [
     "fastapi>=0.109.0",
     "uvicorn[standard]>=0.27.0",
 
+    # GraphQL API
+    "ariadne>=0.23.0",
+
     # Realtime transport (Socket.IO, issue #538)
     "python-socketio>=5.11.0",
 
@@ -90,6 +93,11 @@ faiss = [
 celery = [
     "celery>=5.3.0",
     "redis>=5.0.0",
+]
+observability = [
+    "opentelemetry-exporter-jaeger>=1.20.0",
+    "opentelemetry-instrumentation-fastapi>=0.41b0",
+    "opentelemetry-instrumentation-requests>=0.41b0",
 ]
 dev = [
     # Testing
@@ -208,5 +216,18 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 addopts = "--cov=socialseed_tasker --cov-report=term-missing"
 markers = [
-    "integration: marks tests as integration tests (requires Neo4j container)",
+    "integration: opt-in live-infra test (requires TASKER_INTEGRATION=1 and the services of its group marker)",
+    "self_contained: integration-style test that provisions its own local resources and needs no external service",
+    "requires_neo4j: needs a disposable Neo4j (TASKER_NEO4J_URI, default bolt://localhost:7687)",
+    "requires_redis: needs a disposable Redis (TASKER_REDIS_URL, default redis://localhost:6379/0)",
+    "requires_api: needs the FastAPI service (TASKER_API_URL, default http://localhost:8000)",
+    "requires_board: needs tasker-board (TASKER_BOARD_URL, default http://localhost:8080)",
+    "requires_graphql: needs the GraphQL service (TASKER_GRAPHQL_URL, default http://localhost:8081/graphql)",
+    "requires_graphviz: needs the graphviz service (TASKER_GRAPHVIZ_URL, default http://localhost:8082)",
+    "requires_jaeger: needs Jaeger (TASKER_JAEGER_URL, default http://localhost:16686)",
+    "requires_grafana: needs Grafana (:3000) and Prometheus (:9090)",
+    "requires_sso: needs the Keycloak realm (TASKER_KEYCLOAK_URL, default http://localhost:8082)",
+    "requires_celery: needs a Celery worker and its Redis broker",
+    "requires_chaos: destructive chaos scenario, only with TASKER_CHAOS=1",
+    "requires_treesitter: needs TASKER_TREESITTER_PYTHON_SO pointing to a compiled grammar",
 ]

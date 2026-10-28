@@ -20,6 +20,19 @@
 | `RELEASE_GPG_PASSPHRASE` | GPG key passphrase |
 | `PUBLISH_RELEASE` | Set to `1` to enable publish job |
 
+## Integration suite (opt-in)
+
+The `integration` job in `.github/workflows/ci.yml` runs only on manual dispatch
+with `integration = true`. It provisions a disposable stack (Neo4j, PostgreSQL,
+Redis, Mongo, API, board, GraphQL, Graphviz, Keycloak, Jaeger, Prometheus and
+Grafana), waits for every endpoint, runs
+`pytest -m "integration and not requires_chaos and not requires_treesitter"` and
+dumps logs on failure. Chaos and tree-sitter groups stay manual.
+
+The tests are grouped by prerequisite markers; see
+[docs/INTEGRATION_TESTS.md](INTEGRATION_TESTS.md) for the inventory, ports,
+environment variables and the local commands for each group.
+
 ## Local usage
 
 ```bash
