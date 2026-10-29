@@ -78,7 +78,7 @@ def doc_sync_command(
 
         if code_repo and rel_path:
             file_hash = hashlib.sha256(content.encode()).hexdigest()[:16]
-            file_id = hashlib.md5(rel_path.encode()).hexdigest()
+            file_id = hashlib.md5(rel_path.encode(), usedforsecurity=False).hexdigest()
 
             try:
                 code_repo._driver.driver.session(

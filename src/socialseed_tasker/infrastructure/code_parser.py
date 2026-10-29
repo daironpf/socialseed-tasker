@@ -113,7 +113,7 @@ class CodeGraphParser:
                 continue
 
             language = self._detect_language(file_path)
-            file_hash = hashlib.md5(file_content.encode()).hexdigest()
+            file_hash = hashlib.md5(file_content.encode(), usedforsecurity=False).hexdigest()
 
             code_file = CodeFile(
                 path=str(file_path.relative_to(repo_path)),

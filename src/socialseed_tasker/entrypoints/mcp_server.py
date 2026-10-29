@@ -101,7 +101,7 @@ def _session_identity(ctx: Context | None) -> tuple[str | None, str]:
             if str(key).lower() == "user-agent" and value:
                 user_agent = str(value)
                 break
-        digest = hashlib.sha1(user_agent.encode("utf-8")).hexdigest()[:12]
+        digest = hashlib.sha1(user_agent.encode("utf-8"), usedforsecurity=False).hexdigest()[:12]
         return f"ext-{digest}", user_agent[:120]
     except Exception:
         return None, "mcp-client"

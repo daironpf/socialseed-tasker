@@ -523,7 +523,9 @@ class AutoHealingEngine:
             sha = self._git_commit(run)
         if not sha:
             diff = run.get("last_diff") or ""
-            sha = hashlib.sha1((diff or run["id"]).encode("utf-8")).hexdigest()[:12]
+            sha = hashlib.sha1(
+                (diff or run["id"]).encode("utf-8"), usedforsecurity=False
+            ).hexdigest()[:12]
             stage["details"] = f"Snapshot {sha} (git unavailable)"
             self._log(run, "system", f"[Auto-Healing] Workspace snapshot {sha} (no git)")
         else:

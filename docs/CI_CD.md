@@ -9,6 +9,22 @@
 | `.github/workflows/canary-deploy.yml` | Canary deployment and smoke tests |
 | `.github/workflows/security-scan.yml` | Scheduled security scans |
 
+## Security scans
+
+`security-scan.yml`, the `security-scan` job in `pipeline.yml` and the
+`security-audit` job in `dependency-update.yml` run:
+
+```bash
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install . pip-audit bandit   # dependency-update uses .[dev]
+pip-audit --skip-editable
+bandit -r src -lll
+```
+
+Both commands are blocking: no `|| true` is allowed, so a scanner failure or a
+finding fails the job. The same commands can be reproduced locally in a clean
+virtual environment; `bandit -lll` only fails on High-severity findings.
+
 ## Secrets required (GitHub repository settings)
 
 | Secret | Description |

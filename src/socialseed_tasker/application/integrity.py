@@ -20,7 +20,7 @@ def compute_file_hash(file_path: Path) -> str | None:
     """
     try:
         content = file_path.read_text(encoding="utf-8")
-        return hashlib.md5(content.encode()).hexdigest()
+        return hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()
     except (UnicodeDecodeError, OSError):
         return None
 

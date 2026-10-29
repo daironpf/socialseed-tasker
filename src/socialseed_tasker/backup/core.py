@@ -21,6 +21,18 @@ def _sha256_bytes(b: bytes) -> str:
     h.update(b)
     return h.hexdigest()
 
+def _safe_extract(tar: tarfile.TarFile, destination: Path) -> None:
+    """Extract an archive after rejecting traversal paths and links."""
+    root = destination.resolve()
+    for member in tar.getmembers():
+        if member.issym() or member.islnk():
+            raise ValueError(f"unsafe archive member: {member.name}")
+        target = (root / member.name).resolve()
+        if target != root and root not in target.parents:
+            raise ValueError(f"unsafe archive member: {member.name}")
+    # Members were validated above (no traversal, no links).
+    tar.extractall(path=root)  # nosec B202
+
 def _write_manifest(tmpdir: Path, manifest: dict[str, Any]) -> None:
     with open(tmpdir / "MANIFEST.json", "w", encoding="utf-8") as fh:
         json.dump(manifest, fh, indent=2)
@@ -102,7 +114,10 @@ def export_data(
 def verify_export(file_path: str) -> bool:
     tmpdir = Path(tempfile.mkdtemp(prefix="tasker-verify-"))
     with tarfile.open(file_path, "r:gz") as tar:
-        tar.extractall(path=tmpdir)
+        try:
+            _safe_extract(tar, tmpdir)
+        except ValueError:
+            return False
     manifest_path = tmpdir / "MANIFEST.json"
     if not manifest_path.exists():
         return False
@@ -125,7 +140,7 @@ def restore_data(
 ) -> None:
     tmpdir = Path(tempfile.mkdtemp(prefix="tasker-restore-"))
     with tarfile.open(file_path, "r:gz") as tar:
-        tar.extractall(path=tmpdir)
+        _safe_extract(tar, tmpdir)
     issues_file = tmpdir / "issues.json"
     if issues_file.exists() and issue_repo is not None and hasattr(issue_repo, "import_list"):
         data = json.loads(issues_file.read_text(encoding="utf-8"))
