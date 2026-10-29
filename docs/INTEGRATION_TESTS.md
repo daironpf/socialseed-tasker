@@ -16,7 +16,7 @@ default pipeline.
 | `requires_api` | FastAPI service | `TASKER_API_URL` (`http://localhost:8000`) |
 | `requires_board` | tasker-board UI | `TASKER_BOARD_URL` (`http://localhost:8080`) |
 | `requires_graphql` | GraphQL service | `TASKER_GRAPHQL_URL` (`http://localhost:8081/graphql`) |
-| `requires_graphviz` | Graphviz service | `TASKER_GRAPHVIZ_URL` (`http://localhost:8082`) |
+| `requires_graphviz` | Graphviz service | `TASKER_GRAPHVIZ_URL` (`http://localhost:8082`; CI uses `8083` to avoid Keycloak) |
 | `requires_jaeger` | Jaeger (API exports UDP 6831) | `TASKER_JAEGER_URL` (`http://localhost:16686`) |
 | `requires_grafana` | Prometheus + Grafana | `TASKER_PROM_URL` (`:9090`), `TASKER_GRAFANA_URL` (`:3000`) |
 | `requires_sso` | Keycloak realm `tasker-dev` | `TASKER_KEYCLOAK_URL` (`http://localhost:8082`) |

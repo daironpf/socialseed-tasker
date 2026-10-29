@@ -3,7 +3,7 @@
 **Fuente:** informe de revisión general del proyecto y seguimiento de sus
 recomendaciones, 2026-10-26.
 **Created:** 2026-10-26
-**Status:** TODO (2/8) - #604–#605 DONE 2026-10-27
+**Status:** TODO (3/8) - #604–#605 DONE 2026-10-27; #606 DONE 2026-10-28
 **Numeración:** **#604–#611** (continúa tras **#603**, última issue numerada en
 `.issues/done/`)
 
@@ -23,7 +23,6 @@ puntuales:
 
 - Eliminar todos los hallazgos Ruff en `src/` (#604).
 - Eliminar todos los errores mypy sin debilitar el perfil estricto (#605).
-- Hacer reproducibles los grupos de pruebas de integración y sus servicios (#606).
 - Ejecutar los nuevos scans bloqueantes y triar sus hallazgos reales (#607).
 - Corregir el contrato documentado del análisis de causa raíz (#608).
 - Resolver las mutaciones de `props.issue` avisadas por ESLint (#609).
@@ -40,7 +39,7 @@ antes de fijar la reducción final.
 |---|---|---|---|---|---|
 | #604 | `604-reducir-deuda-ruff-sin-cambios-masivos.md` | Eliminar hallazgos Ruff en `src/` | MEDIUM | quality / backend | DONE |
 | #605 | `605-reducir-deuda-mypy-por-paquetes.md` | Eliminar errores mypy en `src/` sin debilitar strict | MEDIUM | quality / backend | DONE |
-| #606 | `606-hacer-reproducible-la-suite-de-integracion-en-ci.md` | Hacer reproducible la suite de integración en CI | MEDIUM | test / infra | TODO |
+| #606 | `../done/606-hacer-reproducible-la-suite-de-integracion-en-ci.md` | Hacer reproducible la suite de integración en CI | MEDIUM | test / infra | DONE |
 | #607 | `607-validar-y-triar-los-scans-de-seguridad-en-ci.md` | Validar scans bloqueantes y triar su baseline | HIGH | security / quality | TODO |
 | #608 | `608-corregir-documentacion-de-analisis-root-cause.md` | Documentar el contrato real del análisis de causa raíz | MEDIUM | docs / API | TODO |
 | #609 | `609-eliminar-mutaciones-de-props-en-issue-detail.md` | Eliminar mutaciones de props en IssueDetailView | LOW | bug fix / frontend | TODO |
@@ -55,15 +54,14 @@ antes de fijar la reducción final.
    manteniendo activos los gates.
 3. **#608** — corregir el contrato documentado y mantenerlo alineado con OpenAPI.
 4. **#609 y #610** — corregir los avisos frontend y volver a medir la build.
-5. **#606** — definir grupos y servicios reproducibles y pasar la suite completa antes
-   de ampliar el gate de integración.
-6. **#611** — actualizar los datos de compatibilidad y revisar lockfile/build.
+5. **#611** — actualizar los datos de compatibilidad y revisar lockfile/build.
 
 ## Release Checklist
 
 - [x] #604: baseline Ruff vigente y cero hallazgos en `src/`
 - [x] #605: baseline mypy vigente, cero errores globales y modo estricto preservado
-- [ ] #606: prerrequisitos documentados y jobs opt-in de integración reproducibles
+- [x] #606: prerrequisitos documentados y job opt-in reproducible; suite live
+      configurada pero pendiente de ejecución confirmatoria en Actions
 - [ ] #607: ambos scanners validados en Actions, hallazgos triajeados y exit codes
       efectivos
 - [ ] #608: documentación y schema OpenAPI verificados contra la implementación
