@@ -364,16 +364,39 @@ curl http://localhost:8000/api/v1/analyze/component-impact/<component-id>
 ```
 
 ### Root Cause Analysis
+
+> **Deprecated:** `POST /analyze/root-cause` is kept for backwards compatibility.
+> Use `POST /analyze/link-test` instead. Both endpoints accept the same
+> `TestFailureRequest` body (`test_id`, `test_name`, `error_message`,
+> `stack_trace`, `component`, `labels`) and return the same ranked
+> `CausalLinkResponse` list.
+
+#### Link test failure (recommended)
 ```bash
-# Find likely root causes for test failures
+curl -X POST http://localhost:8000/api/v1/analyze/link-test \
+  -H "Content-Type: application/json" \
+  -d '{
+    "test_id": "tests/auth/test_login.py::test_login_special_chars",
+    "test_name": "test_login_special_chars",
+    "error_message": "AssertionError: expected 200, got 422",
+    "stack_trace": "tests/auth/test_login.py:42: AssertionError",
+    "component": "auth-service",
+    "labels": ["auth", "regression"]
+  }'
+```
+
+#### Deprecated root-cause alias
+```bash
 curl -X POST http://localhost:8000/api/v1/analyze/root-cause \
   -H "Content-Type: application/json" \
   -d '{
-    "test_failure": "test_login_special_chars fails",
-    "component_id": "<uuid>"
+    "test_id": "tests/auth/test_login.py::test_login_special_chars",
+    "test_name": "test_login_special_chars",
+    "error_message": "AssertionError: expected 200, got 422",
+    "stack_trace": "tests/auth/test_login.py:42: AssertionError",
+    "component": "auth-service",
+    "labels": ["auth", "regression"]
   }'
-
-# Returns list of likely root causes with scores
 ```
 
 ---

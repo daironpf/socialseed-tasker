@@ -218,7 +218,8 @@ Blocked: 3
 │   └── GET /blocked      # Blocked issues
 ├── analysis
 │   ├── /impact/{id}       # Impact analysis
-│   └── /root-cause/{id}   # Root cause suggestions
+│   ├── /link-test         # Link test failure to root cause (recommended)
+│   └── /root-cause        # Deprecated alias
 ├── projects/{name}/summary
 │   └── GET /              # Project dashboard
 ├── health

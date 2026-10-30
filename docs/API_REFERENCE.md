@@ -157,11 +157,37 @@ GET /issues/workable
 
 ## Analysis
 
-### Root Cause Analysis
+### Root Cause Analysis (deprecated)
+
+> Deprecated: use `POST /analyze/link-test`. Both endpoints accept the same
+> `TestFailureRequest` body.
+
 ```http
 POST /analyze/root-cause
+Content-Type: application/json
+
 {
-  "issue_id": "uuid"
+  "test_id": "tests/auth/test_login.py::test_login_special_chars",
+  "test_name": "test_login_special_chars",
+  "error_message": "AssertionError: expected 200, got 422",
+  "stack_trace": "tests/auth/test_login.py:42: AssertionError",
+  "component": "auth-service",
+  "labels": ["auth", "regression"]
+}
+```
+
+### Link Test to Root Cause (recommended)
+```http
+POST /analyze/link-test
+Content-Type: application/json
+
+{
+  "test_id": "tests/auth/test_login.py::test_login_special_chars",
+  "test_name": "test_login_special_chars",
+  "error_message": "AssertionError: expected 200, got 422",
+  "stack_trace": "tests/auth/test_login.py:42: AssertionError",
+  "component": "auth-service",
+  "labels": ["auth", "regression"]
 }
 ```
 

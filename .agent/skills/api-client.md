@@ -81,8 +81,19 @@ GET /api/v1/issues/{id}/dependencies
 ### 5. Analysis
 
 ```python
-# Root cause analysis
-GET /api/v1/analyze/root-cause/{id}
+# Link a failing test to its likely root cause (recommended)
+POST /api/v1/analyze/link-test
+{
+  "test_id": "tests/auth/test_login.py::test_login_special_chars",
+  "test_name": "test_login_special_chars",
+  "error_message": "AssertionError: expected 200, got 422",
+  "stack_trace": "tests/auth/test_login.py:42: AssertionError",
+  "component": "auth-service",
+  "labels": ["auth"]
+}
+
+# Deprecated alias (same TestFailureRequest body)
+POST /api/v1/analyze/root-cause
 
 # Impact analysis
 GET /api/v1/analyze/impact/{id}
