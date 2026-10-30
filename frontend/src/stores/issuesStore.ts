@@ -304,6 +304,11 @@ export const useIssuesStore = defineStore('issues', () => {
     issues.value[idx] = merged
   }
 
+  function updateIssueFromSync(issue: Issue) {
+    const idx = issues.value.findIndex((i) => i.id === issue.id)
+    if (idx !== -1) issues.value[idx] = issue
+  }
+
   function connectIssueStream() {
     if (issueStream || isMockMode()) return
     issueStream = connectSSE(
@@ -350,5 +355,6 @@ export const useIssuesStore = defineStore('issues', () => {
     startAgent,
     stopAgent,
     updateChecklist,
+    updateIssueFromSync,
   }
 })

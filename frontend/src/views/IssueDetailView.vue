@@ -478,13 +478,31 @@ const emit = defineEmits<{
 
 const issuesStore = useIssuesStore()
 
+// Fresh data received from GitHub sync events. Kept locally so the view never
+// mutates the prop owned by the parent (vue/no-mutating-props).
+const syncedIssue = ref<Issue | null>(null)
+
+const issue = computed<Issue>(() => {
+  const latest = syncedIssue.value
+  if (!latest || latest.id !== props.issue.id) return props.issue
+  const latestTs = Date.parse(latest.updated_at) || 0
+  const propTs = Date.parse(props.issue.updated_at) || 0
+  return latestTs >= propTs ? latest : props.issue
+})
+
+function applySyncedIssue(fresh: Issue, expectedId: string) {
+  if (fresh.id !== expectedId || props.issue.id !== expectedId) return
+  issuesStore.updateIssueFromSync(fresh)
+  syncedIssue.value = fresh
+}
+
 const checklistState = computed(() => {
-  const fromStore = issuesStore.issues.find((i) => i.id === props.issue.id)
-  return fromStore?.task_checklist ?? props.issue.task_checklist ?? {}
+  const fromStore = issuesStore.issues.find((i) => i.id === issue.value.id)
+  return fromStore?.task_checklist ?? issue.value.task_checklist ?? {}
 })
 
 async function onChecklistToggle(key: string, checked: boolean) {
-  const result = await issuesStore.updateChecklist(props.issue.id, key, checked)
+  const result = await issuesStore.updateChecklist(issue.value.id, key, checked)
   if (!result) useToast().error(t('issues.checklistUpdateFailed'))
 }
 
@@ -496,26 +514,26 @@ const tabs = computed(() => [
 ])
 const activeTab = ref('details')
 
-const title = ref(props.issue.title)
-const description = ref(props.issue.description)
-const status = ref(props.issue.status)
-const priority = ref(props.issue.priority)
-const labels = ref([...props.issue.labels])
-const assignee = ref(props.issue.assignee || '')
+const title = ref(issue.value.title)
+const description = ref(issue.value.description)
+const status = ref(issue.value.status)
+const priority = ref(issue.value.priority)
+const labels = ref([...issue.value.labels])
+const assignee = ref(issue.value.assignee || '')
 const newLabel = ref('')
-const assigneeHistory = ref<AssigneeHistoryEntry[]>(props.issue.assignee_history || [])
-const previousAssignee = ref(props.issue.assignee || '')
+const assigneeHistory = ref<AssigneeHistoryEntry[]>(issue.value.assignee_history || [])
+const previousAssignee = ref(issue.value.assignee || '')
 const historyInitialized = ref(false)
 
 onMounted(() => {
   if (!historyInitialized.value) {
-    assigneeHistory.value = props.issue.assignee_history || []
-    previousAssignee.value = props.issue.assignee || ''
+    assigneeHistory.value = issue.value.assignee_history || []
+    previousAssignee.value = issue.value.assignee || ''
     historyInitialized.value = true
   }
 })
 
-watch(() => props.issue, (newIssue) => {
+watch(issue, (newIssue) => {
   title.value = newIssue.title
   description.value = newIssue.description
   status.value = newIssue.status
@@ -558,7 +576,7 @@ const users = ref<User[]>([])
 
 const { status: streamStatus, logs: streamLogs, connect: connectStream, disconnect: disconnectStream } = useAgentStream()
 const mockStream = useMockStream()
-const { viewers, typingAgents, hasConflict } = usePresence(props.issue.id)
+const { viewers, typingAgents, hasConflict } = usePresence(issue.value.id)
 
 // REST history + live SSE entries, deduplicated (issue #517)
 const displayLogs = computed<AgentLog[]>(() => {
@@ -611,8 +629,8 @@ const auditEntries = computed<AuditEntry[]>(() => {
 })
 
 const creatorUser = computed(() => {
-  if (!props.issue.created_by) return null
-  return users.value.find(u => u.id === props.issue.created_by) || null
+  if (!issue.value.created_by) return null
+  return users.value.find(u => u.id === issue.value.created_by) || null
 })
 
 const assigneeHistoryWithUsers = computed(() => {
@@ -625,31 +643,34 @@ const assigneeHistoryWithUsers = computed(() => {
   }).sort((a, b) => new Date(b.assignedAt).getTime() - new Date(a.assignedAt).getTime())
 })
 
-function onGithubSyncUpdated(issue: Issue) {
-  Object.assign(props.issue, issue)
+function onGithubSyncUpdated(fresh: Issue) {
+  applySyncedIssue(fresh, issue.value.id)
 }
 
 let githubSyncStream: ReturnType<typeof connectSSE> | null = null
 
 function connectGithubSyncStream() {
-  if (githubSyncStream || isMockMode() || !props.issue.github_sync) return
+  if (githubSyncStream || isMockMode() || !issue.value.github_sync) return
+  const issueId = issue.value.id
   githubSyncStream = connectSSE(
-    `/issues/${props.issue.id}/github-sync/stream`,
+    `/issues/${issueId}/github-sync/stream`,
     {
       onEvent: (type) => {
-        if (type === 'sync') refreshIssueFromServer()
+        if (type !== 'sync') return
+        if (issue.value.id === issueId) void refreshIssueFromServer(issueId)
       },
     },
     { events: ['connected', 'ping', 'sync'] },
   )
 }
 
-async function refreshIssueFromServer() {
-  const fresh = await issuesStore.fetchIssue(props.issue.id)
-  if (fresh) Object.assign(props.issue, fresh)
+async function refreshIssueFromServer(issueId = issue.value.id) {
+  const fresh = await issuesStore.fetchIssue(issueId)
+  if (fresh) applySyncedIssue(fresh, issueId)
 }
 
 watch(() => props.issue.id, () => {
+  syncedIssue.value = null
   githubSyncStream?.close()
   githubSyncStream = null
   connectGithubSyncStream()
@@ -673,7 +694,7 @@ const estimatedCompletionTokens = computed(() => {
 async function loadLogs() {
   logsLoading.value = true
   try {
-    const bundle = await fetchAgentLogs(props.issue.id)
+    const bundle = await fetchAgentLogs(issue.value.id)
     agentLogs.value = bundle.logs || []
   } catch {
     agentLogs.value = []
@@ -706,10 +727,10 @@ function getIssueTitle(id: string): string {
 }
 
 async function save() {
-  if (status.value === 'CLOSED' && props.issue.status !== 'CLOSED' && props.issue.governance) {
-    const g = props.issue.governance
+  if (status.value === 'CLOSED' && issue.value.status !== 'CLOSED' && issue.value.governance) {
+    const g = issue.value.governance
     if (!g.has_solution_summary || !g.has_file_impact || g.policy_violations.length > 0) {
-      previousStatus.value = props.issue.status
+      previousStatus.value = issue.value.status
       showGovernanceModal.value = true
       return
     }
@@ -723,10 +744,10 @@ async function save() {
     assignee: assignee.value || undefined,
     assignee_history: assigneeHistory.value,
   }
-  if (status.value === 'CLOSED' && props.issue.status !== 'CLOSED') {
+  if (status.value === 'CLOSED' && issue.value.status !== 'CLOSED') {
     body.closed_at = new Date().toISOString()
   }
-  if (status.value !== 'CLOSED' && props.issue.status === 'CLOSED') {
+  if (status.value !== 'CLOSED' && issue.value.status === 'CLOSED') {
     body.closed_at = null
   }
   emit('update', props.issue.id, body)
@@ -766,7 +787,7 @@ function executeDelete() {
 }
 
 const pendingAction = computed(() => {
-  if (props.issue.status !== 'WAITING_HUMAN_APPROVAL') return null
+  if (issue.value.status !== 'WAITING_HUMAN_APPROVAL') return null
   const lastFileLog = fileLogs.value[fileLogs.value.length - 1]
   if (lastFileLog) {
     return {
@@ -804,21 +825,21 @@ function onModify(params: string) {
 watch(activeTab, (tab) => {
   if (tab === 'reasoning' || tab === 'progress') {
     loadLogs()
-    if (isMockMode() && props.issue.agent_working) {
+    if (isMockMode() && issue.value.agent_working) {
       mockStream.start()
     }
   }
 })
 
 onMounted(async () => {
-  connectStream(props.issue.id)
+  connectStream(issue.value.id)
   connectGithubSyncStream()
   try {
     users.value = await fetchUsers()
   } catch {
     users.value = []
   }
-  if (isMockMode() && props.issue.agent_working && activeTab.value === 'reasoning') {
+  if (isMockMode() && issue.value.agent_working && activeTab.value === 'reasoning') {
     mockStream.start()
   }
 })
