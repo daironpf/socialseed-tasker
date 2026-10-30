@@ -3,7 +3,7 @@
 **Fuente:** informe de revisión general del proyecto y seguimiento de sus
 recomendaciones, 2026-10-26.
 **Created:** 2026-10-26
-**Status:** TODO (7/8) - #604–#605 DONE 2026-10-27; #606 DONE 2026-10-28; #607 DONE 2026-10-29; #608–#610 DONE 2026-10-30
+**Status:** DONE (8/8: #604–#611)
 **Numeración:** **#604–#611** (continúa tras **#603**, última issue numerada en
 `.issues/done/`)
 
@@ -40,11 +40,11 @@ antes de fijar la reducción final.
 | #608 | `../done/608-corregir-documentacion-de-analisis-root-cause.md` | Documentar el contrato real del análisis de causa raíz | MEDIUM | docs / API | DONE |
 | #609 | `../done/609-eliminar-mutaciones-de-props-en-issue-detail.md` | Eliminar mutaciones de props en IssueDetailView | LOW | bug fix / frontend | DONE |
 | #610 | `../done/610-reducir-chunk-elk-frontend.md` | Reducir o diferir la carga del chunk ELK de 1.47 MB | MEDIUM | performance / frontend | DONE |
-| #611 | `611-actualizar-base-datos-browserslist.md` | Actualizar caniuse-lite/Browserslist y quitar advertencia obsoleta | LOW | maintenance / frontend | TODO |
+| #611 | `../done/611-actualizar-base-datos-browserslist.md` | Actualizar caniuse-lite/Browserslist y quitar advertencia obsoleta | LOW | maintenance / frontend | DONE |
 
 ## Orden sugerido
 
-1. **#611** — actualizar los datos de compatibilidad y revisar lockfile/build.
+No quedan issues pendientes de esta tanda.
 
 ## Release Checklist
 
@@ -58,8 +58,8 @@ antes de fijar la reducción final.
 - [x] #609: ESLint sin avisos de mutación de props y pruebas del flujo actualizadas
 - [x] #610: ELK solo en chunk lazy verificado por manifest; inicial dividido bajo
       500 kB y excepciones lazy documentadas sin elevar el umbral
-- [ ] #611: build sin advertencia de base Browserslist desactualizada y lockfile
-      actualizado de forma reproducible
+- [x] #611: caniuse-lite actualizado en el lockfile, `npm ci` reproducible y sin
+      advertencia de Browserslist en lint, Vitest ni build
 - [ ] Cada issue cerrada incluye evidencia de los comandos/gates y pasa a
       `.issues/done/` con `Status: DONE`
 - [ ] Commit solo tras un “sí” explícito; mensaje en español y referencia `#NNN`

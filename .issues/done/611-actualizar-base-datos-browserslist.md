@@ -11,7 +11,7 @@ actuales de browsers.
 Esta issue actualiza únicamente la base correspondiente y su lockfile, evitando una
 actualización indiscriminada de dependencias del frontend.
 
-## Status: TODO
+## Status: DONE — 2026-10-30
 
 ## Priority: LOW
 
@@ -33,13 +33,13 @@ maintenance / frontend
 4. Verificar que el lockfile siga siendo reproducible mediante `npm ci`.
 
 ## Acceptance Criteria
-- [ ] La versión de `caniuse-lite` queda actualizada mediante un procedimiento
+- [x] La versión de `caniuse-lite` queda actualizada mediante un procedimiento
       reproducible y reflejado en el lockfile.
-- [ ] `npm ci` termina correctamente.
-- [ ] ESLint, Vitest y `npm run build` pasan.
-- [ ] La salida de build/test deja de mostrar el warning de base Browserslist
+- [x] `npm ci` termina correctamente.
+- [x] ESLint, Vitest y `npm run build` pasan.
+- [x] La salida de build/test deja de mostrar el warning de base Browserslist
       desactualizada.
-- [ ] El diff no incluye actualizaciones no relacionadas de dependencias.
+- [x] El diff no incluye actualizaciones no relacionadas de dependencias.
 
 ## Files to Modify
 - `frontend/package-lock.json` o el lockfile vigente del proyecto
@@ -53,3 +53,18 @@ maintenance / frontend
 - La observación de revisión fue: “Browserslist: browsers data (caniuse-lite) is
   7 months old”.
 - No elevar el warning a error ni suprimirlo para cerrar la issue.
+
+## Resolution
+
+- Actualizado con `npx update-browserslist-db@latest`: `caniuse-lite`
+  **1.0.30001785 → 1.0.30001820** y, como dependencia transitiva necesaria de
+  Browserslist, `baseline-browser-mapping` **2.10.15 → 2.11.34**. La herramienta
+  reportó “No target browser changes”.
+- Solo cambió `frontend/package-lock.json` (6 líneas agregadas / 6 eliminadas); no se
+  modificaron `frontend/package.json` ni dependencias de runtime.
+- `npm ci` reproducible: 581 paquetes instalados correctamente.
+- Gates: `npm run lint` sin hallazgos; `npx vitest run` 63 archivos / 486 tests;
+  `npm run build` correcto con `Bundle guard OK`.
+- La salida de lint, Vitest y build ya no contiene ningún aviso de Browserslist /
+  `caniuse-lite` desactualizado. El único warning restante de la build es el de los
+  chunks lazy justificados de #610, ajeno a esta issue.
