@@ -9,6 +9,28 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    manifest: true,
+    rollupOptions: {
+      output: {
+        // Keep the initial entry small by separating the always-loaded vendor
+        // groups. Lazy feature chunks (mermaid/ELK/vis-network) keep their own
+        // dynamic chunks; see scripts/check-bundle.mjs for the guard.
+        manualChunks(id) {
+          if (/[\\/]node_modules[\\/](vue|@vue|pinia|vue-router|vue-i18n|@intlify)[\\/]/.test(id)) {
+            return 'vendor-vue'
+          }
+          if (
+            /[\\/]node_modules[\\/](axios|socket\.io-client|engine\.io-client|engine\.io-parser|socket\.io-parser|@socket\.io)[\\/]/.test(
+              id,
+            )
+          ) {
+            return 'vendor-realtime'
+          }
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {

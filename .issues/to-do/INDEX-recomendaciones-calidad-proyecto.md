@@ -3,7 +3,7 @@
 **Fuente:** informe de revisión general del proyecto y seguimiento de sus
 recomendaciones, 2026-10-26.
 **Created:** 2026-10-26
-**Status:** TODO (6/8) - #604–#605 DONE 2026-10-27; #606 DONE 2026-10-28; #607 DONE 2026-10-29; #608 DONE 2026-10-30; #609 DONE 2026-10-30
+**Status:** TODO (7/8) - #604–#605 DONE 2026-10-27; #606 DONE 2026-10-28; #607 DONE 2026-10-29; #608–#610 DONE 2026-10-30
 **Numeración:** **#604–#611** (continúa tras **#603**, última issue numerada en
 `.issues/done/`)
 
@@ -23,7 +23,6 @@ puntuales:
 
 - Eliminar todos los hallazgos Ruff en `src/` (#604).
 - Eliminar todos los errores mypy sin debilitar el perfil estricto (#605).
-- Evitar que el bundle siga emitiendo un chunk ELK de 1.47 MB (#610).
 - Actualizar la base de datos de Browserslist que genera una advertencia en la build
   (#611).
 
@@ -40,13 +39,12 @@ antes de fijar la reducción final.
 | #607 | `../done/607-validar-y-triar-los-scans-de-seguridad-en-ci.md` | Validar scans bloqueantes y triar su baseline | HIGH | security / quality | DONE |
 | #608 | `../done/608-corregir-documentacion-de-analisis-root-cause.md` | Documentar el contrato real del análisis de causa raíz | MEDIUM | docs / API | DONE |
 | #609 | `../done/609-eliminar-mutaciones-de-props-en-issue-detail.md` | Eliminar mutaciones de props en IssueDetailView | LOW | bug fix / frontend | DONE |
-| #610 | `610-reducir-chunk-elk-frontend.md` | Reducir o diferir la carga del chunk ELK de 1.47 MB | MEDIUM | performance / frontend | TODO |
+| #610 | `../done/610-reducir-chunk-elk-frontend.md` | Reducir o diferir la carga del chunk ELK de 1.47 MB | MEDIUM | performance / frontend | DONE |
 | #611 | `611-actualizar-base-datos-browserslist.md` | Actualizar caniuse-lite/Browserslist y quitar advertencia obsoleta | LOW | maintenance / frontend | TODO |
 
 ## Orden sugerido
 
-1. **#610** — corregir el aviso frontend y volver a medir la build.
-2. **#611** — actualizar los datos de compatibilidad y revisar lockfile/build.
+1. **#611** — actualizar los datos de compatibilidad y revisar lockfile/build.
 
 ## Release Checklist
 
@@ -58,8 +56,8 @@ antes de fijar la reducción final.
       verificados localmente; ejecución confirmatoria pendiente en Actions
 - [x] #608: referencias alineadas con OpenAPI y prueba de contrato de ejemplos
 - [x] #609: ESLint sin avisos de mutación de props y pruebas del flujo actualizadas
-- [ ] #610: build sin carga ELK innecesaria; tamaño medido sin elevar el umbral para
-      silenciar la alerta
+- [x] #610: ELK solo en chunk lazy verificado por manifest; inicial dividido bajo
+      500 kB y excepciones lazy documentadas sin elevar el umbral
 - [ ] #611: build sin advertencia de base Browserslist desactualizada y lockfile
       actualizado de forma reproducible
 - [ ] Cada issue cerrada incluye evidencia de los comandos/gates y pasa a

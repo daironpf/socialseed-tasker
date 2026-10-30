@@ -14,7 +14,7 @@ el usuario no usa esa funcionalidad y evaluar una partición o sustitución segu
 chunk sigue superando el umbral. No se debe limitar a elevar `chunkSizeWarningLimit`
 para silenciar la advertencia.
 
-## Status: TODO
+## Status: DONE — 2026-10-30
 
 ## Priority: MEDIUM
 
@@ -39,14 +39,14 @@ performance / frontend
    motivo.
 
 ## Acceptance Criteria
-- [ ] La ruta de arranque y vistas sin diagramas/grafo no importan ELK hasta que la
+- [x] La ruta de arranque y vistas sin diagramas/grafo no importan ELK hasta que la
       funcionalidad correspondiente se utiliza.
-- [ ] La descarga de chunks se verifica en build/análisis de bundle, no solo por
+- [x] La descarga de chunks se verifica en build/análisis de bundle, no solo por
       inspección de imports.
-- [ ] La funcionalidad de grafos/diagramas sigue funcionando y sus pruebas pasan.
-- [ ] El bundle inicial no incorpora ELK y no hay chunks >500 kB minificados sin una
+- [x] La funcionalidad de grafos/diagramas sigue funcionando y sus pruebas pasan.
+- [x] El bundle inicial no incorpora ELK y no hay chunks >500 kB minificados sin una
       excepción técnica justificada; no se aumenta el límite para ocultar el warning.
-- [ ] La resolución registra medidas de build (minificado y gzip) antes y después.
+- [x] La resolución registra medidas de build (minificado y gzip) antes y después.
 
 ## Files to Modify
 - `frontend/src/` — imports/componentes que cargan la dependencia identificada
@@ -62,3 +62,33 @@ performance / frontend
   Vite avisa para chunks mayores de 500 kB.
 - Mermaid lazy-loading reduce la carga estática, pero no elimina el chunk ELK ni su
   advertencia de tamaño.
+
+## Resolution
+
+- Cadena verificada en el manifest de Vite: `index.html` → rutas lazy →
+  `MarkdownRenderer` → `import('mermaid')` → `mermaid.core` → `import(elk-*.mjs)`.
+  ELK es un `isDynamicEntry` y no aparece en el grafo de imports estáticos del entry.
+- Se evaluó mover el motor ELK a un worker (`elk-api` + `elk-worker.min.js?url`): el
+  build bajaba el chunk a ~34 kB, pero Mermaid pasa funciones no clonables al grafo y
+  el worker real falla con `DataCloneError`. Se descartó para no romper los layouts
+  ELK; se mantiene el bundle oficial de elkjs dentro de su chunk lazy.
+- `vite.config.ts`: el entry inicial se dividió en `vendor-vue` (Vue/Pinia/Router/
+  i18n) y `vendor-realtime` (axios/socket.io), y se activó `build.manifest` para el
+  análisis. Los chunks lazy de Mermaid/ELK/vis-network conservan su división natural.
+- Nuevo `frontend/scripts/check-bundle.mjs` (ejecutado por `postbuild`): falla si ELK
+  entra en el grafo estático, si un chunk inicial supera 500 kB o si aparece un chunk
+  lazy grande sin justificación. Las excepciones permitidas se imprimen con su motivo.
+- `chunkSizeWarningLimit` no se modificó. El aviso de Vite sigue apareciendo solo para
+  chunks lazy documentados: ELK (layout opcional de Mermaid), `mermaid.core` y
+  `cynefin` (diagramas bajo demanda) y `GraphView` (vis-network de la ruta de grafo).
+- Medidas (minificado / gzip):
+  - Antes: entry `index` **572.15 / 186.18 kB**; ELK **1,471.33 / 451.17 kB**;
+    `mermaid.core` 652.62 / 155.84 kB; `cynefin` 690.86 / 155.11 kB; `GraphView`
+    709.70 / 169.96 kB.
+  - Después: inicial en 3 chunks — `index` **328.4 / 98.1 kB**, `vendor-vue`
+    **164.9 / 60.8 kB**, `vendor-realtime` **79.0 / 27.4 kB** (total 572.3 / 186.3 kB,
+    ninguno >500 kB); ELK **1,471.4 / 451.2 kB** (lazy, sin cambios de tamaño);
+    `mermaid.core` 652.9 / 155.9 kB; `cynefin` 690.9 / 155.1 kB; `GraphView`
+    709.8 / 170.0 kB (todas lazy).
+- Evidencia: `npm run build` correcto con `Bundle guard OK`; `npm run lint` sin
+  salida; `npx vitest run` 63 archivos / 486 tests.
