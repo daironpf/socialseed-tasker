@@ -51,7 +51,10 @@ def _profile_to_response(profile: dict[str, Any]) -> AgentProfileResponse:
         temperature=profile.get("temperature"),
         system_prompt=profile.get("system_prompt"),
         tools=list(profile.get("tools") or []),
+        read_access=list(profile.get("read_access") or []),
         write_access=list(profile.get("write_access") or []),
+        propose_access=list(profile.get("propose_access") or []),
+        apply_access=list(profile.get("apply_access") or []),
         limits=profile.get("limits"),
         enabled=bool(profile.get("enabled", True)),
         skills=list(profile.get("skills") or []),
@@ -65,6 +68,10 @@ def _map_store_error(exc: ValueError) -> None:
     message = str(exc)
     if message.startswith("tool:"):
         raise HTTPException(status_code=422, detail=f"unknown tool: {message.split(':', 1)[1]}") from exc
+    if message.startswith("resource:"):
+        raise HTTPException(
+            status_code=422, detail=f"unknown resource: {message.split(':', 1)[1]}"
+        ) from exc
     if message == "username":
         raise HTTPException(status_code=409, detail="username already exists") from exc
     raise
@@ -120,7 +127,10 @@ def create_agent_profile(body: AgentProfileCreate) -> APIResponse[AgentProfileRe
             temperature=body.temperature,
             system_prompt=body.system_prompt,
             tools=body.tools,
+            read_access=body.read_access,
             write_access=body.write_access,
+            propose_access=body.propose_access,
+            apply_access=body.apply_access,
             limits=body.limits,
             skills=body.skills,
             enabled=body.enabled,
@@ -154,7 +164,10 @@ def update_agent_profile(agent_id: str, body: AgentProfileUpdate) -> APIResponse
             temperature=body.temperature,
             system_prompt=body.system_prompt,
             tools=body.tools,
+            read_access=body.read_access,
             write_access=body.write_access,
+            propose_access=body.propose_access,
+            apply_access=body.apply_access,
             limits=body.limits,
             skills=body.skills,
             enabled=body.enabled,

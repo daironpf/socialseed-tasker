@@ -7,12 +7,13 @@ and consistent envelope formatting.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Generic, Literal, TypeVar
+from typing import Annotated, Any, Generic, Literal, TypeVar
 from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, BeforeValidator, Field, model_validator
 
 from socialseed_tasker import __version__  # noqa: E402
+from socialseed_tasker.domain.agent_permissions import normalize_resource_scopes
 
 T = TypeVar("T")
 
@@ -1095,8 +1096,26 @@ class AgentSkillImportUrlRequest(BaseModel):
     url: str = Field(..., min_length=10, max_length=2000)
 
 
+def _optional_resource_scopes(value: list[str] | None) -> list[str] | None:
+    """Validate explicit scopes while preserving ``None`` as "leave unchanged"."""
+    if value is None:
+        return None
+    return normalize_resource_scopes(value)
+
+
+AgentResourceScopes = Annotated[list[str], BeforeValidator(normalize_resource_scopes)]
+AgentResourceScopesUpdate = Annotated[
+    list[str] | None, BeforeValidator(_optional_resource_scopes)
+]
+
+
 class AgentProfileCreate(BaseModel):
-    """Request for creating an agent profile on /agents/profiles (issue #564)."""
+    """Request for creating an agent profile on /agents/profiles (issue #564).
+
+    Read, write-scope, proposal, application and tool execution are separate
+    capabilities (#612). Missing or empty lists grant nothing; ``write_access``
+    is a legacy scope hint and never grants execution by itself.
+    """
 
     username: str = Field(..., min_length=1)
     email: str | None = None
@@ -1106,7 +1125,10 @@ class AgentProfileCreate(BaseModel):
     temperature: float | None = None
     system_prompt: str | None = None
     tools: list[str] = Field(default_factory=list)
+    read_access: AgentResourceScopes = Field(default_factory=list)
     write_access: list[str] = Field(default_factory=list)
+    propose_access: AgentResourceScopes = Field(default_factory=list)
+    apply_access: AgentResourceScopes = Field(default_factory=list)
     limits: dict[str, Any] | None = None
     skills: list[str] = Field(default_factory=list)
     enabled: bool = True
@@ -1116,7 +1138,8 @@ class AgentProfileUpdate(BaseModel):
     """Request for updating an agent profile (issue #564).
 
     Every field is optional: ``None`` keeps the stored value; ``tools``/
-    ``write_access``/``skills`` set replaces the stored list (``[]`` clears).
+    ``read_access``/``write_access``/``propose_access``/``apply_access``/
+    ``skills`` replace the stored list (``[]`` clears, granting nothing).
     ``last_used_at`` lets the Studio record usage (#573).
     """
 
@@ -1128,7 +1151,10 @@ class AgentProfileUpdate(BaseModel):
     temperature: float | None = None
     system_prompt: str | None = None
     tools: list[str] | None = None
+    read_access: AgentResourceScopesUpdate = None
     write_access: list[str] | None = None
+    propose_access: AgentResourceScopesUpdate = None
+    apply_access: AgentResourceScopesUpdate = None
     limits: dict[str, Any] | None = None
     skills: list[str] | None = None
     enabled: bool | None = None
@@ -1153,7 +1179,10 @@ class AgentProfileResponse(BaseModel):
     temperature: float | None = None
     system_prompt: str | None = None
     tools: list[str] = Field(default_factory=list)
+    read_access: list[str] = Field(default_factory=list)
     write_access: list[str] = Field(default_factory=list)
+    propose_access: list[str] = Field(default_factory=list)
+    apply_access: list[str] = Field(default_factory=list)
     limits: dict[str, Any] | None = None
     enabled: bool = True
     skills: list[str] = Field(default_factory=list)

@@ -121,6 +121,12 @@ class TestCreateSchema:
         assert "user_type" in cursor.columns["users"]
         assert "role_id" in cursor.columns["human_user"]
         assert "model" in cursor.columns["agents_user"]
+        assert {
+            "read_access",
+            "write_access",
+            "propose_access",
+            "apply_access",
+        } <= cursor.columns["agents_user"]
         assert "event" in cursor.columns["session_logs"]
 
         role_seeds = [seq for sql, seq in cursor.executemany_statements if "INSERT INTO roles" in sql]
@@ -131,7 +137,13 @@ class TestCreateSchema:
         assert {"code_search", "web_search", "test_runner", "git_tools"} <= tool_ids
 
         joined = "\n".join(cursor.sql_log)
-        assert "ALTER TABLE" not in joined
+        # Only the idempotent permission-column upgrade may ALTER a fresh DB;
+        # no legacy rename is expected once ``users`` exists.
+        permission_alters = [
+            sql for sql in cursor.sql_log if sql.startswith("ALTER TABLE agents_user")
+        ]
+        assert permission_alters == list(user_store_module.AGENT_PERMISSION_MIGRATION_DDL)
+        assert "ALTER TABLE users" not in joined
         assert "ix_users_user_type" in joined
         assert "ix_session_logs_user_created" in joined
 
@@ -145,7 +157,10 @@ class TestCreateSchema:
         store.create_schema()
 
         assert cursor.tables >= EXPECTED_TABLES
-        assert "ALTER TABLE" not in "\n".join(cursor.sql_log)
+        permission_alters = [
+            sql for sql in cursor.sql_log if sql.startswith("ALTER TABLE agents_user")
+        ]
+        assert permission_alters == list(user_store_module.AGENT_PERMISSION_MIGRATION_DDL) * 2
         role_seeds = [seq for sql, seq in cursor.executemany_statements if "INSERT INTO roles" in sql]
         assert len(role_seeds) == 2
         assert all("ON CONFLICT" in sql for sql, _ in cursor.executemany_statements)

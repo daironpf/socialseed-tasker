@@ -394,6 +394,83 @@ GET /agents/{agent_id}/context?issue_id=uuid
 GET /agents/{agent_id}/similar-issues?issue_id=uuid
 ```
 
+## Agent Profiles
+
+`/agents/profiles` manages non-human agent identities stored in PostgreSQL.
+Agents have no password, login token or human RBAC role, so they cannot
+authenticate an interactive session.
+
+### Explicit permission contract
+
+Reading, proposing changes, applying changes and executing tools are separate
+capabilities. A missing field or an empty list grants nothing; there is no
+implicit access derived from `write_access`, specialization or the prompt.
+
+| Field | Meaning |
+|---|---|
+| `read_access` | Resource scopes the agent may consult |
+| `propose_access` | Resource scopes where the agent may prepare a change without applying it |
+| `apply_access` | Resource scopes where the agent may apply a change (still subject to approval/enforcement in later issues) |
+| `tools` | Tool identifiers the agent may request; validated against the tool catalog |
+| `write_access` | Legacy write-scope hint kept for compatibility; never grants read/propose/apply/tool execution by itself |
+
+Valid resource scopes are `repository`, `documentation`, `tests`, `issues`,
+`workflows`, `graph` and `configuration`. Unknown scopes or empty entries
+return `422`; duplicates are collapsed. Arbitrary Cypher/database access is
+not a permission scope; domain actions are requested through catalog tools.
+
+### Create Agent Profile
+```http
+POST /agents/profiles
+{
+  "username": "bot-qa",
+  "model": "gpt-4o",
+  "tools": ["fs_read", "test_runner"],
+  "read_access": ["repository", "tests"],
+  "propose_access": ["repository"],
+  "apply_access": [],
+  "write_access": ["issues"]
+}
+```
+A successful create returns `201`. Omitted permission lists default to `[]`
+(no access). Unknown tools or resource scopes return `422` before anything is
+written.
+
+### List Agent Profiles
+```http
+GET /agents/profiles
+```
+
+### Get Agent Profile
+```http
+GET /agents/profiles/{agent_id}
+```
+
+### Update Agent Profile
+```http
+PUT /agents/profiles/{agent_id}
+{
+  "read_access": ["documentation"],
+  "propose_access": [],
+  "apply_access": ["tests"]
+}
+```
+Every field is optional: an omitted field (`null`/absent) keeps its stored
+value, while an explicit empty list clears it (granting nothing). Existing
+profiles created before this contract expose empty `read_access`,
+`propose_access` and `apply_access`; their `write_access` is preserved but is
+not translated into new capabilities.
+
+### Delete Agent Profile
+```http
+DELETE /agents/profiles/{agent_id}
+```
+
+Provider credentials are not part of the profile contract and are never
+stored there; they belong to the execution environment's secret management.
+This contract defines data and API semantics only: per-action authorization is
+covered by the execution layer and is not implied by saving a profile.
+
 ## Labels
 
 ### List Labels

@@ -41,8 +41,8 @@ la ejecución:
 |---|---|---|
 | Identidad de agente y CRUD de perfiles | Implementado como dato | Perfil independiente; sin credenciales ni rol RBAC humano |
 | Modelo, especialización, temperatura e instrucciones | Implementado como dato | Se almacenan en el perfil; la disponibilidad del modelo depende de la configuración de ejecución |
-| Skills y herramientas | Parcial | El perfil las referencia y las herramientas se validan contra catálogo; esto no demuestra autorización efectiva al invocarlas |
-| Alcance de escritura | Parcial | Existe `write_access`; el perfil no expresa por separado el alcance de lectura ni demuestra enforcement para cada acción |
+| Skills y herramientas | Parcial | El perfil referencia skills y herramientas; `tools` se valida contra catálogo y es una capacidad separada (#612), pero esto no demuestra autorización efectiva al invocarlas |
+| Alcance de lectura, propuesta y aplicación | Implementado como dato | `read_access`, `propose_access` y `apply_access` se persisten y validan por separado (#612); el enforcement por acción queda en #615. `write_access` se conserva como alcance heredado y no concede capacidades implícitas |
 | Límites | Parcial | Existe el campo `limits`; el formato y enforcement de cada límite deben especificarse y verificarse |
 | Aprobaciones, políticas heredadas y escalado | Pendiente de confirmar | No asumir enforcement completo por la presencia de datos o controles de interfaz |
 | Auditoría de acciones y aprobación | Pendiente de confirmar | Verificar cobertura de ejecución, cambios de permisos y resultados |
@@ -289,10 +289,11 @@ acciones, incluyendo las de ejecuciones en curso.
 ## Alcance actual y evolución
 
 El perfil existente ya contempla identidad, modelo, especialización,
-temperatura, prompt, herramientas, permisos de escritura, límites, skills y
-estado habilitado. La interfaz y el contrato/API son parte de este alcance.
-Esto no implica que todos los campos cuenten ya con autorización efectiva en
-tiempo de ejecución.
+temperatura, prompt, herramientas, lectura, escritura, propuesta, aplicación,
+límites, skills y estado habilitado. La interfaz y el contrato/API son parte de
+este alcance. El contrato explícito de #612 (AGENT-01) separa esas capacidades,
+pero esto no implica que todos los campos cuenten ya con autorización efectiva
+en tiempo de ejecución; el enforcement se aborda en #615.
 
 Antes de presentar como funcional una opción de seguridad, debe verificarse
 que se valida en backend al ejecutar la acción, que aplica a todas las rutas
@@ -308,11 +309,13 @@ indicar qué identificadores completa y actualizar su estado al cerrarse.
 
 ### Fundación del contrato
 
-- **AGENT-01 — Contrato de permisos explícito** — Pendiente. Definir en
-  esquemas, almacenamiento y API permisos separados de lectura, propuesta,
-  aplicación y ejecución de herramientas. **Aceptación:** valores inválidos
-  se rechazan; ausencia o lista vacía no concede acceso; la respuesta y la
-  documentación describen la semántica sin ambigüedad.
+- **AGENT-01 — Contrato de permisos explícito** — Implementado como dato.
+  `read_access`, `propose_access`, `apply_access` y `tools` se persisten y
+  exponen por separado; `write_access` queda como alcance heredado sin
+  capacidades implícitas. **Aceptación:** valores inválidos se rechazan;
+  ausencia o lista vacía no concede acceso; la respuesta y la documentación
+  describen la semántica sin ambigüedad. El enforcement por acción pertenece a
+  AGENT-04 (#615).
 - **AGENT-02 — Herencia y precedencia de políticas** — Pendiente. Implementar
   la combinación organización/proyecto/perfil. **Aceptación:** una prueba
   demuestra que un perfil no puede ampliar una política superior; los valores

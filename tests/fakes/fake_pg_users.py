@@ -20,6 +20,7 @@ import pytest
 _CREATE_TABLE = re.compile(r"CREATE TABLE IF NOT EXISTS (\w+)\s*\(", re.IGNORECASE)
 _COLUMN_LINE = re.compile(r"^\s+(\w+)\s+(?:TEXT|INT|BOOLEAN|TIMESTAMPTZ|JSONB|DOUBLE|SERIAL)\b", re.MULTILINE)
 _RENAME = re.compile(r'ALTER TABLE (\w+) RENAME TO "([^"]+)"', re.IGNORECASE)
+_ADD_COLUMN = re.compile(r"ADD COLUMN IF NOT EXISTS (\w+)", re.IGNORECASE)
 
 _RUN_TS_BASE = datetime(2026, 1, 1, 8, 0, 0, tzinfo=timezone.utc)
 _RUN_COLUMNS = (
@@ -160,7 +161,10 @@ class FakePgCursor:
             profile.get("temperature"),
             profile.get("system_prompt"),
             profile.get("tools", "[]"),
+            profile.get("read_access", "[]"),
             profile.get("write_access", "[]"),
+            profile.get("propose_access", "[]"),
+            profile.get("apply_access", "[]"),
             profile.get("limits"),
             profile.get("enabled", True),
             profile.get("last_used_at"),
@@ -225,6 +229,12 @@ class FakePgCursor:
                 self.tables.discard(old)
                 self.tables.add(new)
                 self.columns[new] = self.columns.pop(old, set())
+            else:
+                added = _ADD_COLUMN.search(norm)
+                if added:
+                    table = norm.split()[2]
+                    self.columns.setdefault(table, set()).add(added.group(1))
+                    self.rowcount = 1
         elif low.startswith("create table"):
             parts = _create_table_parts(sql)
             if parts:
@@ -291,12 +301,13 @@ class FakePgCursor:
                 self.rowcount = 1
         elif low.startswith("insert into agents_user"):
             values = tuple(params or ())
-            if len(values) >= 11:
-                # Full agent profile insert (#564): 11 positional columns.
+            if len(values) >= 14:
+                # Full agent profile insert (#564/#612): 14 positional columns.
                 (
                     uid, email, avatar, model, specialization, temperature,
-                    system_prompt, tools, write_access, limits, enabled,
-                ) = values[:11]
+                    system_prompt, tools, read_access, write_access,
+                    propose_access, apply_access, limits, enabled,
+                ) = values[:14]
                 if uid in self.agents:
                     self.rowcount = 0
                 else:
@@ -309,7 +320,10 @@ class FakePgCursor:
                         "temperature": temperature,
                         "system_prompt": system_prompt,
                         "tools": tools,
+                        "read_access": read_access,
                         "write_access": write_access,
+                        "propose_access": propose_access,
+                        "apply_access": apply_access,
                         "limits": limits,
                         "enabled": enabled,
                         "last_used_at": None,
@@ -590,12 +604,13 @@ class FakePgCursor:
             row = self.agents.get(uid)
             if row is None:
                 self.rowcount = 0
-            elif len(values) >= 12:
-                # Full profile update (#564 + last_used_at, #573): 11 columns + user_id.
+            elif len(values) >= 15:
+                # Full profile update (#564/#573/#612): 14 columns + user_id.
                 (
                     email, avatar, model, specialization, temperature,
-                    system_prompt, tools, write_access, limits, enabled, last_used_at,
-                ) = values[:11]
+                    system_prompt, tools, read_access, write_access,
+                    propose_access, apply_access, limits, enabled, last_used_at,
+                ) = values[:14]
                 row.update(
                     {
                         "email": email,
@@ -605,7 +620,10 @@ class FakePgCursor:
                         "temperature": temperature,
                         "system_prompt": system_prompt,
                         "tools": tools,
+                        "read_access": read_access,
                         "write_access": write_access,
+                        "propose_access": propose_access,
+                        "apply_access": apply_access,
                         "limits": limits,
                         "enabled": enabled,
                         "last_used_at": last_used_at,
@@ -824,7 +842,10 @@ class FakePgCursor:
                     row.get("temperature"),
                     row.get("system_prompt"),
                     row.get("tools"),
+                    row.get("read_access", "[]"),
                     row.get("write_access"),
+                    row.get("propose_access", "[]"),
+                    row.get("apply_access", "[]"),
                     row.get("limits"),
                     row.get("enabled", True),
                     row.get("last_used_at"),

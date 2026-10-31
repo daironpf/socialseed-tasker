@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 
 import pytest
 from fastapi import HTTPException
+from pydantic import ValidationError
 
 from socialseed_tasker.auth.user_store import TOOLS_SEED, authenticate_user
 from socialseed_tasker.infrastructure.web_api.routers import agent_profiles
@@ -30,7 +31,10 @@ AGENT_BODY: dict = {
     "temperature": 0.2,
     "system_prompt": "You are a QA bot.",
     "tools": ["fs_read", "test_runner"],
+    "read_access": ["repository", "issues"],
     "write_access": ["issues"],
+    "propose_access": ["repository"],
+    "apply_access": ["issues"],
     "limits": {"max_tokens": 4000},
     "skills": ["Testing", "Pytest"],
     "enabled": True,
@@ -96,7 +100,13 @@ def test_create_agent_profile_201_returns_uid(monkeypatch: pytest.MonkeyPatch):
     assert response.data.type == "agent"
     assert response.data.role is None  # the front derives 'ai-agent' (#564)
     assert response.data.tools == ["fs_read", "test_runner"]
+    assert response.data.read_access == ["repository", "issues"]
     assert response.data.write_access == ["issues"]
+    assert response.data.propose_access == ["repository"]
+    assert response.data.apply_access == ["issues"]
+    assert agent["read_access"] == '["repository", "issues"]'
+    assert agent["propose_access"] == '["repository"]'
+    assert agent["apply_access"] == '["issues"]'
     assert response.data.limits == {"max_tokens": 4000}
     assert sorted(response.data.skills) == ["Pytest", "Testing"]
     # #577: agent assignments live in agent_user_skills, never in user_skills.
@@ -116,6 +126,102 @@ def test_create_agent_profile_unknown_tool_422(monkeypatch: pytest.MonkeyPatch):
     assert exc.value.status_code == 422
     assert "unknown tool: nope" in str(exc.value.detail)
     assert cursor.users == {}  # validated before anything is written
+
+
+def test_create_agent_profile_defaults_grant_no_access(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install_agent_env(monkeypatch, cursor)
+
+    response = agent_profiles.create_agent_profile(
+        AgentProfileCreate(username="bot-minimal")
+    )
+
+    assert response.data.tools == []
+    assert response.data.read_access == []
+    assert response.data.write_access == []
+    assert response.data.propose_access == []
+    assert response.data.apply_access == []
+
+
+def test_write_access_alone_does_not_grant_other_capabilities(monkeypatch: pytest.MonkeyPatch):
+    """Legacy write scope must not imply read/propose/apply/tool execution (#612)."""
+    cursor = FakePgCursor()
+    _install_agent_env(monkeypatch, cursor)
+
+    response = agent_profiles.create_agent_profile(
+        AgentProfileCreate(username="bot-writer", write_access=["repository"])
+    )
+
+    assert response.data.write_access == ["repository"]
+    assert response.data.read_access == []
+    assert response.data.propose_access == []
+    assert response.data.apply_access == []
+    assert response.data.tools == []
+
+
+@pytest.mark.parametrize("field", ["read_access", "propose_access", "apply_access"])
+@pytest.mark.parametrize("value", ["secrets", "database", "cypher", ""])
+def test_invalid_resource_scope_rejected(field: str, value: str):
+    with pytest.raises(ValidationError) as exc:
+        AgentProfileCreate(username="bot-bad", **{field: [value]})
+
+    assert "resource:" in str(exc.value)
+
+
+def test_resource_scopes_are_trimmed_and_deduplicated():
+    profile = AgentProfileCreate(
+        username="bot-scopes",
+        read_access=[" repository ", "repository", "issues"],
+        propose_access=["documentation"],
+        apply_access=["tests", "tests"],
+    )
+
+    assert profile.read_access == ["repository", "issues"]
+    assert profile.propose_access == ["documentation"]
+    assert profile.apply_access == ["tests"]
+
+
+def test_store_rejects_unknown_resource_scope_before_writing(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install_agent_env(monkeypatch, cursor)
+    store = agent_profiles._pg_store()
+
+    with pytest.raises(ValueError, match="resource:secrets"):
+        store.create_profile(username="bot-bad", read_access=["secrets"])
+
+    assert cursor.users == {}
+
+
+def test_legacy_profile_without_explicit_permissions_grants_nothing(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Rows created before #612 keep write_access but gain no implicit capability."""
+    cursor = FakePgCursor()
+    _install_agent_env(monkeypatch, cursor)
+    uid = "legacy-agent"
+    cursor.users[uid] = {
+        "id": uid,
+        "username": "legacy-agent",
+        "username_normalized": "legacy-agent",
+        "user_type": "agent",
+        "created_at": None,
+    }
+    cursor.agents[uid] = {
+        "user_id": uid,
+        "email": "legacy@socialseed.com",
+        "tools": '["fs_read"]',
+        "write_access": '["issues"]',
+        "limits": None,
+        "enabled": True,
+    }
+
+    response = agent_profiles.get_agent_profile(uid)
+
+    assert response.data.write_access == ["issues"]
+    assert response.data.tools == ["fs_read"]
+    assert response.data.read_access == []
+    assert response.data.propose_access == []
+    assert response.data.apply_access == []
 
 
 def test_create_agent_profile_duplicate_username_409(monkeypatch: pytest.MonkeyPatch):
@@ -149,6 +255,9 @@ def test_update_agent_profile(monkeypatch: pytest.MonkeyPatch):
             temperature=0.5,
             skills=["Refactor"],
             tools=["fs_read"],
+            read_access=["documentation"],
+            propose_access=[],
+            apply_access=["tests", "tests"],
             enabled=False,
         ),
     )
@@ -158,6 +267,10 @@ def test_update_agent_profile(monkeypatch: pytest.MonkeyPatch):
     assert response.data.temperature == 0.5
     assert response.data.enabled is False
     assert response.data.tools == ["fs_read"]
+    assert response.data.read_access == ["documentation"]
+    assert response.data.write_access == ["issues"]  # legacy value retained
+    assert response.data.propose_access == []  # explicit [] clears
+    assert response.data.apply_access == ["tests"]  # duplicates collapsed
     assert response.data.skills == ["Refactor"]
     # None keeps the stored values
     assert response.data.system_prompt == "You are a QA bot."
@@ -179,6 +292,25 @@ def test_update_agent_profile(monkeypatch: pytest.MonkeyPatch):
             _create_second.data.id, AgentProfileUpdate(username="bot-qa-2")
         )
     assert duplicate.value.status_code == 409
+
+
+def test_update_without_permission_fields_keeps_stored_capabilities(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    cursor = FakePgCursor()
+    _install_agent_env(monkeypatch, cursor)
+    uid = _create_agent().data.id
+
+    response = agent_profiles.update_agent_profile(
+        uid, AgentProfileUpdate(model="gpt-4o-mini")
+    )
+
+    assert response.data.model == "gpt-4o-mini"
+    assert response.data.read_access == ["repository", "issues"]
+    assert response.data.write_access == ["issues"]
+    assert response.data.propose_access == ["repository"]
+    assert response.data.apply_access == ["issues"]
+    assert response.data.tools == ["fs_read", "test_runner"]
 
 
 def test_update_agent_profile_last_used_at(monkeypatch: pytest.MonkeyPatch):
