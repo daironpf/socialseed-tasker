@@ -464,6 +464,23 @@ describe('UsersView create agent flow (issue #566)', () => {
     expect(useUsersStore().users.some(u => u.type === 'agent')).toBe(false)
   })
 
+  it('shows unconfigured model errors and does not report agent creation as successful', async () => {
+    vi.mocked(createAgentProfile).mockRejectedValue(
+      Object.assign(new Error('model_not_configured: gpt-4o requires OPENAI_API_KEY'), { status: 503 }),
+    )
+
+    const wrapper = await mountView()
+    await openCreateModal(wrapper)
+    await emitAgentSave(wrapper)
+
+    expect(toastError).toHaveBeenCalledWith(
+      'Error: model_not_configured: gpt-4o requires OPENAI_API_KEY',
+    )
+    expect(toastSuccess).not.toHaveBeenCalled()
+    expect(wrapper.findComponent(CreateUserModal).props('show')).toBe(true)
+    expect(useUsersStore().users.some(u => u.type === 'agent')).toBe(false)
+  })
+
   it('keeps humans on createUser and agents on createAgent (branch by type)', async () => {
     vi.mocked(usersApi.createUser).mockResolvedValue({
       user: makeHuman('uid-new', 'nuevo'),

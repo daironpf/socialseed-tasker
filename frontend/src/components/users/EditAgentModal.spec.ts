@@ -124,6 +124,16 @@ describe('EditAgentModal tools catalog (issue #572)', () => {
     expect(fetchTools).toHaveBeenCalledTimes(2)
   })
 
+  it('limits temperature to the selected provider range', async () => {
+    const { wrapper } = mountComponent(EditAgentModal, {
+      props: { show: true, agent: AGENT },
+    })
+
+    await wrapper.find('select').setValue('claude-3-opus')
+
+    expect(wrapper.find('input[type="range"]').attributes('max')).toBe('1')
+  })
+
   it('replaces the skills through the floating agent picker (issue #577)', async () => {
     apiMode.value = 'real'
     vi.mocked(fetchAgentSkills).mockResolvedValue([

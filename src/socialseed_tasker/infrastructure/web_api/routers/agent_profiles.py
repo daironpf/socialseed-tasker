@@ -15,6 +15,10 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 
 from socialseed_tasker.auth.user_store import PostgresAgentProfileStore
+from socialseed_tasker.config.agent_models import (
+    AgentModelConfigurationError,
+    validate_agent_model,
+)
 from socialseed_tasker.config.storage import get_database_url
 from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentProfileCreate,
@@ -116,6 +120,11 @@ def create_agent_profile(body: AgentProfileCreate) -> APIResponse[AgentProfileRe
     The agent gets no credential and no RBAC role: it cannot log in. Unknown
     ``tools`` slugs are rejected with 422 before anything is written.
     """
+    try:
+        validate_agent_model(body.model, body.temperature)
+    except AgentModelConfigurationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
     store = _pg_store()
     try:
         uid = store.create_profile(
@@ -153,6 +162,23 @@ def create_agent_profile(body: AgentProfileCreate) -> APIResponse[AgentProfileRe
 def update_agent_profile(agent_id: str, body: AgentProfileUpdate) -> APIResponse[AgentProfileResponse]:
     """Update an agent profile (issue #564): 404 sin fila, 409 username duplicado."""
     store = _pg_store()
+    if body.model is not None or body.temperature is not None:
+        existing_profile = store.get_profile(agent_id)
+        if not existing_profile:
+            raise HTTPException(status_code=404, detail="Agent profile not found")
+        try:
+            effective_model = (
+                body.model if body.model is not None else existing_profile.get("model")
+            )
+            effective_temperature = (
+                body.temperature
+                if body.temperature is not None
+                else existing_profile.get("temperature")
+            )
+            validate_agent_model(effective_model, effective_temperature)
+        except AgentModelConfigurationError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
     try:
         store.update_profile(
             agent_id,

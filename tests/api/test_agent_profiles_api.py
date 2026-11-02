@@ -45,6 +45,8 @@ def _install_agent_env(monkeypatch: pytest.MonkeyPatch, cursor: FakePgCursor) ->
     """Run every /agents/profiles query against the stateful fake cursor."""
     install_fake_pg(monkeypatch, cursor)
     monkeypatch.setattr(agent_profiles, "get_database_url", lambda: "postgresql://fake")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
     cursor.tools.update({slug: name for slug, name, _ in TOOLS_SEED})
 
 
@@ -81,7 +83,9 @@ def test_get_agent_profile_404(monkeypatch: pytest.MonkeyPatch):
 # ---------------------------------------------------------------------------
 
 
-def test_create_agent_profile_201_returns_uid(monkeypatch: pytest.MonkeyPatch):
+def test_create_agent_profile_201_returns_uid(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
     cursor = FakePgCursor()
     _install_agent_env(monkeypatch, cursor)
 
@@ -96,6 +100,9 @@ def test_create_agent_profile_201_returns_uid(monkeypatch: pytest.MonkeyPatch):
     assert agent["specialization"] == "qa"
     assert agent["temperature"] == 0.2
     assert agent["system_prompt"] == "You are a QA bot."
+    assert "test-openai-key" not in repr(agent)
+    assert "test-openai-key" not in repr(response.data.model_dump())
+    assert "test-openai-key" not in caplog.text
     assert agent["enabled"] is True
     assert response.data.type == "agent"
     assert response.data.role is None  # the front derives 'ai-agent' (#564)
@@ -133,7 +140,7 @@ def test_create_agent_profile_defaults_grant_no_access(monkeypatch: pytest.Monke
     _install_agent_env(monkeypatch, cursor)
 
     response = agent_profiles.create_agent_profile(
-        AgentProfileCreate(username="bot-minimal")
+        AgentProfileCreate(username="bot-minimal", model="gpt-4o")
     )
 
     assert response.data.tools == []
@@ -143,13 +150,108 @@ def test_create_agent_profile_defaults_grant_no_access(monkeypatch: pytest.Monke
     assert response.data.apply_access == []
 
 
+def test_create_agent_profile_requires_model(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install_agent_env(monkeypatch, cursor)
+
+    with pytest.raises(HTTPException) as exc:
+        agent_profiles.create_agent_profile(AgentProfileCreate(username="bot-minimal"))
+
+    assert exc.value.status_code == 422
+    assert "model_required" in str(exc.value.detail)
+    assert cursor.users == {}
+
+
+def test_create_agent_profile_rejects_model_outside_catalog(monkeypatch: pytest.MonkeyPatch):
+    cursor = FakePgCursor()
+    _install_agent_env(monkeypatch, cursor)
+
+    with pytest.raises(HTTPException) as exc:
+        agent_profiles.create_agent_profile(
+            AgentProfileCreate(username="bot-bad-model", model="not-a-model")
+        )
+
+    assert exc.value.status_code == 422
+    assert "model_not_allowed" in str(exc.value.detail)
+    assert cursor.users == {}
+
+
+def test_create_agent_profile_rejects_unconfigured_provider_without_exposing_secret(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    cursor = FakePgCursor()
+    _install_agent_env(monkeypatch, cursor)
+    secret = "test-openai-key"
+    monkeypatch.delenv("OPENAI_API_KEY")
+
+    with pytest.raises(HTTPException) as exc:
+        _create_agent()
+
+    assert exc.value.status_code == 503
+    assert "model_not_configured" in str(exc.value.detail)
+    assert secret not in str(exc.value.detail)
+    assert cursor.users == {}
+
+
+@pytest.mark.parametrize(
+    ("model", "temperature"), [("gpt-4o", 0.0), ("gpt-4o", 2.0), ("claude-3-opus", 1.0)]
+)
+def test_create_agent_profile_accepts_temperature_boundaries(
+    monkeypatch: pytest.MonkeyPatch, model: str, temperature: float
+):
+    cursor = FakePgCursor()
+    _install_agent_env(monkeypatch, cursor)
+
+    response = agent_profiles.create_agent_profile(
+        AgentProfileCreate(
+            username=f"bot-temp-{model}-{temperature}",
+            model=model,
+            temperature=temperature,
+        )
+    )
+
+    assert response.data.temperature == temperature
+
+
+@pytest.mark.parametrize(
+    ("model", "temperature"),
+    [
+        ("gpt-4o", -0.01),
+        ("gpt-4o", 2.01),
+        ("gpt-4o", float("nan")),
+        ("gpt-4o", float("inf")),
+        ("claude-3-opus", 1.01),
+    ],
+)
+def test_agent_profile_rejects_incompatible_temperature(
+    monkeypatch: pytest.MonkeyPatch, model: str, temperature: float
+):
+    cursor = FakePgCursor()
+    _install_agent_env(monkeypatch, cursor)
+
+    with pytest.raises(HTTPException) as exc:
+        agent_profiles.create_agent_profile(
+            AgentProfileCreate(
+                username="bot-bad-temperature",
+                model=model,
+                temperature=temperature,
+            )
+        )
+
+    assert exc.value.status_code == 422
+    assert "model_parameter_incompatible" in str(exc.value.detail)
+    assert cursor.users == {}
+
+
 def test_write_access_alone_does_not_grant_other_capabilities(monkeypatch: pytest.MonkeyPatch):
     """Legacy write scope must not imply read/propose/apply/tool execution (#612)."""
     cursor = FakePgCursor()
     _install_agent_env(monkeypatch, cursor)
 
     response = agent_profiles.create_agent_profile(
-        AgentProfileCreate(username="bot-writer", write_access=["repository"])
+        AgentProfileCreate(
+            username="bot-writer", model="gpt-4o", write_access=["repository"]
+        )
     )
 
     assert response.data.write_access == ["repository"]
@@ -251,7 +353,7 @@ def test_update_agent_profile(monkeypatch: pytest.MonkeyPatch):
         uid,
         AgentProfileUpdate(
             username="bot-qa-2",
-            model="claude-3",
+            model="claude-3-opus",
             temperature=0.5,
             skills=["Refactor"],
             tools=["fs_read"],
@@ -263,7 +365,7 @@ def test_update_agent_profile(monkeypatch: pytest.MonkeyPatch):
     )
 
     assert response.data.username == "bot-qa-2"
-    assert response.data.model == "claude-3"
+    assert response.data.model == "claude-3-opus"
     assert response.data.temperature == 0.5
     assert response.data.enabled is False
     assert response.data.tools == ["fs_read"]
@@ -277,7 +379,7 @@ def test_update_agent_profile(monkeypatch: pytest.MonkeyPatch):
     assert response.data.email == "bot@socialseed.com"
     assert response.data.limits == {"max_tokens": 4000}
     assert cursor.users[uid]["username"] == "bot-qa-2"
-    assert cursor.agents[uid]["model"] == "claude-3"
+    assert cursor.agents[uid]["model"] == "claude-3-opus"
     assert cursor.agent_user_skills[uid] == {"refactor"}  # #577 replace on agent tables
 
     with pytest.raises(HTTPException) as not_found:
@@ -302,10 +404,10 @@ def test_update_without_permission_fields_keeps_stored_capabilities(
     uid = _create_agent().data.id
 
     response = agent_profiles.update_agent_profile(
-        uid, AgentProfileUpdate(model="gpt-4o-mini")
+        uid, AgentProfileUpdate(model="gpt-4o")
     )
 
-    assert response.data.model == "gpt-4o-mini"
+    assert response.data.model == "gpt-4o"
     assert response.data.read_access == ["repository", "issues"]
     assert response.data.write_access == ["issues"]
     assert response.data.propose_access == ["repository"]
@@ -328,9 +430,24 @@ def test_update_agent_profile_last_used_at(monkeypatch: pytest.MonkeyPatch):
     assert cursor.agents[uid]["last_used_at"] == used_at
 
     # None keeps the stored timestamp on later partial updates
-    agent_profiles.update_agent_profile(uid, AgentProfileUpdate(model="gpt-4o-mini"))
+    agent_profiles.update_agent_profile(uid, AgentProfileUpdate(model="gpt-4o"))
     assert cursor.agents[uid]["last_used_at"] == used_at
-    assert agent_profiles.get_agent_profile(uid).data.model == "gpt-4o-mini"
+    assert agent_profiles.get_agent_profile(uid).data.model == "gpt-4o"
+
+
+def test_update_rejects_invalid_temperature_without_changing_profile(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    cursor = FakePgCursor()
+    _install_agent_env(monkeypatch, cursor)
+    uid = _create_agent().data.id
+
+    with pytest.raises(HTTPException) as exc:
+        agent_profiles.update_agent_profile(uid, AgentProfileUpdate(temperature=2.1))
+
+    assert exc.value.status_code == 422
+    assert "model_parameter_incompatible" in str(exc.value.detail)
+    assert cursor.agents[uid]["temperature"] == 0.2
 
 
 # ---------------------------------------------------------------------------

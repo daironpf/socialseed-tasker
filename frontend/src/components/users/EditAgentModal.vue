@@ -81,7 +81,7 @@
             v-model.number="form.temperature"
             type="range"
             min="0"
-            max="2"
+            :max="selectedModel?.temperatureMax ?? 2"
             step="0.05"
             class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-purple-600"
           />
@@ -304,13 +304,15 @@ const form = ref<AgentForm>({ ...defaultForm })
 const pickerOpen = ref(false)
 
 const models = [
-  { value: 'claude-3.5-sonnet', label: 'Claude 3.5 Sonnet' },
-  { value: 'claude-3-opus', label: 'Claude 3 Opus' },
-  { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
-  { value: 'gpt-4o', label: 'GPT-4o' },
-  { value: 'gemini-pro', label: 'Gemini Pro' },
-  { value: 'llama-3', label: 'Llama 3' },
+  { value: 'claude-3.5-sonnet', label: 'Claude 3.5 Sonnet', temperatureMax: 1 },
+  { value: 'claude-3-opus', label: 'Claude 3 Opus', temperatureMax: 1 },
+  { value: 'gpt-4-turbo', label: 'GPT-4 Turbo', temperatureMax: 2 },
+  { value: 'gpt-4o', label: 'GPT-4o', temperatureMax: 2 },
+  { value: 'gemini-pro', label: 'Gemini Pro', temperatureMax: 2 },
+  { value: 'llama-3', label: 'Llama 3', temperatureMax: 2 },
 ]
+
+const selectedModel = computed(() => models.find(model => model.value === form.value.model))
 
 // Canonical slugs: GET /tools in real mode, AGENT_TOOLS as local fallback in
 // mock mode or when the catalog is down (#572 - end of the divergent lists).

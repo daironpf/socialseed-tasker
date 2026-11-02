@@ -578,7 +578,7 @@ function closeEditAgent() {
       } else if (err.status === 422 || err.status === 404) {
         toast.error(`${t('common.error')}: ${err.message}`)
       } else {
-        toast.error(t('common.error'))
+        toast.error(err.message ? `${t('common.error')}: ${err.message}` : t('common.error'))
       }
     }
   }
@@ -670,7 +670,7 @@ async function createUser(data: CreateUserData) {
     } else if (err.status === 422) {
       toast.error(`${t('common.error')}: ${err.message}`)
     } else {
-      toast.error(t('common.error'))
+      toast.error(err.message ? `${t('common.error')}: ${err.message}` : t('common.error'))
     }
     createDraft.value = data
     showCreateModal.value = true

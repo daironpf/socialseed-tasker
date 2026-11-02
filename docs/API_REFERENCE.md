@@ -436,6 +436,20 @@ A successful create returns `201`. Omitted permission lists default to `[]`
 (no access). Unknown tools or resource scopes return `422` before anything is
 written.
 
+The `model` is required on creation and must match the allowed catalog:
+`claude-3.5-sonnet`, `claude-3-opus`, `gpt-4-turbo`, `gpt-4o`, `gemini-pro`
+or `llama-3`. The selected provider must be configured in the API runtime:
+`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY` (or `GOOGLE_API_KEY`),
+or `OLLAMA_BASE_URL`, respectively. Missing provider configuration returns
+`503`; a missing or unsupported model returns `422`. The API only checks that
+the required setting is present and never stores or returns its value.
+
+`temperature` is optional and, when provided, must be finite and within the
+selected model's range: `0..1` for Anthropic models and `0..2` for the other
+catalog entries. Invalid values return `422`; the server does not clamp or
+replace them. Model configuration errors are returned to the UI, and failed
+saves leave the profile unchanged.
+
 ### List Agent Profiles
 ```http
 GET /agents/profiles
@@ -460,6 +474,9 @@ value, while an explicit empty list clears it (granting nothing). Existing
 profiles created before this contract expose empty `read_access`,
 `propose_access` and `apply_access`; their `write_access` is preserved but is
 not translated into new capabilities.
+When changing `model`, it must be in the allowed catalog and configured for
+the runtime; an invalid model or temperature is rejected without changing the
+stored profile.
 
 ### Delete Agent Profile
 ```http

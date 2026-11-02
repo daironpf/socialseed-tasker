@@ -321,11 +321,13 @@ indicar qué identificadores completa y actualizar su estado al cerrarse.
   demuestra que un perfil no puede ampliar una política superior; los valores
   heredados se distinguen de los valores explícitos y las decisiones no
   disponibles fallan de forma segura.
-- **AGENT-03 — Validación de modelo y configuración** — Pendiente de verificar.
-  Comprobar y completar la validación de que el modelo esté permitido y
-  configurado y que sus parámetros estén dentro del rango soportado.
-  **Aceptación:** modelo o parámetro inválido produce error explícito; no se
-  sustituye silenciosamente por un valor distinto.
+- **AGENT-03 — Validación de modelo y configuración** — Implementado.
+  El backend exige un modelo permitido y configurado para crear perfiles;
+  temperatura se valida como valor finito dentro del rango del modelo/proveedor.
+  **Aceptación:** modelo ausente/no permitido o proveedor no configurado
+  produce error explícito (`422`/`503`); parámetros incompatibles se rechazan
+  y no se sustituyen. Las credenciales solo se consultan en el entorno de
+  ejecución y no se guardan ni exponen en perfiles o respuestas.
 
 ### Enforcement y seguridad operativa
 
