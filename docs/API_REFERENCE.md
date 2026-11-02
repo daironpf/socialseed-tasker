@@ -483,10 +483,103 @@ stored profile.
 DELETE /agents/profiles/{agent_id}
 ```
 
+### Effective permissions and inheritance
+
+Organization and project policies are ceilings: the effective permission set
+is the profile's explicit set intersected with every applicable policy. A
+policy can restrict a profile but never widen it. A policy field set to `null`
+is silent (no extra restriction); `[]` denies that capability completely.
+
+```http
+POST /agents/permission-policies
+{
+  "name": "Project read ceiling",
+  "scope_type": "project",
+  "scope_id": "proj-1",
+  "tools": ["fs_read", "test_runner"],
+  "read_access": ["repository", "tests"],
+  "propose_access": null,
+  "apply_access": [],
+  "is_active": true
+}
+```
+
+Policy administration is available through `GET /agents/permission-policies`
+(optional `scope_type`, `scope_id` and `is_active` filters) and
+`DELETE /agents/permission-policies/{policy_id}`. Unknown tools or resource
+scopes return `422` before the policy is written.
+
+```http
+GET /agents/profiles/{agent_id}/permissions?organization_id=org-1&project_id=proj-1
+```
+
+The response keeps the three states explicit:
+
+```json
+{
+  "agent_id": "agent-1",
+  "status": "resolved",
+  "profile_enabled": true,
+  "explicit": {"tools": ["fs_read", "test_runner"], "read_access": ["repository", "issues", "tests"], "propose_access": ["repository"], "apply_access": ["tests"]},
+  "inherited": {"tools": ["fs_read"], "read_access": ["repository", "tests"], "propose_access": null, "apply_access": null},
+  "effective": {"tools": ["fs_read"], "read_access": ["repository", "tests"], "propose_access": ["repository"], "apply_access": ["tests"]},
+  "sources": [{"id": "policy-1", "name": "Project read ceiling", "scope": "project", "scope_id": "proj-1"}],
+  "errors": []
+}
+```
+
+Without organization/project context this query reports only explicit
+permissions; this response is informational and does not authorize an action.
+A disabled profile has empty effective capabilities. Malformed active policies
+produce `status: "unresolved"`, empty effective capabilities and safe error
+codes such as `policy:<id>:resource:<scope>`; callers must treat this as a
+denial. If the policy source is unavailable the endpoint returns `503`.
+
+### Run-scoped MCP authorization
+
+Start an agent run on an issue:
+
+```http
+POST /issues/{issue_id}/agent/start
+{"agent_id": "agent-uuid"}
+```
+
+The API derives the project from the issue's component and resolves its
+`project`, `project_id` or slug against persisted Project nodes. A missing or
+ambiguous backend mapping or an unauthorized/disabled profile is denied before
+the issue is marked as being worked on. On success,
+the response includes an `X-Agent-Execution-Token` header. The token is signed,
+expires after `TASKER_AGENT_EXECUTION_TTL` seconds (default `900`), and is
+bound to the agent profile, persisted run, issue and project. The default CORS
+configuration exposes this header to browser clients.
+
+Send the token as a bearer credential only when calling the streamable HTTP MCP
+endpoint:
+
+```http
+POST /mcp
+Authorization: Bearer aet_<signed-token>
+```
+
+Each MCP tool invocation verifies the active run, reloads the enabled profile
+and current policies, and checks the catalog tool plus the requested action
+and resource scope. Closing the run or changing the profile/policy affects
+subsequent calls immediately. The token is not accepted as authentication for
+other API routes.
+
+The current MCP tools are read-only and use the `neo4j_query` tool capability.
+Issue and graph responses are restricted to the run's project; the global
+`active_policies` tool is denied for agent tokens because those policies do not
+carry project ownership. Organization policies are also fail-closed while the
+backend cannot derive a project's organization: if any active organization
+policy exists, agent actions are denied rather than skipping that ceiling.
+Future proposal or apply tools must use the same authorizer with the separate
+`propose_access` or `apply_access` capability; proposal permission never grants
+application permission.
+
 Provider credentials are not part of the profile contract and are never
 stored there; they belong to the execution environment's secret management.
-This contract defines data and API semantics only: per-action authorization is
-covered by the execution layer and is not implied by saving a profile.
+Saving a profile alone never authorizes an action.
 
 ## Labels
 

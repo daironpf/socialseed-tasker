@@ -10,7 +10,8 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
+import psycopg
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from socialseed_tasker.application.actions import (
@@ -43,6 +44,7 @@ from socialseed_tasker.application.github_sync import (
     push_issue_to_github,
     resolve_github_conflict,
 )
+from socialseed_tasker.auth.tokens import issue_agent_execution_token
 from socialseed_tasker.domain.entities import (
     Agent,
     AgentRole,
@@ -58,6 +60,11 @@ from socialseed_tasker.domain.entities import (
     ObjectiveStatus,
     User,
     UserRole,
+)
+from socialseed_tasker.infrastructure.web_api.agent_authorization import (
+    create_agent_action_authorizer,
+    create_agent_profile_store,
+    resolve_component_project_id,
 )
 from socialseed_tasker.infrastructure.web_api.routers.chat import _resolve_user
 from socialseed_tasker.infrastructure.web_api.routers.helpers import (
@@ -1267,27 +1274,101 @@ def _run_agent_finish(issue_id: str, agent_id: str, repo: TaskRepositoryInterfac
     "/issues/{issue_id}/agent/start",
     response_model=APIResponse[IssueResponse],
     summary="Start agent work",
-    description="Start agent work on an issue. Requires agent_working=false.",
+    description=(
+        "Start an authorized agent run. Requires a resolvable project context and "
+        "read access to issues; returns a short-lived MCP credential in "
+        "X-Agent-Execution-Token."
+    ),
     responses={
+        200: {
+            "headers": {
+                "X-Agent-Execution-Token": {
+                    "description": "Signed token scoped to this agent run, issue and project.",
+                    "schema": {"type": "string"},
+                }
+            }
+        },
         404: {"description": "Issue not found"},
         409: {"description": "Agent is already working on this issue"},
+        403: {"description": "Agent authorization denied or project context unavailable"},
+        503: {"description": "Agent authorization or run store unavailable"},
     },
 )
 def start_agent_work(
     issue_id: str,
     body: AgentStartRequest,
     request: Request,
+    response: Response,
     repo: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[IssueResponse]:
+    issue = repo.get_issue(issue_id)
+    if issue is None:
+        raise IssueNotFoundError(issue_id)
+    if getattr(issue, "agent_working", False):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Agent is already working on issue {issue_id}",
+        )
+    component = repo.get_component(str(issue.component_id))
+    project_id = resolve_component_project_id(component, repo) if component else None
+    if project_id is None:
+        logger.warning(
+            "Agent action denied: agent=%s tool=agent_run_start action=read scope=issues "
+            "reason=project_context_unresolved",
+            body.agent_id,
+        )
+        raise HTTPException(status_code=403, detail="Agent authorization context unavailable")
+
+    try:
+        authorizer = create_agent_action_authorizer()
+        profiles = create_agent_profile_store()
+        profile = profiles.get_profile(body.agent_id)
+        decision = authorizer.authorize(
+            agent_id=body.agent_id,
+            tool=None,
+            action="read",
+            resource_scope="issues",
+            project_id=project_id,
+        )
+    except psycopg.Error as exc:
+        raise HTTPException(status_code=503, detail="Agent authorization source unavailable") from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    if not decision.allowed or profile is None:
+        raise HTTPException(status_code=403, detail="Agent is not authorized to start this issue")
+
+    try:
+        run = profiles.create_run(body.agent_id, issue_id=issue_id, model=profile.get("model"))
+    except LookupError as exc:
+        raise HTTPException(status_code=403, detail="Agent is not authorized to start this issue") from exc
+    except psycopg.Error as exc:
+        raise HTTPException(status_code=503, detail="Agent run store unavailable") from exc
+
     try:
         updated_issue = _run_agent_start(issue_id, body.agent_id, repo)
-    except ValueError as e:
-        raise HTTPException(status_code=409, detail=str(e)) from e
-    publish_issue_update(request.app, issue_id, _agent_flag_payload(updated_issue))
-    # #574: best-effort open of a persistent run (no-op for non-PG agent ids).
-    from socialseed_tasker.infrastructure.web_api.routers.agent_runs import open_run_best_effort
+    except ValueError as exc:
+        profiles.update_run(
+            str(run["id"]),
+            status="failed",
+            finished_at=datetime.now(timezone.utc),
+        )
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception:
+        profiles.update_run(
+            str(run["id"]),
+            status="failed",
+            finished_at=datetime.now(timezone.utc),
+        )
+        raise
 
-    open_run_best_effort(body.agent_id, issue_id=issue_id)
+    response.headers["X-Agent-Execution-Token"] = issue_agent_execution_token(
+        agent_id=body.agent_id,
+        run_id=str(run["id"]),
+        issue_id=issue_id,
+        project_id=project_id,
+    )
+    publish_issue_update(request.app, issue_id, _agent_flag_payload(updated_issue))
     return APIResponse(data=_issue_to_response(updated_issue), meta=Meta(request_id=None))
 
 

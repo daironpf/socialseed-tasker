@@ -26,6 +26,7 @@ from typing import Any
 SECRET = os.getenv("TASKER_JWT_SECRET", "tasker-dev-secret-change-me")
 ACCESS_TTL = int(os.getenv("TASKER_JWT_ACCESS_TTL", "900"))
 REFRESH_TTL = int(os.getenv("TASKER_JWT_REFRESH_TTL", "604800"))
+AGENT_EXECUTION_TTL = int(os.getenv("TASKER_AGENT_EXECUTION_TTL", "900"))
 
 
 def _b64e(raw: bytes) -> bytes:
@@ -111,6 +112,41 @@ def issue_tokens(user: dict[str, Any], session_id: str | None = None) -> dict[st
 def verify_access(token: str) -> dict[str, Any] | None:
     claims = _decode(token)
     if claims is None or claims.get("typ") != "access":
+        return None
+    return claims
+
+
+def issue_agent_execution_token(
+    *,
+    agent_id: str,
+    run_id: str,
+    issue_id: str,
+    project_id: str,
+) -> str:
+    """Issue a short-lived credential scoped to one persisted agent run."""
+    now = int(time.time())
+    claims = {
+        "sub": agent_id,
+        "typ": "agent_execution",
+        "run_id": run_id,
+        "issue_id": issue_id,
+        "project_id": project_id,
+        "iat": now,
+        "exp": now + AGENT_EXECUTION_TTL,
+        "jti": uuid.uuid4().hex,
+    }
+    return "aet_" + _sign(claims)
+
+
+def verify_agent_execution_token(token: str) -> dict[str, Any] | None:
+    """Verify an agent execution credential and its required scope claims."""
+    if not token.startswith("aet_"):
+        return None
+    claims = _decode(token[4:])
+    if claims is None or claims.get("typ") != "agent_execution":
+        return None
+    required = ("sub", "run_id", "issue_id", "project_id", "jti")
+    if any(not isinstance(claims.get(key), str) or not claims[key] for key in required):
         return None
     return claims
 

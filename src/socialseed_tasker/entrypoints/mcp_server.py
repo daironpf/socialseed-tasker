@@ -17,7 +17,8 @@ import hashlib
 import logging
 import time
 from collections.abc import Callable
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, NoReturn
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.context import Context
@@ -31,6 +32,7 @@ from socialseed_tasker.application.actions import (
 )
 from socialseed_tasker.application.analyzer import RootCauseAnalyzer
 from socialseed_tasker.application.policy import Policy
+from socialseed_tasker.auth.tokens import verify_agent_execution_token
 from socialseed_tasker.domain.entities import Component, Issue
 from socialseed_tasker.infrastructure.neo4j_policy_repository import PolicyRepository
 
@@ -51,6 +53,14 @@ MCP_TOOL_NAMES: tuple[str, ...] = (
 RepoProvider = Callable[[], TaskRepositoryInterface]
 DriverProvider = Callable[[], Any]
 AuditSink = Callable[[dict[str, Any]], None]
+
+
+@dataclass(frozen=True)
+class AgentExecutionContext:
+    agent_id: str
+    issue_id: str
+    project_id: str
+    project_name: str
 
 
 def _enum_value(value: Any) -> Any:
@@ -136,6 +146,130 @@ def _record(
         logger.warning("MCP audit sink failed for tool %s", tool, exc_info=True)
 
 
+def _authorization_header(ctx: Context | None) -> str | None:
+    headers = ctx.headers if ctx is not None else None
+    for key, value in (headers or {}).items():
+        if str(key).lower() == "authorization" and str(value).lower().startswith("bearer "):
+            return str(value)[7:].strip()
+    return None
+
+
+def _deny_agent_tool(
+    *,
+    agent_id: str,
+    tool: str,
+    resource_scope: str,
+    reason: str,
+) -> NoReturn:
+    logger.warning(
+        "Agent action denied: agent=%s tool=%s action=read scope=%s reason=%s",
+        agent_id,
+        tool,
+        resource_scope,
+        reason,
+    )
+    raise PermissionError("Agent action denied")
+
+
+def _authorize_agent_tool(
+    *,
+    tool: str,
+    resource_scope: str,
+    ctx: Context | None,
+    repository: TaskRepositoryInterface,
+) -> AgentExecutionContext | None:
+    token = _authorization_header(ctx)
+    if token is None or not token.startswith("aet_"):
+        return None
+    claims = verify_agent_execution_token(token)
+    if claims is None:
+        _deny_agent_tool(
+            agent_id="unknown",
+            tool=tool,
+            resource_scope=resource_scope,
+            reason="invalid_execution_credential",
+        )
+
+    from socialseed_tasker.infrastructure.web_api.agent_authorization import (
+        create_agent_action_authorizer,
+        create_agent_profile_store,
+        resolve_component_project_id,
+    )
+
+    agent_id = str(claims["sub"])
+    issue_id = str(claims["issue_id"])
+    project_id = str(claims["project_id"])
+    run = create_agent_profile_store().get_run(str(claims["run_id"]))
+    if (
+        run is None
+        or run.get("status") != "running"
+        or str(run.get("agent_id")) != agent_id
+        or str(run.get("issue_id")) != issue_id
+    ):
+        _deny_agent_tool(
+            agent_id=agent_id,
+            tool=tool,
+            resource_scope=resource_scope,
+            reason="run_inactive",
+        )
+
+    decision = create_agent_action_authorizer().authorize(
+        agent_id=agent_id,
+        tool=tool,
+        action="read",
+        resource_scope=resource_scope,
+        project_id=project_id,
+    )
+    if not decision.allowed:
+        _deny_agent_tool(
+            agent_id=agent_id,
+            tool=tool,
+            resource_scope=resource_scope,
+            reason=decision.reason,
+        )
+
+    issue = repository.get_issue(issue_id)
+    if issue is None:
+        _deny_agent_tool(
+            agent_id=agent_id,
+            tool=tool,
+            resource_scope=resource_scope,
+            reason="execution_resource_missing",
+        )
+    component = repository.get_component(str(issue.component_id))
+    if component is None or resolve_component_project_id(component, repository) != project_id:
+        _deny_agent_tool(
+            agent_id=agent_id,
+            tool=tool,
+            resource_scope=resource_scope,
+            reason="project_context_changed",
+        )
+    return AgentExecutionContext(
+        agent_id=agent_id,
+        issue_id=issue_id,
+        project_id=project_id,
+        project_name=component.project,
+    )
+
+
+def _issue_in_agent_project(
+    issue: Issue,
+    context: AgentExecutionContext,
+    repository: TaskRepositoryInterface,
+) -> bool:
+    component = repository.get_component(str(issue.component_id))
+    return component is not None and _component_in_agent_project(component, context)
+
+
+def _component_in_agent_project(
+    component: Component,
+    context: AgentExecutionContext,
+) -> bool:
+    if component.project_id:
+        return str(component.project_id) == context.project_id
+    return component.project == context.project_name
+
+
 def build_mcp_server(
     repo_provider: RepoProvider,
     driver_provider: DriverProvider | None = None,
@@ -178,8 +312,31 @@ def build_mcp_server(
         arguments: dict[str, Any] = {"project": project}
         try:
             repository = _repo()
-            components = repository.list_components(project=project)
-            issues = repository.list_issues(project=project)
+            agent_context = _authorize_agent_tool(
+                tool="neo4j_query",
+                resource_scope="graph",
+                ctx=ctx,
+                repository=repository,
+            )
+            if agent_context and project and project != agent_context.project_name:
+                _deny_agent_tool(
+                    agent_id=agent_context.agent_id,
+                    tool="neo4j_query",
+                    resource_scope="graph",
+                    reason="project_out_of_scope",
+                )
+            effective_project = agent_context.project_name if agent_context else project
+            components = repository.list_components(project=effective_project)
+            if agent_context:
+                components = [
+                    component
+                    for component in components
+                    if _component_in_agent_project(component, agent_context)
+                ]
+            component_ids = {str(component.id) for component in components}
+            issues = repository.list_issues(project=effective_project)
+            if agent_context:
+                issues = [issue for issue in issues if str(issue.component_id) in component_ids]
             counts: dict[str, dict[str, int]] = {}
             for issue in issues:
                 key = str(issue.component_id) if issue.component_id else ""
@@ -197,6 +354,8 @@ def build_mcp_server(
             edges: list[dict[str, str]] = []
             for component in components:
                 for dependency in repository.get_component_dependencies(str(component.id)):
+                    if agent_context and str(dependency.id) not in component_ids:
+                        continue
                     edges.append(
                         {"source": str(component.id), "target": str(dependency.id), "type": "DEPENDS_ON"}
                     )
@@ -223,7 +382,29 @@ def build_mcp_server(
         started = time.perf_counter()
         arguments: dict[str, Any] = {"project": project}
         try:
-            components = _repo().list_components(project=project)
+            repository = _repo()
+            agent_context = _authorize_agent_tool(
+                tool="neo4j_query",
+                resource_scope="graph",
+                ctx=ctx,
+                repository=repository,
+            )
+            if agent_context and project and project != agent_context.project_name:
+                _deny_agent_tool(
+                    agent_id=agent_context.agent_id,
+                    tool="neo4j_query",
+                    resource_scope="graph",
+                    reason="project_out_of_scope",
+                )
+            components = repository.list_components(
+                project=agent_context.project_name if agent_context else project
+            )
+            if agent_context:
+                components = [
+                    component
+                    for component in components
+                    if _component_in_agent_project(component, agent_context)
+                ]
         except Exception as exc:
             _record("list_components", arguments, started, ctx, audit, error=str(exc))
             raise
@@ -247,13 +428,29 @@ def build_mcp_server(
         started = time.perf_counter()
         try:
             repository = _repo()
+            agent_context = _authorize_agent_tool(
+                tool="neo4j_query",
+                resource_scope="issues",
+                ctx=ctx,
+                repository=repository,
+            )
             blocked = get_blocked_issues_action(repository)
+            if agent_context:
+                blocked = [
+                    issue
+                    for issue in blocked
+                    if _issue_in_agent_project(issue, agent_context, repository)
+                ]
             issues = []
             for issue in blocked:
                 open_blockers = [
                     dependency
                     for dependency in repository.get_dependencies(str(issue.id))
                     if dependency.status.value != "CLOSED"
+                    and (
+                        agent_context is None
+                        or _issue_in_agent_project(dependency, agent_context, repository)
+                    )
                 ]
                 summary = _issue_summary(issue)
                 summary["blockedBy"] = [
@@ -275,6 +472,20 @@ def build_mcp_server(
     def active_policies(ctx: Context | None = None) -> dict[str, Any]:
         started = time.perf_counter()
         try:
+            repository = _repo()
+            agent_context = _authorize_agent_tool(
+                tool="neo4j_query",
+                resource_scope="configuration",
+                ctx=ctx,
+                repository=repository,
+            )
+            if agent_context:
+                _deny_agent_tool(
+                    agent_id=agent_context.agent_id,
+                    tool="neo4j_query",
+                    resource_scope="configuration",
+                    reason="resource_context_unresolved",
+                )
             driver = _driver()
             if driver is None:
                 raise RuntimeError("Neo4j driver not available; active policies require the graph database")
@@ -296,19 +507,38 @@ def build_mcp_server(
         arguments: dict[str, Any] = {"issue_id": issue_id}
         try:
             repository = _repo()
+            agent_context = _authorize_agent_tool(
+                tool="neo4j_query",
+                resource_scope="issues",
+                ctx=ctx,
+                repository=repository,
+            )
             issue = repository.get_issue(issue_id)
             if issue is None:
                 raise ValueError(f"Issue '{issue_id}' not found")
+            if agent_context and not _issue_in_agent_project(issue, agent_context, repository):
+                _deny_agent_tool(
+                    agent_id=agent_context.agent_id,
+                    tool="neo4j_query",
+                    resource_scope="issues",
+                    reason="issue_out_of_scope",
+                )
             detail = _issue_summary(issue)
             detail["description"] = issue.description
             detail["resolution"] = issue.resolution
             detail["resolvedByCommitSha"] = issue.resolved_by_commit_sha
             detail["closedAt"] = issue.closed_at.isoformat() if issue.closed_at else None
             detail["dependencies"] = [
-                _issue_summary(dep) for dep in repository.get_dependencies(issue_id)
+                _issue_summary(dep)
+                for dep in repository.get_dependencies(issue_id)
+                if agent_context is None
+                or _issue_in_agent_project(dep, agent_context, repository)
             ]
             detail["dependents"] = [
-                _issue_summary(dep) for dep in repository.get_dependents(issue_id)
+                _issue_summary(dep)
+                for dep in repository.get_dependents(issue_id)
+                if agent_context is None
+                or _issue_in_agent_project(dep, agent_context, repository)
             ]
         except Exception as exc:
             _record("issue_detail", arguments, started, ctx, audit, error=str(exc))
@@ -327,20 +557,67 @@ def build_mcp_server(
         arguments: dict[str, Any] = {"issue_id": issue_id}
         try:
             repository = _repo()
+            agent_context = _authorize_agent_tool(
+                tool="neo4j_query",
+                resource_scope="issues",
+                ctx=ctx,
+                repository=repository,
+            )
             issue = repository.get_issue(issue_id)
             if issue is None:
                 raise ValueError(f"Issue '{issue_id}' not found")
-            impact = RootCauseAnalyzer(repository).analyze_impact(issue_id)
+            if agent_context and not _issue_in_agent_project(issue, agent_context, repository):
+                _deny_agent_tool(
+                    agent_id=agent_context.agent_id,
+                    tool="neo4j_query",
+                    resource_scope="issues",
+                    reason="issue_out_of_scope",
+                )
+            analyzer = RootCauseAnalyzer(repository)
+            impact = analyzer.analyze_impact(issue_id)
+            direct = [
+                affected
+                for affected in impact.directly_affected
+                if agent_context is None
+                or _issue_in_agent_project(affected, agent_context, repository)
+            ]
+            transitive = [
+                affected
+                for affected in impact.transitively_affected
+                if agent_context is None
+                or _issue_in_agent_project(affected, agent_context, repository)
+            ]
+            blocked = [
+                affected
+                for affected in impact.blocked_issues
+                if agent_context is None
+                or _issue_in_agent_project(affected, agent_context, repository)
+            ]
             data = {
                 "issueId": str(impact.issue_id),
                 "issueTitle": issue.title,
-                "riskLevel": _enum_value(impact.risk_level),
-                "graphDepth": impact.graph_depth,
-                "affectedComponents": list(impact.affected_components),
-                "directlyAffected": [_issue_summary(i) for i in impact.directly_affected],
-                "transitivelyAffected": [_issue_summary(i) for i in impact.transitively_affected],
-                "blockedIssues": [_issue_summary(i) for i in impact.blocked_issues],
-                "totalAffected": len(impact.directly_affected) + len(impact.transitively_affected),
+                "riskLevel": _enum_value(
+                    analyzer._calculate_risk_level(len(direct), len(transitive), len(blocked))
+                    if agent_context
+                    else impact.risk_level
+                ),
+                "graphDepth": (
+                    2 if transitive else 1 if direct else 0
+                )
+                if agent_context
+                else impact.graph_depth,
+                "affectedComponents": sorted(
+                    {
+                        str(affected.component_id)
+                        for affected in direct + transitive + blocked
+                    }
+                )
+                if agent_context
+                else list(impact.affected_components),
+                "directlyAffected": [_issue_summary(i) for i in direct],
+                "transitivelyAffected": [_issue_summary(i) for i in transitive],
+                "blockedIssues": [_issue_summary(i) for i in blocked],
+                "totalAffected": len(direct) + len(transitive),
             }
         except Exception as exc:
             _record("dependency_impact", arguments, started, ctx, audit, error=str(exc))

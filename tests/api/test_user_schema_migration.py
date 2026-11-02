@@ -25,6 +25,7 @@ EXPECTED_TABLES = {
     "users",
     "human_user",
     "agents_user",
+    "agent_permission_policies",
     "user_skills",
     "session_logs",
 }
@@ -127,6 +128,15 @@ class TestCreateSchema:
             "propose_access",
             "apply_access",
         } <= cursor.columns["agents_user"]
+        assert {
+            "scope_type",
+            "scope_id",
+            "tools",
+            "read_access",
+            "propose_access",
+            "apply_access",
+            "is_active",
+        } <= cursor.columns["agent_permission_policies"]
         assert "event" in cursor.columns["session_logs"]
 
         role_seeds = [seq for sql, seq in cursor.executemany_statements if "INSERT INTO roles" in sql]
@@ -146,6 +156,7 @@ class TestCreateSchema:
         assert "ALTER TABLE users" not in joined
         assert "ix_users_user_type" in joined
         assert "ix_session_logs_user_created" in joined
+        assert "ix_agent_permission_policies_scope" in joined
 
     def test_second_run_on_normalized_database_is_idempotent(
         self, monkeypatch: pytest.MonkeyPatch

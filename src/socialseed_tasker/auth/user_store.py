@@ -21,7 +21,10 @@ import bcrypt
 import psycopg
 
 from socialseed_tasker.config.storage import get_database_url
-from socialseed_tasker.domain.agent_permissions import normalize_resource_scopes
+from socialseed_tasker.domain.agent_permissions import (
+    normalize_resource_scopes,
+    normalize_tool_slugs,
+)
 
 _INVALID_USERNAME_CHARS = re.compile(r"[^a-z0-9.]")
 _SKILL_SLUG_CHARS = re.compile(r"[^a-z0-9]+")
@@ -210,6 +213,25 @@ AGENT_PERMISSION_MIGRATION_DDL: tuple[str, ...] = tuple(
     for column in AGENT_PERMISSION_COLUMNS
 )
 
+# Organization/project ceilings for agent capabilities (#613). A NULL JSONB
+# column means the policy is silent for that capability; an empty array denies
+# it completely.
+AGENT_PERMISSION_POLICIES_DDL = """
+CREATE TABLE IF NOT EXISTS agent_permission_policies (
+    id             TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    name           TEXT NOT NULL,
+    scope_type     TEXT NOT NULL CHECK (scope_type IN ('organization', 'project')),
+    scope_id       TEXT NOT NULL,
+    tools          JSONB,
+    read_access    JSONB,
+    propose_access JSONB,
+    apply_access   JSONB,
+    is_active      BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+)
+"""
+
 USER_SKILLS_DDL = """
 CREATE TABLE IF NOT EXISTS user_skills (
     user_id  TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -299,6 +321,8 @@ INDEX_DDL: tuple[str, ...] = (
     "CREATE INDEX IF NOT EXISTS ix_user_skills_skill ON user_skills (skill_id)",
     "CREATE INDEX IF NOT EXISTS ix_session_logs_user_created ON session_logs (user_id, created_at DESC)",
     "CREATE INDEX IF NOT EXISTS ix_agent_runs_agent_started ON agent_runs (agent_id, started_at DESC)",
+    "CREATE INDEX IF NOT EXISTS ix_agent_permission_policies_scope "
+    "ON agent_permission_policies (scope_type, scope_id, is_active)",
     "CREATE INDEX IF NOT EXISTS ix_workflows_source ON workflows (source)",
 )
 
@@ -452,6 +476,7 @@ class PostgresUserStore:
                 SESSION_LOGS_DDL,
                 AGENT_RUNS_DDL,
                 AGENT_RUN_LOGS_DDL,
+                AGENT_PERMISSION_POLICIES_DDL,
                 WORKFLOWS_DDL,
             ):
                 cur.execute(ddl)
@@ -1194,6 +1219,161 @@ def _as_json_dict(value: Any) -> dict[str, Any] | None:
     return dict(value)
 
 
+def _as_optional_json_list(value: Any) -> list[str] | None:
+    """Normalize a nullable JSONB list without turning ``NULL`` into ``[]``."""
+    return None if value is None else _as_json_list(value)
+
+
+_AGENT_POLICY_ROW_SQL = (
+    "id, name, scope_type, scope_id, tools, read_access, propose_access, "
+    "apply_access, is_active, created_at"
+)
+
+
+class PostgresAgentPermissionPolicyStore:
+    """CRUD for organization/project permission ceilings (issue #613).
+
+    ``NULL`` capability columns are preserved as "policy is silent"; empty
+    JSONB arrays are preserved as "deny this capability". Tool slugs and
+    resource scopes are validated before writing and again when composing the
+    effective decision.
+    """
+
+    def __init__(self, database_url: str, tool_slugs: set[str] | None = None) -> None:
+        self._database_url = database_url
+        self._tool_slugs = (
+            tool_slugs if tool_slugs is not None else {slug for slug, _, _ in TOOLS_SEED}
+        )
+
+    def create_policy(
+        self,
+        *,
+        name: str,
+        scope_type: str,
+        scope_id: str,
+        tools: list[str] | None = None,
+        read_access: list[str] | None = None,
+        propose_access: list[str] | None = None,
+        apply_access: list[str] | None = None,
+        is_active: bool = True,
+    ) -> dict[str, Any]:
+        """Insert a policy and return it; invalid scopes/tools raise ``ValueError``."""
+        if scope_type not in ("organization", "project"):
+            raise ValueError(f"scope:{scope_type}")
+        clean_scope_id = scope_id.strip()
+        if not clean_scope_id:
+            raise ValueError("scope_id:<empty>")
+
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute(
+                f"""
+                INSERT INTO agent_permission_policies (
+                    name, scope_type, scope_id, tools, read_access,
+                    propose_access, apply_access, is_active, updated_at
+                ) VALUES (%s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb, %s, now())
+                RETURNING {_AGENT_POLICY_ROW_SQL}
+                """,
+                (
+                    name,
+                    scope_type,
+                    clean_scope_id,
+                    self._json_or_null(tools, self._tool_slugs),
+                    self._json_or_null(read_access, None),
+                    self._json_or_null(propose_access, None),
+                    self._json_or_null(apply_access, None),
+                    is_active,
+                ),
+            )
+            row = cur.fetchone()
+            if row is None:
+                raise RuntimeError("agent_permission_policies INSERT returned no row")
+            return self._row_to_policy(row)
+
+    def list_policies(
+        self,
+        *,
+        scope_type: str | None = None,
+        scope_id: str | None = None,
+        is_active: bool | None = None,
+    ) -> list[dict[str, Any]]:
+        """List policies filtered by their organization/project scope."""
+        clauses: list[str] = []
+        params: list[Any] = []
+        if scope_type is not None:
+            clauses.append("scope_type = %s")
+            params.append(scope_type)
+        if scope_id is not None:
+            clauses.append("scope_id = %s")
+            params.append(scope_id)
+        if is_active is not None:
+            clauses.append("is_active = %s")
+            params.append(is_active)
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute(
+                f"SELECT {_AGENT_POLICY_ROW_SQL} FROM agent_permission_policies "
+                f"{where} ORDER BY scope_type, scope_id, name",
+                tuple(params),
+            )
+            return [self._row_to_policy(row) for row in cur.fetchall()]
+
+    def list_for_context(
+        self, *, organization_id: str | None = None, project_id: str | None = None
+    ) -> list[dict[str, Any]]:
+        """Active policies applicable to an organization and/or project context."""
+        clauses: list[str] = []
+        params: list[Any] = []
+        if organization_id:
+            clauses.append("(scope_type = 'organization' AND scope_id = %s)")
+            params.append(organization_id)
+        if project_id:
+            clauses.append("(scope_type = 'project' AND scope_id = %s)")
+            params.append(project_id)
+        if not clauses:
+            return []
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute(
+                f"SELECT {_AGENT_POLICY_ROW_SQL} FROM agent_permission_policies "
+                f"WHERE is_active AND ({' OR '.join(clauses)}) "
+                "ORDER BY scope_type, scope_id, name",
+                tuple(params),
+            )
+            return [self._row_to_policy(row) for row in cur.fetchall()]
+
+    def delete_policy(self, policy_id: str) -> bool:
+        """Delete one policy; ``False`` when the id does not exist."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM agent_permission_policies WHERE id = %s", (policy_id,))
+            return bool(cur.rowcount)
+
+    def _json_or_null(
+        self, values: list[str] | None, allowed_tools: set[str] | None
+    ) -> str | None:
+        if values is None:
+            return None
+        normalized = (
+            normalize_tool_slugs(values, allowed_tools)
+            if allowed_tools is not None
+            else normalize_resource_scopes(values)
+        )
+        return json.dumps(normalized)
+
+    @staticmethod
+    def _row_to_policy(row: Any) -> dict[str, Any]:
+        return {
+            "id": str(row[0]),
+            "name": row[1],
+            "scope_type": row[2],
+            "scope_id": row[3],
+            "tools": _as_optional_json_list(row[4]),
+            "read_access": _as_optional_json_list(row[5]),
+            "propose_access": _as_optional_json_list(row[6]),
+            "apply_access": _as_optional_json_list(row[7]),
+            "is_active": bool(row[8]),
+            "created_at": row[9],
+        }
+
+
 class PostgresAgentProfileStore:
     """CRUD over ``users`` + ``agents_user`` + ``agent_user_skills`` (issues #564/#577).
 
@@ -1570,6 +1750,16 @@ class PostgresAgentProfileStore:
                 (agent_id, issue_id, model),
             )
             return self._run_row(cur.fetchone())
+
+    def get_run(self, run_id: str) -> dict[str, Any] | None:
+        """Return one persisted run so execution tokens can be revoked on close."""
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute(
+                f"SELECT {self._RUN_ROW_SQL} FROM agent_runs WHERE id = %s",
+                (run_id,),
+            )
+            row = cur.fetchone()
+            return self._run_row(row) if row is not None else None
 
     def ensure_running_run(self, agent_id: str, *, issue_id: str | None = None, model: str | None = None) -> str | None:
         """Return the id of an open ``running`` run (creating one as needed).

@@ -1,35 +1,23 @@
 # Definición de usuario agente
 
-Este documento define qué significa crear y configurar un usuario de tipo
-agente en SocialSeed Tasker. Es la referencia funcional para el formulario,
-el perfil persistido y las políticas que el sistema debe aplicar al ejecutar
-un agente.
+Este documento define qué significa crear y configurar un usuario de tipo agente en SocialSeed Tasker. Es la referencia funcional para el formulario, el perfil persistido y las políticas que el sistema debe aplicar al ejecutar un agente.
 
 ## Propósito y alcance
 
 Un **usuario agente** es una identidad no humana que representa una
-configuración reutilizable de agente dentro de Tasker. Su perfil declara para
-qué sirve, qué modelo y capacidades puede usar, en qué alcance puede operar y
-bajo qué límites y aprobaciones.
+configuración reutilizable de agente dentro de Tasker. Su perfil declara para qué sirve, qué modelo y capacidades puede usar, en qué alcance puede operar y bajo qué límites y aprobaciones.
 
-El perfil no es, por sí solo, una sesión de ejecución, una credencial, un rol
-RBAC ni una autorización para ignorar las políticas del proyecto. La
-orquestación decide cuándo y sobre qué tarea se ejecuta; la autorización se
-valida en el servidor cada vez que el agente intenta realizar una acción.
+El perfil no es, por sí solo, una sesión de ejecución, una credencial, un rol RBAC ni una autorización para ignorar las políticas del proyecto. La orquestación decide cuándo y sobre qué tarea se ejecuta; la autorización se valida en el servidor cada vez que el agente intenta realizar una acción.
 
-Este documento cubre la definición del agente y su creación. No define el
-posicionamiento comercial, la monetización ni el roadmap general del producto.
-Debe usarse como fuente funcional al crear issues para cambios del perfil,
-su interfaz, API, persistencia o ejecución.
+Este documento cubre la definición del agente y su creación. No define el posicionamiento comercial, la monetización ni el roadmap general del producto.
+Debe usarse como fuente funcional al crear issues para cambios del perfil, su interfaz, API, persistencia o ejecución.
 
 Los términos **DEBE**, **NO DEBE** y **PUEDE** expresan requisitos normativos.
-Los identificadores `AGENT-*` de la sección de requisitos son referencias
-estables para issues y pruebas; no son identificadores de issues de GitHub.
+Los identificadores `AGENT-*` de la sección de requisitos son referencias estables para issues y pruebas; no son identificadores de issues de GitHub.
 
 ## Estado de implementación
 
-Los estados distinguen persistir una configuración de hacerla cumplir durante
-la ejecución:
+Los estados distinguen persistir una configuración de hacerla cumplir durante la ejecución:
 
 - **Implementado como dato:** existe en el contrato/perfil; no implica que
   controle acciones en tiempo de ejecución.
@@ -41,59 +29,42 @@ la ejecución:
 |---|---|---|
 | Identidad de agente y CRUD de perfiles | Implementado como dato | Perfil independiente; sin credenciales ni rol RBAC humano |
 | Modelo, especialización, temperatura e instrucciones | Implementado como dato | Se almacenan en el perfil; la disponibilidad del modelo depende de la configuración de ejecución |
-| Skills y herramientas | Parcial | El perfil referencia skills y herramientas; `tools` se valida contra catálogo y es una capacidad separada (#612), pero esto no demuestra autorización efectiva al invocarlas |
-| Alcance de lectura, propuesta y aplicación | Implementado como dato | `read_access`, `propose_access` y `apply_access` se persisten y validan por separado (#612); el enforcement por acción queda en #615. `write_access` se conserva como alcance heredado y no concede capacidades implícitas |
+| Skills y herramientas | Parcial | El perfil referencia skills y herramientas; `tools` se valida contra catálogo y se comprueba por invocación en las herramientas MCP actuales. Aún no hay ejecutores backend para herramientas de escritura |
+| Alcance de lectura, propuesta y aplicación | Parcial | `read_access`, `propose_access` y `apply_access` se evalúan independientemente en el authorizer backend (#615); las herramientas MCP actuales solo leen. `write_access` se conserva como alcance heredado y no concede capacidades implícitas |
 | Límites | Parcial | Existe el campo `limits`; el formato y enforcement de cada límite deben especificarse y verificarse |
-| Aprobaciones, políticas heredadas y escalado | Pendiente de confirmar | No asumir enforcement completo por la presencia de datos o controles de interfaz |
+| Políticas heredadas de organización y proyecto | Parcial | `agent_permission_policies` limita cada invocación MCP junto al perfil (#615). El proyecto se deriva del componente del issue; mientras no exista una relación proyecto-organización, cualquier política organizacional activa causa denegación cerrada |
+| Aprobaciones y escalado | Pendiente de confirmar | No asumir enforcement completo por la presencia de datos o controles de interfaz |
 | Auditoría de acciones y aprobación | Pendiente de confirmar | Verificar cobertura de ejecución, cambios de permisos y resultados |
 
-Antes de cerrar un issue, actualizar esta tabla con la evidencia verificable
-(código, pruebas y rutas de ejecución) y ajustar el estado. No marcar una
-capacidad como implementada solo porque exista un campo en el perfil.
+Antes de cerrar un issue, actualizar esta tabla con la evidencia verificable (código, pruebas y rutas de ejecución) y ajustar el estado. No marcar una capacidad como implementada solo porque exista un campo en el perfil.
 
 ## Principios obligatorios
 
-1. **Mínimo privilegio:** un agente recibe solo las capacidades y el alcance
-   que necesita. La ausencia de una concesión explícita no concede acceso.
-2. **Política superior prevalece:** las políticas de organización y proyecto
-   limitan el perfil. El agente no puede ampliar esos permisos.
-3. **Denegar por defecto:** capacidades desconocidas, recursos no declarados o
-   políticas que no puedan evaluarse no autorizan la acción.
-4. **Separar propósito de autoridad:** especializaciones como `QA` o
-   `Frontend` describen el trabajo; nunca otorgan permisos implícitos.
-5. **Aplicar controles fuera del prompt:** el prompt orienta el comportamiento,
-   pero no es un mecanismo de autorización ni una frontera de seguridad.
-6. **Trazabilidad:** las ejecuciones y decisiones relevantes deben poder
-   atribuirse al agente y a la persona o proceso que las inició o aprobó.
+1. **Mínimo privilegio:** un agente recibe solo las capacidades y el alcance que necesita. La ausencia de una concesión explícita no concede acceso.
+2. **Política superior prevalece:** las políticas de organización y proyecto limitan el perfil. El agente no puede ampliar esos permisos.
+3. **Denegar por defecto:** capacidades desconocidas, recursos no declarados o políticas que no puedan evaluarse no autorizan la acción.
+4. **Separar propósito de autoridad:** especializaciones como `QA` o `Frontend` describen el trabajo; nunca otorgan permisos implícitos.
+5. **Aplicar controles fuera del prompt:** el prompt orienta el comportamiento, pero no es un mecanismo de autorización ni una frontera de seguridad.
+6. **Trazabilidad:** las ejecuciones y decisiones relevantes deben poder atribuirse al agente y a la persona o proceso que las inició o aprobó.
 
 ## Datos del perfil
 
 ### Identidad y estado
 
 - **Nombre de usuario:** identificador legible y único para el perfil.
-- **Correo y avatar:** datos opcionales de presentación; no son credenciales
-  ni prueban identidad humana.
-- **Estado:** habilitado o deshabilitado. Un agente deshabilitado no puede
-  iniciar nuevas ejecuciones. La política de cancelación de ejecuciones activas
-  debe ser explícita en el sistema de ejecución.
+- **Correo y avatar:** datos opcionales de presentación; no son credenciales ni prueban identidad humana.
+- **Estado:** habilitado o deshabilitado. Un agente deshabilitado no puede iniciar nuevas ejecuciones. La política de cancelación de ejecuciones activas debe ser explícita en el sistema de ejecución.
 - **Identificador persistente:** lo genera el backend; no lo elige el cliente.
-- **Fechas de creación y último uso:** metadatos de ciclo de vida, no
-  configuración editable por el usuario salvo que una operación del sistema
-  registre el último uso.
+- **Fechas de creación y último uso:** metadatos de ciclo de vida, no configuración editable por el usuario salvo que una operación del sistema registre el último uso.
 
-Los perfiles de agente no reciben contraseña, token de inicio de sesión ni rol
-RBAC humano. Su identidad no debe permitir autenticar una sesión interactiva
-como si fuera una persona.
+Los perfiles de agente no reciben contraseña, token de inicio de sesión ni rol RBAC humano. Su identidad no debe permitir autenticar una sesión interactiva como si fuera una persona.
 
 ### Propósito
 
 - **Especialización:** área principal de trabajo, por ejemplo `QA`,
   `documentación` o `frontend`.
-- **Descripción/instrucciones de rol:** resultado esperado, contexto pertinente
-  y forma de comunicar. Debe ser breve, clara y no contener secretos.
-- **Skills y workflows:** referencias a capacidades reutilizables disponibles
-  para el agente. Deben validarse contra catálogos conocidos; asignar una skill
-  no debe ampliar permisos por sí mismo.
+- **Descripción/instrucciones de rol:** resultado esperado, contexto pertinente y forma de comunicar. Debe ser breve, clara y no contener secretos.
+- **Skills y workflows:** referencias a capacidades reutilizables disponibles para el agente. Deben validarse contra catálogos conocidos; asignar una skill no debe ampliar permisos por sí mismo.
 
 La especialización, la descripción y las instrucciones no sustituyen las
 políticas de acceso.
@@ -316,11 +287,14 @@ indicar qué identificadores completa y actualizar su estado al cerrarse.
   ausencia o lista vacía no concede acceso; la respuesta y la documentación
   describen la semántica sin ambigüedad. El enforcement por acción pertenece a
   AGENT-04 (#615).
-- **AGENT-02 — Herencia y precedencia de políticas** — Pendiente. Implementar
-  la combinación organización/proyecto/perfil. **Aceptación:** una prueba
-  demuestra que un perfil no puede ampliar una política superior; los valores
-  heredados se distinguen de los valores explícitos y las decisiones no
-  disponibles fallan de forma segura.
+- **AGENT-02 — Herencia y precedencia de políticas** — Implementado como dato.
+  Las políticas de organización y proyecto actúan como techos: el resultado
+  efectivo es la intersección entre los permisos explícitos del perfil y las
+  políticas activas aplicables; un campo `null` no restringe y `[]` deniega.
+  **Aceptación:** una prueba demuestra que un perfil no puede ampliar una
+  política superior; los valores heredados se distinguen de los explícitos y
+  las políticas inválidas o no disponibles producen `unresolved`/`503` sin
+  conceder acceso. El enforcement por acción pertenece a AGENT-04 (#615).
 - **AGENT-03 — Validación de modelo y configuración** — Implementado.
   El backend exige un modelo permitido y configurado para crear perfiles;
   temperatura se valida como valor finito dentro del rango del modelo/proveedor.
@@ -331,11 +305,21 @@ indicar qué identificadores completa y actualizar su estado al cerrarse.
 
 ### Enforcement y seguridad operativa
 
-- **AGENT-04 — Autorización en cada acción** — Pendiente de confirmar.
-  Aplicar la decisión de permisos en el backend/herramienta al momento de cada
-  acción, no solo al guardar el perfil o mostrar la UI. **Aceptación:** pruebas
-  cubren acciones permitidas y denegadas, acceso a recursos fuera del alcance,
-  perfil deshabilitado y cambios de política.
+- **AGENT-04 — Autorización en cada acción** — Implementado para las rutas de
+  inicio y herramientas MCP actuales. `POST /issues/{id}/agent/start` emite un
+  token firmado y ligado a perfil/run/issue/proyecto; cada invocación MCP
+  vuelve a validar el run activo, perfil, herramienta, alcance y políticas. El
+  proyecto se resuelve desde Project nodes por el backend y se deniega si el
+  nombre/slug no es único.
+  Acciones fuera del proyecto y cambios de permisos se aplican de forma
+  inmediata. La relación organización-proyecto no existe aún: si hay una
+  política organizacional activa y no puede derivarse su ámbito, se deniega.
+  Las capacidades de propuesta/aplicación están separadas en el authorizer,
+  pero se deben invocar desde cualquier ejecutor futuro antes de agregar
+  herramientas que escriban. **Aceptación verificada:** pruebas cubren
+  autorización y denegación, agente deshabilitado, herramienta/alcance inválido,
+  separación de propuesta/aplicación, cambio de política y revocación al cerrar
+  el run.
 - **AGENT-05 — Flujo de aprobación humana** — Pendiente. Implementar solicitud,
   aprobación, rechazo, revocación y vencimiento. **Aceptación:** solo una
   persona autenticada y autorizada aprueba; la aprobación está vinculada a la

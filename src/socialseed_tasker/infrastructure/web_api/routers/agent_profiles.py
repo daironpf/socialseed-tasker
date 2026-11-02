@@ -12,15 +12,28 @@ from __future__ import annotations
 
 from typing import Any
 
+import psycopg
 from fastapi import APIRouter, HTTPException
 
-from socialseed_tasker.auth.user_store import PostgresAgentProfileStore
+from socialseed_tasker.auth.user_store import (
+    TOOLS_SEED,
+    PostgresAgentPermissionPolicyStore,
+    PostgresAgentProfileStore,
+)
 from socialseed_tasker.config.agent_models import (
     AgentModelConfigurationError,
     validate_agent_model,
 )
 from socialseed_tasker.config.storage import get_database_url
+from socialseed_tasker.domain.agent_policy import resolve_effective_permissions
 from socialseed_tasker.infrastructure.web_api.schemas import (
+    AgentEffectivePermissionsResponse,
+    AgentPermissionLimitsResponse,
+    AgentPermissionPolicyCreate,
+    AgentPermissionPolicyResponse,
+    AgentPermissionSetResponse,
+    AgentPermissionSourceResponse,
+    AgentPolicyScope,
     AgentProfileCreate,
     AgentProfileResponse,
     AgentProfileUpdate,
@@ -40,6 +53,17 @@ def _pg_store() -> PostgresAgentProfileStore:
             detail="PostgreSQL not configured: TASKER_DATABASE_URL is not set",
         )
     return PostgresAgentProfileStore(database_url)
+
+
+def _permission_policy_store() -> PostgresAgentPermissionPolicyStore:
+    """PostgreSQL store for organization/project permission ceilings (#613)."""
+    database_url = get_database_url()
+    if not database_url:
+        raise HTTPException(
+            status_code=503,
+            detail="PostgreSQL not configured: TASKER_DATABASE_URL is not set",
+        )
+    return PostgresAgentPermissionPolicyStore(database_url)
 
 
 def _profile_to_response(profile: dict[str, Any]) -> AgentProfileResponse:
@@ -76,6 +100,12 @@ def _map_store_error(exc: ValueError) -> None:
         raise HTTPException(
             status_code=422, detail=f"unknown resource: {message.split(':', 1)[1]}"
         ) from exc
+    if message.startswith("scope:"):
+        raise HTTPException(
+            status_code=422, detail=f"unknown policy scope: {message.split(':', 1)[1]}"
+        ) from exc
+    if message.startswith("scope_id:"):
+        raise HTTPException(status_code=422, detail="policy scope_id is required") from exc
     if message == "username":
         raise HTTPException(status_code=409, detail="username already exists") from exc
     raise
@@ -221,3 +251,167 @@ def delete_agent_profile(agent_id: str) -> APIResponse[bool]:
     if not deleted:
         raise HTTPException(status_code=404, detail="Agent profile not found")
     return APIResponse(data=True, meta=Meta(request_id=None))
+
+def _policy_to_response(policy: dict[str, Any]) -> AgentPermissionPolicyResponse:
+    """Compose the API response for one permission policy (#613)."""
+    return AgentPermissionPolicyResponse(
+        id=str(policy["id"]),
+        name=str(policy["name"]),
+        scope_type=policy["scope_type"],
+        scope_id=str(policy["scope_id"]),
+        tools=policy.get("tools"),
+        read_access=policy.get("read_access"),
+        propose_access=policy.get("propose_access"),
+        apply_access=policy.get("apply_access"),
+        is_active=bool(policy.get("is_active", True)),
+        created_at=policy.get("created_at"),
+    )
+
+
+def _permission_set_response(values: dict[str, list[str]]) -> AgentPermissionSetResponse:
+    return AgentPermissionSetResponse(
+        tools=values["tools"],
+        read_access=values["read_access"],
+        propose_access=values["propose_access"],
+        apply_access=values["apply_access"],
+    )
+
+
+def _permission_limits_response(
+    values: dict[str, list[str] | None],
+) -> AgentPermissionLimitsResponse:
+    return AgentPermissionLimitsResponse(
+        tools=values["tools"],
+        read_access=values["read_access"],
+        propose_access=values["propose_access"],
+        apply_access=values["apply_access"],
+    )
+
+
+@agent_profiles_router.get(
+    "/agents/permission-policies",
+    response_model=APIResponse[list[AgentPermissionPolicyResponse]],
+    summary="List agent permission policies",
+    description="List organization/project permission ceilings (issue #613).",
+)
+def list_agent_permission_policies(
+    scope_type: AgentPolicyScope | None = None,
+    scope_id: str | None = None,
+    is_active: bool | None = None,
+) -> APIResponse[list[AgentPermissionPolicyResponse]]:
+    """List stored permission ceilings, optionally filtered by scope."""
+    try:
+        policies = _permission_policy_store().list_policies(
+            scope_type=scope_type, scope_id=scope_id, is_active=is_active
+        )
+    except psycopg.Error as exc:
+        raise HTTPException(status_code=503, detail="permission policy source unavailable") from exc
+    return APIResponse(
+        data=[_policy_to_response(policy) for policy in policies],
+        meta=Meta(request_id=None),
+    )
+
+
+@agent_profiles_router.post(
+    "/agents/permission-policies",
+    response_model=APIResponse[AgentPermissionPolicyResponse],
+    status_code=201,
+    summary="Create an agent permission policy",
+    description="Create an organization/project ceiling; omitted capabilities are unrestricted (#613).",
+)
+def create_agent_permission_policy(
+    body: AgentPermissionPolicyCreate,
+) -> APIResponse[AgentPermissionPolicyResponse]:
+    """Create a permission ceiling; policies can only restrict profiles."""
+    try:
+        policy = _permission_policy_store().create_policy(
+            name=body.name,
+            scope_type=body.scope_type,
+            scope_id=body.scope_id,
+            tools=body.tools,
+            read_access=body.read_access,
+            propose_access=body.propose_access,
+            apply_access=body.apply_access,
+            is_active=body.is_active,
+        )
+    except ValueError as exc:
+        _map_store_error(exc)
+        raise
+    except psycopg.Error as exc:
+        raise HTTPException(status_code=503, detail="permission policy source unavailable") from exc
+    return APIResponse(data=_policy_to_response(policy), meta=Meta(request_id=None))
+
+
+@agent_profiles_router.delete(
+    "/agents/permission-policies/{policy_id}",
+    response_model=APIResponse[bool],
+    summary="Delete an agent permission policy",
+    description="Delete a permission ceiling; 404 when it does not exist (issue #613).",
+)
+def delete_agent_permission_policy(policy_id: str) -> APIResponse[bool]:
+    """Delete one permission ceiling."""
+    try:
+        deleted = _permission_policy_store().delete_policy(policy_id)
+    except psycopg.Error as exc:
+        raise HTTPException(status_code=503, detail="permission policy source unavailable") from exc
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Agent permission policy not found")
+    return APIResponse(data=True, meta=Meta(request_id=None))
+
+
+@agent_profiles_router.get(
+    "/agents/profiles/{agent_id}/permissions",
+    response_model=APIResponse[AgentEffectivePermissionsResponse],
+    summary="Get effective agent permissions",
+    description=(
+        "Intersect explicit profile capabilities with organization/project ceilings "
+        "for the given context; unresolved policies deny everything (issue #613)."
+    ),
+)
+def get_effective_agent_permissions(
+    agent_id: str,
+    organization_id: str | None = None,
+    project_id: str | None = None,
+) -> APIResponse[AgentEffectivePermissionsResponse]:
+    """Resolve explicit, inherited and effective permissions for one agent."""
+    profile = _pg_store().get_profile(agent_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Agent profile not found")
+    try:
+        policies = _permission_policy_store().list_for_context(
+            organization_id=organization_id, project_id=project_id
+        )
+    except psycopg.Error as exc:
+        raise HTTPException(status_code=503, detail="permission policy source unavailable") from exc
+    resolved = resolve_effective_permissions(
+        explicit={field: profile.get(field) or [] for field in (
+            "tools",
+            "read_access",
+            "propose_access",
+            "apply_access",
+        )},
+        enabled=bool(profile.get("enabled", True)),
+        policies=policies,
+        known_tools=[slug for slug, _, _ in TOOLS_SEED],
+    )
+    return APIResponse(
+        data=AgentEffectivePermissionsResponse(
+            agent_id=agent_id,
+            status=resolved.status,
+            profile_enabled=resolved.profile_enabled,
+            explicit=_permission_set_response(resolved.explicit.as_dict()),
+            inherited=_permission_limits_response(resolved.inherited.as_dict()),
+            effective=_permission_set_response(resolved.effective.as_dict()),
+            sources=[
+                AgentPermissionSourceResponse(
+                    id=source.id,
+                    name=source.name,
+                    scope=source.scope,
+                    scope_id=source.scope_id,
+                )
+                for source in resolved.sources
+            ],
+            errors=list(resolved.errors),
+        ),
+        meta=Meta(request_id=None),
+    )

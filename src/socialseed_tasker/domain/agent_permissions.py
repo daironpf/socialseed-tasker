@@ -44,3 +44,25 @@ def normalize_resource_scopes(values: Iterable[str]) -> list[str]:
         if value not in normalized:
             normalized.append(value)
     return normalized
+
+
+def normalize_tool_slugs(
+    values: Iterable[str], allowed: Iterable[str] | None = None
+) -> list[str]:
+    """Return unique, trimmed tool slugs or raise for an unknown/empty one.
+
+    ``allowed`` is optional so request schemas can normalize without loading
+    the catalog; persistence and policy composition always pass the known
+    slugs and therefore fail closed for unknown tools.
+    """
+    allowed_set = frozenset(allowed) if allowed is not None else None
+    normalized: list[str] = []
+    for raw in values:
+        value = str(raw).strip()
+        if not value:
+            raise ValueError("tool:<empty>")
+        if allowed_set is not None and value not in allowed_set:
+            raise ValueError(f"tool:{value}")
+        if value not in normalized:
+            normalized.append(value)
+    return normalized

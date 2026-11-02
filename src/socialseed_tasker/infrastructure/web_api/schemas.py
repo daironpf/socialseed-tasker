@@ -13,7 +13,10 @@ from uuid import UUID
 from pydantic import BaseModel, BeforeValidator, Field, model_validator
 
 from socialseed_tasker import __version__  # noqa: E402
-from socialseed_tasker.domain.agent_permissions import normalize_resource_scopes
+from socialseed_tasker.domain.agent_permissions import (
+    normalize_resource_scopes,
+    normalize_tool_slugs,
+)
 
 T = TypeVar("T")
 
@@ -1103,9 +1106,19 @@ def _optional_resource_scopes(value: list[str] | None) -> list[str] | None:
     return normalize_resource_scopes(value)
 
 
+def _optional_tool_slugs(value: list[str] | None) -> list[str] | None:
+    """Normalize requested tools while preserving ``None`` as "no restriction"."""
+    if value is None:
+        return None
+    return normalize_tool_slugs(value)
+
+
 AgentResourceScopes = Annotated[list[str], BeforeValidator(normalize_resource_scopes)]
 AgentResourceScopesUpdate = Annotated[
     list[str] | None, BeforeValidator(_optional_resource_scopes)
+]
+AgentToolSlugsUpdate = Annotated[
+    list[str] | None, BeforeValidator(_optional_tool_slugs)
 ]
 
 
@@ -1188,6 +1201,85 @@ class AgentProfileResponse(BaseModel):
     skills: list[str] = Field(default_factory=list)
     created_at: datetime | None = None
     last_used_at: datetime | None = None
+
+
+AgentPolicyScope = Literal["organization", "project"]
+
+
+class AgentPermissionPolicyCreate(BaseModel):
+    """Organization/project ceiling for agent capabilities (issue #613).
+
+    ``None`` means the policy is silent for that capability; ``[]`` denies it
+    completely. Policies only restrict the profile and never grant access.
+    """
+
+    name: str = Field(..., min_length=1, max_length=100)
+    scope_type: AgentPolicyScope
+    scope_id: str = Field(..., min_length=1, max_length=200)
+    tools: AgentToolSlugsUpdate = None
+    read_access: AgentResourceScopesUpdate = None
+    propose_access: AgentResourceScopesUpdate = None
+    apply_access: AgentResourceScopesUpdate = None
+    is_active: bool = True
+
+
+class AgentPermissionPolicyResponse(BaseModel):
+    """Stored permission ceiling (issue #613)."""
+
+    id: str
+    name: str
+    scope_type: AgentPolicyScope
+    scope_id: str
+    tools: list[str] | None = None
+    read_access: list[str] | None = None
+    propose_access: list[str] | None = None
+    apply_access: list[str] | None = None
+    is_active: bool = True
+    created_at: datetime | None = None
+
+
+class AgentPermissionSetResponse(BaseModel):
+    """Concrete capability set."""
+
+    tools: list[str] = Field(default_factory=list)
+    read_access: list[str] = Field(default_factory=list)
+    propose_access: list[str] = Field(default_factory=list)
+    apply_access: list[str] = Field(default_factory=list)
+
+
+class AgentPermissionLimitsResponse(BaseModel):
+    """Inherited ceilings; ``None`` means no policy restricted that capability."""
+
+    tools: list[str] | None = None
+    read_access: list[str] | None = None
+    propose_access: list[str] | None = None
+    apply_access: list[str] | None = None
+
+
+class AgentPermissionSourceResponse(BaseModel):
+    """Policy source that participated in an effective decision."""
+
+    id: str
+    name: str
+    scope: str
+    scope_id: str
+
+
+class AgentEffectivePermissionsResponse(BaseModel):
+    """Explicit, inherited and effective permissions for one agent context.
+
+    ``status == "unresolved"`` is a fail-closed denial: callers must not use
+    any effective capability even if a partial inherited set is displayed.
+    """
+
+    agent_id: str
+    status: Literal["resolved", "unresolved"]
+    profile_enabled: bool
+    explicit: AgentPermissionSetResponse
+    inherited: AgentPermissionLimitsResponse
+    effective: AgentPermissionSetResponse
+    sources: list[AgentPermissionSourceResponse] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
 
 
 class CommitCreateRequest(BaseModel):

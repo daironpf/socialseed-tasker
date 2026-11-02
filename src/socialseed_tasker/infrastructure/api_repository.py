@@ -213,6 +213,10 @@ class ApiTaskRepository(TaskRepositoryInterface):
             return items if isinstance(items, list) else []
         return []
 
+    def list_project_nodes(self) -> list[dict[str, Any]]:
+        data = self.client.request("GET", f"{_API}/projects/all")
+        return [dict(item) for item in _response_items(data) if isinstance(item, dict)]
+
     def create_project(self, project_data: dict[str, Any]) -> dict[str, Any]:
         data = self.client.request("POST", f"{_API}/projects", json=project_data)
         if isinstance(data, dict):

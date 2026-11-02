@@ -254,6 +254,7 @@ def create_app(
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["X-Agent-Execution-Token"],
     )
 
     # API Key authentication
@@ -333,6 +334,12 @@ def create_app(
         # A Bearer token may be a short-lived JWT from /auth/login instead of
         # the raw API key; accept it when the signature checks out.
         if not _api_key_matches(provided_key) and (bearer is None or not _verify_jwt(bearer)):
+            from socialseed_tasker.auth.tokens import verify_agent_execution_token
+
+            if request.url.path == "/mcp" and bearer is not None:
+                claims = verify_agent_execution_token(bearer)
+                if claims is not None:
+                    return await call_next(request)
             return JSONResponse(
                 status_code=401,
                 content={"error": {"code": "UNAUTHORIZED", "message": "Invalid or missing API key"}},

@@ -273,6 +273,9 @@ class TaskRepositoryInterface(Protocol):
     def list_projects(self) -> list[str]:
         """List all unique project names."""
 
+    def list_project_nodes(self) -> list[dict[str, Any]]:
+        """List persisted project identifiers and names for trusted scope resolution."""
+
     def create_project(self, project_data: dict[str, Any]) -> dict[str, Any]:
         """Create a new project. Returns status dict."""
 

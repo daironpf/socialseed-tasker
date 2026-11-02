@@ -305,6 +305,17 @@ def test_list_projects_dict_response(repo, mock_client):
     assert projects == ["project-a"]
 
 
+def test_list_project_nodes_returns_backend_ids(repo, mock_client):
+    mock_client.request.return_value = {
+        "data": [{"id": "project-id", "name": "Project", "slug": "project"}]
+    }
+
+    projects = repo.list_project_nodes()
+
+    assert projects == [{"id": "project-id", "name": "Project", "slug": "project"}]
+    mock_client.request.assert_called_once_with("GET", "/api/v1/projects/all")
+
+
 # -- Transaction (no-op) -----------------------------------------------------
 
 
