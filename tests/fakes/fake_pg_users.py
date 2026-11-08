@@ -33,6 +33,7 @@ _RUN_COLUMNS = (
     "finished_at",
     "total_tokens",
     "total_tool_calls",
+    "total_cost_usd",
     "duration_ms",
     "summary",
 )
@@ -200,6 +201,7 @@ class FakePgCursor:
             "finished_at": None,
             "total_tokens": None,
             "total_tool_calls": None,
+            "total_cost_usd": None,
             "duration_ms": None,
             "summary": None,
         }
@@ -439,6 +441,39 @@ class FakePgCursor:
             )
             self.rowcount = 1
             self._next = (_RUN_TS_BASE + timedelta(seconds=seq),)
+        elif "update agent_runs set total_tokens = coalesce" in low:
+            # add_run_usage (#617): atomic token/cost/tool-call increments.
+            tokens, tool_calls, cost_usd, run_id = (
+                int(params[0]),
+                int(params[1]),
+                float(params[2]),
+                str(params[3]),
+            )
+            run = self.runs.get(run_id)
+            if run is None:
+                self.rowcount = 0
+                self._next = None
+            else:
+                run["total_tokens"] = int(run.get("total_tokens") or 0) + tokens
+                run["total_tool_calls"] = int(run.get("total_tool_calls") or 0) + tool_calls
+                run["total_cost_usd"] = float(run.get("total_cost_usd") or 0.0) + cost_usd
+                run["duration_ms"] = 1000
+                self.rowcount = 1
+                self._next = self._run_tuple(run)
+        elif low.startswith("update agent_runs set status = 'failed'"):
+            # stop_run_for_limit (#617): close the run as failed.
+            summary, run_id = params[0], str(params[1])
+            run = self.runs.get(run_id)
+            if run is None:
+                self.rowcount = 0
+                self._next = None
+            else:
+                run["status"] = "failed"
+                run["finished_at"] = _RUN_TS_BASE + timedelta(minutes=5)
+                run["duration_ms"] = 300000
+                if summary is not None:
+                    run["summary"] = summary
+                self.rowcount = 1
         elif low.startswith("update agent_runs set") and "finished_at = now()" in low:
             # close_open_run (#574): status + finished_at + summary + duration_ms.
             values = tuple(params or ())
@@ -477,6 +512,9 @@ class FakePgCursor:
             self.runs.pop(run_id, None)
             self.run_logs.pop(run_id, None)
             self.rowcount = 1 if existed else 0
+        elif low.startswith("select status from agent_runs where id"):
+            run = self.runs.get(str(params[0]))
+            self._next = (run["status"],) if run is not None else None
         elif low.startswith("select id from agent_runs"):
             # ensure_running_run picks the newest open run for the agent (#574).
             agent_id = str(params[0])

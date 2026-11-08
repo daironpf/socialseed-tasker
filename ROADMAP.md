@@ -18,7 +18,7 @@
 ## Phase 4: Agent Governance & Safety
 - [x] Backend authorization on every agent action (#615)
 - [x] Human approval lifecycle bound to each action (#616)
-- [ ] Execution limits enforcement (#617)
+- [x] Execution limits enforcement (#617)
 - [ ] End-to-end execution audit (#618)
 - [ ] Permission changes during a run (#619)
 - [ ] Effective-policy form for agents (#620)

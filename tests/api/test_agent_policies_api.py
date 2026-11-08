@@ -70,6 +70,7 @@ class FakePolicyStore:
             "read_access": kwargs.get("read_access"),
             "propose_access": kwargs.get("propose_access"),
             "apply_access": kwargs.get("apply_access"),
+            "limits": kwargs.get("limits"),
             "is_active": kwargs.get("is_active", True),
             "created_at": datetime(2026, 1, 1, tzinfo=timezone.utc),
         }
@@ -254,6 +255,7 @@ def test_create_permission_policy_normalizes_fields(
         read_access=[" repository ", "repository"],
         propose_access=[],
         apply_access=None,
+        limits={"maxTokensPerRun": 500, "maxStepsPerRun": 3},
     )
 
     response = agent_profiles.create_agent_permission_policy(body)
@@ -263,6 +265,14 @@ def test_create_permission_policy_normalizes_fields(
     assert policies.created["read_access"] == ["repository"]
     assert policies.created["propose_access"] == []
     assert policies.created["apply_access"] is None
+    assert policies.created["limits"] == {
+        "max_tokens_per_run": 500,
+        "max_tool_calls_per_run": 3,
+    }
+    assert response.data.limits == {
+        "max_tokens_per_run": 500,
+        "max_tool_calls_per_run": 3,
+    }
     assert response.data.id == "policy-1"
     assert response.data.scope_type == "project"
 

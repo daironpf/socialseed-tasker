@@ -56,7 +56,7 @@ function makeBackendProfile(id: string, username: string): BackendAgentProfile {
     specialization: 'developer',
     system_prompt: 'You are a builder.',
     tools: ['code_search'],
-    limits: { maxTokensPerRun: 4000, timeoutSeconds: 60, maxRisk: 'LOW' },
+    limits: { max_tokens_per_run: 4000, max_duration_seconds: 60, max_risk: 'LOW' },
     enabled: true,
     created_at: '2026-10-01T08:00:00Z',
     last_used_at: null,
@@ -123,7 +123,11 @@ describe('agentStudioStore real mode (issue #573)', () => {
       specialization: 'developer',
       system_prompt: 'You are a builder.',
       tools: ['code_search'],
-      limits: { maxTokensPerRun: 4000, timeoutSeconds: 60, maxRisk: 'LOW' },
+      limits: {
+        max_tokens_per_run: 4000,
+        max_duration_seconds: 60,
+        max_risk: 'LOW',
+      },
       enabled: true,
     })
     expect(saved?.id).toBe('pg-9')

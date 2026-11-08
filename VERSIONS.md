@@ -4,6 +4,7 @@
 
 ### Unreleased Checklist
 - [x] **#616 Human approval lifecycle:** Persisted `agent_approvals` bound to run, action, scope, target, expected effect and action fingerprint; approve/reject/revoke/expire transitions; one-shot execution gate that revalidates authorization and rejects changed or reused actions; human-only decisions via the `admin` permission; HITL UI consumes the persisted server state.
+- [x] **#617 Agent execution limits:** Typed limits with canonical snake_case fields and legacy aliases, composed with organization/project ceilings by the most restrictive value; server-measured tokens, cost, duration and tool calls stop the run at the limit (`409 AGENT_LIMIT_EXCEEDED`), append a `violation` log with the reason, and accept runtime consumption only via the run-scoped `POST /runs/{run_id}/usage` credential.
 
 ## [1.0.5] - 2026-07-04
 

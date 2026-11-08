@@ -25,6 +25,7 @@ from socialseed_tasker.config.agent_models import (
     validate_agent_model,
 )
 from socialseed_tasker.config.storage import get_database_url
+from socialseed_tasker.domain.agent_limits import parse_agent_limits
 from socialseed_tasker.domain.agent_policy import resolve_effective_permissions
 from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentEffectivePermissionsResponse,
@@ -91,6 +92,17 @@ def _profile_to_response(profile: dict[str, Any]) -> AgentProfileResponse:
     )
 
 
+def _normalize_limits(raw: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Validate and canonicalize a typed limits document (#617)."""
+    if raw is None:
+        return None
+    try:
+        return parse_agent_limits(raw).as_dict()
+    except ValueError as exc:
+        _map_store_error(exc)
+        raise
+
+
 def _map_store_error(exc: ValueError) -> None:
     """Map store ValueErrors onto HTTP status codes."""
     message = str(exc)
@@ -106,6 +118,17 @@ def _map_store_error(exc: ValueError) -> None:
         ) from exc
     if message.startswith("scope_id:"):
         raise HTTPException(status_code=422, detail="policy scope_id is required") from exc
+    if message in {
+        "limits",
+        "max_tokens_per_run",
+        "max_cost_usd_per_run",
+        "max_duration_seconds",
+        "max_tool_calls_per_run",
+        "max_risk",
+    } or message.startswith("max_"):
+        raise HTTPException(
+            status_code=422, detail=f"invalid agent limit: {message.split(':', 1)[0]}"
+        ) from exc
     if message == "username":
         raise HTTPException(status_code=409, detail="username already exists") from exc
     raise
@@ -170,7 +193,7 @@ def create_agent_profile(body: AgentProfileCreate) -> APIResponse[AgentProfileRe
             write_access=body.write_access,
             propose_access=body.propose_access,
             apply_access=body.apply_access,
-            limits=body.limits,
+            limits=_normalize_limits(body.limits),
             skills=body.skills,
             enabled=body.enabled,
         )
@@ -224,7 +247,7 @@ def update_agent_profile(agent_id: str, body: AgentProfileUpdate) -> APIResponse
             write_access=body.write_access,
             propose_access=body.propose_access,
             apply_access=body.apply_access,
-            limits=body.limits,
+            limits=_normalize_limits(body.limits),
             skills=body.skills,
             enabled=body.enabled,
             last_used_at=body.last_used_at,
@@ -263,6 +286,7 @@ def _policy_to_response(policy: dict[str, Any]) -> AgentPermissionPolicyResponse
         read_access=policy.get("read_access"),
         propose_access=policy.get("propose_access"),
         apply_access=policy.get("apply_access"),
+        limits=policy.get("limits"),
         is_active=bool(policy.get("is_active", True)),
         created_at=policy.get("created_at"),
     )
@@ -332,6 +356,7 @@ def create_agent_permission_policy(
             read_access=body.read_access,
             propose_access=body.propose_access,
             apply_access=body.apply_access,
+            limits=_normalize_limits(body.limits),
             is_active=body.is_active,
         )
     except ValueError as exc:

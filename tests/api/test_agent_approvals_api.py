@@ -55,6 +55,28 @@ class FakeAgentProfileStore:
     def get_run(self, run_id: str) -> dict[str, Any] | None:
         return dict(self.run) if run_id == self.run["id"] else None
 
+    def add_run_usage(
+        self,
+        run_id: str,
+        *,
+        tokens: int = 0,
+        cost_usd: float = 0.0,
+        tool_calls: int = 0,
+    ) -> dict[str, Any]:
+        if run_id != self.run["id"]:
+            raise LookupError(run_id)
+        self.run["total_tokens"] = int(self.run.get("total_tokens") or 0) + tokens
+        self.run["total_tool_calls"] = int(self.run.get("total_tool_calls") or 0) + tool_calls
+        self.run["total_cost_usd"] = float(self.run.get("total_cost_usd") or 0.0) + cost_usd
+        return dict(self.run)
+
+    def stop_run_for_limit(self, run_id: str, *, violation: dict[str, Any]) -> dict[str, Any]:
+        if run_id != self.run["id"]:
+            raise LookupError(run_id)
+        self.run["status"] = "failed"
+        self.run.setdefault("violations", []).append(violation)
+        return dict(self.run)
+
 
 class FakePolicyStore:
     def list_policies(self, **filters: Any) -> list[dict[str, Any]]:
@@ -258,6 +280,27 @@ def test_approved_action_executes_once_and_rejects_reuse(env):
     )
     assert reused.status_code == 409
     assert reused.json()["error"]["code"] == "APPROVAL_ALREADY_USED"
+
+
+def test_tool_call_limit_blocks_new_approval_actions(env):
+    env.profiles.profile["limits"] = {"max_tool_calls_per_run": 1}
+    approved = _approved(env)
+
+    executed = env.client.post(
+        f"/api/v1/agent-approvals/{approved['id']}/execute",
+        json=_body(),
+        headers=_headers(_agent_token(env)),
+    )
+    assert executed.status_code == 200, executed.text
+
+    blocked = _create(env)
+
+    assert blocked.status_code == 409, blocked.text
+    error = blocked.json()["error"]
+    assert error["code"] == "AGENT_LIMIT_EXCEEDED"
+    assert error["details"]["limit"] == "max_tool_calls_per_run"
+    assert env.profiles.run["status"] == "failed"
+    assert env.profiles.run["violations"][-1]["limit"] == "max_tool_calls_per_run"
 
 
 def test_changed_payload_after_approval_is_rejected(env):

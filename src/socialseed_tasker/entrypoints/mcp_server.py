@@ -168,7 +168,7 @@ def _deny_agent_tool(
         resource_scope,
         reason,
     )
-    raise PermissionError("Agent action denied")
+    raise PermissionError(f"Agent action denied: {reason}")
 
 
 def _authorize_agent_tool(
@@ -190,8 +190,10 @@ def _authorize_agent_tool(
             reason="invalid_execution_credential",
         )
 
+    from socialseed_tasker.application.agent_limits import AgentLimitError
     from socialseed_tasker.infrastructure.web_api.agent_authorization import (
         create_agent_action_authorizer,
+        create_agent_limit_guard,
         create_agent_profile_store,
         resolve_component_project_id,
     )
@@ -243,6 +245,21 @@ def _authorize_agent_tool(
             tool=tool,
             resource_scope=resource_scope,
             reason="project_context_changed",
+        )
+
+    # Count the action start and enforce the server-measured limits before the
+    # tool runs (#617). The guard stops the run and records the reason when a
+    # limit is reached.
+    try:
+        create_agent_limit_guard().consume_tool_call(
+            str(claims["run_id"]), decision.effective_limits
+        )
+    except AgentLimitError as exc:
+        _deny_agent_tool(
+            agent_id=agent_id,
+            tool=tool,
+            resource_scope=resource_scope,
+            reason=f"agent_limit_exceeded:{exc.violation.field}",
         )
     return AgentExecutionContext(
         agent_id=agent_id,

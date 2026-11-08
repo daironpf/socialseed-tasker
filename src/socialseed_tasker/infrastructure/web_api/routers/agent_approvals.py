@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from socialseed_tasker.application.actions import TaskRepositoryInterface
 from socialseed_tasker.application.agent_approvals import AgentApprovalService
+from socialseed_tasker.application.agent_limits import AgentLimitError, AgentLimitGuard
 from socialseed_tasker.auth.permissions import require_permission
 from socialseed_tasker.auth.tokens import verify_agent_execution_token
 from socialseed_tasker.infrastructure.web_api.agent_approvals import (
@@ -152,13 +153,38 @@ def _execution_context(
     }
 
 
+def _limit_guard() -> AgentLimitGuard:
+    return AgentLimitGuard(create_agent_profile_store())
+
+
+def _enforce_limits(
+    *,
+    context: dict[str, Any],
+    effective_limits: Any,
+    consume_action: bool,
+) -> None:
+    """Reject a new action when the run already reached a server-measured limit."""
+    guard = _limit_guard()
+    try:
+        if consume_action:
+            guard.consume_tool_call(context["run_id"], effective_limits)
+        else:
+            guard.check(context["run_id"], effective_limits)
+    except LookupError as exc:
+        raise HTTPException(status_code=403, detail="Agent run is not active") from exc
+    except AgentLimitError:
+        # The guard already stopped the run and logged the reached limit; the
+        # application error handler turns this into a 409 with its metadata.
+        raise
+
+
 def _authorize_action(
     *,
     context: dict[str, Any],
     action: str,
     tool: str | None,
     resource_scope: str,
-) -> bool:
+) -> Any:
     try:
         authorizer = create_agent_action_authorizer()
         decision = authorizer.authorize(
@@ -180,7 +206,7 @@ def _authorize_action(
             resource_scope,
             decision.reason,
         )
-    return decision.allowed
+    return decision
 
 
 def _service() -> AgentApprovalService:
@@ -206,17 +232,22 @@ def request_agent_approval(
     repository: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[AgentApprovalResponse]:
     context = _execution_context(request=request, repository=repository)
-    authorized = _authorize_action(
+    decision = _authorize_action(
         context=context,
         action=body.action,
         tool=body.tool,
         resource_scope=body.resource_scope,
     )
-    if not authorized:
+    if not decision.allowed:
         raise HTTPException(
             status_code=403,
             detail="Agent is not authorized for this action",
         )
+    _enforce_limits(
+        context=context,
+        effective_limits=decision.effective_limits,
+        consume_action=False,
+    )
     row = _service().request_approval(
         run_id=context["run_id"],
         agent_id=context["agent_id"],
@@ -355,12 +386,20 @@ def execute_agent_action(
     repository: Annotated[TaskRepositoryInterface, Depends(get_repo)],
 ) -> APIResponse[AgentApprovalResponse]:
     context = _execution_context(request=request, repository=repository)
-    authorized = _authorize_action(
+    decision = _authorize_action(
         context=context,
         action=body.action,
         tool=body.tool,
         resource_scope=body.resource_scope,
     )
+    if decision.allowed:
+        # Executing consumes one action from the run's step budget; when the
+        # limit is already reached the run is stopped and no approval is used.
+        _enforce_limits(
+            context=context,
+            effective_limits=decision.effective_limits,
+            consume_action=True,
+        )
     row = _service().execute(
         approval_id,
         run_id=context["run_id"],
@@ -371,6 +410,6 @@ def execute_agent_action(
         target=body.target,
         expected_effect=body.expected_effect,
         action_payload=body.action_payload,
-        authorization_allowed=authorized,
+        authorization_allowed=decision.allowed,
     )
     return _wrap(row)

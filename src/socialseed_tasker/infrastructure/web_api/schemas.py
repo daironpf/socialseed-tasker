@@ -1220,6 +1220,7 @@ class AgentPermissionPolicyCreate(BaseModel):
     read_access: AgentResourceScopesUpdate = None
     propose_access: AgentResourceScopesUpdate = None
     apply_access: AgentResourceScopesUpdate = None
+    limits: dict[str, Any] | None = None
     is_active: bool = True
 
 
@@ -1234,6 +1235,7 @@ class AgentPermissionPolicyResponse(BaseModel):
     read_access: list[str] | None = None
     propose_access: list[str] | None = None
     apply_access: list[str] | None = None
+    limits: dict[str, Any] | None = None
     is_active: bool = True
     created_at: datetime | None = None
 
@@ -1371,6 +1373,7 @@ class AgentRunUpdate(BaseModel):
     finished_at: datetime | None = None
     total_tokens: int | None = None
     total_tool_calls: int | None = None
+    total_cost_usd: float | None = None
     duration_ms: int | None = None
     summary: str | None = None
     model: str | None = None
@@ -1388,8 +1391,20 @@ class AgentRunResponse(BaseModel):
     finished_at: datetime | None = None
     total_tokens: int | None = None
     total_tool_calls: int | None = None
+    total_cost_usd: float | None = None
     duration_ms: int | None = None
     summary: str | None = None
+
+
+class AgentRunUsageCreate(BaseModel):
+    """Runtime-reported consumption for limit enforcement (issue #617).
+
+    Only the run-scoped execution credential may report usage; the server adds
+    these values to its own counters and enforces the effective limits.
+    """
+
+    tokens: int = Field(default=0, ge=0)
+    cost_usd: float = Field(default=0.0, ge=0.0)
 
 
 class AgentRunLogCreate(BaseModel):

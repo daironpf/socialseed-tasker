@@ -33,6 +33,7 @@ from socialseed_tasker.application.actions import (
     PolicyViolationError,
 )
 from socialseed_tasker.application.agent_approvals import AgentApprovalError
+from socialseed_tasker.application.agent_limits import AgentLimitError
 from socialseed_tasker.application.exceptions import AIServiceNotConfiguredError, GraphPortError
 from socialseed_tasker.infrastructure.web_api.schemas import (
     APIResponse,
@@ -344,11 +345,21 @@ def create_app(
             # Agents request and consume approvals with their run-scoped
             # execution credential; the router enforces human-only decisions
             # and revalidates the run before any side effect (issue #616).
+            # The same credential reports server-measured usage (#617).
+            execution_token = request.headers.get("X-Agent-Execution-Token") or bearer
+            usage_report = (
+                request.method == "POST"
+                and request.url.path.startswith("/api/v1/runs/")
+                and request.url.path.endswith("/usage")
+            )
             if (
                 request.method == "POST"
-                and request.url.path.startswith("/api/v1/agent-approvals")
-                and bearer is not None
-                and verify_agent_execution_token(bearer) is not None
+                and (
+                    request.url.path.startswith("/api/v1/agent-approvals")
+                    or usage_report
+                )
+                and execution_token is not None
+                and verify_agent_execution_token(execution_token) is not None
             ):
                 return await call_next(request)
             return JSONResponse(
@@ -1214,6 +1225,19 @@ def create_app(
         return JSONResponse(
             status_code=exc.status_code,
             content=_error_response(exc.code.upper(), exc.message),
+        )
+
+    @app.exception_handler(AgentLimitError)
+    async def agent_limit_error_handler(
+        request: Request, exc: AgentLimitError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=_error_response(
+                exc.code.upper(),
+                exc.message,
+                exc.as_metadata(),
+            ),
         )
 
     @app.exception_handler(StarletteHTTPException)

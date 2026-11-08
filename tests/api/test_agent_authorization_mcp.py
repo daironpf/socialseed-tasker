@@ -58,12 +58,41 @@ class FakeProfileStore:
     def get_run(self, run_id: str) -> dict[str, Any] | None:
         if run_id != "run-1":
             return None
-        return {
-            "id": run_id,
-            "agent_id": "agent-1",
-            "issue_id": self.issue_id,
-            "status": "running",
-        }
+        if not self.runs:
+            self.runs.append(
+                {
+                    "id": run_id,
+                    "agent_id": "agent-1",
+                    "issue_id": self.issue_id,
+                    "status": "running",
+                    "total_tokens": 0,
+                    "total_tool_calls": 0,
+                    "total_cost_usd": 0.0,
+                }
+            )
+        return self.runs[0]
+
+    def add_run_usage(
+        self,
+        run_id: str,
+        *,
+        tokens: int = 0,
+        cost_usd: float = 0.0,
+        tool_calls: int = 0,
+    ):
+        run = self.get_run(run_id)
+        assert run is not None
+        run["total_tokens"] = int(run.get("total_tokens") or 0) + tokens
+        run["total_tool_calls"] = int(run.get("total_tool_calls") or 0) + tool_calls
+        run["total_cost_usd"] = float(run.get("total_cost_usd") or 0.0) + cost_usd
+        return run
+
+    def stop_run_for_limit(self, run_id: str, *, violation: dict[str, Any]):
+        run = self.get_run(run_id)
+        assert run is not None
+        run["status"] = "failed"
+        run.setdefault("logs", []).append(violation)
+        return run
 
 
 class FakePolicyStore:
@@ -235,6 +264,21 @@ def test_policy_changes_and_run_closure_apply_to_subsequent_tool_calls(
     }
     denied_after_close = _call_issue(client, seed["issue"], token)
     assert denied_after_close["isError"] is True
+
+
+def test_mcp_tool_call_stops_at_the_tool_call_limit(client_and_context):
+    client, seed, project_id, profiles, _ = client_and_context
+    _initialize(client)
+    token = _token(project_id, seed["issue"])
+    profiles.profile["limits"] = {"max_tool_calls_per_run": 1}
+
+    allowed = _call_issue(client, seed["issue"], token)
+    denied = _call_issue(client, seed["issue"], token)
+
+    assert allowed["isError"] is not True
+    assert denied["isError"] is True
+    assert profiles.get_run("run-1")["status"] == "failed"
+    assert profiles.get_run("run-1")["logs"][-1]["limit"] == "max_tool_calls_per_run"
 
 
 def test_execution_token_is_accepted_only_by_mcp_when_api_auth_is_enabled(

@@ -31,7 +31,7 @@ Los estados distinguen persistir una configuración de hacerla cumplir durante l
 | Modelo, especialización, temperatura e instrucciones | Implementado como dato | Se almacenan en el perfil; la disponibilidad del modelo depende de la configuración de ejecución |
 | Skills y herramientas | Parcial | El perfil referencia skills y herramientas; `tools` se valida contra catálogo y se comprueba por invocación en las herramientas MCP actuales. Aún no hay ejecutores backend para herramientas de escritura |
 | Alcance de lectura, propuesta y aplicación | Parcial | `read_access`, `propose_access` y `apply_access` se evalúan independientemente en el authorizer backend (#615); las herramientas MCP actuales solo leen. `write_access` se conserva como alcance heredado y no concede capacidades implícitas |
-| Límites | Parcial | Existe el campo `limits`; el formato y enforcement de cada límite deben especificarse y verificarse |
+| Límites | Implementado | Contrato tipado (`max_tokens_per_run`, `max_cost_usd_per_run`, `max_duration_seconds`, `max_tool_calls_per_run`, `max_risk`); el perfil se compone con los máximos de organización/proyecto aplicando el más restrictivo. El servidor mide tokens/costo/duración/pasos y detiene el run al alcanzar un límite (#617) |
 | Políticas heredadas de organización y proyecto | Parcial | `agent_permission_policies` limita cada invocación MCP junto al perfil (#615). El proyecto se deriva del componente del issue; mientras no exista una relación proyecto-organización, cualquier política organizacional activa causa denegación cerrada |
 | Aprobaciones y escalado | Implementado para acciones concretas | `agent_approvals` persiste solicitud, aprobación, rechazo, revocación y vencimiento ligados a run, acción, alcance y efecto; la UI HITL refleja el estado del servidor. Las condiciones automáticas de escalado siguen pendientes (AGENT-06) |
 | Auditoría de acciones y aprobación | Pendiente de confirmar | Verificar cobertura de ejecución, cambios de permisos y resultados |
@@ -263,10 +263,11 @@ El perfil existente ya contempla identidad, modelo, especialización,
 temperatura, prompt, herramientas, lectura, escritura, propuesta, aplicación,
 límites, skills y estado habilitado. La interfaz y el contrato/API son parte de
 este alcance. El contrato explícito de #612 (AGENT-01) separa esas capacidades;
-el enforcement por acción se implementó en #615 (AGENT-04) y el ciclo de
-aprobación humana en #616 (AGENT-05). Los límites (AGENT-06), la auditoría
-integral (AGENT-07) y los cambios de permisos durante una ejecución (AGENT-08)
-siguen siendo requisitos a completar.
+el enforcement por acción se implementó en #615 (AGENT-04), el ciclo de
+aprobación humana en #616 (AGENT-05) y los límites tipados con medición y
+detención en servidor en #617 (AGENT-06). La auditoría integral (AGENT-07) y
+los cambios de permisos durante una ejecución (AGENT-08) siguen siendo
+requisitos a completar.
 
 Antes de presentar como funcional una opción de seguridad, debe verificarse
 que se valida en backend al ejecutar la acción, que aplica a todas las rutas
@@ -338,11 +339,20 @@ indicar qué identificadores completa y actualizar su estado al cerrarse.
   y actor/run incorrectos; un rechazo, una revocación o un timeout dejan
   `executed_at` vacío y la acción sin ejecutar; sin plazo configurado la
   solicitud permanece `pending` y nunca se interpreta como aprobada.
-- **AGENT-06 — Enforcement de límites** — Parcial. Definir esquema tipado y
-  aplicar límites de costo/tokens, duración y pasos/acciones en el servidor.
-  **Aceptación:** medición y detención son comprobables; se aplica el límite
-  más restrictivo; al agotarse, no se inician nuevas acciones y se registra
-  el motivo.
+- **AGENT-06 — Enforcement de límites** — Implementado. El contrato tipado
+  declara valor, unidad, ámbito (un run) y comportamiento al alcanzar el
+  límite: no se inicia ninguna acción nueva. Los límites del perfil se
+  componen con los máximos de organización/proyecto tomando el valor mínimo y
+  el nivel de riesgo más restrictivo; la ausencia de un límite no crea una
+  cuota. El servidor mantiene contadores autoritativos en `agent_runs`
+  (tokens, costo, pasos y tiempo transcurrido), cuenta cada inicio de acción
+  antes de ejecutarla y recibe tokens/costo por el endpoint autenticado con la
+  credencial del run (`POST /runs/{run_id}/usage`). Al alcanzar un límite el
+  run pasa a `failed`, se agrega un log `violation` con `limit`, `unit`,
+  `limit_value`, `observed` y `reason`, y la API responde `409`
+  `AGENT_LIMIT_EXCEEDED`. **Aceptación verificada:** pruebas cubren parsing,
+  composición con políticas, medición de consumo, parada del run y registro del
+  motivo; un perfil sin límites nunca se bloquea por una cuota implícita.
 - **AGENT-07 — Auditoría de ejecuciones** — Pendiente de confirmar. Registrar
   actor iniciador, perfil, modelo, acciones, recursos, decisiones de
   autorización, aprobaciones, consumo y resultado. **Aceptación:** el

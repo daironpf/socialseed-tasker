@@ -17,6 +17,7 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 - [#575] Workflow definitions library on Postgres with `.md` import
 - [#576-#577] Granular human skills management and floating skill picker for agents in the modals
 - [#616] Persisted human approvals bound to one agent action: request/approve/reject/revoke/expire lifecycle, one-shot execution gate, admin-only decisions that reject agent profiles, and a HITL UI that reflects server state instead of simulating decisions
+- [#617] Typed agent execution limits (`max_tokens_per_run`, `max_cost_usd_per_run`, `max_duration_seconds`, `max_tool_calls_per_run`, `max_risk`) composed with organization/project ceilings, server-side measurement and `409 AGENT_LIMIT_EXCEEDED` stop with a persisted `violation` log; runtime reports tokens/cost through `POST /runs/{run_id}/usage`
 - Frontend test suite: 60 Vitest suites (453 tests) under `frontend/src/**`, running in `frontend-ci` next to the Playwright e2e suite
 - Opt-in live-infra integration gate (`TASKER_INTEGRATION=1`) so routine gates no longer wipe the real Neo4j
 - `_setup_windows_encoding()` function in `init_command.py` for automatic UTF-8 setup on Windows

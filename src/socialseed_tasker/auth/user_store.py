@@ -25,6 +25,7 @@ from socialseed_tasker.auth.agent_approval_store import (
     AGENT_APPROVALS_INDEX_DDL,
 )
 from socialseed_tasker.config.storage import get_database_url
+from socialseed_tasker.domain.agent_limits import parse_agent_limits
 from socialseed_tasker.domain.agent_permissions import (
     normalize_resource_scopes,
     normalize_tool_slugs,
@@ -230,11 +231,18 @@ CREATE TABLE IF NOT EXISTS agent_permission_policies (
     read_access    JSONB,
     propose_access JSONB,
     apply_access   JSONB,
+    limits         JSONB,
     is_active      BOOLEAN NOT NULL DEFAULT TRUE,
     created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 )
 """
+
+# Typed execution limits on policy ceilings (#617): a policy can only make a
+# profile's limits stricter. Existing databases gain the column idempotently.
+AGENT_PERMISSION_POLICY_LIMITS_MIGRATION_DDL = (
+    "ALTER TABLE agent_permission_policies ADD COLUMN IF NOT EXISTS limits JSONB",
+)
 
 USER_SKILLS_DDL = """
 CREATE TABLE IF NOT EXISTS user_skills (
@@ -285,10 +293,17 @@ CREATE TABLE IF NOT EXISTS agent_runs (
     finished_at      TIMESTAMPTZ,
     total_tokens     INT,
     total_tool_calls INT,
+    total_cost_usd   DOUBLE PRECISION,
     duration_ms      INT,
     summary          TEXT
 )
 """
+
+# Server-measured cost for run limits (#617); idempotent upgrade for existing
+# databases created before the column existed.
+AGENT_RUNS_COST_MIGRATION_DDL = (
+    "ALTER TABLE agent_runs ADD COLUMN IF NOT EXISTS total_cost_usd DOUBLE PRECISION",
+)
 
 AGENT_RUN_LOGS_DDL = """
 CREATE TABLE IF NOT EXISTS agent_run_logs (
@@ -485,7 +500,11 @@ class PostgresUserStore:
                 WORKFLOWS_DDL,
             ):
                 cur.execute(ddl)
-            for ddl in AGENT_PERMISSION_MIGRATION_DDL:
+            for ddl in (
+                *AGENT_PERMISSION_MIGRATION_DDL,
+                *AGENT_PERMISSION_POLICY_LIMITS_MIGRATION_DDL,
+                *AGENT_RUNS_COST_MIGRATION_DDL,
+            ):
                 cur.execute(ddl)
             for ddl in INDEX_DDL + AGENT_APPROVALS_INDEX_DDL:
                 cur.execute(ddl)
@@ -1231,7 +1250,7 @@ def _as_optional_json_list(value: Any) -> list[str] | None:
 
 _AGENT_POLICY_ROW_SQL = (
     "id, name, scope_type, scope_id, tools, read_access, propose_access, "
-    "apply_access, is_active, created_at"
+    "apply_access, limits, is_active, created_at"
 )
 
 
@@ -1260,22 +1279,29 @@ class PostgresAgentPermissionPolicyStore:
         read_access: list[str] | None = None,
         propose_access: list[str] | None = None,
         apply_access: list[str] | None = None,
+        limits: dict[str, Any] | None = None,
         is_active: bool = True,
     ) -> dict[str, Any]:
-        """Insert a policy and return it; invalid scopes/tools raise ``ValueError``."""
+        """Insert a policy and return it; invalid scopes/tools/limits raise ``ValueError``."""
         if scope_type not in ("organization", "project"):
             raise ValueError(f"scope:{scope_type}")
         clean_scope_id = scope_id.strip()
         if not clean_scope_id:
             raise ValueError("scope_id:<empty>")
+        clean_limits = (
+            parse_agent_limits(limits).as_dict() if limits is not None else None
+        )
 
         with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
             cur.execute(
                 f"""
                 INSERT INTO agent_permission_policies (
                     name, scope_type, scope_id, tools, read_access,
-                    propose_access, apply_access, is_active, updated_at
-                ) VALUES (%s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb, %s, now())
+                    propose_access, apply_access, limits, is_active, updated_at
+                ) VALUES (
+                    %s, %s, %s, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb,
+                    %s::jsonb, %s, now()
+                )
                 RETURNING {_AGENT_POLICY_ROW_SQL}
                 """,
                 (
@@ -1286,6 +1312,7 @@ class PostgresAgentPermissionPolicyStore:
                     self._json_or_null(read_access, None),
                     self._json_or_null(propose_access, None),
                     self._json_or_null(apply_access, None),
+                    json.dumps(clean_limits) if clean_limits is not None else None,
                     is_active,
                 ),
             )
@@ -1374,8 +1401,9 @@ class PostgresAgentPermissionPolicyStore:
             "read_access": _as_optional_json_list(row[5]),
             "propose_access": _as_optional_json_list(row[6]),
             "apply_access": _as_optional_json_list(row[7]),
-            "is_active": bool(row[8]),
-            "created_at": row[9],
+            "limits": _as_json_dict(row[8]),
+            "is_active": bool(row[9]),
+            "created_at": row[10],
         }
 
 
@@ -1513,6 +1541,7 @@ class PostgresAgentProfileStore:
         validated_read = normalize_resource_scopes(read_access or [])
         validated_propose = normalize_resource_scopes(propose_access or [])
         validated_apply = normalize_resource_scopes(apply_access or [])
+        clean_limits = parse_agent_limits(limits).as_dict() if limits is not None else None
         with closing(psycopg.connect(self._database_url, autocommit=False)) as conn:
             try:
                 with conn.cursor() as cur:
@@ -1556,7 +1585,7 @@ class PostgresAgentProfileStore:
                             json.dumps(write_access or []),
                             json.dumps(validated_propose),
                             json.dumps(validated_apply),
-                            json.dumps(limits) if limits is not None else None,
+                            json.dumps(clean_limits) if clean_limits is not None else None,
                             enabled,
                         ),
                     )
@@ -1608,6 +1637,7 @@ class PostgresAgentProfileStore:
         validated_apply = (
             normalize_resource_scopes(apply_access) if apply_access is not None else None
         )
+        clean_limits = parse_agent_limits(limits).as_dict() if limits is not None else None
         with closing(psycopg.connect(self._database_url, autocommit=False)) as conn:
             try:
                 with conn.cursor() as cur:
@@ -1654,7 +1684,9 @@ class PostgresAgentProfileStore:
                     next_apply = (
                         validated_apply if validated_apply is not None else _as_json_list(cur_apply)
                     )
-                    next_limits = limits if limits is not None else _as_json_dict(cur_limits)
+                    next_limits = (
+                        clean_limits if clean_limits is not None else _as_json_dict(cur_limits)
+                    )
                     cur.execute(
                         """
                         UPDATE agents_user SET
@@ -1716,7 +1748,7 @@ class PostgresAgentProfileStore:
 
     _RUN_ROW_SQL = (
         "id, agent_id, issue_id, status, model, started_at, finished_at, "
-        "total_tokens, total_tool_calls, duration_ms, summary"
+        "total_tokens, total_tool_calls, total_cost_usd, duration_ms, summary"
     )
 
     @staticmethod
@@ -1731,8 +1763,9 @@ class PostgresAgentProfileStore:
             "finished_at": row[6].isoformat() if row[6] is not None else None,
             "total_tokens": row[7],
             "total_tool_calls": row[8],
-            "duration_ms": row[9],
-            "summary": row[10],
+            "total_cost_usd": row[9],
+            "duration_ms": row[10],
+            "summary": row[11],
         }
 
     def _agent_exists(self, cur: Any, agent_id: str, as_agent: bool = True) -> bool:
@@ -1855,7 +1888,16 @@ class PostgresAgentProfileStore:
 
     def update_run(self, run_id: str, **fields: Any) -> dict[str, Any]:
         """Partially update a run; raises ``LookupError`` when the run is missing."""
-        allowed = {"status", "finished_at", "total_tokens", "total_tool_calls", "duration_ms", "summary", "model"}
+        allowed = {
+            "status",
+            "finished_at",
+            "total_tokens",
+            "total_tool_calls",
+            "total_cost_usd",
+            "duration_ms",
+            "summary",
+            "model",
+        }
         assignments = {key: value for key, value in fields.items() if key in allowed and value is not None}
         with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
             cur.execute("SELECT 1 FROM agent_runs WHERE id = %s", (run_id,))
@@ -1869,6 +1911,95 @@ class PostgresAgentProfileStore:
                 (run_id,),
             )
             return self._run_row(cur.fetchone())
+
+    def add_run_usage(
+        self,
+        run_id: str,
+        *,
+        tokens: int = 0,
+        cost_usd: float = 0.0,
+        tool_calls: int = 0,
+    ) -> dict[str, Any]:
+        """Atomically add server-measured consumption to a run (#617).
+
+        ``duration_ms`` is refreshed from ``started_at`` on every call so the
+        duration limit sees real elapsed time even without runtime reports.
+        Raises ``LookupError`` when the run does not exist.
+        """
+        if tokens < 0 or cost_usd < 0 or tool_calls < 0:
+            raise ValueError("usage")
+        with closing(psycopg.connect(self._database_url, autocommit=True)) as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE agent_runs SET "
+                "total_tokens = COALESCE(total_tokens, 0) + %s, "
+                "total_tool_calls = COALESCE(total_tool_calls, 0) + %s, "
+                "total_cost_usd = COALESCE(total_cost_usd, 0) + %s, "
+                "duration_ms = CAST(extract(epoch FROM (now() - started_at)) * 1000 AS INT) "
+                f"WHERE id = %s RETURNING {self._RUN_ROW_SQL}",
+                (tokens, tool_calls, cost_usd, run_id),
+            )
+            row = cur.fetchone()
+            if row is None:
+                raise LookupError(f"run not found: {run_id}")
+            return self._run_row(row)
+
+    def stop_run_for_limit(
+        self, run_id: str, *, violation: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Close a running run as failed and persist the reached limit as a log.
+
+        Idempotent: a run that is already closed is returned unchanged and no
+        duplicate ``violation`` entry is appended.
+        """
+        with closing(psycopg.connect(self._database_url, autocommit=False)) as conn:
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT status FROM agent_runs WHERE id = %s FOR UPDATE",
+                        (run_id,),
+                    )
+                    current = cur.fetchone()
+                    if current is None:
+                        raise LookupError(f"run not found: {run_id}")
+                    if current[0] != "running":
+                        cur.execute(
+                            f"SELECT {self._RUN_ROW_SQL} FROM agent_runs WHERE id = %s",
+                            (run_id,),
+                        )
+                        return self._run_row(cur.fetchone())
+                    limit = str(violation.get("limit") or "limit")
+                    summary = f"Agent stopped: {limit} reached"
+                    cur.execute(
+                        "UPDATE agent_runs SET status = 'failed', finished_at = now(), "
+                        "summary = COALESCE(%s, summary), "
+                        "duration_ms = CAST(extract(epoch FROM (now() - started_at)) * 1000 AS INT) "
+                        "WHERE id = %s",
+                        (summary, run_id),
+                    )
+                    cur.execute(
+                        "SELECT COALESCE(MAX(seq), 0) + 1 FROM agent_run_logs WHERE run_id = %s",
+                        (run_id,),
+                    )
+                    seq_row = cur.fetchone()
+                    seq = int(seq_row[0]) if seq_row else 1
+                    cur.execute(
+                        "INSERT INTO agent_run_logs "
+                        "(run_id, seq, type, content_markdown, metadata) "
+                        "VALUES (%s, %s, 'violation', %s, %s::jsonb)",
+                        (run_id, seq, f"Agent limit exceeded: {limit}", json.dumps(violation)),
+                    )
+                    cur.execute(
+                        f"SELECT {self._RUN_ROW_SQL} FROM agent_runs WHERE id = %s",
+                        (run_id,),
+                    )
+                    row = cur.fetchone()
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+        if row is None:
+            raise LookupError(f"run not found: {run_id}")
+        return self._run_row(row)
 
     def list_runs(self, agent_id: str, *, limit: int = 50) -> list[dict[str, Any]]:
         """List an agent's runs, newest first; raises ``LookupError`` when the agent is missing."""

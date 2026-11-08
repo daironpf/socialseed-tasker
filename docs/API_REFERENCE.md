@@ -581,6 +581,65 @@ Provider credentials are not part of the profile contract and are never
 stored there; they belong to the execution environment's secret management.
 Saving a profile alone never authorizes an action.
 
+### Execution limits
+
+Profiles and organization/project policies may declare typed execution limits.
+The canonical contract uses snake_case; the Studio's legacy camelCase aliases
+(`maxTokensPerRun`, `timeoutSeconds`, `maxRisk`, ...) are accepted on input and
+normalized before storage.
+
+| Field | Unit | Enforcement |
+|---|---|---|
+| `max_tokens_per_run` | tokens | Server counters from usage reports; new actions stop when reached |
+| `max_cost_usd_per_run` | USD | Server counters from usage reports; new actions stop when reached |
+| `max_duration_seconds` | seconds | Elapsed time from `started_at`; new actions stop when reached |
+| `max_tool_calls_per_run` | actions | Counted by the server before each action starts |
+| `max_risk` | risk level | Typed guardrail (`LOW` < `MEDIUM` < `HIGH`); most restrictive wins |
+
+A profile limit is composed with every applicable policy: numeric ceilings take
+the minimum and risk takes the most restrictive level. An absent limit means
+"not configured", never an implicit quota; only configured values are applied.
+
+```http
+POST /agents/permission-policies
+{
+  "name": "Project execution ceiling",
+  "scope_type": "project",
+  "scope_id": "proj-1",
+  "limits": {
+    "max_tokens_per_run": 50000,
+    "max_cost_usd_per_run": 2.5,
+    "max_duration_seconds": 600,
+    "max_tool_calls_per_run": 20,
+    "max_risk": "MEDIUM"
+  }
+}
+```
+
+When a limit is reached, no new action starts. The server closes the run with
+`status: "failed"`, appends a `violation` log containing `limit`, `unit`,
+`limit_value`, `observed` and `reason: "agent_limit_exceeded"`, and answers
+`409` with code `AGENT_LIMIT_EXCEEDED` and the same metadata in `details`.
+Invalid or ambiguous limit values return `422`; malformed active policy limits
+fail closed as `permissions_unresolved`.
+
+### Report run usage (runtime)
+
+Token and cost consumption are reported with the run-scoped execution
+credential; the server adds them to its own counters and enforces the effective
+limits. Client-supplied totals on the generic run update are not authoritative.
+
+```http
+POST /runs/{run_id}/usage
+X-Agent-Execution-Token: aet_<signed-token>
+{"tokens": 1250, "cost_usd": 0.03}
+```
+
+The token must match the run, agent and issue, and the run must still be
+`running`. A report that reaches a configured limit returns `409` as described
+above and the run is stopped; only then is the endpoint rejected for the closed
+run (`403`).
+
 ## Agent Action Approvals
 
 `/agent-approvals` stores human decisions bound to one concrete agent action.

@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import {
+  backendProfileToStudio,
   loadStudioProfiles,
-  saveStudioProfiles,
   mergeStudioAgents,
+  saveStudioProfiles,
+  studioProfileToPayload,
 } from '@/utils/studioAgents'
 import type { AgentProfile } from '@/types/agentStudio'
 import type { User } from '@/types'
@@ -69,6 +71,32 @@ describe('studioAgents', () => {
   it('leaves the user list untouched without saved profiles', () => {
     const users = [makeUser('u-1')]
     expect(mergeStudioAgents(users)).toEqual(users)
+  })
+
+  it('reads canonical snake_case limits and the legacy camelCase aliases', () => {
+    const canonical = backendProfileToStudio({
+      id: 'agent-1',
+      username: 'bot',
+      limits: { max_tokens_per_run: 2500, max_duration_seconds: 45, max_risk: 'HIGH' },
+    })
+    const legacy = backendProfileToStudio({
+      id: 'agent-2',
+      username: 'legacy',
+      limits: { maxTokensPerRun: 1000, timeoutSeconds: 30, maxRisk: 'LOW' },
+    })
+
+    expect(canonical.limits).toEqual({ maxTokensPerRun: 2500, timeoutSeconds: 45, maxRisk: 'HIGH' })
+    expect(legacy.limits).toEqual({ maxTokensPerRun: 1000, timeoutSeconds: 30, maxRisk: 'LOW' })
+  })
+
+  it('writes the canonical snake_case limits contract to the backend', () => {
+    const payload = studioProfileToPayload(makeProfile('agent-studio-1'))
+
+    expect(payload.limits).toEqual({
+      max_tokens_per_run: 1000,
+      max_duration_seconds: 30,
+      max_risk: 'LOW',
+    })
   })
 
   it('never lets a studio profile overwrite a PG id (#565)', () => {

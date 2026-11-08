@@ -110,16 +110,17 @@ export function mergeStudioAgents(users: User[]): User[] {
 
 /** The Studio's free-text `role` rides on `specialization` (agents have no RBAC role). */
 export function backendProfileToStudio(raw: BackendAgentProfile): AgentProfile {
-  const stored = (raw.limits ?? {}) as Partial<Record<keyof AgentLimits, unknown>>
+  const stored = (raw.limits ?? {}) as Record<string, unknown>
+  // Backend stores canonical snake_case; older records may still carry the
+  // Studio's camelCase aliases, so both are accepted on read (#617).
+  const tokens = stored.max_tokens_per_run ?? stored.maxTokensPerRun
+  const duration = stored.max_duration_seconds ?? stored.timeoutSeconds
+  const risk = stored.max_risk ?? stored.maxRisk
   const limits: AgentLimits = {
-    maxTokensPerRun: typeof stored.maxTokensPerRun === 'number'
-      ? stored.maxTokensPerRun
-      : DEFAULT_LIMITS.maxTokensPerRun,
-    timeoutSeconds: typeof stored.timeoutSeconds === 'number'
-      ? stored.timeoutSeconds
-      : DEFAULT_LIMITS.timeoutSeconds,
-    maxRisk: stored.maxRisk === 'LOW' || stored.maxRisk === 'MEDIUM' || stored.maxRisk === 'HIGH'
-      ? stored.maxRisk
+    maxTokensPerRun: typeof tokens === 'number' ? tokens : DEFAULT_LIMITS.maxTokensPerRun,
+    timeoutSeconds: typeof duration === 'number' ? duration : DEFAULT_LIMITS.timeoutSeconds,
+    maxRisk: risk === 'LOW' || risk === 'MEDIUM' || risk === 'HIGH'
+      ? risk
       : DEFAULT_LIMITS.maxRisk,
   }
   const profile: AgentProfile = {
@@ -151,7 +152,12 @@ export function studioProfileToPayload(
     specialization: profile.role,
     system_prompt: profile.systemPrompt,
     tools: [...profile.tools],
-    limits: { ...profile.limits },
+    // Canonical snake_case contract shared with organization/project policies.
+    limits: {
+      max_tokens_per_run: profile.limits.maxTokensPerRun,
+      max_duration_seconds: profile.limits.timeoutSeconds,
+      max_risk: profile.limits.maxRisk,
+    },
     enabled: profile.enabled,
   }
 }

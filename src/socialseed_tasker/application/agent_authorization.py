@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from socialseed_tasker.domain.agent_limits import AgentLimits, resolve_agent_limits
 from socialseed_tasker.domain.agent_permissions import AGENT_RESOURCE_SCOPES
 from socialseed_tasker.domain.agent_policy import resolve_effective_permissions
 
@@ -42,6 +43,7 @@ class AgentActionDecision:
     action: str
     resource_scope: str
     effective_permissions: dict[str, list[str]]
+    effective_limits: AgentLimits = AgentLimits()
 
 
 class AgentActionAuthorizer:
@@ -56,6 +58,34 @@ class AgentActionAuthorizer:
         self._profiles = profiles
         self._policies = policies
         self._known_tools = tuple(known_tools)
+
+    def resolve_limits(
+        self,
+        *,
+        agent_id: str,
+        project_id: str,
+        organization_id: str | None = None,
+    ) -> AgentLimits:
+        """Resolve the effective execution limits for one run context.
+
+        Raises ``LookupError`` for a missing profile and ``ValueError`` when the
+        context or a policy document cannot be resolved (fail closed).
+        """
+        profile = self._profiles.get_profile(agent_id)
+        if profile is None:
+            raise LookupError(f"agent not found: {agent_id}")
+        organization_policies = self._policies.list_policies(
+            scope_type="organization", is_active=True
+        )
+        if organization_policies and not organization_id:
+            raise ValueError("organization_context_unresolved")
+        applicable = self._policies.list_for_context(
+            organization_id=organization_id, project_id=project_id
+        )
+        resolved = resolve_agent_limits(profile.get("limits"), applicable)
+        if resolved.errors:
+            raise ValueError("limits_unresolved")
+        return resolved.limits
 
     def authorize(
         self,
@@ -74,6 +104,7 @@ class AgentActionAuthorizer:
             "propose_access": [],
             "apply_access": [],
         }
+        effective_limits = AgentLimits()
 
         if action not in _AGENT_ACTIONS:
             reason = "unknown_action"
@@ -113,6 +144,10 @@ class AgentActionAuthorizer:
                         policies=applicable_policies,
                         known_tools=self._known_tools,
                     )
+                    limit_resolution = resolve_agent_limits(
+                        profile.get("limits"), applicable_policies
+                    )
+                    effective_limits = limit_resolution.limits
                     effective = resolved.effective.as_dict()
                     action_scopes = {
                         "read": resolved.effective.read_access,
@@ -121,7 +156,7 @@ class AgentActionAuthorizer:
                     }
                     if not resolved.profile_enabled:
                         reason = "agent_disabled"
-                    elif resolved.status != "resolved":
+                    elif resolved.status != "resolved" or limit_resolution.errors:
                         reason = "permissions_unresolved"
                     elif tool is not None and tool not in resolved.effective.tools:
                         reason = "tool_not_permitted"
@@ -138,6 +173,7 @@ class AgentActionAuthorizer:
             action=action,
             resource_scope=resource_scope,
             effective_permissions=effective,
+            effective_limits=effective_limits,
         )
         log = logger.info if decision.allowed else logger.warning
         log(

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from socialseed_tasker.application.agent_authorization import AgentActionAuthorizer
+from socialseed_tasker.application.agent_limits import AgentLimitGuard
 from socialseed_tasker.auth.user_store import (
     TOOLS_SEED,
     PostgresAgentPermissionPolicyStore,
@@ -22,6 +23,11 @@ def create_agent_action_authorizer() -> AgentActionAuthorizer:
         PostgresAgentPermissionPolicyStore(database_url),
         [slug for slug, _, _ in TOOLS_SEED],
     )
+
+
+def create_agent_limit_guard() -> AgentLimitGuard:
+    """Create a guard backed by the persistent run usage counters (#617)."""
+    return AgentLimitGuard(create_agent_profile_store())
 
 
 def create_agent_profile_store() -> PostgresAgentProfileStore:

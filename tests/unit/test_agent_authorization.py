@@ -210,3 +210,50 @@ def test_project_context_denies_ambiguous_or_mismatched_backend_mapping():
 
     assert resolve_component_project_id(component, AmbiguousRepository()) is None
     assert resolve_component_project_id(stale_component, AmbiguousRepository()) is None
+
+def test_effective_limits_compose_profile_with_the_tightest_policy():
+    profile = {**PROFILE, "limits": {"max_tokens_per_run": 4000, "max_duration_seconds": 120}}
+    policies = [
+        {
+            "id": "ceiling",
+            "scope_type": "project",
+            "scope_id": "project-1",
+            "is_active": True,
+            "limits": {"maxTokensPerRun": 1000, "max_steps": 3},
+        }
+    ]
+    authorizer, _, _ = _authorizer(profile=profile, policies=policies)
+
+    decision = _authorize(authorizer)
+
+    assert decision.allowed is True
+    assert decision.effective_limits.max_tokens_per_run == 1000
+    assert decision.effective_limits.max_duration_seconds == 120
+    assert decision.effective_limits.max_tool_calls_per_run == 3
+
+
+def test_invalid_policy_limits_fail_closed():
+    policies = [
+        {
+            "id": "broken",
+            "scope_type": "project",
+            "scope_id": "project-1",
+            "is_active": True,
+            "limits": {"max_tokens_per_run": 0},
+        }
+    ]
+    authorizer, _, _ = _authorizer(policies=policies)
+
+    decision = _authorize(authorizer)
+
+    assert decision.allowed is False
+    assert decision.reason == "permissions_unresolved"
+
+
+def test_absence_of_limits_does_not_create_a_quota():
+    authorizer, _, _ = _authorizer()
+
+    decision = _authorize(authorizer)
+
+    assert decision.allowed is True
+    assert decision.effective_limits.is_empty() is True

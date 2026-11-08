@@ -16,8 +16,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+import psycopg
+from fastapi import APIRouter, HTTPException, Query, Request
 
+from socialseed_tasker.application.agent_limits import AgentLimitGuard
+from socialseed_tasker.auth.tokens import verify_agent_execution_token
 from socialseed_tasker.auth.user_store import PostgresAgentProfileStore
 from socialseed_tasker.config.storage import get_database_url
 from socialseed_tasker.infrastructure.web_api.schemas import (
@@ -26,6 +29,7 @@ from socialseed_tasker.infrastructure.web_api.schemas import (
     AgentRunLogResponse,
     AgentRunResponse,
     AgentRunUpdate,
+    AgentRunUsageCreate,
     APIResponse,
     Meta,
 )
@@ -57,6 +61,7 @@ def _run_to_response(run: dict[str, Any]) -> AgentRunResponse:
         finished_at=run.get("finished_at"),
         total_tokens=run.get("total_tokens"),
         total_tool_calls=run.get("total_tool_calls"),
+        total_cost_usd=run.get("total_cost_usd"),
         duration_ms=run.get("duration_ms"),
         summary=run.get("summary"),
     )
@@ -207,6 +212,89 @@ def append_agent_run_log(run_id: str, body: AgentRunLogCreate) -> APIResponse[Ag
     return APIResponse(data=_log_to_response(entry), meta=Meta(request_id=None))
 
 
+def _usage_claims(request: Request) -> dict[str, Any]:
+    """Validate the run-scoped execution credential used to report usage."""
+    token = request.headers.get("X-Agent-Execution-Token")
+    if not token:
+        authorization = request.headers.get("Authorization", "")
+        if authorization.startswith("Bearer "):
+            token = authorization[7:]
+    claims = verify_agent_execution_token(token or "")
+    if claims is None:
+        raise HTTPException(
+            status_code=401,
+            detail="A valid agent execution credential is required",
+        )
+    return claims
+
+
+@agent_runs_router.post(
+    "/runs/{run_id}/usage",
+    response_model=APIResponse[AgentRunResponse],
+    summary="Report server-measured agent usage",
+    description=(
+        "Runtime-only endpoint authenticated with the run's execution token. "
+        "It adds token/cost consumption to the server counters and stops the "
+        "run when an effective limit is reached (issue #617)."
+    ),
+    responses={
+        401: {"description": "Missing or invalid execution credential"},
+        403: {"description": "Run/agent/project mismatch or unresolved limits"},
+        409: {"description": "A configured consumption limit was reached"},
+    },
+)
+def report_agent_run_usage(
+    run_id: str,
+    body: AgentRunUsageCreate,
+    request: Request,
+) -> APIResponse[AgentRunResponse]:
+    """Add runtime-reported usage and enforce the run's effective limits."""
+    claims = _usage_claims(request)
+    if str(claims["run_id"]) != run_id:
+        raise HTTPException(status_code=403, detail="Execution token does not match this run")
+    agent_id = str(claims["sub"])
+    issue_id = str(claims["issue_id"])
+    project_id = str(claims["project_id"])
+
+    store = _pg_store()
+    try:
+        run = store.get_run(run_id)
+    except psycopg.Error as exc:
+        raise HTTPException(status_code=503, detail="Agent run store unavailable") from exc
+    if run is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if (
+        run.get("status") != "running"
+        or str(run.get("agent_id")) != agent_id
+        or str(run.get("issue_id")) != issue_id
+    ):
+        raise HTTPException(status_code=403, detail="Agent run is not active for this usage report")
+
+    from socialseed_tasker.infrastructure.web_api.agent_authorization import (
+        create_agent_action_authorizer,
+    )
+
+    try:
+        limits = create_agent_action_authorizer().resolve_limits(
+            agent_id=agent_id,
+            project_id=project_id,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=403, detail="Agent profile not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=403, detail="Agent limits could not be resolved") from exc
+    except psycopg.Error as exc:
+        raise HTTPException(status_code=503, detail="Agent authorization source unavailable") from exc
+
+    updated = AgentLimitGuard(store).record_usage_and_check(
+        run_id,
+        limits,
+        tokens=body.tokens,
+        cost_usd=body.cost_usd,
+    )
+    return APIResponse(data=_run_to_response(updated), meta=Meta(request_id=None))
+
+
 @agent_runs_router.get(
     "/runs/{run_id}/logs",
     response_model=APIResponse[list[AgentRunLogResponse]],
@@ -237,6 +325,7 @@ def update_agent_run(run_id: str, body: AgentRunUpdate) -> APIResponse[AgentRunR
             finished_at=body.finished_at,
             total_tokens=body.total_tokens,
             total_tool_calls=body.total_tool_calls,
+            total_cost_usd=body.total_cost_usd,
             duration_ms=body.duration_ms,
             summary=body.summary,
             model=body.model,

@@ -114,7 +114,7 @@ def test_create_agent_profile_201_returns_uid(
     assert agent["read_access"] == '["repository", "issues"]'
     assert agent["propose_access"] == '["repository"]'
     assert agent["apply_access"] == '["issues"]'
-    assert response.data.limits == {"max_tokens": 4000}
+    assert response.data.limits == {"max_tokens_per_run": 4000}
     assert sorted(response.data.skills) == ["Pytest", "Testing"]
     # #577: agent assignments live in agent_user_skills, never in user_skills.
     assert cursor.agent_user_skills[uid] == {"testing", "pytest"}
@@ -377,7 +377,7 @@ def test_update_agent_profile(monkeypatch: pytest.MonkeyPatch):
     # None keeps the stored values
     assert response.data.system_prompt == "You are a QA bot."
     assert response.data.email == "bot@socialseed.com"
-    assert response.data.limits == {"max_tokens": 4000}
+    assert response.data.limits == {"max_tokens_per_run": 4000}
     assert cursor.users[uid]["username"] == "bot-qa-2"
     assert cursor.agents[uid]["model"] == "claude-3-opus"
     assert cursor.agent_user_skills[uid] == {"refactor"}  # #577 replace on agent tables
