@@ -1,6 +1,6 @@
 # Project Roadmap
 
-**Last updated**: 2026-07-04
+**Last updated**: 2026-11-06
 
 ## Phase 1: Foundations
 - [x] Environment Setup
@@ -14,6 +14,15 @@
 ## Phase 3: Autonomous Testing
 - [x] Agent Reasoning Implementation
 - [x] Automated Test Suites
+
+## Phase 4: Agent Governance & Safety
+- [x] Backend authorization on every agent action (#615)
+- [x] Human approval lifecycle bound to each action (#616)
+- [ ] Execution limits enforcement (#617)
+- [ ] End-to-end execution audit (#618)
+- [ ] Permission changes during a run (#619)
+- [ ] Effective-policy form for agents (#620)
+- [ ] Agent contract tests and documentation (#621)
 
 ---
 
@@ -49,3 +58,5 @@
 | 432 | Environment isolation: real-test shares Neo4j with main project | Critical | cli/init_command.py | ✅ RESOLVED |
 | 433 | Config password: `_get_password_with_fallback()` misses YAML fallback | Low | cli/commands/shared.py | ✅ RESOLVED |
 | 434 | Path normalization: Windows backslashes in error messages | Low | cli/commands/*.py | ✅ RESOLVED |
+| 615 | Agent actions were not authorized per run/action in the backend | High | infrastructure/web_api/agent_authorization.py, application/agent_authorization.py | ✅ RESOLVED |
+| 616 | HITL governance UI simulated approvals instead of enforcing server-side decisions | High | auth/agent_approval_store.py, application/agent_approvals.py, infrastructure/web_api/routers/agent_approvals.py | ✅ RESOLVED |

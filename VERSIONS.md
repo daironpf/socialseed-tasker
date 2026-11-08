@@ -1,5 +1,10 @@
 # Project Versions
 
+## [Unreleased]
+
+### Unreleased Checklist
+- [x] **#616 Human approval lifecycle:** Persisted `agent_approvals` bound to run, action, scope, target, expected effect and action fingerprint; approve/reject/revoke/expire transitions; one-shot execution gate that revalidates authorization and rejects changed or reused actions; human-only decisions via the `admin` permission; HITL UI consumes the persisted server state.
+
 ## [1.0.5] - 2026-07-04
 
 ### v1.0.5 Checklist

@@ -20,6 +20,10 @@ from typing import Any, Protocol, cast
 import bcrypt
 import psycopg
 
+from socialseed_tasker.auth.agent_approval_store import (
+    AGENT_APPROVALS_DDL,
+    AGENT_APPROVALS_INDEX_DDL,
+)
 from socialseed_tasker.config.storage import get_database_url
 from socialseed_tasker.domain.agent_permissions import (
     normalize_resource_scopes,
@@ -477,12 +481,13 @@ class PostgresUserStore:
                 AGENT_RUNS_DDL,
                 AGENT_RUN_LOGS_DDL,
                 AGENT_PERMISSION_POLICIES_DDL,
+                AGENT_APPROVALS_DDL,
                 WORKFLOWS_DDL,
             ):
                 cur.execute(ddl)
             for ddl in AGENT_PERMISSION_MIGRATION_DDL:
                 cur.execute(ddl)
-            for ddl in INDEX_DDL:
+            for ddl in INDEX_DDL + AGENT_APPROVALS_INDEX_DDL:
                 cur.execute(ddl)
             if legacy_backup:
                 self._migrate_legacy_users(cur, legacy_backup)

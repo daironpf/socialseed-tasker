@@ -1,5 +1,11 @@
 export type HITLRequestSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
-export type HITLRequestStatus = 'pending' | 'approved' | 'rejected' | 'modified'
+export type HITLRequestStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'modified'
+  | 'revoked'
+  | 'expired'
 export type HITLRequestType = 'code_change' | 'schema_migration' | 'delete_operation' | 'deploy' | 'config_change'
 
 export interface HITLRequestDiff {
@@ -36,4 +42,10 @@ export interface HITLRequest {
   reviewedAt?: string
   reviewedBy?: string
   feedback?: string
+  runId?: string
+  action?: 'read' | 'propose' | 'apply'
+  tool?: string
+  resourceScope?: string
+  expectedEffect?: string
+  executedAt?: string
 }

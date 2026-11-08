@@ -33,7 +33,7 @@ Los estados distinguen persistir una configuración de hacerla cumplir durante l
 | Alcance de lectura, propuesta y aplicación | Parcial | `read_access`, `propose_access` y `apply_access` se evalúan independientemente en el authorizer backend (#615); las herramientas MCP actuales solo leen. `write_access` se conserva como alcance heredado y no concede capacidades implícitas |
 | Límites | Parcial | Existe el campo `limits`; el formato y enforcement de cada límite deben especificarse y verificarse |
 | Políticas heredadas de organización y proyecto | Parcial | `agent_permission_policies` limita cada invocación MCP junto al perfil (#615). El proyecto se deriva del componente del issue; mientras no exista una relación proyecto-organización, cualquier política organizacional activa causa denegación cerrada |
-| Aprobaciones y escalado | Pendiente de confirmar | No asumir enforcement completo por la presencia de datos o controles de interfaz |
+| Aprobaciones y escalado | Implementado para acciones concretas | `agent_approvals` persiste solicitud, aprobación, rechazo, revocación y vencimiento ligados a run, acción, alcance y efecto; la UI HITL refleja el estado del servidor. Las condiciones automáticas de escalado siguen pendientes (AGENT-06) |
 | Auditoría de acciones y aprobación | Pendiente de confirmar | Verificar cobertura de ejecución, cambios de permisos y resultados |
 
 Antes de cerrar un issue, actualizar esta tabla con la evidencia verificable (código, pruebas y rutas de ejecución) y ajustar el estado. No marcar una capacidad como implementada solo porque exista un campo en el perfil.
@@ -262,9 +262,11 @@ acciones, incluyendo las de ejecuciones en curso.
 El perfil existente ya contempla identidad, modelo, especialización,
 temperatura, prompt, herramientas, lectura, escritura, propuesta, aplicación,
 límites, skills y estado habilitado. La interfaz y el contrato/API son parte de
-este alcance. El contrato explícito de #612 (AGENT-01) separa esas capacidades,
-pero esto no implica que todos los campos cuenten ya con autorización efectiva
-en tiempo de ejecución; el enforcement se aborda en #615.
+este alcance. El contrato explícito de #612 (AGENT-01) separa esas capacidades;
+el enforcement por acción se implementó en #615 (AGENT-04) y el ciclo de
+aprobación humana en #616 (AGENT-05). Los límites (AGENT-06), la auditoría
+integral (AGENT-07) y los cambios de permisos durante una ejecución (AGENT-08)
+siguen siendo requisitos a completar.
 
 Antes de presentar como funcional una opción de seguridad, debe verificarse
 que se valida en backend al ejecutar la acción, que aplica a todas las rutas
@@ -320,11 +322,22 @@ indicar qué identificadores completa y actualizar su estado al cerrarse.
   autorización y denegación, agente deshabilitado, herramienta/alcance inválido,
   separación de propuesta/aplicación, cambio de política y revocación al cerrar
   el run.
-- **AGENT-05 — Flujo de aprobación humana** — Pendiente. Implementar solicitud,
-  aprobación, rechazo, revocación y vencimiento. **Aceptación:** solo una
-  persona autenticada y autorizada aprueba; la aprobación está vinculada a la
-  acción concreta; acción modificada o vencida no se ejecuta con la aprobación
-  anterior; rechazo o timeout no reporta éxito.
+- **AGENT-05 — Flujo de aprobación humana** — Implementado. La tabla
+  `agent_approvals` persiste solicitudes ligadas a un run, una acción, su
+  alcance, su efecto previsto y un fingerprint determinista del payload. Un
+  agente solicita con su credencial de ejecución (`POST /agent-approvals`) y
+  solo consume la aprobación mediante un gate de un solo uso
+  (`POST /agent-approvals/{id}/execute`) que revalida run, actor, vencimiento,
+  fingerprint y autorización vigente. Las decisiones humanas
+  (`GET /agent-approvals`, `GET /agent-approvals/{id}`,
+  `POST /agent-approvals/{id}/approve|reject|revoke`) exigen permiso `admin` y
+  rechazan perfiles de agente, por lo que un agente no puede decidir su propia
+  acción. La UI HITL deja de simular decisiones y reemplaza cada fila con la
+  respuesta persistida del servidor. **Aceptación verificada:** pruebas cubren
+  aprobación, rechazo, revocación, vencimiento, acción modificada, reutilización
+  y actor/run incorrectos; un rechazo, una revocación o un timeout dejan
+  `executed_at` vacío y la acción sin ejecutar; sin plazo configurado la
+  solicitud permanece `pending` y nunca se interpreta como aprobada.
 - **AGENT-06 — Enforcement de límites** — Parcial. Definir esquema tipado y
   aplicar límites de costo/tokens, duración y pasos/acciones en el servidor.
   **Aceptación:** medición y detención son comprobables; se aplica el límite

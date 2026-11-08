@@ -32,6 +32,7 @@ from socialseed_tasker.application.actions import (
     OpenDependenciesError,
     PolicyViolationError,
 )
+from socialseed_tasker.application.agent_approvals import AgentApprovalError
 from socialseed_tasker.application.exceptions import AIServiceNotConfiguredError, GraphPortError
 from socialseed_tasker.infrastructure.web_api.schemas import (
     APIResponse,
@@ -340,6 +341,16 @@ def create_app(
                 claims = verify_agent_execution_token(bearer)
                 if claims is not None:
                     return await call_next(request)
+            # Agents request and consume approvals with their run-scoped
+            # execution credential; the router enforces human-only decisions
+            # and revalidates the run before any side effect (issue #616).
+            if (
+                request.method == "POST"
+                and request.url.path.startswith("/api/v1/agent-approvals")
+                and bearer is not None
+                and verify_agent_execution_token(bearer) is not None
+            ):
+                return await call_next(request)
             return JSONResponse(
                 status_code=401,
                 content={"error": {"code": "UNAUTHORIZED", "message": "Invalid or missing API key"}},
@@ -498,6 +509,11 @@ def create_app(
     # Register routers
     from socialseed_tasker.events.routes import webhook_router as events_webhook_router
 
+    # #616: persisted human approvals bound to one concrete agent action.
+    from socialseed_tasker.infrastructure.web_api.routers.agent_approvals import (
+        agent_approvals_router,
+    )
+
     # #564: must be registered before agent_router so /agents/profiles is not
     # swallowed by the /agents/{agent_id} path parameter of agent.py.
     from socialseed_tasker.infrastructure.web_api.routers.agent_profiles import agent_profiles_router
@@ -564,6 +580,7 @@ def create_app(
     app.include_router(agent_skills_router, prefix="/api/v1", tags=["agent-skills"])
     app.include_router(agent_router, prefix="/api/v1", tags=["agents"])
     app.include_router(agent_runs_router, prefix="/api/v1", tags=["agent-runs"])
+    app.include_router(agent_approvals_router, prefix="/api/v1", tags=["agent-approvals"])
     app.include_router(workflows_router, prefix="/api/v1", tags=["workflows"])
     app.include_router(sync_router, prefix="/api/v1", tags=["sync"])
     app.include_router(webhook_router, prefix="/api/v1", tags=["webhooks"])
@@ -1188,6 +1205,15 @@ def create_app(
         return JSONResponse(
             status_code=503,
             content=_error_response("AI_NOT_CONFIGURED", str(exc)),
+        )
+
+    @app.exception_handler(AgentApprovalError)
+    async def agent_approval_error_handler(
+        request: Request, exc: AgentApprovalError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=_error_response(exc.code.upper(), exc.message),
         )
 
     @app.exception_handler(StarletteHTTPException)

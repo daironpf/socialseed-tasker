@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { isMockMode, apiMode } from '@/api/client'
+import * as hitlApi from '@/api/hitlApi'
 import type { HITLRequest, HITLRequestSeverity, HITLRequestStatus } from '@/types/hitl'
 
 const MOCK_DIFF_1 = `@@ -12,8 +12,12 @@
@@ -240,6 +241,8 @@ export const useHitlStore = defineStore('hitl', () => {
   const approvedRequests = computed(() => requests.value.filter(r => r.status === 'approved'))
   const rejectedRequests = computed(() => requests.value.filter(r => r.status === 'rejected'))
   const modifiedRequests = computed(() => requests.value.filter(r => r.status === 'modified'))
+  const revokedRequests = computed(() => requests.value.filter(r => r.status === 'revoked'))
+  const expiredRequests = computed(() => requests.value.filter(r => r.status === 'expired'))
 
   const urgentPendingRequests = computed(() =>
     pendingRequests.value.filter(r => r.severity === 'CRITICAL' || r.severity === 'HIGH')
@@ -254,18 +257,19 @@ export const useHitlStore = defineStore('hitl', () => {
   const criticalCount = computed(() => pendingRequests.value.filter(r => r.severity === 'CRITICAL').length)
 
   async function fetchRequests() {
-    // Demo HITL requests only exist in mock mode; there is no real HITL API yet.
-    if (!isMockMode()) {
-      requests.value = []
-      loadedOnce = true
-      return
-    }
-    if (loadedOnce && requests.value.length > 0) return
     loading.value = true
     error.value = null
     try {
-      await new Promise(resolve => setTimeout(resolve, 300))
-      requests.value = [...MOCK_REQUESTS]
+      if (isMockMode()) {
+        if (loadedOnce && requests.value.length > 0) return
+        await new Promise(resolve => setTimeout(resolve, 300))
+        requests.value = [...MOCK_REQUESTS]
+        loadedOnce = true
+        return
+      }
+      // Real mode always reflects persisted server state; the server is the
+      // only source of truth for pending/approved/rejected/revoked/expired.
+      requests.value = await hitlApi.fetchApprovals()
       loadedOnce = true
     } catch (e) {
       error.value = (e as Error).message
@@ -276,12 +280,9 @@ export const useHitlStore = defineStore('hitl', () => {
 
   // Runtime data-source switch (mock <-> real), issue #545.
   watch(apiMode, () => {
-    if (isMockMode()) {
-      loadedOnce = false
-      void fetchRequests()
-    } else {
-      requests.value = []
-    }
+    loadedOnce = false
+    requests.value = []
+    void fetchRequests()
   })
 
   type ResolveAction = 'approve' | 'reject' | 'modify'
@@ -300,9 +301,28 @@ export const useHitlStore = defineStore('hitl', () => {
     quickActionRequestId.value = null
   }
 
+  function replaceRequest(updated: HITLRequest) {
+    const index = requests.value.findIndex(r => r.id === updated.id)
+    if (index >= 0) {
+      requests.value[index] = updated
+    } else {
+      requests.value.unshift(updated)
+    }
+  }
+
   async function approveRequest(id: string): Promise<boolean> {
     const req = requests.value.find(r => r.id === id)
     if (!req || req.status !== 'pending') return false
+    if (!isMockMode()) {
+      try {
+        replaceRequest(await hitlApi.approveApproval(id))
+        if (selectedRequestId.value === id) selectedRequestId.value = null
+        return true
+      } catch (e) {
+        error.value = (e as Error).message
+        return false
+      }
+    }
     req.status = 'approved'
     req.reviewedAt = new Date().toISOString()
     req.reviewedBy = 'admin'
@@ -313,6 +333,16 @@ export const useHitlStore = defineStore('hitl', () => {
   async function rejectRequest(id: string, feedback: string): Promise<boolean> {
     const req = requests.value.find(r => r.id === id)
     if (!req || req.status !== 'pending') return false
+    if (!isMockMode()) {
+      try {
+        replaceRequest(await hitlApi.rejectApproval(id, feedback))
+        if (selectedRequestId.value === id) selectedRequestId.value = null
+        return true
+      } catch (e) {
+        error.value = (e as Error).message
+        return false
+      }
+    }
     req.status = 'rejected'
     req.reviewedAt = new Date().toISOString()
     req.reviewedBy = 'admin'
@@ -324,7 +354,40 @@ export const useHitlStore = defineStore('hitl', () => {
   async function modifyRequest(id: string, feedback: string): Promise<boolean> {
     const req = requests.value.find(r => r.id === id)
     if (!req || req.status !== 'pending') return false
+    if (!isMockMode()) {
+      // "Request changes" is a rejection with feedback: the backend never
+      // records it as an approval, so the action stays unexecutable.
+      try {
+        replaceRequest(await hitlApi.rejectApproval(id, feedback))
+        if (selectedRequestId.value === id) selectedRequestId.value = null
+        return true
+      } catch (e) {
+        error.value = (e as Error).message
+        return false
+      }
+    }
     req.status = 'modified'
+    req.reviewedAt = new Date().toISOString()
+    req.reviewedBy = 'admin'
+    req.feedback = feedback
+    if (selectedRequestId.value === id) selectedRequestId.value = null
+    return true
+  }
+
+  async function revokeRequest(id: string, feedback?: string): Promise<boolean> {
+    const req = requests.value.find(r => r.id === id)
+    if (!req || (req.status !== 'pending' && req.status !== 'approved')) return false
+    if (!isMockMode()) {
+      try {
+        replaceRequest(await hitlApi.revokeApproval(id, feedback))
+        if (selectedRequestId.value === id) selectedRequestId.value = null
+        return true
+      } catch (e) {
+        error.value = (e as Error).message
+        return false
+      }
+    }
+    req.status = 'revoked'
     req.reviewedAt = new Date().toISOString()
     req.reviewedBy = 'admin'
     req.feedback = feedback
@@ -352,6 +415,8 @@ export const useHitlStore = defineStore('hitl', () => {
       approved: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
       rejected: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
       modified: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+      revoked: 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+      expired: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
     }
     return colors[status]
   }
@@ -387,6 +452,8 @@ export const useHitlStore = defineStore('hitl', () => {
     approvedRequests,
     rejectedRequests,
     modifiedRequests,
+    revokedRequests,
+    expiredRequests,
     urgentPendingRequests,
     urgentPendingCount,
     selectedRequest,
@@ -396,6 +463,7 @@ export const useHitlStore = defineStore('hitl', () => {
     approveRequest,
     rejectRequest,
     modifyRequest,
+    revokeRequest,
     resolveAction,
     openQuickAction,
     closeQuickAction,

@@ -1411,6 +1411,109 @@ class AgentRunLogResponse(BaseModel):
     metadata: dict[str, Any] | None = None
 
 
+AgentApprovalStatus = Literal["pending", "approved", "rejected", "revoked", "expired"]
+
+AgentApprovalAction = Literal["read", "propose", "apply"]
+
+AgentApprovalSeverity = Literal["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+
+
+class AgentApprovalDiff(BaseModel):
+    """Presentation-only diff attached to an approval request (issue #616)."""
+
+    filename: str
+    content: str
+
+
+class AgentApprovalImpact(BaseModel):
+    """Presentation-only impact summary attached to an approval request."""
+
+    totalAffected: int = 0  # noqa: N815
+    directDeps: int = 0  # noqa: N815
+    transitiveDeps: int = 0  # noqa: N815
+    riskLevel: AgentApprovalSeverity = "MEDIUM"  # noqa: N815
+    affectedComponents: list[str] = Field(default_factory=list)  # noqa: N815
+
+
+class AgentApprovalMetadata(BaseModel):
+    """Human-facing context for the HITL inbox.
+
+    These fields are never part of the action fingerprint: changing a title or
+    a diff preview does not make a previous approval valid for another action.
+    """
+
+    title: str | None = Field(None, max_length=200)
+    description: str | None = Field(None, max_length=4000)
+    type: str = Field("code_change", max_length=80)
+    severity: AgentApprovalSeverity = "MEDIUM"
+    component: str | None = Field(None, max_length=200)
+    issue_title: str | None = Field(None, max_length=500)
+    command: str | None = Field(None, max_length=4000)
+    diffs: list[AgentApprovalDiff] = Field(default_factory=list)
+    impact: AgentApprovalImpact | None = None
+
+
+class AgentApprovalRequestCreate(BaseModel):
+    """Agent request for a human decision on one concrete action (issue #616)."""
+
+    action: AgentApprovalAction = "apply"
+    tool: str | None = Field(None, max_length=120)
+    resource_scope: str = Field(..., min_length=1, max_length=80)
+    target: str | None = Field(None, max_length=500)
+    expected_effect: str = Field(..., min_length=1, max_length=4000)
+    action_payload: dict[str, Any] = Field(default_factory=dict)
+    expires_in_seconds: int | None = Field(
+        None,
+        gt=0,
+        le=30 * 24 * 60 * 60,
+        description="Optional deadline; omitting it never auto-approves the request.",
+    )
+    metadata: AgentApprovalMetadata = Field(default_factory=AgentApprovalMetadata)
+
+
+class AgentApprovalExecutionRequest(BaseModel):
+    """Exact action the agent wants to execute under an existing approval."""
+
+    action: AgentApprovalAction
+    tool: str | None = Field(None, max_length=120)
+    resource_scope: str = Field(..., min_length=1, max_length=80)
+    target: str | None = Field(None, max_length=500)
+    expected_effect: str = Field(..., min_length=1, max_length=4000)
+    action_payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class AgentApprovalDecisionRequest(BaseModel):
+    """Human decision or revocation note (issue #616)."""
+
+    feedback: str | None = Field(None, max_length=4000)
+
+
+class AgentApprovalResponse(BaseModel):
+    """Persisted approval state returned to the HITL UI and agents."""
+
+    id: str
+    run_id: str
+    agent_id: str
+    issue_id: str
+    project_id: str
+    action: AgentApprovalAction
+    tool: str | None = None
+    resource_scope: str
+    target: str | None = None
+    expected_effect: str
+    action_payload: dict[str, Any] = Field(default_factory=dict)
+    request_metadata: dict[str, Any] = Field(default_factory=dict)
+    status: AgentApprovalStatus
+    requested_at: datetime | None = None
+    expires_at: datetime | None = None
+    decided_at: datetime | None = None
+    decided_by: str | None = None
+    feedback: str | None = None
+    revoked_at: datetime | None = None
+    revoked_by: str | None = None
+    executed_at: datetime | None = None
+
+
 WorkflowSource = Literal["builtin", "custom"]
 
 _WORKFLOW_SLUG_PATTERN = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"

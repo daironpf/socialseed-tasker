@@ -581,6 +581,89 @@ Provider credentials are not part of the profile contract and are never
 stored there; they belong to the execution environment's secret management.
 Saving a profile alone never authorizes an action.
 
+## Agent Action Approvals
+
+`/agent-approvals` stores human decisions bound to one concrete agent action.
+An approval never covers future actions, a different run or a modified payload.
+
+### Request approval (agent)
+```http
+POST /agent-approvals
+Authorization: Bearer aet_<signed-token>
+{
+  "action": "apply",
+  "tool": "neo4j_query",
+  "resource_scope": "graph",
+  "target": "production",
+  "expected_effect": "archive the selected nodes",
+  "action_payload": {"cypher": "MATCH (n) RETURN n"},
+  "expires_in_seconds": 900,
+  "metadata": {
+    "title": "Archive production nodes",
+    "type": "schema_migration",
+    "severity": "HIGH"
+  }
+}
+```
+
+The endpoint requires the run-scoped execution token issued by
+`POST /issues/{issue_id}/agent/start`. It validates that the run is still
+active, that the issue/project claims match the current backend state and that
+the profile is currently authorized for the action and scope. The persisted
+approval records the run, agent, issue, project, action, scope, target,
+expected effect and a fingerprint over the action payload. `metadata` is
+presentation-only and never participates in the fingerprint.
+
+Omitting `expires_in_seconds` leaves the request `pending` indefinitely; it
+never means approval. `expires_in_seconds` must be positive and at most 30
+days.
+
+### Human inbox and decisions
+```http
+GET /agent-approvals?status=pending
+GET /agent-approvals/{approval_id}
+POST /agent-approvals/{approval_id}/approve
+POST /agent-approvals/{approval_id}/reject
+POST /agent-approvals/{approval_id}/revoke
+```
+
+Every read or decision route requires an authenticated caller with the `admin`
+permission and rejects agent profiles, so an agent cannot decide its own
+action. The decision body is optional:
+
+```json
+{"feedback": "scope approved for this run only"}
+```
+
+Statuses are `pending`, `approved`, `rejected`, `revoked` and `expired`.
+Rejecting a pending request or revoking a pending/approved request prevents
+execution. Expiry is materialized server-side from `expires_at`. A rejected,
+revoked, expired or never-decided action remains unexecuted and is reported
+with its actual status, never as success.
+
+### Consume approval (agent, one shot)
+```http
+POST /agent-approvals/{approval_id}/execute
+Authorization: Bearer aet_<signed-token>
+{
+  "action": "apply",
+  "tool": "neo4j_query",
+  "resource_scope": "graph",
+  "target": "production",
+  "expected_effect": "archive the selected nodes",
+  "action_payload": {"cypher": "MATCH (n) RETURN n"}
+}
+```
+
+The execution gate revalidates the active run, agent and issue, the current
+authorization, the deadline, the approval status and the full action
+fingerprint. It is atomic and one-shot: a second call returns
+`409 APPROVAL_ALREADY_USED`. A changed payload or effect returns
+`409 APPROVAL_ACTION_CHANGED`; a rejected, revoked or expired approval returns
+the matching `409` code with `executed_at` empty. On success the response
+includes `executed_at`, after which the approval can no longer be changed or
+revoked.
+
 ## Labels
 
 ### List Labels

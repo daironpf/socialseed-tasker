@@ -175,7 +175,25 @@
               </button>
             </div>
 
-            <!-- Status badge for reviewed -->
+            <!-- Status badge or revoke action for reviewed -->
+            <div v-else-if="hitlStore.selectedRequest.status === 'approved'" class="flex items-center gap-2">
+              <span
+                class="rounded-full px-3 py-1.5 text-sm font-bold"
+                :class="hitlStore.getStatusColor(hitlStore.selectedRequest.status)"
+              >
+                {{ t(`hitlCenter.statuses.${hitlStore.selectedRequest.status}`) }}
+              </span>
+              <button
+                v-if="!hitlStore.selectedRequest.executedAt"
+                class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+                :disabled="!can('hitl.approve')"
+                @click="showRevokeForm = !showRevokeForm"
+              >
+                {{ t('hitlCenter.revoke') }}
+              </button>
+            </div>
+
+            <!-- Status badge for other reviewed states -->
             <div v-else>
               <span
                 class="rounded-full px-3 py-1.5 text-sm font-bold"
@@ -183,6 +201,31 @@
               >
                 {{ t(`hitlCenter.statuses.${hitlStore.selectedRequest.status}`) }}
               </span>
+            </div>
+          </div>
+
+          <!-- Revoke Form -->
+          <div v-if="showRevokeForm && hitlStore.selectedRequest.status === 'approved'" class="mt-4 rounded-lg border border-gray-300 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700/30">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('hitlCenter.revokeFeedback') }}</label>
+            <textarea
+              v-model="revokeFeedback"
+              rows="3"
+              class="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+              :placeholder="t('hitlCenter.revokePlaceholder')"
+            ></textarea>
+            <div class="mt-3 flex justify-end gap-2">
+              <button
+                class="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                @click="showRevokeForm = false; revokeFeedback = ''"
+              >
+                {{ t('common.cancel') }}
+              </button>
+              <button
+                class="rounded-lg bg-gray-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+                @click="handleRevoke"
+              >
+                {{ t('hitlCenter.confirmRevoke') }}
+              </button>
             </div>
           </div>
 
@@ -359,8 +402,10 @@ const severityFilter = ref('all')
 const componentFilter = ref('all')
 const showRejectForm = ref(false)
 const showModifyForm = ref(false)
+const showRevokeForm = ref(false)
 const rejectFeedback = ref('')
 const modifyFeedback = ref('')
+const revokeFeedback = ref('')
 
 const uniqueComponents = computed(() => {
   const comps = new Set(hitlStore.requests.map(r => r.component))
@@ -373,6 +418,8 @@ const statusFilters = computed(() => [
   { value: 'approved' as const, label: t('hitlCenter.approved'), count: hitlStore.approvedRequests.length },
   { value: 'rejected' as const, label: t('hitlCenter.rejected'), count: hitlStore.rejectedRequests.length },
   { value: 'modified' as const, label: t('hitlCenter.modified'), count: hitlStore.modifiedRequests.length },
+  { value: 'revoked' as const, label: t('hitlCenter.revoked'), count: hitlStore.revokedRequests.length },
+  { value: 'expired' as const, label: t('hitlCenter.expired'), count: hitlStore.expiredRequests.length },
 ])
 
 const filteredRequests = computed(() => {
@@ -416,6 +463,13 @@ function handleModify() {
   hitlStore.modifyRequest(hitlStore.selectedRequest.id, modifyFeedback.value.trim())
   modifyFeedback.value = ''
   showModifyForm.value = false
+}
+
+function handleRevoke() {
+  if (!hitlStore.selectedRequest) return
+  hitlStore.revokeRequest(hitlStore.selectedRequest.id, revokeFeedback.value.trim() || undefined)
+  revokeFeedback.value = ''
+  showRevokeForm.value = false
 }
 
 onMounted(() => {

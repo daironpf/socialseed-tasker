@@ -1078,11 +1078,19 @@
     "approved": "Approved",
     "rejected": "Rejected",
     "modified": "Modified",
+    "revoked": "Revoked",
+    "expired": "Expired",
+    "revoke": "Revoke",
+    "revokeFeedback": "Revocation Reason",
+    "revokePlaceholder": "Explain why this approval is revoked...",
+    "confirmRevoke": "Confirm Revocation",
     "statuses": {
       "pending": "Pending",
       "approved": "Approved",
       "rejected": "Rejected",
-      "modified": "Modified"
+      "modified": "Modified",
+      "revoked": "Revoked",
+      "expired": "Expired"
     }
   },
   "floatingChat": {
